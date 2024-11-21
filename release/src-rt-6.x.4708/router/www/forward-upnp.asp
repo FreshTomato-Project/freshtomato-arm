@@ -193,7 +193,7 @@ ug.onClick = function(cell) {
 function verifyFields(focused, quiet) {
 	var enable = (E('_f_enable_upnp').checked || E('_f_enable_pcp_pmp').checked);
 
-	E('_f_upnp_secure').disabled = (enable == 0);
+	E('_f_upnp_allow_third_party').disabled = (enable == 0);
 	E('_upnp_custom').disabled = (enable == 0);
 
 	E('_f_upnp_lan').disabled = ((nvram.lan_ifname.length < 1) || (enable == 0));
@@ -248,7 +248,7 @@ function save() {
 	if (fom.f_enable_pcp_pmp.checked)
 		fom.upnp_enable.value |= 2;
 
-	fom.upnp_secure.value = fom._f_upnp_secure.checked ? 1 : 0;
+	fom.upnp_secure.value = fom._f_upnp_allow_third_party.checked ? 0 : 1;
 
 	fom.upnp_lan.value = fom._f_upnp_lan.checked ? 1 : 0;
 	fom.upnp_lan1.value = fom._f_upnp_lan1.checked ? 1 : 0;
@@ -323,7 +323,7 @@ function init() {
 				{ title: 'LAN1', indent: 2, name: 'f_upnp_lan1', type: 'checkbox', value: (nvram.upnp_lan1 == '1') },
 				{ title: 'LAN2', indent: 2, name: 'f_upnp_lan2', type: 'checkbox', value: (nvram.upnp_lan2 == '1') },
 				{ title: 'LAN3', indent: 2, name: 'f_upnp_lan3', type: 'checkbox', value: (nvram.upnp_lan3 == '1') },
-			{ title: 'Secure Mode', name: 'f_upnp_secure', type: 'checkbox', suffix: ' <small>when enabled, UPnP clients are allowed to add mappings only to their IP<\/small>', value: (nvram.upnp_secure == '1') },
+			{ title: 'Allow third-party forwarding', name: 'f_upnp_allow_third_party', type: 'checkbox', suffix: ' <small>Allow adding port forwards for non-requesting IP addresses<\/small>', value: (nvram.upnp_secure == '0') },
 			{ title: 'Custom Configuration', name: 'upnp_custom', type: 'textarea', value: nvram.upnp_custom }
 		]);
 	</script>

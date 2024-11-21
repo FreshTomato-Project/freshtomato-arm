@@ -954,7 +954,6 @@ static const nvset_t nvset_list[] = {
 	{ "upnp_secure",		V_01				},
 	{ "upnp_port",			V_RANGE(0, 65535)		},
 	{ "upnp_ssdp_interval",		V_RANGE(10, 9999)		},
-	{ "upnp_mnp",			V_01				},
 	{ "upnp_clean",			V_01				},
 	{ "upnp_clean_interval",	V_RANGE(60, 65535)		},
 	{ "upnp_clean_threshold",	V_RANGE(0, 9999)		},

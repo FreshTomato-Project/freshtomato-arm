@@ -19,7 +19,7 @@
 
 <script>
 
-//	<% nvram("upnp_enable,upnp_mnp,upnp_clean,upnp_secure,upnp_clean_interval,upnp_clean_threshold,upnp_custom,upnp_lan,upnp_lan1,upnp_lan2,upnp_lan3,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname"); %>
+//	<% nvram("upnp_enable,upnp_clean,upnp_secure,upnp_clean_interval,upnp_clean_threshold,upnp_custom,upnp_lan,upnp_lan1,upnp_lan2,upnp_lan3,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname"); %>
 
 </script>
 <script src="upnp.jsx?_http_id=<% nv(http_id); %>"></script>
@@ -198,7 +198,6 @@ function verifyFields(focused, quiet) {
 	E('_f_upnp_clean').disabled = (enable == 0);
 	E('_f_upnp_secure').disabled = (enable == 0);
 	E('_upnp_custom').disabled = (enable == 0);
-	E('_f_upnp_mnp').disabled = (E('_f_enable_upnp').checked == 0);
 	E('_upnp_clean_interval').disabled = (enable == 0) || (bc == 0);
 	E('_upnp_clean_threshold').disabled = (enable == 0) || (bc == 0);
 	elem.display(PR(E('_upnp_clean_interval')), (enable != 0) && (bc != 0));
@@ -267,7 +266,6 @@ function save() {
 	if (fom.f_enable_pcp_pmp.checked)
 		fom.upnp_enable.value |= 2;
 
-	fom.upnp_mnp.value = fom._f_upnp_mnp.checked ? 1 : 0;
 	fom.upnp_clean.value = fom._f_upnp_clean.checked ? 1 : 0;
 	fom.upnp_secure.value = fom._f_upnp_secure.checked ? 1 : 0;
 
@@ -313,7 +311,6 @@ function init() {
 <input type="hidden" name="_service" value="upnp-restart">
 <input type="hidden" name="_nofootermsg" value="">
 <input type="hidden" name="upnp_enable">
-<input type="hidden" name="upnp_mnp">
 <input type="hidden" name="upnp_clean">
 <input type="hidden" name="upnp_secure">
 <input type="hidden" name="upnp_lan">
@@ -350,8 +347,6 @@ function init() {
 				{ title: 'LAN1', indent: 2, name: 'f_upnp_lan1', type: 'checkbox', value: (nvram.upnp_lan1 == '1') },
 				{ title: 'LAN2', indent: 2, name: 'f_upnp_lan2', type: 'checkbox', value: (nvram.upnp_lan2 == '1') },
 				{ title: 'LAN3', indent: 2, name: 'f_upnp_lan3', type: 'checkbox', value: (nvram.upnp_lan3 == '1') },
-			{ title: 'Show In My Network Places',  name: 'f_upnp_mnp',  type: 'checkbox',  value: (nvram.upnp_mnp == '1')},
-			null,
 			{ title: 'Custom Configuration', name: 'upnp_custom', type: 'textarea', value: nvram.upnp_custom }
 		]);
 	</script>

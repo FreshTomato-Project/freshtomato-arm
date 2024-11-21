@@ -1850,13 +1850,8 @@ void start_upnp(void)
 	else
 		fprintf(f, "clean_ruleset_interval=0\n");
 
-	if (nvram_get_int("upnp_mnp")) {
-		https = nvram_get_int("https_enable");
-		fprintf(f, "presentation_url=http%s://%s:%s/forward-upnp.asp\n", (https ? "s" : ""), nvram_safe_get("lan_ipaddr"), nvram_safe_get(https ? "https_lanport" : "http_lanport"));
-	}
-	else
-		/* Empty parameters are not included into XML service description */
-		fprintf(f, "presentation_url=\n");
+	https = nvram_get_int("https_enable");
+	fprintf(f, "presentation_url=http%s://%s:%s/forward-upnp.asp\n", (https ? "s" : ""), nvram_safe_get("lan_ipaddr"), nvram_safe_get(https ? "https_lanport" : "http_lanport"));
 
 	f_read_string("/proc/sys/kernel/random/uuid", uuid, sizeof(uuid));
 	fprintf(f, "uuid=%s\n", uuid);

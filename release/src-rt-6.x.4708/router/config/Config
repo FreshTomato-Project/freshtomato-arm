@@ -162,7 +162,7 @@ config CONFIG_PPP
        default y
 
 config CONFIG_UPNP
-       bool "UPnP IGD server"
+       bool "UPnP IGD & PCP/NAT-PMP daemon"
        depends on CONFIG_NETCONF && CONFIG_NVRAM && CONFIG_SHARED && CONFIG_NAT
        default y
 

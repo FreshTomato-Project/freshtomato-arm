@@ -1823,7 +1823,7 @@ void start_upnp(void)
 	           "upnp_nat_postrouting_chain=pupnp\n"
 	           "notify_interval=%d\n"
 	           "system_uptime=yes\n"
-	           "friendly_name=FreshTomato UPnP daemon\n"
+	           "friendly_name=FreshTomato UPnP IGD &amp; PCP\n"
 	           "model_name=%s\n"
 	           "model_url=https://freshtomato.org/\n"
 	           "manufacturer_name=FreshTomato Firmware\n"

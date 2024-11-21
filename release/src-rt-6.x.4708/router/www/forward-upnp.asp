@@ -11,7 +11,7 @@
 <head>
 <meta http-equiv="content-type" content="text/html;charset=utf-8">
 <meta name="robots" content="noindex,nofollow">
-<title>[<% ident(); %>] Forwarding: UPnP / NAT-PMP</title>
+<title>[<% ident(); %>] Forwarding: UPnP IGD &amp; PCP/NAT-PMP</title>
 <link rel="stylesheet" type="text/css" href="tomato.css?rel=<% version(); %>">
 <% css(); %>
 <script src="isup.jsz?rel=<% version(); %>"></script>
@@ -49,11 +49,11 @@ function upnpNvramAdd() {
 		return;
 
 	E('_f_enable_upnp').disabled = 1;
-	E('_f_enable_natpmp').disabled = 1;
+	E('_f_enable_pcp_pmp').disabled = 1;
 	if ((sb = E('save-button')) != null) sb.disabled = 1;
 	if ((cb = E('cancel-button')) != null) cb.disabled = 1;
 
-	if (!confirm("Add UPNP to nvram?"))
+	if (!confirm("Add UPnP IGD & PCP/NAT-PMP autonomous port forwarding service to nvram?"))
 		return;
 
 	if (xob)
@@ -76,7 +76,7 @@ function upnpNvramAdd() {
 		setTimeout(
 			function() {
 				E('_f_enable_upnp').disabled = 0;
-				E('_f_enable_natpmp').disabled = 0;
+				E('_f_enable_pcp_pmp').disabled = 0;
 				if (sb) sb.disabled = 0;
 				if (cb) cb.disabled = 0;
 				if (msg) msg.style.display = 'none';
@@ -192,7 +192,7 @@ ug.onClick = function(cell) {
 }
 
 function verifyFields(focused, quiet) {
-	var enable = (E('_f_enable_upnp').checked || E('_f_enable_natpmp').checked);
+	var enable = (E('_f_enable_upnp').checked || E('_f_enable_pcp_pmp').checked);
 	var bc = E('_f_upnp_clean').checked;
 
 	E('_f_upnp_clean').disabled = (enable == 0);
@@ -232,9 +232,9 @@ function verifyFields(focused, quiet) {
 		E('_f_upnp_lan3').checked = 0;
 
 	if ((enable) && (!E('_f_upnp_lan').checked) && (!E('_f_upnp_lan1').checked) && (!E('_f_upnp_lan2').checked) && (!E('_f_upnp_lan3').checked)) {
-		if ((E('_f_enable_natpmp').checked) || (E('_f_enable_upnp').checked)) {
-			var m = 'NAT-PMP or UPnP should be enabled on at least one LAN bridge. You can continue, but be sure to configure access to the UPnP service in Custom Configuration, otherwise miniupnpd will not run';
-			ferror.set('_f_enable_natpmp', m, quiet);
+		if ((E('_f_enable_pcp_pmp').checked) || (E('_f_enable_upnp').checked)) {
+			var m = 'Must be enabled on at least one LAN interface if no custom configuration is used, otherwise the service will not run';
+			ferror.set('_f_enable_pcp_pmp', m, quiet);
 			ferror.set('_f_enable_upnp', m, 1);
 			ferror.set('_f_upnp_lan', m, 1);
 			ferror.set('_f_upnp_lan1', m, 1);
@@ -244,7 +244,7 @@ function verifyFields(focused, quiet) {
 		return 1;
 	}
 	else {
-		ferror.clear('_f_enable_natpmp');
+		ferror.clear('_f_enable_pcp_pmp');
 		ferror.clear('_f_enable_upnp');
 		ferror.clear('_f_upnp_lan');
 		ferror.clear('_f_upnp_lan1');
@@ -264,7 +264,7 @@ function save() {
 	fom.upnp_enable.value = 0;
 	if (fom.f_enable_upnp.checked)
 		fom.upnp_enable.value = 1;
-	if (fom.f_enable_natpmp.checked)
+	if (fom.f_enable_pcp_pmp.checked)
 		fom.upnp_enable.value |= 2;
 
 	fom.upnp_mnp.value = fom._f_upnp_mnp.checked ? 1 : 0;
@@ -326,7 +326,7 @@ function init() {
 <!-- / / / -->
 
 <div id="show_ports">
-	<div class="section-title">Forwarded Ports</div>
+	<div class="section-title">Active Port Forwards</div>
 	<div class="section">
 		<div class="tomato-grid" id="upnp-grid"></div>
 		<div style="width:100%;text-align:right"><img src="spin.gif" id="refresh-spinner" alt=""> &nbsp;<input type="button" value="Delete All" onclick="deleteAll()" id="upnp-delete-all"></div>
@@ -335,12 +335,12 @@ function init() {
 
 <!-- / / / -->
 
-<div class="section-title">UPnP / NAT-PMP Settings</div>
+<div class="section-title">UPnP IGD &amp; PCP/NAT-PMP Service Settings</div>
 <div class="section">
 	<script>
 		createFieldTable('', [
-			{ title: 'Enable UPnP', name: 'f_enable_upnp', type: 'checkbox', value: (nvram.upnp_enable & 1) },
-			{ title: 'Enable NAT-PMP', name: 'f_enable_natpmp', type: 'checkbox', value: (nvram.upnp_enable & 2) },
+			{ title: 'Enable UPnP IGD', name: 'f_enable_upnp', type: 'checkbox', suffix: ' <small>This protocol is often used by Microsoft-compatible systems<\/small>', value: (nvram.upnp_enable & 1) },
+			{ title: 'Enable PCP/NAT-PMP', name: 'f_enable_pcp_pmp', type: 'checkbox', suffix: ' <small>These protocols are often used by Apple-compatible systems<\/small>', value: (nvram.upnp_enable & 2) },
 			{ title: 'Inactive Rules Cleaning', name: 'f_upnp_clean', type: 'checkbox', value: (nvram.upnp_clean == '1') },
 				{ title: 'Cleaning Interval', indent: 2, name: 'upnp_clean_interval', type: 'text', maxlen: 5, size: 7, suffix: ' <small>seconds<\/small>', value: nvram.upnp_clean_interval },
 				{ title: 'Cleaning Threshold', indent: 2, name: 'upnp_clean_threshold', type: 'text', maxlen: 4, size: 7, suffix: ' <small>redirections<\/small>', value: nvram.upnp_clean_threshold },
@@ -352,7 +352,7 @@ function init() {
 				{ title: 'LAN3', indent: 2, name: 'f_upnp_lan3', type: 'checkbox', value: (nvram.upnp_lan3 == '1') },
 			{ title: 'Show In My Network Places',  name: 'f_upnp_mnp',  type: 'checkbox',  value: (nvram.upnp_mnp == '1')},
 			null,
-			{ title: 'Miniupnpd<\/a><br>Custom configuration', name: 'upnp_custom', type: 'textarea', value: nvram.upnp_custom }
+			{ title: 'Custom Configuration', name: 'upnp_custom', type: 'textarea', value: nvram.upnp_custom }
 		]);
 	</script>
 </div>
@@ -360,7 +360,7 @@ function init() {
 <div class="section-title">Notes</div>
 <div class="section">
 	<ul>
-		<li><b>NVRAM</b> - If UPnP has been enabled, nvram values will be added. Nvram values will be removed after reboot in case UPnP will be disabled.</li>
+		<li><b>NVRAM</b> - If UPnP IGD or PCP/NAT-PMP has been enabled, nvram values will be added. Nvram values will be removed after reboot in case service will be disabled.</li>
 	</ul>
 </div>
 

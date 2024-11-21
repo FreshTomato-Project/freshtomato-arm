@@ -136,14 +136,14 @@ function submitDelete(proto, eport) {
 }
 
 function deleteData(data) {
-	if (!confirm('Delete '+data[3]+' '+data[0]+' -> '+data[2]+':'+data[1]+' ?'))
+	if (!confirm('Delete port forward '+data[2]+'/'+data[3]+' -> '+data[0]+':'+data[1]+'?'))
 		return;
 
-	submitDelete(data[3], data[0]);
+	submitDelete(data[3], data[2]);
 }
 
 function deleteAll() {
-	if (!confirm('Delete all entries?'))
+	if (!confirm('Delete all port forwards?'))
 		return;
 
 	submitDelete('*', '0');
@@ -153,9 +153,9 @@ var ug = new TomatoGrid();
 
 ug.setup = function() {
 	this.init('upnp-grid', 'sort delete');
-	this.headerSet(['External', 'Internal', 'Internal Address', 'Protocol', 'Description']);
+	this.headerSet(['Internal Address', 'Internal Port', 'External Port', 'Protocol', 'Description']);
 	ug.populate();
-	this.sort(2);
+	this.sort(0);
 }
 
 ug.populate = function() {
@@ -168,7 +168,7 @@ ug.populate = function() {
 			if (r == null)
 				continue;
 
-			row = this.insertData(-1, [r[2], r[4], r[3], r[1], r[5]]);
+			row = this.insertData(-1, [r[3], r[4], r[2], r[1], r[5]]);
 
 			if (!r[0]) {
 				for (j = 0; j < 5; ++j) {

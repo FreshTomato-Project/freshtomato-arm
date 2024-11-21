@@ -47,8 +47,8 @@ function upnpNvramAdd() {
 	if (nvram.upnp_enable > 0)
 		return;
 
-	E('_f_enable_upnp').disabled = 1;
-	E('_f_enable_pcp_pmp').disabled = 1;
+	E('_f_enable_upnp').checked = 1;
+	E('_f_enable_pcp_pmp').checked = 1;
 	if ((sb = E('save-button')) != null) sb.disabled = 1;
 	if ((cb = E('cancel-button')) != null) cb.disabled = 1;
 

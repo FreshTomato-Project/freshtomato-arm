@@ -19,7 +19,7 @@
 
 <script>
 
-//	<% nvram("upnp_enable,upnp_clean,upnp_secure,upnp_clean_interval,upnp_clean_threshold,upnp_custom,upnp_lan,upnp_lan1,upnp_lan2,upnp_lan3,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname"); %>
+//	<% nvram("upnp_enable,upnp_secure,upnp_custom,upnp_lan,upnp_lan1,upnp_lan2,upnp_lan3,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname"); %>
 
 </script>
 <script src="upnp.jsx?_http_id=<% nv(http_id); %>"></script>
@@ -40,8 +40,7 @@ function upnpNvramAdd() {
 	var sb, cb, msg;
 
 	/* short check for upnp nvram var. If OK - nothing to do! */
-	if ((nvram.upnp_secure.length > 0) &&
-	    (nvram.upnp_clean.length > 0))
+	if (nvram.upnp_secure.length > 0)
 		return;
 
 	/* check already enabled? - nothing to do! */
@@ -193,26 +192,9 @@ ug.onClick = function(cell) {
 
 function verifyFields(focused, quiet) {
 	var enable = (E('_f_enable_upnp').checked || E('_f_enable_pcp_pmp').checked);
-	var bc = E('_f_upnp_clean').checked;
 
-	E('_f_upnp_clean').disabled = (enable == 0);
 	E('_f_upnp_secure').disabled = (enable == 0);
 	E('_upnp_custom').disabled = (enable == 0);
-	E('_upnp_clean_interval').disabled = (enable == 0) || (bc == 0);
-	E('_upnp_clean_threshold').disabled = (enable == 0) || (bc == 0);
-	elem.display(PR(E('_upnp_clean_interval')), (enable != 0) && (bc != 0));
-	elem.display(PR(E('_upnp_clean_threshold')), (enable != 0) && (bc != 0));
-
-	if ((enable != 0) && (bc != 0)) {
-		if (!v_range('_upnp_clean_interval', quiet, 60, 65535))
-			return 0;
-		if (!v_range('_upnp_clean_threshold', quiet, 0, 9999))
-			return 0;
-	}
-	else {
-		ferror.clear(E('_upnp_clean_interval'));
-		ferror.clear(E('_upnp_clean_threshold'));
-	}
 
 	E('_f_upnp_lan').disabled = ((nvram.lan_ifname.length < 1) || (enable == 0));
 	if (E('_f_upnp_lan').disabled)
@@ -266,7 +248,6 @@ function save() {
 	if (fom.f_enable_pcp_pmp.checked)
 		fom.upnp_enable.value |= 2;
 
-	fom.upnp_clean.value = fom._f_upnp_clean.checked ? 1 : 0;
 	fom.upnp_secure.value = fom._f_upnp_secure.checked ? 1 : 0;
 
 	fom.upnp_lan.value = fom._f_upnp_lan.checked ? 1 : 0;
@@ -311,7 +292,6 @@ function init() {
 <input type="hidden" name="_service" value="upnp-restart">
 <input type="hidden" name="_nofootermsg" value="">
 <input type="hidden" name="upnp_enable">
-<input type="hidden" name="upnp_clean">
 <input type="hidden" name="upnp_secure">
 <input type="hidden" name="upnp_lan">
 <input type="hidden" name="upnp_lan1">
@@ -338,9 +318,6 @@ function init() {
 		createFieldTable('', [
 			{ title: 'Enable UPnP IGD', name: 'f_enable_upnp', type: 'checkbox', suffix: ' <small>This protocol is often used by Microsoft-compatible systems<\/small>', value: (nvram.upnp_enable & 1) },
 			{ title: 'Enable PCP/NAT-PMP', name: 'f_enable_pcp_pmp', type: 'checkbox', suffix: ' <small>These protocols are often used by Apple-compatible systems<\/small>', value: (nvram.upnp_enable & 2) },
-			{ title: 'Inactive Rules Cleaning', name: 'f_upnp_clean', type: 'checkbox', value: (nvram.upnp_clean == '1') },
-				{ title: 'Cleaning Interval', indent: 2, name: 'upnp_clean_interval', type: 'text', maxlen: 5, size: 7, suffix: ' <small>seconds<\/small>', value: nvram.upnp_clean_interval },
-				{ title: 'Cleaning Threshold', indent: 2, name: 'upnp_clean_threshold', type: 'text', maxlen: 4, size: 7, suffix: ' <small>redirections<\/small>', value: nvram.upnp_clean_threshold },
 			{ title: 'Secure Mode', name: 'f_upnp_secure', type: 'checkbox', suffix: ' <small>when enabled, UPnP clients are allowed to add mappings only to their IP<\/small>', value: (nvram.upnp_secure == '1') },
 			{ title: 'Enabled on' },
 				{ title: 'LAN0', indent: 2, name: 'f_upnp_lan', type: 'checkbox', value: (nvram.upnp_lan == '1') },

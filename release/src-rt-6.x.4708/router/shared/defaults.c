@@ -90,9 +90,6 @@ struct nvram_tuple upnp_defaults[] = {
 	{ "upnp_lan1",			""				, 0 },
 	{ "upnp_lan2",			""				, 0 },
 	{ "upnp_lan3",			""				, 0 },
-	{ "upnp_clean",			"1"				, 0 },	/* 0:Disable 1:Enable */
-	{ "upnp_clean_interval",	"600"				, 0 },	/* Cleaning interval in seconds */
-	{ "upnp_clean_threshold",	"20"				, 0 },	/* Threshold for cleaning unused rules */
 #if 0	/* disabled for miniupnpd */
 	{ "upnp_max_age",		"180"				, 0 },	/* Max age */
 	{ "upnp_config",		"0"				, 0 },

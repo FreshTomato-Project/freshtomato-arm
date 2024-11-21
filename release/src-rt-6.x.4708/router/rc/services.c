@@ -1837,19 +1837,6 @@ void start_upnp(void)
 	           nvram_get_int("upnp_ssdp_interval"),
 	           nvram_safe_get("t_model_name"));
 
-	if (nvram_get_int("upnp_clean")) {
-		interval = nvram_get_int("upnp_clean_interval");
-		if (interval < 60)
-			interval = 60;
-
-		fprintf(f, "clean_ruleset_interval=%d\n"
-		           "clean_ruleset_threshold=%d\n",
-		           interval,
-		           nvram_get_int("upnp_clean_threshold"));
-	}
-	else
-		fprintf(f, "clean_ruleset_interval=0\n");
-
 	https = nvram_get_int("https_enable");
 	fprintf(f, "presentation_url=http%s://%s:%s/forward-upnp.asp\n", (https ? "s" : ""), nvram_safe_get("lan_ipaddr"), nvram_safe_get(https ? "https_lanport" : "http_lanport"));
 

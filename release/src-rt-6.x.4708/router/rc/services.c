@@ -1817,6 +1817,7 @@ void start_upnp(void)
 	           "port=%d\n"
 	           "enable_upnp=%s\n"
 	           "enable_pcp_pmp=%s\n"
+	           "force_igd_desc_v1=yes\n"
 	           "secure_mode=%s\n"
 	           "pcp_allow_thirdparty=%s\n"
 	           "upnp_forward_chain=upnp\n"

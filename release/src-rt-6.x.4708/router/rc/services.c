@@ -1818,6 +1818,7 @@ void start_upnp(void)
 	           "enable_upnp=%s\n"
 	           "enable_pcp_pmp=%s\n"
 	           "secure_mode=%s\n"
+	           "pcp_allow_thirdparty=%s\n"
 	           "upnp_forward_chain=upnp\n"
 	           "upnp_nat_chain=upnp\n"
 	           "upnp_nat_postrouting_chain=pupnp\n"
@@ -1834,6 +1835,7 @@ void start_upnp(void)
 	           (enable & 1) ? "yes" : "no",			/* upnp enable */
 	           (enable & 2) ? "yes" : "no",			/* natpmp enable */
 	           nvram_get_int("upnp_secure") ? "yes" : "no",	/* secure_mode (only forward to self) */
+	           nvram_get_int("upnp_secure") ? "no" : "yes",
 	           nvram_get_int("upnp_ssdp_interval"),
 	           nvram_safe_get("t_model_name"));
 

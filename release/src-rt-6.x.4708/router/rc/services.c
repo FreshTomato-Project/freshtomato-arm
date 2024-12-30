@@ -1819,9 +1819,7 @@ void start_upnp(void)
 	           "port=%d\n"
 	           "enable_upnp=%s\n"
 	           "enable_pcp_pmp=%s\n"
-#ifdef TCONFIG_IPV6
-	           "force_igd_desc_v1=yes\n" /* If igd2 is compiled in + IPv6 support (force version 1 in IGD v2 mode) */
-#endif
+	           "force_igd_desc_v1=yes\n"
 	           "secure_mode=%s\n"
 	           "pcp_allow_thirdparty=%s\n"
 	           "upnp_forward_chain=upnp\n"
@@ -1834,6 +1832,9 @@ void start_upnp(void)
 	           "model_url=https://freshtomato.org/\n"
 	           "manufacturer_name=FreshTomato Firmware\n"
 	           "manufacturer_url=https://freshtomato.org/\n"
+	           /* Empty strings so that 1 and 00000000 are not reported */
+	           "model_number=\n"
+	           "serial=\n"
 	           "\n",
 	           get_wanface("wan"),
 	           upnp_port,

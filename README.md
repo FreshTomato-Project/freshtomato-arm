@@ -11,16 +11,14 @@ For the following **ARM** routers: **Asus** N18U, AC56S, AC56U/AC56R, N66U C1, A
 .  
   
 - [**Project page**](https://freshtomato.org/)
-- [**Source code**](https://bitbucket.org/pedro311/freshtomato-arm/commits/all) ([**Mirror**](https://github.com/pedro0311/freshtomato-arm))
-- [**Changelog**](https://bitbucket.org/pedro311/freshtomato-arm/src/arm-master/CHANGELOG)
+- [**Source code**](https://github.com/FreshTomato-Project/freshtomato-arm) ([**Mirror**](https://bitbucket.org/pedro311/freshtomato-arm/commits/all))
+- [**Changelog**](https://github.com/FreshTomato-Project/freshtomato-arm/blob/arm-master/CHANGELOG)
 - [**Downloads**](https://freshtomato.org/downloads)
-- [**Issue tracker**](https://bitbucket.org/pedro311/freshtomato-arm/issues?status=new&status=open)
-- [**Pull Requests**](https://bitbucket.org/pedro311/freshtomato-arm/pull-requests/)
-- [**Forum EN**](https://www.linksysinfo.org/)
+- [**Issue tracker**](https://github.com/FreshTomato-Project/freshtomato-arm/issues)
+- [**Pull Requests**](https://github.com/FreshTomato-Project/freshtomato-arm/pulls)
+- [**Forum EN**](https://www.linksysinfo.org/index.php?forums/tomato-firmware.33/)
 - [**Forum PL**](https://openlinksys.info/forum/)
 - **Donations**: [**PayPal**](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=B4FDH9TH6Z8FU)  or  BTC: **`1JDxBBQvcJ9XxgagJRNVrqC1nysq8F8B1Y`**  
-  
-Note: Please do not use github mirror for Pull Requests because it's not actively monitored!
   
 .  
 **HOW TO PREPARE A WORK ENVIRONMENT FOR FRESHTOMATO COMPILATION (on Debian 12/64bit)**
@@ -67,7 +65,7 @@ Note: Please do not use github mirror for Pull Requests because it's not activel
   
 8. Clone/download repository:
     ```sh
-    $ git clone https://bitbucket.org/pedro311/freshtomato-arm.git
+    $ git clone https://github.com/FreshTomato-Project/freshtomato-arm.git
     ```
   
 9. Reboot system

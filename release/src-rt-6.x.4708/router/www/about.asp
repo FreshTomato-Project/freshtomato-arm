@@ -47,7 +47,7 @@ function init() {
 	<br>
 	<b>FreshTomato project page: </b><a href="https://freshtomato.org" class="new_window"> https://freshtomato.org</a><br>
 	<b>Forums about Tomato</b> - EN: <a href="https://www.linksysinfo.org/index.php?forums/tomato-firmware.33/" class="new_window">https://linksysinfo.org</a> PL: <a href="https://openlinksys.info" class="new_window">https://openlinksys.info</a><br>
-	<b>Source code: </b><a href="https://bitbucket.org/pedro311/freshtomato-arm" class="new_window"> https://bitbucket.org</a><br>
+	<b>Source code: </b><a href="https://github.com/FreshTomato-Project/freshtomato-arm" class="new_window"> https://github.com</a><br>
 	<br>
 	<hr>
 	<br>

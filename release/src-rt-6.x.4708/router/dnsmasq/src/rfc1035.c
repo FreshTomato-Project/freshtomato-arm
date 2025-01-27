@@ -16,16 +16,29 @@
 
 #include "dnsmasq.h"
 
+/* EXTR_NAME_EXTRACT -> extract name
+   EXTR_NAME_COMPARE -> compare name, case insensitive
+   EXTR_NAME_NOCASE -> compare name, case sensitive
+   EXTR_NAME_FLIP -> flip 0x20 bits in packet, controlled by bitmap in parm. name may be NULL 
+   
+   return = 0 -> error
+   return = 1 -> extract OK, compare OK, flip OK
+   return = 2 -> extract OK, compare failed.
+*/
 int extract_name(struct dns_header *header, size_t plen, unsigned char **pp, 
-		 char *name, int isExtract, int extrabytes)
+		 char *name, int func, unsigned int parm)
 {
   unsigned char *cp = (unsigned char *)name, *p = *pp, *p1 = NULL;
   unsigned int j, l, namelen = 0, hops = 0;
-  int retvalue = 1;
+  int retvalue = 1, case_insens = 1, isExtract = 0, flip = 0, extrabytes = (int)parm;
   
-  if (isExtract)
-    *cp = 0;
-
+  if (func == EXTR_NAME_EXTRACT)
+    isExtract = 1, *cp = 0;
+  else if (func == EXTR_NAME_NOCASE)
+    case_insens = 0;
+  else if (func == EXTR_NAME_FLIP)
+    flip = 1, extrabytes = 0;
+  
   while (1)
     { 
       unsigned int label_type;
@@ -46,7 +59,7 @@ int extract_name(struct dns_header *header, size_t plen, unsigned char **pp,
 		cp--;
 	      *cp = 0; /* terminate: lose final period */
 	    }
-	  else if (*cp != 0)
+	  else if (!flip && *cp != 0)
 	    retvalue = 2;
 	  
 	  if (p1) /* we jumped via compression */
@@ -85,7 +98,7 @@ int extract_name(struct dns_header *header, size_t plen, unsigned char **pp,
 	  if (!CHECK_LEN(header, p, plen, l))
 	    return 0;
 	  
-	  for(j=0; j<l; j++, p++)
+	  for (j=0; j<l; j++, p++)
 	    if (isExtract)
 	      {
 		unsigned char c = *p;
@@ -98,6 +111,18 @@ int extract_name(struct dns_header *header, size_t plen, unsigned char **pp,
 		else
 		  *cp++ = c; 
 	      }
+	    else if (flip)
+	      {
+		unsigned char c = *p;
+
+		/* parm is unsigned. We only flip up to the first 32 alpha-chars. */
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+		  {
+		    if (parm & 1)
+		      *p ^= 0x20;
+		    parm >>= 1;
+		  }
+	      }
 	    else 
 	      {
 		unsigned char c1 = *cp, c2 = *p;
@@ -107,15 +132,15 @@ int extract_name(struct dns_header *header, size_t plen, unsigned char **pp,
 		else 
 		  {
 		    cp++;
-		    if (c1 >= 'A' && c1 <= 'Z')
-		      c1 += 'a' - 'A';
 
 		    if (c1 == NAME_ESCAPE)
 		      c1 = (*cp++)-1;
+		    else if (case_insens && c1 >= 'A' && c1 <= 'Z')
+		      c1 += 'a' - 'A';
 		    
-		    if (c2 >= 'A' && c2 <= 'Z')
+		    if (case_insens && c2 >= 'A' && c2 <= 'Z')
 		      c2 += 'a' - 'A';
-		     
+		    
 		    if (c1 != c2)
 		      retvalue =  2;
 		  }
@@ -123,7 +148,7 @@ int extract_name(struct dns_header *header, size_t plen, unsigned char **pp,
 	    
 	  if (isExtract)
 	    *cp++ = '.';
-	  else if (*cp != 0 && *cp++ != '.')
+	  else if (!flip && *cp != 0 && *cp++ != '.')
 	    retvalue = 2;
 	}
       else
@@ -399,7 +424,7 @@ int do_doctor(struct dns_header *header, size_t qlen, char *namebuff)
       if (i == ntohs(header->ancount) && !(p = skip_section(p, ntohs(header->nscount), header, qlen)))
 	return done;
       
-      if (!extract_name(header, qlen, &p, namebuff, 1, 10))
+      if (!extract_name(header, qlen, &p, namebuff, EXTR_NAME_EXTRACT, 10))
 	return done; /* bad packet */
       
       GETSHORT(qtype, p); 
@@ -480,7 +505,7 @@ static int find_soa(struct dns_header *header, size_t qlen, char *name, int *sub
   
   for (i = 0; i < ntohs(header->nscount); i++)
     {
-      if (!extract_name(header, qlen, &p, daemon->workspacename, 1, 0))
+      if (!extract_name(header, qlen, &p, daemon->workspacename, EXTR_NAME_EXTRACT, 0))
 	return 0; /* bad packet */
       
       GETSHORT(qtype, p); 
@@ -509,7 +534,7 @@ static int find_soa(struct dns_header *header, size_t qlen, char *name, int *sub
 	      
 	      for (j = 0; j < 2; j++) /* MNAME, RNAME */
 		{
-		  if (!extract_name(header, qlen, &p, daemon->workspacename, 1, 0))
+		  if (!extract_name(header, qlen, &p, daemon->workspacename, EXTR_NAME_EXTRACT, 0))
 		    {
 		      if (!no_cache)
 			blockdata_free(addr.rrblock.rrdata);
@@ -660,7 +685,7 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 
   namep = p = (unsigned char *)(header+1);
   
-  if (ntohs(header->qdcount) != 1 || !extract_name(header, qlen, &p, name, 1, 4))
+  if (ntohs(header->qdcount) != 1 || !extract_name(header, qlen, &p, name, EXTR_NAME_EXTRACT, 4))
     return 2; /* bad packet */
   
   GETSHORT(qtype, p); 
@@ -684,7 +709,7 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 	  for (j = 0; j < ntohs(header->ancount); j++) 
 	    {
 	      int secflag = 0;
-	      if (!(res = extract_name(header, qlen, &p1, name, 0, 10)))
+	      if (!(res = extract_name(header, qlen, &p1, name, EXTR_NAME_COMPARE, 10)))
 		return 2; /* bad packet */
 	      
 	      GETSHORT(aqtype, p1); 
@@ -722,7 +747,7 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 		  if (aqtype == T_CNAME)
 		    log_query(secflag | F_CNAME | F_FORWARD | F_UPSTREAM, name, NULL, NULL, 0);
 		  
-		  if (!extract_name(header, qlen, &p1, name, 1, 0))
+		  if (!extract_name(header, qlen, &p1, name, EXTR_NAME_EXTRACT, 0))
 		    return 2;
 		  
 		  if (aqtype == T_CNAME)
@@ -800,7 +825,7 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 	{
 	  int secflag = 0;
 	  
-	  if (!(res = extract_name(header, qlen, &p1, name, 0, 10)))
+	  if (!(res = extract_name(header, qlen, &p1, name, EXTR_NAME_COMPARE, 10)))
 	    return 2; /* bad packet */
 	  
 	  GETSHORT(aqtype, p1); 
@@ -862,7 +887,7 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 		}
 	      
 	      namep = p1;
-	      if (!extract_name(header, qlen, &p1, name, 1, 0))
+	      if (!extract_name(header, qlen, &p1, name, EXTR_NAME_EXTRACT, 0))
 		return 2;
 	      
 	      if (qtype != T_CNAME)
@@ -932,7 +957,7 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 			      /* Name, extract it then re-encode. */
 			      int len;
 			      
-			      if (!extract_name(header, qlen, &p1, name, 1, 0))
+			      if (!extract_name(header, qlen, &p1, name, EXTR_NAME_EXTRACT, 0))
 				{
 				  blockdata_free(addr.rrblock.rrdata);
 				  return 2;
@@ -965,7 +990,7 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 			} while (desc != -1);
 		      
 		      /* we overwrote the original name, so get it back here. */
-		      if (!extract_name(header, qlen, &tmp, name, 1, 0))
+		      if (!extract_name(header, qlen, &tmp, name, EXTR_NAME_EXTRACT, 0))
 			{
 			  blockdata_free(addr.rrblock.rrdata);
 			  return 2;
@@ -1127,7 +1152,7 @@ void report_addresses(struct dns_header *header, size_t len, u32 mark)
     {
       int aqtype, aqclass, ardlen;
       
-      if (!extract_name(header, len, &p, daemon->namebuff, 1, 10))
+      if (!extract_name(header, len, &p, daemon->namebuff, EXTR_NAME_EXTRACT, 10))
 	return;
       
       if (!CHECK_LEN(header, p, len, 10))
@@ -1145,7 +1170,7 @@ void report_addresses(struct dns_header *header, size_t len, u32 mark)
 	{
 	  if (aqtype == T_CNAME)
 	    {
-	      if (!extract_name(header, len, &p, daemon->workspacename, 1, 0))
+	      if (!extract_name(header, len, &p, daemon->workspacename, EXTR_NAME_EXTRACT, 0))
 		return;
 	      if (safe_name(daemon->namebuff) && safe_name(daemon->workspacename))
 		ubus_event_bcast_connmark_allowlist_resolved(mark, daemon->namebuff, daemon->workspacename, attl);
@@ -1195,7 +1220,7 @@ unsigned int extract_request(struct dns_header *header, size_t qlen, char *name,
   if (!(header->hb3 & HB3_QR) && (ntohs(header->ancount) != 0 || ntohs(header->nscount) != 0))
     return 0; /* non-standard query. */
   
-  if (!extract_name(header, qlen, &p, name, 1, 4))
+  if (!extract_name(header, qlen, &p, name, EXTR_NAME_EXTRACT, 4))
     return 0; /* bad packet */
    
   GETSHORT(qtype, p); 
@@ -1309,7 +1334,7 @@ static int check_bad_address(struct dns_header *header, size_t qlen, struct bogu
 
   for (i = ntohs(header->ancount); i != 0; i--)
     {
-      if (name && !extract_name(header, qlen, &p, name, 1, 10))
+      if (name && !extract_name(header, qlen, &p, name, EXTR_NAME_EXTRACT, 10))
 	return 0; /* bad packet */
 
       if (!name && !(p = skip_name(p, header, qlen, 10)))
@@ -1619,7 +1644,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
   nameoffset = p - (unsigned char *)header;
   
   /* now extract name as .-concatenated string into name */
-  if (!extract_name(header, qlen, &p, name, 1, 4))
+  if (!extract_name(header, qlen, &p, name, EXTR_NAME_EXTRACT, 4))
     return 0; /* bad packet */
   
   GETSHORT(qtype, p); 

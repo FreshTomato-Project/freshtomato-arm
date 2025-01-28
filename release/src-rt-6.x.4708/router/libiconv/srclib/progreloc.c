@@ -1,5 +1,5 @@
 /* Provide relocatable programs.
-   Copyright (C) 2003-2022 Free Software Foundation, Inc.
+   Copyright (C) 2003-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003.
 
    This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,6 @@
 #include "progname.h"
 
 #include <errno.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,7 +133,7 @@ static size_t
 full_read (int fd, void *buf, size_t count)
 {
   size_t total = 0;
-  const char *ptr = (const char *) buf;
+  char *ptr = (char *) buf;
 
   while (count > 0)
     {

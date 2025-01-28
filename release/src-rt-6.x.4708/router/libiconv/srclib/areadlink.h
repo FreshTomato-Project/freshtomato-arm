@@ -1,6 +1,6 @@
 /* Read symbolic links without size limitation.
 
-   Copyright (C) 2001, 2003-2004, 2007, 2009-2022 Free Software Foundation,
+   Copyright (C) 2001, 2003-2004, 2007, 2009-2024 Free Software Foundation,
    Inc.
 
    This file is free software: you can redistribute it and/or modify
@@ -20,6 +20,11 @@
 
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 extern char *areadlink (char const *filename)
   _GL_ATTRIBUTE_DEALLOC_FREE;
 extern char *areadlink_with_size (char const *filename, size_t size_hint)
@@ -34,4 +39,9 @@ extern char *areadlinkat (int fd, char const *filename)
 extern char *areadlinkat_with_size (int fd, char const *filename,
                                     size_t size_hint)
   _GL_ATTRIBUTE_DEALLOC_FREE;
+#endif
+
+
+#ifdef __cplusplus
+}
 #endif

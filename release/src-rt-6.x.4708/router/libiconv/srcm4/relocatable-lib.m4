@@ -1,8 +1,10 @@
-# relocatable-lib.m4 serial 6
-dnl Copyright (C) 2003, 2005-2007, 2009-2022 Free Software Foundation, Inc.
+# relocatable-lib.m4
+# serial 8
+dnl Copyright (C) 2003, 2005-2007, 2009-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl From Bruno Haible.
 
@@ -20,7 +22,9 @@ AC_DEFUN([gl_RELOCATABLE_LIBRARY_BODY],
   else
     reloc_final_prefix="$prefix"
   fi
-  AC_DEFINE_UNQUOTED([INSTALLPREFIX], ["${reloc_final_prefix}"],
+  dnl Define reloc_final_prefix_c and reloc_final_prefix_c_make.
+  gl_BUILD_TO_HOST([reloc_final_prefix])
+  AC_DEFINE_UNQUOTED([INSTALLPREFIX], [${reloc_final_prefix_c}],
     [Define to the value of ${prefix}, as a string.])
   if test $RELOCATABLE = yes; then
     AC_DEFINE([ENABLE_RELOCATABLE], [1],
@@ -34,7 +38,7 @@ AC_DEFUN([gl_RELOCATABLE_NOP],
 [
   AC_MSG_CHECKING([whether to activate relocatable installation])
   AC_ARG_ENABLE([relocatable],
-    [AS_HELP_STRING([--enable-relocatable],
+    [AS_HELP_STRING([[--enable-relocatable]],
       [install a package that can be moved in the file system])],
     [if test "$enableval" != no; then
        RELOCATABLE=yes

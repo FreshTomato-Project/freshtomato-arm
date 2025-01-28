@@ -1,8 +1,10 @@
-# intl-thread-locale.m4 serial 9
-dnl Copyright (C) 2015-2022 Free Software Foundation, Inc.
+# intl-thread-locale.m4
+# serial 12
+dnl Copyright (C) 2015-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 dnl
 dnl This file can be used in projects which are not available under
 dnl the GNU General Public License or the GNU Lesser General Public
@@ -38,6 +40,7 @@ AC_DEFUN([gt_INTL_THREAD_LOCALE_NAME],
   dnl they did not think about the programs.
   dnl In this situation, even the HAVE_NAMELESS_LOCALES support does not work.
   dnl So, define HAVE_FAKE_LOCALES and disable all locale_t support.
+  dnl Expected result: HAVE_FAKE_LOCALES is defined on OpenBSD ≥ 6.2.
   case "$gt_cv_func_uselocale_works" in
     *yes)
       AC_CHECK_HEADERS_ONCE([xlocale.h])
@@ -81,6 +84,7 @@ int main ()
       ;;
   esac
 
+  dnl Expected result: HAVE_SOLARIS114_LOCALES is defined on Solaris ≥ 11.4.
   case "$gt_cv_func_uselocale_works" in
     *yes)
       AC_CACHE_CHECK([for Solaris 11.4 locale system],
@@ -128,6 +132,8 @@ int main ()
   dnl requires the gnulib overrides of 'newlocale', 'duplocale', 'freelocale',
   dnl which is a problem for GNU libunistring.  Therefore try hard to avoid
   dnl enabling this code!
+  dnl Expected result: HAVE_NAMELESS_LOCALES is defined on AIX,
+  dnl and              HAVE_AIX72_LOCALES is defined on AIX ≥ 7.2.
   gt_nameless_locales=no
   case "$host_os" in
     dnl It's needed on AIX 7.2.
@@ -135,16 +141,38 @@ int main ()
       gt_nameless_locales=yes
       AC_DEFINE([HAVE_NAMELESS_LOCALES], [1],
         [Define if the locale_t type does not contain the name of each locale category.])
+      dnl In AIX ≥ 7.2, a locale contains at least the name of the LC_MESSSAGES
+      dnl category (fix of defect 823926).
+      AC_CACHE_CHECK([for AIX locales with LC_MESSAGES name],
+        [gt_cv_locale_aix72],
+        [AC_COMPILE_IFELSE(
+           [AC_LANG_PROGRAM([[
+              #include <locale.h>
+              /* Include <sys/localedef.h>, which defines __locale_t.  */
+              #include <stdlib.h>
+              locale_t x;
+            ]],
+            [[return ((__locale_t) x)->locale_name[0];]])],
+           [gt_cv_locale_aix72=yes],
+           [gt_cv_locale_aix72=no])
+        ])
+      if test $gt_cv_locale_aix72 = yes; then
+        AC_DEFINE([HAVE_AIX72_LOCALES], [1],
+          [Define if the __locale_t type contains the name of the LC_MESSAGES category.])
+      fi
       ;;
   esac
 
   dnl We cannot support uselocale() on platforms where the locale_t type is
   dnl fake.  So, set
   dnl   gt_good_uselocale = gt_working_uselocale && !gt_fake_locales.
+  dnl Expected result: HAVE_GOOD_USELOCALE is defined on all platforms except
+  dnl FreeBSD < 9.1, NetBSD, OpenBSD, Minix, AIX < 7, AIX 7.2, HP-UX, IRIX,
+  dnl Solaris < 11.4, Cygwin < 2.6, mingw, MSVC 14, Android API level < 21.
   if test $gt_working_uselocale = yes && test $gt_fake_locales = no; then
     gt_good_uselocale=yes
     AC_DEFINE([HAVE_GOOD_USELOCALE], [1],
-      [Define if the uselocale exists, may be safely called, and returns sufficient information.])
+      [Define if the uselocale function exists, may be safely called, and returns sufficient information.])
   else
     gt_good_uselocale=no
   fi
@@ -152,6 +180,8 @@ int main ()
   dnl Set gt_localename_enhances_locale_funcs to indicate whether localename.c
   dnl overrides newlocale(), duplocale(), freelocale() to keep track of locale
   dnl names.
+  dnl Expected result: LOCALENAME_ENHANCE_LOCALE_FUNCS is defined on
+  dnl AIX 7.1, AIX ≥ 7.3.
   if test $gt_good_uselocale = yes && test $gt_nameless_locales = yes; then
     gt_localename_enhances_locale_funcs=yes
     LOCALENAME_ENHANCE_LOCALE_FUNCS=1
@@ -164,6 +194,9 @@ int main ()
 
 dnl Tests whether uselocale() exists and is usable.
 dnl Sets gt_working_uselocale and defines HAVE_WORKING_USELOCALE.
+dnl Expected result: HAVE_WORKING_USELOCALE is defined on all platforms except
+dnl FreeBSD < 9.1, NetBSD, OpenBSD < 6.2, Minix, AIX < 7, AIX 7.2, HP-UX, IRIX,
+dnl Solaris < 11.4, Cygwin < 2.6, mingw, MSVC 14, Android API level < 21.
 AC_DEFUN([gt_FUNC_USELOCALE],
 [
   AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
@@ -171,7 +204,7 @@ AC_DEFUN([gt_FUNC_USELOCALE],
   dnl Persuade glibc and Solaris <locale.h> to define 'locale_t'.
   AC_REQUIRE([AC_USE_SYSTEM_EXTENSIONS])
 
-  AC_CHECK_FUNCS_ONCE([uselocale])
+  gl_CHECK_FUNCS_ANDROID([uselocale], [[#include <locale.h>]])
 
   dnl On AIX 7.2, the uselocale() function is not documented and leads to
   dnl crashes in subsequent setlocale() invocations.

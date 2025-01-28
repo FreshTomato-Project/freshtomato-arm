@@ -62,8 +62,10 @@ AC_DEFUN([_AM_SUBST_NOTMAKE])
 # Public sister of _AM_SUBST_NOTMAKE.
 AC_DEFUN([AM_SUBST_NOTMAKE], [_AM_SUBST_NOTMAKE($@)])
 
+m4_include([m4/build-to-host.m4])
 m4_include([m4/codeset.m4])
 m4_include([m4/fcntl-o.m4])
+m4_include([m4/host-cpu-c-abi.m4])
 m4_include([m4/lib-ld.m4])
 m4_include([m4/libtool.m4])
 m4_include([m4/ltoptions.m4])

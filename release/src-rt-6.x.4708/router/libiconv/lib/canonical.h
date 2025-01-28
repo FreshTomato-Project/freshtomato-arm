@@ -95,6 +95,7 @@
   (int)(long)&((struct stringpool_t *)0)->stringpool_str388,
   (int)(long)&((struct stringpool_t *)0)->stringpool_str153,
   (int)(long)&((struct stringpool_t *)0)->stringpool_str443,
+  (int)(long)&((struct stringpool_t *)0)->stringpool_str740,
   (int)(long)&((struct stringpool_t *)0)->stringpool_str254,
   (int)(long)&((struct stringpool_t *)0)->stringpool_str281,
   (int)(long)&((struct stringpool_t *)0)->stringpool_str78,

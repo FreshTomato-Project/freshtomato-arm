@@ -1,5 +1,5 @@
 /* Determine whether the current process is running under QEMU.
-   Copyright (C) 2021-2022 Free Software Foundation, Inc.
+   Copyright (C) 2021-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -16,7 +16,6 @@
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2021.  */
 
-#include <stdbool.h>
 #ifdef __linux__
 # include <fcntl.h>
 # include <string.h>

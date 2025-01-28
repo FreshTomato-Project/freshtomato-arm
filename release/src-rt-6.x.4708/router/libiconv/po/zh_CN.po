@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: libiconv 1.17-pre1\n"
 "Report-Msgid-Bugs-To: bug-gnu-libiconv@gnu.org\n"
-"POT-Creation-Date: 2022-02-12 13:29+0100\n"
+"POT-Creation-Date: 2024-12-15 13:23+0100\n"
 "PO-Revision-Date: 2022-02-13 11:40-0500\n"
 "Last-Translator: Boyuan Yang <073plan@gmail.com>\n"
 "Language-Team: Chinese (simplified) <i18n-zh@googlegroups.com>\n"
@@ -21,24 +21,24 @@ msgstr ""
 "X-Generator: Poedit 2.4.3\n"
 
 #. TRANSLATORS: The first line of the short usage message.
-#: src/iconv.c:104
+#: src/iconv.c:108
 msgid "Usage: iconv [-c] [-s] [-f fromcode] [-t tocode] [file ...]"
 msgstr "用法：iconv [-c] [-s] [-f 输入编码] [-t 输出编码] [文件 ...]"
 
 #. TRANSLATORS: The second line of the short usage message.
 #. Align it correctly against the first line.
-#: src/iconv.c:108
+#: src/iconv.c:112
 msgid "or:    iconv -l"
 msgstr "或：  iconv -l"
 
-#: src/iconv.c:110
+#: src/iconv.c:114
 #, c-format
 msgid "Try '%s --help' for more information.\n"
 msgstr "尝试‘%s --help’以获得更多信息。\n"
 
 #. TRANSLATORS: The first line of the long usage message.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:115
+#: src/iconv.c:119
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION...] [-f ENCODING] [-t ENCODING] [INPUTFILE...]\n"
 msgstr "用法: %s [OPTION...] [-f ENCODING] [-t ENCODING] [INPUTFILE...]\n"
@@ -46,23 +46,23 @@ msgstr "用法: %s [OPTION...] [-f ENCODING] [-t ENCODING] [INPUTFILE...]\n"
 #. TRANSLATORS: The second line of the long usage message.
 #. Align it correctly against the first line.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:122
+#: src/iconv.c:126
 #, c-format, no-wrap
 msgid "or:    %s -l\n"
 msgstr "或者: %s -l\n"
 
 #. TRANSLATORS: Description of the iconv program.
-#: src/iconv.c:128
+#: src/iconv.c:132
 #, c-format, no-wrap
 msgid "Converts text from one encoding to another encoding.\n"
 msgstr "将文本从一种编码转换成另一种编码。\n"
 
-#: src/iconv.c:132
+#: src/iconv.c:136
 #, c-format, no-wrap
 msgid "Options controlling the input and output format:\n"
 msgstr "控制输入输出格式的选项:\n"
 
-#: src/iconv.c:135
+#: src/iconv.c:139
 #, c-format, no-wrap
 msgid ""
 "  -f ENCODING, --from-code=ENCODING\n"
@@ -71,7 +71,7 @@ msgstr ""
 "  -f ENCODING, --from-code=ENCODING\n"
 "                              输入编码\n"
 
-#: src/iconv.c:139
+#: src/iconv.c:143
 #, c-format, no-wrap
 msgid ""
 "  -t ENCODING, --to-code=ENCODING\n"
@@ -80,17 +80,17 @@ msgstr ""
 "  -t ENCODING, --to-code=ENCODING\n"
 "                              输出编码\n"
 
-#: src/iconv.c:144
+#: src/iconv.c:148
 #, c-format, no-wrap
 msgid "Options controlling conversion problems:\n"
 msgstr "控制字符转换的选项:\n"
 
-#: src/iconv.c:147
+#: src/iconv.c:151
 #, c-format, no-wrap
 msgid "  -c                          discard unconvertible characters\n"
 msgstr "  -c                          忽略不可转换的字符\n"
 
-#: src/iconv.c:150
+#: src/iconv.c:154
 #, c-format, no-wrap
 msgid ""
 "  --unicode-subst=FORMATSTRING\n"
@@ -99,12 +99,12 @@ msgstr ""
 "  --unicode-subst=FORMATSTRING\n"
 "                              替代不可转换的 Unicode 字符\n"
 
-#: src/iconv.c:154
+#: src/iconv.c:158
 #, c-format, no-wrap
 msgid "  --byte-subst=FORMATSTRING   substitution for unconvertible bytes\n"
 msgstr "  --byte-subst=FORMATSTRING   替代不可转换的字节\n"
 
-#: src/iconv.c:157
+#: src/iconv.c:161
 #, c-format, no-wrap
 msgid ""
 "  --widechar-subst=FORMATSTRING\n"
@@ -113,32 +113,32 @@ msgstr ""
 "  --widechar-subst=FORMATSTRING\n"
 "                              替代不可转换的宽字符\n"
 
-#: src/iconv.c:162
+#: src/iconv.c:166
 #, c-format, no-wrap
 msgid "Options controlling error output:\n"
 msgstr "控制错误输出的选项:\n"
 
-#: src/iconv.c:165
+#: src/iconv.c:169
 #, c-format, no-wrap
 msgid "  -s, --silent                suppress error messages about conversion problems\n"
 msgstr "  -s, --silent                不显示有关转换出错的信息\n"
 
-#: src/iconv.c:169
+#: src/iconv.c:173
 #, c-format, no-wrap
 msgid "Informative output:\n"
 msgstr "输出信息:\n"
 
-#: src/iconv.c:172
+#: src/iconv.c:176
 #, c-format, no-wrap
 msgid "  -l, --list                  list the supported encodings\n"
 msgstr "  -l, --list                  列出支持的编码\n"
 
-#: src/iconv.c:175
+#: src/iconv.c:179
 #, c-format, no-wrap
 msgid "  --help                      display this help and exit\n"
 msgstr "  --help                      显示此帮助并退出\n"
 
-#: src/iconv.c:178
+#: src/iconv.c:182
 #, c-format, no-wrap
 msgid "  --version                   output version information and exit\n"
 msgstr "  --version                   显示版本信息并退出\n"
@@ -148,7 +148,7 @@ msgstr "  --version                   显示版本信息并退出\n"
 #. email address for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/iconv.c:186
+#: src/iconv.c:190
 #, c-format
 msgid ""
 "Report bugs in the bug tracker at <%s>\n"
@@ -159,7 +159,7 @@ msgstr ""
 "请将翻译错误报告至简体中文邮件列表 <i18n-zh@googlegroups.com>。\n"
 
 #. TRANSLATORS: The %s placeholder is the web address of the GPL license.
-#: src/iconv.c:202
+#: src/iconv.c:206
 #, c-format, no-wrap
 msgid ""
 "License GPLv3+: GNU GPL version 3 or later <%s>\n"
@@ -171,14 +171,14 @@ msgstr ""
 "在法律所允许的范围内不做任何担保。\n"
 
 #. TRANSLATORS: The %s placeholder expands to an author's name.
-#: src/iconv.c:208
+#: src/iconv.c:212
 #, c-format
 msgid "Written by %s.\n"
 msgstr "由 %s 编写。\n"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:302
+#: src/iconv.c:306
 #, c-format
 msgid ""
 "%s argument: A format directive with a variable width is not allowed here."
@@ -186,7 +186,7 @@ msgstr "%s 参数: 此处不允许用可变长度的命令格式。"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:317
+#: src/iconv.c:321
 #, c-format
 msgid ""
 "%s argument: A format directive with a variable precision is not allowed "
@@ -195,14 +195,14 @@ msgstr "%s 参数: 此处不允许用可变精度的命令格式。"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:333
+#: src/iconv.c:337
 #, c-format
 msgid "%s argument: A format directive with a size is not allowed here."
 msgstr "%s 参数: 此处不允许用含大小的命令格式。"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:375
+#: src/iconv.c:379
 #, c-format
 msgid "%s argument: The string ends in the middle of a directive."
 msgstr "%s 参数: 字符串在命令中部终止。"
@@ -210,14 +210,14 @@ msgstr "%s 参数: 字符串在命令中部终止。"
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #. The %c placeholder expands to an unknown format directive.
-#: src/iconv.c:382
+#: src/iconv.c:386
 #, c-format
 msgid "%s argument: The character '%c' is not a valid conversion specifier."
 msgstr "%s 参数: 字符‘%c’不是有效的转义符。"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:388
+#: src/iconv.c:392
 #, c-format
 msgid ""
 "%s argument: The character that terminates the format directive is not a "
@@ -227,7 +227,7 @@ msgstr "%s 参数: 用于终止命令格式的字符不是有效的转义符。"
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #. The %u placeholder expands to the number of arguments consumed by the format string.
-#: src/iconv.c:404
+#: src/iconv.c:408
 #, c-format
 msgid ""
 "%s argument: The format string consumes more than one argument: %u argument."
@@ -237,14 +237,14 @@ msgstr[0] "%s 参数: 格式字符串需要更多的参数: %u 参数。"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --byte-subst.
-#: src/iconv.c:462
+#: src/iconv.c:464
 #, c-format
 msgid "cannot convert byte substitution to Unicode: %s"
 msgstr "无法将欲替换字节转换成 Unicode: %s"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --unicode-subst.
-#: src/iconv.c:502
+#: src/iconv.c:504
 #, c-format
 msgid "cannot convert unicode substitution to target encoding: %s"
 msgstr "无法将欲替换 unicode 字元转换成目标编码: %s"
@@ -265,14 +265,14 @@ msgstr "无法将欲替换的宽字符转换成目标编码: %s"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --byte-subst.
-#: src/iconv.c:625
+#: src/iconv.c:618
 #, c-format
 msgid "cannot convert byte substitution to target encoding: %s"
 msgstr "无法将欲替换字节转换成目标编码: %s"
 
 #. TRANSLATORS: An error message.
 #. The placeholders expand to the input file name, a line number, and a column number.
-#: src/iconv.c:644
+#: src/iconv.c:637
 #, c-format
 msgid "%s:%u:%u: cannot convert"
 msgstr "%s:%u:%u: 无法转换"
@@ -281,7 +281,7 @@ msgstr "%s:%u:%u: 无法转换"
 #. The placeholders expand to the input file name, a line number, and a column number.
 #. A "shift sequence" is a sequence of bytes that changes the state of the converter;
 #. this concept exists only for "stateful" encodings like ISO-2022-JP.
-#: src/iconv.c:658
+#: src/iconv.c:651
 #, c-format
 msgid "%s:%u:%u: incomplete character or shift sequence"
 msgstr "%s:%u:%u: 不完整的字符或者替换序列"
@@ -289,61 +289,61 @@ msgstr "%s:%u:%u: 不完整的字符或者替换序列"
 #. TRANSLATORS: The first part of an error message.
 #. It is followed by a colon and a detail message.
 #. The placeholders expand to the input file name, a line number, and a column number.
-#: src/iconv.c:671
+#: src/iconv.c:664
 #, c-format
 msgid "%s:%u:%u"
 msgstr "%s:%u:%u"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the input file name.
-#: src/iconv.c:832
+#: src/iconv.c:830
 #, c-format
 msgid "%s: I/O error"
 msgstr "%s: 输入/输出错误"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the encoding name, specified through --from-code.
-#: src/iconv.c:1030
+#: src/iconv.c:1033
 #, c-format
 msgid "conversion from %s unsupported"
 msgstr "不支持从 %s 进行转换"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the encoding name, specified through --to-code.
-#: src/iconv.c:1036
+#: src/iconv.c:1039
 #, c-format
 msgid "conversion to %s unsupported"
 msgstr "不支持转换到 %s"
 
 #. TRANSLATORS: An error message.
 #. The placeholders expand to the encoding names, specified through --from-code and --to-code, respectively.
-#: src/iconv.c:1042
+#: src/iconv.c:1045
 #, c-format
 msgid "conversion from %s to %s unsupported"
 msgstr "不支持从 %s 转换到 %s"
 
 #. TRANSLATORS: Additional advice after an error message.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:1047
+#: src/iconv.c:1050
 #, c-format
 msgid "try '%s -l' to get the list of supported encodings"
 msgstr "尝试用‘%s -l’获取所支持的编码列表"
 
 #. TRANSLATORS: A filename substitute denoting standard input.
-#: src/iconv.c:1104
+#: src/iconv.c:1113 src/iconv.c:1122
 msgid "(stdin)"
 msgstr "(标准输入)"
 
 #. TRANSLATORS: The first part of an error message.
 #. It is followed by a colon and a detail message.
 #. The %s placeholder expands to the input file name.
-#: src/iconv.c:1116
+#: src/iconv.c:1132
 #, c-format
 msgid "%s"
 msgstr "%s"
 
 #. TRANSLATORS: An error message.
-#: src/iconv.c:1130
+#: src/iconv.c:1147
 #, c-format
 msgid "I/O error"
 msgstr "输入/输出错误"

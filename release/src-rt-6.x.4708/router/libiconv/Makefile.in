@@ -147,8 +147,9 @@ maintainer-clean : force
 
 # List of source files.
 SOURCE_FILES = \
-  README DEPENDENCIES INSTALL.windows HACKING AUTHORS NEWS DESIGN NOTES THANKS \
-  ChangeLog Makefile.devel configure.ac Makefile.in \
+  README DEPENDENCIES INSTALL.windows HACKING AUTHORS NEWS JOIN-GNU \
+  DESIGN NOTES THANKS \
+  ChangeLog autogen.sh Makefile.devel configure.ac Makefile.in \
   include/export.h include/iconv.h.in \
   gnulib-local/lib/alloca.in.h \
   gnulib-local/lib/error.h.diff \
@@ -171,7 +172,8 @@ SOURCE_FILES = \
   extras/ChangeLog extras/iconv_string.h extras/iconv_string.c \
   tools/Makefile \
   tools/8bit_tab_to_h.c tools/cjk_tab_to_h.c tools/cjk_variants.c \
-  tools/CP50221-0208-EXT.TXT tools/CP50221-0212-EXT.TXT tools/JISX0213.TXT
+  tools/CP50221-0208-EXT.TXT tools/CP50221-0212-EXT.TXT tools/JISX0213.TXT \
+  tools/gen-translit-def-part.lisp
 # List of distributed files imported from other packages.
 LIBTOOL_IMPORTED_FILES = \
   build-aux/ltmain.sh \

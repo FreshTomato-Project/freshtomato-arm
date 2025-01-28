@@ -1,5 +1,5 @@
 /* Substitute for and wrapper around <unistd.h>.
-   Copyright (C) 2003-2022 Free Software Foundation, Inc.
+   Copyright (C) 2003-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -40,6 +40,24 @@
 # undef _GL_INCLUDING_UNISTD_H
 #endif
 
+/* Avoid lseek bugs in FreeBSD, macOS <https://bugs.gnu.org/61386>.
+   This bug is fixed after FreeBSD 13; see <https://bugs.freebsd.org/256205>.
+   Use macOS "9999" to stand for a future fixed macOS version.  */
+#if defined __FreeBSD__ && __FreeBSD__ < 14
+# undef SEEK_DATA
+# undef SEEK_HOLE
+#elif defined __APPLE__ && defined __MACH__ && defined SEEK_DATA
+# ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
+#  include <AvailabilityMacros.h>
+# endif
+# if (!defined MAC_OS_X_VERSION_MIN_REQUIRED \
+      || MAC_OS_X_VERSION_MIN_REQUIRED < 99990000)
+#  include <sys/fcntl.h> /* It also defines the two macros.  */
+#  undef SEEK_DATA
+#  undef SEEK_HOLE
+# endif
+#endif
+
 /* Get all possible declarations of gethostname().  */
 #if @GNULIB_GETHOSTNAME@ && @UNISTD_H_HAVE_WINSOCK2_H@ \
   && !defined _GL_INCLUDING_WINSOCK2_H
@@ -50,6 +68,12 @@
 
 #if !defined _@GUARD_PREFIX@_UNISTD_H && !defined _GL_INCLUDING_WINSOCK2_H
 #define _@GUARD_PREFIX@_UNISTD_H
+
+/* This file uses _GL_ATTRIBUTE_NODISCARD, _GL_INLINE_HEADER_BEGIN, _GL_INLINE,
+   GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
 
 /* NetBSD 5.0 mis-defines NULL.  Also get size_t.  */
 /* But avoid namespace pollution on glibc systems.  */
@@ -135,8 +159,9 @@
 #endif
 
 /* MSVC defines off_t in <sys/types.h>.
-   May also define off_t to a 64-bit type on native Windows.  */
-/* Get off_t, ssize_t, mode_t.  */
+   May also define off_t to a 64-bit type on native Windows.
+   Also defines off64_t on macOS, NetBSD, OpenBSD, MSVC, Cygwin, Haiku.  */
+/* Get off_t, off64_t, ssize_t, mode_t.  */
 #include <sys/types.h>
 
 /* The definitions of _GL_FUNCDECL_RPL etc. are copied here.  */
@@ -152,12 +177,12 @@
 # include <getopt-pfx-core.h>
 #endif
 
-#ifndef _GL_INLINE_HEADER_BEGIN
- #error "Please include config.h first."
-#endif
 _GL_INLINE_HEADER_BEGIN
 #ifndef _GL_UNISTD_INLINE
 # define _GL_UNISTD_INLINE _GL_INLINE
+#endif
+#ifndef _GL_GETPAGESIZE_INLINE
+# define _GL_GETPAGESIZE_INLINE _GL_INLINE
 #endif
 
 /* Hide some function declarations from <winsock2.h>.  */
@@ -265,7 +290,7 @@ _GL_INLINE_HEADER_BEGIN
 #   undef access
 #   define access rpl_access
 #  endif
-_GL_FUNCDECL_RPL (access, int, (const char *file, int mode)
+_GL_FUNCDECL_RPL (access, int, (const char *file, int mode),
                                _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (access, int, (const char *file, int mode));
 # elif defined _WIN32 && !defined __CYGWIN__
@@ -318,7 +343,7 @@ _GL_CXXALIASWARN (chdir);
 #elif defined GNULIB_POSIXCHECK
 # undef chdir
 # if HAVE_RAW_DECL_CHDIR
-_GL_WARN_ON_USE (chown, "chdir is not always in <unistd.h> - "
+_GL_WARN_ON_USE (chdir, "chdir is not always in <unistd.h> - "
                  "use gnulib module chdir for portability");
 # endif
 #elif @GNULIB_MDA_CHDIR@
@@ -349,13 +374,13 @@ _GL_CXXALIASWARN (chdir);
 #   undef chown
 #   define chown rpl_chown
 #  endif
-_GL_FUNCDECL_RPL (chown, int, (const char *file, uid_t uid, gid_t gid)
-                              _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_RPL (chown, int, (const char *file, uid_t uid, gid_t gid),
+                              _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (chown, int, (const char *file, uid_t uid, gid_t gid));
 # else
 #  if !@HAVE_CHOWN@
-_GL_FUNCDECL_SYS (chown, int, (const char *file, uid_t uid, gid_t gid)
-                              _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (chown, int, (const char *file, uid_t uid, gid_t gid),
+                              _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (chown, int, (const char *file, uid_t uid, gid_t gid));
 # endif
@@ -377,7 +402,7 @@ _GL_WARN_ON_USE (chown, "chown fails to follow symlinks on some systems and "
 #   undef close
 #   define close rpl_close
 #  endif
-_GL_FUNCDECL_RPL (close, int, (int fd));
+_GL_FUNCDECL_RPL (close, int, (int fd), );
 _GL_CXXALIAS_RPL (close, int, (int fd));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -390,8 +415,10 @@ _GL_CXXALIAS_SYS (close, int, (int fd));
 # endif
 _GL_CXXALIASWARN (close);
 #elif @UNISTD_H_HAVE_WINSOCK2_H_AND_USE_SOCKETS@
-# undef close
-# define close close_used_without_requesting_gnulib_module_close
+# if !GNULIB_CLOSE
+#  undef close
+#  define close close_used_without_requesting_gnulib_module_close
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef close
 /* Assume close is always declared.  */
@@ -422,7 +449,7 @@ _GL_CXXALIASWARN (close);
 #  endif
 _GL_FUNCDECL_RPL (copy_file_range, ssize_t, (int ifd, off_t *ipos,
                                              int ofd, off_t *opos,
-                                             size_t len, unsigned flags));
+                                             size_t len, unsigned flags), );
 _GL_CXXALIAS_RPL (copy_file_range, ssize_t, (int ifd, off_t *ipos,
                                              int ofd, off_t *opos,
                                              size_t len, unsigned flags));
@@ -430,7 +457,7 @@ _GL_CXXALIAS_RPL (copy_file_range, ssize_t, (int ifd, off_t *ipos,
 #  if !@HAVE_COPY_FILE_RANGE@
 _GL_FUNCDECL_SYS (copy_file_range, ssize_t, (int ifd, off_t *ipos,
                                              int ofd, off_t *opos,
-                                             size_t len, unsigned flags));
+                                             size_t len, unsigned flags), );
 #  endif
 _GL_CXXALIAS_SYS (copy_file_range, ssize_t, (int ifd, off_t *ipos,
                                              int ofd, off_t *opos,
@@ -452,7 +479,7 @@ _GL_WARN_ON_USE (copy_file_range,
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define dup rpl_dup
 #  endif
-_GL_FUNCDECL_RPL (dup, int, (int oldfd));
+_GL_FUNCDECL_RPL (dup, int, (int oldfd), _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (dup, int, (int oldfd));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -497,7 +524,7 @@ _GL_CXXALIASWARN (dup);
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define dup2 rpl_dup2
 #  endif
-_GL_FUNCDECL_RPL (dup2, int, (int oldfd, int newfd));
+_GL_FUNCDECL_RPL (dup2, int, (int oldfd, int newfd), );
 _GL_CXXALIAS_RPL (dup2, int, (int oldfd, int newfd));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -541,17 +568,22 @@ _GL_CXXALIASWARN (dup2);
    Return newfd if successful, otherwise -1 and errno set.
    See the Linux man page at
    <https://www.kernel.org/doc/man-pages/online/pages/man2/dup3.2.html>.  */
-# if @HAVE_DUP3@
+# if @REPLACE_DUP3@
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   undef dup3
 #   define dup3 rpl_dup3
 #  endif
-_GL_FUNCDECL_RPL (dup3, int, (int oldfd, int newfd, int flags));
+_GL_FUNCDECL_RPL (dup3, int, (int oldfd, int newfd, int flags), );
 _GL_CXXALIAS_RPL (dup3, int, (int oldfd, int newfd, int flags));
 # else
-_GL_FUNCDECL_SYS (dup3, int, (int oldfd, int newfd, int flags));
+#  if !@HAVE_DUP3@
+_GL_FUNCDECL_SYS (dup3, int, (int oldfd, int newfd, int flags), );
+#  endif
 _GL_CXXALIAS_SYS (dup3, int, (int oldfd, int newfd, int flags));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (dup3);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef dup3
 # if HAVE_RAW_DECL_DUP3
@@ -610,7 +642,7 @@ rpl_environ (void)
 /* Like access(), except that it uses the effective user id and group id of
    the current process.  */
 # if !@HAVE_EUIDACCESS@
-_GL_FUNCDECL_SYS (euidaccess, int, (const char *filename, int mode)
+_GL_FUNCDECL_SYS (euidaccess, int, (const char *filename, int mode),
                                    _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (euidaccess, int, (const char *filename, int mode));
@@ -635,7 +667,7 @@ _GL_WARN_ON_USE (euidaccess, "euidaccess is unportable - "
 #   undef execl
 #   define execl rpl_execl
 #  endif
-_GL_FUNCDECL_RPL (execl, int, (const char *program, const char *arg, ...)
+_GL_FUNCDECL_RPL (execl, int, (const char *program, const char *arg, ...),
                               _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (execl, int, (const char *program, const char *arg, ...));
 # else
@@ -670,7 +702,7 @@ _GL_CXXALIASWARN (execl);
 #   undef execle
 #   define execle rpl_execle
 #  endif
-_GL_FUNCDECL_RPL (execle, int, (const char *program, const char *arg, ...)
+_GL_FUNCDECL_RPL (execle, int, (const char *program, const char *arg, ...),
                                _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (execle, int, (const char *program, const char *arg, ...));
 # else
@@ -706,7 +738,7 @@ _GL_CXXALIASWARN (execle);
 #   undef execlp
 #   define execlp rpl_execlp
 #  endif
-_GL_FUNCDECL_RPL (execlp, int, (const char *program, const char *arg, ...)
+_GL_FUNCDECL_RPL (execlp, int, (const char *program, const char *arg, ...),
                                _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (execlp, int, (const char *program, const char *arg, ...));
 # else
@@ -743,7 +775,7 @@ _GL_CXXALIASWARN (execlp);
 #   undef execv
 #   define execv rpl_execv
 #  endif
-_GL_FUNCDECL_RPL (execv, int, (const char *program, char * const *argv)
+_GL_FUNCDECL_RPL (execv, int, (const char *program, char * const *argv),
                               _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_RPL (execv, int, (const char *program, char * const *argv));
 # else
@@ -780,7 +812,7 @@ _GL_CXXALIASWARN (execv);
 #   define execve rpl_execve
 #  endif
 _GL_FUNCDECL_RPL (execve, int,
-                  (const char *program, char * const *argv, char * const *env)
+                  (const char *program, char * const *argv, char * const *env),
                   _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_RPL (execve, int,
                   (const char *program, char * const *argv, char * const *env));
@@ -820,7 +852,7 @@ _GL_CXXALIASWARN (execve);
 #   undef execvp
 #   define execvp rpl_execvp
 #  endif
-_GL_FUNCDECL_RPL (execvp, int, (const char *program, char * const *argv)
+_GL_FUNCDECL_RPL (execvp, int, (const char *program, char * const *argv),
                                _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_RPL (execvp, int, (const char *program, char * const *argv));
 # else
@@ -857,20 +889,22 @@ _GL_CXXALIASWARN (execvp);
 #   define execvpe rpl_execvpe
 #  endif
 _GL_FUNCDECL_RPL (execvpe, int,
-                  (const char *program, char * const *argv, char * const *env)
+                  (const char *program, char * const *argv, char * const *env),
                   _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_RPL (execvpe, int,
                   (const char *program, char * const *argv, char * const *env));
 # else
 #  if !@HAVE_DECL_EXECVPE@
 _GL_FUNCDECL_SYS (execvpe, int,
-                  (const char *program, char * const *argv, char * const *env)
+                  (const char *program, char * const *argv, char * const *env),
                   _GL_ARG_NONNULL ((1, 2)));
 #  endif
 _GL_CXXALIAS_SYS (execvpe, int,
                   (const char *program, char * const *argv, char * const *env));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (execvpe);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef execvpe
 # if HAVE_RAW_DECL_EXECVPE
@@ -893,7 +927,7 @@ _GL_CXXALIAS_MDA_CAST (execvpe, intptr_t,
 # elif @HAVE_EXECVPE@
 #  if !@HAVE_DECL_EXECVPE@
 _GL_FUNCDECL_SYS (execvpe, int,
-                  (const char *program, char * const *argv, char * const *env)
+                  (const char *program, char * const *argv, char * const *env),
                   _GL_ARG_NONNULL ((1, 2)));
 #  endif
 _GL_CXXALIAS_SYS (execvpe, int,
@@ -912,20 +946,22 @@ _GL_CXXALIASWARN (execvpe);
 #   define faccessat rpl_faccessat
 #  endif
 _GL_FUNCDECL_RPL (faccessat, int,
-                  (int fd, char const *name, int mode, int flag)
-                  _GL_ARG_NONNULL ((2)));
+                  (int fd, char const *name, int mode, int flag),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (faccessat, int,
                   (int fd, char const *name, int mode, int flag));
 # else
 #  if !@HAVE_FACCESSAT@
 _GL_FUNCDECL_SYS (faccessat, int,
-                  (int fd, char const *file, int mode, int flag)
-                  _GL_ARG_NONNULL ((2)));
+                  (int fd, char const *file, int mode, int flag),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (faccessat, int,
                   (int fd, char const *file, int mode, int flag));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (faccessat);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef faccessat
 # if HAVE_RAW_DECL_FACCESSAT
@@ -941,23 +977,28 @@ _GL_WARN_ON_USE (faccessat, "faccessat is not portable - "
    Return 0 if successful, otherwise -1 and errno set.
    See the POSIX:2008 specification
    <https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchdir.html>.  */
-# if ! @HAVE_FCHDIR@
-_GL_FUNCDECL_SYS (fchdir, int, (int /*fd*/));
-
+# if @REPLACE_FCHDIR@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   undef fchdir
+#   define fchdir rpl_fchdir
+#  endif
+_GL_FUNCDECL_RPL (fchdir, int, (int /*fd*/), _GL_ATTRIBUTE_NODISCARD);
+_GL_CXXALIAS_RPL (fchdir, int, (int /*fd*/));
+# else
+#  if !@HAVE_FCHDIR@ || !@HAVE_DECL_FCHDIR@
+_GL_FUNCDECL_SYS (fchdir, int, (int /*fd*/), _GL_ATTRIBUTE_NODISCARD);
+#  endif
+_GL_CXXALIAS_SYS (fchdir, int, (int /*fd*/));
+# endif
+_GL_CXXALIASWARN (fchdir);
+# if @REPLACE_FCHDIR@ || !@HAVE_FCHDIR@
 /* Gnulib internal hooks needed to maintain the fchdir metadata.  */
 _GL_EXTERN_C int _gl_register_fd (int fd, const char *filename)
      _GL_ARG_NONNULL ((2));
 _GL_EXTERN_C void _gl_unregister_fd (int fd);
 _GL_EXTERN_C int _gl_register_dup (int oldfd, int newfd);
 _GL_EXTERN_C const char *_gl_directory_name (int fd);
-
-# else
-#  if !@HAVE_DECL_FCHDIR@
-_GL_FUNCDECL_SYS (fchdir, int, (int /*fd*/));
-#  endif
 # endif
-_GL_CXXALIAS_SYS (fchdir, int, (int /*fd*/));
-_GL_CXXALIASWARN (fchdir);
 #elif defined GNULIB_POSIXCHECK
 # undef fchdir
 # if HAVE_RAW_DECL_FCHDIR
@@ -974,15 +1015,15 @@ _GL_WARN_ON_USE (fchdir, "fchdir is unportable - "
 #   define fchownat rpl_fchownat
 #  endif
 _GL_FUNCDECL_RPL (fchownat, int, (int fd, char const *file,
-                                  uid_t owner, gid_t group, int flag)
-                                 _GL_ARG_NONNULL ((2)));
+                                  uid_t owner, gid_t group, int flag),
+                                 _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (fchownat, int, (int fd, char const *file,
                                   uid_t owner, gid_t group, int flag));
 # else
 #  if !@HAVE_FCHOWNAT@
 _GL_FUNCDECL_SYS (fchownat, int, (int fd, char const *file,
-                                  uid_t owner, gid_t group, int flag)
-                                 _GL_ARG_NONNULL ((2)));
+                                  uid_t owner, gid_t group, int flag),
+                                 _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (fchownat, int, (int fd, char const *file,
                                   uid_t owner, gid_t group, int flag));
@@ -1002,11 +1043,22 @@ _GL_WARN_ON_USE (fchownat, "fchownat is not portable - "
    Return 0 if successful, otherwise -1 and errno set.
    See POSIX:2008 specification
    <https://pubs.opengroup.org/onlinepubs/9699919799/functions/fdatasync.html>.  */
-# if !@HAVE_FDATASYNC@ || !@HAVE_DECL_FDATASYNC@
-_GL_FUNCDECL_SYS (fdatasync, int, (int fd));
-# endif
+# if @REPLACE_FDATASYNC@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   undef fdatasync
+#   define fdatasync rpl_fdatasync
+#  endif
+_GL_FUNCDECL_RPL (fdatasync, int, (int fd), );
+_GL_CXXALIAS_RPL (fdatasync, int, (int fd));
+# else
+#  if !@HAVE_FDATASYNC@|| !@HAVE_DECL_FDATASYNC@
+_GL_FUNCDECL_SYS (fdatasync, int, (int fd), );
+#  endif
 _GL_CXXALIAS_SYS (fdatasync, int, (int fd));
+# endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (fdatasync);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef fdatasync
 # if HAVE_RAW_DECL_FDATASYNC
@@ -1022,7 +1074,7 @@ _GL_WARN_ON_USE (fdatasync, "fdatasync is unportable - "
    See POSIX:2008 specification
    <https://pubs.opengroup.org/onlinepubs/9699919799/functions/fsync.html>.  */
 # if !@HAVE_FSYNC@
-_GL_FUNCDECL_SYS (fsync, int, (int fd));
+_GL_FUNCDECL_SYS (fsync, int, (int fd), );
 # endif
 _GL_CXXALIAS_SYS (fsync, int, (int fd));
 _GL_CXXALIASWARN (fsync);
@@ -1045,15 +1097,21 @@ _GL_WARN_ON_USE (fsync, "fsync is unportable - "
 #   undef ftruncate
 #   define ftruncate rpl_ftruncate
 #  endif
-_GL_FUNCDECL_RPL (ftruncate, int, (int fd, off_t length));
-_GL_CXXALIAS_RPL (ftruncate, int, (int fd, off_t length));
+_GL_FUNCDECL_RPL (ftruncate, int,
+                  (int fd, off_t length), _GL_ATTRIBUTE_NODISCARD);
+_GL_CXXALIAS_RPL (ftruncate, int,
+                  (int fd, off_t length));
 # else
 #  if !@HAVE_FTRUNCATE@
-_GL_FUNCDECL_SYS (ftruncate, int, (int fd, off_t length));
+_GL_FUNCDECL_SYS (ftruncate, int,
+                  (int fd, off_t length), _GL_ATTRIBUTE_NODISCARD);
 #  endif
-_GL_CXXALIAS_SYS (ftruncate, int, (int fd, off_t length));
+_GL_CXXALIAS_SYS (ftruncate, int,
+                  (int fd, off_t length));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (ftruncate);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef ftruncate
 # if HAVE_RAW_DECL_FTRUNCATE
@@ -1070,15 +1128,16 @@ _GL_WARN_ON_USE (ftruncate, "ftruncate is unportable - "
    or SIZE was too small.
    See the POSIX:2008 specification
    <https://pubs.opengroup.org/onlinepubs/9699919799/functions/getcwd.html>.
-   Additionally, the gnulib module 'getcwd' guarantees the following GNU
-   extension: If BUF is NULL, an array is allocated with 'malloc'; the array
-   is SIZE bytes long, unless SIZE == 0, in which case it is as big as
-   necessary.  */
+   Additionally, the gnulib module 'getcwd' or 'getcwd-lgpl' guarantees the
+   following GNU extension: If BUF is NULL, an array is allocated with
+   'malloc'; the array is SIZE bytes long, unless SIZE == 0, in which case
+   it is as big as necessary.  */
 # if @REPLACE_GETCWD@
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define getcwd rpl_getcwd
 #  endif
-_GL_FUNCDECL_RPL (getcwd, char *, (char *buf, size_t size));
+_GL_FUNCDECL_RPL (getcwd, char *, (char *buf, size_t size),
+                                  _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (getcwd, char *, (char *buf, size_t size));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -1133,17 +1192,23 @@ _GL_CXXALIASWARN (getcwd);
 #   undef getdomainname
 #   define getdomainname rpl_getdomainname
 #  endif
-_GL_FUNCDECL_RPL (getdomainname, int, (char *name, size_t len)
-                                      _GL_ARG_NONNULL ((1)));
-_GL_CXXALIAS_RPL (getdomainname, int, (char *name, size_t len));
+_GL_FUNCDECL_RPL (getdomainname, int,
+                  (char *name, size_t len),
+                  _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
+_GL_CXXALIAS_RPL (getdomainname, int,
+                  (char *name, size_t len));
 # else
 #  if !@HAVE_DECL_GETDOMAINNAME@
-_GL_FUNCDECL_SYS (getdomainname, int, (char *name, size_t len)
-                                      _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (getdomainname, int,
+                  (char *name, size_t len),
+                  _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
-_GL_CXXALIAS_SYS (getdomainname, int, (char *name, size_t len));
+_GL_CXXALIAS_SYS (getdomainname, int,
+                  (char *name, size_t len));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (getdomainname);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef getdomainname
 # if HAVE_RAW_DECL_GETDOMAINNAME
@@ -1161,11 +1226,11 @@ _GL_WARN_ON_USE (getdomainname, "getdomainname is unportable - "
 #   undef getdtablesize
 #   define getdtablesize rpl_getdtablesize
 #  endif
-_GL_FUNCDECL_RPL (getdtablesize, int, (void));
+_GL_FUNCDECL_RPL (getdtablesize, int, (void), );
 _GL_CXXALIAS_RPL (getdtablesize, int, (void));
 # else
 #  if !@HAVE_GETDTABLESIZE@
-_GL_FUNCDECL_SYS (getdtablesize, int, (void));
+_GL_FUNCDECL_SYS (getdtablesize, int, (void), );
 #  endif
 /* Need to cast, because on AIX, the parameter list is
                                            (...).  */
@@ -1183,11 +1248,26 @@ _GL_WARN_ON_USE (getdtablesize, "getdtablesize is unportable - "
 
 #if @GNULIB_GETENTROPY@
 /* Fill a buffer with random bytes.  */
-# if !@HAVE_GETENTROPY@
-_GL_FUNCDECL_SYS (getentropy, int, (void *buffer, size_t length));
+# if @REPLACE_GETENTROPY@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   undef getentropy
+#   define getentropy rpl_getentropy
+#  endif
+_GL_FUNCDECL_RPL (getentropy, int,
+                  (void *buffer, size_t length), _GL_ATTRIBUTE_NODISCARD);
+_GL_CXXALIAS_RPL (getentropy, int,
+                  (void *buffer, size_t length));
+# else
+#  if !@HAVE_GETENTROPY@
+_GL_FUNCDECL_SYS (getentropy, int,
+                  (void *buffer, size_t length), _GL_ATTRIBUTE_NODISCARD);
+#  endif
+_GL_CXXALIAS_SYS (getentropy, int,
+                  (void *buffer, size_t length));
 # endif
-_GL_CXXALIAS_SYS (getentropy, int, (void *buffer, size_t length));
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (getentropy);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef getentropy
 # if HAVE_RAW_DECL_GETENTROPY
@@ -1208,13 +1288,17 @@ _GL_WARN_ON_USE (getentropy, "getentropy is unportable - "
 #   undef getgroups
 #   define getgroups rpl_getgroups
 #  endif
-_GL_FUNCDECL_RPL (getgroups, int, (int n, gid_t *groups));
-_GL_CXXALIAS_RPL (getgroups, int, (int n, gid_t *groups));
+_GL_FUNCDECL_RPL (getgroups, int,
+                  (int n, gid_t *groups), _GL_ATTRIBUTE_NODISCARD);
+_GL_CXXALIAS_RPL (getgroups, int,
+                  (int n, gid_t *groups));
 # else
 #  if !@HAVE_GETGROUPS@
-_GL_FUNCDECL_SYS (getgroups, int, (int n, gid_t *groups));
+_GL_FUNCDECL_SYS (getgroups, int,
+                  (int n, gid_t *groups), _GL_ATTRIBUTE_NODISCARD);
 #  endif
-_GL_CXXALIAS_SYS (getgroups, int, (int n, gid_t *groups));
+_GL_CXXALIAS_SYS (getgroups, int,
+                  (int n, gid_t *groups));
 # endif
 _GL_CXXALIASWARN (getgroups);
 #elif defined GNULIB_POSIXCHECK
@@ -1239,12 +1323,12 @@ _GL_WARN_ON_USE (getgroups, "getgroups is unportable - "
 #   undef gethostname
 #   define gethostname rpl_gethostname
 #  endif
-_GL_FUNCDECL_RPL (gethostname, int, (char *name, size_t len)
+_GL_FUNCDECL_RPL (gethostname, int, (char *name, size_t len),
                                     _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (gethostname, int, (char *name, size_t len));
 # else
 #  if !@HAVE_GETHOSTNAME@
-_GL_FUNCDECL_SYS (gethostname, int, (char *name, size_t len)
+_GL_FUNCDECL_SYS (gethostname, int, (char *name, size_t len),
                                     _GL_ARG_NONNULL ((1)));
 #  endif
 /* Need to cast, because on Solaris 10 and OSF/1 5.1 systems, the second
@@ -1254,8 +1338,10 @@ _GL_CXXALIAS_SYS_CAST (gethostname, int, (char *name, size_t len));
 # endif
 _GL_CXXALIASWARN (gethostname);
 #elif @UNISTD_H_HAVE_WINSOCK2_H@
-# undef gethostname
-# define gethostname gethostname_used_without_requesting_gnulib_module_gethostname
+# if !GNULIB_GETHOSTNAME
+#  undef gethostname
+#  define gethostname gethostname_used_without_requesting_gnulib_module_gethostname
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef gethostname
 # if HAVE_RAW_DECL_GETHOSTNAME
@@ -1277,7 +1363,7 @@ _GL_WARN_ON_USE (gethostname, "gethostname is unportable - "
      $USERNAME               on native Windows platforms.
  */
 # if !@HAVE_DECL_GETLOGIN@
-_GL_FUNCDECL_SYS (getlogin, char *, (void));
+_GL_FUNCDECL_SYS (getlogin, char *, (void), );
 # endif
 _GL_CXXALIAS_SYS (getlogin, char *, (void));
 _GL_CXXALIASWARN (getlogin);
@@ -1309,19 +1395,21 @@ _GL_WARN_ON_USE (getlogin, "getlogin is unportable - "
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define getlogin_r rpl_getlogin_r
 #  endif
-_GL_FUNCDECL_RPL (getlogin_r, int, (char *name, size_t size)
+_GL_FUNCDECL_RPL (getlogin_r, int, (char *name, size_t size),
                                    _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (getlogin_r, int, (char *name, size_t size));
 # else
 #  if !@HAVE_DECL_GETLOGIN_R@
-_GL_FUNCDECL_SYS (getlogin_r, int, (char *name, size_t size)
+_GL_FUNCDECL_SYS (getlogin_r, int, (char *name, size_t size),
                                    _GL_ARG_NONNULL ((1)));
 #  endif
 /* Need to cast, because on Solaris 10 systems, the second argument is
                                                      int size.  */
 _GL_CXXALIAS_SYS_CAST (getlogin_r, int, (char *name, size_t size));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (getlogin_r);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef getlogin_r
 # if HAVE_RAW_DECL_GETLOGIN_R
@@ -1336,13 +1424,13 @@ _GL_WARN_ON_USE (getlogin_r, "getlogin_r is unportable - "
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define getpagesize rpl_getpagesize
 #  endif
-_GL_FUNCDECL_RPL (getpagesize, int, (void));
+_GL_FUNCDECL_RPL (getpagesize, int, (void), );
 _GL_CXXALIAS_RPL (getpagesize, int, (void));
 # else
 /* On HP-UX, getpagesize exists, but it is not declared in <unistd.h> even if
    the compiler options -D_HPUX_SOURCE -D_XOPEN_SOURCE=600 are used.  */
 #  if defined __hpux
-_GL_FUNCDECL_SYS (getpagesize, int, (void));
+_GL_FUNCDECL_SYS (getpagesize, int, (void), );
 #  endif
 #  if !@HAVE_GETPAGESIZE@
 #   if !defined getpagesize
@@ -1393,7 +1481,7 @@ _GL_FUNCDECL_SYS (getpagesize, int, (void));
 #     define getpagesize() _gl_getpagesize ()
 #    else
 #     if !GNULIB_defined_getpagesize_function
-_GL_UNISTD_INLINE int
+_GL_GETPAGESIZE_INLINE int
 getpagesize ()
 {
   return _gl_getpagesize ();
@@ -1429,12 +1517,12 @@ _GL_WARN_ON_USE (getpagesize, "getpagesize is unportable - "
 #   undef getpass
 #   define getpass rpl_getpass
 #  endif
-_GL_FUNCDECL_RPL (getpass, char *, (const char *prompt)
+_GL_FUNCDECL_RPL (getpass, char *, (const char *prompt),
                                    _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (getpass, char *, (const char *prompt));
 # else
 #  if !@HAVE_GETPASS@
-_GL_FUNCDECL_SYS (getpass, char *, (const char *prompt)
+_GL_FUNCDECL_SYS (getpass, char *, (const char *prompt),
                                    _GL_ARG_NONNULL ((1)));
 #  endif
 _GL_CXXALIAS_SYS (getpass, char *, (const char *prompt));
@@ -1467,12 +1555,21 @@ _GL_CXXALIASWARN (getpid);
 
 
 #if @GNULIB_GETUSERSHELL@
+# if @REPLACE_GETUSERSHELL@
 /* Return the next valid login shell on the system, or NULL when the end of
    the list has been reached.  */
-# if !@HAVE_DECL_GETUSERSHELL@
-_GL_FUNCDECL_SYS (getusershell, char *, (void));
-# endif
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#    undef getusershell
+#    define getusershell rpl_getusershell
+#  endif
+_GL_FUNCDECL_RPL (getusershell, char *, (void), );
+_GL_CXXALIAS_RPL (getusershell, char *, (void));
+# else
+#  if !@HAVE_DECL_GETUSERSHELL@
+_GL_FUNCDECL_SYS (getusershell, char *, (void), );
+#  endif
 _GL_CXXALIAS_SYS (getusershell, char *, (void));
+# endif
 _GL_CXXALIASWARN (getusershell);
 #elif defined GNULIB_POSIXCHECK
 # undef getusershell
@@ -1484,10 +1581,19 @@ _GL_WARN_ON_USE (getusershell, "getusershell is unportable - "
 
 #if @GNULIB_GETUSERSHELL@
 /* Rewind to pointer that is advanced at each getusershell() call.  */
-# if !@HAVE_DECL_GETUSERSHELL@
-_GL_FUNCDECL_SYS (setusershell, void, (void));
-# endif
+# if @REPLACE_GETUSERSHELL@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#    undef setusershell
+#    define setusershell rpl_setusershell
+#  endif
+_GL_FUNCDECL_RPL (setusershell, void, (void), );
+_GL_CXXALIAS_RPL (setusershell, void, (void));
+# else
+#  if !@HAVE_DECL_GETUSERSHELL@
+_GL_FUNCDECL_SYS (setusershell, void, (void), );
+#  endif
 _GL_CXXALIAS_SYS (setusershell, void, (void));
+# endif
 _GL_CXXALIASWARN (setusershell);
 #elif defined GNULIB_POSIXCHECK
 # undef setusershell
@@ -1500,10 +1606,19 @@ _GL_WARN_ON_USE (setusershell, "setusershell is unportable - "
 #if @GNULIB_GETUSERSHELL@
 /* Free the pointer that is advanced at each getusershell() call and
    associated resources.  */
-# if !@HAVE_DECL_GETUSERSHELL@
-_GL_FUNCDECL_SYS (endusershell, void, (void));
-# endif
+# if @REPLACE_GETUSERSHELL@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#    undef endusershell
+#    define endusershell rpl_endusershell
+#  endif
+_GL_FUNCDECL_RPL (endusershell, void, (void), );
+_GL_CXXALIAS_RPL (endusershell, void, (void));
+# else
+#  if !@HAVE_DECL_GETUSERSHELL@
+_GL_FUNCDECL_SYS (endusershell, void, (void), );
+#  endif
 _GL_CXXALIAS_SYS (endusershell, void, (void));
+# endif
 _GL_CXXALIASWARN (endusershell);
 #elif defined GNULIB_POSIXCHECK
 # undef endusershell
@@ -1517,7 +1632,7 @@ _GL_WARN_ON_USE (endusershell, "endusershell is unportable - "
 #if @GNULIB_GROUP_MEMBER@
 /* Determine whether group id is in calling user's group list.  */
 # if !@HAVE_GROUP_MEMBER@
-_GL_FUNCDECL_SYS (group_member, int, (gid_t gid));
+_GL_FUNCDECL_SYS (group_member, int, (gid_t gid), );
 # endif
 _GL_CXXALIAS_SYS (group_member, int, (gid_t gid));
 _GL_CXXALIASWARN (group_member);
@@ -1537,7 +1652,7 @@ _GL_WARN_ON_USE (group_member, "group_member is unportable - "
 #   define isatty rpl_isatty
 #  endif
 #  define GNULIB_defined_isatty 1
-_GL_FUNCDECL_RPL (isatty, int, (int fd));
+_GL_FUNCDECL_RPL (isatty, int, (int fd), );
 _GL_CXXALIAS_RPL (isatty, int, (int fd));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -1583,13 +1698,13 @@ _GL_CXXALIASWARN (isatty);
 #   undef lchown
 #   define lchown rpl_lchown
 #  endif
-_GL_FUNCDECL_RPL (lchown, int, (char const *file, uid_t owner, gid_t group)
-                               _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_RPL (lchown, int, (char const *file, uid_t owner, gid_t group),
+                               _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (lchown, int, (char const *file, uid_t owner, gid_t group));
 # else
 #  if !@HAVE_LCHOWN@
-_GL_FUNCDECL_SYS (lchown, int, (char const *file, uid_t owner, gid_t group)
-                               _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (lchown, int, (char const *file, uid_t owner, gid_t group),
+                               _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (lchown, int, (char const *file, uid_t owner, gid_t group));
 # endif
@@ -1612,13 +1727,13 @@ _GL_WARN_ON_USE (lchown, "lchown is unportable to pre-POSIX.1-2001 systems - "
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define link rpl_link
 #  endif
-_GL_FUNCDECL_RPL (link, int, (const char *path1, const char *path2)
-                             _GL_ARG_NONNULL ((1, 2)));
+_GL_FUNCDECL_RPL (link, int, (const char *path1, const char *path2),
+                             _GL_ARG_NONNULL ((1, 2)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (link, int, (const char *path1, const char *path2));
 # else
 #  if !@HAVE_LINK@
-_GL_FUNCDECL_SYS (link, int, (const char *path1, const char *path2)
-                             _GL_ARG_NONNULL ((1, 2)));
+_GL_FUNCDECL_SYS (link, int, (const char *path1, const char *path2),
+                             _GL_ARG_NONNULL ((1, 2)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (link, int, (const char *path1, const char *path2));
 # endif
@@ -1643,8 +1758,8 @@ _GL_WARN_ON_USE (link, "link is unportable - "
 #  endif
 _GL_FUNCDECL_RPL (linkat, int,
                   (int fd1, const char *path1, int fd2, const char *path2,
-                   int flag)
-                  _GL_ARG_NONNULL ((2, 4)));
+                   int flag),
+                  _GL_ARG_NONNULL ((2, 4)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (linkat, int,
                   (int fd1, const char *path1, int fd2, const char *path2,
                    int flag));
@@ -1652,14 +1767,16 @@ _GL_CXXALIAS_RPL (linkat, int,
 #  if !@HAVE_LINKAT@
 _GL_FUNCDECL_SYS (linkat, int,
                   (int fd1, const char *path1, int fd2, const char *path2,
-                   int flag)
-                  _GL_ARG_NONNULL ((2, 4)));
+                   int flag),
+                  _GL_ARG_NONNULL ((2, 4)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (linkat, int,
                   (int fd1, const char *path1, int fd2, const char *path2,
                    int flag));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (linkat);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef linkat
 # if HAVE_RAW_DECL_LINKAT
@@ -1678,7 +1795,7 @@ _GL_WARN_ON_USE (linkat, "linkat is unportable - "
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define lseek rpl_lseek
 #  endif
-_GL_FUNCDECL_RPL (lseek, off_t, (int fd, off_t offset, int whence));
+_GL_FUNCDECL_RPL (lseek, off_t, (int fd, off_t offset, int whence), );
 _GL_CXXALIAS_RPL (lseek, off_t, (int fd, off_t offset, int whence));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -1718,7 +1835,8 @@ _GL_CXXALIASWARN (lseek);
    Store the read-end as fd[0] and the write-end as fd[1].
    Return 0 upon success, or -1 with errno set upon failure.  */
 # if !@HAVE_PIPE@
-_GL_FUNCDECL_SYS (pipe, int, (int fd[2]) _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (pipe, int, (int fd[2]),
+                             _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 # endif
 _GL_CXXALIAS_SYS (pipe, int, (int fd[2]));
 _GL_CXXALIASWARN (pipe);
@@ -1740,17 +1858,22 @@ _GL_WARN_ON_USE (pipe, "pipe is unportable - "
    Return 0 upon success, or -1 with errno set upon failure.
    See also the Linux man page at
    <https://www.kernel.org/doc/man-pages/online/pages/man2/pipe2.2.html>.  */
-# if @HAVE_PIPE2@
+# if @REPLACE_PIPE2@
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   undef pipe2
 #   define pipe2 rpl_pipe2
 #  endif
-_GL_FUNCDECL_RPL (pipe2, int, (int fd[2], int flags) _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_RPL (pipe2, int, (int fd[2], int flags),
+                              _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (pipe2, int, (int fd[2], int flags));
 # else
-_GL_FUNCDECL_SYS (pipe2, int, (int fd[2], int flags) _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (pipe2, int, (int fd[2], int flags),
+                              _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_SYS (pipe2, int, (int fd[2], int flags));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (pipe2);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef pipe2
 # if HAVE_RAW_DECL_PIPE2
@@ -1772,20 +1895,22 @@ _GL_WARN_ON_USE (pipe2, "pipe2 is unportable - "
 #   define pread rpl_pread
 #  endif
 _GL_FUNCDECL_RPL (pread, ssize_t,
-                  (int fd, void *buf, size_t bufsize, off_t offset)
-                  _GL_ARG_NONNULL ((2)));
+                  (int fd, void *buf, size_t bufsize, off_t offset),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (pread, ssize_t,
                   (int fd, void *buf, size_t bufsize, off_t offset));
 # else
 #  if !@HAVE_PREAD@
 _GL_FUNCDECL_SYS (pread, ssize_t,
-                  (int fd, void *buf, size_t bufsize, off_t offset)
-                  _GL_ARG_NONNULL ((2)));
+                  (int fd, void *buf, size_t bufsize, off_t offset),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (pread, ssize_t,
                   (int fd, void *buf, size_t bufsize, off_t offset));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (pread);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef pread
 # if HAVE_RAW_DECL_PREAD
@@ -1807,20 +1932,22 @@ _GL_WARN_ON_USE (pread, "pread is unportable - "
 #   define pwrite rpl_pwrite
 #  endif
 _GL_FUNCDECL_RPL (pwrite, ssize_t,
-                  (int fd, const void *buf, size_t bufsize, off_t offset)
-                  _GL_ARG_NONNULL ((2)));
+                  (int fd, const void *buf, size_t bufsize, off_t offset),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (pwrite, ssize_t,
                   (int fd, const void *buf, size_t bufsize, off_t offset));
 # else
 #  if !@HAVE_PWRITE@
 _GL_FUNCDECL_SYS (pwrite, ssize_t,
-                  (int fd, const void *buf, size_t bufsize, off_t offset)
-                  _GL_ARG_NONNULL ((2)));
+                  (int fd, const void *buf, size_t bufsize, off_t offset),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (pwrite, ssize_t,
                   (int fd, const void *buf, size_t bufsize, off_t offset));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (pwrite);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef pwrite
 # if HAVE_RAW_DECL_PWRITE
@@ -1839,8 +1966,9 @@ _GL_WARN_ON_USE (pwrite, "pwrite is unportable - "
 #   undef read
 #   define read rpl_read
 #  endif
-_GL_FUNCDECL_RPL (read, ssize_t, (int fd, void *buf, size_t count)
-                                 _GL_ARG_NONNULL ((2)));
+
+_GL_FUNCDECL_RPL (read, ssize_t, (int fd, void *buf, size_t count),
+                                 _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (read, ssize_t, (int fd, void *buf, size_t count));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -1861,11 +1989,7 @@ _GL_CXXALIASWARN (read);
 #   undef read
 #   define read _read
 #  endif
-#  ifdef __MINGW32__
-_GL_CXXALIAS_MDA (read, int, (int fd, void *buf, unsigned int count));
-#  else
-_GL_CXXALIAS_MDA (read, ssize_t, (int fd, void *buf, unsigned int count));
-#  endif
+_GL_CXXALIAS_MDA_CAST (read, ssize_t, (int fd, void *buf, unsigned int count));
 # else
 _GL_CXXALIAS_SYS (read, ssize_t, (int fd, void *buf, size_t count));
 # endif
@@ -1885,8 +2009,8 @@ _GL_CXXALIASWARN (read);
 #  endif
 _GL_FUNCDECL_RPL (readlink, ssize_t,
                   (const char *restrict file,
-                   char *restrict buf, size_t bufsize)
-                  _GL_ARG_NONNULL ((1, 2)));
+                   char *restrict buf, size_t bufsize),
+                  _GL_ARG_NONNULL ((1, 2)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (readlink, ssize_t,
                   (const char *restrict file,
                    char *restrict buf, size_t bufsize));
@@ -1894,8 +2018,8 @@ _GL_CXXALIAS_RPL (readlink, ssize_t,
 #  if !@HAVE_READLINK@
 _GL_FUNCDECL_SYS (readlink, ssize_t,
                   (const char *restrict file,
-                   char *restrict buf, size_t bufsize)
-                  _GL_ARG_NONNULL ((1, 2)));
+                   char *restrict buf, size_t bufsize),
+                  _GL_ARG_NONNULL ((1, 2)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (readlink, ssize_t,
                   (const char *restrict file,
@@ -1918,8 +2042,8 @@ _GL_WARN_ON_USE (readlink, "readlink is unportable - "
 #  endif
 _GL_FUNCDECL_RPL (readlinkat, ssize_t,
                   (int fd, char const *restrict file,
-                   char *restrict buf, size_t len)
-                  _GL_ARG_NONNULL ((2, 3)));
+                   char *restrict buf, size_t len),
+                  _GL_ARG_NONNULL ((2, 3)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (readlinkat, ssize_t,
                   (int fd, char const *restrict file,
                    char *restrict buf, size_t len));
@@ -1927,14 +2051,16 @@ _GL_CXXALIAS_RPL (readlinkat, ssize_t,
 #  if !@HAVE_READLINKAT@
 _GL_FUNCDECL_SYS (readlinkat, ssize_t,
                   (int fd, char const *restrict file,
-                   char *restrict buf, size_t len)
-                  _GL_ARG_NONNULL ((2, 3)));
+                   char *restrict buf, size_t len),
+                  _GL_ARG_NONNULL ((2, 3)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (readlinkat, ssize_t,
                   (int fd, char const *restrict file,
                    char *restrict buf, size_t len));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (readlinkat);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef readlinkat
 # if HAVE_RAW_DECL_READLINKAT
@@ -1950,7 +2076,7 @@ _GL_WARN_ON_USE (readlinkat, "readlinkat is not portable - "
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define rmdir rpl_rmdir
 #  endif
-_GL_FUNCDECL_RPL (rmdir, int, (char const *name) _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_RPL (rmdir, int, (char const *name), _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (rmdir, int, (char const *name));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -1994,15 +2120,31 @@ _GL_CXXALIASWARN (rmdir);
 
    Platforms with no ability to set the hostname return -1 and set
    errno = ENOSYS.  */
-# if !@HAVE_SETHOSTNAME@ || !@HAVE_DECL_SETHOSTNAME@
-_GL_FUNCDECL_SYS (sethostname, int, (const char *name, size_t len)
-                                    _GL_ARG_NONNULL ((1)));
-# endif
+# if @REPLACE_SETHOSTNAME@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   undef sethostname
+#   define sethostname rpl_sethostname
+#  endif
+_GL_FUNCDECL_RPL (sethostname, int,
+                  (const char *name, size_t len),
+                  _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
+_GL_CXXALIAS_RPL (sethostname, int,
+                  (const char *name, size_t len));
+# else
+#  if !@HAVE_SETHOSTNAME@ || !@HAVE_DECL_SETHOSTNAME@
+_GL_FUNCDECL_SYS (sethostname, int,
+                  (const char *name, size_t len),
+                  _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
+#  endif
 /* Need to cast, because on Solaris 11 2011-10, Mac OS X 10.5, IRIX 6.5
    and FreeBSD 6.4 the second parameter is int.  On Solaris 11
    2011-10, the first parameter is not const.  */
-_GL_CXXALIAS_SYS_CAST (sethostname, int, (const char *name, size_t len));
+_GL_CXXALIAS_SYS_CAST (sethostname, int,
+                       (const char *name, size_t len));
+# endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (sethostname);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef sethostname
 # if HAVE_RAW_DECL_SETHOSTNAME
@@ -2022,11 +2164,11 @@ _GL_WARN_ON_USE (sethostname, "sethostname is unportable - "
 #   undef sleep
 #   define sleep rpl_sleep
 #  endif
-_GL_FUNCDECL_RPL (sleep, unsigned int, (unsigned int n));
+_GL_FUNCDECL_RPL (sleep, unsigned int, (unsigned int n), );
 _GL_CXXALIAS_RPL (sleep, unsigned int, (unsigned int n));
 # else
 #  if !@HAVE_SLEEP@
-_GL_FUNCDECL_SYS (sleep, unsigned int, (unsigned int n));
+_GL_FUNCDECL_SYS (sleep, unsigned int, (unsigned int n), );
 #  endif
 _GL_CXXALIAS_SYS (sleep, unsigned int, (unsigned int n));
 # endif
@@ -2055,7 +2197,7 @@ _GL_CXXALIAS_MDA_CAST (swab, void, (char *from, char *to, int n));
 # else
 #  if defined __hpux /* HP-UX */
 _GL_CXXALIAS_SYS (swab, void, (const char *from, char *to, int n));
-#  elif defined __sun && !defined _XPG4 /* Solaris */
+#  elif defined __sun && (defined __SunOS_5_10 || defined __XOPEN_OR_POSIX) && !defined _XPG4 /* Solaris */
 _GL_CXXALIAS_SYS (swab, void, (const char *from, char *to, ssize_t n));
 #  else
 _GL_CXXALIAS_SYS (swab, void, (const void *from, void *to, ssize_t n));
@@ -2071,15 +2213,19 @@ _GL_CXXALIASWARN (swab);
 #   undef symlink
 #   define symlink rpl_symlink
 #  endif
-_GL_FUNCDECL_RPL (symlink, int, (char const *contents, char const *file)
-                                _GL_ARG_NONNULL ((1, 2)));
-_GL_CXXALIAS_RPL (symlink, int, (char const *contents, char const *file));
+_GL_FUNCDECL_RPL (symlink, int,
+                  (char const *contents, char const *file),
+                  _GL_ARG_NONNULL ((1, 2)) _GL_ATTRIBUTE_NODISCARD);
+_GL_CXXALIAS_RPL (symlink, int,
+                  (char const *contents, char const *file));
 # else
 #  if !@HAVE_SYMLINK@
-_GL_FUNCDECL_SYS (symlink, int, (char const *contents, char const *file)
-                                _GL_ARG_NONNULL ((1, 2)));
+_GL_FUNCDECL_SYS (symlink, int,
+                  (char const *contents, char const *file),
+                  _GL_ARG_NONNULL ((1, 2)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
-_GL_CXXALIAS_SYS (symlink, int, (char const *contents, char const *file));
+_GL_CXXALIAS_SYS (symlink, int,
+                  (char const *contents, char const *file));
 # endif
 _GL_CXXALIASWARN (symlink);
 #elif defined GNULIB_POSIXCHECK
@@ -2098,20 +2244,22 @@ _GL_WARN_ON_USE (symlink, "symlink is not portable - "
 #   define symlinkat rpl_symlinkat
 #  endif
 _GL_FUNCDECL_RPL (symlinkat, int,
-                  (char const *contents, int fd, char const *file)
-                  _GL_ARG_NONNULL ((1, 3)));
+                  (char const *contents, int fd, char const *file),
+                  _GL_ARG_NONNULL ((1, 3)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (symlinkat, int,
                   (char const *contents, int fd, char const *file));
 # else
 #  if !@HAVE_SYMLINKAT@
 _GL_FUNCDECL_SYS (symlinkat, int,
-                  (char const *contents, int fd, char const *file)
-                  _GL_ARG_NONNULL ((1, 3)));
+                  (char const *contents, int fd, char const *file),
+                  _GL_ARG_NONNULL ((1, 3)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (symlinkat, int,
                   (char const *contents, int fd, char const *file));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (symlinkat);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef symlinkat
 # if HAVE_RAW_DECL_SYMLINKAT
@@ -2131,17 +2279,19 @@ _GL_WARN_ON_USE (symlinkat, "symlinkat is not portable - "
 #   undef truncate
 #   define truncate rpl_truncate
 #  endif
-_GL_FUNCDECL_RPL (truncate, int, (const char *filename, off_t length)
-                                 _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_RPL (truncate, int, (const char *filename, off_t length),
+                                 _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (truncate, int, (const char *filename, off_t length));
 # else
 #  if !@HAVE_DECL_TRUNCATE@
-_GL_FUNCDECL_SYS (truncate, int, (const char *filename, off_t length)
-                                 _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (truncate, int, (const char *filename, off_t length),
+                                 _GL_ARG_NONNULL ((1)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (truncate, int, (const char *filename, off_t length));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (truncate);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef truncate
 # if HAVE_RAW_DECL_TRUNCATE
@@ -2160,18 +2310,22 @@ _GL_WARN_ON_USE (truncate, "truncate is unportable - "
 #   define ttyname_r rpl_ttyname_r
 #  endif
 _GL_FUNCDECL_RPL (ttyname_r, int,
-                  (int fd, char *buf, size_t buflen) _GL_ARG_NONNULL ((2)));
+                  (int fd, char *buf, size_t buflen),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 _GL_CXXALIAS_RPL (ttyname_r, int,
                   (int fd, char *buf, size_t buflen));
 # else
 #  if !@HAVE_DECL_TTYNAME_R@
 _GL_FUNCDECL_SYS (ttyname_r, int,
-                  (int fd, char *buf, size_t buflen) _GL_ARG_NONNULL ((2)));
+                  (int fd, char *buf, size_t buflen),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
 #  endif
 _GL_CXXALIAS_SYS (ttyname_r, int,
                   (int fd, char *buf, size_t buflen));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (ttyname_r);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef ttyname_r
 # if HAVE_RAW_DECL_TTYNAME_R
@@ -2187,7 +2341,7 @@ _GL_WARN_ON_USE (ttyname_r, "ttyname_r is not portable - "
 #   undef unlink
 #   define unlink rpl_unlink
 #  endif
-_GL_FUNCDECL_RPL (unlink, int, (char const *file) _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_RPL (unlink, int, (char const *file), _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (unlink, int, (char const *file));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -2228,12 +2382,12 @@ _GL_CXXALIASWARN (unlink);
 #   undef unlinkat
 #   define unlinkat rpl_unlinkat
 #  endif
-_GL_FUNCDECL_RPL (unlinkat, int, (int fd, char const *file, int flag)
+_GL_FUNCDECL_RPL (unlinkat, int, (int fd, char const *file, int flag),
                                  _GL_ARG_NONNULL ((2)));
 _GL_CXXALIAS_RPL (unlinkat, int, (int fd, char const *file, int flag));
 # else
 #  if !@HAVE_UNLINKAT@
-_GL_FUNCDECL_SYS (unlinkat, int, (int fd, char const *file, int flag)
+_GL_FUNCDECL_SYS (unlinkat, int, (int fd, char const *file, int flag),
                                  _GL_ARG_NONNULL ((2)));
 #  endif
 _GL_CXXALIAS_SYS (unlinkat, int, (int fd, char const *file, int flag));
@@ -2258,11 +2412,11 @@ _GL_WARN_ON_USE (unlinkat, "unlinkat is not portable - "
 #   undef usleep
 #   define usleep rpl_usleep
 #  endif
-_GL_FUNCDECL_RPL (usleep, int, (useconds_t n));
+_GL_FUNCDECL_RPL (usleep, int, (useconds_t n), );
 _GL_CXXALIAS_RPL (usleep, int, (useconds_t n));
 # else
 #  if !@HAVE_USLEEP@
-_GL_FUNCDECL_SYS (usleep, int, (useconds_t n));
+_GL_FUNCDECL_SYS (usleep, int, (useconds_t n), );
 #  endif
 /* Need to cast, because on Haiku, the first parameter is
                                      unsigned int n.  */
@@ -2287,17 +2441,21 @@ _GL_WARN_ON_USE (usleep, "usleep is unportable - "
 #   undef write
 #   define write rpl_write
 #  endif
-_GL_FUNCDECL_RPL (write, ssize_t, (int fd, const void *buf, size_t count)
-                                  _GL_ARG_NONNULL ((2)));
-_GL_CXXALIAS_RPL (write, ssize_t, (int fd, const void *buf, size_t count));
+_GL_FUNCDECL_RPL (write, ssize_t,
+                  (int fd, const void *buf, size_t count),
+                  _GL_ARG_NONNULL ((2)) _GL_ATTRIBUTE_NODISCARD);
+_GL_CXXALIAS_RPL (write, ssize_t,
+                  (int fd, const void *buf, size_t count));
 # elif defined _WIN32 && !defined __CYGWIN__
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   undef write
 #   define write _write
 #  endif
-_GL_CXXALIAS_MDA (write, ssize_t, (int fd, const void *buf, size_t count));
+_GL_CXXALIAS_MDA (write, ssize_t,
+                  (int fd, const void *buf, size_t count));
 # else
-_GL_CXXALIAS_SYS (write, ssize_t, (int fd, const void *buf, size_t count));
+_GL_CXXALIAS_SYS (write, ssize_t,
+                  (int fd, const void *buf, size_t count));
 # endif
 _GL_CXXALIASWARN (write);
 #elif @GNULIB_MDA_WRITE@
@@ -2309,13 +2467,11 @@ _GL_CXXALIASWARN (write);
 #   undef write
 #   define write _write
 #  endif
-#  ifdef __MINGW32__
-_GL_CXXALIAS_MDA (write, int, (int fd, const void *buf, unsigned int count));
-#  else
-_GL_CXXALIAS_MDA (write, ssize_t, (int fd, const void *buf, unsigned int count));
-#  endif
+_GL_CXXALIAS_MDA_CAST (write, ssize_t,
+                       (int fd, const void *buf, unsigned int count));
 # else
-_GL_CXXALIAS_SYS (write, ssize_t, (int fd, const void *buf, size_t count));
+_GL_CXXALIAS_SYS (write, ssize_t,
+                  (int fd, const void *buf, size_t count));
 # endif
 _GL_CXXALIASWARN (write);
 #endif

@@ -1,22 +1,47 @@
 # -*- makefile -*-
 # This is the developer's makefile, not the user's makefile.
 # Don't use it unless you know exactly what you do!
+# It requires GNU make.
+# It obeys the environment variables GNULIB_TOOL, CC, CFLAGS
+# if you have set them.
+
+ifneq (,)
+This makefile requires GNU Make.
+endif
 
 SHELL = /bin/sh
 MAKE = make
 AUTOCONF = autoconf
 AUTOHEADER = autoheader
-AUTOMAKE = automake-1.16
-ACLOCAL = aclocal-1.16
+AUTOMAKE = automake-1.17
+ACLOCAL = aclocal-1.17
 GPERF = gperf
-CC = gcc -Wall
+
+# Ignore the built-in default for CC. Also ignore $(CC) if it is empty.
+# https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
+# https://www.gnu.org/software/make/manual/html_node/Origin-Function.html
+# https://www.gnu.org/software/make/manual/html_node/Text-Functions.html#index-findstring
+# https://www.gnu.org/software/make/manual/html_node/Text-Functions.html#index-stripping-whitespace
+# https://www.gnu.org/software/make/manual/html_node/Conditional-Functions.html#index-or
+# https://www.gnu.org/software/make/manual/html_node/Override-Directive.html
+ifneq ($(or $(findstring $(origin CC), undefined default),$(if $(strip $(CC)),,empty)),)
+override CC = gcc -Wall
+endif
+
+# Ignore the built-in default for CFLAGS.
+# https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
+# https://www.gnu.org/software/make/manual/html_node/Origin-Function.html
+# https://www.gnu.org/software/make/manual/html_node/Text-Functions.html#index-findstring
+ifneq ($(findstring $(origin CFLAGS), undefined default),)
 CFLAGS = -O
+endif
+
 MAN2HTML = groff -mandoc -Thtml
 CP = cp
 RM = rm -f
 
 
-all : srclib/Makefile.gnulib srclib/Makefile.in \
+all : srclib/Makefile.in \
       configures config.h.in \
       include/iconv.h.build.in \
       lib/aliases.h lib/aliases_sysaix.h lib/aliases_syshpux.h lib/aliases_sysosf1.h lib/aliases_syssolaris.h \
@@ -111,9 +136,10 @@ config.h.in : configure.ac $(AUTOCONF_FILES)
 
 
 include/iconv.h.build.in : include/iconv.h.in include/export.h
-	sed -e 's/extern \([^"]\)/extern LIBICONV_DLL_EXPORTED \1/' \
-	    -e '/_LIBICONV_VERSION/r include/export.h' \
-	  < $< > $@
+	cat $< \
+	| sed -e 's/extern \([^"]\)/extern LIBICONV_SHLIB_EXPORTED \1/' \
+	      -e '/_LIBICONV_VERSION/r include/export.h' \
+	| sed -e '/_LIBICONV_VERSION/,/[*][/]$$/{/_LIBICONV_VERSION/!d;}' > $@
 
 
 lib/aliases.h lib/canonical.h lib/canonical_local.h : lib/encodings.def lib/encodings_local.def lib/genaliases.c

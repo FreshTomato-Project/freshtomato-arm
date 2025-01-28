@@ -1,5 +1,5 @@
-/* Exporting symbols from Cygwin shared libraries.
-   Copyright (C) 2006, 2011-2018 Free Software Foundation, Inc.
+/* Exporting symbols from Windows shared libraries.
+   Copyright (C) 2006, 2011-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    License along with this program; see the file COPYING.LIB.  If not,
    see <https://www.gnu.org/licenses/>.  */
 
-/* There are four ways to build shared libraries on Cygwin:
+/* There are four ways to build shared libraries on Windows:
 
    - Export only functions, no variables.
      This has the drawback of severely affecting the programming style in use.
@@ -54,13 +54,13 @@
        2. the library sources are contained in one directory, making it easy
           to define a -DBUILDING_LIBXYZ flag for the library.
      Example:
-         #ifdef BUILDING_LIBASPRINTF
-         #define LIBASPRINTF_DLL_EXPORTED __declspec(dllexport)
+         #ifdef BUILDING_LIBICONV
+         #define LIBICONV_SHLIB_EXPORTED __declspec(dllexport)
          #else
-         #define LIBASPRINTF_DLL_EXPORTED __declspec(dllimport)
+         #define LIBICONV_SHLIB_EXPORTED __declspec(dllimport)
          #endif
 
-     We use this technique for the libintl and the libasprintf libraries.
+     We use this technique for the libintl and the libiconv libraries.
 
    - Define a macro that expands to  __declspec(dllimport)  always, and use
      it in all header files of the library.  Use an explicit export list for
@@ -95,7 +95,11 @@
 #if defined __GNUC__ /* GCC compiler, GNU toolchain */
 
  /* IMP(x) is a symbol that contains the address of x.  */
-# define IMP(x) _imp__##x
+# if defined _WIN64 || defined _LP64
+#  define IMP(x) __imp_##x
+# else
+#  define IMP(x) _imp__##x
+# endif
 
  /* Ensure that the variable x is exported from the library, and that a
     pseudo-variable IMP(x) is available.  */

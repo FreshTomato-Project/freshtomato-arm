@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: libiconv 1.17-pre1\n"
 "Report-Msgid-Bugs-To: bug-gnu-libiconv@gnu.org\n"
-"POT-Creation-Date: 2022-02-12 13:29+0100\n"
+"POT-Creation-Date: 2024-12-15 13:23+0100\n"
 "PO-Revision-Date: 2022-02-13 12:57+0100\n"
 "Last-Translator: Luna Jernberg <droidbittin@gmail.com>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
@@ -23,24 +23,24 @@ msgstr ""
 "X-Generator: Poedit 2.2.1\n"
 
 #. TRANSLATORS: The first line of the short usage message.
-#: src/iconv.c:104
+#: src/iconv.c:108
 msgid "Usage: iconv [-c] [-s] [-f fromcode] [-t tocode] [file ...]"
 msgstr "Användning: iconv [-c] [-s] [-f frånkod] [-t tillkod] [fil …]"
 
 #. TRANSLATORS: The second line of the short usage message.
 #. Align it correctly against the first line.
-#: src/iconv.c:108
+#: src/iconv.c:112
 msgid "or:    iconv -l"
 msgstr "eller:      iconv -l"
 
-#: src/iconv.c:110
+#: src/iconv.c:114
 #, c-format
 msgid "Try '%s --help' for more information.\n"
 msgstr "Prova ”%s --help” för mer information.\n"
 
 #. TRANSLATORS: The first line of the long usage message.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:115
+#: src/iconv.c:119
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION...] [-f ENCODING] [-t ENCODING] [INPUTFILE...]\n"
 msgstr "Användning: %s [FLAGGA…] [-f KODNING] [-t KODNING] [INMATNINGSFIL…]\n"
@@ -48,23 +48,23 @@ msgstr "Användning: %s [FLAGGA…] [-f KODNING] [-t KODNING] [INMATNINGSFIL…]
 #. TRANSLATORS: The second line of the long usage message.
 #. Align it correctly against the first line.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:122
+#: src/iconv.c:126
 #, c-format, no-wrap
 msgid "or:    %s -l\n"
 msgstr "eller:      %s -l\n"
 
 #. TRANSLATORS: Description of the iconv program.
-#: src/iconv.c:128
+#: src/iconv.c:132
 #, c-format, no-wrap
 msgid "Converts text from one encoding to another encoding.\n"
 msgstr "Konverterar text från en kodning till en annan kodning.\n"
 
-#: src/iconv.c:132
+#: src/iconv.c:136
 #, c-format, no-wrap
 msgid "Options controlling the input and output format:\n"
 msgstr "Flaggor som styr formatet på inmatning och utmatning:\n"
 
-#: src/iconv.c:135
+#: src/iconv.c:139
 #, c-format, no-wrap
 msgid ""
 "  -f ENCODING, --from-code=ENCODING\n"
@@ -73,7 +73,7 @@ msgstr ""
 "  -f KODNING,  --from-code=KODNING\n"
 "                              kodningen på inmatningen\n"
 
-#: src/iconv.c:139
+#: src/iconv.c:143
 #, c-format, no-wrap
 msgid ""
 "  -t ENCODING, --to-code=ENCODING\n"
@@ -82,17 +82,17 @@ msgstr ""
 "  -t KODNING,  --to-code=KODNING\n"
 "                              kodningen på utmatningen\n"
 
-#: src/iconv.c:144
+#: src/iconv.c:148
 #, c-format, no-wrap
 msgid "Options controlling conversion problems:\n"
 msgstr "Flaggor som kontrollerar konverteringsproblem:\n"
 
-#: src/iconv.c:147
+#: src/iconv.c:151
 #, c-format, no-wrap
 msgid "  -c                          discard unconvertible characters\n"
 msgstr "  -c                          förkasta tecken som inte går att konvertera\n"
 
-#: src/iconv.c:150
+#: src/iconv.c:154
 #, c-format, no-wrap
 msgid ""
 "  --unicode-subst=FORMATSTRING\n"
@@ -101,13 +101,13 @@ msgstr ""
 "  --unicode-subst=FORMATSTRÄNG\n"
 "                              ersättning av Unicode-tecken som inte går att konvertera\n"
 
-#: src/iconv.c:154
+#: src/iconv.c:158
 #, c-format, no-wrap
 msgid "  --byte-subst=FORMATSTRING   substitution for unconvertible bytes\n"
 msgstr "  --byte-subst=FORMATSTRÄNG   ersättning av inte konverterbara byte\n"
 
 # Breda tecken? Finns det bättre ord?
-#: src/iconv.c:157
+#: src/iconv.c:161
 #, c-format, no-wrap
 msgid ""
 "  --widechar-subst=FORMATSTRING\n"
@@ -116,32 +116,32 @@ msgstr ""
 "  --widechar-subst=FORMATSTRÄNG\n"
 "                              ersättning av inte konverterbara breda tecken\n"
 
-#: src/iconv.c:162
+#: src/iconv.c:166
 #, c-format, no-wrap
 msgid "Options controlling error output:\n"
 msgstr "Flaggor som kontrollerar felutskrift:\n"
 
-#: src/iconv.c:165
+#: src/iconv.c:169
 #, c-format, no-wrap
 msgid "  -s, --silent                suppress error messages about conversion problems\n"
 msgstr "  -s, --silent                tysta felmeddelanden om konverteringsproblem\n"
 
-#: src/iconv.c:169
+#: src/iconv.c:173
 #, c-format, no-wrap
 msgid "Informative output:\n"
 msgstr "Informativ utmatning:\n"
 
-#: src/iconv.c:172
+#: src/iconv.c:176
 #, c-format, no-wrap
 msgid "  -l, --list                  list the supported encodings\n"
 msgstr "  -l, --list                  lista kodningar som stöds\n"
 
-#: src/iconv.c:175
+#: src/iconv.c:179
 #, c-format, no-wrap
 msgid "  --help                      display this help and exit\n"
 msgstr "  --help                      visa denna hjälp och avsluta\n"
 
-#: src/iconv.c:178
+#: src/iconv.c:182
 #, c-format, no-wrap
 msgid "  --version                   output version information and exit\n"
 msgstr "  --version                   skriv ut versionsinformation och avsluta\n"
@@ -151,7 +151,7 @@ msgstr "  --version                   skriv ut versionsinformation och avsluta\n
 #. email address for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/iconv.c:186
+#: src/iconv.c:190
 #, c-format
 msgid ""
 "Report bugs in the bug tracker at <%s>\n"
@@ -159,11 +159,11 @@ msgid ""
 msgstr ""
 "Rapportera fel i felrapporteringssystemet på <%s>\n"
 "eller via e-post till <%s>.\n"
-"Rapportera fel eller synpunkter på översättningen till <tp-sv@listor.tp-sv."
-"se>.\n"
+"Rapportera fel eller synpunkter på översättningen till <tp-sv@listor.tp-"
+"sv.se>.\n"
 
 #. TRANSLATORS: The %s placeholder is the web address of the GPL license.
-#: src/iconv.c:202
+#: src/iconv.c:206
 #, c-format, no-wrap
 msgid ""
 "License GPLv3+: GNU GPL version 3 or later <%s>\n"
@@ -175,14 +175,14 @@ msgstr ""
 "Det finns INGEN GARANTI, så långt lagen tillåter.\n"
 
 #. TRANSLATORS: The %s placeholder expands to an author's name.
-#: src/iconv.c:208
+#: src/iconv.c:212
 #, c-format
 msgid "Written by %s.\n"
 msgstr "Skrivet av %s.\n"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:302
+#: src/iconv.c:306
 #, c-format
 msgid ""
 "%s argument: A format directive with a variable width is not allowed here."
@@ -191,7 +191,7 @@ msgstr ""
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:317
+#: src/iconv.c:321
 #, c-format
 msgid ""
 "%s argument: A format directive with a variable precision is not allowed "
@@ -201,14 +201,14 @@ msgstr ""
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:333
+#: src/iconv.c:337
 #, c-format
 msgid "%s argument: A format directive with a size is not allowed here."
 msgstr "Argument %s: Ett formatdirektiv med en storlek tillåts inte här."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:375
+#: src/iconv.c:379
 #, c-format
 msgid "%s argument: The string ends in the middle of a directive."
 msgstr "Argument %s: Strängen slutar mitt i ett direktiv."
@@ -216,14 +216,14 @@ msgstr "Argument %s: Strängen slutar mitt i ett direktiv."
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #. The %c placeholder expands to an unknown format directive.
-#: src/iconv.c:382
+#: src/iconv.c:386
 #, c-format
 msgid "%s argument: The character '%c' is not a valid conversion specifier."
 msgstr "Argument %s: Tecknet \"%c\" är inte en giltig konverteringsangivare."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:388
+#: src/iconv.c:392
 #, c-format
 msgid ""
 "%s argument: The character that terminates the format directive is not a "
@@ -235,7 +235,7 @@ msgstr ""
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #. The %u placeholder expands to the number of arguments consumed by the format string.
-#: src/iconv.c:404
+#: src/iconv.c:408
 #, c-format
 msgid ""
 "%s argument: The format string consumes more than one argument: %u argument."
@@ -248,14 +248,14 @@ msgstr[1] ""
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --byte-subst.
-#: src/iconv.c:462
+#: src/iconv.c:464
 #, c-format
 msgid "cannot convert byte substitution to Unicode: %s"
 msgstr "kan inte konvertera byte-ersättning till Unicode: %s"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --unicode-subst.
-#: src/iconv.c:502
+#: src/iconv.c:504
 #, c-format
 msgid "cannot convert unicode substitution to target encoding: %s"
 msgstr "kan inte konvertera unicode-ersättning till målkodning: %s"
@@ -276,14 +276,14 @@ msgstr "kan inte konvertera bredteckenersättning till målkodning: %s"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --byte-subst.
-#: src/iconv.c:625
+#: src/iconv.c:618
 #, c-format
 msgid "cannot convert byte substitution to target encoding: %s"
 msgstr "kan inte konvertera byte-ersättning till målkodning: %s"
 
 #. TRANSLATORS: An error message.
 #. The placeholders expand to the input file name, a line number, and a column number.
-#: src/iconv.c:644
+#: src/iconv.c:637
 #, c-format
 msgid "%s:%u:%u: cannot convert"
 msgstr "%s:%u:%u: kan inte konvertera"
@@ -292,7 +292,7 @@ msgstr "%s:%u:%u: kan inte konvertera"
 #. The placeholders expand to the input file name, a line number, and a column number.
 #. A "shift sequence" is a sequence of bytes that changes the state of the converter;
 #. this concept exists only for "stateful" encodings like ISO-2022-JP.
-#: src/iconv.c:658
+#: src/iconv.c:651
 #, c-format
 msgid "%s:%u:%u: incomplete character or shift sequence"
 msgstr "%s:%u:%u: ofullständigt tecken eller skiftsekvens"
@@ -300,61 +300,61 @@ msgstr "%s:%u:%u: ofullständigt tecken eller skiftsekvens"
 #. TRANSLATORS: The first part of an error message.
 #. It is followed by a colon and a detail message.
 #. The placeholders expand to the input file name, a line number, and a column number.
-#: src/iconv.c:671
+#: src/iconv.c:664
 #, c-format
 msgid "%s:%u:%u"
 msgstr "%s:%u:%u"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the input file name.
-#: src/iconv.c:832
+#: src/iconv.c:830
 #, c-format
 msgid "%s: I/O error"
 msgstr "%s: In-/Ut-fel"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the encoding name, specified through --from-code.
-#: src/iconv.c:1030
+#: src/iconv.c:1033
 #, c-format
 msgid "conversion from %s unsupported"
 msgstr "konvertering från %s stöds inte"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the encoding name, specified through --to-code.
-#: src/iconv.c:1036
+#: src/iconv.c:1039
 #, c-format
 msgid "conversion to %s unsupported"
 msgstr "konvertering till %s stöds inte"
 
 #. TRANSLATORS: An error message.
 #. The placeholders expand to the encoding names, specified through --from-code and --to-code, respectively.
-#: src/iconv.c:1042
+#: src/iconv.c:1045
 #, c-format
 msgid "conversion from %s to %s unsupported"
 msgstr "konvertering från %s till %s stöds inte"
 
 #. TRANSLATORS: Additional advice after an error message.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:1047
+#: src/iconv.c:1050
 #, c-format
 msgid "try '%s -l' to get the list of supported encodings"
 msgstr "prova ”%s -l” för att få listan på kodningar som stöds"
 
 #. TRANSLATORS: A filename substitute denoting standard input.
-#: src/iconv.c:1104
+#: src/iconv.c:1113 src/iconv.c:1122
 msgid "(stdin)"
 msgstr "(standard in)"
 
 #. TRANSLATORS: The first part of an error message.
 #. It is followed by a colon and a detail message.
 #. The %s placeholder expands to the input file name.
-#: src/iconv.c:1116
+#: src/iconv.c:1132
 #, c-format
 msgid "%s"
 msgstr "%s"
 
 #. TRANSLATORS: An error message.
-#: src/iconv.c:1130
+#: src/iconv.c:1147
 #, c-format
 msgid "I/O error"
 msgstr "In-/Ut-fel"

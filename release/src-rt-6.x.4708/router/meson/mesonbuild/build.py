@@ -6,6 +6,7 @@ from collections import defaultdict, OrderedDict
 from dataclasses import dataclass, field, InitVar
 from functools import lru_cache
 import abc
+import copy
 import hashlib
 import itertools, pathlib
 import os
@@ -275,7 +276,11 @@ class Build:
         self.dependency_overrides: PerMachine[T.Dict[T.Tuple, DependencyOverride]] = PerMachineDefaultable.default(
             environment.is_cross_build(), {}, {})
         self.devenv: T.List[EnvironmentVariables] = []
-        self.modules: T.List[str] = []
+        self.modules: T.Set[str] = set()
+        """Used to track which modules are enabled in all subprojects.
+
+        Needed for tracking whether a modules options needs to be exposed to the user.
+        """
 
     def get_build_targets(self):
         build_targets = OrderedDict()
@@ -1360,7 +1365,8 @@ class BuildTarget(Target):
                                                               [],
                                                               dep.get_compile_args(),
                                                               dep.get_link_args(),
-                                                              [], [], [], [], [], {}, [], [], [])
+                                                              [], [], [], [], [], {}, [], [], [],
+                                                              dep.name)
                     self.external_deps.append(extpart)
                 # Deps of deps.
                 self.add_deps(dep.ext_deps)
@@ -1495,7 +1501,7 @@ class BuildTarget(Target):
         if not self.uses_rust() and links_with_rust_abi:
             raise InvalidArguments(f'Try to link Rust ABI library {t.name!r} with a non-Rust target {self.name!r}')
         if self.for_machine is not t.for_machine and (not links_with_rust_abi or t.rust_crate_type != 'proc-macro'):
-            msg = f'Tried to tied to mix a {t.for_machine} library ("{t.name}") with a {self.for_machine} target "{self.name}"'
+            msg = f'Tried to mix a {t.for_machine} library ("{t.name}") with a {self.for_machine} target "{self.name}"'
             if self.environment.is_cross_build():
                 raise InvalidArguments(msg + ' This is not possible in a cross build.')
             else:
@@ -1752,7 +1758,7 @@ class BuildTarget(Target):
                 lib_list.append(lib)
         return lib_list
 
-    def get(self, lib_type: T.Literal['static', 'shared', 'auto']) -> LibTypes:
+    def get(self, lib_type: T.Literal['static', 'shared']) -> LibTypes:
         """Base case used by BothLibraries"""
         return self
 
@@ -2014,6 +2020,8 @@ class Executable(BuildTarget):
             elif ('c' in self.compilers and self.compilers['c'].get_id() in {'mwccarm', 'mwcceppc'} or
                   'cpp' in self.compilers and self.compilers['cpp'].get_id() in {'mwccarm', 'mwcceppc'}):
                 self.suffix = 'nef'
+            elif ('c' in self.compilers and self.compilers['c'].get_id() == 'tasking'):
+                self.suffix = 'elf'
             else:
                 self.suffix = machine.get_exe_suffix()
         self.filename = self.name
@@ -2169,7 +2177,10 @@ class StaticLibrary(BuildTarget):
                 elif self.rust_crate_type == 'staticlib':
                     self.suffix = 'a'
             else:
-                self.suffix = 'a'
+                if 'c' in self.compilers and self.compilers['c'].get_id() == 'tasking':
+                    self.suffix = 'ma' if self.options.get_value('b_lto') and not self.prelink else 'a'
+                else:
+                    self.suffix = 'a'
         self.filename = self.prefix + self.name + '.' + self.suffix
         self.outputs[0] = self.filename
 
@@ -2206,12 +2217,16 @@ class StaticLibrary(BuildTarget):
         return not self.install
 
     def set_shared(self, shared_library: SharedLibrary) -> None:
-        self.both_lib = shared_library
+        self.both_lib = copy.copy(shared_library)
+        self.both_lib.both_lib = None
 
-    def get(self, lib_type: T.Literal['static', 'shared', 'auto']) -> LibTypes:
+    def get(self, lib_type: T.Literal['static', 'shared'], recursive: bool = False) -> LibTypes:
+        result = self
         if lib_type == 'shared':
-            return self.both_lib or self
-        return self
+            result = self.both_lib or self
+        if recursive:
+            result.link_targets = [t.get(lib_type, True) for t in self.link_targets]
+        return result
 
 class SharedLibrary(BuildTarget):
     known_kwargs = known_shlib_kwargs
@@ -2480,12 +2495,16 @@ class SharedLibrary(BuildTarget):
         return True
 
     def set_static(self, static_library: StaticLibrary) -> None:
-        self.both_lib = static_library
+        self.both_lib = copy.copy(static_library)
+        self.both_lib.both_lib = None
 
-    def get(self, lib_type: T.Literal['static', 'shared']) -> LibTypes:
+    def get(self, lib_type: T.Literal['static', 'shared'], recursive: bool = False) -> LibTypes:
+        result = self
         if lib_type == 'static':
-            return self.both_lib or self
-        return self
+            result = self.both_lib or self
+        if recursive:
+            result.link_targets = [t.get(lib_type, True) for t in self.link_targets]
+        return result
 
 # A shared library that is meant to be used with dlopen rather than linking
 # into something else.
@@ -2532,7 +2551,7 @@ class BothLibraries(SecondLevelHolder):
     def __repr__(self) -> str:
         return f'<BothLibraries: static={repr(self.static)}; shared={repr(self.shared)}>'
 
-    def get(self, lib_type: T.Literal['static', 'shared', 'auto']) -> LibTypes:
+    def get(self, lib_type: T.Literal['static', 'shared']) -> LibTypes:
         if lib_type == 'static':
             return self.static
         if lib_type == 'shared':
@@ -2606,7 +2625,7 @@ class CustomTargetBase:
     def get_internal_static_libraries_recurse(self, result: OrderedSet[BuildTargetTypes]) -> None:
         pass
 
-    def get(self, lib_type: T.Literal['static', 'shared', 'auto']) -> LibTypes:
+    def get(self, lib_type: T.Literal['static', 'shared'], recursive: bool = False) -> LibTypes:
         """Base case used by BothLibraries"""
         return self
 

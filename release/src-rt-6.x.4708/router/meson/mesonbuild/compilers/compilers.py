@@ -69,6 +69,7 @@ lang_suffixes: T.Mapping[str, T.Tuple[str, ...]] = {
     'cython': ('pyx', ),
     'nasm': ('asm', 'nasm',),
     'masm': ('masm',),
+    'linearasm': ('sa',),
 }
 all_languages = lang_suffixes.keys()
 c_cpp_suffixes = {'h'}
@@ -133,11 +134,15 @@ def is_header(fname: 'mesonlib.FileOrString') -> bool:
 def is_source_suffix(suffix: str) -> bool:
     return suffix in source_suffixes
 
+@lru_cache(maxsize=None)
+def cached_is_source_by_name(fname: str) -> bool:
+    suffix = fname.split('.')[-1].lower()
+    return is_source_suffix(suffix)
+
 def is_source(fname: 'mesonlib.FileOrString') -> bool:
     if isinstance(fname, mesonlib.File):
         fname = fname.fname
-    suffix = fname.split('.')[-1].lower()
-    return is_source_suffix(suffix)
+    return cached_is_source_by_name(fname)
 
 def is_assembly(fname: 'mesonlib.FileOrString') -> bool:
     if isinstance(fname, mesonlib.File):
@@ -152,14 +157,14 @@ def is_llvm_ir(fname: 'mesonlib.FileOrString') -> bool:
     return suffix in llvm_ir_suffixes
 
 @lru_cache(maxsize=None)
-def cached_by_name(fname: 'mesonlib.FileOrString') -> bool:
+def cached_is_object_by_name(fname: str) -> bool:
     suffix = fname.split('.')[-1]
     return suffix in obj_suffixes
 
 def is_object(fname: 'mesonlib.FileOrString') -> bool:
     if isinstance(fname, mesonlib.File):
         fname = fname.fname
-    return cached_by_name(fname)
+    return cached_is_object_by_name(fname)
 
 def is_library(fname: 'mesonlib.FileOrString') -> bool:
     if isinstance(fname, mesonlib.File):
@@ -428,8 +433,8 @@ class CompileResult(HoldableObject):
     output_name: T.Optional[str] = field(default=None, init=False)
     cached: bool = field(default=False, init=False)
 
-
 class Compiler(HoldableObject, metaclass=abc.ABCMeta):
+
     # Libraries to ignore in find_library() since they are provided by the
     # compiler or the C library. Currently only used for MSVC.
     ignore_libs: T.List[str] = []
@@ -1323,8 +1328,12 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         # TODO: using a TypeDict here would improve this
         raise EnvironmentException(f'{self.id} does not implement get_feature_args')
 
-    def get_prelink_args(self, prelink_name: str, obj_list: T.List[str]) -> T.List[str]:
+    def get_prelink_args(self, prelink_name: str, obj_list: T.List[str]) -> T.Tuple[T.List[str], T.List[str]]:
         raise EnvironmentException(f'{self.id} does not know how to do prelinking.')
+
+    def get_prelink_append_compile_args(self) -> bool:
+        """Controls whether compile args have to be used for prelinking or not"""
+        return False
 
     def rsp_file_syntax(self) -> 'RSPFileSyntax':
         """The format of the RSP file that this compiler supports.

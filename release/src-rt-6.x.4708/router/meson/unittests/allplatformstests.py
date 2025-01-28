@@ -467,7 +467,7 @@ class AllPlatformTests(BasePlatformTests):
         '''
         if not shutil.which('xmllint'):
             raise SkipTest('xmllint not installed')
-        testdir = os.path.join(self.unit_test_dir, '111 replace unencodable xml chars')
+        testdir = os.path.join(self.unit_test_dir, '112 replace unencodable xml chars')
         self.init(testdir)
         tests_command_output = self.run_tests()
         junit_xml_logs = Path(self.logdir, 'testlog.junit.xml')
@@ -627,7 +627,7 @@ class AllPlatformTests(BasePlatformTests):
         self.run_tests()
 
     def test_implicit_forcefallback(self):
-        testdir = os.path.join(self.unit_test_dir, '95 implicit force fallback')
+        testdir = os.path.join(self.unit_test_dir, '96 implicit force fallback')
         with self.assertRaises(subprocess.CalledProcessError):
             self.init(testdir)
         self.init(testdir, extra_args=['--wrap-mode=forcefallback'])
@@ -889,17 +889,17 @@ class AllPlatformTests(BasePlatformTests):
         self.init(testdir)
         self.utime(os.path.join(testdir, 'meson.build'))
         o = self._run(self.mtest_command + ['--list'])
-        self.assertIn('Regenerating build files.', o)
+        self.assertIn('Regenerating build files', o)
         self.assertIn('test_features / xfail', o)
         o = self._run(self.mtest_command + ['--list'])
-        self.assertNotIn('Regenerating build files.', o)
+        self.assertNotIn('Regenerating build files', o)
         # no real targets should have been built
         tester = os.path.join(self.builddir, 'tester' + exe_suffix)
         self.assertPathDoesNotExist(tester)
         # check that we don't reconfigure if --no-rebuild is passed
         self.utime(os.path.join(testdir, 'meson.build'))
         o = self._run(self.mtest_command + ['--list', '--no-rebuild'])
-        self.assertNotIn('Regenerating build files.', o)
+        self.assertNotIn('Regenerating build files', o)
 
     def test_unexisting_test_name(self):
         testdir = os.path.join(self.unit_test_dir, '4 suite selection')
@@ -1766,7 +1766,7 @@ class AllPlatformTests(BasePlatformTests):
 
     def test_prebuilt_shared_lib(self):
         (cc, _, object_suffix, shared_suffix) = self.detect_prebuild_env()
-        tdir = os.path.join(self.unit_test_dir, '17 prebuilt shared')
+        tdir = self.copy_srcdir(os.path.join(self.unit_test_dir, '17 prebuilt shared'))
         source = os.path.join(tdir, 'alexandria.c')
         objectfile = os.path.join(tdir, 'alexandria.' + object_suffix)
         impfile = os.path.join(tdir, 'alexandria.lib')
@@ -2061,7 +2061,7 @@ class AllPlatformTests(BasePlatformTests):
         check_pcfile('libvartest2.pc', relocatable=False)
 
         self.wipe()
-        testdir_abs = os.path.join(self.unit_test_dir, '105 pkgconfig relocatable with absolute path')
+        testdir_abs = os.path.join(self.unit_test_dir, '106 pkgconfig relocatable with absolute path')
         self.init(testdir_abs)
 
         check_pcfile('libsimple.pc', relocatable=True, levels=3)
@@ -2143,7 +2143,7 @@ class AllPlatformTests(BasePlatformTests):
         self.assertDictEqual(original, expected)
 
     def test_executable_names(self):
-        testdir = os.path.join(self.unit_test_dir, '121 executable suffix')
+        testdir = os.path.join(self.unit_test_dir, '122 executable suffix')
         self.init(testdir)
         self.build()
         exe1 = os.path.join(self.builddir, 'foo' + exe_suffix)
@@ -2234,7 +2234,7 @@ class AllPlatformTests(BasePlatformTests):
 
     def test_options_listed_in_build_options(self) -> None:
         """Detect when changed options become listed in build options."""
-        testdir = os.path.join(self.unit_test_dir, '113 list build options')
+        testdir = os.path.join(self.unit_test_dir, '114 list build options')
 
         out = self.init(testdir)
         for line in out.splitlines():
@@ -2472,7 +2472,7 @@ class AllPlatformTests(BasePlatformTests):
         self.assertIn(msg, out)
 
     def test_mixed_language_linker_check(self):
-        testdir = os.path.join(self.unit_test_dir, '96 compiler.links file arg')
+        testdir = os.path.join(self.unit_test_dir, '97 compiler.links file arg')
         self.init(testdir)
         cmds = self.get_meson_log_compiler_checks()
         self.assertEqual(len(cmds), 5)
@@ -3333,13 +3333,17 @@ class AllPlatformTests(BasePlatformTests):
             ('win_subsystem', (str, None)),
         ]
 
-        targets_sources_typelist = [
+        targets_sources_unknown_lang_typelist = [
             ('language', str),
             ('compiler', list),
             ('parameters', list),
             ('sources', list),
             ('generated_sources', list),
             ('unity_sources', (list, None)),
+        ]
+
+        targets_sources_typelist = targets_sources_unknown_lang_typelist + [
+            ('machine', str),
         ]
 
         target_sources_linker_typelist = [
@@ -3456,7 +3460,10 @@ class AllPlatformTests(BasePlatformTests):
                 targets_to_find.pop(i['name'], None)
             for j in i['target_sources']:
                 if 'compiler' in j:
-                    assertKeyTypes(targets_sources_typelist, j)
+                    if j['language'] == 'unknown':
+                        assertKeyTypes(targets_sources_unknown_lang_typelist, j)
+                    else:
+                        assertKeyTypes(targets_sources_typelist, j)
                     self.assertEqual(j['sources'], [os.path.normpath(f) for f in tgt[4]])
                 else:
                     assertKeyTypes(target_sources_linker_typelist, j)
@@ -3558,6 +3565,7 @@ class AllPlatformTests(BasePlatformTests):
                 sources += j.get('sources', [])
             i['target_sources'] = [{
                 'language': 'unknown',
+                'machine': 'host',
                 'compiler': [],
                 'parameters': [],
                 'sources': sources,
@@ -4297,7 +4305,7 @@ class AllPlatformTests(BasePlatformTests):
         self.init(srcdir, extra_args=['-Dbuild.b_lto=true'])
 
     def test_install_skip_subprojects(self):
-        testdir = os.path.join(self.unit_test_dir, '91 install skip subprojects')
+        testdir = os.path.join(self.unit_test_dir, '92 install skip subprojects')
         self.init(testdir)
         self.build()
 
@@ -4344,7 +4352,7 @@ class AllPlatformTests(BasePlatformTests):
         check_installed_files(['--skip-subprojects', 'another'], all_expected)
 
     def test_adding_subproject_to_configure_project(self) -> None:
-        srcdir = os.path.join(self.unit_test_dir, '92 new subproject in configured project')
+        srcdir = os.path.join(self.unit_test_dir, '93 new subproject in configured project')
         self.init(srcdir)
         self.build()
         self.setconf('-Duse-sub=true')
@@ -4394,7 +4402,7 @@ class AllPlatformTests(BasePlatformTests):
         if not shutil.which('clang-format'):
             raise SkipTest('clang-format not found')
 
-        testdir = os.path.join(self.unit_test_dir, '93 clangformat')
+        testdir = os.path.join(self.unit_test_dir, '94 clangformat')
         newdir = os.path.join(self.builddir, 'testdir')
         shutil.copytree(testdir, newdir)
         self.new_builddir()
@@ -4419,7 +4427,7 @@ class AllPlatformTests(BasePlatformTests):
         self.build('clang-format-check')
 
     def test_custom_target_implicit_include(self):
-        testdir = os.path.join(self.unit_test_dir, '94 custominc')
+        testdir = os.path.join(self.unit_test_dir, '95 custominc')
         self.init(testdir)
         self.build()
         compdb = self.get_compdb()
@@ -4459,7 +4467,7 @@ class AllPlatformTests(BasePlatformTests):
                 self.assertEqual(sorted(link_args), sorted(['-flto']))
 
     def test_install_tag(self) -> None:
-        testdir = os.path.join(self.unit_test_dir, '98 install all targets')
+        testdir = os.path.join(self.unit_test_dir, '99 install all targets')
         self.init(testdir)
         self.build()
 
@@ -4630,7 +4638,7 @@ class AllPlatformTests(BasePlatformTests):
 
 
     def test_introspect_install_plan(self):
-        testdir = os.path.join(self.unit_test_dir, '98 install all targets')
+        testdir = os.path.join(self.unit_test_dir, '99 install all targets')
         introfile = os.path.join(self.builddir, 'meson-info', 'intro-install_plan.json')
         self.init(testdir)
         self.assertPathExists(introfile)
@@ -4884,11 +4892,36 @@ class AllPlatformTests(BasePlatformTests):
         # When clippy is used, we should get an exception since a variable named
         # "foo" is used, but is on our denylist
         testdir = os.path.join(self.rust_test_dir, '1 basic')
+        self.init(testdir)
+        self.build('clippy')
+
+        self.wipe()
+        self.init(testdir, extra_args=['--werror', '-Db_colorout=never'])
+        with self.assertRaises(subprocess.CalledProcessError) as cm:
+            self.build('clippy')
+        self.assertTrue('error: use of a blacklisted/placeholder name `foo`' in cm.exception.stdout or
+                        'error: use of a disallowed/placeholder name `foo`' in cm.exception.stdout)
+
+    @skip_if_not_language('rust')
+    @unittest.skipIf(not shutil.which('clippy-driver'), 'Test requires clippy-driver')
+    def test_rust_clippy_as_rustc(self) -> None:
+        if self.backend is not Backend.ninja:
+            raise unittest.SkipTest('Rust is only supported with ninja currently')
+        # When clippy is used, we should get an exception since a variable named
+        # "foo" is used, but is on our denylist
+        testdir = os.path.join(self.rust_test_dir, '1 basic')
         self.init(testdir, extra_args=['--werror'], override_envvars={'RUSTC': 'clippy-driver'})
         with self.assertRaises(subprocess.CalledProcessError) as cm:
             self.build()
         self.assertTrue('error: use of a blacklisted/placeholder name `foo`' in cm.exception.stdout or
                         'error: use of a disallowed/placeholder name `foo`' in cm.exception.stdout)
+
+    @skip_if_not_language('rust')
+    def test_rust_test_warnings(self) -> None:
+        if self.backend is not Backend.ninja:
+            raise unittest.SkipTest('Rust is only supported with ninja currently')
+        testdir = os.path.join(self.rust_test_dir, '9 unit tests')
+        self.init(testdir, extra_args=['--fatal-meson-warnings'])
 
     @skip_if_not_language('rust')
     def test_rust_rlib_linkage(self) -> None:
@@ -4902,7 +4935,7 @@ class AllPlatformTests(BasePlatformTests):
                 }}
             ''')
 
-        testdir = os.path.join(self.unit_test_dir, '101 rlib linkage')
+        testdir = os.path.join(self.unit_test_dir, '102 rlib linkage')
         gen_file = os.path.join(testdir, 'lib.rs')
         with open(gen_file, 'w', encoding='utf-8') as f:
             f.write(template.format(0))
@@ -4950,7 +4983,7 @@ class AllPlatformTests(BasePlatformTests):
                 return
 
     def test_custom_target_name(self):
-        testdir = os.path.join(self.unit_test_dir, '99 custom target name')
+        testdir = os.path.join(self.unit_test_dir, '100 custom target name')
         self.init(testdir)
         out = self.build()
         if self.backend is Backend.ninja:
@@ -4958,7 +4991,7 @@ class AllPlatformTests(BasePlatformTests):
             self.assertIn('Generating subdir/file.txt with a custom command', out)
 
     def test_symlinked_subproject(self):
-        testdir = os.path.join(self.unit_test_dir, '107 subproject symlink')
+        testdir = os.path.join(self.unit_test_dir, '108 subproject symlink')
         subproject_dir = os.path.join(testdir, 'subprojects')
         subproject = os.path.join(testdir, 'symlinked_subproject')
         symlinked_subproject = os.path.join(testdir, 'subprojects', 'symlinked_subproject')
@@ -4974,7 +5007,7 @@ class AllPlatformTests(BasePlatformTests):
         self.build()
 
     def test_configure_same_noop(self):
-        testdir = os.path.join(self.unit_test_dir, '109 configure same noop')
+        testdir = os.path.join(self.unit_test_dir, '110 configure same noop')
         args = [
             '-Dstring=val',
             '-Dboolean=true',
@@ -5011,7 +5044,7 @@ class AllPlatformTests(BasePlatformTests):
             oldmtime = newmtime
 
     def test_c_cpp_stds(self):
-        testdir = os.path.join(self.unit_test_dir, '115 c cpp stds')
+        testdir = os.path.join(self.unit_test_dir, '116 c cpp stds')
         self.init(testdir)
         # Invalid values should fail whatever compiler we have
         with self.assertRaises(subprocess.CalledProcessError):

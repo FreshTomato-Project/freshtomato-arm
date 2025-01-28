@@ -202,6 +202,7 @@ mesonbuild/compilers/mixins/intel.py
 mesonbuild/compilers/mixins/islinker.py
 mesonbuild/compilers/mixins/metrowerks.py
 mesonbuild/compilers/mixins/pgi.py
+mesonbuild/compilers/mixins/tasking.py
 mesonbuild/compilers/mixins/ti.py
 mesonbuild/compilers/mixins/visualstudio.py
 mesonbuild/compilers/mixins/xc16.py
@@ -287,6 +288,7 @@ mesonbuild/scripts/__init__.py
 mesonbuild/scripts/clangformat.py
 mesonbuild/scripts/clangtidy.py
 mesonbuild/scripts/cleantrees.py
+mesonbuild/scripts/clippy.py
 mesonbuild/scripts/cmake_run_ctgt.py
 mesonbuild/scripts/cmd_or_ps.ps1
 mesonbuild/scripts/copy.py
@@ -821,6 +823,7 @@ test cases/common/14 configure file/check_file.py
 test cases/common/14 configure file/check_inputs.py
 test cases/common/14 configure file/config.h
 test cases/common/14 configure file/config.h.in
+test cases/common/14 configure file/config10.h.in
 test cases/common/14 configure file/config4a.h.in
 test cases/common/14 configure file/config4b.h.in
 test cases/common/14 configure file/config5.h.in
@@ -841,6 +844,7 @@ test cases/common/14 configure file/meson.build
 test cases/common/14 configure file/nosubst-nocopy1.txt.in
 test cases/common/14 configure file/nosubst-nocopy2.txt.in
 test cases/common/14 configure file/prog.c
+test cases/common/14 configure file/prog10.c
 test cases/common/14 configure file/prog2.c
 test cases/common/14 configure file/prog4.c
 test cases/common/14 configure file/prog5.c
@@ -1814,6 +1818,7 @@ test cases/common/65 build always/version.h
 test cases/common/65 build always/version_gen.py
 test cases/common/66 vcstag/meson.build
 test cases/common/66 vcstag/tagprog.c
+test cases/common/66 vcstag/test.json
 test cases/common/66 vcstag/vcstag.c.in
 test cases/common/66 vcstag/version.py
 test cases/common/67 modules/meson.build
@@ -2939,6 +2944,20 @@ test cases/frameworks/38 gir both_libraries/foo.c
 test cases/frameworks/38 gir both_libraries/foo.h
 test cases/frameworks/38 gir both_libraries/meson.build
 test cases/frameworks/38 gir both_libraries/test.json
+test cases/frameworks/39 qt qml/Basic.qml
+test cases/frameworks/39 qt qml/Internal.qml
+test cases/frameworks/39 qt qml/Main.qml
+test cases/frameworks/39 qt qml/QmlCppExposed.hpp
+test cases/frameworks/39 qt qml/QmlCppOtherExposed.hpp
+test cases/frameworks/39 qt qml/QmlMain.cpp
+test cases/frameworks/39 qt qml/QmlSingleton.qml
+test cases/frameworks/39 qt qml/custom_qmldir
+test cases/frameworks/39 qt qml/custom_qmldir.qrc
+test cases/frameworks/39 qt qml/meson.build
+test cases/frameworks/39 qt qml/meson_options.txt
+test cases/frameworks/39 qt qml/test.json
+test cases/frameworks/39 qt qml/subdir/SubdirHeader.hpp
+test cases/frameworks/39 qt qml/subdir/Thing.qml
 test cases/frameworks/4 qt/main.cpp
 test cases/frameworks/4 qt/mainWindow.cpp
 test cases/frameworks/4 qt/mainWindow.h
@@ -3550,16 +3569,24 @@ test cases/rust/21 transitive dependencies/libb/lib.rs
 test cases/rust/21 transitive dependencies/libb/meson.build
 test cases/rust/22 cargo subproject/main.c
 test cases/rust/22 cargo subproject/meson.build
+test cases/rust/22 cargo subproject/test.json
 test cases/rust/22 cargo subproject/subprojects/bar-0.1-rs.wrap
+test cases/rust/22 cargo subproject/subprojects/common-0-rs.wrap
 test cases/rust/22 cargo subproject/subprojects/foo-0-rs.wrap
+test cases/rust/22 cargo subproject/subprojects/libname-1-rs.wrap
 test cases/rust/22 cargo subproject/subprojects/bar-0.1-rs/Cargo.toml
 test cases/rust/22 cargo subproject/subprojects/bar-0.1-rs/src/lib.rs
+test cases/rust/22 cargo subproject/subprojects/common-0-rs/Cargo.toml
+test cases/rust/22 cargo subproject/subprojects/common-0-rs/lib.rs
+test cases/rust/22 cargo subproject/subprojects/extra-dep-1-rs/Cargo.toml
 test cases/rust/22 cargo subproject/subprojects/extra-dep-1-rs/lib.c
 test cases/rust/22 cargo subproject/subprojects/extra-dep-1-rs/meson.build
 test cases/rust/22 cargo subproject/subprojects/extra-dep-1-rs/meson_options.txt
 test cases/rust/22 cargo subproject/subprojects/foo-0-rs/Cargo.toml
 test cases/rust/22 cargo subproject/subprojects/foo-0-rs/lib.rs
 test cases/rust/22 cargo subproject/subprojects/foo-0-rs/meson/meson.build
+test cases/rust/22 cargo subproject/subprojects/libname-1-rs/Cargo.toml
+test cases/rust/22 cargo subproject/subprojects/libname-1-rs/lib.rs
 test cases/rust/23 crt-static/lib.c
 test cases/rust/23 crt-static/main.rs
 test cases/rust/23 crt-static/meson.build
@@ -3571,6 +3598,11 @@ test cases/rust/25 cargo lock/Cargo.lock
 test cases/rust/25 cargo lock/meson.build
 test cases/rust/25 cargo lock/test.json
 test cases/rust/25 cargo lock/subprojects/packagecache/bar-0.1.tar.gz
+test cases/rust/26 cargo system deps/main.rs
+test cases/rust/26 cargo system deps/meson.build
+test cases/rust/26 cargo system deps/subprojects/sub-1-rs.wrap
+test cases/rust/26 cargo system deps/subprojects/sub-1-rs/Cargo.toml
+test cases/rust/26 cargo system deps/subprojects/sub-1-rs/lib.rs
 test cases/rust/3 staticlib/meson.build
 test cases/rust/3 staticlib/other.rs
 test cases/rust/3 staticlib/prog.rs
@@ -3599,6 +3631,7 @@ test cases/rust/7 private crate collision/test.json
 test cases/rust/8 many files/foo.rs
 test cases/rust/8 many files/main.rs
 test cases/rust/8 many files/meson.build
+test cases/rust/9 unit tests/doctest1.rs
 test cases/rust/9 unit tests/helper.rs
 test cases/rust/9 unit tests/meson.build
 test cases/rust/9 unit tests/test.rs
@@ -3646,58 +3679,62 @@ test cases/unit/10 build_rpath/prog.c
 test cases/unit/10 build_rpath/prog.cc
 test cases/unit/10 build_rpath/sub/meson.build
 test cases/unit/10 build_rpath/sub/stuff.c
-test cases/unit/100 relative find program/foo.py
-test cases/unit/100 relative find program/meson.build
-test cases/unit/100 relative find program/subdir/meson.build
-test cases/unit/101 rlib linkage/lib2.rs
-test cases/unit/101 rlib linkage/main.rs
-test cases/unit/101 rlib linkage/meson.build
-test cases/unit/102 python without pkgconfig/meson.build
-test cases/unit/103 strip/lib.c
-test cases/unit/103 strip/meson.build
-test cases/unit/104 debug function/meson.build
-test cases/unit/105 pkgconfig relocatable with absolute path/meson.build
-test cases/unit/107 subproject symlink/cp.py
-test cases/unit/107 subproject symlink/main.c
-test cases/unit/107 subproject symlink/meson.build
-test cases/unit/107 subproject symlink/symlinked_subproject/meson.build
-test cases/unit/107 subproject symlink/symlinked_subproject/src.c
-test cases/unit/107 subproject symlink/symlinked_subproject/datadir/datafile
-test cases/unit/107 subproject symlink/symlinked_subproject/datadir/meson.build
-test cases/unit/108 new subproject on reconfigure/meson.build
-test cases/unit/108 new subproject on reconfigure/meson_options.txt
-test cases/unit/108 new subproject on reconfigure/subprojects/foo/foo.c
-test cases/unit/108 new subproject on reconfigure/subprojects/foo/meson.build
-test cases/unit/109 configure same noop/meson.build
-test cases/unit/109 configure same noop/meson_options.txt
+test cases/unit/100 custom target name/file.txt.in
+test cases/unit/100 custom target name/meson.build
+test cases/unit/100 custom target name/subdir/meson.build
+test cases/unit/101 relative find program/foo.py
+test cases/unit/101 relative find program/meson.build
+test cases/unit/101 relative find program/subdir/meson.build
+test cases/unit/102 rlib linkage/lib2.rs
+test cases/unit/102 rlib linkage/main.rs
+test cases/unit/102 rlib linkage/meson.build
+test cases/unit/103 python without pkgconfig/meson.build
+test cases/unit/104 strip/lib.c
+test cases/unit/104 strip/meson.build
+test cases/unit/105 debug function/meson.build
+test cases/unit/106 pkgconfig relocatable with absolute path/meson.build
+test cases/unit/107 underspecified mtest/main.c
+test cases/unit/107 underspecified mtest/meson.build
+test cases/unit/107 underspecified mtest/runner.py
+test cases/unit/108 subproject symlink/cp.py
+test cases/unit/108 subproject symlink/main.c
+test cases/unit/108 subproject symlink/meson.build
+test cases/unit/108 subproject symlink/symlinked_subproject/meson.build
+test cases/unit/108 subproject symlink/symlinked_subproject/src.c
+test cases/unit/108 subproject symlink/symlinked_subproject/datadir/datafile
+test cases/unit/108 subproject symlink/symlinked_subproject/datadir/meson.build
+test cases/unit/109 new subproject on reconfigure/meson.build
+test cases/unit/109 new subproject on reconfigure/meson_options.txt
+test cases/unit/109 new subproject on reconfigure/subprojects/foo/foo.c
+test cases/unit/109 new subproject on reconfigure/subprojects/foo/meson.build
 test cases/unit/11 cross prog/meson.build
 test cases/unit/11 cross prog/some_cross_tool.py
 test cases/unit/11 cross prog/sometool.py
-test cases/unit/110 freeze/freeze.c
-test cases/unit/110 freeze/meson.build
-test cases/unit/111 replace unencodable xml chars/meson.build
-test cases/unit/111 replace unencodable xml chars/script.py
-test cases/unit/112 classpath/meson.build
-test cases/unit/112 classpath/com/mesonbuild/Simple.java
-test cases/unit/113 list build options/meson.build
-test cases/unit/113 list build options/meson_options.txt
-test cases/unit/114 complex link cases/main.c
-test cases/unit/114 complex link cases/meson.build
-test cases/unit/114 complex link cases/s1.c
-test cases/unit/114 complex link cases/s2.c
-test cases/unit/114 complex link cases/s3.c
-test cases/unit/115 c cpp stds/meson.build
-test cases/unit/116 empty project/expected_mods.json
-test cases/unit/116 empty project/meson.build
-test cases/unit/117 genvslite/main.cpp
-test cases/unit/117 genvslite/meson.build
-test cases/unit/118 meson package cache dir/meson.build
-test cases/unit/118 meson package cache dir/cache_dir/foo.zip
-test cases/unit/118 meson package cache dir/cache_dir/bar/meson.build
-test cases/unit/118 meson package cache dir/subprojects/bar.wrap
-test cases/unit/118 meson package cache dir/subprojects/foo.wrap
-test cases/unit/119 openssl cmake bug/meson.build
-test cases/unit/119 openssl cmake bug/nativefile.ini
+test cases/unit/110 configure same noop/meson.build
+test cases/unit/110 configure same noop/meson_options.txt
+test cases/unit/111 freeze/freeze.c
+test cases/unit/111 freeze/meson.build
+test cases/unit/112 replace unencodable xml chars/meson.build
+test cases/unit/112 replace unencodable xml chars/script.py
+test cases/unit/113 classpath/meson.build
+test cases/unit/113 classpath/com/mesonbuild/Simple.java
+test cases/unit/114 list build options/meson.build
+test cases/unit/114 list build options/meson_options.txt
+test cases/unit/115 complex link cases/main.c
+test cases/unit/115 complex link cases/meson.build
+test cases/unit/115 complex link cases/s1.c
+test cases/unit/115 complex link cases/s2.c
+test cases/unit/115 complex link cases/s3.c
+test cases/unit/116 c cpp stds/meson.build
+test cases/unit/117 empty project/expected_mods.json
+test cases/unit/117 empty project/meson.build
+test cases/unit/118 genvslite/main.cpp
+test cases/unit/118 genvslite/meson.build
+test cases/unit/119 meson package cache dir/meson.build
+test cases/unit/119 meson package cache dir/cache_dir/foo.zip
+test cases/unit/119 meson package cache dir/cache_dir/bar/meson.build
+test cases/unit/119 meson package cache dir/subprojects/bar.wrap
+test cases/unit/119 meson package cache dir/subprojects/foo.wrap
 test cases/unit/12 promote/meson.build
 test cases/unit/12 promote/subprojects/s1/meson.build
 test cases/unit/12 promote/subprojects/s1/s1.c
@@ -3710,13 +3747,15 @@ test cases/unit/12 promote/subprojects/s2/s2.c
 test cases/unit/12 promote/subprojects/s2/subprojects/athing.wrap
 test cases/unit/12 promote/subprojects/s2/subprojects/scommon/meson.build
 test cases/unit/12 promote/subprojects/s2/subprojects/scommon/scommon_ok.c
-test cases/unit/120 rewrite/meson.build
-test cases/unit/121 executable suffix/main.c
-test cases/unit/121 executable suffix/meson.build
-test cases/unit/122 reconfigure base options/meson.build
-test cases/unit/122 reconfigure base options/subprojects/sub/meson.build
-test cases/unit/123 pkgsubproj/meson.build
-test cases/unit/123 pkgsubproj/subprojects/sub/meson.build
+test cases/unit/120 openssl cmake bug/meson.build
+test cases/unit/120 openssl cmake bug/nativefile.ini
+test cases/unit/121 rewrite/meson.build
+test cases/unit/122 executable suffix/main.c
+test cases/unit/122 executable suffix/meson.build
+test cases/unit/123 reconfigure base options/meson.build
+test cases/unit/123 reconfigure base options/subprojects/sub/meson.build
+test cases/unit/124 pkgsubproj/meson.build
+test cases/unit/124 pkgsubproj/subprojects/sub/meson.build
 test cases/unit/13 reconfigure/meson.build
 test cases/unit/14 testsetup selection/main.c
 test cases/unit/14 testsetup selection/meson.build
@@ -4124,68 +4163,65 @@ test cases/unit/90 devenv/meson.build
 test cases/unit/90 devenv/test-devenv.py
 test cases/unit/90 devenv/subprojects/sub/foo.c
 test cases/unit/90 devenv/subprojects/sub/meson.build
-test cases/unit/91 install skip subprojects/foo.c
-test cases/unit/91 install skip subprojects/foo.dat
-test cases/unit/91 install skip subprojects/foo.h
-test cases/unit/91 install skip subprojects/meson.build
-test cases/unit/91 install skip subprojects/foo/foofile
-test cases/unit/91 install skip subprojects/subprojects/bar/bar.c
-test cases/unit/91 install skip subprojects/subprojects/bar/bar.dat
-test cases/unit/91 install skip subprojects/subprojects/bar/bar.h
-test cases/unit/91 install skip subprojects/subprojects/bar/meson.build
-test cases/unit/91 install skip subprojects/subprojects/bar/bar/barfile
-test cases/unit/92 new subproject in configured project/meson.build
-test cases/unit/92 new subproject in configured project/meson_options.txt
-test cases/unit/92 new subproject in configured project/subprojects/sub/foo.c
-test cases/unit/92 new subproject in configured project/subprojects/sub/meson.build
-test cases/unit/93 clangformat/.clang-format
-test cases/unit/93 clangformat/.clang-format-ignore
-test cases/unit/93 clangformat/.clang-format-include
-test cases/unit/93 clangformat/meson.build
-test cases/unit/93 clangformat/not-included/badformat.cpp
-test cases/unit/93 clangformat/src/badformat.c
-test cases/unit/93 clangformat/src/badformat.cpp
-test cases/unit/94 custominc/helper.c
-test cases/unit/94 custominc/meson.build
-test cases/unit/94 custominc/prog.c
-test cases/unit/94 custominc/prog2.c
-test cases/unit/94 custominc/easytogrepfor/genh.py
-test cases/unit/94 custominc/easytogrepfor/meson.build
-test cases/unit/95 implicit force fallback/meson.build
-test cases/unit/95 implicit force fallback/subprojects/something/meson.build
-test cases/unit/96 compiler.links file arg/meson.build
-test cases/unit/96 compiler.links file arg/test.c
-test cases/unit/97 link full name/.gitignore
-test cases/unit/97 link full name/libtestprovider/meson.build
-test cases/unit/97 link full name/libtestprovider/provider.c
-test cases/unit/97 link full name/proguser/meson.build
-test cases/unit/97 link full name/proguser/receiver.c
-test cases/unit/98 install all targets/bar-custom.txt
-test cases/unit/98 install all targets/bar-devel.h
-test cases/unit/98 install all targets/bar-notag.txt
-test cases/unit/98 install all targets/foo.in
-test cases/unit/98 install all targets/foo1-devel.h
-test cases/unit/98 install all targets/lib.c
-test cases/unit/98 install all targets/main.c
-test cases/unit/98 install all targets/meson.build
-test cases/unit/98 install all targets/script.py
-test cases/unit/98 install all targets/custom_files/data.txt
-test cases/unit/98 install all targets/excludes/excluded.txt
-test cases/unit/98 install all targets/excludes/installed.txt
-test cases/unit/98 install all targets/excludes/excluded/placeholder.txt
-test cases/unit/98 install all targets/subdir/bar2-devel.h
-test cases/unit/98 install all targets/subdir/foo2.in
-test cases/unit/98 install all targets/subdir/foo3-devel.h
-test cases/unit/98 install all targets/subdir/lib.c
-test cases/unit/98 install all targets/subdir/main.c
-test cases/unit/98 install all targets/subdir/meson.build
-test cases/unit/98 install all targets/subdir/script.py
-test cases/unit/98 install all targets/subprojects/subproject/aaa.txt
-test cases/unit/98 install all targets/subprojects/subproject/bbb.txt
-test cases/unit/98 install all targets/subprojects/subproject/meson.build
-test cases/unit/99 custom target name/file.txt.in
-test cases/unit/99 custom target name/meson.build
-test cases/unit/99 custom target name/subdir/meson.build
+test cases/unit/92 install skip subprojects/foo.c
+test cases/unit/92 install skip subprojects/foo.dat
+test cases/unit/92 install skip subprojects/foo.h
+test cases/unit/92 install skip subprojects/meson.build
+test cases/unit/92 install skip subprojects/foo/foofile
+test cases/unit/92 install skip subprojects/subprojects/bar/bar.c
+test cases/unit/92 install skip subprojects/subprojects/bar/bar.dat
+test cases/unit/92 install skip subprojects/subprojects/bar/bar.h
+test cases/unit/92 install skip subprojects/subprojects/bar/meson.build
+test cases/unit/92 install skip subprojects/subprojects/bar/bar/barfile
+test cases/unit/93 new subproject in configured project/meson.build
+test cases/unit/93 new subproject in configured project/meson_options.txt
+test cases/unit/93 new subproject in configured project/subprojects/sub/foo.c
+test cases/unit/93 new subproject in configured project/subprojects/sub/meson.build
+test cases/unit/94 clangformat/.clang-format
+test cases/unit/94 clangformat/.clang-format-ignore
+test cases/unit/94 clangformat/.clang-format-include
+test cases/unit/94 clangformat/meson.build
+test cases/unit/94 clangformat/not-included/badformat.cpp
+test cases/unit/94 clangformat/src/badformat.c
+test cases/unit/94 clangformat/src/badformat.cpp
+test cases/unit/95 custominc/helper.c
+test cases/unit/95 custominc/meson.build
+test cases/unit/95 custominc/prog.c
+test cases/unit/95 custominc/prog2.c
+test cases/unit/95 custominc/easytogrepfor/genh.py
+test cases/unit/95 custominc/easytogrepfor/meson.build
+test cases/unit/96 implicit force fallback/meson.build
+test cases/unit/96 implicit force fallback/subprojects/something/meson.build
+test cases/unit/97 compiler.links file arg/meson.build
+test cases/unit/97 compiler.links file arg/test.c
+test cases/unit/98 link full name/.gitignore
+test cases/unit/98 link full name/libtestprovider/meson.build
+test cases/unit/98 link full name/libtestprovider/provider.c
+test cases/unit/98 link full name/proguser/meson.build
+test cases/unit/98 link full name/proguser/receiver.c
+test cases/unit/99 install all targets/bar-custom.txt
+test cases/unit/99 install all targets/bar-devel.h
+test cases/unit/99 install all targets/bar-notag.txt
+test cases/unit/99 install all targets/foo.in
+test cases/unit/99 install all targets/foo1-devel.h
+test cases/unit/99 install all targets/lib.c
+test cases/unit/99 install all targets/main.c
+test cases/unit/99 install all targets/meson.build
+test cases/unit/99 install all targets/script.py
+test cases/unit/99 install all targets/custom_files/data.txt
+test cases/unit/99 install all targets/excludes/excluded.txt
+test cases/unit/99 install all targets/excludes/installed.txt
+test cases/unit/99 install all targets/excludes/excluded/placeholder.txt
+test cases/unit/99 install all targets/subdir/bar2-devel.h
+test cases/unit/99 install all targets/subdir/foo2.in
+test cases/unit/99 install all targets/subdir/foo3-devel.h
+test cases/unit/99 install all targets/subdir/lib.c
+test cases/unit/99 install all targets/subdir/main.c
+test cases/unit/99 install all targets/subdir/meson.build
+test cases/unit/99 install all targets/subdir/script.py
+test cases/unit/99 install all targets/subprojects/subproject/aaa.txt
+test cases/unit/99 install all targets/subprojects/subproject/bbb.txt
+test cases/unit/99 install all targets/subprojects/subproject/meson.build
 test cases/vala/1 basic/meson.build
 test cases/vala/1 basic/prog.vala
 test cases/vala/10 mixed sources/meson.build

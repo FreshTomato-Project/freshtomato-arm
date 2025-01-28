@@ -1,6 +1,6 @@
 --- libzip/lib/zip.h
 +++ libzip/lib/zip.h
-@@ -59,8 +59,10 @@
+@@ -68,8 +68,10 @@
  #endif
  
  #ifndef ZIP_DEPRECATED

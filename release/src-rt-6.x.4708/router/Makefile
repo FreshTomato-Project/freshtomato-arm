@@ -2500,9 +2500,9 @@ libpng: libpng/build/Makefile
 	@$(MAKE) -C libpng/build DESTDIR=$(TOP)/libpng/staged install
 
 libpng-install:
-	install -D libpng/build/libpng16.so.16.45.0 $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.45.0
-	$(STRIP) $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.45.0
-	cd $(INSTALLDIR)/libpng/usr/lib && ln -sf libpng16.so.16.45.0 libpng16.so && ln -sf libpng16.so.16.45.0 libpng16.so.16
+	install -D libpng/build/libpng16.so.16.46.0 $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.46.0
+	$(STRIP) $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.46.0
+	cd $(INSTALLDIR)/libpng/usr/lib && ln -sf libpng16.so.16.46.0 libpng16.so && ln -sf libpng16.so.16.46.0 libpng16.so.16
 
 libpng-clean:
 	@rm -rf libpng/build
@@ -3116,11 +3116,11 @@ libiconv-clean:
 
 libiconv-install:
 	install -d $(INSTALLDIR)/libiconv/usr/lib
-	install libiconv/lib/.libs/libiconv.so.2.6.1 $(INSTALLDIR)/libiconv/usr/lib/libiconv.so.2.6.1
-	$(STRIP) -s $(INSTALLDIR)/libiconv/usr/lib/libiconv.so.2.6.1
+	install libiconv/lib/.libs/libiconv.so.2.7.0 $(INSTALLDIR)/libiconv/usr/lib/libiconv.so.2.7.0
+	$(STRIP) -s $(INSTALLDIR)/libiconv/usr/lib/libiconv.so.2.7.0
 	cd $(INSTALLDIR)/libiconv/usr/lib/ && \
-		ln -sf libiconv.so.2.6.1 libiconv.so.2 && \
-		ln -sf libiconv.so.2.6.1 libiconv.so
+		ln -sf libiconv.so.2.7.0 libiconv.so.2 && \
+		ln -sf libiconv.so.2.7.0 libiconv.so
 
 transmission/build/Makefile:
 	@rm -rf transmission/build && mkdir -p transmission/build

@@ -16,6 +16,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <stdlib.h>
@@ -28,7 +30,7 @@
 
 #include "exif-mnote-data-fuji.h"
 
-#define CHECKOVERFLOW(offset,datasize,structsize) (( offset >= datasize) || (structsize > datasize) || (offset > datasize - structsize ))
+#define CHECKOVERFLOW(offset,datasize,structsize) (( (offset) >= (datasize)) || ((structsize) > (datasize)) || ((offset) > (datasize) - (structsize) ))
 
 struct _MNoteFujiDataPrivate {
 	ExifByteOrder order;
@@ -158,17 +160,19 @@ exif_mnote_data_fuji_load (ExifMnoteData *en,
 	ExifLong c;
 	size_t i, tcount, o, datao;
 
-	if (!n || !buf || !buf_size) {
+	if (!n) return;
+
+	if (!buf || !buf_size) {
+		exif_log (en->log, EXIF_LOG_CODE_CORRUPT_DATA,
+			  "ExifMnoteDataFuji", "Short MakerNote");
+		return;
+	}
+	if (CHECKOVERFLOW(n->offset, buf_size, 6+8+4)) {
 		exif_log (en->log, EXIF_LOG_CODE_CORRUPT_DATA,
 			  "ExifMnoteDataFuji", "Short MakerNote");
 		return;
 	}
 	datao = 6 + n->offset;
-	if (CHECKOVERFLOW(datao, buf_size, 12)) {
-		exif_log (en->log, EXIF_LOG_CODE_CORRUPT_DATA,
-			  "ExifMnoteDataFuji", "Short MakerNote");
-		return;
-	}
 
 	n->order = EXIF_BYTE_ORDER_INTEL;
 

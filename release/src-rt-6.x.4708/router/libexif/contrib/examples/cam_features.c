@@ -4,6 +4,7 @@
  *  Wed Jul 27 11:25:09 2005
  *  Copyright  2005  User: Naysawn Naderi
  *  Email: ndn at xiphos dot ca
+ *  SPDX-License-Identifier: BSD-3-Clause
  *
  * Uses libdc1394 and libraw1394
  ****************************************************************************/
@@ -99,7 +100,7 @@ int createEXIF(dc1394featureset_t *xFeatures, ExifData ** pParentEd)
     ExifData * pEd;
     int i = !xFeatures->feature[DC1394_FEATURE_WHITE_BALANCE - DC1394_FEATURE_MIN].auto_active;
 
-    ExifSRational xR = {xFeatures->feature[DC1394_FEATURE_BRIGHTNESS - DC1394_FEATURE_MIN].value, xFeatures->feature[DC1394_FEATURE_BRIGHTNESS - DC1394_FEATURE_MIN].max};;
+    ExifSRational xR = {xFeatures->feature[DC1394_FEATURE_BRIGHTNESS - DC1394_FEATURE_MIN].value, xFeatures->feature[DC1394_FEATURE_BRIGHTNESS - DC1394_FEATURE_MIN].max};
 
     printf ("Creating EXIF data...\n");
     pEd = exif_data_new ();

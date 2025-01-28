@@ -1,6 +1,11 @@
+dnl autoconf configuration for libexif
+dnl
+dnl Copyright (c) 2001-2022 Lutz Mueller <lutz@users.sourceforge.net>, et. al.
+dnl SPDX-License-Identifier: LGPL-2.0-or-later
+
 AC_PREREQ(2.69)
 AC_INIT([EXIF library],
-        [0.6.24],
+        [0.6.25],
         [libexif-devel@lists.sourceforge.net],
         [libexif],
         [https://libexif.github.io/])
@@ -19,8 +24,6 @@ AM_INIT_AUTOMAKE([
 ])
 AM_MAINTAINER_MODE
 
-# Use the silent-rules feature when possible.
-m4_ifndef([AM_SILENT_RULES], [m4_define([AM_SILENT_RULES],[])])
 AM_SILENT_RULES([yes])
 
 GP_CHECK_SHELL_ENVIRONMENT
@@ -31,6 +34,7 @@ dnl ---------------------------------------------------------------------------
 dnl Advanced information about versioning:
 dnl   * "Writing shared libraries" by Mike Hearn
 dnl         http://plan99.net/~mike/writing-shared-libraries.html
+dnl         originally http://navi.cx/~mike/writing-shared-libraries.html
 dnl   * libtool.info chapter "Versioning"
 dnl   * libtool.info chapter "Updating library version information"
 dnl ---------------------------------------------------------------------------
@@ -197,7 +201,7 @@ AM_CONDITIONAL([ENABLE_INTERNAL_DOCS],
 # ---------------------------------------------------------------------------
 # i18n support
 # ---------------------------------------------------------------------------
-ALL_LINGUAS="be bs cs da de en_AU en_CA en_GB es fr it ja ms nl pl pt pt_BR ru sk sq sr sv tr uk vi zh_CN"
+ALL_LINGUAS="be bs cs da de en_AU en_CA en_GB es fr it ja ka ms nl pl pt pt_BR ro ru sk sq sr sv tr uk vi zh_CN"
 AM_PO_SUBDIRS
 GP_GETTEXT_HACK([${PACKAGE}-${LIBEXIF_CURRENT_MIN}],
                 [Lutz Mueller and others])

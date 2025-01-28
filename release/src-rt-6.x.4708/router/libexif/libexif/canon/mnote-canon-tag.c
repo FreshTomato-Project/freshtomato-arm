@@ -16,6 +16,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <config.h>
@@ -241,7 +243,11 @@ mnote_canon_tag_get_title (MnoteCanonTag t)
 
 	(void) bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
 	for (i = 0; i < sizeof (table) / sizeof (table[0]); i++)
-		if (table[i].tag == t) return (_(table[i].title));
+		if (table[i].tag == t) {
+			if (!table[i].title)
+				return NULL;
+			return _(table[i].title);
+		}
 	return NULL;
 }
 
@@ -253,8 +259,11 @@ mnote_canon_tag_get_title_sub (MnoteCanonTag t, unsigned int s, ExifDataOption o
 
 	for (i = 0; i < sizeof (table_sub) / sizeof (table_sub[0]); i++) {
 		if (table_sub[i].tag == t) {
-			if (table_sub[i].subtag == s)
+			if (table_sub[i].subtag == s) {
+				if (!table_sub[i].name)
+					return NULL;
 				return _(table_sub[i].name);
+			}
 			tag_found = 1;
 		}
 	}

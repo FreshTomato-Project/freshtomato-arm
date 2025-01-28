@@ -16,6 +16,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <config.h>
@@ -30,7 +32,7 @@
 #include <libexif/i18n.h>
 #include <libexif/exif-system.h>
 
-#include <libexif/apple/exif-mnote-data-apple.h>
+/*#include <libexif/apple/exif-mnote-data-apple.h>*/
 #include <libexif/canon/exif-mnote-data-canon.h>
 #include <libexif/fuji/exif-mnote-data-fuji.h>
 #include <libexif/olympus/exif-mnote-data-olympus.h>
@@ -48,7 +50,7 @@
 #undef JPEG_MARKER_APP1
 #define JPEG_MARKER_APP1 0xe1
 
-#define CHECKOVERFLOW(offset,datasize,structsize) (( offset >= datasize) || (structsize > datasize) || (offset > datasize - structsize ))
+#define CHECKOVERFLOW(offset,datasize,structsize) (( (offset) >= (datasize)) || ((structsize) > (datasize)) || ((offset) > (datasize) - (structsize) ))
 
 static const unsigned char ExifHeader[] = {0x45, 0x78, 0x69, 0x66, 0x00, 0x00};
 
@@ -454,7 +456,9 @@ exif_data_load_data_content (ExifData *data, ExifIfd ifd,
 			if (o >= ds) {
 				exif_log (data->priv->log, EXIF_LOG_CODE_CORRUPT_DATA, "ExifData",
 					  "Tag data past end of buffer (%u > %u)", offset+2, ds);
-				return;
+				if (recursion_cost > 0)
+					return;
+				break;
 			}
 			/* FIXME: IFD_POINTER tags aren't marked as being in a
 			 * specific IFD, so exif_tag_get_name_in_ifd won't work
@@ -464,17 +468,17 @@ exif_data_load_data_content (ExifData *data, ExifIfd ifd,
 				  exif_tag_get_name(tag), o);
 			switch (tag) {
 			case EXIF_TAG_EXIF_IFD_POINTER:
-				CHECK_REC (EXIF_IFD_EXIF);
+				CHECK_REC (EXIF_IFD_EXIF)
 				exif_data_load_data_content (data, EXIF_IFD_EXIF, d, ds, o,
 					recursion_cost + level_cost(n));
 				break;
 			case EXIF_TAG_GPS_INFO_IFD_POINTER:
-				CHECK_REC (EXIF_IFD_GPS);
+				CHECK_REC (EXIF_IFD_GPS)
 				exif_data_load_data_content (data, EXIF_IFD_GPS, d, ds, o,
 					recursion_cost + level_cost(n));
 				break;
 			case EXIF_TAG_INTEROPERABILITY_IFD_POINTER:
-				CHECK_REC (EXIF_IFD_INTEROPERABILITY);
+				CHECK_REC (EXIF_IFD_INTEROPERABILITY)
 				exif_data_load_data_content (data, EXIF_IFD_INTEROPERABILITY, d, ds, o,
 					recursion_cost + level_cost(n));
 				break;
@@ -817,11 +821,14 @@ interpret_maker_note(ExifData *data, const unsigned char *d, unsigned int ds)
 		exif_log (data->priv->log, EXIF_LOG_CODE_DEBUG,
 			"ExifData", "Pentax MakerNote variant type %d", mnoteid);
 		data->priv->md = exif_mnote_data_pentax_new (data->priv->mem);
-	} else if ((mnoteid = exif_mnote_data_apple_identify (data, e)) != 0) {
+	}
+/* Marcus: disabled until apple makernote can also be saved
+	else if ((mnoteid = exif_mnote_data_apple_identify (data, e)) != 0) {
 		exif_log (data->priv->log, EXIF_LOG_CODE_DEBUG,
 			"ExifData", "Apple MakerNote variant type %d", mnoteid);
 		data->priv->md = exif_mnote_data_apple_new (data->priv->mem);
 	}
+*/
 
 	/* 
 	 * If we are able to interpret the maker note, do so.
@@ -838,7 +845,7 @@ interpret_maker_note(ExifData *data, const unsigned char *d, unsigned int ds)
 
 #define LOG_TOO_SMALL \
 exif_log (data->priv->log, EXIF_LOG_CODE_CORRUPT_DATA, "ExifData", \
-		_("Size of data too small to allow for EXIF data."));
+		_("Size of data too small to allow for EXIF data."))
 
 void
 exif_data_load_data (ExifData *data, const unsigned char *d_orig,

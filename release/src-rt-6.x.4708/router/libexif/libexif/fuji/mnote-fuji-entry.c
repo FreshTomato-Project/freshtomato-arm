@@ -16,6 +16,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <stdlib.h>
@@ -205,8 +207,8 @@ mnote_fuji_entry_get_value (MnoteFujiEntry *entry,
 
 	switch (entry->tag) {
 	  case MNOTE_FUJI_TAG_VERSION:
-		CF (entry->format, EXIF_FORMAT_UNDEFINED, val, maxlen);
-		CC (entry->components, 4, val, maxlen);
+		CF (entry->format, EXIF_FORMAT_UNDEFINED, val, maxlen)
+		CC (entry->components, 4, val, maxlen)
 		memcpy (val, entry->data, MIN(maxlen, entry->size));
 		break;
 	  case MNOTE_FUJI_TAG_SHARPNESS:
@@ -226,8 +228,8 @@ mnote_fuji_entry_get_value (MnoteFujiEntry *entry,
 	  case MNOTE_FUJI_TAG_DYNAMIC_RANGE:
 	  case MNOTE_FUJI_TAG_FILM_MODE:
 	  case MNOTE_FUJI_TAG_DYNAMIC_RANGE_SETTING:
-		CF (entry->format, EXIF_FORMAT_SHORT, val, maxlen);
-		CC (entry->components, 1, val, maxlen);
+		CF (entry->format, EXIF_FORMAT_SHORT, val, maxlen)
+		CC (entry->components, 1, val, maxlen)
 		vs = exif_get_short (entry->data, entry->order);
 
 		/* search the tag */
@@ -249,16 +251,16 @@ mnote_fuji_entry_get_value (MnoteFujiEntry *entry,
 		strncpy (val, _(items[i].elem[j].string), maxlen);
 		break;
 	  case MNOTE_FUJI_TAG_FOCUS_POINT:
-		CF (entry->format, EXIF_FORMAT_SHORT, val, maxlen);
-		CC (entry->components, 2, val, maxlen);
+		CF (entry->format, EXIF_FORMAT_SHORT, val, maxlen)
+		CC (entry->components, 2, val, maxlen)
 		vs = exif_get_short (entry->data, entry->order);
 		vs2 = exif_get_short (entry->data+2, entry->order);
 		snprintf (val, maxlen, "%i, %i", vs, vs2);
 		break;
 	  case MNOTE_FUJI_TAG_MIN_FOCAL_LENGTH:
 	  case MNOTE_FUJI_TAG_MAX_FOCAL_LENGTH:
-		CF (entry->format, EXIF_FORMAT_RATIONAL, val, maxlen);
-		CC (entry->components, 1, val, maxlen);
+		CF (entry->format, EXIF_FORMAT_RATIONAL, val, maxlen)
+		CC (entry->components, 1, val, maxlen)
 		vr = exif_get_rational (entry->data, entry->order);
 		if (!vr.denominator) break;
 		snprintf (val, maxlen, _("%2.2f mm"), (double) vr.numerator /

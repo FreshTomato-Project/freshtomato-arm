@@ -20,11 +20,14 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <libexif/exif-utils.h>
 #include <libexif/exif-data.h>
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +37,7 @@
  * There should be one for every block in exif_entry_initialize() and
  * exif_entry_get_value().
  */
-ExifTag trunc_test_tags[] = {
+static const ExifTag trunc_test_tags[] = {
 	EXIF_TAG_PIXEL_X_DIMENSION,
 	EXIF_TAG_SUBJECT_LOCATION,
 	EXIF_TAG_IMAGE_WIDTH,
@@ -60,7 +63,7 @@ ExifTag trunc_test_tags[] = {
  * These tags produce different outputs depending on the amount of buffer space
  * available.
  */
-ExifTag nonuniform_test_tags[] = {
+static const ExifTag nonuniform_test_tags[] = {
 	EXIF_TAG_RESOLUTION_UNIT,
 	EXIF_TAG_COLOR_SPACE,
 	EXIF_TAG_METERING_MODE,
@@ -71,7 +74,7 @@ ExifTag nonuniform_test_tags[] = {
  * They must have space for a rational or srational created automatically by
  * exif_entry_initialize().
  */
-ExifTag rational_test_tags[] = {
+static const ExifTag rational_test_tags[] = {
 	EXIF_TAG_FNUMBER,
 	EXIF_TAG_APERTURE_VALUE,
 	EXIF_TAG_MAX_APERTURE_VALUE,
@@ -114,7 +117,7 @@ static void check_entry_trunc(ExifEntry *e, int uniform)
 }
 
 int
-main ()
+main (void)
 {
 	ExifData *data;
 	ExifEntry *e;
@@ -285,15 +288,9 @@ main ()
 	}
 	exif_content_add_entry (data->ifd[EXIF_IFD_GPS], e);
 	exif_entry_initialize (e, EXIF_TAG_GPS_VERSION_ID);
-	e->format = EXIF_FORMAT_BYTE;
-	e->size = 4;
-	e->components = e->size;
-	/* Allocate memory to use for holding the tag data */
-	e->data = exif_mem_alloc(mem, e->size);
-	if (!e->data) {
-		fprintf (stderr, "Out of memory\n");
-		exit(13);
-	}
+	assert(e->format == EXIF_FORMAT_BYTE);
+	assert(e->size == 4);
+	assert(e->components == e->size);
 	e->data[0] = 2;
 	e->data[1] = 2;
 	e->data[2] = 0;
@@ -310,15 +307,9 @@ main ()
 	}
 	exif_content_add_entry (data->ifd[EXIF_IFD_GPS], e);
 	exif_entry_initialize (e, EXIF_TAG_GPS_ALTITUDE_REF);
-	e->format = EXIF_FORMAT_BYTE;
-	e->size = 1;
-	e->components = e->size;
-	/* Allocate memory to use for holding the tag data */
-	e->data = exif_mem_alloc(mem, e->size);
-	if (!e->data) {
-		fprintf (stderr, "Out of memory\n");
-		exit(13);
-	}
+	assert(e->format == EXIF_FORMAT_BYTE);
+	assert(e->size == 1);
+	assert(e->components == e->size);
 	e->data[0] = 1;
 	check_entry_trunc(e, 1);
 	exif_content_remove_entry (data->ifd[EXIF_IFD_GPS], e);
@@ -332,15 +323,9 @@ main ()
 	}
 	exif_content_add_entry (data->ifd[EXIF_IFD_GPS], e);
 	exif_entry_initialize (e, EXIF_TAG_GPS_TIME_STAMP);
-	e->format = EXIF_FORMAT_RATIONAL;
-	e->components = 3;
-	e->size = e->components * exif_format_get_size(EXIF_FORMAT_RATIONAL);
-	/* Allocate memory to use for holding the tag data */
-	e->data = exif_mem_alloc(mem, e->size);
-	if (!e->data) {
-		fprintf (stderr, "Out of memory\n");
-		exit(13);
-	}
+	assert(e->format == EXIF_FORMAT_RATIONAL);
+	assert(e->components == 3);
+	assert(e->size == e->components * exif_format_get_size(EXIF_FORMAT_RATIONAL));
 	exif_set_rational(e->data, exif_data_get_byte_order (data), gpsh);
 	exif_set_rational(e->data+8, exif_data_get_byte_order (data), gpsm);
 	exif_set_rational(e->data+16, exif_data_get_byte_order (data), gpss);
@@ -357,7 +342,7 @@ main ()
 	exif_content_add_entry (data->ifd[EXIF_IFD_0], e);
 	exif_entry_initialize (e, EXIF_TAG_SUBJECT_AREA);
 	e->format = EXIF_FORMAT_SHORT;
-	/* This tags is interpreted differently depending on # components */
+	/* This tag is interpreted differently depending on # components */
 	/* Rectangle */
 	e->components = 4;
 	e->size = e->components * exif_format_get_size(EXIF_FORMAT_SHORT);

@@ -1,6 +1,8 @@
+# This file is Copyright (C) 2002 Mark Pulford
+# SPDX-License-Identifier: LGPL-2.0-or-later
 Name: libexif
 Summary: EXIF tag library
-Version: 0.6.24
+Version: 0.6.25
 Release: 1
 Source: https://prdownloads.sourceforge.net/libexif/%{name}-%{version}.tar.bz2
 Url: https://libexif.github.io/

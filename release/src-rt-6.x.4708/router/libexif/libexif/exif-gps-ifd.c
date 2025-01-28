@@ -18,6 +18,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <stddef.h>
@@ -55,7 +57,8 @@ static const struct ExifGPSIfdTagInfo exif_gps_ifd_tags[] = {
     {EXIF_TAG_GPS_PROCESSING_METHOD, EXIF_FORMAT_UNDEFINED, 0, 0, 0},
     {EXIF_TAG_GPS_AREA_INFORMATION, EXIF_FORMAT_UNDEFINED, 0, 0, 0},
     {EXIF_TAG_GPS_DATE_STAMP, EXIF_FORMAT_ASCII, 0, 0, 0},
-    {EXIF_TAG_GPS_DIFFERENTIAL, EXIF_FORMAT_SHORT, 1, 0, 0}
+    {EXIF_TAG_GPS_DIFFERENTIAL, EXIF_FORMAT_SHORT, 1, 0, 0},
+    {EXIF_TAG_GPS_H_POSITIONING_ERROR, EXIF_FORMAT_RATIONAL, 1, 0, 0},
 };
 
 const ExifGPSIfdTagInfo *exif_get_gps_tag_info(ExifTag tag) {

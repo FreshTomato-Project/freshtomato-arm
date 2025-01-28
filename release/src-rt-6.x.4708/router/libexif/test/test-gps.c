@@ -19,6 +19,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <libexif/exif-utils.h>
@@ -32,7 +34,7 @@
 /*
  * List of tags to test, 
  */
-const uint16_t test_tags [] = {
+static const uint16_t test_tags [] = {
  EXIF_TAG_GPS_VERSION_ID,
  EXIF_TAG_GPS_LATITUDE_REF,
  EXIF_TAG_GPS_LATITUDE,
@@ -111,7 +113,7 @@ static int check_entry_format(ExifEntry *e)
 }
 
 int
-main ()
+main (void)
 {
 	size_t i;
 	ExifData *data = NULL;

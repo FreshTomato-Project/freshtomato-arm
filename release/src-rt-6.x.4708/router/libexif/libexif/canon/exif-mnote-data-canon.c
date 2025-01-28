@@ -17,6 +17,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <config.h>
@@ -30,7 +32,7 @@
 #include <libexif/exif-utils.h>
 #include <libexif/exif-data.h>
 
-#define CHECKOVERFLOW(offset,datasize,structsize) (( offset >= datasize) || (structsize > datasize) || (offset > datasize - structsize ))
+#define CHECKOVERFLOW(offset,datasize,structsize) (( (offset) >= (datasize)) || ((structsize) > (datasize)) || ((offset) > (datasize) - (structsize) ))
 
 /* Total size limit to prevent abuse by DoS */
 #define FAILSAFE_SIZE_MAX 1000000L
@@ -209,17 +211,19 @@ exif_mnote_data_canon_load (ExifMnoteData *ne,
 	size_t i, tcount, o, datao;
 	long failsafe_size = 0;
 
-	if (!n || !buf || !buf_size) {
+	if (!n) return;
+
+	if (!buf || !buf_size) {
+		exif_log (ne->log, EXIF_LOG_CODE_CORRUPT_DATA,
+			  "ExifMnoteCanon", "Short MakerNote");
+		return;
+	}
+	if (CHECKOVERFLOW(n->offset, buf_size, 8)) {
 		exif_log (ne->log, EXIF_LOG_CODE_CORRUPT_DATA,
 			  "ExifMnoteCanon", "Short MakerNote");
 		return;
 	}
 	datao = 6 + n->offset;
-	if (CHECKOVERFLOW(datao, buf_size, 2)) {
-		exif_log (ne->log, EXIF_LOG_CODE_CORRUPT_DATA,
-			  "ExifMnoteCanon", "Short MakerNote");
-		return;
-	}
 
 	/* Read the number of tags */
 	c = exif_get_short (buf + datao, n->order);

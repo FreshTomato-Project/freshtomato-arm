@@ -1,8 +1,12 @@
+# Copyright (c) 2001-2022 Lutz Mueller <lutz@users.sourceforge.net>, et. al.
+# SPDX-License-Identifier: LGPL-2.0-or-later
+
 EXTRA_DIST =
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 
-include apple/Makefile-files
+# apple makernote currently cannot save itself, which is required functionality... reenable once it does.
+# include apple/Makefile-files
 include canon/Makefile-files
 include fuji/Makefile-files
 include olympus/Makefile-files
@@ -36,14 +40,12 @@ libexif_la_SOURCES =		\
 
 libexif_la_DEPENDENCIES = \
 	$(srcdir)/libexif.sym \
-	libmnote-apple.la		\
 	libmnote-canon.la		\
 	libmnote-fuji.la		\
 	libmnote-olympus.la	\
 	libmnote-pentax.la
 libexif_la_LIBADD =			\
 	$(LTLIBINTL)			\
-	libmnote-apple.la		\
 	libmnote-canon.la		\
 	libmnote-fuji.la	\
 	libmnote-olympus.la	\

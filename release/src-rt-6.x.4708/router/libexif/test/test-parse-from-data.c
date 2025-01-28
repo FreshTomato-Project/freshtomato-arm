@@ -18,6 +18,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
  *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include "libexif/exif-data.h"
@@ -99,6 +100,8 @@ static void test_parse(const char *filename, void *callback_data, int swap)
   printf("File %s\n", fn);
 
   d = exif_data_new_from_file(filename);
+  exif_data_unref(d);
+
   fd = open(filename,O_RDONLY);
   if (fd == -1) {
     perror(filename);
@@ -110,7 +113,7 @@ static void test_parse(const char *filename, void *callback_data, int swap)
   }
   data = malloc(stbuf.st_size);
   if (!data) {
-    fprintf (stderr, "Failed to allocate %ld bytes for reading %s\n", stbuf.st_size, filename);
+    fprintf (stderr, "Failed to allocate %ld bytes for reading %s\n", (long)stbuf.st_size, filename);
     return;
   }
   if (-1 == read(fd, data, stbuf.st_size)) {
@@ -122,9 +125,9 @@ static void test_parse(const char *filename, void *callback_data, int swap)
   close(fd);
 
   d = exif_data_new_from_data(data, stbuf.st_size);
+  free(data);
   if (!d) {
       fprintf (stderr, "Could not load data from '%s'!\n", filename);
-      free(data);
       return;
   }
   printf("Byte order: %s\n",

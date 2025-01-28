@@ -16,6 +16,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <config.h>
@@ -537,15 +539,15 @@ static const struct TagEntry {
 	 N_("Recommended Exposure Index"),
 	 "",
 	 { ESL_NNNN, ESL_NNNN, ESL_OOOO, ESL_NNNN, ESL_NNNN } },
-	{EXIF_TAG_ISO_SPEED, "ISO Speed",
+	{EXIF_TAG_ISO_SPEED, "ISOSpeed",
 	 N_("ISO Speed"),
 	 "",
 	 { ESL_NNNN, ESL_NNNN, ESL_OOOO, ESL_NNNN, ESL_NNNN } },
-	{EXIF_TAG_ISO_SPEEDLatitudeYYY, "ISO Speed Latitude yyy",
+	{EXIF_TAG_ISO_SPEEDLatitudeYYY, "ISOSpeedLatitudeyyy",
 	 N_("ISO Speed Latitude yyy"),
 	 "",
 	 { ESL_NNNN, ESL_NNNN, ESL_OOOO, ESL_NNNN, ESL_NNNN } },
-	{EXIF_TAG_ISO_SPEEDLatitudeZZZ, "ISO Speed Latitude zzz",
+	{EXIF_TAG_ISO_SPEEDLatitudeZZZ, "ISOSpeedLatitudezzz",
 	 N_("ISO Speed Latitude zzz"),
 	 "",
 	 { ESL_NNNN, ESL_NNNN, ESL_OOOO, ESL_NNNN, ESL_NNNN } },

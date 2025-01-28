@@ -16,6 +16,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <config.h>
@@ -47,6 +49,8 @@
 #define JPEG_MARKER_APP4 0xe4
 #undef JPEG_MARKER_APP5
 #define JPEG_MARKER_APP5 0xe5
+#undef JPEG_MARKER_APP10
+#define JPEG_MARKER_APP10 0xea
 #undef JPEG_MARKER_APP11
 #define JPEG_MARKER_APP11 0xeb
 #undef JPEG_MARKER_APP13
@@ -317,6 +321,7 @@ begin:
 			case JPEG_MARKER_APP2:
 			case JPEG_MARKER_APP4:
 			case JPEG_MARKER_APP5:
+			case JPEG_MARKER_APP10:
 			case JPEG_MARKER_APP11:
 			case JPEG_MARKER_APP13:
 			case JPEG_MARKER_APP14:

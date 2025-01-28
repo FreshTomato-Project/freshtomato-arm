@@ -4,7 +4,7 @@
  * order. If that were not so, then it a binary search of the array would
  * not give correct results.
  *
- * Copyright 2009 Dan Fandrich <dan@coneharvesters.com>
+ * Copyright 2009-2022 Dan Fandrich <dan@coneharvesters.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,10 +20,13 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include <libexif/exif-tag.h>
 #include <stdio.h>
+#include <string.h>
 
 int
 main (void)
@@ -31,6 +34,7 @@ main (void)
 	int rc = 0;
 	unsigned int i, num;
 	ExifTag last = 0, current;
+	const char *name;
 	num = exif_tag_table_count() - 1; /* last entry is a NULL terminator */
 	for (i=0; i < num; ++i) {
 		current = exif_tag_table_get_tag(i);
@@ -39,8 +43,15 @@ main (void)
 				current);
 			rc = 1;
 		}
-		if (exif_tag_table_get_name(i) == NULL) {
+		name = exif_tag_table_get_name(i);
+		/* Ensure each tag has a name */
+		if (name == NULL) {
 			printf("Tag 0x%04x has a NULL name\n", current);
+			rc = 1;
+		}
+		/* Ensure each tag's name contains only valid characters */
+		if (strspn(name, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890/") != strlen(name)) {
+			printf("Tag 0x%04x has an invalid name: %s\n", current, name);
 			rc = 1;
 		}
 		last = current;

@@ -16,6 +16,8 @@
  * License along with this library; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301  USA.
+ *
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,7 +30,7 @@
 #include <libexif/exif-byte-order.h>
 #include <libexif/exif-utils.h>
 
-#define CHECKOVERFLOW(offset,datasize,structsize) (( offset >= datasize) || (structsize > datasize) || (offset > datasize - structsize ))
+#define CHECKOVERFLOW(offset,datasize,structsize) (( (offset) >= (datasize)) || ((structsize) > (datasize)) || ((offset) > (datasize) - (structsize) ))
 
 static void
 exif_mnote_data_pentax_clear (ExifMnoteDataPentax *n)
@@ -220,7 +222,9 @@ exif_mnote_data_pentax_load (ExifMnoteData *en,
 	size_t i, tcount, o, datao, base = 0;
 	ExifShort c;
 
-	if (!n || !buf || !buf_size) {
+	if (!n) return;
+
+	if (!buf || !buf_size) {
 		exif_log (en->log, EXIF_LOG_CODE_CORRUPT_DATA,
 			  "ExifMnoteDataPentax", "Short MakerNote");
 		return;

@@ -1,5 +1,115 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+16 Jan 2025, PHP 8.3.16
+
+- Core:
+  . Fixed bug GH-17106 (ZEND_MATCH_ERROR misoptimization). (ilutov)
+  . Fixed bug GH-17162 (zend_array_try_init() with dtor can cause engine UAF).
+    (nielsdos)
+  . Fixed bug GH-17101 (AST->string does not reproduce constructor property
+    promotion correctly). (nielsdos)
+  . Fixed bug GH-17211 (observer segfault on function loaded with dl()).
+    (Arnaud)
+  . Fixed bug GH-17216 (Trampoline crash on error). (nielsdos)
+
+- Date:
+  . Fixed bug GH-14709 DatePeriod::__construct() overflow on recurrences.
+    (David Carlier)
+
+- DBA:
+  . Skip test if inifile is disabled. (orlitzky)
+
+- DOM:
+  . Fixed bug GH-17224 (UAF in importNode). (nielsdos)
+
+- Embed:
+  . Make build command for program using embed portable. (dunglas)
+
+- FFI:
+  . Fixed bug #79075 (FFI header parser chokes on comments). (nielsdos)
+  . Fix memory leak on ZEND_FFI_TYPE_CHAR conversion failure. (nielsdos)
+  . Fixed bug GH-16013 and bug #80857 (Big endian issues). (Dmitry, nielsdos)
+
+- Filter:
+  . Fixed bug GH-16944 (Fix filtering special IPv4 and IPv6 ranges, by using
+    information from RFC 6890). (Derick)
+
+- FPM:
+  . Fixed bug GH-13437 (FPM: ERROR: scoreboard: failed to lock (already
+    locked)). (Jakub Zelenka)
+  . Fixed bug GH-17112 (Macro redefinitions). (cmb, nielsdos)
+  . Fixed bug GH-17208 (bug64539-status-json-encoding.phpt fail on 32-bits).
+    (nielsdos)
+
+- GD:
+  . Fixed bug GH-16255 (Unexpected nan value in ext/gd/libgd/gd_filter.c).
+    (nielsdos, cmb)
+  . Ported fix for libgd bug 276 (Sometimes pixels are missing when storing
+    images as BMPs). (cmb)
+
+- Gettext:
+  . Fixed bug GH-17202 (Segmentation fault ext/gettext/gettext.c
+    bindtextdomain()). (Michael Orlitzky)
+
+- Iconv:
+  . Fixed bug GH-17047 (UAF on iconv filter failure). (nielsdos)
+
+- LDAP:
+  . Fixed bug GH-17280 (ldap_search() fails when $attributes array has holes).
+    (nielsdos)
+
+- LibXML:
+  . Fixed bug GH-17223 (Memory leak in libxml encoding handling). (nielsdos)
+
+- MBString:
+  . Fixed bug GH-17112 (Macro redefinitions). (nielsdos, cmb)
+
+- Opcache:
+  . opcache_get_configuration() properly reports jit_prof_threshold. (cmb)
+  . Fixed bug GH-17246 (GC during SCCP causes segfault). (Dmitry)
+
+- PCNTL:
+  . Fix memory leak in cleanup code of pcntl_exec() when a non stringable
+    value is encountered past the first entry. (Girgias)
+
+- PgSql:
+  . Fixed bug GH-17158 (pg_fetch_result Shows Incorrect ArgumentCountError
+    Message when Called With 1 Argument). (nielsdos)
+  . Fixed further ArgumentCountError for calls with flexible
+    number of arguments. (David Carlier)
+
+- Phar:
+  . Fixed bug GH-17137 (Segmentation fault ext/phar/phar.c). (nielsdos)
+
+- SimpleXML:
+  . Fixed bug GH-17040 (SimpleXML's unset can break DOM objects). (nielsdos)
+  . Fixed bug GH-17153 (SimpleXML crash when using autovivification on
+    document). (nielsdos)
+
+- Sockets:
+  . Fixed bug GH-16276 (socket_strerror overflow handling with INT_MIN).
+    (David Carlier / cmb)
+  . Fixed overflow on SO_LINGER values setting, strengthening values check
+    on SO_SNDTIMEO/SO_RCVTIMEO for socket_set_option().
+    (David Carlier)
+
+- SPL:
+  . Fixed bug GH-17225 (NULL deref in spl_directory.c). (nielsdos)
+
+- Streams:
+  . Fixed bug GH-17037 (UAF in user filter when adding existing filter name due
+    to incorrect error handling). (nielsdos)
+  . Fixed bug GH-16810 (overflow on fopen HTTP wrapper timeout value).
+    (David Carlier)
+  . Fixed bug GH-17067 (glob:// wrapper doesn't cater to CWD for ZTS builds).
+    (cmb)
+
+- Windows:
+  . Hardened proc_open() against cmd.exe hijacking. (cmb)
+
+- XML:
+  . Fixed bug GH-1718 (unreachable program point in zend_hash). (nielsdos)
+
 19 Dec 2024, PHP 8.3.15
 
 - Calendar:

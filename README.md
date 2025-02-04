@@ -1,14 +1,14 @@
 # **FreshTomato-ARM** #
-.  
+  
   
 **Forked off from Tomato-ARM by Shibby, builds compiled by pedro**
-.  
+  
   
 For the following **ARM** routers: **Asus** N18U, AC56S, AC56U/AC56R, N66U C1, AC66U B1, RT-AC1750 B1, AC67U, AC68U(A1,A2,B1,B2,C1,E1,V3)/R/P, AC1900P/U, AC3200, AC3100, AC88U, AC5300, DSL-AC68U(no xDSL support) **Netgear** AC1450, R6200v2, R6250, R6300v2, R6400, R6400v2, R6700v1, R6700v3, R6900, XR300, R7000, EX7000, R7900, R8000, **Linksys** EA6200, EA6350v1, EA6350v2, EA6300v1/EA6400, EA6500v2, EA6700, EA6900, **Tenda** AC15, AC18, **Huawei** WS880, **Dlink** DIR868L (rev A1/B1/C1), **Xiaomi** R1D, **Belkin** F9K1113v2, **Buffalo** WZR-1750DHP.  
-.  
+  
   
 ***Disclaimer: I am not responsible for any bricked routers, nor do I encourage other people to flash alternative firmwares on their routers. Use at your own risk!***  
-.  
+  
   
 - [**Project page**](https://freshtomato.org/)
 - [**Source code**](https://github.com/FreshTomato-Project/freshtomato-arm) ([**Mirror**](https://bitbucket.org/pedro311/freshtomato-arm/commits/all))
@@ -20,7 +20,7 @@ For the following **ARM** routers: **Asus** N18U, AC56S, AC56U/AC56R, N66U C1, A
 - [**Forum PL**](https://openlinksys.info/forum/)
 - **Donations**: [**PayPal**](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=B4FDH9TH6Z8FU)  or  BTC: **`1JDxBBQvcJ9XxgagJRNVrqC1nysq8F8B1Y`**  
   
-.  
+  
 **HOW TO PREPARE A WORK ENVIRONMENT FOR FRESHTOMATO COMPILATION (on Debian 12/64bit)**
   
 1. Install Debian via the graphical interface (for simplicity); install the SSH server, choose default [username]; the rest may be the default
@@ -82,7 +82,7 @@ For the following **ARM** routers: **Asus** N18U, AC56S, AC56U/AC56R, N66U C1, A
     $ git config --global user.name [name]
     ```
   
-.  
+  
 **HOW TO COMPILE**
   
 1. Change dir to git repository ie: ```$ cd freshtomato-arm```

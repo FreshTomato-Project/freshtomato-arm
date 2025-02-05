@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
  * lsmem - Show memory configuration
  *
  * Copyright IBM Corp. 2016
@@ -8,15 +10,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include <c.h>
 #include <nls.h>
@@ -477,7 +470,7 @@ static void read_info(struct lsmem *lsmem)
 			continue;
 		}
 		lsmem->nblocks++;
-		lsmem->blocks = xrealloc(lsmem->blocks, lsmem->nblocks * sizeof(blk));
+		lsmem->blocks = xreallocarray(lsmem->blocks, lsmem->nblocks, sizeof(blk));
 		*&lsmem->blocks[lsmem->nblocks - 1] = blk;
 	}
 }
@@ -535,13 +528,13 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("     --summary[=when] print summary information (never,always or only)\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(22));
+	fprintf(out, USAGE_HELP_OPTIONS(22));
 
 	fputs(USAGE_COLUMNS, out);
 	for (i = 0; i < ARRAY_SIZE(coldescs); i++)
 		fprintf(out, " %10s  %s\n", coldescs[i].name, _(coldescs[i].help));
 
-	printf(USAGE_MAN_TAIL("lsmem(1)"));
+	fprintf(out, USAGE_MAN_TAIL("lsmem(1)"));
 
 	exit(EXIT_SUCCESS);
 }

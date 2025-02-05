@@ -61,6 +61,11 @@
 #include <sys/types.h>
 #include <grp.h>
 
+#if defined(USE_SYSTEMD) && HAVE_DECL_SD_SESSION_GET_USERNAME == 1
+# include <systemd/sd-login.h>
+# include <systemd/sd-daemon.h>
+#endif
+
 #include "nls.h"
 #include "xalloc.h"
 #include "strutils.h"
@@ -96,8 +101,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -n, --nobanner          do not print banner, works only for root\n"), out);
 	fputs(_(" -t, --timeout <timeout> write timeout in seconds\n"), out);
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(25));
-	printf(USAGE_MAN_TAIL("wall(1)"));
+	fprintf(out, USAGE_HELP_OPTIONS(25));
+	fprintf(out, USAGE_MAN_TAIL("wall(1)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -131,10 +136,17 @@ static gid_t get_group_gid(const char *group)
 
 static struct group_workspace *init_group_workspace(const char *group)
 {
-	struct group_workspace *buf = xmalloc(sizeof(struct group_workspace));
+	struct group_workspace *buf;
+	long n;
+
+	n = sysconf(_SC_NGROUPS_MAX);
+	if (n < 0 || n > INT_MAX - 1)
+		return NULL;
+
+	buf = xmalloc(sizeof(struct group_workspace));
+	buf->ngroups = n + 1;	/* room for the primary gid */
 
 	buf->requested_group = get_group_gid(group);
-	buf->ngroups = sysconf(_SC_NGROUPS_MAX) + 1;  /* room for the primary gid */
 	buf->groups = xcalloc(buf->ngroups, sizeof(*buf->groups));
 
 	return buf;
@@ -246,29 +258,64 @@ int main(int argc, char **argv)
 
 	iov.iov_base = mbuf;
 	iov.iov_len = mbufsize;
-	while((utmpptr = getutxent())) {
-		if (!utmpptr->ut_user[0])
-			continue;
-#ifdef USER_PROCESS
-		if (utmpptr->ut_type != USER_PROCESS)
-			continue;
+
+#if defined(USE_SYSTEMD) && HAVE_DECL_SD_SESSION_GET_USERNAME == 1
+	if (sd_booted() > 0) {
+		char **sessions_list;
+		int sessions;
+
+		sessions = sd_get_sessions(&sessions_list);
+		if (sessions < 0)
+			errx(EXIT_FAILURE, _("error getting sessions: %s"),
+				strerror(-sessions));
+
+		for (int i = 0; i < sessions; i++) {
+			char *name, *tty;
+			int r;
+
+			if ((r = sd_session_get_username(sessions_list[i], &name)) < 0)
+				errx(EXIT_FAILURE, _("get user name failed: %s"), strerror (-r));
+
+			if (!(group_buf && !is_gr_member(name, group_buf))) {
+				if (sd_session_get_tty(sessions_list[i], &tty) >= 0) {
+					if ((p = ttymsg(&iov, 1, tty, timeout)) != NULL)
+						warnx("%s", p);
+
+					free(tty);
+				}
+			}
+			free(name);
+			free(sessions_list[i]);
+		}
+		free(sessions_list);
+	} else
 #endif
-		/* Joey Hess reports that use-sessreg in /etc/X11/wdm/ produces
-		 * ut_line entries like :0, and a write to /dev/:0 fails.
-		 *
-		 * It also seems that some login manager may produce empty ut_line.
-		 */
-		if (!*utmpptr->ut_line || *utmpptr->ut_line == ':')
-			continue;
+	{
+		while ((utmpptr = getutxent())) {
+			if (!utmpptr->ut_user[0])
+				continue;
+#ifdef USER_PROCESS
+			if (utmpptr->ut_type != USER_PROCESS)
+				continue;
+#endif
+			/* Joey Hess reports that use-sessreg in /etc/X11/wdm/ produces
+			 * ut_line entries like :0, and a write to /dev/:0 fails.
+			 *
+			 * It also seems that some login manager may produce empty ut_line.
+			 */
+			if (!*utmpptr->ut_line || *utmpptr->ut_line == ':')
+				continue;
 
-		if (group_buf && !is_gr_member(utmpptr->ut_user, group_buf))
-			continue;
+			if (group_buf && !is_gr_member(utmpptr->ut_user, group_buf))
+				continue;
 
-		mem2strcpy(line, utmpptr->ut_line, sizeof(utmpptr->ut_line), sizeof(line));
-		if ((p = ttymsg(&iov, 1, line, timeout)) != NULL)
-			warnx("%s", p);
+			mem2strcpy(line, utmpptr->ut_line, sizeof(utmpptr->ut_line), sizeof(line));
+			if ((p = ttymsg(&iov, 1, line, timeout)) != NULL)
+				warnx("%s", p);
+		}
+		endutxent();
 	}
-	endutxent();
+
 	free(mbuf);
 	free_group_workspace(group_buf);
 	exit(EXIT_SUCCESS);
@@ -284,10 +331,10 @@ static char *makemsg(char *fname, char **mvec, int mvecsz,
 
 	if (print_banner == TRUE) {
 		char *hostname = xgethostname();
-		char *whom, *where, date[CTIME_BUFSIZ];
+		char *whombuf, *whom, *where, date[CTIME_BUFSIZ];
 		time_t now;
 
-		whom = xgetlogin();
+		whombuf = whom = xgetlogin();
 		if (!whom) {
 			whom = "<someone>";
 			warn(_("cannot get passwd uid"));
@@ -318,6 +365,7 @@ static char *makemsg(char *fname, char **mvec, int mvecsz,
 				whom, hostname, where, date);
 		fprintf(fs, "%-*.*s\007\007\r\n", TERM_WIDTH, TERM_WIDTH, lbuf);
 		free(hostname);
+		free(whombuf);
 	}
 	fprintf(fs, "%*s\r\n", TERM_WIDTH, " ");
 

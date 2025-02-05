@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -27,6 +28,7 @@ extern int ul_strtos64(const char *str, int64_t *num, int base);
 extern int ul_strtou64(const char *str, uint64_t *num, int base);
 extern int ul_strtos32(const char *str, int32_t *num, int base);
 extern int ul_strtou32(const char *str, uint32_t *num, int base);
+extern int ul_strtold(const char *str, long double *num);
 
 extern int64_t str2num_or_err(const char *str, int base, const char *errmesg, int64_t low, int64_t up);
 extern uint64_t str2unum_or_err(const char *str, int base, const char *errmesg, uint64_t up);
@@ -388,12 +390,33 @@ static inline void strrem(char *s, int rem)
 	*p = '\0';
 }
 
+/* returns next string after \0 if before @end */
+static inline char *ul_next_string(char *p, char *end)
+{
+	char *last;
+
+	if (!p || !end || p >= end)
+		return NULL;
+
+	for (last = p; p < end; p++) {
+		if (*last == '\0' && p != last)
+			return p;
+		last = p;
+	}
+
+	return NULL;
+}
+
 extern char *strnconcat(const char *s, const char *suffix, size_t b);
 extern char *strconcat(const char *s, const char *suffix);
 extern char *strfconcat(const char *s, const char *format, ...)
 		 __attribute__ ((__format__ (__printf__, 2, 3)));
 
 extern int strappend(char **a, const char *b);
+extern int strfappend(char **a, const char *format, ...)
+		 __attribute__ ((__format__ (__printf__, 2, 3)));
+extern int strvfappend(char **a, const char *format, va_list ap)
+		 __attribute__ ((__format__ (__printf__, 2, 0)));
 
 extern const char *split(const char **state, size_t *l, const char *separator, int quoted);
 

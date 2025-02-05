@@ -37,6 +37,10 @@ option('build-libblkid', type : 'feature',
        description : 'build libblkid and many related utilities')
 option('build-libuuid', type : 'feature',
        description : 'build libuuid and uuid utilities')
+option('build-liblastlog2', type : 'feature',
+       description : 'build liblastlog2 and lastlog2 utilities')
+option('build-pam-lastlog2', type : 'feature',
+       description : 'build PAM lastlog2 module')
 option('build-libmount', type : 'feature',
        description : 'build libmount')
 option('build-libsmartcols', type : 'feature',
@@ -49,14 +53,26 @@ option('build-fdisks', type : 'feature',
        description : 'build fdisk(8), sfdisk(8) and cfdisk(8)')
 option('build-mount', type : 'feature',
        description : 'build mount(8) and umount(8)')
+option('build-swapon', type : 'feature',
+       description : 'build swapon')
+option('build-swapoff', type : 'feature',
+       description : 'build swapoff')
+option('build-chcpu', type : 'feature',
+       description : 'build chcpu')
 option('build-losetup', type : 'feature',
        description : 'build losetup')
 option('build-zramctl', type : 'feature',
        description : 'build zramctl')
+option('build-lsns', type : 'feature',
+       description : 'build lsns')
 option('build-fsck', type : 'feature',
        description : 'build fsck')
 option('build-partx', type : 'feature',
        description : 'build addpart, delpart, partx')
+option('build-script', type : 'feature',
+       description : 'build script')
+option('build-scriptlive', type : 'feature',
+       description : 'build scriptlive')
 
 option('build-uuidd', type : 'feature',
        description : 'build the uuid daemon')
@@ -87,6 +103,8 @@ option('build-minix', type : 'feature',
        description : 'build fsck.minix, mkfs.minix')
 option('build-fdformat', type : 'feature', value : 'disabled',
        description : 'build fdformat')
+option('build-blockdev', type : 'feature',
+       description : 'build blockdev')
 option('build-hwclock', type : 'feature',
        description : 'build hwclock')
 option('build-lslogins', type : 'feature',
@@ -97,6 +115,14 @@ option('build-cal', type : 'feature',
        description : 'build cal')
 option('build-logger', type : 'feature',
        description : 'build logger')
+option('build-lsblk', type : 'feature',
+       description : 'build lsblk')
+option('build-lslocks', type : 'feature',
+       description : 'build lslocks')
+option('build-findmnt', type : 'feature',
+       description : 'build findmnt')
+option('build-lsfd', type : 'feature',
+       description : 'build lsfd')
 option('build-switch_root', type : 'feature',
        description : 'switch_root')
 option('build-pivot_root', type : 'feature',
@@ -109,6 +135,8 @@ option('build-irqtop', type : 'feature',
        description : 'build irqtop')
 option('build-chmem', type : 'feature',
        description : 'build chmem')
+option('build-ipcmk', type : 'feature',
+       description : 'build ipcmk')
 option('build-ipcrm', type : 'feature',
        description : 'build ipcrm')
 option('build-ipcs', type : 'feature',
@@ -117,6 +145,24 @@ option('build-rfkill', type : 'feature',
        description : 'build rfkill')
 option('build-tunelp', type : 'feature',
        description : 'build tunelp')
+option('build-fstrim', type : 'feature',
+       description : 'build fstrim')
+option('build-dmesg', type : 'feature',
+       description : 'build dmesg')
+option('build-fsfreeze', type : 'feature',
+       description : 'build fsfreeze')
+option('build-blkdiscard', type : 'feature',
+       description : 'build blkdiscard')
+option('build-blkzone', type : 'feature',
+       description : 'build blkzone')
+option('build-blkpr', type : 'feature',
+       description : 'build blkpr')
+option('build-ldattach', type : 'feature',
+       description : 'build ldattach')
+option('build-rtcwake', type : 'feature',
+       description : 'build rtcwake')
+option('build-setarch', type : 'feature',
+       description : 'build setarch')
 option('build-kill', type : 'feature',
        description : 'build kill')
 option('build-last', type : 'feature',
@@ -155,6 +201,12 @@ option('build-pg', type : 'feature',
        description : 'build pg')
 option('build-pipesz', type : 'feature',
        description : 'build pipesz')
+option('build-fadvise', type : 'feature',
+       description : 'build fadvise')
+option('build-enosys', type : 'feature',
+       description : 'build enosys')
+option('build-lsclocks', type : 'feature',
+       description : 'build lsclocks')
 option('build-setterm', type : 'feature',
        description : 'build setterm')
 option('build-schedutils', type : 'feature',
@@ -177,6 +229,10 @@ option('static-programs', type : 'array',
 
 # feature selection and other configuration
 
+option('program-tests',
+       type: 'boolean', value : true,
+       description : 'build test programs')
+
 option('chfn-chsh-password',
        type : 'boolean', value : true,
        description : 'require the user to enter the password in chfn and chsh')
@@ -197,6 +253,8 @@ option('pg-bell',
        description : 'should pg ring the bell on invalid keys?')
 option('colors-default', type: 'boolean', value: true,
        description: 'Enables colorized output from utils by default')
+option('allow-32bit-time', type: 'boolean', value: false,
+       description: 'Allow 32bit time_t type')
 
 option('fs-search-path',
        type : 'string',
@@ -208,3 +266,9 @@ option('fs-search-path-extra',
 option('vendordir',
        type: 'string',
        description : 'directory for distribution provided econf files')
+
+option('pamlibdir', type : 'string',
+       description : 'directory for PAM modules')
+option('lastlog-compat-symlink', type : 'boolean',
+       value : false,
+       description : 'create lastlog compat symlink')

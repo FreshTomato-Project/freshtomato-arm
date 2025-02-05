@@ -1,3 +1,14 @@
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Copyright (C) 2013 Ondrej Oprala <ooprala@redhat.com>
+ * Copyright (C) 2013-2023 Karel Zak <kzak@redhat.com>
+ */
 #ifndef LSCPU_H
 #define LSCPU_H
 
@@ -252,6 +263,9 @@ struct lscpu_cxt {
 	int is_cluster; /* For aarch64 if the machine doesn't have ACPI PPTT */
 };
 
+#define is_live(_cxt)	(!(_cxt)->noalive)
+#define is_dump(_cxt)	((_cxt)->noalive)
+
 #define is_cpu_online(_cxt, _cpu) \
 		((_cxt) && (_cpu) && (_cxt)->online && \
 		 CPU_ISSET_S((_cpu)->logical_id, (_cxt)->setsize, (_cxt)->online))
@@ -259,6 +273,8 @@ struct lscpu_cxt {
 #define is_cpu_present(_cxt, _cpu) \
 		((_cxt) && (_cpu) && (_cxt)->present && \
 		 CPU_ISSET_S((_cpu)->logical_id, (_cxt)->setsize, (_cxt)->present))
+
+int is_arm(struct lscpu_cxt *cxt);
 
 struct lscpu_cputype *lscpu_new_cputype(void);
 void lscpu_ref_cputype(struct lscpu_cputype *ct);

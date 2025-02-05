@@ -29,7 +29,7 @@ static int romfs_verify_csum(blkid_probe pr, const struct blkid_idmag *mag,
 {
 	uint32_t csummed_size = min((uint32_t) 512,
 			be32_to_cpu(ros->ros_full_size));
-	unsigned char *csummed;
+	const unsigned char *csummed;
 	uint32_t csum;
 
 	if (csummed_size % sizeof(uint32_t) != 0)
@@ -50,7 +50,7 @@ static int romfs_verify_csum(blkid_probe pr, const struct blkid_idmag *mag,
 
 static int probe_romfs(blkid_probe pr, const struct blkid_idmag *mag)
 {
-	struct romfs_super_block *ros;
+	const struct romfs_super_block *ros;
 
 	ros = blkid_probe_get_sb(pr, mag, struct romfs_super_block);
 	if (!ros)

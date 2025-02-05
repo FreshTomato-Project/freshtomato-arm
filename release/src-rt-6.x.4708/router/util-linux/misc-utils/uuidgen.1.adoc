@@ -1,7 +1,7 @@
 //po4a: entry man manual
 ////
 Copyright 1999 Andreas Dilger (adilger@enel.ucalgary.ca)
-This file may be copied under the terms of the GNU Public License.
+This file may be copied under the terms of the GNU General Public License.
 ////
 = uuidgen(1)
 :doctype: manpage
@@ -47,6 +47,9 @@ Generate the hash with the _namespace_ prefix. The _namespace_ is UUID, or '@ns'
 
 *-N*, *--name* _name_::
 Generate the hash of the _name_.
+
+*-C*, *--count* _num_::
+Generate multiple UUIDs using the enhanced capability of the libuuid to cache time-based UUIDs, thus resulting in improved performance. However, this holds no significance for other UUID types.
 
 *-x*, *--hex*::
 Interpret name _name_ as a hexadecimal string.

@@ -75,6 +75,7 @@ int fdisk_set_wipe_area(struct fdisk_context *cxt,
 			free(wp);
 			return 1;
 		}
+		DBG(WIPE, ul_debug("not requested"));
 		return 0;
 	}
 
@@ -132,18 +133,10 @@ int fdisk_do_wipe(struct fdisk_context *cxt)
 			DBG(WIPE, ul_debugobj(wp, "blkid_probe_set_device() failed [rc=%d]", rc));
 			return rc;
 		}
+		blkid_probe_set_sectorsize(pr, cxt->sector_size);
 
-		blkid_probe_enable_superblocks(pr, 1);
-		blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_MAGIC |
-						      BLKID_SUBLKS_BADCSUM);
-		blkid_probe_enable_partitions(pr, 1);
-		blkid_probe_set_partitions_flags(pr, BLKID_PARTS_MAGIC |
-				                     BLKID_PARTS_FORCE_GPT);
-
-		while (blkid_do_probe(pr) == 0) {
-			DBG(WIPE, ul_debugobj(wp, " wiping..."));
-			blkid_do_wipe(pr, FALSE);
-		}
+		DBG(WIPE, ul_debugobj(wp, " wiping..."));
+		blkid_wipe_all(pr);
 	}
 
 	blkid_free_probe(pr);
@@ -183,6 +176,8 @@ int fdisk_check_collisions(struct fdisk_context *cxt)
 	cxt->pt_collision = 0;
 	free(cxt->collision);
 	cxt->collision = NULL;
+
+	blkid_probe_set_sectorsize(pr, cxt->sector_size);
 
 	blkid_probe_enable_superblocks(pr, 1);
 	blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_TYPE |

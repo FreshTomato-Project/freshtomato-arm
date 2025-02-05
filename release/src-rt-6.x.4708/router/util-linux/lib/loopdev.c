@@ -116,7 +116,9 @@ int loopcxt_set_device(struct loopdev_cxt *lc, const char *device)
 		DBG(CXT, ul_debugobj(lc, "closing old open fd"));
 	}
 	lc->fd = -1;
-	lc->mode = 0;
+	lc->is_lost = 0;
+	lc->devno = 0;
+	lc->mode = O_RDONLY;
 	lc->blocksize = 0;
 	lc->has_info = 0;
 	lc->info_failed = 0;
@@ -153,6 +155,28 @@ int loopcxt_has_device(struct loopdev_cxt *lc)
 	return lc && *lc->device;
 }
 
+dev_t loopcxt_get_devno(struct loopdev_cxt *lc)
+{
+	if (!lc || !loopcxt_has_device(lc))
+		return 0;
+	if (!lc->devno)
+		lc->devno = sysfs_devname_to_devno(lc->device);
+	return lc->devno;
+}
+
+int loopcxt_is_lost(struct loopdev_cxt *lc)
+{
+	if (!lc || !loopcxt_has_device(lc))
+		return 0;
+	if (lc->is_lost)
+		return 1;
+
+	lc->is_lost = access(lc->device, F_OK) != 0
+			&& loopcxt_get_devno(lc) != 0;
+
+	return lc->is_lost;
+}
+
 /*
  * @lc: context
  * @flags: LOOPDEV_FL_* flags
@@ -164,12 +188,6 @@ int loopcxt_has_device(struct loopdev_cxt *lc)
  *	* LOOPDEV_FL_* flags control loopcxt_* API behavior
  *
  *	* LO_FLAGS_* are kernel flags used for LOOP_{SET,GET}_STAT64 ioctls
- *
- * Note about LOOPDEV_FL_{RDONLY,RDWR} flags. These flags are used for open(2)
- * syscall to open loop device. By default is the device open read-only.
- *
- * The exception is loopcxt_setup_device(), where the device is open read-write
- * if LO_FLAGS_READ_ONLY flags is not set (see loopcxt_set_flags()).
  *
  * Returns: <0 on error, 0 on success.
  */
@@ -271,7 +289,7 @@ static struct path_cxt *loopcxt_get_sysfs(struct loopdev_cxt *lc)
 		return NULL;
 
 	if (!lc->sysfs) {
-		dev_t devno = sysfs_devname_to_devno(lc->device);
+		dev_t devno = loopcxt_get_devno(lc);
 		if (!devno) {
 			DBG(CXT, ul_debugobj(lc, "sysfs: failed devname to devno"));
 			return NULL;
@@ -285,28 +303,50 @@ static struct path_cxt *loopcxt_get_sysfs(struct loopdev_cxt *lc)
 	return lc->sysfs;
 }
 
-/*
- * @lc: context
- *
- * Returns: file descriptor to the open loop device or <0 on error. The mode
- *          depends on LOOPDEV_FL_{RDWR,RDONLY} context flags. Default is
- *          read-only.
- */
-int loopcxt_get_fd(struct loopdev_cxt *lc)
+static int __loopcxt_get_fd(struct loopdev_cxt *lc, mode_t mode)
 {
+	int old = -1;
+
 	if (!lc || !*lc->device)
 		return -EINVAL;
 
+	/* It's okay to return a FD with read-write permissions if someone
+	 * asked for read-only, but you shouldn't do the opposite.
+	 *
+	 * (O_RDONLY is a widely usable default.)
+	 */
+	if (lc->fd >= 0 && mode == O_RDWR && lc->mode == O_RDONLY) {
+		DBG(CXT, ul_debugobj(lc, "closing already open device (mode mismatch)"));
+		old = lc->fd;
+		lc->fd = -1;
+	}
+
 	if (lc->fd < 0) {
-		lc->mode = lc->flags & LOOPDEV_FL_RDWR ? O_RDWR : O_RDONLY;
+		lc->mode = mode;
 		lc->fd = open(lc->device, lc->mode | O_CLOEXEC);
 		DBG(CXT, ul_debugobj(lc, "open %s [%s]: %m", lc->device,
-				lc->flags & LOOPDEV_FL_RDWR ? "rw" : "ro"));
+				mode == O_RDONLY ? "ro" :
+			        mode == O_RDWR ? "rw" : "??"));
+
+		if (lc->fd < 0 && old >= 0) {
+			/* restore original on error */
+			lc->fd = old;
+			old = -1;
+		}
 	}
+
+	if (old >= 0)
+		close(old);
 	return lc->fd;
 }
 
-int loopcxt_set_fd(struct loopdev_cxt *lc, int fd, int mode)
+/* default is read-only file descriptor, it's enough for all ioctls */
+int loopcxt_get_fd(struct loopdev_cxt *lc)
+{
+	return __loopcxt_get_fd(lc, O_RDONLY);
+}
+
+int loopcxt_set_fd(struct loopdev_cxt *lc, int fd, mode_t mode)
 {
 	if (!lc)
 		return -EINVAL;
@@ -400,13 +440,6 @@ static int loopiter_set_device(struct loopdev_cxt *lc, const char *device)
 	    !(lc->iter.flags & LOOPITER_FL_FREE))
 		return 0;	/* caller does not care about device status */
 
-	if (!is_loopdev(lc->device)) {
-		DBG(ITER, ul_debugobj(&lc->iter, "%s does not exist", lc->device));
-		return -errno;
-	}
-
-	DBG(ITER, ul_debugobj(&lc->iter, "%s exist", lc->device));
-
 	used = loopcxt_get_offset(lc, NULL) == 0;
 
 	if ((lc->iter.flags & LOOPITER_FL_USED) && used)
@@ -479,7 +512,7 @@ static int loop_scandir(const char *dirname, int **ary, int hasprefix)
 
 			arylen += 1;
 
-			tmp = realloc(*ary, arylen * sizeof(int));
+			tmp = reallocarray(*ary, arylen, sizeof(int));
 			if (!tmp) {
 				free(*ary);
 				*ary = NULL;
@@ -749,6 +782,26 @@ char *loopcxt_get_backing_file(struct loopdev_cxt *lc)
 
 /*
  * @lc: context
+ *
+ * Returns (allocated) string with loop reference. The same as backing file by
+ * default.
+ */
+char *loopcxt_get_refname(struct loopdev_cxt *lc)
+{
+	char *res = NULL;
+	struct loop_info64 *lo = loopcxt_get_info(lc);
+
+	if (lo) {
+		lo->lo_file_name[LO_NAME_SIZE - 1] = '\0';
+		res = strdup((char *) lo->lo_file_name);
+	}
+
+	DBG(CXT, ul_debugobj(lc, "get_refname [%s]", res));
+	return res;
+}
+
+/*
+ * @lc: context
  * @offset: returns offset number for the given device
  *
  * Returns: <0 on error, 0 on success
@@ -840,7 +893,7 @@ int loopcxt_get_sizelimit(struct loopdev_cxt *lc, uint64_t *size)
 
 /*
  * @lc: context
- * @devno: returns encryption type
+ * @type: returns encryption type
  *
  * Cryptoloop is DEPRECATED!
  *
@@ -865,7 +918,6 @@ int loopcxt_get_encrypt_type(struct loopdev_cxt *lc, uint32_t *type)
 
 /*
  * @lc: context
- * @devno: returns crypt name
  *
  * Cryptoloop is DEPRECATED!
  *
@@ -1182,6 +1234,28 @@ int loopcxt_set_flags(struct loopdev_cxt *lc, uint32_t flags)
 
 /*
  * @lc: context
+ * @refname: reference name (used to overwrite lo_file_name where is backing
+ *           file by default)
+ *
+ * The setting is removed by loopcxt_set_device() loopcxt_next()!
+ *
+ * Returns: 0 on success, <0 on error.
+ */
+int loopcxt_set_refname(struct loopdev_cxt *lc, const char *refname)
+{
+	if (!lc)
+		return -EINVAL;
+
+	memset(lc->config.info.lo_file_name, 0, sizeof(lc->config.info.lo_file_name));
+	if (refname)
+		xstrncpy((char *)lc->config.info.lo_file_name, refname, LO_NAME_SIZE);
+
+	DBG(CXT, ul_debugobj(lc, "set refname=%s", (char *)lc->config.info.lo_file_name));
+	return 0;
+}
+
+/*
+ * @lc: context
  * @filename: backing file path (the path will be canonicalized)
  *
  * The setting is removed by loopcxt_set_device() loopcxt_next()!
@@ -1197,9 +1271,10 @@ int loopcxt_set_backing_file(struct loopdev_cxt *lc, const char *filename)
 	if (!lc->filename)
 		return -errno;
 
-	xstrncpy((char *)lc->config.info.lo_file_name, lc->filename, LO_NAME_SIZE);
+	if (!lc->config.info.lo_file_name[0])
+		loopcxt_set_refname(lc, lc->filename);
 
-	DBG(CXT, ul_debugobj(lc, "set backing file=%s", lc->config.info.lo_file_name));
+	DBG(CXT, ul_debugobj(lc, "set backing file=%s", lc->filename));
 	return 0;
 }
 
@@ -1314,7 +1389,8 @@ static int loopcxt_check_size(struct loopdev_cxt *lc, int file_fd)
  */
 int loopcxt_setup_device(struct loopdev_cxt *lc)
 {
-	int file_fd, dev_fd, mode = O_RDWR, flags = O_CLOEXEC;
+	int file_fd, dev_fd;
+	mode_t flags = O_CLOEXEC, mode = O_RDWR;
 	int rc = -1, cnt = 0;
 	int errsv = 0;
 	int fallback = 0;
@@ -1344,25 +1420,22 @@ int loopcxt_setup_device(struct loopdev_cxt *lc)
 	}
 	DBG(SETUP, ul_debugobj(lc, "backing file open: OK"));
 
-	if (lc->fd != -1 && lc->mode != mode) {
-		DBG(SETUP, ul_debugobj(lc, "closing already open device (mode mismatch)"));
-		close(lc->fd);
-		lc->fd = -1;
-		lc->mode = 0;
-	}
-
-	if (mode == O_RDONLY) {
-		lc->flags |= LOOPDEV_FL_RDONLY;			/* open() mode */
+	if (mode == O_RDONLY)
 		lc->config.info.lo_flags |= LO_FLAGS_READ_ONLY;	/* kernel loopdev mode */
-	} else {
-		lc->flags |= LOOPDEV_FL_RDWR;			/* open() mode */
+	else
 		lc->config.info.lo_flags &= ~LO_FLAGS_READ_ONLY;
-		lc->flags &= ~LOOPDEV_FL_RDONLY;
-	}
 
 	do {
 		errno = 0;
-		dev_fd = loopcxt_get_fd(lc);
+
+		/* For the ioctls, it's enough to use O_RDONLY, but udevd
+		 * monitor devices by inotify, and udevd needs IN_CLOSE_WRITE
+		 * event to trigger probing of the new device.
+		 *
+		 * The mode used for the device does not have to match the mode
+		 * used for the backing file.
+		 */
+		dev_fd = __loopcxt_get_fd(lc, O_RDWR);
 		if (dev_fd >= 0 || lc->control_ok == 0)
 			break;
 		if (errno != EACCES && errno != ENOENT)

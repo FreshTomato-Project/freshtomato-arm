@@ -73,7 +73,7 @@ void scols_unref_column(struct libscols_column *cl)
 		scols_reset_cell(&cl->header);
 		free(cl->color);
 		free(cl->safechars);
-		free(cl->pending_data_buf);
+		free(cl->wrap_data);
 		free(cl->shellvar);
 		free(cl);
 	}
@@ -211,6 +211,42 @@ int scols_column_get_json_type(const struct libscols_column *cl)
 
 
 /**
+ * scols_column_set_data_type:
+ * @cl: a pointer to a struct libscols_column instance
+ * @type: SCOLS_DATA_*
+ *
+ * The table always keep data in strings in form that is printed on output, but
+ * for some internal operations (like filters or counters) it needs to convert
+ * the strings to usable data format. This data format is possible to specify,
+ * by this function. If the format is not specified then filter and counters
+ * try to use SCOLS_JSON_* types, if also not define than defaults to string.
+ *
+ * If a simple string conversion is not possible then application (which want
+ * to use filters and counters) needs to define data function to do the
+ * conversion. See scols_column_set_data_func().
+ *
+ * Returns: 0, a negative value in case of an error.
+ *
+ * Since: 2.40
+ */
+int scols_column_set_data_type(struct libscols_column *cl, int type)
+{
+	return cl->data_type = type;
+}
+
+/**
+ * scols_column_get_data_type:
+ * @cl: a pointer to a struct libscols_column instance
+ *
+ * Returns: The current datatype setting of the column @cl.
+ *
+ * Since: 2.40
+ */
+int scols_column_get_data_type(const struct libscols_column *cl)
+{
+	return cl->data_type;
+}
+/**
  * scols_column_get_table:
  * @cl: a pointer to a struct libscols_column instance
  *
@@ -280,6 +316,59 @@ const char *scols_column_get_name(struct libscols_column *cl)
 }
 
 /**
+ * scols_shellvar_name:
+ * @name: raw (column) name
+ * @buf: buffer to returns normalized name
+ * @bufsz: size of the buffer
+ *
+ * Converts @name to a name compatible with shell. The buffer is reallocated if
+ * not large enough.
+ *
+ * Returns: 0 in case of conversion, 1 if conversion unnecessary, <0 on error.
+ *
+ * Since: 2.40
+ */
+int scols_shellvar_name(const char *name, char **buf, size_t *bufsz)
+{
+	char *p;
+	const char *s;
+	size_t sz;
+
+	if (!name || !*name || !buf || !bufsz)
+		return -EINVAL;
+
+	/* size to convert "1FOO%" --> "_1FOO_PCT */
+	sz = strlen(name) + 1 + 3;
+	if (sz + 1 > *bufsz) {
+		char *tmp;
+
+		*bufsz = sz + 1;
+		tmp = realloc(*buf, *bufsz);
+		if (!tmp)
+			return -ENOMEM;
+		*buf = tmp;
+	}
+	memset(*buf, 0, *bufsz);
+	p = *buf;
+
+	 /* convert "1FOO" to "_1FOO" */
+	if (!isalpha(*name))
+		*p++ = '_';
+
+	/* replace all "bad" chars with "_" */
+	for (s = name; *s; s++)
+		*p++ = !isalnum(*s) ? '_' : *s;
+
+	if (!*s && *(s - 1) == '%') {
+		*p++ = 'P';
+		*p++ = 'C';
+		*p++ = 'T';
+	}
+
+	return strcmp(name, *buf) == 0;
+}
+
+/**
  * scols_column_get_name_as_shellvar
  * @cl: a pointer to a struct libscols_column instance
  *
@@ -291,32 +380,13 @@ const char *scols_column_get_name(struct libscols_column *cl)
 const char *scols_column_get_name_as_shellvar(struct libscols_column *cl)
 {
 	if (!cl->shellvar) {
-		const char *s, *name = scols_column_get_name(cl);
-		char *p;
-		size_t sz;
+		const char *name = scols_column_get_name(cl);
+		size_t sz = 0;
 
 		if (!name || !*name)
 			return NULL;
-
-		/* "1FOO%" --> "_1FOO_PCT */
-		sz = strlen(name) + 1 + 3;
-		p = cl->shellvar = calloc(1, sz + 1);
-		if (!cl->shellvar)
+		if (scols_shellvar_name(name, &cl->shellvar, &sz) < 0)
 			return NULL;
-
-		 /* convert "1FOO" to "_1FOO" */
-		if (!isalpha(*name))
-			*p++ = '_';
-
-		/* replace all "bad" chars with "_" */
-		for (s = name; *s; s++)
-			*p++ = !isalnum(*s) ? '_' : *s;
-
-		if (!*s && *(s - 1) == '%') {
-			*p++ = 'P';
-			*p++ = 'C';
-			*p++ = 'T';
-		}
 	}
 	return cl->shellvar;
 }
@@ -361,6 +431,7 @@ const char *scols_column_get_color(const struct libscols_column *cl)
 	return cl->color;
 }
 
+
 /**
  * scols_wrapnl_nextchunk:
  * @cl: a pointer to a struct libscols_column instance
@@ -391,6 +462,37 @@ char *scols_wrapnl_nextchunk(const struct libscols_column *cl __attribute__((unu
 }
 
 /**
+ * scols_wrapzero_nextchunk:
+ * @cl: a pointer to a struct libscols_column instance
+ * @data: string
+ * @userdata: callback private data
+ *
+ * This is built-in function for scols_column_set_wrapfunc(). This function
+ * walk string separated by \0.
+ *
+ * For example for data "AAA\0BBB\0CCC\0" the next chunk is "BBB".
+ *
+ * Returns: next chunk
+ *
+ * Since: 2.40
+ */
+char *scols_wrapzero_nextchunk(const struct libscols_column *cl,
+			char *data,
+			void *userdata __attribute__((unused)))
+{
+	char *start = NULL;
+	size_t sz = 0;
+
+	if (!data)
+		return NULL;
+	scols_column_get_wrap_data(cl, &start, &sz, NULL, NULL);
+	if (!start || !sz)
+		return NULL;
+	return ul_next_string(data, start + sz);
+}
+
+
+/**
  * scols_wrapnl_chunksize:
  * @cl: a pointer to a struct libscols_column instance
  * @data: string
@@ -401,6 +503,8 @@ char *scols_wrapnl_nextchunk(const struct libscols_column *cl __attribute__((unu
  *
  * Note that the size has to be based on number of terminal cells rather than
  * bytes to support multu-byte output.
+ *
+ * Deprecated since 2.40.
  *
  * Returns: size of the largest chunk.
  *
@@ -459,13 +563,20 @@ int scols_column_set_cmpfunc(struct libscols_column *cl,
 /**
  * scols_column_set_wrapfunc:
  * @cl: a pointer to a struct libscols_column instance
- * @wrap_chunksize: function to return size of the largest chink of data
+ * @wrap_chunksize: function to return size of the largest chink of data (deprecated)
  * @wrap_nextchunk: function to return next zero terminated data
  * @userdata: optional stuff for callbacks
  *
  * Extends SCOLS_FL_WRAP and can be used to set custom wrap function. The default
  * is to wrap by column size, but you can create functions to wrap for example
  * after \n or after words, etc.
+ *
+ * Note that since 2.40 the @wrap_chunksize is unnecessary. The library calculates
+ * the size itself.
+ *
+ * The wrap functions do not work directly with cell data, but with buffer used
+ * by library to compose output data. The wrap_nextchunk() function can access
+ * additional details about wrap data by scols_column_get_wrap_data().
  *
  * Returns: 0, a negative value in case of an error.
  *
@@ -474,7 +585,7 @@ int scols_column_set_cmpfunc(struct libscols_column *cl,
 int scols_column_set_wrapfunc(struct libscols_column *cl,
 			size_t (*wrap_chunksize)(const struct libscols_column *,
 						 const char *,
-						 void *),
+						 void *) __attribute__((__unused__)),
 			char * (*wrap_nextchunk)(const struct libscols_column *,
 						 char *,
 						 void *),
@@ -484,9 +595,85 @@ int scols_column_set_wrapfunc(struct libscols_column *cl,
 		return -EINVAL;
 
 	cl->wrap_nextchunk = wrap_nextchunk;
-	cl->wrap_chunksize = wrap_chunksize;
 	cl->wrapfunc_data = userdata;
 	return 0;
+}
+
+/**
+ * scols_column_get_wrap_data:
+ * @cl: column
+ * @data: return wrap data
+ * @datasiz: return wrap buffer size
+ * @cur: the current pozition in the buffer
+ * @next: the next pozition
+ *
+ * This function returns the current status of wrapping cell data (for multi-line cells).
+ *
+ * Returns: 0, a negative value in case of an error.
+ *
+ * Since: 2.40
+ */
+int scols_column_get_wrap_data(const struct libscols_column *cl,
+		char **data, size_t *datasiz, char **cur, char **next)
+{
+	if (!cl)
+		return -EINVAL;
+	if (data)
+		*data = cl->wrap_data;
+	if (datasiz)
+		*datasiz = cl->wrap_datasz;
+	if (cur)
+		*cur = cl->wrap_cur;
+	if (next)
+		*next = cl->wrap_next;
+	return 0;
+}
+
+/*
+ * scols_column_set_data_func:
+ * @cl: a pointer to a struct libscols_column instance
+ * @datafunc: function to return data
+ * @userdata: optional stuff for callbacks
+ *
+ * The table always keep data in strings in form that is printed on output, but
+ * for some internal operations (like filters or counters) it needs to convert
+ * the strings to usable data format. If this converion is not possible then
+ * application can define datafunc() callback to provide data for filters and counters.
+
+ * The callback needs to return the data as pointer to void, and the data type
+ * is defined by scols_column_set_data_type().
+ *
+ * Returns: 0, a negative value in case of an error.
+ *
+ * Since: 2.40
+ */
+int scols_column_set_data_func(struct libscols_column *cl,
+			void *(*datafunc)(const struct libscols_column *,
+					struct libscols_cell *,
+					void *),
+			void *userdata)
+{
+	if (!cl)
+		return -EINVAL;
+
+	cl->datafunc = datafunc;
+	cl->datafunc_data = userdata;
+	return 0;
+}
+
+/**
+ * scols_column_has_data_func:
+ * @cl: a pointer to a struct libscols_column instance
+ *
+ * See scols_column_set_data_func() for more details.
+ *
+ * Returns: 1 if data function defined, or 0
+ *
+ * Since: 2.40
+ */
+int scols_column_has_data_func(struct libscols_column *cl)
+{
+	return cl && cl->datafunc != NULL ? 1 : 0;
 }
 
 /**
@@ -639,7 +826,6 @@ int scols_column_is_wrap(const struct libscols_column *cl)
 int scols_column_is_customwrap(const struct libscols_column *cl)
 {
 	return (cl->flags & SCOLS_FL_WRAP)
-		&& cl->wrap_chunksize
 		&& cl->wrap_nextchunk ? 1 : 0;
 }
 
@@ -681,7 +867,7 @@ int scols_column_set_properties(struct libscols_column *cl, const char *opts)
 			flags |= SCOLS_FL_STRICTWIDTH;
 
 		else if (strncmp(name, "noextremes", namesz) == 0)
-			flags |= SCOLS_FL_STRICTWIDTH;
+			flags |= SCOLS_FL_NOEXTREMES;
 
 		else if (strncmp(name, "hidden", namesz) == 0)
 			flags |= SCOLS_FL_HIDDEN;
@@ -689,12 +875,29 @@ int scols_column_set_properties(struct libscols_column *cl, const char *opts)
 		else if (strncmp(name, "wrap", namesz) == 0)
 			flags |= SCOLS_FL_WRAP;
 
-		else if (value && strncmp(name, "json", namesz) == 0) {
+		else if (strncmp(name, "wrapnl", namesz) == 0) {
+			flags |= SCOLS_FL_WRAP;
+			scols_column_set_wrapfunc(cl,
+					NULL,
+					scols_wrapnl_nextchunk,
+					NULL);
+			scols_column_set_safechars(cl, "\n");
+
+		} else if (strncmp(name, "wrapzero", namesz) == 0) {
+			flags |= SCOLS_FL_WRAP;
+			scols_column_set_wrapfunc(cl,
+					NULL,
+					scols_wrapzero_nextchunk,
+					NULL);
+
+		} else if (value && strncmp(name, "json", namesz) == 0) {
 
 			if (strncmp(value, "string", valuesz) == 0)
 				rc = scols_column_set_json_type(cl, SCOLS_JSON_STRING);
 			else if (strncmp(value, "number", valuesz) == 0)
 				rc = scols_column_set_json_type(cl, SCOLS_JSON_NUMBER);
+			else if (strncmp(value, "float", valuesz) == 0)
+				rc = scols_column_set_json_type(cl, SCOLS_JSON_FLOAT);
 			else if (strncmp(value, "array-string", valuesz) == 0)
 				rc = scols_column_set_json_type(cl, SCOLS_JSON_ARRAY_STRING);
 			else if (strncmp(value, "array-number", valuesz) == 0)
@@ -706,9 +909,8 @@ int scols_column_set_properties(struct libscols_column *cl, const char *opts)
 
 			char *end = NULL;
 			double x = strtod(value, &end);
-			if (errno || str == end)
+			if (errno || value == end)
 				return -EINVAL;
-
 			rc = scols_column_set_whint(cl, x);
 
 		} else if (value && strncmp(name, "color", namesz) == 0) {
@@ -735,3 +937,122 @@ int scols_column_set_properties(struct libscols_column *cl, const char *opts)
 	return rc;
 }
 
+void scols_column_reset_wrap(struct libscols_column *cl)
+{
+	if (!cl)
+		return;
+
+	if (cl->wrap_data)
+		memset(cl->wrap_data, 0, cl->wrap_datamax);
+	cl->wrap_cell = NULL;
+	cl->wrap_datasz = 0;
+	cl->wrap_cur = NULL;
+	cl->wrap_next = NULL;
+}
+
+static int scols_column_init_wrap(
+			struct libscols_column *cl,
+			struct libscols_cell *ce)
+{
+	const char *data = scols_cell_get_data(ce);
+
+	if (!cl || !ce)
+		return -EINVAL;
+
+	assert(cl->table->cur_column == cl);
+	assert(cl->table->cur_cell == ce);
+
+	scols_column_reset_wrap(cl);
+
+	cl->wrap_cell = ce;
+	if (data) {
+		void *tmp;
+		cl->wrap_datasz = scols_cell_get_datasiz(ce);
+
+		if (cl->wrap_datasz > cl->wrap_datamax) {
+			cl->wrap_datamax = cl->wrap_datasz;
+			tmp = realloc(cl->wrap_data, cl->wrap_datamax);
+			if (!tmp)
+				return -ENOMEM;
+			cl->wrap_data = tmp;
+		}
+		memcpy(cl->wrap_data, data, cl->wrap_datasz);
+		cl->wrap_cur = cl->wrap_data;
+		cl->wrap_next = NULL;
+	}
+
+	return 0;
+}
+
+/* Returns the next chunk of cell data in multi-line cells */
+int scols_column_next_wrap(
+			struct libscols_column *cl,
+			struct libscols_cell *ce,
+			char **data)
+{
+	if (!cl || !data || (!cl->wrap_cell && !ce))
+		return -EINVAL;
+
+	*data = NULL;
+
+	if (ce && cl->wrap_cell != ce)
+		scols_column_init_wrap(cl, ce);		/* init */
+	else {
+		cl->wrap_cur = cl->wrap_next;	/* next step */
+		cl->wrap_next = NULL;
+	}
+
+	if (!cl->wrap_cur)
+		return 1;				/* no more data */
+	if (scols_column_is_customwrap(cl))
+		cl->wrap_next = cl->wrap_nextchunk(cl, cl->wrap_cur, cl->wrapfunc_data);
+
+	*data = cl->wrap_cur;
+	return 0;
+}
+
+int scols_column_greatest_wrap(
+			struct libscols_column *cl,
+			struct libscols_cell *ce,
+			char **data)
+{
+	size_t maxsz = 0;
+	char *res = NULL;;
+
+	if (!scols_column_is_customwrap(cl))
+		return scols_column_next_wrap(cl, ce, data);
+
+	while (scols_column_next_wrap(cl, ce, data) == 0) {
+		size_t sz = strlen(*data);
+
+		maxsz = max(maxsz, sz);
+		if (maxsz == sz)
+			res = *data;
+	}
+
+	*data = res;
+	return 0;
+}
+
+/* Set the "next" chunk in multi-line cell to offset specified by @bytes.
+ * Don't use it for columns with custom wrapfunc().
+ */
+int scols_column_move_wrap(struct libscols_column *cl, size_t bytes)
+{
+	size_t x;	/* remaining bytes */
+
+	if (!cl->wrap_cur)
+		return -EINVAL;		/* scols_column_init_wrap() not called */
+
+	x = cl->wrap_datasz - (cl->wrap_cur - cl->wrap_data);
+	if (bytes >= x)
+		cl->wrap_next = NULL;	/* done */
+	else
+		cl->wrap_next = cl->wrap_cur + bytes;
+	return 0;
+}
+
+int scols_column_has_pending_wrap(struct libscols_column *cl)
+{
+	return cl && cl->wrap_next;
+}

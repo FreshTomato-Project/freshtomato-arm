@@ -25,6 +25,7 @@ ts_skip_docker
 . "$TS_SELF/lsfd-functions.bash"
 ts_check_test_command "$TS_CMD_LSFD"
 ts_check_test_command "$TS_HELPER_MKFDS"
+lsfd_check_mkfds_factory netns
 
 ts_cd "$TS_OUTDIR"
 
@@ -61,11 +62,11 @@ INO_NS=
 	    echo "NAME_FD: $NAME_FD" == "net:[INO_NS: $INO_NS]": $?
 	fi
 
-	kill -CONT ${PID}
+	echo DONE >&"${MKFDS[1]}"
     fi
     wait "${MKFDS_PID}"
 } > "$TS_OUTPUT" 2>&1
-if [ "$?" == "$ENOSYS" ]; then
+if [ "$?" == "$TS_EXIT_NOTSUPP" ]; then
     ts_skip "ioctl(fd, SIOCGSKNS) is not available"
 fi
 

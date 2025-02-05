@@ -65,6 +65,7 @@ struct wipe_control {
 	char		*devname;
 	const char	*type_pattern;		/* -t <pattern> */
 	const char	*lockmode;
+	const char	*backup;		/* location of backups */
 
 	struct libscols_table *outtab;
 	struct wipe_desc *offsets;		/* -o <offset> -o <offset> ... */
@@ -77,7 +78,6 @@ struct wipe_control {
 	unsigned int	noact : 1,
 			all : 1,
 			quiet : 1,
-			backup : 1,
 			force : 1,
 			json : 1,
 			no_headings : 1,
@@ -535,12 +535,9 @@ static int do_wipe(struct wipe_control *ctl)
 	}
 
 	if (ctl->backup) {
-		const char *home = getenv ("HOME");
 		char *tmp = xstrdup(ctl->devname);
 
-		if (!home)
-			errx(EXIT_FAILURE, _("failed to create a signature backup, $HOME undefined"));
-		xasprintf (&backup, "%s/wipefs-%s-", home, basename(tmp));
+		xasprintf(&backup, "%s/wipefs-%s-", ctl->backup, basename(tmp));
 		free(tmp);
 	}
 
@@ -630,36 +627,36 @@ usage(void)
 	size_t i;
 
 	fputs(USAGE_HEADER, stdout);
-	printf(_(" %s [options] <device>\n"), program_invocation_short_name);
+	fprintf(stdout, _(" %s [options] <device>\n"), program_invocation_short_name);
 
 	fputs(USAGE_SEPARATOR, stdout);
-	puts(_("Wipe signatures from a device."));
+	fputsln(_("Wipe signatures from a device."), stdout);
 
 	fputs(USAGE_OPTIONS, stdout);
-	puts(_(" -a, --all           wipe all magic strings (BE CAREFUL!)"));
-	puts(_(" -b, --backup        create a signature backup in $HOME"));
-	puts(_(" -f, --force         force erasure"));
-	puts(_(" -i, --noheadings    don't print headings"));
-	puts(_(" -J, --json          use JSON output format"));
-	puts(_(" -n, --no-act        do everything except the actual write() call"));
-	puts(_(" -o, --offset <num>  offset to erase, in bytes"));
-	puts(_(" -O, --output <list> COLUMNS to display (see below)"));
-	puts(_(" -p, --parsable      print out in parsable instead of printable format"));
-	puts(_(" -q, --quiet         suppress output messages"));
-	puts(_(" -t, --types <list>  limit the set of filesystem, RAIDs or partition tables"));
-	printf(
+	fputsln(_(" -a, --all            wipe all magic strings (BE CAREFUL!)"), stdout);
+	fputsln(_(" -b, --backup[=<dir>] create a signature backup in <dir> or $HOME"), stdout);
+	fputsln(_(" -f, --force          force erasure"), stdout);
+	fputsln(_(" -i, --noheadings     don't print headings"), stdout);
+	fputsln(_(" -J, --json           use JSON output format"), stdout);
+	fputsln(_(" -n, --no-act         do everything except the actual write() call"), stdout);
+	fputsln(_(" -o, --offset <num>   offset to erase, in bytes"), stdout);
+	fputsln(_(" -O, --output <list>  COLUMNS to display (see below)"), stdout);
+	fputsln(_(" -p, --parsable       print out in parsable instead of printable format"), stdout);
+	fputsln(_(" -q, --quiet          suppress output messages"), stdout);
+	fputsln(_(" -t, --types <list>   limit the set of filesystem, RAIDs or partition tables"), stdout);
+	fprintf(stdout,
 	     _("     --lock[=<mode>] use exclusive device lock (%s, %s or %s)\n"), "yes", "no", "nonblock");
 
-	printf(USAGE_HELP_OPTIONS(21));
+	fprintf(stdout, USAGE_HELP_OPTIONS(22));
 
 	fputs(USAGE_ARGUMENTS, stdout);
-	printf(USAGE_ARG_SIZE(_("<num>")));
+	fprintf(stdout, USAGE_ARG_SIZE(_("<num>")));
 
 	fputs(USAGE_COLUMNS, stdout);
 	for (i = 0; i < ARRAY_SIZE(infos); i++)
 		fprintf(stdout, " %8s  %s\n", infos[i].name, _(infos[i].help));
 
-	printf(USAGE_MAN_TAIL("wipefs(8)"));
+	fprintf(stdout, USAGE_MAN_TAIL("wipefs(8)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -676,7 +673,7 @@ main(int argc, char **argv)
 	};
 	static const struct option longopts[] = {
 	    { "all",       no_argument,       NULL, 'a' },
-	    { "backup",    no_argument,       NULL, 'b' },
+	    { "backup",    optional_argument, NULL, 'b' },
 	    { "force",     no_argument,       NULL, 'f' },
 	    { "help",      no_argument,       NULL, 'h' },
 	    { "lock",      optional_argument, NULL, OPT_LOCK },
@@ -703,7 +700,7 @@ main(int argc, char **argv)
 	textdomain(PACKAGE);
 	close_stdout_atexit();
 
-	while ((c = getopt_long(argc, argv, "abfhiJnO:o:pqt:V", longopts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "ab::fhiJnO:o:pqt:V", longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
 
@@ -712,7 +709,14 @@ main(int argc, char **argv)
 			ctl.all = 1;
 			break;
 		case 'b':
-			ctl.backup = 1;
+			if (optarg) {
+				ctl.backup = optarg;
+			} else {
+				ctl.backup = getenv("HOME");
+				if (!ctl.backup)
+					errx(EXIT_FAILURE,
+					     _("failed to create a signature backup, $HOME undefined"));
+			}
 			break;
 		case 'f':
 			ctl.force = 1;

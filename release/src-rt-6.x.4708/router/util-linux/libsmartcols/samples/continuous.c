@@ -65,7 +65,7 @@ fail:
 	err(EXIT_FAILURE, "failed to create output line");
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	struct libscols_table *tb;
 	size_t i;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 		struct libscols_line *line;
 		struct timeval now;
 		int done = 0;
-		char *timecell = xmalloc( timecellsz );
+		char *timecell = xcalloc(1, timecellsz );
 
 		line = add_line(tb, i);
 

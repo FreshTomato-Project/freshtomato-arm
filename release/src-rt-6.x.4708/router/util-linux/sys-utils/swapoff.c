@@ -1,3 +1,16 @@
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Copyright (C) 2012-2023 Karel Zak <kzak@redhat.com>
+ *
+ * Original implementation from Linux 0.99, without License and copyright in
+ * the code. Karel Zak rewrote the code under GPL-2.0-or-later.
+ */
 #include <stdio.h>
 #include <errno.h>
 #include <getopt.h>
@@ -148,7 +161,7 @@ static void __attribute__((__noreturn__)) usage(void)
 		" -v, --verbose          verbose mode\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(24));
+	fprintf(out, USAGE_HELP_OPTIONS(24));
 
 	fputs(_("\nThe <spec> parameter:\n" \
 		" -L <label>             LABEL of device to be used\n" \
@@ -158,7 +171,7 @@ static void __attribute__((__noreturn__)) usage(void)
 		" <device>               name of device to be used\n" \
 		" <file>                 name of file to be used\n"), out);
 
-	printf(USAGE_MAN_TAIL("swapoff(8)"));
+	fprintf(out, USAGE_MAN_TAIL("swapoff(8)"));
 	exit(SWAPOFF_EX_OK);
 }
 

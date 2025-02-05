@@ -79,9 +79,9 @@ enum {
 };
 
 struct ul_fileeq_method {
-	int id;
 	const char *name;	/* name used by applications */
 	const char *kname;	/* name used by kernel crypto */
+	int id;
 	short digsiz;
 };
 
@@ -272,12 +272,12 @@ size_t ul_fileeq_set_size(struct ul_fileeq *eq, uint64_t filesiz,
 		nreads = filesiz / readsiz;
 		/* enlarge readsize for large files */
 		if (nreads > maxdigs)
-			readsiz = filesiz / maxdigs;
+			readsiz = (filesiz + maxdigs - 1) / maxdigs;
 		break;
 	}
 
 	eq->readsiz = readsiz;
-	eq->blocksmax = filesiz / readsiz;
+	eq->blocksmax = (filesiz + readsiz - 1) / readsiz;
 
 	DBG(EQ, ul_debugobj(eq, "set sizes: filesiz=%ju, maxblocks=%" PRIu64 ", readsiz=%zu",
 				eq->filesiz, eq->blocksmax, eq->readsiz));

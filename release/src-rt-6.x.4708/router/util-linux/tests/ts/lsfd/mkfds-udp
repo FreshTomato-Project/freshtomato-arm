@@ -51,8 +51,8 @@ LPORT=
 
 for lite in 0 1; do
     coproc MKFDS { "$TS_HELPER_MKFDS" udp $FDS $FDC \
-				      server-port=34567 \
-				      client-port=23456 \
+				      server-port=56789 \
+				      client-port=45678 \
 				      lite=$lite; }
     if read -r -u "${MKFDS[0]}" PID; then
 	${TS_CMD_LSFD} -n \
@@ -60,13 +60,13 @@ for lite in 0 1; do
 		       -p "${PID}" -Q "${EXPR[$lite]}"
 	echo "ASSOC,TYPE,STTYPE,NAME,SOCK.STATE,SOCK.TYPE,SOCK.LISTENING,INET.LADDR,INET.RADDR,${COLNS[$lite]}.LADDR,${COLNS[$lite]}.LPORT,${COLNS[$lite]}.RADDR,${COLNS[$lite]}.RPORT": $?
 
-	kill -CONT "${PID}"
+	echo DONE >&"${MKFDS[1]}"
     fi
     wait "${MKFDS_PID}"
 
     coproc MKFDS { "$TS_HELPER_MKFDS" udp $FDS $FDC \
-				      server-port=34567 \
-				      client-port=23456 \
+				      server-port=56789 \
+				      client-port=45678 \
 				      server-do-bind=no \
 				      lite=$lite; }
     if read -r -u "${MKFDS[0]}" PID; then
@@ -85,13 +85,13 @@ for lite in 0 1; do
 	    echo "NAME pattern match: FAILED (NAME=$NAME)"
 	fi
 
-	kill -CONT "${PID}"
+	echo DONE >&"${MKFDS[1]}"
     fi
     wait "${MKFDS_PID}"
 
     coproc MKFDS { "$TS_HELPER_MKFDS" udp $FDS $FDC \
-				      server-port=34567 \
-				      client-port=23456 \
+				      server-port=56789 \
+				      client-port=45678 \
 				      client-do-bind=no \
 				      lite=$lite; }
     if read -r -u "${MKFDS[0]}" PID; then
@@ -115,13 +115,13 @@ for lite in 0 1; do
 	    echo "LADDR/LPORT pattern match: FAILED (LADDR=$LADDR, LPORT=$LPORT)"
 	fi
 
-	kill -CONT "${PID}"
+	echo DONE >&"${MKFDS[1]}"
     fi
     wait "${MKFDS_PID}"
 
     coproc MKFDS { "$TS_HELPER_MKFDS" udp $FDS $FDC \
-				      server-port=34567 \
-				      client-port=23456 \
+				      server-port=56789 \
+				      client-port=45678 \
 				      client-do-connect=no \
 				      lite=$lite; }
     if read -r -u "${MKFDS[0]}" PID; then
@@ -130,7 +130,7 @@ for lite in 0 1; do
 		       -p "${PID}" -Q "${EXPR[$lite]}"
 	echo 'ASSOC,TYPE,STTYPE,NAME,SOCK.STATE,SOCK.TYPE,SOCK.LISTENING,INET.LADDR,INET.RADDR,UDP.LADDR,UDP.LPORT,UDP.RADDR,UDP.RPORT': $?
 
-	kill -CONT "${PID}"
+	echo DONE >&"${MKFDS[1]}"
     fi
     wait "${MKFDS_PID}"
 done > "$TS_OUTPUT" 2>&1

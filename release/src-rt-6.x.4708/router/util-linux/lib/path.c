@@ -682,7 +682,7 @@ int ul_path_read_buffer(struct path_cxt *pc, char *buf, size_t bufsz, const char
 		if (*(buf + rc - 1) == '\n')
 			buf[--rc] = '\0';
 		else
-			buf[rc - 1] = '\0';
+			buf[rc] = '\0';
 	}
 
 	return rc;
@@ -996,38 +996,25 @@ int ul_path_next_dirent(struct path_cxt *pc, DIR **sub, const char *dirname, str
 	return 1;
 }
 
-/*
- * Like fopen() but, @path is always prefixed by @prefix. This function is
- * useful in case when ul_path_* API is overkill.
- */
-FILE *ul_prefix_fopen(const char *prefix, const char *path, const char *mode)
-{
-	char buf[PATH_MAX];
-
-	if (!path)
-		return NULL;
-	if (!prefix)
-		return fopen(path, mode);
-	if (*path == '/')
-		path++;
-
-	snprintf(buf, sizeof(buf), "%s/%s", prefix, path);
-	return fopen(buf, mode);
-}
-
 #ifdef HAVE_CPU_SET_T
 static int ul_path_cpuparse(struct path_cxt *pc, cpu_set_t **set, int maxcpus, int islist, const char *path, va_list ap)
 {
 	FILE *f;
 	size_t setsize, len = maxcpus * 7;
-	char buf[len];
+	char *buf;
 	int rc;
 
 	*set = NULL;
 
+	buf = malloc(len);
+	if (!buf)
+		return -ENOMEM;
+
 	f = ul_path_vfopenf(pc, "r" UL_CLOEXECSTR, path, ap);
-	if (!f)
-		return -errno;
+	if (!f) {
+		rc = -errno;
+		goto out;
+	}
 
 	if (fgets(buf, len, f) == NULL) {
 		errno = EIO;
@@ -1038,32 +1025,38 @@ static int ul_path_cpuparse(struct path_cxt *pc, cpu_set_t **set, int maxcpus, i
 	fclose(f);
 
 	if (rc)
-		return rc;
+		goto out;
 
 	len = strlen(buf);
 	if (len > 0 && buf[len - 1] == '\n')
 		buf[len - 1] = '\0';
 
 	*set = cpuset_alloc(maxcpus, &setsize, NULL);
-	if (!*set)
-		return -ENOMEM;
+	if (!*set) {
+		rc = -EINVAL;
+		goto out;
+	}
 
 	if (islist) {
 		if (cpulist_parse(buf, *set, setsize, 0)) {
-			cpuset_free(*set);
 			errno = EINVAL;
 			rc = -errno;
-			return rc;
+			goto out;
 		}
 	} else {
 		if (cpumask_parse(buf, *set, setsize)) {
-			cpuset_free(*set);
 			errno = EINVAL;
 			rc = -errno;
-			return rc;
+			goto out;
 		}
 	}
-	return 0;
+	rc = 0;
+
+out:
+	if (rc)
+		cpuset_free(*set);
+	free(buf);
+	return rc;
 }
 
 int ul_path_readf_cpuset(struct path_cxt *pc, cpu_set_t **set, int maxcpus, const char *path, ...)

@@ -1,12 +1,11 @@
 /*
+ * No copyright is claimed.  This code is in the public domain; do with
+ * it what you wish.
+ *
  * line - read one line
  *
  * Gunnar Ritter, Freiburg i. Br., Germany, December 2000.
  *
- * Public Domain.
- */
-
-/*
  * This command is deprecated.  The utility is in maintenance mode,
  * meaning we keep them in source tree for backward compatibility
  * only.  Do not waste time making this command better, unless the
@@ -34,8 +33,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("Read one line.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	printf(USAGE_HELP_OPTIONS(16));
-	printf(USAGE_MAN_TAIL("line(1)"));
+	fprintf(out,USAGE_HELP_OPTIONS(16));
+	fprintf(out, USAGE_MAN_TAIL("line(1)"));
 	exit(EXIT_SUCCESS);
 }
 

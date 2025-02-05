@@ -248,7 +248,7 @@ static int unix_socket(struct logger_ctl *ctl, const char *path, int *socket_typ
 		errx(EXIT_FAILURE, _("openlog %s: pathname too long"), path);
 
 	s_addr.sun_family = AF_UNIX;
-	strcpy(s_addr.sun_path, path);
+	xstrncpy(s_addr.sun_path, path, sizeof(s_addr.sun_path));
 
 	for (i = 2; i; i--) {
 		int st = -1;
@@ -343,7 +343,7 @@ static int journald_entry(struct logger_ctl *ctl, FILE *fp)
 	int n, lines = 0, vectors = 8, ret = 0, msgline = -1;
 	size_t dummy = 0;
 
-	iovec = xmalloc(vectors * sizeof(struct iovec));
+	iovec = xreallocarray(NULL, vectors, sizeof(struct iovec));
 	while (1) {
 		buf = NULL;
 		sz = getline(&buf, &dummy, fp);
@@ -375,7 +375,7 @@ static int journald_entry(struct logger_ctl *ctl, FILE *fp)
 			vectors *= 2;
 			if (IOV_MAX < vectors)
 				errx(EXIT_FAILURE, _("maximum input lines (%d) exceeded"), IOV_MAX);
-			iovec = xrealloc(iovec, vectors * sizeof(struct iovec));
+			iovec = xreallocarray(iovec, vectors, sizeof(struct iovec));
 		}
 		iovec[lines].iov_base = buf;
 		iovec[lines].iov_len = sz;
@@ -451,7 +451,7 @@ static void write_output(struct logger_ctl *ctl, const char *const msg)
 	if (!ctl->noact && !is_connected(ctl))
 		logger_reopen(ctl);
 
-	/* 1) octen count */
+	/* 1) octet count */
 	if (ctl->octet_count) {
 		size_t len = xasprintf(&octet, "%zu ", strlen(ctl->hdr) + strlen(msg));
 		iovec_add_string(iov, iovlen, octet, len);
@@ -798,12 +798,12 @@ static void syslog_rfc5424_header(struct logger_ctl *const ctl)
 		if (localtime_r(&tv.tv_sec, &tm) != NULL) {
 			char fmt[64];
 			const size_t i = strftime(fmt, sizeof(fmt),
-						  "%Y-%m-%dT%H:%M:%S.%%06u%z ", &tm);
+						  "%Y-%m-%dT%H:%M:%S.%%06jd%z ", &tm);
 			/* patch TZ info to comply with RFC3339 (we left SP at end) */
 			fmt[i - 1] = fmt[i - 2];
 			fmt[i - 2] = fmt[i - 3];
 			fmt[i - 3] = ':';
-			xasprintf(&time, fmt, tv.tv_usec);
+			xasprintf(&time, fmt, (intmax_t) tv.tv_usec);
 		} else
 			err(EXIT_FAILURE, _("localtime() failed"));
 	} else
@@ -1091,8 +1091,8 @@ static void __attribute__((__noreturn__)) usage(void)
 #endif
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(26));
-	printf(USAGE_MAN_TAIL("logger(1)"));
+	fprintf(out, USAGE_HELP_OPTIONS(26));
+	fprintf(out, USAGE_MAN_TAIL("logger(1)"));
 
 	exit(EXIT_SUCCESS);
 }

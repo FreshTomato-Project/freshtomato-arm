@@ -128,27 +128,27 @@ struct entry {
 static void __attribute__((__noreturn__)) usage(void)
 {
 	fputs(USAGE_HEADER, stdout);
-	printf(_(" %s [-h] [-v] [-b blksize] [-e edition] [-N endian] [-i file] [-n name] dirname outfile\n"),
+	fprintf(stdout, _(" %s [-h] [-v] [-b blksize] [-e edition] [-N endian] [-i file] [-n name] dirname outfile\n"),
 		program_invocation_short_name);
 	fputs(USAGE_SEPARATOR, stdout);
-	puts(_("Make compressed ROM file system."));
+	fputsln(_("Make compressed ROM file system."), stdout);
 	fputs(USAGE_OPTIONS, stdout);
-	puts(_(  " -v             be verbose"));
-	puts(_(  " -E             make all warnings errors (non-zero exit status)"));
-	puts(_(  " -b blksize     use this blocksize, must equal page size"));
-	puts(_(  " -e edition     set edition number (part of fsid)"));
-	printf(_(" -N endian      set cramfs endianness (%s|%s|%s), default %s\n"), "big", "little", "host", "host");
-	puts(_(  " -i file        insert a file image into the filesystem"));
-	puts(_(  " -n name        set name of cramfs filesystem"));
-	printf(_(" -p             pad by %d bytes for boot code\n"), PAD_SIZE);
-	puts(_(  " -s             sort directory entries (old option, ignored)"));
-	puts(_(  " -z             make explicit holes"));
-	puts(_(  " -l[=<mode>]    use exclusive device lock (yes, no or nonblock)"));
-	puts(_(  " dirname        root of the filesystem to be compressed"));
-	puts(_(  " outfile        output file"));
+	fputsln(_(  " -v             be verbose"), stdout);
+	fputsln(_(  " -E             make all warnings errors (non-zero exit status)"), stdout);
+	fputsln(_(  " -b blksize     use this blocksize, must equal page size"), stdout);
+	fputsln(_(  " -e edition     set edition number (part of fsid)"), stdout);
+	fprintf(stdout, _(" -N endian      set cramfs endianness (%s|%s|%s), default %s\n"), "big", "little", "host", "host");
+	fputsln(_(  " -i file        insert a file image into the filesystem"), stdout);
+	fputsln(_(  " -n name        set name of cramfs filesystem"), stdout);
+	fprintf(stdout, _(" -p             pad by %d bytes for boot code\n"), PAD_SIZE);
+	fputsln(_(  " -s             sort directory entries (old option, ignored)"), stdout);
+	fputsln(_(  " -z             make explicit holes"), stdout);
+	fputsln(_(  " -l[=<mode>]    use exclusive device lock (yes, no or nonblock)"), stdout);
+	fputsln(_(  " dirname        root of the filesystem to be compressed"), stdout);
+	fputsln(_(  " outfile        output file"), stdout);
 	fputs(USAGE_SEPARATOR, stdout);
-	printf(USAGE_HELP_OPTIONS(16));
-	printf(USAGE_MAN_TAIL("mkfs.cramfs(8)"));
+	fprintf(stdout, USAGE_HELP_OPTIONS(16));
+	fprintf(stdout, USAGE_MAN_TAIL("mkfs.cramfs(8)"));
 	exit(MKFS_EX_OK);
 }
 
@@ -497,7 +497,7 @@ static unsigned int write_directory_structure(struct entry *entry, char *base, u
 			if (entry->child) {
 				if (stack_entries >= stack_size) {
 					stack_size *= 2;
-					entry_stack = xrealloc(entry_stack, stack_size * sizeof(struct entry *));
+					entry_stack = xreallocarray(entry_stack, stack_size, sizeof(struct entry *));
 				}
 				entry_stack[stack_entries] = entry;
 				stack_entries++;

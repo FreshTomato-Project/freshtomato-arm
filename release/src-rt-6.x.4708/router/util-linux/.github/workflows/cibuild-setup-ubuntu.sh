@@ -29,6 +29,10 @@ PACKAGES=(
 	iproute2
 	dmsetup
 	python3-dev
+	gawk
+	bison
+	flex
+	libsqlite3-dev
 )
 
 PACKAGES_OPTIONAL=(
@@ -59,7 +63,9 @@ bash -c "echo 'deb-src http://archive.ubuntu.com/ubuntu/ $RELEASE main restricte
 # cov-build fails to compile util-linux when CC is set to gcc-*
 # so let's just install and use the default compiler
 if [[ "$COMPILER_VERSION" == "" ]]; then
-    PACKAGES+=("$COMPILER")
+    if [[ "$COMPILER" != "none" ]]; then
+	PACKAGES+=("$COMPILER")
+    fi
 elif [[ "$COMPILER" == clang ]]; then
     # Latest LLVM stack deb packages provided by https://apt.llvm.org/
     # Following snippet was borrowed from https://apt.llvm.org/llvm.sh
@@ -74,6 +80,9 @@ elif [[ "$COMPILER" == gcc ]]; then
 else
     fatal "Unknown compiler: $COMPILER"
 fi
+
+# ASAN can crash with the new default of =32
+sysctl --write vm.mmap_rnd_bits=28
 
 
 apt-get -y update --fix-missing

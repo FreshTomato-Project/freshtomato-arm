@@ -360,7 +360,7 @@ int main(int argc, char **argv)
 	 * POSIX:  19971201 + 7 -1 = 0
 	 */
 	{
-		int wfd;
+		unsigned int wfd;
 		union { unsigned int word; char *string; } val;
 		val.string = nl_langinfo(_NL_TIME_WEEK_1STDAY);
 
@@ -692,9 +692,9 @@ static void headers_init(struct cal_control *ctl)
 	for (i = 0; i < DAYS_IN_WEEK; i++) {
 		size_t space_left;
 
-		if (i)
-			strcat(cur_dh++, " ");
 		space_left = sizeof(day_headings) - (cur_dh - day_headings);
+		if (i && space_left)
+			strncat(cur_dh++, " ", space_left--);
 
 		if (space_left <= (ctl->day_width - 1))
 			break;
@@ -1296,8 +1296,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	        "                         %s\n", USAGE_COLORS_DEFAULT);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(23));
-	printf(USAGE_MAN_TAIL("cal(1)"));
+	fprintf(out, USAGE_HELP_OPTIONS(23));
+	fprintf(out, USAGE_MAN_TAIL("cal(1)"));
 
 	exit(EXIT_SUCCESS);
 }

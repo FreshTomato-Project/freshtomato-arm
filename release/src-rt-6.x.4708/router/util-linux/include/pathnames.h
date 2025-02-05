@@ -108,6 +108,7 @@
 #define _PATH_PROC_SETGROUPS	"/proc/self/setgroups"
 
 #define _PATH_PROC_FDDIR	"/proc/self/fd"
+#define _PATH_PROC_TIMENS_OFF   "/proc/self/timens_offsets"
 
 #define _PATH_PROC_ATTR_CURRENT	"/proc/self/attr/current"
 #define _PATH_PROC_ATTR_EXEC	"/proc/self/attr/exec"
@@ -226,5 +227,15 @@
 #define _PATH_DEV_RFKILL	"/dev/rfkill"
 #define _PATH_SYS_RFKILL	"/sys/class/rfkill"
 
+/* cgroup path */
+#define _PATH_SYS_CGROUP	"/sys/fs/cgroup"
+
+/* Maximum number of PIDs system supports */
+#define _PATH_PROC_PIDMAX	"/proc/sys/kernel/pid_max"
+
+/* libeconf default */
+#ifndef _PATH_VENDORDIR
+# define _PATH_VENDORDIR	"/usr/etc"
+#endif
 
 #endif /* PATHNAMES_H */

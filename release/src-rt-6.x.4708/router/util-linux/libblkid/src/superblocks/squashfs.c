@@ -40,7 +40,7 @@ struct sqsh_super_block {
 
 static int probe_squashfs(blkid_probe pr, const struct blkid_idmag *mag)
 {
-	struct sqsh_super_block *sq;
+	const struct sqsh_super_block *sq;
 	uint16_t vermaj;
 	uint16_t vermin;
 
@@ -63,10 +63,10 @@ static int probe_squashfs(blkid_probe pr, const struct blkid_idmag *mag)
 
 static int probe_squashfs3(blkid_probe pr, const struct blkid_idmag *mag)
 {
-	struct sqsh_super_block *sq;
+	const struct sqsh_super_block *sq;
 	uint16_t vermaj;
 	uint16_t vermin;
-	enum BLKID_ENDIANNESS endianness;
+	enum blkid_endianness endianness;
 
 	sq = blkid_probe_get_sb(pr, mag, struct sqsh_super_block);
 	if (!sq)

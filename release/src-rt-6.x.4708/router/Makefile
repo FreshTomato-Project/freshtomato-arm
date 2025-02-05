@@ -3946,7 +3946,8 @@ util-linux/stamp-h1:
 			--without-cryptsetup \
 			--disable-hwclock \
 			--disable-hwclock-cmos \
-			--disable-shared
+			--disable-shared \
+			$(if $(TCONFIG_BCMARM),--disable-year2038,)
 	@touch $@
 
 util-linux: util-linux/stamp-h1
@@ -3967,7 +3968,8 @@ zfs/stamp-h1:
 	cd zfs && \
 		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
 		CPPFLAGS="-I$(TOP)/zlib/staged/usr/include -I$(TOP)/util-linux/staged/usr/include -I$(TOP)/$(OPENSSLDIR)/staged/usr/include -I$(TOP)/gettext-tiny/staged/usr/include" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib -L$(TOP)/util-linux/staged/usr/lib -L$(TOP)/$(OPENSSLDIR)/staged/usr/lib -L$(TOP)/gettext-tiny/staged/usr/lib" \
+		LDFLAGS="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib -L$(TOP)/util-linux/staged/usr/lib -L$(TOP)/$(OPENSSLDIR)/staged/usr/lib -L$(TOP)/gettext-tiny/staged/usr/lib" \
+		LIBS="-lpthread" \
 		$(CONFIGURE) \
 			--prefix=/usr \
 			--sysconfdir=/etc \

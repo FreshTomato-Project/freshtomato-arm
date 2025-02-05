@@ -1,4 +1,6 @@
-/*   Copyright 2003-2005 H. Peter Anvin - All Rights Reserved
+/*   SPDX-License-Identifier: MIT
+ *
+ *   Copyright 2003-2005 H. Peter Anvin - All Rights Reserved
  *
  *   Permission is hereby granted, free of charge, to any person
  *   obtaining a copy of this software and associated documentation
@@ -49,7 +51,7 @@
 static void __attribute__((__noreturn__)) usage(void)
 {
 	fputs(USAGE_HEADER, stdout);
-	printf(
+	fprintf(stdout,
 		_(" %1$s [options] <file>|<directory> <command> [<argument>...]\n"
 		  " %1$s [options] <file>|<directory> -c <command>\n"
 		  " %1$s [options] <file descriptor number>\n"),
@@ -70,8 +72,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(  " -F, --no-fork            execute command without forking\n"), stdout);
 	fputs(_(  "     --verbose            increase verbosity\n"), stdout);
 	fputs(USAGE_SEPARATOR, stdout);
-	printf(USAGE_HELP_OPTIONS(26));
-	printf(USAGE_MAN_TAIL("flock(1)"));
+	fprintf(stdout, USAGE_HELP_OPTIONS(26));
+	fprintf(stdout, USAGE_MAN_TAIL("flock(1)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -138,7 +140,7 @@ int main(int argc, char *argv[])
 	int no_fork = 0;
 	int status;
 	int verbose = 0;
-	struct timeval time_start, time_done;
+	struct timeval time_start = { 0 }, time_done = { 0 };
 	/*
 	 * The default exit code for lock conflict or timeout
 	 * is specified in man flock.1
@@ -327,7 +329,7 @@ int main(int argc, char *argv[])
 	if (have_timeout)
 		cancel_timer(&timer);
 	if (verbose) {
-		struct timeval delta;
+		struct timeval delta = { 0 };
 
 		gettime_monotonic(&time_done);
 		timersub(&time_done, &time_start, &delta);

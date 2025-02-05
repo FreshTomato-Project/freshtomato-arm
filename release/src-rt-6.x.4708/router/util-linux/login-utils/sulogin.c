@@ -99,6 +99,81 @@ static int locked_account_password(const char * const passwd)
 	return 0;
 }
 
+#ifdef HAVE_LIBSELINUX
+/*
+ * Cached check whether SELinux is enabled.
+ */
+static int is_selinux_enabled_cached(void)
+{
+	static int cache = -1;
+
+	if (cache == -1)
+		cache = is_selinux_enabled();
+
+	return cache;
+}
+
+/* Computed SELinux login context. */
+static char *login_context;
+
+/*
+ * Compute SELinux login context.
+ */
+static void compute_login_context(void)
+{
+	char *seuser = NULL;
+	char *level = NULL;
+
+	if (is_selinux_enabled_cached() == 0)
+		goto cleanup;
+
+	if (getseuserbyname("root", &seuser, &level) == -1) {
+		warnx(_("failed to compute seuser"));
+		goto cleanup;
+	}
+
+	if (get_default_context_with_level(seuser, level, NULL, &login_context) == -1) {
+		warnx(_("failed to compute default context"));
+		goto cleanup;
+	}
+
+cleanup:
+	free(seuser);
+	free(level);
+}
+
+/*
+ * Compute SELinux terminal context.
+ */
+static void tcinit_selinux(struct console *con)
+{
+	security_class_t tclass;
+
+	if (!login_context)
+		return;
+
+	if (fgetfilecon(con->fd, &con->reset_tty_context) == -1) {
+		warn(_("failed to get context of terminal %s"), con->tty);
+		return;
+	}
+
+	tclass = string_to_security_class("chr_file");
+	if (tclass == 0) {
+		warnx(_("security class chr_file not available"));
+		freecon(con->reset_tty_context);
+		con->reset_tty_context = NULL;
+		return;
+	}
+
+	if (security_compute_relabel(login_context, con->reset_tty_context, tclass, &con->user_tty_context) == -1) {
+		warnx(_("failed to compute relabel context of terminal"));
+		freecon(con->reset_tty_context);
+		con->reset_tty_context = NULL;
+		return;
+	}
+}
+#endif
+
 /*
  * Fix the tty modes and set reasonable defaults.
  */
@@ -130,6 +205,10 @@ static void tcinit(struct console *con)
 	memset(&lock, 0, sizeof(struct termios));
 	ioctl(fd, TIOCSLCKTRMIOS, &lock);
 	errno = 0;
+#endif
+
+#ifdef HAVE_LIBSELINUX
+	tcinit_selinux(con);
 #endif
 
 #ifdef TIOCGSERIAL
@@ -270,23 +349,21 @@ static void tcfinal(struct console *con)
 {
 	struct termios *tio = &con->tio;
 	const int fd = con->fd;
+	char *term, *ttyname = NULL;
 
-	if (con->flags & CON_EIO)
-		return;
-	if ((con->flags & CON_SERIAL) == 0) {
-		xsetenv("TERM", "linux", 0);
-		return;
-	}
-	if (con->flags & CON_NOTTY) {
-		xsetenv("TERM", "dumb", 0);
-		return;
+	if (con->tty)
+		ttyname = strncmp(con->tty, "/dev/", 5) == 0 ?
+					con->tty + 5 : con->tty;
+
+	term = get_terminal_default_type(ttyname, con->flags & CON_SERIAL);
+	if (term) {
+		xsetenv("TERM", term, 0);
+		free(term);
 	}
 
-#if defined (__s390__) || defined (__s390x__)
-	xsetenv("TERM", "dumb", 0);
-#else
-	xsetenv("TERM", "vt102", 0);
-#endif
+	if (!(con->flags & CON_SERIAL) || (con->flags & CON_NOTTY))
+		return;
+
 	tio->c_iflag |= (IXON | IXOFF);
 	tio->c_lflag |= (ICANON | ISIG | ECHO|ECHOE|ECHOK|ECHOKE);
 	tio->c_oflag |= OPOST;
@@ -787,7 +864,7 @@ out:
 /*
  * Password was OK, execute a shell.
  */
-static void sushell(struct passwd *pwd)
+static void sushell(struct passwd *pwd, struct console *con)
 {
 	char shell[PATH_MAX];
 	char home[PATH_MAX];
@@ -844,22 +921,21 @@ static void sushell(struct passwd *pwd)
 	mask_signal(SIGHUP, SIG_DFL, NULL);
 
 #ifdef HAVE_LIBSELINUX
-	if (is_selinux_enabled() > 0) {
-		char *scon = NULL;
-		char *seuser = NULL;
-		char *level = NULL;
-
-		if (getseuserbyname("root", &seuser, &level) == 0) {
-			if (get_default_context_with_level(seuser, level, 0, &scon) == 0) {
-				if (setexeccon(scon) != 0)
-					warnx(_("setexeccon failed"));
-				freecon(scon);
-			}
+	if (is_selinux_enabled_cached() == 1) {
+		if (con->user_tty_context) {
+			if (fsetfilecon(con->fd, con->user_tty_context) == -1)
+				warn(_("failed to set context to %s for terminal %s"), con->user_tty_context, con->tty);
 		}
-		free(seuser);
-		free(level);
+
+		if (login_context) {
+			if (setexeccon(login_context) == -1)
+				warn(_("failed to set exec context to %s"), login_context);
+		}
 	}
+#else
+	(void)con;
 #endif
+
 	execl(su_shell, shell, (char *)NULL);
 	warn(_("failed to execute %s"), su_shell);
 
@@ -867,6 +943,30 @@ static void sushell(struct passwd *pwd)
 	execl("/bin/sh", profile ? "-sh" : "sh", (char *)NULL);
 	warn(_("failed to execute %s"), "/bin/sh");
 }
+
+#ifdef HAVE_LIBSELINUX
+static void tcreset_selinux(struct list_head *consoles) {
+	struct list_head *ptr;
+	struct console *con;
+
+	if (is_selinux_enabled_cached() == 0)
+		return;
+
+	list_for_each(ptr, consoles) {
+		con = list_entry(ptr, struct console, entry);
+
+		if (con->fd < 0)
+			continue;
+		if (!con->reset_tty_context)
+			continue;
+		if (fsetfilecon(con->fd, con->reset_tty_context) == -1)
+			warn(_("failed to reset context to %s for terminal %s"), con->reset_tty_context, con->tty);
+
+		freecon(con->reset_tty_context);
+		con->reset_tty_context = NULL;
+	}
+}
+#endif
 
 static void usage(void)
 {
@@ -885,8 +985,8 @@ static void usage(void)
 		out);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(26));
-	printf(USAGE_MAN_TAIL("sulogin(8)"));
+	fprintf(out, USAGE_HELP_OPTIONS(26));
+	fprintf(out, USAGE_MAN_TAIL("sulogin(8)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -1017,6 +1117,10 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+#ifdef HAVE_LIBSELINUX
+	compute_login_context();
+#endif
+
 	/*
 	 * Ask for the password on the consoles.
 	 */
@@ -1036,9 +1140,18 @@ int main(int argc, char **argv)
 	}
 	ptr = (&consoles)->next;
 
-	if (ptr->next == &consoles) {
-		con = list_entry(ptr, struct console, entry);
-		goto nofork;
+#ifdef HAVE_LIBSELINUX
+	/*
+	 * Always fork with SELinux enabled, so the parent can restore the
+	 * terminal context afterwards.
+	 */
+	if (is_selinux_enabled_cached() == 0)
+#endif
+	{
+		if (ptr->next == &consoles) {
+			con = list_entry(ptr, struct console, entry);
+			goto nofork;
+		}
 	}
 
 
@@ -1089,7 +1202,7 @@ int main(int argc, char **argv)
 #endif
 				if (doshell) {
 					/* sushell() unmask signals */
-					sushell(pwd);
+					sushell(pwd, con);
 
 					mask_signal(SIGQUIT, SIG_IGN, &saved_sigquit);
 					mask_signal(SIGTSTP, SIG_IGN, &saved_sigtstp);
@@ -1195,5 +1308,10 @@ int main(int argc, char **argv)
 	} while (1);
 
 	mask_signal(SIGCHLD, SIG_DFL, NULL);
+
+#ifdef HAVE_LIBSELINUX
+	tcreset_selinux(&consoles);
+#endif
+
 	return EXIT_SUCCESS;
 }

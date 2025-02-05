@@ -31,7 +31,7 @@ libuuid_la_SOURCES = \
 EXTRA_libuuid_la_DEPENDENCIES = \
 	libuuid/src/libuuid.sym
 
-libuuid_la_LIBADD       = $(LDADD) $(SOCKET_LIBS)
+libuuid_la_LIBADD       = $(LDADD) $(SOCKET_LIBS) -lpthread
 
 libuuid_la_CFLAGS = \
 	$(AM_CFLAGS) \
@@ -41,7 +41,7 @@ libuuid_la_CFLAGS = \
 
 libuuid_la_LDFLAGS = $(SOLIB_LDFLAGS)
 if HAVE_VSCRIPT
-libuuid_la_LDFLAGS += libuuid_la_LDFLAGS += $(VSCRIPT_LDFLAGS),$(top_srcdir)/libuuid/src/libuuid.sym
+libuuid_la_LDFLAGS += $(VSCRIPT_LDFLAGS),$(top_srcdir)/libuuid/src/libuuid.sym
 endif
 libuuid_la_LDFLAGS += -version-info $(LIBUUID_VERSION_INFO)
 

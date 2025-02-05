@@ -8,7 +8,7 @@
  *
  * cfdisk.c - Display or manipulate a disk partition table.
  *
- *     Copyright (C) 2014-2015 Karel Zak <kzak@redhat.com>
+ *     Copyright (C) 2014-2023 Karel Zak <kzak@redhat.com>
  *     Copyright (C) 1994 Kevin E. Martin (martin@cs.unc.edu)
  *
  *     The original cfdisk was inspired by the fdisk program
@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <libsmartcols.h>
 #include <sys/ioctl.h>
+#include <rpmatch.h>
 #include <libfdisk.h>
 
 #ifdef HAVE_LIBMOUNT
@@ -1740,6 +1741,8 @@ static int ui_table_goto(struct cfdisk *cf, int where)
 
 	if (where < 0)
 		where = 0;
+	if (!nparts)
+		where = 0;
 	else if ((size_t) where > nparts - 1)
 		where = nparts - 1;
 
@@ -2258,7 +2261,8 @@ static int ui_help(void)
 		"  ",
 		N_("Command      Meaning"),
 		N_("-------      -------"),
-		N_("  b          Toggle bootable flag of the current partition"),
+		N_("  b          Toggle bootable flag of the current partition;"),
+		N_("               implemented for DOS (MBR) and SGI labels only"),
 		N_("  d          Delete the current partition"),
 		N_("  h          Print this screen"),
 		N_("  n          Create new partition from free space"),
@@ -2282,7 +2286,7 @@ static int ui_help(void)
 		N_("Use lsblk(8) or partx(8) to see more details about the device."),
 		"  ",
 		"  ",
-		"Copyright (C) 2014-2017 Karel Zak <kzak@redhat.com>"
+		"Copyright (C) 2014-2023 Karel Zak <kzak@redhat.com>"
 	};
 
 	erase();
@@ -2456,18 +2460,17 @@ static int main_menu_action(struct cfdisk *cf, int key)
 	}
 	case 'r': /* resize */
 	{
-		struct fdisk_partition *npa, *next;
 		uint64_t size, max_size, secs;
+		struct fdisk_partition *npa;
 
 		if (fdisk_partition_is_freespace(pa) || !fdisk_partition_has_start(pa))
 			return -EINVAL;
 
-		size = fdisk_partition_get_size(pa);
-
-		/* is the next freespace? */
-		next = fdisk_table_get_partition(cf->table, cf->lines_idx + 1);
-		if (next && fdisk_partition_is_freespace(next))
-			size += fdisk_partition_get_size(next);
+		rc = fdisk_partition_get_max_size(cf->cxt,
+						  fdisk_partition_get_partno(pa),
+						  &size);
+		if (rc)
+			return rc;
 
 		size *= fdisk_get_sector_size(cf->cxt);
 		max_size = size;
@@ -2525,11 +2528,15 @@ static int main_menu_action(struct cfdisk *cf, int key)
 		if (rc)
 			warn = _("Failed to write disklabel.");
 		else {
+			size_t q_idx = 0;
+
 			if (cf->device_is_used)
 				fdisk_reread_changes(cf->cxt, cf->original_layout);
 			else
 				fdisk_reread_partition_table(cf->cxt);
 			info = _("The partition table has been altered.");
+			if (menu_get_menuitem_by_key(cf, 'q', &q_idx))
+				ui_menu_goto(cf, q_idx);
 		}
 		cf->nwrites++;
 		break;
@@ -2589,11 +2596,17 @@ static int ui_run(struct cfdisk *cf)
 	DBG(UI, ul_debug("start cols=%zu, lines=%zu", ui_cols, ui_lines));
 
 	if (fdisk_get_collision(cf->cxt)) {
-		ui_warnx(_("Device already contains a %s signature; it will be removed by a write command."),
-				fdisk_get_collision(cf->cxt));
-		fdisk_enable_wipe(cf->cxt, 1);
-		ui_hint(_("Press a key to continue."));
-		getch();
+		ui_warnx(_("Device already contains a %s signature."), fdisk_get_collision(cf->cxt));
+		if (fdisk_is_readonly(cf->cxt)) {
+			ui_hint(_("Press a key to continue."));
+			getch();
+		} else {
+			char buf[64] = { 0 };
+			rc = ui_get_string(_("Do you want to remove it? [Y]es/[N]o: "), NULL,
+					buf, sizeof(buf));
+			fdisk_enable_wipe(cf->cxt,
+					rc > 0 && rpmatch(buf) == RPMATCH_YES ? 1 : 0);
+		}
 	}
 
 	if (!fdisk_has_label(cf->cxt) || cf->zero_start) {
@@ -2727,9 +2740,9 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -r, --read-only          forced open cfdisk in read-only mode\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(26));
+	fprintf(out, USAGE_HELP_OPTIONS(26));
 
-	printf(USAGE_MAN_TAIL("cfdisk(8)"));
+	fprintf(out, USAGE_MAN_TAIL("cfdisk(8)"));
 	exit(EXIT_SUCCESS);
 }
 

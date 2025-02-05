@@ -136,7 +136,7 @@ int scols_line_alloc_cells(struct libscols_line *ln, size_t n)
 
 	DBG(LINE, ul_debugobj(ln, "alloc %zu cells", n));
 
-	ce = realloc(ln->cells, n * sizeof(struct libscols_cell));
+	ce = reallocarray(ln->cells, n, sizeof(struct libscols_cell));
 	if (!ce)
 		return -errno;
 
@@ -502,6 +502,20 @@ int scols_line_refer_data(struct libscols_line *ln, size_t n, char *data)
 	if (!ce)
 		return -EINVAL;
 	return scols_cell_refer_data(ce, data);
+}
+
+/**
+ * scols_line_is_filled:
+ * @ln: a pointer to a struct libscols_line instance
+ * @n: number of the cell
+ *
+ * Returns: 0 or 1 if cell was already filled (note that NULL is also valid filler)
+ */
+int scols_line_is_filled(struct libscols_line *ln, size_t n)
+{
+	struct libscols_cell *ce = scols_line_get_cell(ln, n);
+
+	return ce ? ce->is_filled : 0;
 }
 
 /**

@@ -41,7 +41,7 @@ struct fdisk_sgi_label {
 	} freelist[SGI_MAXPARTITIONS + 1];
 };
 
-static struct fdisk_parttype sgi_parttypes[] =
+static const struct fdisk_parttype sgi_parttypes[] =
 {
 	{SGI_TYPE_VOLHDR,	N_("SGI volhdr")},
 	{SGI_TYPE_TRKREPL,	N_("SGI trkrepl")},
@@ -123,10 +123,12 @@ static struct sgi_info *sgi_new_info(void)
 	info->b3 = cpu_to_be16(1);
 
 	/* You may want to replace this string !!!!!!! */
-	strcpy((char *) info->scsi_string, "IBM OEM 0662S12         3 30");
-	strcpy((char *) info->serial, "0000");
+	strncpy((char *) info->scsi_string, "IBM OEM 0662S12         3 30",
+		sizeof(info->scsi_string));
+	strncpy((char *) info->serial, "0000", sizeof(info->serial));
 	info->check1816 = cpu_to_be16(18 * 256 + 16);
-	strcpy((char *) info->installer, "Sfx version 5.3, Oct 18, 1994");
+	strncpy((char *) info->installer, "Sfx version 5.3, Oct 18, 1994",
+		sizeof(info->installer));
 
 	return info;
 }
@@ -389,8 +391,8 @@ static int sgi_check_bootfile(struct fdisk_context *cxt, const char *name)
 
 	sz = strlen(name);
 
-	if (sz < 3) {
-		/* "/a\n" is minimum */
+	if (sz < 2) {
+		/* "/a" is minimum */
 		fdisk_warnx(cxt, _("Invalid bootfile!  The bootfile must "
 				   "be an absolute non-zero pathname, "
 				   "e.g. \"/unix\" or \"/unix.save\"."));
@@ -441,12 +443,14 @@ int fdisk_sgi_set_bootfile(struct fdisk_context *cxt)
 
 	fdisk_info(cxt, _("The current boot file is: %s"), sgilabel->boot_file);
 
-	rc = fdisk_ask_string(cxt, _("Enter of the new boot file"), &name);
+	rc = fdisk_ask_string(cxt, _("Enter full path of the new boot file"), &name);
 	if (rc == 0)
 		rc = sgi_check_bootfile(cxt, name);
 	if (rc) {
-		if (rc == 1)
+		if (rc == 1) {
 			fdisk_info(cxt, _("Boot file is unchanged."));
+			rc = 0;
+		}
 		goto done;
 	}
 
@@ -1009,7 +1013,8 @@ static int sgi_create_disklabel(struct fdisk_context *cxt)
 
 	/* sizeof(sgilabel->boot_file) = 16 > 6 */
 	memset(sgilabel->boot_file, 0, 16);
-	strcpy((char *) sgilabel->boot_file, "/unix");
+	strncpy((char *) sgilabel->boot_file, "/unix",
+		sizeof(sgilabel->boot_file));
 
 	sgilabel->devparam.skew			= (0);
 	sgilabel->devparam.gap1			= (0);

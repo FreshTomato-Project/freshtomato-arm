@@ -28,10 +28,28 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
+#include "debug.h"
+#include "libsmartcols.h"
 #include "list.h"
+#include "nls.h"
 #include "path.h"
 #include "strutils.h"
+#include "xalloc.h"
+
+/*
+ * debug
+ */
+UL_DEBUG_DECLARE_MASK(lsfd);
+
+#define LSFD_DEBUG_INIT	     (1 << 1)
+#define LSFD_DEBUG_ENDPOINTS (1 << 2)
+#define LSFD_DEBUG_ALL       0xFFFF
+
+#define DBG(m, x)       __UL_DBG(lsfd, LSFD_DEBUG_, m, x)
 
 /*
  * column IDs
@@ -40,19 +58,31 @@ enum {
 	COL_AINODECLASS,
 	COL_ASSOC,
 	COL_BLKDRV,
+	COL_BPF_MAP_ID,
+	COL_BPF_MAP_TYPE,
+	COL_BPF_MAP_TYPE_RAW,
+	COL_BPF_NAME,
+	COL_BPF_PROG_ID,
+	COL_BPF_PROG_TYPE,
+	COL_BPF_PROG_TYPE_RAW,
 	COL_CHRDRV,
 	COL_COMMAND,
 	COL_DELETED,
 	COL_DEV,
 	COL_DEVTYPE,
 	COL_ENDPOINTS,
+	COL_EVENTFD_ID,
+	COL_EVENTPOLL_TFDS,
 	COL_FD,
 	COL_FLAGS,
-	COL_INODE,
+	COL_FUID,		/* file */
 	COL_INET_LADDR,
 	COL_INET_RADDR,
 	COL_INET6_LADDR,
 	COL_INET6_RADDR,
+	COL_INODE,
+	COL_INOTIFY_INODES,
+	COL_INOTIFY_INODES_RAW,
 	COL_KNAME,
 	COL_KTHREAD,
 	COL_MAJMIN,
@@ -67,6 +97,7 @@ enum {
 	COL_NLINK,
 	COL_NS_NAME,
 	COL_NS_TYPE,
+	COL_OWNER,		/* file */
 	COL_PACKET_IFACE,
 	COL_PACKET_PROTOCOL,
 	COL_PARTITION,
@@ -76,12 +107,15 @@ enum {
 	COL_PIDFD_PID,
 	COL_PING_ID,
 	COL_POS,
+	COL_PTMX_TTY_INDEX,
 	COL_RAW_PROTOCOL,
 	COL_RDEV,
+	COL_SIGNALFD_MASK,
 	COL_SIZE,
 	COL_SOCK_LISTENING,
 	COL_SOCK_NETNS,
 	COL_SOCK_PROTONAME,
+	COL_SOCK_SHUTDOWN,
 	COL_SOCK_STATE,
 	COL_SOCK_TYPE,
 	COL_SOURCE,
@@ -91,6 +125,10 @@ enum {
 	COL_TCP_LPORT,
 	COL_TCP_RPORT,
 	COL_TID,
+	COL_TIMERFD_CLOCKID,
+	COL_TIMERFD_INTERVAL,
+	COL_TIMERFD_REMAINING,
+	COL_TUN_IFACE,
 	COL_TYPE,
 	COL_UDP_LADDR,
 	COL_UDP_RADDR,
@@ -103,8 +141,7 @@ enum {
 	COL_UID,		/* process */
 	COL_UNIX_PATH,
 	COL_USER,		/* process */
-	COL_FUID,		/* file */
-	COL_OWNER,		/* file */
+	COL_XMODE,
 	LSFD_N_COLS		/* This must be at last. */
 };
 
@@ -139,6 +176,7 @@ struct proc {
 	struct list_head procs;
 	struct list_head files;
 	unsigned int kthread: 1;
+	struct list_head eventpolls;
 };
 
 struct proc *get_proc(pid_t pid);
@@ -161,6 +199,11 @@ struct file {
 
 	unsigned int sys_flags;
 	unsigned int mnt_id;
+
+	struct {
+		uint8_t read:1, write:1;
+	} locked;
+	uint8_t multiplexed;
 };
 
 #define is_opened_file(_f) ((_f)->association >= 0)
@@ -185,7 +228,7 @@ struct file_class {
 };
 
 extern const struct file_class file_class, cdev_class, bdev_class, sock_class, unkn_class, fifo_class,
-	nsfs_file_class;
+	nsfs_file_class, mqueue_file_class, pidfs_file_class;
 
 /*
  * IPC
@@ -202,14 +245,34 @@ struct ipc_endpoint {
 };
 
 struct ipc_class {
+	size_t size;
 	unsigned int (*get_hash)(struct file *file);
 	bool (*is_suitable_ipc)(struct ipc *ipc, struct file *file);
 	void (*free)(struct ipc *ipc);
 };
 
+struct ipc *new_ipc(const struct ipc_class *class);
 struct ipc *get_ipc(struct file *file);
 void add_ipc(struct ipc *ipc, unsigned int hash);
+void init_endpoint(struct ipc_endpoint *endpoint);
+void add_endpoint(struct ipc_endpoint *endpoint, struct ipc *ipc);
+#define foreach_endpoint(E,ENDPOINT) list_for_each_backwardly(E, &((ENDPOINT).ipc->endpoints))
 
+enum decode_source_bit {
+	DECODE_SOURCE_MAJMIN_BIT    = 1 << 0,
+	DECODE_SOURCE_PARTITION_BIT = 1 << 1,
+	DECODE_SOURCE_FILESYS_BIT   = 1 << 2,
+};
+
+enum decode_source_level {
+	DECODE_SOURCE_MAJMIN    = DECODE_SOURCE_MAJMIN_BIT,
+	DECODE_SOURCE_PARTITION = DECODE_SOURCE_PARTITION_BIT | DECODE_SOURCE_MAJMIN,
+	DECODE_SOURCE_FILESYS   = DECODE_SOURCE_FILESYS_BIT   | DECODE_SOURCE_PARTITION,
+	DECODE_SOURCE_FULL      = DECODE_SOURCE_FILESYS,
+};
+
+void decode_source(char *buf, size_t bufsize, unsigned int dev_major, unsigned int dev_minor,
+		   enum decode_source_level level);
 /*
  * Name managing
  */
@@ -225,23 +288,28 @@ const char *get_blkdrv(unsigned long major);
 const char *get_chrdrv(unsigned long major);
 const char *get_miscdev(unsigned long minor);
 const char *get_nodev_filesystem(unsigned long minor);
-
-static inline void xstrappend(char **a, const char *b)
-{
-	if (strappend(a, b) < 0)
-		err(XALLOC_EXIT_CODE, _("failed to allocate memory for string"));
-}
-
-static inline void xstrputc(char **a, char c)
-{
-	char b[] = {c, '\0'};
-	xstrappend(a, b);
-}
+void add_nodev(unsigned long minor, const char *filesystem);
 
 /*
  * Net namespace
  */
 void load_sock_xinfo(struct path_cxt *pc, const char *name, ino_t netns);
 bool is_nsfs_dev(dev_t dev);
+
+/*
+ * POSIX Mqueue
+ */
+/* 0 is assumed as the major dev for DEV. */
+bool is_mqueue_dev(dev_t dev);
+
+/*
+ * Eventpoll
+ */
+bool is_multiplexed_by_eventpoll(int fd, struct list_head *eventpolls);
+
+/*
+ * Pidfs
+ */
+bool is_pidfs_dev(dev_t dev);
 
 #endif /* UTIL_LINUX_LSFD_H */

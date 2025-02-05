@@ -52,7 +52,11 @@ _/etc/fstab_
 
 The file *fstab* contains descriptive information about the filesystems the system can mount. *fstab* is only read by programs, and not written; it is the duty of the system administrator to properly create and maintain this file. The order of records in *fstab* is important because *fsck*(8), *mount*(8), and *umount*(8) sequentially iterate through *fstab* doing their thing.
 
-Each filesystem is described on a separate line. Fields on each line are separated by tabs or spaces. Lines starting with '#' are comments. Blank lines are ignored.
+The file is not read by *mount*(8) only but often is used by many other tools and daemons, and proper functionality may require additional steps. For example, on systemd-based systems, it's recommended to use *systemctl daemon-reload* after *fstab* modification.
+
+Each filesystem is described on a separate line, with fields separated by tabs or spaces. The line is split into fields before being parsed. This means that any spaces or tabs within the fields must be escaped using \040 or \011, even within quoted strings (e.g. LABEL="foo\040bar").
+
+Lines starting with '#' are comments. Blank lines are ignored.
 
 The following is a typical example of an *fstab* entry:
 
@@ -129,6 +133,8 @@ _<fstab.h>_
 The proper way to read records from *fstab* is to use the routines *getmntent*(3) or *libmount*.
 
 The keyword *ignore* as a filesystem type (3rd field) is no longer supported by the pure libmount based mount utility (since util-linux v2.22).
+
+This document describes handling of *fstab* by *util-linux* and *libmount*. For *systemd*, read *systemd* documentation. There are slight differences.
 
 == HISTORY
 

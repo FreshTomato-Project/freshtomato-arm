@@ -1,3 +1,11 @@
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ */
 #ifndef HWCLOCK_CLOCK_H
 #define HWCLOCK_CLOCK_H
 
@@ -53,6 +61,8 @@ struct hwclock_control {
 		set:1,
 		update:1,
 		universal:1,	/* will store hw_clock_is_utc() return value */
+		vl_read:1,
+		vl_clear:1,
 		verbose:1;
 };
 
@@ -87,6 +97,9 @@ extern const struct hwclock_param *get_hwclock_params(void);
 extern int get_param_rtc(const struct hwclock_control *ctl,
 			const char *name, uint64_t *id, uint64_t *value);
 extern int set_param_rtc(const struct hwclock_control *ctl, const char *name);
+
+extern int rtc_vl_read(const struct hwclock_control *ctl);
+extern int rtc_vl_clear(const struct hwclock_control *ctl);
 
 extern void __attribute__((__noreturn__))
 hwclock_exit(const struct hwclock_control *ctl, int status);

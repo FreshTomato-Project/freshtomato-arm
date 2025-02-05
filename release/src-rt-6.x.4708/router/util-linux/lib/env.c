@@ -93,6 +93,7 @@ struct ul_env_list *env_from_fd(int fd)
 	ssize_t rc = 0;
 	struct ul_env_list *ls = NULL;
 
+	errno = 0;
 	if ((rc = read_all_alloc(fd, &buf)) < 1)
 		return NULL;
 	buf[rc] = '\0';
@@ -118,13 +119,13 @@ int env_list_setenv(struct ul_env_list *ls)
 	int rc = 0;
 
 	while (ls && rc == 0) {
-		if (ls->env) {
+		if (ls->env && *ls->env) {
 			char *val = strchr(ls->env, '=');
-			if (!val)
-				continue;
-			*val = '\0';
-			rc = setenv(ls->env, val + 1, 0);
-			*val = '=';
+			if (val) {
+				*val = '\0';
+				rc = setenv(ls->env, val + 1, 0);
+				*val = '=';
+			}
 		}
 		ls = ls->next;
 	}
@@ -159,7 +160,7 @@ void __sanitize_env(struct ul_env_list **org)
                         if (strncmp(*cur, *bad, strlen(*bad)) == 0) {
 				if (org)
 					*org = env_list_add(*org, *cur);
-                                last = remote_entry(envp, cur - envp, last);
+                                last = remove_entry(envp, cur - envp, last);
                                 cur--;
                                 break;
                         }
@@ -174,7 +175,7 @@ void __sanitize_env(struct ul_env_list **org)
                                 continue;  /* OK */
 			if (org)
 				*org = env_list_add(*org, *cur);
-                        last = remote_entry(envp, cur - envp, last);
+                        last = remove_entry(envp, cur - envp, last);
                         cur--;
                         break;
                 }

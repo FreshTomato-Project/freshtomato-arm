@@ -202,7 +202,7 @@ static int cache_add_entry(struct libmnt_cache *cache, char *key,
 	if (cache->nents == cache->nallocs) {
 		size_t sz = cache->nallocs + MNT_CACHE_CHUNKSZ;
 
-		e = realloc(cache->ents, sz * sizeof(struct mnt_cache_entry));
+		e = reallocarray(cache->ents, sz, sizeof(struct mnt_cache_entry));
 		if (!e)
 			return -ENOMEM;
 		cache->ents = e;
@@ -748,7 +748,9 @@ char *mnt_resolve_spec(const char *spec, struct libmnt_cache *cache)
 
 #ifdef TEST_PROGRAM
 
-static int test_resolve_path(struct libmnt_test *ts, int argc, char *argv[])
+static int test_resolve_path(struct libmnt_test *ts __attribute__((unused)),
+			     int argc __attribute__((unused)),
+			     char *argv[] __attribute__((unused)))
 {
 	char line[BUFSIZ];
 	struct libmnt_cache *cache;
@@ -771,7 +773,9 @@ static int test_resolve_path(struct libmnt_test *ts, int argc, char *argv[])
 	return 0;
 }
 
-static int test_resolve_spec(struct libmnt_test *ts, int argc, char *argv[])
+static int test_resolve_spec(struct libmnt_test *ts __attribute__((unused)),
+			     int argc __attribute__((unused)),
+			     char *argv[] __attribute__((unused)))
 {
 	char line[BUFSIZ];
 	struct libmnt_cache *cache;
@@ -794,7 +798,9 @@ static int test_resolve_spec(struct libmnt_test *ts, int argc, char *argv[])
 	return 0;
 }
 
-static int test_read_tags(struct libmnt_test *ts, int argc, char *argv[])
+static int test_read_tags(struct libmnt_test *ts __attribute__((unused)),
+			  int argc __attribute__((unused)),
+			  char *argv[] __attribute__((unused)))
 {
 	char line[BUFSIZ];
 	struct libmnt_cache *cache;

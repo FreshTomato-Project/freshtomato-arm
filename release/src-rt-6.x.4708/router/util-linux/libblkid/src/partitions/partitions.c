@@ -436,8 +436,8 @@ static blkid_partition new_partition(blkid_partlist ls, blkid_parttable tab)
 		/* Linux kernel has DISK_MAX_PARTS=256, but it's too much for
 		 * generic Linux machine -- let start with 32 partitions.
 		 */
-		void *tmp = realloc(ls->parts, (ls->nparts_max + 32) *
-					sizeof(struct blkid_struct_partition));
+		void *tmp = reallocarray(ls->parts, ls->nparts_max + 32,
+					 sizeof(struct blkid_struct_partition));
 		if (!tmp)
 			return NULL;
 		ls->parts = tmp;
@@ -557,6 +557,7 @@ static int idinfo_probe(blkid_probe pr, const struct blkid_idinfo *id,
 			"%s: ---> call probefunc()", id->name));
 		errno = 0;
 		rc = id->probefunc(pr, mag);
+		blkid_probe_prune_buffers(pr);
 		if (rc < 0) {
 			/* reset after error */
 			reset_partlist(blkid_probe_get_partlist(pr));

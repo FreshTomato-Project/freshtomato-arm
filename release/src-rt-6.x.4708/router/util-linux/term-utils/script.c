@@ -216,8 +216,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -q, --quiet                   be quiet\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(31));
-	printf(USAGE_MAN_TAIL("script(1)"));
+	fprintf(out, USAGE_HELP_OPTIONS(31));
+	fprintf(out, USAGE_MAN_TAIL("script(1)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -260,8 +260,8 @@ static struct script_log *log_associate(struct script_control *ctl,
 	}
 
 	/* add log to the stream */
-	stream->logs = xrealloc(stream->logs,
-			(stream->nlogs + 1) * sizeof(log));
+	stream->logs = xreallocarray(stream->logs,
+			stream->nlogs + 1, sizeof(log));
 	stream->logs[stream->nlogs] = log;
 	stream->nlogs++;
 

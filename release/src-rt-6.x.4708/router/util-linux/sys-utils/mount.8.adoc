@@ -325,11 +325,11 @@ Note that *mount* does not pass this option to the **/sbin/mount.**__type__ help
 (Used in conjunction with *-a*.) Fork off a new incarnation of *mount* for each device. This will do the mounts on different devices or different NFS servers in parallel. This has the advantage that it is faster; also NFS timeouts proceed in parallel. A disadvantage is that the order of the mount operations is undefined. Thus, you cannot use this option if you want to mount both _/usr_ and _/usr/spool_.
 
 *-f, --fake*::
-Causes everything to be done except for the mount-related system calls. The --fake option was originally designed to write an entry to /etc/mtab without actually mounting.
+Causes everything to be done except for the mount-related system calls. The *--fake* option was originally designed to write an entry to _/etc/mtab_ without actually mounting.
 +
-The /etc/mtab is no longer maintained in userspace, and starting from version 2.39, the mount operation can be a complex chain of operations with dependencies between the syscalls. The --fake option forces libmount to skip all mount source preparation, mount option analysis, and the actual mounting process.
+The _/etc/mtab_ is no longer maintained in userspace, and starting from version 2.39, the mount operation can be a complex chain of operations with dependencies between the syscalls. The *--fake* option forces libmount to skip all mount source preparation, mount option analysis, and the actual mounting process.
 +
-The difference between fake and non-fake execution is huge. This is the reason why the --fake option has minimal significance for the current mount(8) implementation and it is maintained mostly for backward compatibility.
+The difference between fake and non-fake execution is huge. This is the reason why the *--fake* option has minimal significance for the current *mount*(8) implementation and it is maintained mostly for backward compatibility.
 
 *-i, --internal-only*::
 Don't call the **/sbin/mount.**__filesystem__ helper even if it exists.
@@ -345,6 +345,12 @@ Move a subtree to some other place. See above, the subsection *The move operatio
 
 *-m*, **--mkdir**[=__mode__]::
 Allow to make a target directory (mountpoint) if it does not exist yet. Alias to "-o X-mount.mkdir[=mode]", the default mode is 0755. For more details see *X-mount.mkdir* below.
+
+*--map-groups*, *--map-users* _inner_:_outer_:_count_::
+Add the specified user/group mapping to an *X-mount.idmap* map. These options can be given multiple times to build up complete mappings for users and groups. For more details see *X-mount.idmap* below.
+
+*--map-users* /proc/_PID_/ns/user::
+Use the specified user namespace for user and group mapping in an id-mapped mount. This is an alias for "-o X-mount.idmap=/proc/_PID_/ns/user" and cannot be used twice nor together with the _inner_:_outer_:_count_ option format above. For more details see *X-mount.idmap* below.
 
 *-n*, *--no-mtab*::
 Mount without writing in _/etc/mtab_. This is necessary for example when _/etc_ is on a read-only filesystem.
@@ -381,7 +387,7 @@ Note that the order of the options matters, as the last option wins if there are
 For more details, see the *FILESYSTEM-INDEPENDENT MOUNT OPTIONS* and *FILESYSTEM-SPECIFIC MOUNT OPTIONS* sections.
 
 *--onlyonce*::
-Forces mount command to check if the filesystem is already mounted. This behavior is the default for *--all*; otherwise, it depends on the kernel filesystem driver. Some filesystems may be mounted more than once on the same mount point (e.g. tmpfs).
+Forces *mount* command to check if the filesystem is already mounted. This behavior is the default for *--all*; otherwise, it depends on the kernel filesystem driver. Some filesystems may be mounted more than once on the same mount point (e.g. tmpfs).
 
 *--options-mode* _mode_::
 Controls how to combine options from _fstab_/_mtab_ with options from the command line. _mode_ can be one of *ignore*, *append*, *prepend* or *replace*. For example, *append* means that options from _fstab_ are appended to options from the command line. The default value is *prepend* -- it means command line options are evaluated after _fstab_ options. Note that the last option wins if there are conflicting ones.
@@ -521,9 +527,12 @@ The *rootcontext=* option allows you to explicitly label the root inode of a FS 
 Note that the kernel rejects any remount request that includes the context option, *even* when unchanged from the current context.
 +
 *Warning: the* _context_ *value might contain commas*, in which case the value has to be properly quoted, otherwise *mount* will interpret the comma as a separator between mount options. Don't forget that the shell strips off quotes and thus *double quoting is required*. For example:
++
 ____
+....
 mount -t tmpfs none /mnt -o \
 'context="system_u:object_r:tmp_t:s0:c127,c456",noexec'
+....
 ____
 
 For more details, see *selinux*(8).
@@ -684,7 +693,7 @@ The _list_ is a comma-separated list of the filesystem names. The
 automatic filesystem detection is triggered by the "auto" filesystem type or
 when the filesystem type is not specified.
 +
-Thy _list_ follows how mount
+The _list_ follows how mount
 evaluates type patterns (see *-t* for more details). Only specified filesystem
 types are allowed, or all specified types are forbidden if the list is prefixed
 by "no". 
@@ -730,7 +739,8 @@ The __id-mount__ parameter indicates the starting ID in the new mount.
 The __id-host__ parameter indicates the starting ID in the filesystem.
 The __id-range__ parameter indicates how many IDs are to be mapped.
 It is possible to specify multiple ID-mappings.
-The individual ID-mappings must be separated by spaces.
++
+The individual ID mappings must be separated by spaces. Please note that in the __/etc/fstab__ file, spaces are interpreted as separators between fields. To avoid this, you must escape them using \040. For example, X-mount.idmap=0:0:1\040500:1000:1.
 +
 For example, the ID-mapping *X-mount.idmap=u:1000:0:1 g:1001:1:2 5000:1000:2* creates an idmapped mount where
 UID 0 is mapped to UID 1000, GID 1 is mapped to GUID 1001, GID 2 is mapped to GID 1002, UID and GID 1000 are mapped to 5000, and UID and GID 1001 are mapped to 5001 in the mount.
@@ -1529,13 +1539,12 @@ Supported since util-linux v2.35.
 For example commands:
 
 ....
-mksquashfs /etc /tmp/etc.squashfs
-dd if=/dev/zero of=/tmp/etc.hash bs=1M count=10
-veritysetup format /tmp/etc.squashfs /tmp/etc.hash
-openssl smime -sign -in <hash> -nocerts -inkey private.key \
+mksquashfs /etc /tmp/etc.raw
+veritysetup format /tmp/etc.raw /tmp/etc.verity --root-hash-file=/tmp/etc.roothash
+openssl smime -sign -in /tmp/etc.roothash -nocerts -inkey private.key \
 -signer private.crt -noattr -binary -outform der -out /tmp/etc.roothash.p7s
-mount -o verity.hashdevice=/tmp/etc.hash,verity.roothash=<hash>,\
-verity.roothashsig=/tmp/etc.roothash.p7s /tmp/etc.squashfs /mnt
+mount -o verity.hashdevice=/tmp/etc.verity,verity.roothashfile=/tmp/etc.roothash,\
+verity.roothashsig=/tmp/etc.roothash.p7s /tmp/etc.raw /mnt
 ....
 
 create squashfs image from _/etc_ directory, verity hash device and mount verified filesystem image to _/mnt_. The kernel will verify that the root hash is signed by a key from the kernel keyring if roothashsig is used.
@@ -1615,7 +1624,7 @@ The command *mount* does not pass the mount options *unbindable*, *runbindable*,
 == ENVIRONMENT
 
 *LIBMOUNT_FORCE_MOUNT2*={always|never|auto}::
-force to use classic mount(2) system call (requires support for new file descriptors based mount API). The default is *auto*; in this case, libmount tries to be smart and use classic mount(2) only for well-known issues. If the new mount API is unavailable, libmount can still use traditional mount(2), although LIBMOUNT_FORCE_MOUNT2 is set to *never*.
+force to use classic *mount*(2) system call (requires support for new file descriptors based mount API). The default is *auto*; in this case, libmount tries to be smart and use classic *mount*(2) only for well-known issues. If the new mount API is unavailable, libmount can still use traditional *mount*(2), although LIBMOUNT_FORCE_MOUNT2 is set to *never*.
 
 *LIBMOUNT_FSTAB*=<path>::
 overrides the default location of the _fstab_ file (ignored for suid)

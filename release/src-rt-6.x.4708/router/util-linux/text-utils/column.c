@@ -585,7 +585,7 @@ static void add_entry(struct column_control *ctl, size_t *maxents, wchar_t *wcs)
 {
 	if (ctl->nents <= *maxents) {
 		*maxents += 1000;
-		ctl->ents = xrealloc(ctl->ents, *maxents * sizeof(wchar_t *));
+		ctl->ents = xreallocarray(ctl->ents, *maxents, sizeof(wchar_t *));
 	}
 	ctl->ents[ctl->nents] = wcs;
 	ctl->nents++;
@@ -661,6 +661,8 @@ static int read_input(struct column_control *ctl, FILE *fp)
 			break;
 		}
 	} while (rc == 0);
+
+	free(buf);
 
 	return rc;
 }
@@ -776,8 +778,8 @@ static void __attribute__((__noreturn__)) usage(void)
 
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(34));
-	printf(USAGE_MAN_TAIL("column(1)"));
+	fprintf(out, USAGE_HELP_OPTIONS(34));
+	fprintf(out, USAGE_MAN_TAIL("column(1)"));
 
 	exit(EXIT_SUCCESS);
 }

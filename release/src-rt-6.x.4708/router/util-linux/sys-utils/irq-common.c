@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: GPL-2.1-or-later
+ *
  * irq-common.c - functions to display kernel interrupt information.
  *
  * Copyright (C) 2019 zhenwei pi <pizhenwei@bytedance.com>
@@ -8,17 +10,7 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
-
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -328,8 +320,8 @@ static struct irq_stat *get_irqinfo(int softirq, size_t setsize, cpu_set_t *cpus
 
 		if (stat->nr_irq == stat->nr_irq_info) {
 			stat->nr_irq_info *= 2;
-			stat->irq_info = xrealloc(stat->irq_info,
-						  sizeof(*stat->irq_info) * stat->nr_irq_info);
+			stat->irq_info = xreallocarray(stat->irq_info, stat->nr_irq_info,
+						       sizeof(*stat->irq_info));
 		}
 	}
 	fclose(irqfile);
@@ -369,18 +361,29 @@ static inline int cmp_name(const struct irq_info *a,
 	return strcoll(a->name, b->name);
 }
 
+static inline int cmp_ulong_descending(unsigned long a,
+		      unsigned long b)
+{
+	if (a == b)
+		return 0;
+	if (a < b)
+		return 1;
+	else
+		return -1;
+}
+
 static inline int cmp_total(const struct irq_info *a,
 		      const struct irq_info *b)
 {
-	return a->total < b->total;
+	int cmp = cmp_ulong_descending(a->total, b->total);
+	return cmp ? cmp : cmp_name(a, b);
 }
 
 static inline int cmp_delta(const struct irq_info *a,
 		      const struct irq_info *b)
 {
-	if (a->delta != b->delta)
-		return a->delta < b->delta;
-	return cmp_name(a, b);
+	int cmp = cmp_ulong_descending(a->delta, b->delta);
+	return cmp ? cmp : cmp_name(a, b);
 }
 
 static inline int cmp_interrupts(const struct irq_info *a,

@@ -31,36 +31,66 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <search.h>
+#include <poll.h>
+#include <sys/select.h>
 
+#include <sys/uio.h>
 #include <linux/sched.h>
 #include <sys/syscall.h>
-#include <linux/kcmp.h>
+
+#ifdef HAVE_LINUX_KCMP_H
+#  include <linux/kcmp.h>
 static int kcmp(pid_t pid1, pid_t pid2, int type,
 		unsigned long idx1, unsigned long idx2)
 {
 	return syscall(SYS_kcmp, pid1, pid2, type, idx1, idx2);
 }
+#else
+#  ifndef KCMP_FS
+#    define KCMP_FS 0
+#  endif
+#  ifndef KCMP_VM
+#    define KCMP_VM 0
+#  endif
+#  ifndef KCMP_FILES
+#    define KCMP_FILES 0
+#  endif
+static int kcmp(pid_t pid1 __attribute__((__unused__)),
+		pid_t pid2 __attribute__((__unused__)),
+		int type __attribute__((__unused__)),
+		unsigned long idx1 __attribute__((__unused__)),
+		unsigned long idx2 __attribute__((__unused__)))
+{
+	/* lsfd uses kcmp only for optimization. If the platform doesn't provide
+	 * kcmp, just returning an error is acceptable. */
+	errno = ENOSYS;
+	return -1;
+}
+#endif
 
 /* See proc(5).
  * Defined in linux/include/linux/sched.h private header file. */
 #define PF_KTHREAD		0x00200000	/* I am a kernel thread */
 
 #include "c.h"
-#include "nls.h"
-#include "xalloc.h"
 #include "list.h"
 #include "closestream.h"
+#include "column-list-table.h"
 #include "strutils.h"
 #include "procfs.h"
 #include "fileutils.h"
 #include "idcache.h"
 #include "pathnames.h"
 
-#include "libsmartcols.h"
-
 #include "lsfd.h"
-#include "lsfd-filter.h"
-#include "lsfd-counter.h"
+
+UL_DEBUG_DEFINE_MASK(lsfd);
+UL_DEBUG_DEFINE_MASKNAMES(lsfd) = UL_DEBUG_EMPTY_MASKNAMES;
+
+static void lsfd_init_debug(void)
+{
+	__UL_INIT_DEBUG_FROM_ENV(lsfd, LSFD_DEBUG_, 0, LSFD_DEBUG);
+}
 
 /*
  * /proc/$pid/mountinfo entries
@@ -129,6 +159,27 @@ static const struct colinfo infos[] = {
 	[COL_BLKDRV]           = { "BLKDRV",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("block device driver name resolved by /proc/devices") },
+	[COL_BPF_MAP_ID]       = { "BPF-MAP.ID",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("bpf map id associated with the fd") },
+	[COL_BPF_MAP_TYPE]     = { "BPF-MAP.TYPE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("bpf map type (decoded)") },
+	[COL_BPF_MAP_TYPE_RAW]= { "BPF-MAP.TYPE.RAW",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("bpf map type (raw)") },
+	[COL_BPF_NAME]         = { "BPF.NAME",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("bpf object name") },
+	[COL_BPF_PROG_ID]      = { "BPF-PROG.ID",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("bpf program id associated with the fd") },
+	[COL_BPF_PROG_TYPE]    = { "BPF-PROG.TYPE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("bpf program type (decoded)") },
+	[COL_BPF_PROG_TYPE_RAW]= { "BPF-PROG.TYPE.RAW",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("bpf program type (raw)") },
 	[COL_CHRDRV]           = { "CHRDRV",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("character device driver name resolved by /proc/devices") },
@@ -147,18 +198,21 @@ static const struct colinfo infos[] = {
 	[COL_ENDPOINTS]        = { "ENDPOINTS",
 				   0,   SCOLS_FL_WRAP,  SCOLS_JSON_ARRAY_STRING,
 				   N_("IPC endpoints information communicated with the fd") },
-	[COL_FLAGS]            = { "FLAGS",
-				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-				   N_("flags specified when opening the file") },
+	[COL_EVENTFD_ID]       = {"EVENTFD.ID",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("eventfd ID") },
+	[COL_EVENTPOLL_TFDS]   = {"EVENTPOLL.TFDS",
+				   0,   SCOLS_FL_WRAP,  SCOLS_JSON_ARRAY_NUMBER,
+				   N_("file descriptors targeted by the eventpoll file") },
 	[COL_FD]               = { "FD",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
 				   N_("file descriptor for the file") },
+	[COL_FLAGS]            = { "FLAGS",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("flags specified when opening the file") },
 	[COL_FUID]             = { "FUID",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
 				   N_("user ID number of the file's owner") },
-	[COL_INODE]            = { "INODE",
-				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
-				   N_("inode number") },
 	[COL_INET_LADDR]       = { "INET.LADDR",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("local IP address") },
@@ -171,6 +225,15 @@ static const struct colinfo infos[] = {
 	[COL_INET6_RADDR]      = { "INET6.RADDR",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("remote IPv6 address") },
+	[COL_INODE]            = { "INODE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("inode number") },
+	[COL_INOTIFY_INODES]   = { "INOTIFY.INODES",
+				   0,   SCOLS_FL_WRAP,  SCOLS_JSON_ARRAY_STRING,
+				   N_("list of monitoring inodes (cooked)") },
+	[COL_INOTIFY_INODES_RAW]={ "INOTIFY.INODES.RAW",
+				   0,   SCOLS_FL_WRAP,  SCOLS_JSON_ARRAY_STRING,
+				   N_("list of monitoring inodes (raw, don't decode devices)") },
 	[COL_KNAME]            = { "KNAME",
 				   0.4, SCOLS_FL_TRUNC, SCOLS_JSON_STRING,
 				   N_("name of the file (raw)") },
@@ -243,12 +306,18 @@ static const struct colinfo infos[] = {
 	[COL_POS]              = { "POS",
 				   5,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
 				   N_("file position") },
+	[COL_PTMX_TTY_INDEX]   = { "PTMX.TTY-INDEX",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
+				   N_("tty index of the counterpart") },
 	[COL_RAW_PROTOCOL]     = { "RAW.PROTOCOL",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
 				   N_("protocol number of the raw socket") },
 	[COL_RDEV]             = { "RDEV",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("device ID (if special file)") },
+	[COL_SIGNALFD_MASK]    = { "SIGNALFD.MASK",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("masked signals") },
 	[COL_SIZE]             = { "SIZE",
 				   4,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
 				   N_("file size"), },
@@ -261,12 +330,15 @@ static const struct colinfo infos[] = {
 	[COL_SOCK_PROTONAME]   = { "SOCK.PROTONAME",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("protocol name") },
+	[COL_SOCK_SHUTDOWN]    = { "SOCK.SHUTDOWN",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("shutdown state of socket ([-r?][-w?])") },
 	[COL_SOCK_STATE]       = { "SOCK.STATE",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-				   N_("State of socket") },
+				   N_("state of socket") },
 	[COL_SOCK_TYPE]        = { "SOCK.TYPE",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
-				   N_("Type of socket") },
+				   N_("type of socket") },
 	[COL_SOURCE]           = { "SOURCE",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("file system, partition, or device containing file") },
@@ -288,6 +360,18 @@ static const struct colinfo infos[] = {
 	[COL_TID]              = { "TID",
 				   5,   SCOLS_FL_RIGHT, SCOLS_JSON_NUMBER,
 				   N_("thread ID of the process opening the file") },
+	[COL_TIMERFD_CLOCKID]  = { "TIMERFD.CLOCKID",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("clockid") },
+	[COL_TIMERFD_INTERVAL] = { "TIMERFD.INTERVAL",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_FLOAT,
+				   N_("interval") },
+	[COL_TIMERFD_REMAINING]= { "TIMERFD.REMAINING",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_FLOAT,
+				   N_("remaining time") },
+	[COL_TUN_IFACE]        = { "TUN.IFACE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("network interface behind the tun device") },
 	[COL_TYPE]             = { "TYPE",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("file type (cooked)") },
@@ -324,6 +408,9 @@ static const struct colinfo infos[] = {
 	[COL_USER]             = { "USER",
 				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
 				   N_("user of the process") },
+	[COL_XMODE]            = { "XMODE",
+				   0,   SCOLS_FL_RIGHT, SCOLS_JSON_STRING,
+				   N_("extended version of MODE (rwxD[Ll]m)") },
 };
 
 static const int default_columns[] = {
@@ -331,7 +418,7 @@ static const int default_columns[] = {
 	COL_PID,
 	COL_USER,
 	COL_ASSOC,
-	COL_MODE,
+	COL_XMODE,
 	COL_TYPE,
 	COL_SOURCE,
 	COL_MNT_ID,
@@ -345,7 +432,7 @@ static const int default_threads_columns[] = {
 	COL_TID,
 	COL_USER,
 	COL_ASSOC,
-	COL_MODE,
+	COL_XMODE,
 	COL_TYPE,
 	COL_SOURCE,
 	COL_MNT_ID,
@@ -432,6 +519,12 @@ static const struct counter_spec default_counter_specs[] = {
 	}
 };
 
+/* "userdata" used by callback for libsmartcols filter */
+struct filler_data {
+	struct proc *proc;
+	struct file *file;
+};
+
 struct lsfd_control {
 	struct libscols_table *tb;		/* output */
 	struct list_head procs;			/* list of all processes */
@@ -443,10 +536,11 @@ struct lsfd_control {
 			threads : 1,
 			show_main : 1,		/* print main table */
 			show_summary : 1,	/* print summary/counters */
-			sockets_only : 1;	/* display only SOCKETS */
+			sockets_only : 1,	/* display only SOCKETS */
+			show_xmode : 1;		/* XMODE column is enabled. */
 
-	struct lsfd_filter *filter;
-	struct lsfd_counter **counters;		/* NULL terminated array. */
+	struct libscols_filter *filter;		/* filter */
+	struct libscols_filter **ct_filters;	/* counters (NULL terminated array) */
 };
 
 static void *proc_tree;			/* for tsearch/tfind */
@@ -476,13 +570,7 @@ static int column_name_to_id(const char *name, size_t namesz)
 			return i;
 	}
 	warnx(_("unknown column: %s"), name);
-
-	return LSFD_FILTER_UNKNOWN_COL_ID;
-}
-
-static int column_name_to_id_cb(const char *name, void *data __attribute__((__unused__)))
-{
-	return column_name_to_id(name, strlen(name));
+	return -1;
 }
 
 static int get_column_id(int num)
@@ -499,12 +587,13 @@ static const struct colinfo *get_column_info(int num)
 	return &infos[ get_column_id(num) ];
 }
 
-static struct libscols_column *add_column(struct libscols_table *tb, const struct colinfo *col)
+static struct libscols_column *add_column(struct libscols_table *tb,
+					  const struct colinfo *col, int extra)
 {
 	struct libscols_column *cl;
 	int flags = col->flags;
 
-	cl = scols_table_new_column(tb, col->name, col->whint, flags);
+	cl = scols_table_new_column(tb, col->name, col->whint, flags | extra);
 	if (cl) {
 		scols_column_set_json_type(cl, col->json_type);
 		if (col->flags & SCOLS_FL_WRAP) {
@@ -519,7 +608,8 @@ static struct libscols_column *add_column(struct libscols_table *tb, const struc
 	return cl;
 }
 
-static struct libscols_column *add_column_by_id_cb(struct libscols_table *tb, int colid, void *data)
+static struct libscols_column *add_column_by_id(struct lsfd_control *ctl,
+						int colid, int extra)
 {
 	struct libscols_column *cl;
 
@@ -528,15 +618,13 @@ static struct libscols_column *add_column_by_id_cb(struct libscols_table *tb, in
 
 	assert(colid < LSFD_N_COLS);
 
-	cl = add_column(tb, infos + colid);
+	cl = add_column(ctl->tb, infos + colid, extra);
 	if (!cl)
 		err(EXIT_FAILURE, _("failed to allocate output column"));
 	columns[ncolumns++] = colid;
 
-	if (colid == COL_TID) {
-		struct lsfd_control *ctl = data;
+	if (colid == COL_TID)
 		ctl->threads = 1;
-	}
 
 	return cl;
 }
@@ -560,8 +648,8 @@ static void add_mnt_ns(ino_t id)
 		nmax = (nspaces + 16) / 16 * 16;
 	if (nmax <= nspaces + 1) {
 		nmax += 16;
-		mnt_namespaces = xrealloc(mnt_namespaces,
-					sizeof(ino_t) * nmax);
+		mnt_namespaces = xreallocarray(mnt_namespaces,
+					       nmax, sizeof(ino_t));
 	}
 	mnt_namespaces[nspaces++] = id;
 }
@@ -592,6 +680,12 @@ static const struct file_class *stat2class(struct stat *sb)
 		if (is_nsfs_dev(dev))
 			return &nsfs_file_class;
 
+		if (is_mqueue_dev(dev))
+			return &mqueue_file_class;
+
+		if (is_pidfs_dev(dev))
+			return &pidfs_file_class;
+
 		return &file_class;
 	default:
 		break;
@@ -604,7 +698,10 @@ static struct file *new_file(struct proc *proc, const struct file_class *class)
 {
 	struct file *file;
 
+	assert(class);
 	file = xcalloc(1, class->size);
+	file->class = class;
+
 	file->proc = proc;
 
 	INIT_LIST_HEAD(&file->files);
@@ -631,11 +728,6 @@ static struct file *copy_file(struct file *old)
 
 static void file_set_path(struct file *file, struct stat *sb, const char *name, int association)
 {
-	const struct file_class *class = stat2class(sb);
-
-	assert(class);
-
-	file->class = class;
 	file->association = association;
 	file->name = xstrdup(name);
 	file->stat = *sb;
@@ -660,7 +752,7 @@ static void free_file(struct file *file)
 }
 
 
-static struct proc *new_process(pid_t pid, struct proc *leader)
+static struct proc *new_proc(pid_t pid, struct proc *leader)
 {
 	struct proc *proc = xcalloc(1, sizeof(*proc));
 
@@ -670,6 +762,7 @@ static struct proc *new_process(pid_t pid, struct proc *leader)
 
 	INIT_LIST_HEAD(&proc->files);
 	INIT_LIST_HEAD(&proc->procs);
+	INIT_LIST_HEAD(&proc->eventpolls);
 
 	proc->kthread = 0;
 	return proc;
@@ -737,11 +830,12 @@ static struct file *collect_file_symlink(struct path_cxt *pc,
 
 		class = stat2class(&sb);
 		if (sockets_only
-		    /* A nsfs is not a socket but the nsfs can be used to
-		     * collect information from other network namespaces.
-		     * Besed on the information, various columns of sockets.
+		    /* A nsfs file is not a socket but the nsfs file can
+		     * be used as a entry point to collect information from
+		     * other network namespaces. Besed on the information,
+		     * various columns of sockets can be filled.
 		     */
-		    && (class != &sock_class)&& (class != &nsfs_file_class))
+		    && (class != &sock_class) && (class != &nsfs_file_class))
 			return NULL;
 		f = new_file(proc, class);
 		file_set_path(f, &sb, sym, assoc);
@@ -809,7 +903,7 @@ static void parse_maps_line(struct path_cxt *pc, char *buf, struct proc *proc)
 			"-%"SCNx64		/* end */
 			" %4[^ ]"		/* mode */
 			" %"SCNx64		/* offset */
-		        " %lx:%lx"		/* maj:min */
+			" %lx:%lx"		/* maj:min */
 			" %"SCNu64,		/* inode */
 
 			&start, &end, modestr, &offset,
@@ -841,9 +935,6 @@ static void parse_maps_line(struct path_cxt *pc, char *buf, struct proc *proc)
 			 */
 			goto try_map_files;
 		f = new_file(proc, stat2class(&sb));
-		if (!f)
-			return;
-
 		file_set_path(f, &sb, path, -assoc);
 	} else {
 		/* As used in tcpdump, AF_PACKET socket can be mmap'ed. */
@@ -857,9 +948,6 @@ static void parse_maps_line(struct path_cxt *pc, char *buf, struct proc *proc)
 		if (ul_path_readlink(pc, sym, sizeof(sym), map_file) < 0)
 			return;
 		f = new_file(proc, stat2class(&sb));
-		if (!f)
-			return;
-
 		file_set_path(f, &sb, sym, -assoc);
 	}
 
@@ -920,7 +1008,7 @@ static void collect_execve_file(struct path_cxt *pc, struct proc *proc,
 static void collect_fs_files(struct path_cxt *pc, struct proc *proc,
 			     bool sockets_only)
 {
-	enum association assocs[] = { ASSOC_EXE, ASSOC_CWD, ASSOC_ROOT };
+	enum association assocs[] = { ASSOC_CWD, ASSOC_ROOT };
 	const char *names[] = {
 		[ASSOC_CWD]  = "cwd",
 		[ASSOC_ROOT] = "root",
@@ -929,12 +1017,26 @@ static void collect_fs_files(struct path_cxt *pc, struct proc *proc,
 			       sockets_only);
 }
 
-static void collect_namespace_files(struct path_cxt *pc, struct proc *proc)
+static void collect_namespace_files_tophalf(struct path_cxt *pc, struct proc *proc)
 {
 	enum association assocs[] = {
 		ASSOC_NS_CGROUP,
 		ASSOC_NS_IPC,
 		ASSOC_NS_MNT,
+	};
+	const char *names[] = {
+		[ASSOC_NS_CGROUP] = "ns/cgroup",
+		[ASSOC_NS_IPC]    = "ns/ipc",
+		[ASSOC_NS_MNT]    = "ns/mnt",
+	};
+	collect_outofbox_files(pc, proc, assocs, names, ARRAY_SIZE(assocs),
+			       /* Namespace information is alwasys needed. */
+			       false);
+}
+
+static void collect_namespace_files_bottomhalf(struct path_cxt *pc, struct proc *proc)
+{
+	enum association assocs[] = {
 		ASSOC_NS_NET,
 		ASSOC_NS_PID,
 		ASSOC_NS_PID4C,
@@ -944,9 +1046,6 @@ static void collect_namespace_files(struct path_cxt *pc, struct proc *proc)
 		ASSOC_NS_UTS,
 	};
 	const char *names[] = {
-		[ASSOC_NS_CGROUP] = "ns/cgroup",
-		[ASSOC_NS_IPC]    = "ns/ipc",
-		[ASSOC_NS_MNT]    = "ns/mnt",
 		[ASSOC_NS_NET]    = "ns/net",
 		[ASSOC_NS_PID]    = "ns/pid",
 		[ASSOC_NS_PID4C]  = "ns/pid_for_children",
@@ -975,6 +1074,14 @@ static void free_nodev(struct nodev *nodev)
 {
 	free(nodev->filesystem);
 	free(nodev);
+}
+
+void add_nodev(unsigned long minor, const char *filesystem)
+{
+	struct nodev *nodev = new_nodev(minor, filesystem);
+	unsigned long slot = nodev->minor % NODEV_TABLE_SIZE;
+
+	list_add_tail(&nodev->nodevs, &nodev_table.tables[slot]);
 }
 
 static void initialize_nodevs(void)
@@ -1008,7 +1115,7 @@ const char *get_nodev_filesystem(unsigned long minor)
 	return NULL;
 }
 
-static void add_nodevs(FILE *mnt)
+static void read_mountinfo(FILE *mnt)
 {
 	/* This can be very long. A line in mountinfo can have more than 3
 	 * paths. */
@@ -1017,15 +1124,12 @@ static void add_nodevs(FILE *mnt)
 	while (fgets(line, sizeof(line), mnt)) {
 		unsigned long major, minor;
 		char filesystem[256];
-		struct nodev *nodev;
-		int slot;
-
 
 		/* 23 61 0:22 / /sys rw,nosuid,nodev,noexec,relatime shared:2 - sysfs sysfs rw,seclabel */
-		if(sscanf(line, "%*d %*d %lu:%lu %*s %*s %*s %*[^-] - %s %*[^\n]",
+		if(sscanf(line, "%*d %*d %lu:%lu %*s %*s %*s %*[^-] - %255s %*[^\n]",
 			  &major, &minor, filesystem) != 3)
 			/* 1600 1458 0:55 / / rw,nodev,relatime - overlay overlay rw,context="s... */
-			if (sscanf(line, "%*d %*d %lu:%lu %*s %*s %*s - %s %*[^\n]",
+			if (sscanf(line, "%*d %*d %lu:%lu %*s %*s %*s - %255s %*[^\n]",
 				   &major, &minor, filesystem) != 3)
 				continue;
 
@@ -1034,10 +1138,7 @@ static void add_nodevs(FILE *mnt)
 		if (get_nodev_filesystem(minor))
 			continue;
 
-		nodev = new_nodev(minor, filesystem);
-		slot = minor % NODEV_TABLE_SIZE;
-
-		list_add_tail(&nodev->nodevs, &nodev_table.tables[slot]);
+		add_nodev(minor, filesystem);
 	}
 }
 
@@ -1058,6 +1159,15 @@ static void finalize_ipc_table(void)
 {
 	for (int i = 0; i < IPC_TABLE_SIZE; i++)
 		list_free(&ipc_table.tables[i], struct ipc, ipcs, free_ipc);
+}
+
+struct ipc *new_ipc(const struct ipc_class *class)
+{
+	struct ipc *ipc = xcalloc(1, class->size);
+	ipc->class = class;
+	INIT_LIST_HEAD(&ipc->endpoints);
+	INIT_LIST_HEAD(&ipc->ipcs);
+	return ipc;
 }
 
 struct ipc *get_ipc(struct file *file)
@@ -1090,6 +1200,18 @@ void add_ipc(struct ipc *ipc, unsigned int hash)
 	list_add(&ipc->ipcs, &ipc_table.tables[slot]);
 }
 
+void init_endpoint(struct ipc_endpoint *endpoint)
+{
+	INIT_LIST_HEAD(&endpoint->endpoints);
+}
+
+void add_endpoint(struct ipc_endpoint *endpoint, struct ipc *ipc)
+{
+	endpoint->ipc = ipc;
+	list_add(&endpoint->endpoints, &ipc->endpoints);
+}
+
+
 static void fill_column(struct proc *proc,
 			struct file *file,
 			struct libscols_line *ln,
@@ -1107,6 +1229,18 @@ static void fill_column(struct proc *proc,
 	}
 }
 
+static int filter_filler_cb(
+		struct libscols_filter *fltr __attribute__((__unused__)),
+		struct libscols_line *ln,
+		size_t colnum,
+		void *userdata)
+{
+	struct filler_data *fid = (struct filler_data *) userdata;
+
+	fill_column(fid->proc, fid->file, ln, get_column_id(colnum), colnum);
+	return 0;
+}
+
 static void convert_file(struct proc *proc,
 		     struct file *file,
 		     struct libscols_line *ln)
@@ -1114,8 +1248,11 @@ static void convert_file(struct proc *proc,
 {
 	size_t i;
 
-	for (i = 0; i < ncolumns; i++)
+	for (i = 0; i < ncolumns; i++) {
+		if (scols_line_is_filled(ln, i))
+			continue;
 		fill_column(proc, file, ln, get_column_id(i), i);
+	}
 }
 
 static void convert(struct list_head *procs, struct lsfd_control *ctl)
@@ -1129,23 +1266,34 @@ static void convert(struct list_head *procs, struct lsfd_control *ctl)
 		list_for_each (f, &proc->files) {
 			struct file *file = list_entry(f, struct file, files);
 			struct libscols_line *ln = scols_table_new_line(ctl->tb, NULL);
-			struct lsfd_counter **counter = NULL;
+			struct libscols_filter **ct_fltr = NULL;
 
 			if (!ln)
 				err(EXIT_FAILURE, _("failed to allocate output line"));
+			if (ctl->filter) {
+				int status = 0;
+				struct filler_data fid = {
+					.proc = proc,
+					.file = file
+				};
+
+				scols_filter_set_filler_cb(ctl->filter,
+						filter_filler_cb, (void *) &fid);
+				if (scols_line_apply_filter(ln, ctl->filter, &status))
+					err(EXIT_FAILURE, _("failed to apply filter"));
+				if (status == 0) {
+					scols_table_remove_line(ctl->tb, ln);
+					continue;
+				}
+			}
 
 			convert_file(proc, file, ln);
 
-			if (!lsfd_filter_apply(ctl->filter, ln)) {
-				scols_table_remove_line(ctl->tb, ln);
-				continue;
-			}
-
-			if (!ctl->counters)
+			if (!ctl->ct_filters)
 				continue;
 
-			for (counter = ctl->counters; *counter; counter++)
-				lsfd_counter_accumulate(*counter, ln);
+			for (ct_fltr = ctl->ct_filters; *ct_fltr; ct_fltr++)
+				scols_line_apply_filter(ln, *ct_fltr, NULL);
 		}
 	}
 }
@@ -1161,12 +1309,13 @@ static void delete(struct list_head *procs, struct lsfd_control *ctl)
 	list_free(procs, struct proc, procs, free_proc);
 
 	scols_unref_table(ctl->tb);
-	lsfd_filter_free(ctl->filter);
-	if (ctl->counters) {
-		struct lsfd_counter **counter;
-		for (counter = ctl->counters; *counter; counter++)
-			lsfd_counter_free(*counter);
-		free(ctl->counters);
+	scols_unref_filter(ctl->filter);
+
+	if (ctl->ct_filters) {
+		struct libscols_filter **ct_fltr;
+		for (ct_fltr = ctl->ct_filters; *ct_fltr; ct_fltr++)
+			scols_unref_filter(*ct_fltr);
+		free(ctl->ct_filters);
 	}
 }
 
@@ -1365,6 +1514,169 @@ unsigned long add_name(struct name_manager *nm, const char *name)
 	return e->id;
 }
 
+static void walk_threads(struct lsfd_control *ctl, struct path_cxt *pc,
+			 pid_t pid, struct proc *proc,
+			 void (*cb)(struct lsfd_control *, struct path_cxt *,
+				    pid_t, struct proc *))
+{
+	DIR *sub = NULL;
+	pid_t tid = 0;
+
+	while (procfs_process_next_tid(pc, &sub, &tid) == 0) {
+		if (tid == pid)
+			continue;
+		(*cb)(ctl, pc, tid, proc);
+	}
+}
+
+static int pollfdcmp(const void *a, const void *b)
+{
+	const struct pollfd *apfd = a, *bpfd = b;
+
+	return apfd->fd - bpfd->fd;
+}
+
+static void mark_poll_fds_as_multiplexed(char *buf,
+					 pid_t pid, struct proc *proc)
+{
+	long fds;
+	long nfds;
+
+	struct iovec  local;
+	struct iovec  remote;
+	ssize_t n;
+
+	struct list_head *f;
+
+	if (sscanf(buf, "%lx %lx", &fds, &nfds) != 2)
+		return;
+
+	if (nfds == 0)
+		return;
+
+	local.iov_len = sizeof(struct pollfd) * nfds;
+	local.iov_base = xmalloc(local.iov_len);
+	remote.iov_len = local.iov_len;
+	remote.iov_base = (void *)fds;
+
+	n = process_vm_readv(pid, &local, 1, &remote, 1, 0);
+	if (n < 0 || ((size_t)n) != local.iov_len)
+		goto out;
+
+	qsort(local.iov_base, nfds, sizeof(struct pollfd), pollfdcmp);
+
+	list_for_each (f, &proc->files) {
+		struct file *file = list_entry(f, struct file, files);
+		if (is_opened_file(file) && !file->multiplexed) {
+			int fd = file->association;
+			if (bsearch(&(struct pollfd){.fd = fd,}, local.iov_base,
+				    nfds, sizeof(struct pollfd), pollfdcmp))
+				file->multiplexed = 1;
+		}
+	}
+
+ out:
+	free(local.iov_base);
+}
+
+static void mark_select_fds_as_multiplexed(char *buf,
+					   pid_t pid, struct proc *proc)
+{
+	long nfds;
+	long fds[3];
+
+	struct iovec  local[3];
+	fd_set local_set[3];
+	struct iovec  remote[3];
+	ssize_t n;
+	ssize_t expected_n = 0;
+
+	struct list_head *f;
+
+	if (sscanf(buf, "%lx %lx %lx %lx", &nfds, fds + 0, fds + 1, fds + 2) != 4)
+		return;
+
+	if (nfds == 0)
+		return;
+
+	for (int i = 0; i < 3; i++) {
+		/* If the remote address for the fd_set is 0x0, no set is tehre. */
+		remote[i].iov_len = local[i].iov_len = fds[i]? sizeof(local_set[i]): 0;
+		expected_n += (ssize_t)local[i].iov_len;
+		local[i].iov_base = local_set + i;
+		remote[i].iov_base = (void *)(fds[i]);
+	}
+
+	n = process_vm_readv(pid, local, 3, remote, 3, 0);
+	if (n < 0 || n != expected_n)
+			return;
+
+	list_for_each (f, &proc->files) {
+		struct file *file = list_entry(f, struct file, files);
+		if (is_opened_file(file) && !file->multiplexed) {
+			int fd = file->association;
+			if (nfds <= fd)
+				continue;
+			if ((fds[0] && FD_ISSET(fd, (fd_set *)local[0].iov_base))
+			    || (fds[1] && FD_ISSET(fd, (fd_set *)local[1].iov_base))
+			    || (fds[2] && FD_ISSET(fd, (fd_set *)local[2].iov_base)))
+				file->multiplexed = 1;
+		}
+	}
+}
+
+static void parse_proc_syscall(struct lsfd_control *ctl __attribute__((__unused__)),
+			       struct path_cxt *pc, pid_t pid, struct proc *proc)
+{
+	char buf[BUFSIZ];
+	char *ptr = NULL;
+	long scn;
+
+	if (procfs_process_get_syscall(pc, buf, sizeof(buf)) <= 0)
+		return;
+
+	errno  = 0;
+	scn = strtol(buf, &ptr, 10);
+	if (errno)
+		return;
+	if (scn < 0)
+		return;
+
+	switch (scn) {
+#ifdef SYS_poll
+	case SYS_poll:
+		mark_poll_fds_as_multiplexed(ptr, pid, proc);
+		break;
+#endif
+#ifdef SYS_ppoll
+	case SYS_ppoll:
+		mark_poll_fds_as_multiplexed(ptr, pid, proc);
+		break;
+#endif
+#ifdef SYS_ppoll_time64
+	case SYS_ppoll_time64:
+		mark_poll_fds_as_multiplexed(ptr, pid, proc);
+		break;
+#endif
+
+#ifdef SYS_select
+	case SYS_select:
+		mark_select_fds_as_multiplexed(ptr, pid, proc);
+		break;
+#endif
+#ifdef SYS_pselect6
+	case SYS_pselect6:
+		mark_select_fds_as_multiplexed(ptr, pid, proc);
+		break;
+#endif
+#ifdef SYS_pselect6_time64
+	case SYS_pselect6_time64:
+		mark_select_fds_as_multiplexed(ptr, pid, proc);
+		break;
+#endif
+	}
+}
+
 static void read_process(struct lsfd_control *ctl, struct path_cxt *pc,
 			 pid_t pid, struct proc *leader)
 {
@@ -1374,7 +1686,7 @@ static void read_process(struct lsfd_control *ctl, struct path_cxt *pc,
 	if (procfs_process_init_path(pc, pid) != 0)
 		return;
 
-	proc = new_process(pid, leader);
+	proc = new_proc(pid, leader);
 	proc->command = procfs_process_get_cmdname(pc, buf, sizeof(buf)) > 0 ?
 			xstrdup(buf) : xstrdup(_("(unknown)"));
 	procfs_process_get_uid(pc, &proc->uid);
@@ -1397,6 +1709,10 @@ static void read_process(struct lsfd_control *ctl, struct path_cxt *pc,
 			proc->kthread = !!(flags & PF_KTHREAD);
 		free(pat);
 	}
+	if (proc->kthread && !ctl->threads) {
+		free_proc(proc);
+		goto out;
+	}
 
 	collect_execve_file(pc, proc, ctl->sockets_only);
 
@@ -1404,20 +1720,43 @@ static void read_process(struct lsfd_control *ctl, struct path_cxt *pc,
 	    || kcmp(proc->leader->pid, proc->pid, KCMP_FS, 0, 0) != 0)
 		collect_fs_files(pc, proc, ctl->sockets_only);
 
+	/* Reading /proc/$pid/mountinfo is expensive.
+	 * mnt_namespaces is a table for avoiding reading mountinfo files
+	 * for an identical mnt namespace.
+	 *
+	 * After reading a mountinfo file for a mnt namespace, we store $mnt_id
+	 * identifying the mnt namespace to mnt_namespaces.
+	 *
+	 * Before reading a mountinfo, we look up the mnt_namespaces with $mnt_id
+	 * as a key. If we find the key, we can skip the reading.
+	 *
+	 * To utilize mnt_namespaces, we need $mnt_id.
+	 * So we read /proc/$pid/ns/mnt here. However, we should not read
+	 * /proc/$pid/ns/net here. When reading /proc/$pid/ns/net, we need
+	 * the information about backing device of "nsfs" file system.
+	 * The information is available in a mountinfo file.
+	 */
+
+	/* 1/3. read /proc/$pid/ns/mnt */
+	if (proc->ns_mnt == 0)
+		collect_namespace_files_tophalf(pc, proc);
+
+	/* 2/3. read /proc/$pid/mountinfo */
 	if (proc->ns_mnt == 0 || !has_mnt_ns(proc->ns_mnt)) {
 		FILE *mnt = ul_path_fopen(pc, "r", "mountinfo");
 		if (mnt) {
-			add_nodevs(mnt);
+			read_mountinfo(mnt);
 			if (proc->ns_mnt)
 				add_mnt_ns(proc->ns_mnt);
 			fclose(mnt);
 		}
 	}
 
-	collect_namespace_files(pc, proc);
+	/* 3/3. read /proc/$pid/ns/{the other than mnt} */
+	collect_namespace_files_bottomhalf(pc, proc);
 
 	/* If kcmp is not available,
-	 * there is no way to no whether threads share resources.
+	 * there is no way to know whether threads share resources.
 	 * In such cases, we must pay the costs: call collect_mem_files()
 	 * and collect_fd_files().
 	 */
@@ -1434,22 +1773,20 @@ static void read_process(struct lsfd_control *ctl, struct path_cxt *pc,
 	if (tsearch(proc, &proc_tree, proc_tree_compare) == NULL)
 		errx(EXIT_FAILURE, _("failed to allocate memory"));
 
+	if (ctl->show_xmode)
+		parse_proc_syscall(ctl, pc, pid, proc);
+
 	/* The tasks collecting overwrites @pc by /proc/<task-pid>/. Keep it as
 	 * the last path based operation in read_process()
 	 */
-	if (ctl->threads && leader == NULL) {
-		DIR *sub = NULL;
-		pid_t tid = 0;
+	if (ctl->threads && leader == NULL)
+		walk_threads(ctl, pc, pid, proc, read_process);
+	else if (ctl->show_xmode)
+		walk_threads(ctl, pc, pid, proc, parse_proc_syscall);
 
-		while (procfs_process_next_tid(pc, &sub, &tid) == 0) {
-			if (tid == pid)
-				continue;
-			read_process(ctl, pc, tid, proc);
-		}
-	}
-
+ out:
 	/* Let's be careful with number of open files */
-        ul_path_close_dirfd(pc);
+	ul_path_close_dirfd(pc);
 }
 
 static void parse_pids(const char *str, pid_t **pids, int *count)
@@ -1470,7 +1807,7 @@ static void parse_pids(const char *str, pid_t **pids, int *count)
 		errx(EXIT_FAILURE, _("out of range value for pid specification: %ld"), v);
 
 	(*count)++;
-	*pids = xrealloc(*pids, (*count) * sizeof(**pids));
+	*pids = xreallocarray(*pids, *count, sizeof(**pids));
 	(*pids)[*count - 1] = (pid_t)v;
 
 	while (next && *next != '\0'
@@ -1530,44 +1867,66 @@ static void collect_processes(struct lsfd_control *ctl, const pid_t pids[], int 
 	ul_unref_path(pc);
 }
 
+static void __attribute__((__noreturn__)) list_colunms(const char *table_name,
+						       FILE *out,
+						       int raw,
+						       int json)
+{
+	struct libscols_table *col_tb = xcolumn_list_table_new(table_name, out, raw, json);
+
+	for (size_t i = 0; i < ARRAY_SIZE(infos); i++)
+		xcolumn_list_table_append_line(col_tb, infos[i].name,
+					       infos[i].json_type, "<boolean>",
+					       _(infos[i].help));
+
+	scols_print_table(col_tb);
+	scols_unref_table(col_tb);
+
+	exit(EXIT_SUCCESS);
+}
+
+static void print_columns(FILE *out, const char *prefix, const int cols[], size_t n_cols)
+{
+	fprintf(out, "%15s: ", prefix);
+	for (size_t i = 0; i < n_cols; i++) {
+		if (i)
+			fputc(',', out);
+		fputs(infos[cols[i]].name, out);
+	}
+	fputc('\n', out);
+}
+
 static void __attribute__((__noreturn__)) usage(void)
 {
 	FILE *out = stdout;
-	size_t i;
 
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(" %s [options]\n"), program_invocation_short_name);
 
 	fputs(USAGE_OPTIONS, out);
-	fputs(_(" -l,      --threads           list in threads level\n"), out);
-	fputs(_(" -J,      --json              use JSON output format\n"), out);
-	fputs(_(" -n,      --noheadings        don't print headings\n"), out);
-	fputs(_(" -o,      --output <list>     output columns\n"), out);
-	fputs(_(" -r,      --raw               use raw output format\n"), out);
-	fputs(_(" -u,      --notruncate        don't truncate text in columns\n"), out);
-	fputs(_(" -p,      --pid  <pid(s)>     collect information only specified processes\n"), out);
-	fputs(_(" -i[4|6], --inet[=4|6]        list only IPv4 and/or IPv6 sockets\n"), out);
-	fputs(_(" -Q,      --filter <expr>     apply display filter\n"), out);
-	fputs(_("          --debug-filter      dump the internal data structure of filter and exit\n"), out);
-	fputs(_(" -C,      --counter <name>:<expr>\n"
-		"                              define custom counter for --summary output\n"), out);
-	fputs(_("          --dump-counters     dump counter definitions\n"), out);
-	fputs(_("          --summary[=<when>]  print summary information (only, append, or never)\n"), out);
+	fputs(_(" -l, --threads                list in threads level\n"), out);
+	fputs(_(" -J, --json                   use JSON output format\n"), out);
+	fputs(_(" -n, --noheadings             don't print headings\n"), out);
+	fputs(_(" -o, --output <list>          output columns (see --list-columns)\n"), out);
+	fputs(_(" -r, --raw                    use raw output format\n"), out);
+	fputs(_(" -u, --notruncate             don't truncate text in columns\n"), out);
+	fputs(_(" -p, --pid  <pid(s)>          collect information only specified processes\n"), out);
+	fputs(_(" -i[4|6], --inet[=4|=6]       list only IPv4 and/or IPv6 sockets\n"), out);
+	fputs(_(" -Q, --filter <expr>          apply display filter\n"), out);
+	fputs(_("     --debug-filter           dump the internal data structure of filter and exit\n"), out);
+	fputs(_(" -C, --counter <name>:<expr>  define custom counter for --summary output\n"), out);
+	fputs(_("     --dump-counters          dump counter definitions\n"), out);
+	fputs(_("     --summary[=<when>]       print summary information (only, append, or never)\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(30));
+	fputs(_(" -H, --list-columns           list the available columns\n"), out);
+	fprintf(out, USAGE_HELP_OPTIONS(30));
 
-	fprintf(out, USAGE_COLUMNS);
+	fputs(USAGE_DEFAULT_COLUMNS, out);
+	print_columns(out, _("Default"), default_columns, ARRAY_SIZE(default_columns));
+	print_columns(out, _("With --threads"), default_threads_columns, ARRAY_SIZE(default_threads_columns));
 
-	for (i = 0; i < ARRAY_SIZE(infos); i++)
-		fprintf(out, " %16s  %-10s%s\n", infos[i].name,
-			infos[i].json_type == SCOLS_JSON_STRING?  "<string>":
-			infos[i].json_type == SCOLS_JSON_ARRAY_STRING?  "<string>":
-			infos[i].json_type == SCOLS_JSON_NUMBER?  "<number>":
-			"<boolean>",
-			_(infos[i].help));
-
-	printf(USAGE_MAN_TAIL("lsfd(1)"));
+	fprintf(out, USAGE_MAN_TAIL("lsfd(1)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -1595,24 +1954,49 @@ static void append_filter_expr(char **a, const char *b, bool and)
 	free(tmp);
 }
 
-static struct lsfd_filter *new_filter(const char *expr, bool debug, const char *err_prefix, struct lsfd_control *ctl)
+static struct libscols_filter *new_filter(const char *expr, bool debug, struct lsfd_control *ctl)
 {
-	struct lsfd_filter *filter;
-	const char *errmsg;
+	struct libscols_filter *f;
+	struct libscols_iter *itr;
+	int nerrs = 0;
+	const char *name = NULL;
 
-	filter = lsfd_filter_new(expr, ctl->tb,
-				 LSFD_N_COLS,
-				 column_name_to_id_cb,
-				 add_column_by_id_cb, ctl);
-	errmsg = lsfd_filter_get_errmsg(filter);
-	if (errmsg)
-		errx(EXIT_FAILURE, "%s%s", err_prefix, errmsg);
-	if (debug) {
-		lsfd_filter_dump(filter, stdout);
-		exit(EXIT_SUCCESS);
+	f = scols_new_filter(NULL);
+	if (!f)
+		err(EXIT_FAILURE, _("failed to allocate filter"));
+	if (expr && scols_filter_parse_string(f, expr) != 0)
+		errx(EXIT_FAILURE, _("failed to parse \"%s\": %s"), expr,
+				scols_filter_get_errmsg(f));
+
+	itr = scols_new_iter(SCOLS_ITER_FORWARD);
+	if (!itr)
+		err(EXIT_FAILURE, _("failed to allocate iterator"));
+
+	while (scols_filter_next_holder(f, itr, &name, 0) == 0) {
+		struct libscols_column *col = scols_table_get_column_by_name(ctl->tb, name);
+
+		if (!col) {
+			int id = column_name_to_id(name, strlen(name));
+			if (id >= 0)
+				col = add_column_by_id(ctl, id, SCOLS_FL_HIDDEN);
+			if (!col) {
+				nerrs++;	/* report all unknown columns */
+				continue;
+			}
+		}
+		scols_filter_assign_column(f, itr, name, col);
 	}
 
-	return filter;
+	scols_free_iter(itr);
+
+	if (debug)
+		scols_dump_filter(f, stdout);
+	if (nerrs)
+		exit(EXIT_FAILURE);
+	if (debug)
+		exit(EXIT_SUCCESS);
+
+	return f;
 }
 
 static struct counter_spec *new_counter_spec(const char *spec_str)
@@ -1660,47 +2044,54 @@ static void free_counter_spec(struct counter_spec *counter_spec)
 	free(counter_spec);
 }
 
-static struct lsfd_counter *new_counter(const struct counter_spec *spec, struct lsfd_control *ctl)
+static struct libscols_filter *new_counter(const struct counter_spec *spec, struct lsfd_control *ctl)
 {
-	struct lsfd_filter *filter;
+	struct libscols_filter *f;
+	struct libscols_counter *ct;
 
-	filter = new_filter(spec->expr, false,
-			    _("failed in making filter for a counter: "),
-			    ctl);
-	return lsfd_counter_new(spec->name, filter);
+	f = new_filter(spec->expr, false, ctl);
+
+	ct = scols_filter_new_counter(f);
+	if (!ct)
+		err(EXIT_FAILURE, _("failed to allocate counter"));
+
+	scols_counter_set_name(ct, spec->name);
+	scols_counter_set_func(ct, SCOLS_COUNTER_COUNT);
+
+	return f;
 }
 
-static struct lsfd_counter **new_counters(struct list_head *specs, struct lsfd_control *ctl)
+static struct libscols_filter **new_counters(struct list_head *specs, struct lsfd_control *ctl)
 {
-	struct lsfd_counter **counters;
+	struct libscols_filter **ct_filters;
 	size_t len = list_count_entries(specs);
 	size_t i = 0;
 	struct list_head *s;
 
-	counters = xcalloc(len + 1, sizeof(struct lsfd_counter *));
+	ct_filters = xcalloc(len + 1, sizeof(struct libscols_filter *));
 	list_for_each(s, specs) {
 		struct counter_spec *spec = list_entry(s, struct counter_spec, specs);
-		counters[i++] = new_counter(spec, ctl);
+		ct_filters[i++] = new_counter(spec, ctl);
 	}
-	assert(counters[len] == NULL);
+	assert(ct_filters[len] == NULL);
 
-	return counters;
+	return ct_filters;
 }
 
-static struct lsfd_counter **new_default_counters(struct lsfd_control *ctl)
+static struct libscols_filter **new_default_counters(struct lsfd_control *ctl)
 {
-	struct lsfd_counter **counters;
+	struct libscols_filter **ct_filters;
 	size_t len = ARRAY_SIZE(default_counter_specs);
 	size_t i;
 
-	counters = xcalloc(len + 1, sizeof(struct lsfd_counter *));
+	ct_filters = xcalloc(len + 1, sizeof(struct libscols_filter *));
 	for (i = 0; i < len; i++) {
 		const struct counter_spec *spec = default_counter_specs + i;
-		counters[i] = new_counter(spec, ctl);
+		ct_filters[i] = new_counter(spec, ctl);
 	}
-	assert(counters[len] == NULL);
+	assert(ct_filters[len] == NULL);
 
-	return counters;
+	return ct_filters;
 }
 
 static void dump_default_counter_specs(void)
@@ -1758,28 +2149,35 @@ static struct libscols_table *new_summary_table(struct lsfd_control *ctl)
 	return tb;
 }
 
-static void fill_summary_line(struct libscols_line *ln, struct lsfd_counter *counter)
+static void emit_summary(struct lsfd_control *ctl)
 {
-	char *str = NULL;
-
-	xasprintf(&str, "%llu", (unsigned long long)lsfd_counter_value(counter));
-	if (!str)
-		err(EXIT_FAILURE, _("failed to add summary data"));
-	if (scols_line_refer_data(ln, 0, str))
-		err(EXIT_FAILURE, _("failed to add summary data"));
-
-	if (scols_line_set_data(ln, 1, lsfd_counter_name(counter)))
-		err(EXIT_FAILURE, _("failed to add summary data"));
-}
-
-static void emit_summary(struct lsfd_control *ctl, struct lsfd_counter **counter)
-{
+	struct libscols_iter *itr;
+	struct libscols_filter **ct_fltr;
 	struct libscols_table *tb = new_summary_table(ctl);
 
-	for (; *counter; counter++) {
-		struct libscols_line *ln = scols_table_new_line(tb, NULL);
-		fill_summary_line(ln, *counter);
+	itr = scols_new_iter(SCOLS_ITER_FORWARD);
+
+	for (ct_fltr = ctl->ct_filters; *ct_fltr; ct_fltr++) {
+		struct libscols_counter *ct = NULL;
+
+		scols_reset_iter(itr, SCOLS_ITER_FORWARD);
+		while (scols_filter_next_counter(*ct_fltr, itr, &ct) == 0) {
+			char *str = NULL;
+			struct libscols_line *ln;
+
+			ln = scols_table_new_line(tb, NULL);
+			if (!ln)
+				err(EXIT_FAILURE, _("failed to allocate summary line"));
+
+			xasprintf(&str, "%llu", scols_counter_get_result(ct));
+			if (scols_line_refer_data(ln, 0, str))
+				err(EXIT_FAILURE, _("failed to add summary data"));
+			if (scols_line_set_data(ln, 1, scols_counter_get_name(ct)))
+				err(EXIT_FAILURE, _("failed to add summary data"));
+		}
 	}
+
+	scols_free_iter(itr);
 	scols_print_table(tb);
 
 	scols_unref_table(tb);
@@ -1797,6 +2195,23 @@ static void attach_xinfos(struct list_head *procs)
 			struct file *file = list_entry(f, struct file, files);
 			if (file->class->attach_xinfo)
 				file->class->attach_xinfo(file);
+		}
+	}
+}
+
+static void set_multiplexed_flags(struct list_head *procs)
+{
+	struct list_head *p;
+	list_for_each (p, procs) {
+		struct proc *proc = list_entry(p, struct proc, procs);
+		struct list_head *f;
+		list_for_each (f, &proc->files) {
+			struct file *file = list_entry(f, struct file, files);
+			if (is_opened_file(file) && !file->multiplexed) {
+				int fd = file->association;
+				if (is_multiplexed_by_eventpoll(fd, &proc->eventpolls))
+					file->multiplexed = 1;
+			}
 		}
 	}
 }
@@ -1826,7 +2241,7 @@ static const char *inet46_subexpr = INET_SUBEXP_BEGIN
 
 int main(int argc, char *argv[])
 {
-	int c;
+	int c, collist = 0;
 	size_t i;
 	char *outarg = NULL;
 	char  *filter_expr = NULL;
@@ -1863,15 +2278,18 @@ int main(int argc, char *argv[])
 		{ "summary",    optional_argument, NULL,  OPT_SUMMARY },
 		{ "counter",    required_argument, NULL, 'C' },
 		{ "dump-counters",no_argument, NULL, OPT_DUMP_COUNTERS },
+		{ "list-columns",no_argument, NULL, 'H' },
 		{ NULL, 0, NULL, 0 },
 	};
+
+	lsfd_init_debug();
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 	close_stdout_atexit();
 
-	while ((c = getopt_long(argc, argv, "no:JrVhluQ:p:i::C:s", longopts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "no:JrVhluQ:p:i::C:sH", longopts, NULL)) != -1) {
 		switch (c) {
 		case 'n':
 			ctl.noheadings = 1;
@@ -1943,10 +2361,17 @@ int main(int argc, char *argv[])
 			print_version(EXIT_SUCCESS);
 		case 'h':
 			usage();
+		case 'H':
+			collist = 1;
+			break;
 		default:
 			errtryhelp(EXIT_FAILURE);
 		}
 	}
+
+	if (collist)
+		list_colunms("lsfd-columns", stdout, ctl.raw, ctl.json); /* print and exit */
+
 	if (argv[optind])
 		errtryhelp(EXIT_FAILURE);
 
@@ -1982,7 +2407,7 @@ int main(int argc, char *argv[])
 	/* create output columns */
 	for (i = 0; i < ncolumns; i++) {
 		const struct colinfo *col = get_column_info(i);
-		struct libscols_column *cl = add_column(ctl.tb, col);
+		struct libscols_column *cl = add_column(ctl.tb, col, 0);
 
 		if (!cl)
 			err(EXIT_FAILURE, _("failed to allocate output column"));
@@ -1994,9 +2419,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* make fitler */
+	/* make filter */
 	if (filter_expr) {
-		ctl.filter = new_filter(filter_expr, debug_filter, "", &ctl);
+		ctl.filter = new_filter(filter_expr, debug_filter, &ctl);
 		free(filter_expr);
 	}
 
@@ -2011,9 +2436,9 @@ int main(int argc, char *argv[])
 	/* make counters */
 	if (ctl.show_summary) {
 		if (list_empty(&counter_specs))
-			ctl.counters = new_default_counters(&ctl);
+			ctl.ct_filters = new_default_counters(&ctl);
 		else {
-			ctl.counters = new_counters(&counter_specs, &ctl);
+			ctl.ct_filters = new_counters(&counter_specs, &ctl);
 			list_free(&counter_specs, struct counter_spec, specs,
 				  free_counter_spec);
 		}
@@ -2022,16 +2447,26 @@ int main(int argc, char *argv[])
 	if (n_pids > 0)
 		sort_pids(pids, n_pids);
 
-	/* collect data */
+	if (scols_table_get_column_by_name(ctl.tb, "XMODE"))
+		ctl.show_xmode = 1;
+
+	/* collect data
+	 *
+	 * The call initialize_ipc_table() must come before
+	 * initialize_classes.
+	 */
 	initialize_nodevs();
+	initialize_ipc_table();
 	initialize_classes();
 	initialize_devdrvs();
-	initialize_ipc_table();
 
 	collect_processes(&ctl, pids, n_pids);
 	free(pids);
 
 	attach_xinfos(&ctl.procs);
+	if (ctl.show_xmode)
+		set_multiplexed_flags(&ctl.procs);
+
 
 	convert(&ctl.procs, &ctl);
 
@@ -2039,15 +2474,15 @@ int main(int argc, char *argv[])
 	if (ctl.show_main)
 		emit(&ctl);
 
-	if (ctl.show_summary && ctl.counters)
-		emit_summary(&ctl, ctl.counters);
+	if (ctl.show_summary && ctl.ct_filters)
+		emit_summary(&ctl);
 
 	/* cleanup */
 	delete(&ctl.procs, &ctl);
 
-	finalize_ipc_table();
 	finalize_devdrvs();
 	finalize_classes();
+	finalize_ipc_table();
 	finalize_nodevs();
 
 	return 0;

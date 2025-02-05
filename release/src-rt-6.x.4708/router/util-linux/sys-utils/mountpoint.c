@@ -1,9 +1,5 @@
 /*
- * mountpoint(1) - see if a directory is a mountpoint
- *
- * This is libmount based reimplementation of the mountpoint(1)
- * from sysvinit project.
- *
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Copyright (C) 2011 Red Hat, Inc. All rights reserved.
  * Written by Karel Zak <kzak@redhat.com>
@@ -13,16 +9,11 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * mountpoint(1) - see if a directory is a mountpoint
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * This is libmount based reimplementation of the mountpoint(1)
+ * from sysvinit project.
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -130,8 +121,8 @@ static void __attribute__((__noreturn__)) usage(void)
 		" -d, --fs-devno     print maj:min device number of the filesystem\n"
 		" -x, --devno        print maj:min device number of the block device\n"), out);
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(20));
-	printf(USAGE_MAN_TAIL("mountpoint(1)"));
+	fprintf(out, USAGE_HELP_OPTIONS(20));
+	fprintf(out, USAGE_MAN_TAIL("mountpoint(1)"));
 
 	exit(EXIT_SUCCESS);
 }

@@ -213,6 +213,14 @@
 	(type *)( (char *)__mptr - offsetof(type,member) );})
 #endif
 
+#define read_unaligned_member(p, m) __extension__ ({          \
+	size_t offset = offsetof(__typeof__(* p), m);         \
+	__typeof__(p->m + 0) v;                               \
+	memcpy(&v, ((unsigned char *)p) + offset, sizeof(v)); \
+	v; })
+
+#define member_ptr(p, m) (((unsigned char *)p) + offsetof(__typeof__(*p), m))
+
 #ifndef HAVE_PROGRAM_INVOCATION_SHORT_NAME
 # ifdef HAVE___PROGNAME
 extern char *__progname;
@@ -293,6 +301,9 @@ void __err_oom(const char *file, unsigned int line)
 	err(EXIT_FAILURE, "%s: %u: cannot allocate memory", file, line);
 }
 #define err_oom()	__err_oom(__FILE__, __LINE__)
+
+#define err_nosys(exitcode, ...) \
+	err(errno == ENOSYS ? EXIT_NOTSUPP : exitcode, __VA_ARGS__)
 
 
 /* Don't use inline function to avoid '#include "nls.h"' in c.h
@@ -449,6 +460,7 @@ static inline void __attribute__((__noreturn__)) ul_sig_err(int excode, const ch
 #define USAGE_COMMANDS   _("\nCommands:\n")
 #define USAGE_ARGUMENTS   _("\nArguments:\n")
 #define USAGE_COLUMNS    _("\nAvailable output columns:\n")
+#define USAGE_DEFAULT_COLUMNS _("\nDefault columns:\n")
 #define USAGE_SEPARATOR    "\n"
 
 #define USAGE_OPTSTR_HELP     _("display this help")
@@ -497,6 +509,12 @@ static inline void print_features(const char **features, const char *prefix)
 		fputc('\n', stdout); \
 		exit(eval); \
 })
+
+static inline int fputsln(const char *s, FILE *stream) {
+	if (fputs(s, stream) == EOF)
+		return EOF;
+	return fputc('\n', stdout);
+}
 
 /*
  * seek stuff
@@ -563,5 +581,18 @@ static inline void print_features(const char **features, const char *prefix)
 #endif
 
 #define SINT_MAX(t) (((t)1 << (sizeof(t) * 8 - 2)) - (t)1 + ((t)1 << (sizeof(t) * 8 - 2)))
+
+#ifndef HAVE_REALLOCARRAY
+static inline void *reallocarray(void *ptr, size_t nmemb, size_t size)
+{
+	size_t s = nmemb * size;
+
+	if (nmemb != 0 && s / nmemb != size) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	return realloc(ptr, s);
+}
+#endif
 
 #endif /* UTIL_LINUX_C_H */

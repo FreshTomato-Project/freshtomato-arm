@@ -92,19 +92,34 @@ lsblk_SOURCES = \
 	misc-utils/lsblk-properties.c \
 	misc-utils/lsblk-devtree.c \
 	misc-utils/lsblk.h
-lsblk_LDADD = $(LDADD) libblkid.la libmount.la libcommon.la libsmartcols.la
+lsblk_LDADD = $(LDADD) libblkid.la libmount.la libcommon.la \
+		libsmartcols.la libtcolors.la
 lsblk_CFLAGS = $(AM_CFLAGS) -I$(ul_libblkid_incdir) -I$(ul_libmount_incdir) -I$(ul_libsmartcols_incdir)
 if HAVE_UDEV
 lsblk_LDADD += -ludev
 endif
 endif # BUILD_LSBLK
 
+if BUILD_LIBLASTLOG2
+usrbin_exec_PROGRAMS += lastlog2
+MANPAGES += misc-utils/lastlog2.8
+dist_noinst_DATA += misc-utils/lastlog2.8.adoc
+lastlog2_SOURCES = misc-utils/lastlog2.c lib/strutils.c
+lastlog2_LDADD = $(LDADD) liblastlog2.la -lsqlite3
+lastlog2_CFLAGS = $(AM_CFLAGS) -I$(ul_liblastlog2_incdir)
+systemdsystemunit_DATA += \
+	misc-utils/lastlog2-import.service
+tmpfiles_DATA += misc-utils/lastlog2-tmpfiles.conf
+endif
+PATHFILES += misc-utils/lastlog2-import.service \
+             misc-utils/lastlog2-tmpfiles.conf
+
 if BUILD_UUIDGEN
 usrbin_exec_PROGRAMS += uuidgen
 MANPAGES += misc-utils/uuidgen.1
 dist_noinst_DATA += misc-utils/uuidgen.1.adoc
 uuidgen_SOURCES = misc-utils/uuidgen.c
-uuidgen_LDADD = $(LDADD) libuuid.la
+uuidgen_LDADD = $(LDADD) libcommon.la libuuid.la
 uuidgen_CFLAGS = $(AM_CFLAGS) -I$(ul_libuuid_incdir)
 endif
 
@@ -128,6 +143,7 @@ uuidd_SOURCES = misc-utils/uuidd.c lib/monotonic.c lib/timer.c
 if HAVE_SYSTEMD
 uuidd_LDADD += $(SYSTEMD_LIBS) $(SYSTEMD_DAEMON_LIBS)
 uuidd_CFLAGS += $(SYSTEMD_CFLAGS) $(SYSTEMD_DAEMON_CFLAGS)
+tmpfiles_DATA += misc-utils/uuidd-tmpfiles.conf
 systemdsystemunit_DATA += \
 	misc-utils/uuidd.service \
 	misc-utils/uuidd.socket
@@ -142,7 +158,8 @@ endif # BUILD_UUIDD
 PATHFILES += \
 	misc-utils/uuidd.rc \
 	misc-utils/uuidd.service \
-	misc-utils/uuidd.socket
+	misc-utils/uuidd.socket \
+	misc-utils/uuidd-tmpfiles.conf
 
 if BUILD_BLKID
 sbin_PROGRAMS += blkid
@@ -215,6 +232,7 @@ usrbin_exec_PROGRAMS += rename
 MANPAGES += misc-utils/rename.1
 dist_noinst_DATA += misc-utils/rename.1.adoc
 rename_SOURCES = misc-utils/rename.c
+rename_LDADD = $(LDADD) libcommon.la
 endif
 
 if BUILD_GETOPT
@@ -227,6 +245,15 @@ getoptexampledir = $(docdir)
 dist_getoptexample_DATA = \
 	misc-utils/getopt-example.bash \
 	misc-utils/getopt-example.tcsh
+endif
+
+if BUILD_EXCH
+usrbin_exec_PROGRAMS += exch
+MANPAGES += misc-utils/exch.1
+dist_noinst_DATA += misc-utils/exch.1.adoc
+exch_SOURCES = misc-utils/exch.c
+exch_LDADD = $(LDADD) libcommon.la
+exch_CFLAGS = $(AM_CFLAGS)
 endif
 
 if BUILD_FINCORE
@@ -254,10 +281,6 @@ dist_noinst_DATA += misc-utils/lsfd.1.adoc
 lsfd_SOURCES = \
 	misc-utils/lsfd.c \
 	misc-utils/lsfd.h \
-	misc-utils/lsfd-filter.h \
-	misc-utils/lsfd-filter.c \
-	misc-utils/lsfd-counter.h \
-	misc-utils/lsfd-counter.c \
 	misc-utils/lsfd-decode-file-flags.c \
 	misc-utils/lsfd-file.c \
 	misc-utils/lsfd-cdev.c \
@@ -266,8 +289,10 @@ lsfd_SOURCES = \
 	misc-utils/lsfd-sock.h \
 	misc-utils/lsfd-sock-xinfo.c \
 	misc-utils/lsfd-unkn.c \
-	misc-utils/lsfd-fifo.c
-lsfd_LDADD = $(LDADD) libsmartcols.la libcommon.la
+	misc-utils/lsfd-fifo.c \
+	misc-utils/lsfd-pidfd.h \
+	misc-utils/lsfd-pidfd.c
+lsfd_LDADD = $(LDADD) $(MQ_LIBS) libsmartcols.la libcommon.la
 lsfd_CFLAGS = $(AM_CFLAGS) -I$(ul_libsmartcols_incdir)
 endif
 
@@ -296,4 +321,32 @@ dist_noinst_DATA += misc-utils/waitpid.1.adoc
 waitpid_SOURCES = misc-utils/waitpid.c
 waitpid_LDADD = $(LDADD) libcommon.la
 waitpid_CFLAGS = $(AM_CFLAGS)
+endif
+
+if BUILD_ENOSYS
+
+misc-utils/enosys.c: syscalls.h
+
+syscalls.h: $(top_srcdir)/tools/all_syscalls
+	@echo '  GEN      $@'
+	@$(top_srcdir)/tools/all_syscalls "$(SED)" $(CC) $(CFLAGS)
+
+-include syscalls.h.deps
+CLEANFILES += syscalls.h syscalls.h.deps
+
+usrbin_exec_PROGRAMS += enosys
+MANPAGES += misc-utils/enosys.1
+dist_noinst_DATA += misc-utils/enosys.1.adoc
+enosys_SOURCES = misc-utils/enosys.c
+enosys_LDADD = $(LDADD) libcommon.la
+enosys_CFLAGS = $(AM_CFLAGS)
+endif
+
+if BUILD_LSCLOCKS
+usrbin_exec_PROGRAMS += lsclocks
+MANPAGES += misc-utils/lsclocks.1
+dist_noinst_DATA += misc-utils/lsclocks.1.adoc
+lsclocks_SOURCES = misc-utils/lsclocks.c
+lsclocks_LDADD = $(LDADD) libcommon.la libsmartcols.la
+lsclocks_CFLAGS = $(AM_CFLAGS) -I$(ul_libsmartcols_incdir)
 endif

@@ -1,10 +1,16 @@
 /*
- * ctrlaltdel.c - Set the function of the Ctrl-Alt-Del combination
- * Created 4-Jul-92 by Peter Orbaek <poe@daimi.aau.dk>
- * 1999-02-22 Arkadiusz Miśkiewicz <misiek@pld.ORG.PL>
- * - added Native Language Support
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Copyright (C) 1992 Peter Orbaek <poe@daimi.aau.dk>
+ * Copyright (C) 1992-1993 Rickard E. Faith <faith@cs.unc.edu>
+ *
+ * Set the function of the Ctrl-Alt-Del combination
  */
-
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,8 +37,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fprintf(out, _("Set the function of the Ctrl-Alt-Del combination.\n"));
 
 	fputs(USAGE_OPTIONS, out);
-	printf(USAGE_HELP_OPTIONS(16));
-	printf(USAGE_MAN_TAIL("ctrlaltdel(8)"));
+	fprintf(out, USAGE_HELP_OPTIONS(16));
+	fprintf(out, USAGE_MAN_TAIL("ctrlaltdel(8)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -62,10 +68,6 @@ static int set_cad(const char *arg)
 {
 	unsigned int cmd;
 
-	if (geteuid()) {
-		warnx(_("You must be root to set the Ctrl-Alt-Del behavior"));
-		return EXIT_FAILURE;
-	}
 	if (!strcmp("hard", arg))
 		cmd = LINUX_REBOOT_CMD_CAD_ON;
 	else if (!strcmp("soft", arg))

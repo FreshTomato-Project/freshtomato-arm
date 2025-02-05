@@ -1,24 +1,16 @@
 /*
- * lscpu - CPU architecture information helper
- *
- * Copyright (C) 2008 Cai Qian <qcai@redhat.com>
- * Copyright (C) 2008 Karel Zak <kzak@redhat.com>
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Copyright (C) 2008 Cai Qian <qcai@redhat.com>
+ * Copyright (C) 2008-2023 Karel Zak <kzak@redhat.com>
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * lscpu - CPU architecture information helper
  */
-
 #include <assert.h>
 #include <ctype.h>
 #include <dirent.h>
@@ -855,12 +847,14 @@ print_cpuset(struct lscpu_cxt *cxt,
 	     const char *key, cpu_set_t *set)
 {
 	size_t setbuflen = 7 * cxt->maxcpus;
-	char setbuf[setbuflen], *p;
+	char *setbuf, *p;
 
 	assert(set);
 	assert(key);
 	assert(tb);
 	assert(cxt);
+
+	setbuf = xmalloc(setbuflen);
 
 	if (cxt->hex) {
 		p = cpumask_create(setbuf, setbuflen, set, cxt->setsize);
@@ -869,6 +863,8 @@ print_cpuset(struct lscpu_cxt *cxt,
 		p = cpulist_create(setbuf, setbuflen, set, cxt->setsize);
 		add_summary_s(tb, sec, key, p);
 	}
+
+	free(setbuf);
 }
 
 static void
@@ -994,18 +990,16 @@ static void print_summary(struct lscpu_cxt *cxt)
 	/* Section: architecture */
 	sec = add_summary_s(tb, NULL, _("Architecture:"), cxt->arch->name);
 	if (cxt->arch->bit32 || cxt->arch->bit64) {
-		char buf[32], *p = buf;
+		const char *p;
 
-		if (cxt->arch->bit32) {
-			strcpy(p, "32-bit, ");
-			p += 8;
-		}
-		if (cxt->arch->bit64) {
-			strcpy(p, "64-bit, ");
-			p += 8;
-		}
-		*(p - 2) = '\0';
-		add_summary_s(tb, sec, _("CPU op-mode(s):"), buf);
+		if (cxt->arch->bit32 && cxt->arch->bit64)
+			p = "32-bit, 64-bit";
+		else if (cxt->arch->bit32)
+			p = "32-bit";
+		else
+			p = "64-bit";
+
+		add_summary_s(tb, sec, _("CPU op-mode(s):"), p);
 	}
 	if (ct && ct->addrsz)
 		add_summary_s(tb, sec, _("Address sizes:"), ct->addrsz);
@@ -1194,7 +1188,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("     --hierarchic[=when] use subsections in summary (auto, never, always)\n"), out);
 	fputs(_("     --output-all        print all available columns for -e, -p or -C\n"), out);
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(25));
+	fprintf(out, USAGE_HELP_OPTIONS(25));
 
 	fputs(_("\nAvailable output columns for -e or -p:\n"), out);
 	for (i = 0; i < ARRAY_SIZE(coldescs_cpu); i++)
@@ -1204,7 +1198,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	for (i = 0; i < ARRAY_SIZE(coldescs_cache); i++)
 		fprintf(out, " %13s  %s\n", coldescs_cache[i].name, _(coldescs_cache[i].help));
 
-	printf(USAGE_MAN_TAIL("lscpu(1)"));
+	fprintf(out, USAGE_MAN_TAIL("lscpu(1)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -1371,7 +1365,8 @@ int main(int argc, char *argv[])
 	lscpu_read_numas(cxt);
 	lscpu_read_topology(cxt);
 
-	lscpu_decode_arm(cxt);
+	if (is_arm(cxt))
+		lscpu_decode_arm(cxt);
 
 	cxt->virt = lscpu_read_virtualization(cxt);
 

@@ -136,7 +136,7 @@ struct lsipc_control {
 };
 
 struct lsipc_coldesc {
-	const char *name;
+	const char * const name;
 	const char *help;
 	const char *pretty_name;
 
@@ -320,7 +320,7 @@ static void __attribute__((__noreturn__)) usage(void)
 
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(26));
+	fprintf(out, USAGE_HELP_OPTIONS(26));
 
 	fprintf(out, _("\nGeneric columns:\n"));
 	for (i = COLDESC_IDX_GEN_FIRST; i <= COLDESC_IDX_GEN_LAST; i++)
@@ -342,7 +342,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	for (i = COLDESC_IDX_SUM_FIRST; i <= COLDESC_IDX_SUM_LAST; i++)
 		fprintf(out, " %14s  %s\n", coldescs[i].name, _(coldescs[i].help));
 
-	printf(USAGE_MAN_TAIL("lsipc(1)"));
+	fprintf(out, USAGE_MAN_TAIL("lsipc(1)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -717,16 +717,18 @@ static void do_sem(int id, struct lsipc_control *ctl, struct libscols_table *tb)
 
 static void do_sem_global(struct lsipc_control *ctl, struct libscols_table *tb)
 {
-	struct sem_data *semds, *semdsp;
+	struct sem_data *semds;
 	struct ipc_limits lim;
 	int nsems = 0, nsets = 0;
 
 	ipc_sem_get_limits(&lim);
 
 	if (ipc_sem_get_info(-1, &semds) > 0) {
-		for (semdsp = semds; semdsp->next != NULL; semdsp = semdsp->next) {
+		struct sem_data *p;
+
+		for (p = semds; p->next != NULL; p = p->next) {
 			++nsets;
-			nsems += semds->sem_nsems;
+			nsems += p->sem_nsems;
 		}
 		ipc_sem_free_info(semds);
 	}
@@ -1354,4 +1356,3 @@ int main(int argc, char *argv[])
 
 	return EXIT_SUCCESS;
 }
-

@@ -36,6 +36,10 @@ renice_sources = files(
   'renice.c',
 )
 
+setpgid_sources = files(
+  'setpgid.c',
+)
+
 setsid_sources = files(
   'setsid.c',
 )
@@ -181,6 +185,9 @@ nsenter_sources = files(
 setpriv_sources = files(
   'setpriv.c',
 )
+if LINUX and conf.get('HAVE_LINUX_LANDLOCK_H').to_string() == '1'
+  setpriv_sources += files('setpriv-landlock.c')
+endif
 
 flock_sources = files(
   'flock.c',

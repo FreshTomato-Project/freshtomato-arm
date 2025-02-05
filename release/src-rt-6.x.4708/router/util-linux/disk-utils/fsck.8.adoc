@@ -1,7 +1,7 @@
 //po4a: entry man manual
 ////
 Copyright 1993, 1994, 1995 by Theodore Ts'o.  All Rights Reserved.
-This file may be copied under the terms of the GNU Public License.
+This file may be copied under the terms of the GNU General Public License.
 ////
 = fsck(8)
 :doctype: manpage
@@ -151,9 +151,14 @@ enables libmount debug output.
 
 _/etc/fstab_
 
+== NOTES
+During boot, *systemd* does not invoke *fsck -A*. Instead, it schedules the activation
+of mounts individually, taking into account dependencies on backing devices, networking,
+and other factors. Consequently, *fsck* is called individually for each device.
+
 == AUTHORS
 
-mailto:tytso@mit.edu>[Theodore Ts'o],
+mailto:tytso@mit.edu[Theodore Ts'o],
 mailto:kzak@redhat.com[Karel Zak]
 
 == SEE ALSO

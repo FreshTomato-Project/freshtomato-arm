@@ -164,8 +164,6 @@ struct bcachefs_super_block {
 #define BCACHEFS_SECTOR_SIZE   512U
 /* maximum superblock size shift */
 #define BCACHEFS_SB_MAX_SIZE_SHIFT   0x10U
-/* maximum superblock size */
-#define BCACHEFS_SB_MAX_SIZE   (1U << BCACHEFS_SB_MAX_SIZE_SHIFT)
 /* fields offset within super block */
 #define BCACHEFS_SB_FIELDS_OFF offsetof(struct bcachefs_super_block, _start)
 /* tag value for members field */
@@ -189,7 +187,7 @@ static int bcache_verify_checksum(blkid_probe pr, const struct blkid_idmag *mag,
 		return 0;
 
 	/* up to the end of bcs->d[] */
-	csummed_size = offsetof(typeof(*bcs), d) +
+	csummed_size = offsetof(__typeof__(*bcs), d) +
 		sizeof(bcs->d[0]) * le16_to_cpu(bcs->keys);
 	csummed = blkid_probe_get_sb_buffer(pr, mag, csummed_size);
 	csum = ul_crc64_we(csummed + BCACHE_SB_CSUMMED_START,
@@ -199,7 +197,7 @@ static int bcache_verify_checksum(blkid_probe pr, const struct blkid_idmag *mag,
 
 static int probe_bcache (blkid_probe pr, const struct blkid_idmag *mag)
 {
-	struct bcache_super_block *bcs;
+	const struct bcache_super_block *bcs;
 
 	bcs = blkid_probe_get_sb(pr, mag, struct bcache_super_block);
 	if (!bcs)
@@ -211,7 +209,16 @@ static int probe_bcache (blkid_probe pr, const struct blkid_idmag *mag)
 	if (le64_to_cpu(bcs->offset) != BCACHE_SB_OFF / 512)
 		return BLKID_PROBE_NONE;
 
+	if (blkid_probe_sprintf_version(pr, "%"PRIu64, le64_to_cpu(bcs->version)) < 0)
+		return BLKID_PROBE_NONE;
+
 	if (blkid_probe_set_uuid(pr, bcs->uuid) < 0)
+		return BLKID_PROBE_NONE;
+
+	if (blkid_probe_set_label(pr, bcs->label, sizeof(bcs->label)) < 0)
+		return BLKID_PROBE_NONE;
+
+	if (blkid_probe_set_block_size(pr, le16_to_cpu(bcs->block_size) * 512))
 		return BLKID_PROBE_NONE;
 
 	blkid_probe_set_wiper(pr, 0, BCACHE_SB_OFF);
@@ -229,7 +236,7 @@ static void probe_bcachefs_sb_members(blkid_probe pr,
 	uint64_t sectors = 0;
 	uint8_t i;
 
-	if (BYTES(field) != offsetof(typeof(*members), members[bcs->nr_devices]))
+	if (BYTES(field) != offsetof(__typeof__(*members), members[bcs->nr_devices]))
 		return;
 
 	blkid_probe_set_uuid_as(pr, members->members[dev_idx].uuid, "UUID_SUB");
@@ -249,7 +256,7 @@ static void probe_bcachefs_sb_disk_groups(blkid_probe pr,
 	struct bcachefs_sb_field_disk_groups *disk_groups =
 			(struct bcachefs_sb_field_disk_groups *) field;
 
-	if (BYTES(field) != offsetof(typeof(*disk_groups), disk_groups[bcs->nr_devices]))
+	if (BYTES(field) != offsetof(__typeof__(*disk_groups), disk_groups[bcs->nr_devices]))
 		return;
 
 	blkid_probe_set_id_label(pr, "LABEL_SUB",
@@ -257,7 +264,7 @@ static void probe_bcachefs_sb_disk_groups(blkid_probe pr,
 				 sizeof(disk_groups->disk_groups[dev_idx].label));
 }
 
-static int is_within_range(void *start, uint64_t size, void *end)
+static int is_within_range(const void *start, uint64_t size, const void *end)
 {
 	ptrdiff_t diff;
 
@@ -269,9 +276,9 @@ static int is_within_range(void *start, uint64_t size, void *end)
 }
 
 static void probe_bcachefs_sb_fields(blkid_probe pr, const struct bcachefs_super_block *bcs,
-				     unsigned char *sb_start, unsigned char *sb_end)
+				     const unsigned char *sb_start, const unsigned char *sb_end)
 {
-	unsigned char *field_addr = sb_start + BCACHEFS_SB_FIELDS_OFF;
+	const unsigned char *field_addr = sb_start + BCACHEFS_SB_FIELDS_OFF;
 
 	while (1) {
 		struct bcachefs_sb_field *field = (struct bcachefs_sb_field *) field_addr;
@@ -304,10 +311,10 @@ static void probe_bcachefs_sb_fields(blkid_probe pr, const struct bcachefs_super
 }
 
 static int bcachefs_validate_checksum(blkid_probe pr, const struct bcachefs_super_block *bcs,
-				      unsigned char *sb, unsigned char *sb_end)
+				      const unsigned char *sb, const unsigned char *sb_end)
 {
 	uint8_t checksum_type = be64_to_cpu(bcs->flags[0]) >> 58;
-	unsigned char *checksummed_data_start = sb + sizeof(bcs->csum);
+	const unsigned char *checksummed_data_start = sb + sizeof(bcs->csum);
 	size_t checksummed_data_size = sb_end - checksummed_data_start;
 
 	switch (checksum_type) {
@@ -333,25 +340,23 @@ static int bcachefs_validate_checksum(blkid_probe pr, const struct bcachefs_supe
 
 static int probe_bcachefs(blkid_probe pr, const struct blkid_idmag *mag)
 {
-	struct bcachefs_super_block *bcs;
-	unsigned char *sb, *sb_end;
-	uint64_t sb_size, blocksize;
+	const struct bcachefs_super_block *bcs;
+	const unsigned char *sb, *sb_end;
+	uint64_t sb_size, blocksize, offset_sectors;
 	uint16_t version;
 
 	bcs = blkid_probe_get_sb(pr, mag, struct bcachefs_super_block);
 	if (!bcs)
 		return errno ? -errno : BLKID_PROBE_NONE;
 
-	if (le64_to_cpu(bcs->offset) != BCACHE_SB_OFF / BCACHEFS_SECTOR_SIZE)
+	offset_sectors = blkid_probe_get_idmag_off(pr, mag) / BCACHEFS_SECTOR_SIZE;
+	if (le64_to_cpu(bcs->offset) != offset_sectors)
 		return BLKID_PROBE_NONE;
 
 	if (bcs->nr_devices == 0 || bcs->dev_idx >= bcs->nr_devices)
 		return BLKID_PROBE_NONE;
 
 	sb_size = BCACHEFS_SB_FIELDS_OFF + BYTES(bcs);
-
-	if (sb_size > BCACHEFS_SB_MAX_SIZE)
-		return BLKID_PROBE_NONE;
 
 	if (bcs->layout.sb_max_size_bits > BCACHEFS_SB_MAX_SIZE_SHIFT)
 		return BLKID_PROBE_NONE;
@@ -418,6 +423,18 @@ const struct blkid_idinfo bcachefs_idinfo =
 			.magic = BCACHEFS_SB_MAGIC,
 			.len   = BCACHE_SB_MAGIC_LEN,
 			.kboff = BCACHE_SB_KBOFF,
+			.sboff = BCACHE_SB_MAGIC_OFF,
+		},
+		{
+			.magic = BCACHEFS_SB_MAGIC,
+			.len   = BCACHE_SB_MAGIC_LEN,
+			.kboff = 1 << 11,
+			.sboff = BCACHE_SB_MAGIC_OFF,
+		},
+		{
+			.magic = BCACHEFS_SB_MAGIC,
+			.len   = BCACHE_SB_MAGIC_LEN,
+			.kboff = -(1 << 10),
 			.sboff = BCACHE_SB_MAGIC_OFF,
 		},
 		{ NULL }

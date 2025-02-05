@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
  * lsns(8) - list system namespaces
  *
  * Copyright (C) 2015 Karel Zak <kzak@redhat.com>
@@ -7,15 +9,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include <stdio.h>
 #include <string.h>
@@ -75,7 +68,7 @@ UL_DEBUG_DEFINE_MASKNAMES(lsns) = UL_DEBUG_EMPTY_MASKNAMES;
 
 #define lsns_ioctl(fildes, request, ...) __extension__ ({ \
 	int ret = ioctl(fildes, request, ##__VA_ARGS__); \
-	if (ret == -1 && errno == ENOTTY) \
+	if (ret == -1 && (errno == ENOTTY || errno == ENOSYS))	\
 		warnx("Unsupported ioctl %s", #request); \
 	ret; })
 
@@ -315,7 +308,11 @@ static int get_ns_ino(int dir, const char *nsname, ino_t *ino, ino_t *pino, ino_
 		return -errno;
 	if (strcmp(nsname, "pid") == 0 || strcmp(nsname, "user") == 0) {
 		if ((pfd = lsns_ioctl(fd, NS_GET_PARENT)) < 0) {
-			if (errno == EPERM)
+			if (errno == EPERM
+			    /* On the test platforms, "build (qemu-user, s390x)" and
+			     * "build (qemu-user, riscv64)", the ioctl reported ENOSYS.
+			     */
+			    || errno == ENOSYS)
 				goto user;
 			close(fd);
 			return -errno;
@@ -330,7 +327,11 @@ static int get_ns_ino(int dir, const char *nsname, ino_t *ino, ino_t *pino, ino_
 	}
  user:
 	if ((ofd = lsns_ioctl(fd, NS_GET_USERNS)) < 0) {
-		if (errno == EPERM)
+		if (errno == EPERM
+		    /* On the test platforms, "build (qemu-user, s390x)" and
+		     * "build (qemu-user, riscv64)", the ioctl reported ENOSYS.
+		     */
+		    || errno == ENOSYS)
 			goto out;
 		close(fd);
 		return -errno;
@@ -552,8 +553,10 @@ static int read_process(struct lsns *ls, pid_t pid)
 
 		rc = get_ns_ino(dirfd(dir), ns_names[i], &p->ns_ids[i],
 				&p->ns_pids[i], &p->ns_oids[i]);
-		if (rc && rc != -EACCES && rc != -ENOENT)
+		if (rc && rc != -EACCES && rc != -ENOENT && rc != ESRCH) {
+			DBG(PROC, ul_debug("failed in get_ns_inos (rc: %d)", rc));
 			goto done;
+		}
 		if (i == LSNS_ID_NET)
 			p->netnsid = get_netnsid(dirfd(dir), p->ns_ids[i]);
 		rc = 0;
@@ -594,7 +597,10 @@ static int read_processes(struct lsns *ls)
 		 */
 		rc = read_process(ls, pid);
 		if (rc && rc != -EACCES && rc != -ENOENT)
+		if (rc && rc != -EACCES && rc != -ENOENT && rc != ESRCH) {
+			DBG(PROC, ul_debug("failed in read_process() (pid: %d, rc: %d)", (int) pid, rc));
 			break;
+		}
 		rc = 0;
 	}
 
@@ -791,6 +797,9 @@ static void interpolate_missing_namespaces(struct lsns *ls, struct lsns_namespac
 	char buf[BUFSIZ];
 	int fd_orphan, fd_missing;
 	struct stat st;
+
+	if (!orphan->proc)
+		return;
 
 	orphan->related_ns[rela] = get_namespace(ls, orphan->related_id[rela]);
 	if (orphan->related_ns[rela])
@@ -1302,13 +1311,13 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -T, --tree <rel>       use tree format (parent, owner, or process)\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(24));
+	fprintf(out, USAGE_HELP_OPTIONS(24));
 
 	fputs(USAGE_COLUMNS, out);
 	for (i = 0; i < ARRAY_SIZE(infos); i++)
 		fprintf(out, " %11s  %s\n", infos[i].name, _(infos[i].help));
 
-	printf(USAGE_MAN_TAIL("lsns(8)"));
+	fprintf(out, USAGE_MAN_TAIL("lsns(8)"));
 
 	exit(EXIT_SUCCESS);
 }

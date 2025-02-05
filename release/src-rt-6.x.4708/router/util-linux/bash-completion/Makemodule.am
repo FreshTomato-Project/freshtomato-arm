@@ -18,6 +18,9 @@ endif
 if BUILD_COLUMN
 dist_bashcompletion_DATA += bash-completion/column
 endif
+if BUILD_EXCH
+dist_bashcompletion_DATA += bash-completion/exch
+endif
 if BUILD_FINCORE
 dist_bashcompletion_DATA += bash-completion/fincore
 endif
@@ -98,6 +101,9 @@ dist_bashcompletion_DATA += bash-completion/scriptreplay
 endif
 if BUILD_SCRIPTLIVE
 dist_bashcompletion_DATA += bash-completion/scriptlive
+endif
+if BUILD_SETPGID
+dist_bashcompletion_DATA += bash-completion/setpgid
 endif
 if BUILD_SETSID
 dist_bashcompletion_DATA += bash-completion/setsid
@@ -194,6 +200,9 @@ dist_bashcompletion_DATA += bash-completion/utmpdump
 endif
 if BUILD_UUIDGEN
 dist_bashcompletion_DATA += bash-completion/uuidgen
+endif
+if BUILD_LIBLASTLOG2
+dist_bashcompletion_DATA += bash-completion/lastlog2
 endif
 if BUILD_UUIDPARSE
 dist_bashcompletion_DATA += bash-completion/uuidparse
@@ -343,6 +352,12 @@ dist_bashcompletion_DATA += bash-completion/fadvise
 endif
 if BUILD_WAITPID
 dist_bashcompletion_DATA += bash-completion/waitpid
+endif
+if BUILD_ENOSYS
+dist_bashcompletion_DATA += bash-completion/enosys
+endif
+if BUILD_LSCLOCKS
+dist_bashcompletion_DATA += bash-completion/lsclocks
 endif
 
 endif # BUILD_BASH_COMPLETION

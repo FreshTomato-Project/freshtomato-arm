@@ -48,11 +48,8 @@ Do not canonicalize paths at all. This option affects the comparing of paths and
 *-c*, *--canonicalize*::
 Canonicalize all printed paths.
 
-*--deleted*::
-Print filesystems where target (mountpoint) is marked as deleted by kernel.
-
 *-D*, *--df*::
-Imitate the output of *df*(1). This option is equivalent to *-o SOURCE,FSTYPE,SIZE,USED,AVAIL,USE%,TARGET* but excludes all pseudo filesystems. Use *--all* to print all filesystems.
+Imitate the output of *df*(1). This option is equivalent to *-o SOURCE,FSTYPE,SIZE,USED,AVAIL,USE%,TARGET* but excludes all pseudo filesystems. Use *--all* to print all filesystems. See also *-I*, *--dfi* options.
 
 *-d*, *--direction* _word_::
 The search direction, either *forward* or *backward*.
@@ -65,6 +62,12 @@ Search in an alternative file. If used with *--fstab*, *--mtab* or *--kernel*, t
 
 *-f*, *--first-only*::
 Print the first matching filesystem only.
+
+*-H*, *--list-columns*::
+List the available columns, use with *--json* or *--raw* to get output in machine-readable format.
+
+*-I*, *--dfi*::
+Imitate the output of *df*(1) with its *-i* option. This option is equivalent to *-o SOURCE,FSTYPE,INO.TOTAL,INO.USED,INO.AVAIL,INO.USE%,TARGET* but excludes all pseudo filesystems. Use *--all* to print all filesystems.
 
 *-i*, *--invert*::
 Invert the sense of matching.
@@ -105,6 +108,8 @@ Output almost all available columns. The columns that require *--poll* are not i
 
 *-P*, *--pairs*::
 Produce output in the form of key="value" pairs. All potentially unsafe value characters are hex-escaped (\x<code>). See also option *--shell*.
++
+Note that SOURCES column, use multi-line cells. In these cases, the column use an array-like formatting in the output, for example *name=("aaa" "bbb" "ccc")*.
 
 *-p*, *--poll*[_=list_]::
 Monitor changes in the _/proc/self/mountinfo_ file. Supported actions are: mount, umount, remount and move. More than one action may be specified in a comma-separated list. All actions are monitored by default.
@@ -131,6 +136,8 @@ Print recursively all submounts for the selected filesystems. The restrictions d
 
 *-r*, *--raw*::
 Use raw output format. All potentially unsafe characters are hex-escaped (\x<code>).
++
+Note that column SOURCES, use multi-line cells. In these cases, the column may produce more strings on the same line.
 
 *--real*::
 Print only real filesystems.

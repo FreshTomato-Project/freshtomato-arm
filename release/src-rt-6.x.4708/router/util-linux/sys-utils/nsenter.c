@@ -1,22 +1,14 @@
 /*
- * nsenter(1) - command-line interface for setns(2)
- *
- * Copyright (C) 2012-2013 Eric Biederman <ebiederm@xmission.com>
+ * SPDX-License-Identifier: GPL-2.0-only
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation; version 2.
  *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Copyright (C) 2012-2023 Eric Biederman <ebiederm@xmission.com>
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * nsenter(1) - command-line interface for setns(2)
  */
-
 #include <dirent.h>
 #include <errno.h>
 #include <getopt.h>
@@ -30,6 +22,15 @@
 #include <sys/wait.h>
 #include <grp.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
+
+#include <sys/ioctl.h>
+#ifdef HAVE_LINUX_NSFS_H
+# include <linux/nsfs.h>
+#endif
+#ifndef NS_GET_USERNS
+# define NS_GET_USERNS           _IO(0xb7, 0x1)
+#endif
 
 #ifdef HAVE_LIBSELINUX
 # include <selinux/selinux.h>
@@ -45,6 +46,9 @@
 #include "xalloc.h"
 #include "all-io.h"
 #include "env.h"
+#include "caputils.h"
+#include "statfs_magic.h"
+#include "pathnames.h"
 
 static struct namespace_file {
 	int nstype;
@@ -91,22 +95,25 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -p, --pid[=<file>]     enter pid namespace\n"), out);
 	fputs(_(" -C, --cgroup[=<file>]  enter cgroup namespace\n"), out);
 	fputs(_(" -U, --user[=<file>]    enter user namespace\n"), out);
+	fputs(_("     --user-parent      enter parent user namespace\n"), out);
 	fputs(_(" -T, --time[=<file>]    enter time namespace\n"), out);
 	fputs(_(" -S, --setuid[=<uid>]   set uid in entered namespace\n"), out);
 	fputs(_(" -G, --setgid[=<gid>]   set gid in entered namespace\n"), out);
 	fputs(_("     --preserve-credentials do not touch uids or gids\n"), out);
+	fputs(_("     --keep-caps        retain capabilities granted in user namespaces\n"), out);
 	fputs(_(" -r, --root[=<dir>]     set the root directory\n"), out);
 	fputs(_(" -w, --wd[=<dir>]       set the working directory\n"), out);
 	fputs(_(" -W, --wdns <dir>       set the working directory in namespace\n"), out);
 	fputs(_(" -e, --env              inherit environment variables from target process\n"), out);
 	fputs(_(" -F, --no-fork          do not fork before exec'ing <program>\n"), out);
+	fputs(_(" -c, --join-cgroup      join the cgroup of the target process\n"), out);
 #ifdef HAVE_LIBSELINUX
 	fputs(_(" -Z, --follow-context   set SELinux context according to --target PID\n"), out);
 #endif
 
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(24));
-	printf(USAGE_MAN_TAIL("nsenter(1)"));
+	fprintf(out, USAGE_HELP_OPTIONS(24));
+	fprintf(out, USAGE_MAN_TAIL("nsenter(1)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -116,6 +123,34 @@ static int root_fd = -1;
 static int wd_fd = -1;
 static int env_fd = -1;
 static int uid_gid_fd = -1;
+static int cgroup_procs_fd = -1;
+
+static void set_parent_user_ns_fd(void)
+{
+	struct namespace_file *nsfile = NULL;
+	struct namespace_file *user_nsfile = NULL;
+	int parent_ns = -1;
+
+	for (nsfile = namespace_files; nsfile->nstype; nsfile++) {
+		if (nsfile->nstype == CLONE_NEWUSER)
+			user_nsfile = nsfile;
+
+		if (nsfile->fd == -1)
+			continue;
+
+		parent_ns = ioctl(nsfile->fd, NS_GET_USERNS);
+		if (parent_ns < 0)
+			err(EXIT_FAILURE, _("failed to open parent ns of %s"), nsfile->name);
+
+		break;
+	}
+
+	if (parent_ns < 0)
+		errx(EXIT_FAILURE, _("no namespaces to get parent of"));
+	if (user_nsfile)
+		user_nsfile->fd = parent_ns;
+}
+
 
 static void open_target_fd(int *fd, const char *type, const char *path)
 {
@@ -162,6 +197,55 @@ static int get_ns_ino(const char *path, ino_t *ino)
 		return -errno;
 	*ino = st.st_ino;
 	return 0;
+}
+
+static void open_cgroup_procs(void)
+{
+	char *buf = NULL, *path = NULL, *p;
+	int cgroup_fd = 0;
+	char fdpath[PATH_MAX];
+
+	open_target_fd(&cgroup_fd, "cgroup", optarg);
+
+	if (read_all_alloc(cgroup_fd, &buf) < 1)
+		err(EXIT_FAILURE, _("failed to get cgroup path"));
+
+	p = strtok(buf, "\n");
+	if (p)
+		path = strrchr(p, ':');
+	if (!path)
+		err(EXIT_FAILURE, _("failed to get cgroup path"));
+	path++;
+
+	snprintf(fdpath, sizeof(fdpath), _PATH_SYS_CGROUP "/%s/cgroup.procs", path);
+
+	if ((cgroup_procs_fd = open(fdpath, O_WRONLY | O_APPEND)) < 0)
+		err(EXIT_FAILURE, _("failed to open cgroup.procs"));
+
+	free(buf);
+}
+
+static int is_cgroup2(void)
+{
+	struct statfs fs_stat;
+	int rc;
+
+	rc = statfs(_PATH_SYS_CGROUP, &fs_stat);
+	if (rc)
+		err(EXIT_FAILURE, _("statfs %s failed"), _PATH_SYS_CGROUP);
+	return F_TYPE_EQUAL(fs_stat.f_type, STATFS_CGROUP2_MAGIC);
+}
+
+static void join_into_cgroup(void)
+{
+	pid_t pid;
+	char buf[ sizeof(stringify_value(UINT32_MAX)) ];
+	int len;
+
+	pid = getpid();
+	len = snprintf(buf, sizeof(buf), "%zu", (size_t) pid);
+	if (write_all(cgroup_procs_fd, buf, len))
+		err(EXIT_FAILURE, _("write cgroup.procs failed"));
 }
 
 static int is_usable_namespace(pid_t target, const struct namespace_file *nsfile)
@@ -232,7 +316,9 @@ static void continue_as_child(void)
 int main(int argc, char *argv[])
 {
 	enum {
-		OPT_PRESERVE_CRED = CHAR_MAX + 1
+		OPT_PRESERVE_CRED = CHAR_MAX + 1,
+		OPT_KEEPCAPS,
+		OPT_USER_PARENT,
 	};
 	static const struct option longopts[] = {
 		{ "all", no_argument, NULL, 'a' },
@@ -254,7 +340,10 @@ int main(int argc, char *argv[])
 		{ "wdns", optional_argument, NULL, 'W' },
 		{ "env", no_argument, NULL, 'e' },
 		{ "no-fork", no_argument, NULL, 'F' },
+		{ "join-cgroup", no_argument, NULL, 'c'},
 		{ "preserve-credentials", no_argument, NULL, OPT_PRESERVE_CRED },
+		{ "keep-caps", no_argument, NULL, OPT_KEEPCAPS },
+		{ "user-parent", no_argument, NULL, OPT_USER_PARENT},
 #ifdef HAVE_LIBSELINUX
 		{ "follow-context", no_argument, NULL, 'Z' },
 #endif
@@ -269,12 +358,13 @@ int main(int argc, char *argv[])
 	struct namespace_file *nsfile;
 	int c, pass, namespaces = 0, setgroups_nerrs = 0, preserve_cred = 0;
 	bool do_rd = false, do_wd = false, do_uid = false, force_uid = false,
-	     do_gid = false, force_gid = false, do_env = false, do_all = false;
+	     do_gid = false, force_gid = false, do_env = false, do_all = false,
+	     do_join_cgroup = false, do_user_parent = false;
 	int do_fork = -1; /* unknown yet */
 	char *wdns = NULL;
 	uid_t uid = 0;
 	gid_t gid = 0;
-	struct ul_env_list *envls;
+	int keepcaps = 0;
 #ifdef HAVE_LIBSELINUX
 	bool selinux = 0;
 #endif
@@ -285,7 +375,7 @@ int main(int argc, char *argv[])
 	close_stdout_atexit();
 
 	while ((c =
-		getopt_long(argc, argv, "+ahVt:m::u::i::n::p::C::U::T::S:G:r::w::W::eFZ",
+		getopt_long(argc, argv, "+ahVt:m::u::i::n::p::C::U::T::S:G:r::w::W::ecFZ",
 			    longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
@@ -363,6 +453,9 @@ int main(int argc, char *argv[])
 		case 'F':
 			do_fork = 0;
 			break;
+		case 'c':
+			do_join_cgroup = true;
+			break;
 		case 'r':
 			if (optarg)
 				open_target_fd(&root_fd, "root", optarg);
@@ -383,6 +476,12 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_PRESERVE_CRED:
 			preserve_cred = 1;
+			break;
+		case OPT_KEEPCAPS:
+			keepcaps = 1;
+			break;
+		case OPT_USER_PARENT:
+			do_user_parent = true;
 			break;
 #ifdef HAVE_LIBSELINUX
 		case 'Z':
@@ -441,6 +540,17 @@ int main(int argc, char *argv[])
 		open_target_fd(&env_fd, "environ", NULL);
 	if (do_uid || do_gid)
 		open_target_fd(&uid_gid_fd, "", NULL);
+	if (do_join_cgroup) {
+		if (!is_cgroup2())
+			errx(EXIT_FAILURE, _("--join-cgroup is only supported in cgroup v2"));
+		open_cgroup_procs();
+	}
+
+	/*
+	 * Get parent userns from any available ns.
+	 */
+	if (do_user_parent)
+		set_parent_user_ns_fd();
 
 	/*
 	 * Update namespaces variable to contain all requested namespaces
@@ -533,14 +643,21 @@ int main(int argc, char *argv[])
 
 	/* Pass environment variables of the target process to the spawned process */
 	if (env_fd >= 0) {
-		if ((envls = env_from_fd(env_fd)) == NULL)
+		struct ul_env_list *ls;
+
+		ls = env_from_fd(env_fd);
+		if (!ls && errno)
 			err(EXIT_FAILURE, _("failed to get environment variables"));
 		clearenv();
-		if (env_list_setenv(envls) < 0)
+		if (ls && env_list_setenv(ls) < 0)
 			err(EXIT_FAILURE, _("failed to set environment variables"));
-		env_list_free(envls);
+		env_list_free(ls);
 		close(env_fd);
 	}
+
+	// Join into the target cgroup
+	if (cgroup_procs_fd >= 0)
+		join_into_cgroup();
 
 	if (uid_gid_fd >= 0) {
 		struct stat st;
@@ -568,6 +685,9 @@ int main(int argc, char *argv[])
 		if (force_uid && setuid(uid) < 0)		/* change UID */
 			err(EXIT_FAILURE, _("setuid failed"));
 	}
+
+	if (keepcaps && (namespaces & CLONE_NEWUSER))
+		cap_permitted_to_ambient();
 
 	if (optind < argc) {
 		execvp(argv[optind], argv + optind);

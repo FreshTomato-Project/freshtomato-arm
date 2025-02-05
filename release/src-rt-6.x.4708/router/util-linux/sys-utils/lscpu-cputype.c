@@ -1,4 +1,13 @@
-
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Copyright (C) 2020 Karel Zak <kzak@redhat.com>
+ */
 #include <sys/utsname.h>
 #include <sys/personality.h>
 
@@ -109,8 +118,8 @@ struct lscpu_cputype *lscpu_cputype_get_default(struct lscpu_cxt *cxt)
 struct lscpu_cputype *lscpu_add_cputype(struct lscpu_cxt *cxt, struct lscpu_cputype *ct)
 {
 	DBG(TYPE, ul_debugobj(ct, "add new"));
-	cxt->cputypes = xrealloc(cxt->cputypes, (cxt->ncputypes + 1)
-				* sizeof(struct lscpu_cputype *));
+	cxt->cputypes = xreallocarray(cxt->cputypes, cxt->ncputypes + 1,
+				      sizeof(struct lscpu_cputype *));
 	cxt->cputypes[cxt->ncputypes] = ct;
 	cxt->ncputypes++;
 	lscpu_ref_cputype(ct);
@@ -212,12 +221,16 @@ static const struct cpuinfo_pattern type_patterns[] =
 	DEF_PAT_CPUTYPE( "family",		PAT_FAMILY,	family),
 	DEF_PAT_CPUTYPE( "features",		PAT_FEATURES,	flags),		/* s390 */
 	DEF_PAT_CPUTYPE( "flags",		PAT_FLAGS,	flags),		/* x86 */
+	DEF_PAT_CPUTYPE( "marchid",		PAT_FAMILY,	family),	/* riscv */
 	DEF_PAT_CPUTYPE( "max thread id",	PAT_MAX_THREAD_ID, mtid),	/* s390 */
+	DEF_PAT_CPUTYPE( "mimpid",		PAT_MODEL,	model),		/* riscv */
 	DEF_PAT_CPUTYPE( "model",		PAT_MODEL,	model),
 	DEF_PAT_CPUTYPE( "model name",		PAT_MODEL_NAME,	modelname),
+	DEF_PAT_CPUTYPE( "mvendorid",		PAT_VENDOR,	vendor),	/* riscv */
 	DEF_PAT_CPUTYPE( "revision",		PAT_REVISION,	revision),
 	DEF_PAT_CPUTYPE( "stepping",		PAT_STEPPING,	stepping),
 	DEF_PAT_CPUTYPE( "type",		PAT_TYPE,	flags),		/* sparc64 */
+	DEF_PAT_CPUTYPE( "uarch",		PAT_MODEL_NAME,	modelname),	/* riscv */
 	DEF_PAT_CPUTYPE( "vendor",		PAT_VENDOR,	vendor),
 	DEF_PAT_CPUTYPE( "vendor_id",		PAT_VENDOR,	vendor),	/* s390 */
 };
@@ -434,8 +447,8 @@ static int cpuinfo_parse_cache(struct lscpu_cxt *cxt, int keynum, char *data)
 		return 0;
 
 	cxt->necaches++;
-	cxt->ecaches = xrealloc(cxt->ecaches,
-				cxt->necaches * sizeof(struct lscpu_cache));
+	cxt->ecaches = xreallocarray(cxt->ecaches,
+				     cxt->necaches, sizeof(struct lscpu_cache));
 	cache = &cxt->ecaches[cxt->necaches - 1];
 	memset(cache, 0 , sizeof(*cache));
 
@@ -608,7 +621,7 @@ struct lscpu_arch *lscpu_read_architecture(struct lscpu_cxt *cxt)
 	ar = xcalloc(1, sizeof(*cxt->arch));
 	ar->name = xstrdup(utsbuf.machine);
 
-	if (cxt->noalive)
+	if (is_dump(cxt))
 		/* reading info from any /{sys,proc} dump, don't mix it with
 		 * information about our real CPU */
 		;
@@ -643,11 +656,11 @@ struct lscpu_arch *lscpu_read_architecture(struct lscpu_cxt *cxt)
 
 		snprintf(buf, sizeof(buf), " %s ", ct->flags);
 		if (strstr(buf, " lm "))
-			ar->bit32 = 1, ar->bit64 = 1;			/* x86_64 */
+			ar->bit32 = ar->bit64 = 1;			/* x86_64 */
 		if (strstr(buf, " zarch "))
-			ar->bit32 = 1, ar->bit64 = 1;			/* s390x */
+			ar->bit32 = ar->bit64 = 1;			/* s390x */
 		if (strstr(buf, " sun4v ") || strstr(buf, " sun4u "))
-			ar->bit32 = 1, ar->bit64 = 1;			/* sparc64 */
+			ar->bit32 = ar->bit64 = 1;			/* sparc64 */
 	}
 
 	if (ct && ct->isa) {
@@ -660,7 +673,7 @@ struct lscpu_arch *lscpu_read_architecture(struct lscpu_cxt *cxt)
 			ar->bit64 = 1;
 	}
 
-	if (ar->name && !cxt->noalive) {
+	if (ar->name && is_live(cxt)) {
 		if (strcmp(ar->name, "ppc64") == 0)
 			ar->bit32 = 1, ar->bit64 = 1;
 		else if (strcmp(ar->name, "ppc") == 0)
@@ -693,7 +706,7 @@ int lscpu_read_cpulists(struct lscpu_cxt *cxt)
 		/* note that kernel_max is maximum index [NR_CPUS-1] */
 		cxt->maxcpus += 1;
 
-	else if (!cxt->noalive)
+	else if (is_live(cxt))
 		/* the root is '/' so we are working with data from the current kernel */
 		cxt->maxcpus = get_max_number_of_cpus();
 
@@ -765,7 +778,7 @@ int lscpu_read_archext(struct lscpu_cxt *cxt)
 
 #if defined(HAVE_LIBRTAS)
 	/* Get PowerPC specific info */
-	if (!cxt->noalive) {
+	if (is_live(cxt)) {
 		int rc, len, ntypes;
 
 		ct->physsockets = ct->physchips = ct->physcoresperchip = 0;

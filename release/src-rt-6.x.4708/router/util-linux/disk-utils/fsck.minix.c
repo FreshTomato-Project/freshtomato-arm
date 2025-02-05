@@ -198,8 +198,8 @@ usage(void) {
 	fputs(_(" -m, --uncleared  activate mode not cleared warnings\n"), out);
 	fputs(_(" -f, --force      force check\n"), out);
 	fputs(USAGE_SEPARATOR, out);
-	printf(USAGE_HELP_OPTIONS(18));
-	printf(USAGE_MAN_TAIL("fsck.minix(8)"));
+	fprintf(out, USAGE_HELP_OPTIONS(18));
+	fprintf(out, USAGE_MAN_TAIL("fsck.minix(8)"));
 	exit(FSCK_EX_OK);
 }
 
@@ -548,7 +548,7 @@ get_dirsize(void) {
 		block = Inode[ROOT_INO].i_zone[0];
 	read_block(block, blk);
 
-	for (size = 16; size < MINIX_BLOCK_SIZE; size <<= 1) {
+	for (size = 16; size + 2 < MINIX_BLOCK_SIZE; size <<= 1) {
 		if (strcmp(blk + size + 2, "..") == 0) {
 			dirsize = size;
 			namelen = size - 2;

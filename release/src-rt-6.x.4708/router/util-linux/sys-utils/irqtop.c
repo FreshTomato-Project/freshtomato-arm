@@ -1,4 +1,6 @@
 /*
+ * SPDX-License-Identifier: GPL-2.1-or-later
+ *
  * irqtop.c - utility to display kernel interrupt information.
  *
  * Copyright (C) 2019 zhenwei pi <pizhenwei@bytedance.com>
@@ -8,15 +10,6 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 #include <ctype.h>
 #include <errno.h>
@@ -184,7 +177,7 @@ static int event_loop(struct irqtop_ctl *ctl, struct irq_output *out)
 	efd = epoll_create1(0);
 
 	if ((tfd = timerfd_create(CLOCK_MONOTONIC, 0)) < 0)
-		err(EXIT_FAILURE, _("cannot not create timerfd"));
+		err(EXIT_FAILURE, _("cannot create timerfd"));
 	if (timerfd_settime(tfd, 0, &ctl->timer, NULL) != 0)
 		err(EXIT_FAILURE, _("cannot set timerfd"));
 
@@ -204,7 +197,7 @@ static int event_loop(struct irqtop_ctl *ctl, struct irq_output *out)
 	sigaddset(&sigmask, SIGQUIT);
 
 	if ((sfd = signalfd(-1, &sigmask, SFD_CLOEXEC)) < 0)
-		err(EXIT_FAILURE, _("cannot not create signalfd"));
+		err(EXIT_FAILURE, _("cannot create signalfd"));
 
 	ev.events = EPOLLIN;
 	ev.data.fd = sfd;
@@ -272,7 +265,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -s, --sort <column>  specify sort column\n"), stdout);
 	fputs(_(" -S, --softirq        show softirqs instead of interrupts\n"), stdout);
 	fputs(USAGE_SEPARATOR, stdout);
-	printf(USAGE_HELP_OPTIONS(22));
+	fprintf(stdout, USAGE_HELP_OPTIONS(22));
 
 	fputs(_("\nThe following interactive key commands are valid:\n"), stdout);
 	fputs(_("  i      sort by IRQ\n"), stdout);
@@ -284,7 +277,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(USAGE_COLUMNS, stdout);
 	irq_print_columns(stdout, 0);
 
-	printf(USAGE_MAN_TAIL("irqtop(1)"));
+	fprintf(stdout, USAGE_MAN_TAIL("irqtop(1)"));
 	exit(EXIT_SUCCESS);
 }
 

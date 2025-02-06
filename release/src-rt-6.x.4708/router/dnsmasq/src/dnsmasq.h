@@ -775,12 +775,13 @@ struct dyndir {
 #define FREC_DO_QUESTION       64
 #define FREC_HAS_PHEADER      128
 #define FREC_GONE_TO_TCP      256
+#define FREC_ANSWER           512
 
 struct frec {
   struct frec_src {
     union mysockaddr source;
     union all_addr dest;
-    unsigned int iface, log_id;
+    unsigned int iface, log_id, encode_bitmap, *encode_bigmap;
     int fd;
     unsigned short orig_id, udp_pkt_size;
     struct frec_src *next;
@@ -791,7 +792,6 @@ struct frec {
   int forwardall, flags;
   time_t time;
   u32 forward_timestamp;
-  unsigned int encode_bitmap;
   int forward_delay;
   struct blockdata *stash; /* saved query or saved reply, whilst we validate */
   size_t stash_len;

@@ -326,7 +326,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
       forward->new_id = get_id();
       header->id = ntohs(forward->new_id);
       
-      forward->encode_bitmap = rand32();
+      forward->encode_bitmap = option_bool(OPT_NO_0x20) ? 0 : rand32();
       p = (unsigned char *)(header+1);
       if (!extract_name(header, plen, &p, NULL, EXTR_NAME_FLIP, forward->encode_bitmap))
 	goto reply;
@@ -1934,7 +1934,7 @@ static ssize_t tcp_talk(int first, int last, int start, unsigned char *packet,  
 	    break;
 	}
       
-      serv = daemon->serverarray[start];
+      *servp = serv = daemon->serverarray[start];
       
     retry:
       blockdata_retrieve(saved_question, qsize, header);
@@ -1985,6 +1985,12 @@ static ssize_t tcp_talk(int first, int last, int start, unsigned char *packet,  
 	     trying again in non-FASTOPEN mode. */
 	  if (fatal || (!data_sent && connect(serv->tcpfd, &serv->addr.sa, sa_len(&serv->addr)) == -1))
 	    {
+	      int port;
+	      
+	    failed:
+	      port = prettyprint_addr(&serv->addr, daemon->addrbuff);
+	      my_syslog(LOG_DEBUG|MS_DEBUG, _("TCP connection failed to %s#%d"), daemon->addrbuff, port);
+
 	      close(serv->tcpfd);
 	      serv->tcpfd = -1;
 	      continue;
@@ -2000,15 +2006,17 @@ static ssize_t tcp_talk(int first, int last, int start, unsigned char *packet,  
 	  !read_write(serv->tcpfd, (unsigned char *)length, sizeof (*length), RW_READ_ONCE) ||
 	  !read_write(serv->tcpfd, payload, (rsize = ntohs(*length)), RW_READ_ONCE))
 	{
-	  close(serv->tcpfd);
-	  serv->tcpfd = -1;
 	  /* We get data then EOF, reopen connection to same server,
 	     else try next. This avoids DoS from a server which accepts
 	     connections and then closes them. */
 	  if (serv->flags & SERV_GOT_TCP)
-	    goto retry;
+	    {
+	      close(serv->tcpfd);
+	      serv->tcpfd = -1;
+	      goto retry;
+	    }
 	  else
-	    continue;
+	    goto failed;
 	}
 
       /* If the question section of the reply doesn't match the question we sent, then
@@ -2016,7 +2024,7 @@ static ssize_t tcp_talk(int first, int last, int start, unsigned char *packet,  
 	 sending replies containing questions and bogus answers.
 	 Try another server, or give up */
       p = (unsigned char *)(header+1);
-      if (extract_name(header, rsize, &p, daemon->namebuff, EXTR_NAME_NOCASE, 4) != 1)
+      if (extract_name(header, rsize, &p, daemon->namebuff, EXTR_NAME_COMPARE, 4) != 1)
 	continue;
       GETSHORT(rtype, p); 
       GETSHORT(rclass, p);
@@ -2628,7 +2636,8 @@ unsigned char *tcp_request(int confd, time_t now,
     }
 
   blockdata_free(saved_question);
-  
+  check_log_writer(1);
+
   return packet;
 }
 
@@ -3056,22 +3065,35 @@ static struct frec *lookup_frec(char *target, int class, int rrtype, int id, int
 	(header = blockdata_retrieve(f->stash, f->stash_len, NULL)))
       {
 	unsigned char *p = (unsigned char *)(header+1);
-	int hclass, hrrtype;
+	int hclass, hrrtype, rc;
 
 	/* Case sensitive compare for DNS-0x20 encoding. */
-	if (extract_name(header, f->stash_len, &p, target, EXTR_NAME_NOCASE, 4) != 1)
-	  continue;
-		   
-	GETSHORT(hrrtype, p);
-	GETSHORT(hclass, p);
-		   
-	/* type checked by flags for DNSSEC queries. */
-	if (rrtype != -1 && rrtype != hrrtype)
-	  continue;
-		   
-	if (class != hclass)
-	  continue;
-	
+	if ((rc = extract_name(header, f->stash_len, &p, target, option_bool(OPT_NO_0x20) ? EXTR_NAME_COMPARE : EXTR_NAME_NOCASE, 4)))
+	  {
+	    GETSHORT(hrrtype, p);
+	    GETSHORT(hclass, p);
+	    
+	    /* type checked by flags for DNSSEC queries. */
+	    if (rrtype != -1 && rrtype != hrrtype)
+	      continue;
+	    
+	    if (class != hclass)
+	      continue;
+	  }
+
+	if (rc != 1)
+	  {
+	    static int warned = 0;
+	    
+	    if (rc == 3 && !warned)
+	      {
+		my_syslog(LOG_WARNING, _("Case mismatch in DNS reply - check bit 0x20 encoding."));
+		warned = 1;
+	      }
+	    
+	    continue;
+	  }
+		
 	return f;
       }
   

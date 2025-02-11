@@ -40,16 +40,12 @@ EXPR="(PID != ${TARGET}) and (FD == 3) and (PIDFD.PID == ${TARGET})"
 	${TS_CMD_LSFD} -n -o ASSOC,STTYPE,SOURCE,NAME,PIDFD.COMM,PIDFD.PID -p "${PID}" -p ${TARGET} -Q "${EXPR}"
 	echo 'ASSOC,STTYPE,SOURCE,NAME,PIDFD.COMM,PIDFD.PID': $?
 
-	echo DONE >&"${MKFDS[1]}"
+	kill -CONT ${PID}
     fi
     wait ${MKFDS_PID}
 } > $TS_OUTPUT 2>&1
-
-if [ "$?" == "$TS_EXIT_NOTSUPP" ]; then
+if [ "$?" == "$ENOSYS" ]; then
     ts_skip "pidfd_open(2) is not available"
 fi
-
-sed -i -E -e 's/UNKN|REG/[STTYPE]/' -e 's/pidfs|anon_inodefs/[SOURCE]/' \
-    $TS_OUTPUT
 
 ts_finalize

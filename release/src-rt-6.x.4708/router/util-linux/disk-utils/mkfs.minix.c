@@ -152,8 +152,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fprintf(out, _(
 		"     --lock[=<mode>]     use exclusive device lock (%s, %s or %s)\n"), "yes", "no", "nonblock");
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(25));
-	fprintf(out, USAGE_MAN_TAIL("mkfs.minix(8)"));
+	printf(USAGE_HELP_OPTIONS(25));
+	printf(USAGE_MAN_TAIL("mkfs.minix(8)"));
 	exit(MKFS_EX_OK);
 }
 

@@ -76,11 +76,11 @@ static int probe_lvm2(blkid_probe pr, const struct blkid_idmag *mag)
 	int sector = mag->kboff << 1;
 	struct lvm2_pv_label_header *label;
 	char uuid[LVM2_ID_LEN + 7];
-	const unsigned char *buf;
+	unsigned char *buf;
 
 	buf = blkid_probe_get_buffer(pr,
 			mag->kboff << 10,
-			512 + LVM2_LABEL_SIZE);
+			512 + sizeof(struct lvm2_pv_label_header));
 	if (!buf)
 		return errno ? -errno : 1;
 
@@ -122,7 +122,7 @@ static int probe_lvm2(blkid_probe pr, const struct blkid_idmag *mag)
 
 static int probe_lvm1(blkid_probe pr, const struct blkid_idmag *mag)
 {
-	const struct lvm1_pv_label_header *label;
+	struct lvm1_pv_label_header *label;
 	char uuid[LVM2_ID_LEN + 7];
 	unsigned int version;
 
@@ -158,7 +158,7 @@ struct verity_sb {
 
 static int probe_verity(blkid_probe pr, const struct blkid_idmag *mag)
 {
-	const struct verity_sb *sb;
+	struct verity_sb *sb;
 	unsigned int version;
 
 	sb = blkid_probe_get_sb(pr, mag, struct verity_sb);
@@ -187,7 +187,7 @@ struct integrity_sb {
 
 static int probe_integrity(blkid_probe pr, const struct blkid_idmag *mag)
 {
-	const struct integrity_sb *sb;
+	struct integrity_sb *sb;
 
 	sb = blkid_probe_get_sb(pr, mag, struct integrity_sb);
 	if (sb == NULL)

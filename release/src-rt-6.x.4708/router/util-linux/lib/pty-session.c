@@ -241,7 +241,6 @@ int ul_pty_signals_setup(struct ul_pty *pty)
 	sigaddset(&ourset, SIGCHLD);
 	sigaddset(&ourset, SIGWINCH);
 	sigaddset(&ourset, SIGALRM);
-	sigaddset(&ourset, SIGHUP);
 	sigaddset(&ourset, SIGTERM);
 	sigaddset(&ourset, SIGINT);
 	sigaddset(&ourset, SIGQUIT);
@@ -585,8 +584,6 @@ static int handle_signal(struct ul_pty *pty, int fd)
 							&info, (void *) &pty->win);
 		}
 		break;
-	case SIGHUP:
-		/* fallthrough */
 	case SIGTERM:
 		/* fallthrough */
 	case SIGINT:
@@ -644,7 +641,7 @@ int ul_pty_proxy_master(struct ul_pty *pty)
 
 		/* note, callback usually updates @next_callback_time */
 		if (timerisset(&pty->next_callback_time)) {
-			struct timeval now = { 0 };;
+			struct timeval now;
 
 			DBG(IO, ul_debugobj(pty, " callback requested"));
 			gettime_monotonic(&now);
@@ -657,7 +654,7 @@ int ul_pty_proxy_master(struct ul_pty *pty)
 
 		/* set timeout */
 		if (timerisset(&pty->next_callback_time)) {
-			struct timeval now = { 0 }, rest = { 0 };
+			struct timeval now, rest;
 
 			gettime_monotonic(&now);
 			timersub(&pty->next_callback_time, &now, &rest);

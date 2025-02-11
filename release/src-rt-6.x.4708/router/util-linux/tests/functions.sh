@@ -163,18 +163,6 @@ function ts_skip_nonroot {
 	fi
 }
 
-# Specify the capability needed in your test case like:
-#
-#	ts_skip_capability cap_wake_alarm
-#
-function ts_skip_capability {
-	ts_check_prog "$TS_HELPER_CAP"
-
-	if ! "$TS_HELPER_CAP" "$1"; then
-		ts_skip "no capability: $1"
-	fi
-}
-
 function ts_skip_qemu_user {
 	if [ "$QEMU_USER" == "1" ]; then
 		ts_skip "running under qemu-user emulation"
@@ -295,10 +283,10 @@ function ts_init_core_subtest_env {
 	TS_EXPECTED_ERR="$TS_TOPDIR/expected/$TS_NS.err"
 	TS_MOUNTPOINT="$TS_OUTDIR/${TS_TESTNAME}-${TS_SUBNAME}-mnt"
 
-	rm -f "$TS_OUTPUT" "$TS_ERRLOG" "$TS_VGDUMP" "$TS_EXIT_CODE"
+	rm -f $TS_OUTPUT $TS_ERRLOG $TS_VGDUMP $TS_EXIT_CODE
 	[ -d "$TS_OUTDIR" ]  || mkdir -p "$TS_OUTDIR"
 
-	touch "$TS_OUTPUT" "$TS_ERRLOG" "$TS_EXIT_CODE"
+	touch $TS_OUTPUT $TS_ERRLOG $TS_EXIT_CODE
 	[ -n "$TS_VALGRIND_CMD" ] && touch $TS_VGDUMP
 }
 
@@ -398,7 +386,6 @@ function ts_init_env {
 		TS_ENABLE_UBSAN="yes"
 	fi
 
-	TS_FSTAB="$TS_OUTDIR/${TS_TESTNAME}.fstab"
 	BLKID_FILE="$TS_OUTDIR/${TS_TESTNAME}.blkidtab"
 
 	declare -a TS_SUID_PROGS
@@ -542,19 +529,19 @@ function ts_gen_diff_from {
 	local output="$2"
 	local difffile="$3"
 
-	diff -u "$expected" "$output" > "$difffile"
+	diff -u $expected $output > $difffile
 
-	if [ $? -ne 0 ] || [ -s "$difffile" ]; then
+	if [ $? -ne 0 ] || [ -s $difffile ]; then
 		res=1
 		if [ "$TS_SHOWDIFF" == "yes" -a "$TS_KNOWN_FAIL" != "yes" ]; then
 			echo
 			echo "diff-{{{"
-			cat "$difffile"
+			cat $difffile
 			echo "}}}-diff"
 			echo
 		fi
 	else
-		rm -f "$difffile";
+		rm -f $difffile;
 	fi
 
 	return $res
@@ -569,8 +556,8 @@ function ts_gen_diff {
 	[ -f "$TS_EXPECTED" ] || TS_EXPECTED=/dev/null
 
 	# remove libtool lt- prefixes
-	sed --in-place 's/^lt\-\(.*\: \)/\1/g' "$TS_OUTPUT"
-	sed --in-place 's/^lt\-\(.*\: \)/\1/g' "$TS_ERRLOG"
+	sed --in-place 's/^lt\-\(.*\: \)/\1/g' $TS_OUTPUT
+	sed --in-place 's/^lt\-\(.*\: \)/\1/g' $TS_ERRLOG
 
 	[ -d "$TS_DIFFDIR" ] || mkdir -p "$TS_DIFFDIR"
 
@@ -579,10 +566,10 @@ function ts_gen_diff {
 	[ -f "$TS_ERRLOG" ] || TS_ERRLOG=/dev/null
 
 	if [ "$TS_COMPONENT" != "fuzzers" ]; then
-		ts_gen_diff_from "$TS_EXPECTED" "$TS_OUTPUT" "$TS_DIFF"
+		ts_gen_diff_from $TS_EXPECTED $TS_OUTPUT $TS_DIFF
 		status_out=$?
 
-		ts_gen_diff_from "$TS_EXPECTED_ERR" "$TS_ERRLOG" "$TS_DIFF.err"
+		ts_gen_diff_from $TS_EXPECTED_ERR $TS_ERRLOG $TS_DIFF.err
 		status_err=$?
 	else
 		# TS_EXIT_CODE is empty when tests aren't run with ts_run: https://github.com/util-linux/util-linux/issues/1072
@@ -593,8 +580,8 @@ function ts_gen_diff {
 		fi
 
 		if [ $exit_code -ne 0 ]; then
-			ts_gen_diff_from "$TS_EXPECTED" "$TS_OUTPUT" "$TS_DIFF"
-			ts_gen_diff_from "$TS_EXPECTED_ERR" "$TS_ERRLOG" "$TS_DIFF.err"
+			ts_gen_diff_from $TS_EXPECTED $TS_OUTPUT $TS_DIFF
+			ts_gen_diff_from $TS_EXPECTED_ERR $TS_ERRLOG $TS_DIFF.err
 		fi
 	fi
 
@@ -837,12 +824,12 @@ function ts_is_mounted {
 }
 
 function ts_fstab_open {
-	echo "# <!-- util-linux test entry" >> "$TS_FSTAB"
+	echo "# <!-- util-linux test entry" >> /etc/fstab
 }
 
 function ts_fstab_close {
-	echo "# -->" >> "$TS_FSTAB"
-	sync "$TS_FSTAB" 2>/dev/null
+	echo "# -->" >> /etc/fstab
+	sync /etc/fstab 2>/dev/null
 }
 
 function ts_fstab_addline {
@@ -851,7 +838,7 @@ function ts_fstab_addline {
 	local FS=${3:-"auto"}
 	local OPT=${4:-"defaults"}
 
-	echo "$SPEC   $MNT   $FS   $OPT   0   0" >> "$TS_FSTAB"
+	echo "$SPEC   $MNT   $FS   $OPT   0   0" >> /etc/fstab
 }
 
 function ts_fstab_lock {
@@ -875,9 +862,9 @@ function ts_fstab_clean {
   ba
 }
 s/# <!-- util-linux.*-->//;
-/^$/d" "$TS_FSTAB"
+/^$/d" /etc/fstab
 
-	sync "$TS_FSTAB" 2>/dev/null
+	sync /etc/fstab 2>/dev/null
 	ts_unlock "fstab"
 }
 
@@ -1172,8 +1159,8 @@ function ts_is_virt {
 }
 
 function ts_check_enosys_syscalls {
-	ts_check_test_command "$TS_CMD_ENOSYS"
-	"$TS_CMD_ENOSYS" ${@/#/-s } true 2> /dev/null
+	ts_check_test_command "$TS_HELPER_ENOSYS"
+	"$TS_HELPER_ENOSYS" ${@/#/-s } true 2> /dev/null
 	[ $? -ne 0 ] && ts_skip "test_enosys does not work: $*"
 }
 

@@ -991,8 +991,7 @@ static int is_reflink(struct file *xa, struct file *xb)
 		if (ioctl(bf, FS_IOC_FIEMAP, (unsigned long) bmap) < 0)
 			goto done;
 
-		if (amap->fm_mapped_extents == 0 ||
-		    amap->fm_mapped_extents != bmap->fm_mapped_extents)
+		if (amap->fm_mapped_extents != bmap->fm_mapped_extents)
 			goto done;
 
 		for (i = 0; i < amap->fm_mapped_extents; i++) {
@@ -1193,8 +1192,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("     --skip-reflinks        skip already cloned files (enabled on --reflink)\n"), out);
 #endif
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(28));
-	fprintf(out, USAGE_MAN_TAIL("hardlink(1)"));
+	printf(USAGE_HELP_OPTIONS(28));
+	printf(USAGE_MAN_TAIL("hardlink(1)"));
 
 	exit(EXIT_SUCCESS);
 }

@@ -349,8 +349,25 @@ static int setup_veritydev(	struct libmnt_context *cxt,
 	backing_file = mnt_fs_get_srcpath(cxt->fs);
 	if (!backing_file)
 		return -EINVAL;
+	else {
+		/* To avoid clashes, prefix libmnt_ to all mapper devices */
+		char *p, *path = strdup(backing_file);
+		if (!path)
+			return -ENOMEM;
 
-	DBG(HOOK, ul_debugobj(hs, "verity: setup for %s", backing_file));
+		p = stripoff_last_component(path);
+		if (p)
+			mapper_device = calloc(strlen(p) + sizeof("libmnt_"), sizeof(char));
+		if (mapper_device) {
+			strcat(mapper_device, "libmnt_");
+			strcat(mapper_device, p);
+		}
+		free(path);
+		if (!mapper_device)
+			return -ENOMEM;
+	}
+
+	DBG(HOOK, ul_debugobj(hs, "verity: setup for %s [%s]", backing_file, mapper_device));
 
 	/* verity.hashdevice= */
 	if (!rc && (opt = mnt_optlist_get_opt(ol, MNT_MS_HASH_DEVICE, cxt->map_userspace)))
@@ -450,13 +467,6 @@ static int setup_veritydev(	struct libmnt_context *cxt,
 		rc = -EINVAL;
 	}
 
-	/* To avoid clashes, use the roothash as the device name. This allows us to reuse already open devices, saving
-	 * a lot of time and resources when there are duplicated mounts. If the roothash is the same, then the volumes
-	 * are also guaranteed to be identical. This is what systemd also does, so we can deduplicate across the whole
-	 * system. */
-	if (asprintf(&mapper_device, "%s-verity", root_hash) < 0)
-		rc = -ENOMEM;
-
 	if (!rc)
 		rc = verity_call( crypt_init_data_device(&crypt_dev, hash_device, backing_file) );
 	if (rc)
@@ -496,9 +506,7 @@ static int setup_veritydev(	struct libmnt_context *cxt,
 	 * If the mapper device already exists, and if libcryptsetup supports it, get the root
 	 * hash associated with the existing one and compare it with the parameter passed by
 	 * the user. If they match, then we can be sure the user intended to mount the exact
-	 * same device, and simply reuse it and return success. Although we use the roothash
-	 * as the device mapper name, and root privileges are required to open them, better be
-	 * safe than sorry, so double check that the actual root hash used matches.
+	 * same device, and simply reuse it and return success.
 	 * The kernel does the refcounting for us.
 	 * If libcryptsetup does not support getting the root hash out of an existing device,
 	 * then return an error and tell the user that the device is already in use.
@@ -554,10 +562,15 @@ static int setup_veritydev(	struct libmnt_context *cxt,
 	}
 
 	if (!rc) {
-		if (asprintf(&hsd->devname, _PATH_DEV_MAPPER "/%s", mapper_device) == -1)
+		hsd->devname = calloc(strlen(mapper_device)
+					+ sizeof(_PATH_DEV_MAPPER) + 2, sizeof(char));
+		if (!hsd->devname)
 			rc = -ENOMEM;
-		else
+		else {
+			strcat(hsd->devname, _PATH_DEV_MAPPER "/");
+			strcat(hsd->devname, mapper_device);
 			rc = mnt_fs_set_source(cxt->fs, hsd->devname);
+		}
 	}
 
 done:

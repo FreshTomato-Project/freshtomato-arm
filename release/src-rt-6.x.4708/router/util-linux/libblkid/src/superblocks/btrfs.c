@@ -250,7 +250,7 @@ static int btrfs_verify_csum(blkid_probe pr, const struct btrfs_super_block *bfs
 
 static int probe_btrfs(blkid_probe pr, const struct blkid_idmag *mag)
 {
-	const struct btrfs_super_block *bfs;
+	struct btrfs_super_block *bfs;
 
 	if (pr->zone_size) {
 #ifdef HAVE_LINUX_BLKZONED_H

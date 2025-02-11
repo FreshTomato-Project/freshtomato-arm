@@ -1,14 +1,21 @@
 /*
- * SPDX-License-Identifier: GPL-2.0-or-later
+ *  readprofile.c - used to read /proc/profile
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  Copyright (C) 1994,1996 Alessandro Rubini (rubini@ipvvis.unipv.it)
  *
- * Copyright (C) 1994,1996 Alessandro Rubini (rubini@ipvvis.unipv.it)
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
  *
- * readprofile.c - used to read /proc/profile
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License along
+ *   with this program; if not, write to the Free Software Foundation, Inc.,
+ *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /*
@@ -81,10 +88,14 @@ static char *boot_uname_r_str(void)
 {
 	struct utsname uname_info;
 	char *s;
+	size_t len;
 
 	if (uname(&uname_info))
 		return "";
-	xasprintf(&s, "%s%s", BOOT_SYSTEM_MAP, uname_info.release);
+	len = strlen(BOOT_SYSTEM_MAP) + strlen(uname_info.release) + 1;
+	s = xmalloc(len);
+	strcpy(s, BOOT_SYSTEM_MAP);
+	strcat(s, uname_info.release);
 	return s;
 }
 
@@ -113,8 +124,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -r, --reset               reset all the counters (root only)\n"), out);
 	fputs(_(" -n, --no-auto             disable byte order auto-detection\n"), out);
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(27));
-	fprintf(out, USAGE_MAN_TAIL("readprofile(8)"));
+	printf(USAGE_HELP_OPTIONS(27));
+	printf(USAGE_MAN_TAIL("readprofile(8)"));
 	exit(EXIT_SUCCESS);
 }
 

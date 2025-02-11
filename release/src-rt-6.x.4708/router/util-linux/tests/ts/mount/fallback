@@ -22,7 +22,7 @@ test_mount_fallback() {
 	mkdir -p "$MY_SOURCE"
 	mkdir -p "$TS_MOUNTPOINT"
 
-	"$TS_CMD_ENOSYS" $2 -- "$TS_CMD_MOUNT" --bind "$MY_SOURCE" "$TS_MOUNTPOINT" \
+	"$TS_HELPER_ENOSYS" $2 -- "$TS_CMD_MOUNT" --bind "$MY_SOURCE" "$TS_MOUNTPOINT" \
 		>> "$TS_OUTPUT" 2>> "$TS_ERRLOG"
 	[ "$?" = "0" ] || ts_log "error: mount $TS_MOUNTPOINT"
 
@@ -49,7 +49,7 @@ mkdir -p "$MOUNTPOINT"
 
 
 ts_init_subtest "later-fsopen"
-$TS_CMD_ENOSYS -s fsopen -- "$TS_CMD_MOUNT" -t foo,bar,ext2 "$DEVICE" "$MOUNTPOINT" \
+$TS_HELPER_ENOSYS -s fsopen -- "$TS_CMD_MOUNT" -t foo,bar,ext2 "$DEVICE" "$MOUNTPOINT" \
 		>> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_is_mounted $DEVICE || ts_log "Cannot find $DEVICE in /proc/mounts"
 mkdir -p ${MOUNTPOINT}/subdir
@@ -58,7 +58,7 @@ ts_finalize_subtest
 
 
 ts_init_subtest "subdir"
-$TS_CMD_ENOSYS -s fsopen -s open_tree -- \
+$TS_HELPER_ENOSYS -s fsopen -s open_tree -- \
 	"$TS_CMD_MOUNT" -o X-mount.subdir=subdir "$DEVICE" "$MOUNTPOINT" \
 	>> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_is_mounted $DEVICE || ts_log "Cannot find $DEVICE in /proc/mounts"
@@ -69,12 +69,12 @@ ts_finalize_subtest
 ts_init_subtest "mount_setattr"
 "$TS_CMD_MOUNT" "$DEVICE" "$MOUNTPOINT"  >> $TS_OUTPUT 2>> $TS_ERRLOG
 ts_is_mounted $DEVICE || ts_log "Cannot find $DEVICE in /proc/mounts"
-$TS_CMD_ENOSYS -s mount_setattr -- \
+$TS_HELPER_ENOSYS -s mount_setattr -- \
 	"$TS_CMD_MOUNT" -o remount,ro "$MOUNTPOINT" \
 	>> $TS_OUTPUT 2>> $TS_ERRLOG
 $TS_CMD_FINDMNT --kernel --mountpoint "$MOUNTPOINT" --options "ro" &> /dev/null
 [ "$?" == "0" ] || ts_die "Cannot find read-only in $MOUNTPOINT in /proc/self/mountinfo"
-$TS_CMD_ENOSYS -s mount_setattr -- \
+$TS_HELPER_ENOSYS -s mount_setattr -- \
  	"$TS_CMD_MOUNT" --make-slave "$MOUNTPOINT" \
  	>> $TS_OUTPUT 2>> $TS_ERRLOG
 $TS_CMD_FINDMNT -n --kernel --mountpoint "$MOUNTPOINT" -o PROPAGATION >> $TS_OUTPUT

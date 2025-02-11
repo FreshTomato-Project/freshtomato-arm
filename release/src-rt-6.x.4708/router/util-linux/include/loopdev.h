@@ -112,8 +112,7 @@ struct loopdev_cxt {
 	char		device[128];	/* device path (e.g. /dev/loop<N>) */
 	char		*filename;	/* backing file for loopcxt_set_... */
 	int		fd;		/* open(/dev/looo<N>) */
-	dev_t		devno;		/* loop device devno from /sys */
-	mode_t		mode;		/* fd mode O_{RDONLY,RDWR} */
+	int		mode;		/* fd mode O_{RDONLY,RDWR} */
 	uint64_t	blocksize;	/* used by loopcxt_setup_device() */
 
 	int		flags;		/* LOOPDEV_FL_* flags */
@@ -121,10 +120,9 @@ struct loopdev_cxt {
 	unsigned int	extra_check:1;	/* unusual stuff for iterator */
 	unsigned int	info_failed:1;	/* LOOP_GET_STATUS ioctl failed */
 	unsigned int    control_ok:1;	/* /dev/loop-control success */
-	unsigned int	is_lost:1;	/* device in /sys, but missing in /dev */
 
 	struct path_cxt		*sysfs; /* pointer to /sys/dev/block/<maj:min>/ */
-	struct loop_config	config;	/* for GET/SET ioctl */
+	struct loop_config 	config;	/* for GET/SET ioctl */
 	struct loopdev_iter	iter;	/* scans /sys or /dev for used/free devices */
 };
 
@@ -134,6 +132,8 @@ struct loopdev_cxt {
  * loopdev_cxt.flags
  */
 enum {
+	LOOPDEV_FL_RDONLY	= (1 << 0),	/* open(/dev/loop) mode; default */
+	LOOPDEV_FL_RDWR		= (1 << 1),	/* necessary for loop setup only */
 	LOOPDEV_FL_OFFSET	= (1 << 4),
 	LOOPDEV_FL_NOSYSFS	= (1 << 5),
 	LOOPDEV_FL_NOIOCTL	= (1 << 6),
@@ -151,9 +151,7 @@ extern int is_loopdev(const char *device);
 extern int loopdev_is_autoclear(const char *device);
 
 extern char *loopdev_get_backing_file(const char *device);
-extern dev_t loopcxt_get_devno(struct loopdev_cxt *lc);
 extern int loopdev_has_backing_file(const char *device);
-extern int loopcxt_is_lost(struct loopdev_cxt *lc);
 extern int loopdev_is_used(const char *device, const char *filename,
 			   uint64_t offset, uint64_t sizelimit, int flags);
 extern char *loopdev_find_by_backing_file(const char *filename,
@@ -178,7 +176,7 @@ extern const char *loopcxt_get_device(struct loopdev_cxt *lc);
 extern struct loop_info64 *loopcxt_get_info(struct loopdev_cxt *lc);
 
 extern int loopcxt_get_fd(struct loopdev_cxt *lc);
-extern int loopcxt_set_fd(struct loopdev_cxt *lc, int fd, mode_t mode);
+extern int loopcxt_set_fd(struct loopdev_cxt *lc, int fd, int mode);
 
 extern int loopcxt_init_iterator(struct loopdev_cxt *lc, int flags);
 extern int loopcxt_deinit_iterator(struct loopdev_cxt *lc);
@@ -197,10 +195,8 @@ int loopcxt_set_sizelimit(struct loopdev_cxt *lc, uint64_t sizelimit);
 int loopcxt_set_blocksize(struct loopdev_cxt *lc, uint64_t blocksize);
 int loopcxt_set_flags(struct loopdev_cxt *lc, uint32_t flags);
 int loopcxt_set_backing_file(struct loopdev_cxt *lc, const char *filename);
-int loopcxt_set_refname(struct loopdev_cxt *lc, const char *refname);
 
 extern char *loopcxt_get_backing_file(struct loopdev_cxt *lc);
-extern char *loopcxt_get_refname(struct loopdev_cxt *lc);
 extern int loopcxt_get_backing_devno(struct loopdev_cxt *lc, dev_t *devno);
 extern int loopcxt_get_backing_inode(struct loopdev_cxt *lc, ino_t *ino);
 extern int loopcxt_get_offset(struct loopdev_cxt *lc, uint64_t *offset);

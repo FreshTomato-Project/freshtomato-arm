@@ -18,9 +18,6 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <errno.h>
-#ifdef HAVE_LINUX_BLKZONED_H
-#include <linux/blkzoned.h>
-#endif
 
 #include "c.h"
 #include "nls.h"
@@ -186,14 +183,6 @@ static const struct bdc bdcms[] =
 		.argval = -1,
 		.help = N_("get disk sequence number")
 	},{
-#ifdef BLKGETZONESZ
-		IOCTL_ENTRY(BLKGETZONESZ),
-		.name = "--getzonesz",
-		.argtype = ARG_UINT,
-		.argval = -1,
-		.help = N_("get zone size")
-	},{
-#endif
 		IOCTL_ENTRY(BLKFLSBUF),
 		.name = "--flushbufs",
 		.help = N_("flush buffers")
@@ -209,36 +198,36 @@ static void __attribute__((__noreturn__)) usage(void)
 	size_t i;
 
 	fputs(USAGE_HEADER, stdout);
-	fprintf(stdout, _(
+	printf(_(
 	         " %1$s [-v|-q] commands devices\n"
 	         " %1$s --report [devices]\n"
 	         " %1$s -h|-V\n"
 		), program_invocation_short_name);
 
 	fputs(USAGE_SEPARATOR, stdout);
-	fputsln(  _("Call block device ioctls from the command line."), stdout);
+	puts(  _("Call block device ioctls from the command line."));
 
 	fputs(USAGE_OPTIONS, stdout);
-	fputsln(  _(" -q             quiet mode"), stdout);
-	fputsln(  _(" -v             verbose mode"), stdout);
-	fputsln(  _("     --report   print report for specified (or all) devices"), stdout);
+	puts(  _(" -q             quiet mode"));
+	puts(  _(" -v             verbose mode"));
+	puts(  _("     --report   print report for specified (or all) devices"));
 	fputs(USAGE_SEPARATOR, stdout);
-	fprintf(stdout, USAGE_HELP_OPTIONS(16));
+	printf(USAGE_HELP_OPTIONS(16));
 
 	fputs(USAGE_SEPARATOR, stdout);
-	fputsln(  _("Available commands:"), stdout);
-	fprintf(stdout, _(" %-25s get size in 512-byte sectors\n"), "--getsz");
+	puts(  _("Available commands:"));
+	printf(_(" %-25s get size in 512-byte sectors\n"), "--getsz");
 	for (i = 0; i < ARRAY_SIZE(bdcms); i++) {
 		if (bdcms[i].argname)
-			fprintf(stdout, " %s %-*s %s\n", bdcms[i].name,
+			printf(" %s %-*s %s\n", bdcms[i].name,
 				(int)(24 - strlen(bdcms[i].name)),
 				bdcms[i].argname, _(bdcms[i].help));
 		else
-			fprintf(stdout, " %-25s %s\n", bdcms[i].name,
+			printf(" %-25s %s\n", bdcms[i].name,
 				_(bdcms[i].help));
 	}
 
-	fprintf(stdout, USAGE_MAN_TAIL("blockdev(8)"));
+	printf(USAGE_MAN_TAIL("blockdev(8)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -347,11 +336,8 @@ static void do_commands(int fd, char **argv, int d)
 
 		if (!strcmp(argv[i], "--getsz")) {
 			res = blkdev_get_sectors(fd, &llu);
-			if (res == 0) {
-				if (verbose)
-					printf(_("get size in 512-byte sectors: "));
+			if (res == 0)
 				printf("%lld\n", llu);
-			}
 			else
 				errx(EXIT_FAILURE,
 				     _("could not get device size"));

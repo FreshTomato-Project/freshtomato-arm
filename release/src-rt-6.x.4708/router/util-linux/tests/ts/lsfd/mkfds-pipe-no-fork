@@ -116,7 +116,7 @@ EOF
 	    echo EXPECTED_LSFD_ENDPOINTS_JSON: "${EXPECTED_LSFD_ENDPOINTS_JSON}"
 	fi
 
-	echo DONE >&"${MKFDS[1]}"
+	kill -CONT ${PID}
     fi
     wait ${MKFDS_PID}
 } > $TS_OUTPUT 2>&1

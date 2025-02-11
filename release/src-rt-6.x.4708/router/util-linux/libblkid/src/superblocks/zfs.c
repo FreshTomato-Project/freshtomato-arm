@@ -71,13 +71,13 @@ struct nvlist {
 	struct nvpair	nvl_nvpair;
 };
 
-static void zfs_process_value(blkid_probe pr, const char *name, size_t namelen,
-			     const void *value, size_t max_value_size, unsigned directory_level)
+static void zfs_process_value(blkid_probe pr, char *name, size_t namelen,
+			     void *value, size_t max_value_size, unsigned directory_level)
 {
 	if (strncmp(name, "name", namelen) == 0 &&
 	    sizeof(struct nvstring) <= max_value_size &&
 	    !directory_level) {
-		const struct nvstring *nvs = value;
+		struct nvstring *nvs = value;
 		uint32_t nvs_type = be32_to_cpu(nvs->nvs_type);
 		uint32_t nvs_strlen = be32_to_cpu(nvs->nvs_strlen);
 
@@ -92,7 +92,7 @@ static void zfs_process_value(blkid_probe pr, const char *name, size_t namelen,
 	} else if (strncmp(name, "guid", namelen) == 0 &&
 		   sizeof(struct nvuint64) <= max_value_size &&
 		   !directory_level) {
-		const struct nvuint64 *nvu = value;
+		struct nvuint64 *nvu = value;
 		uint32_t nvu_type = be32_to_cpu(nvu->nvu_type);
 		uint64_t nvu_value;
 
@@ -110,7 +110,7 @@ static void zfs_process_value(blkid_probe pr, const char *name, size_t namelen,
 	} else if (strncmp(name, "pool_guid", namelen) == 0 &&
 		   sizeof(struct nvuint64) <= max_value_size &&
 		   !directory_level) {
-		const struct nvuint64 *nvu = value;
+		struct nvuint64 *nvu = value;
 		uint32_t nvu_type = be32_to_cpu(nvu->nvu_type);
 		uint64_t nvu_value;
 
@@ -128,7 +128,7 @@ static void zfs_process_value(blkid_probe pr, const char *name, size_t namelen,
 					 "%"PRIu64, nvu_value);
 	} else if (strncmp(name, "ashift", namelen) == 0 &&
 		   sizeof(struct nvuint64) <= max_value_size) {
-		const struct nvuint64 *nvu = value;
+		struct nvuint64 *nvu = value;
 		uint32_t nvu_type = be32_to_cpu(nvu->nvu_type);
 		uint64_t nvu_value;
 
@@ -147,9 +147,9 @@ static void zfs_process_value(blkid_probe pr, const char *name, size_t namelen,
 
 static void zfs_extract_guid_name(blkid_probe pr, loff_t offset)
 {
-	const unsigned char *p;
-	const struct nvlist *nvl;
-	const struct nvpair *nvp;
+	unsigned char *p;
+	struct nvlist *nvl;
+	struct nvpair *nvp;
 	size_t left = 4096;
 	unsigned directory_level = 0;
 
@@ -166,16 +166,16 @@ static void zfs_extract_guid_name(blkid_probe pr, loff_t offset)
 	DBG(LOWPROBE, ul_debug("zfs_extract: nvlist offset %jd",
 			       (intmax_t)offset));
 
-	nvl = (const struct nvlist *) p;
+	nvl = (struct nvlist *) p;
 	nvp = &nvl->nvl_nvpair;
-	left -= (const unsigned char *)nvp - p; /* Already used up 12 bytes */
+	left -= (unsigned char *)nvp - p; /* Already used up 12 bytes */
 
 	while (left > sizeof(*nvp)) {
 		uint32_t nvp_size = be32_to_cpu(nvp->nvp_size);
 		uint32_t nvp_namelen = be32_to_cpu(nvp->nvp_namelen);
 		uint64_t namesize = ((uint64_t)nvp_namelen + 3) & ~3;
 		size_t max_value_size;
-		const void *value;
+		void *value;
 
 		if (!nvp->nvp_size) {
 			if (!directory_level)
@@ -201,7 +201,7 @@ static void zfs_extract_guid_name(blkid_probe pr, loff_t offset)
 		value = nvp->nvp_name + namesize;
 
 		if (sizeof(struct nvdirectory) <= max_value_size) {
-			const struct nvdirectory *nvu = value;
+			struct nvdirectory *nvu = value;
 			if (be32_to_cpu(nvu->nvd_type) == DATA_TYPE_DIRECTORY) {
 				nvp_size = sizeof(*nvp) + namesize + sizeof(*nvu);
 				directory_level++;
@@ -259,7 +259,7 @@ static int probe_zfs(blkid_probe pr,
 	struct zfs_uberblock *ub = NULL;
 	loff_t offset = 0, ub_offset = 0;
 	int label_no, found = 0, found_in_label;
-	const void *label;
+	void *label;
 	loff_t blk_align = (pr->size % (256 * 1024ULL));
 
 	DBG(PROBE, ul_debug("probe_zfs"));

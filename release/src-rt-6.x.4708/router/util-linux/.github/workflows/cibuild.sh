@@ -1,12 +1,12 @@
 #!/bin/bash
-
+ 
 set -ex
 
 PHASES=(${@:-CONFIGURE MAKE INSTALL CHECK DISTCHECK})
 COMPILER="${COMPILER:?}"
 COMPILER_VERSION="${COMPILER_VERSION}"
-CFLAGS=(-O1 -g -std=c99)
-CXXFLAGS=(-O1 -g -std=c++11)
+CFLAGS=(-O1 -g)
+CXXFLAGS=(-O1 -g)
 LDFLAGS=()
 COVERITY_SCAN_TOOL_BASE="/tmp/coverity-scan-analysis"
 
@@ -83,18 +83,19 @@ for phase in "${PHASES[@]}"; do
             --disable-use-tty-group
             --disable-makeinstall-chown
             --enable-all-programs
+            --enable-werror
         )
 
         if [[ "$COVERAGE" == "yes" ]]; then
-            opts+=(--enable-coverage)
+            CFLAGS+=(--coverage)
+            CXXFLAGS+=(--coverage)
+            LDFLAGS+=(--coverage)
         fi
 
         if [[ "$SANITIZE" == "yes" ]]; then
             opts+=(--enable-asan --enable-ubsan)
             CFLAGS+=(-fno-omit-frame-pointer)
             CXXFLAGS+=(-fno-omit-frame-pointer)
-        else
-            opts+=(--enable-werror)
         fi
 
         if [[ "$COMPILER" == clang* && "$SANITIZE" == "yes" ]]; then
@@ -103,15 +104,6 @@ for phase in "${PHASES[@]}"; do
             CXXFLAGS+=(-shared-libasan)
         fi
 
-        if [[ "$HOST_TRIPLET" != "" ]]; then
-            opts+=(--host "$HOST_TRIPLET")
-        fi
-
-        if [[ "$DYNAMIC_LINKER" != "" ]]; then
-            LDFLAGS+=("-Wl,--dynamic-linker=$DYNAMIC_LINKER")
-        fi
-
-        git config --global --add safe.directory "$PWD"
         git clean -xdf
 
         ./autogen.sh
@@ -120,27 +112,20 @@ for phase in "${PHASES[@]}"; do
     MAKE)
         make -j"$(nproc)"
         make -j"$(nproc)" check-programs
-
-        untracked_files="$(git ls-files --others --exclude-standard)"
-        if [ -n "$untracked_files" ]; then
-                echo "Untracked files"
-                echo "$untracked_files"
-                exit 1
-        fi
         ;;
     INSTALL)
         make install DESTDIR=/tmp/dest
         ;;
     MESONCONF)
-        meson -Dwerror=true build
+        meson build
         ;;
     MESONBUILD)
         ninja -C build
         ;;
     CODECHECK)
-        make checklibdoc
-        make checkxalloc
-        ;;
+	make checklibdoc
+	make checkxalloc
+	;;
     CHECK)
         if [[ "$SANITIZE" == "yes" ]]; then
             # All the following black magic is to make test/eject/umount work, since
@@ -170,20 +155,6 @@ for phase in "${PHASES[@]}"; do
                 echo "${asan_rt_path%/*}" > /etc/ld.so.conf.d/99-clang-libasan.conf
                 ldconfig
             fi
-        fi
-
-        if [[ "$COVERAGE" == "yes" ]]; then
-            # Make (almost) everything under current directory readable/writable
-            # for everyone to allow gcov to write the .gcda files even with
-            # dropped privileges
-            find . tests/helpers/ -maxdepth 1 -type d ! -name . ! -name tests \
-                                  -exec setfacl -R -m 'd:g::rwX,d:o::rwX' -m 'g::rwX,o::rwX' '{}' \;
-            # Make sure we can access $PWD as an unpriv user
-            path="$PWD"
-            while [[ "$path" != / ]]; do
-                chmod o+rx "$path"
-                path="$(dirname "$path")"
-            done
         fi
 
         ./tests/run.sh --show-diff

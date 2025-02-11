@@ -42,18 +42,15 @@ _nsenter_module()
 				--pid=
 				--cgroup=
 				--user=
-				--user-parent
 				--time=
 				--setuid
 				--setgid
-				--keep-caps
 				--preserve-credentials
 				--root=
 				--wd=
 				--wdns=
 				--env
 				--no-fork
-				--join-cgroup
 				--help
 				--version
 			"

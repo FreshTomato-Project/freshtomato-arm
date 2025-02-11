@@ -13,7 +13,6 @@ _blockdev_module()
 		--getro
 		--getdiscardzeroes
 		--getdiskseq
-		--getzonesz
 		--getss
 		--getpbsz
 		--getiomin

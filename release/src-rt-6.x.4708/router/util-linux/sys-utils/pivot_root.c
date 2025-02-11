@@ -1,12 +1,17 @@
 /*
- * SPDX-License-Identifier: GPL-2.0-or-later
+ * pivot_root.c - Change the root file system
+ *
+ * Copyright (C) 2000 Werner Almesberger
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * Copyright (C) 2000 Werner Almesberger
+ * This file is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  */
 #include <err.h>
 #include <errno.h>
@@ -33,8 +38,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("Change the root filesystem.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fprintf(out, USAGE_HELP_OPTIONS(16));
-	fprintf(out, USAGE_MAN_TAIL("pivot_root(8)"));
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("pivot_root(8)"));
 	exit(EXIT_SUCCESS);
 }
 

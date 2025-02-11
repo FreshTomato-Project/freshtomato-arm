@@ -11,18 +11,6 @@ configure_file(
   install_dir : join_paths(get_option('includedir'), 'libsmartcols'),
 )
 
-scols_bison = generator(
-  bison,
-  output : ['@BASENAME@.c', '@BASENAME@.h'],
-  arguments : ['@INPUT@', '--output=@OUTPUT0@', '--defines=@OUTPUT1@'])
-scols_parser_c = scols_bison.process('src/filter-parser.y')
-
-scols_flex = generator(
-  flex,
-  output : ['@BASENAME@.c', '@BASENAME@.h'],
-  arguments : ['--outfile=@OUTPUT0@', '--header-file=@OUTPUT1@', '@INPUT@'])
-scols_scanner_c = scols_flex.process('src/filter-scanner.l')
-
 lib_smartcols_sources = '''
   src/smartcolsP.h
   src/iter.c
@@ -38,12 +26,7 @@ lib_smartcols_sources = '''
   src/grouping.c
   src/walk.c
   src/init.c
-  src/filter.c
-  src/filter-param.c
-  src/filter-expr.c
-'''.split() \
-  + scols_parser_c + scols_scanner_c
-
+'''.split()
 
 libsmartcols_sym = 'src/libsmartcols.sym'
 libsmartcols_sym_path = '@0@/@1@'.format(meson.current_source_dir(), libsmartcols_sym)
@@ -72,5 +55,3 @@ if build_libsmartcols
     meson.override_dependency('smartcols', smartcols_dep)
   endif
 endif
-
-manadocs += ['libsmartcols/scols-filter.5.adoc']

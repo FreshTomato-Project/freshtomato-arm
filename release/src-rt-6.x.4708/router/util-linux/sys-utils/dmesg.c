@@ -1,21 +1,14 @@
 /*
- * SPDX-License-Identifier: GPL-2.0-or-later
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
  * dmesg.c -- Print out the contents of the kernel ring buffer
  *
  * Copyright (C) 1993 Theodore Ts'o <tytso@athena.mit.edu>
- * Copyright (C) 2011-2023 Karel Zak <kzak@redhat.com>
+ * Copyright (C) 2011 Karel Zak <kzak@redhat.com>
+ *
+ * This program comes with ABSOLUTELY NO WARRANTY.
  */
 #include <stdio.h>
 #include <getopt.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/klog.h>
 #include <sys/syslog.h>
 #include <sys/time.h>
@@ -43,7 +36,6 @@
 #include "mangle.h"
 #include "pager.h"
 #include "jsonwrt.h"
-#include "pathnames.h"
 
 /* Close the log.  Currently a NOP. */
 #define SYSLOG_ACTION_CLOSE          0
@@ -67,12 +59,6 @@
 #define SYSLOG_ACTION_SIZE_UNREAD    9
 /* Return size of the log buffer */
 #define SYSLOG_ACTION_SIZE_BUFFER   10
-
-#define PID_CHARS_MAX sizeof(stringify_value(LONG_MAX))
-#define PID_CHARS_DEFAULT sizeof(stringify_value(INT_MAX))
-#define SYSLOG_DEFAULT_CALLER_ID_CHARS sizeof(stringify_value(SHRT_MAX))-1
-#define DMESG_CALLER_PREFIX "caller="
-#define DMESG_CALLER_PREFIXSZ (sizeof(DMESG_CALLER_PREFIX)-1)
 
 /*
  * Color scheme
@@ -155,18 +141,6 @@ static const struct dmesg_name facility_names[] =
 	[FAC_BASE(LOG_CRON)]     = { "cron",     N_("clock daemon") },
 	[FAC_BASE(LOG_AUTHPRIV)] = { "authpriv", N_("security/authorization messages (private)") },
 	[FAC_BASE(LOG_FTP)]      = { "ftp",      N_("FTP daemon") },
-	[FAC_BASE(LOG_FTP) + 1]  = { "res0",     N_("reserved 0") },
-	[FAC_BASE(LOG_FTP) + 2]  = { "res1",     N_("reserved 1") },
-	[FAC_BASE(LOG_FTP) + 3]  = { "res2",     N_("reserved 2") },
-	[FAC_BASE(LOG_FTP) + 4]  = { "res3",     N_("reserved 3") },
-	[FAC_BASE(LOG_LOCAL0)]   = { "local0",   N_("local use 0") },
-	[FAC_BASE(LOG_LOCAL1)]   = { "local1",   N_("local use 1") },
-	[FAC_BASE(LOG_LOCAL2)]   = { "local2",   N_("local use 2") },
-	[FAC_BASE(LOG_LOCAL3)]   = { "local3",   N_("local use 3") },
-	[FAC_BASE(LOG_LOCAL4)]   = { "local4",   N_("local use 4") },
-	[FAC_BASE(LOG_LOCAL5)]   = { "local5",   N_("local use 5") },
-	[FAC_BASE(LOG_LOCAL6)]   = { "local6",   N_("local use 6") },
-	[FAC_BASE(LOG_LOCAL7)]   = { "local7",   N_("local use 7") },
 };
 
 /* supported methods to read message buffer
@@ -185,12 +159,9 @@ enum {
 	DMESG_TIMEFTM_RELTIME,		/* [relative] */
 	DMESG_TIMEFTM_TIME,		/* [time] */
 	DMESG_TIMEFTM_TIME_DELTA,	/* [time <delta>] */
-	DMESG_TIMEFTM_ISO8601,		/* 2013-06-13T22:11:00,123456+0100 */
-
-	__DMESG_TIMEFTM_COUNT
+	DMESG_TIMEFTM_ISO8601		/* 2013-06-13T22:11:00,123456+0100 */
 };
-
-#define DMESG_TIMEFTM_DEFAULT	DMESG_TIMEFTM_TIME
+#define is_timefmt(c, f) ((c)->time_fmt == (DMESG_TIMEFTM_ ##f))
 
 struct dmesg_control {
 	/* bit arrays -- see include/bitops.h */
@@ -228,8 +199,7 @@ struct dmesg_control {
 	char		*filename;
 	char		*mmap_buff;
 	size_t		pagesize;
-	size_t		ntime_fmts;
-	unsigned int	time_fmts[2 * __DMESG_TIMEFTM_COUNT];	/* time format */
+	unsigned int	time_fmt;	/* time format */
 
 	struct ul_jsonwrt jfmt;		/* -J formatting */
 
@@ -246,7 +216,6 @@ struct dmesg_control {
 			force_prefix:1;	/* force timestamp and decode prefix
 					   on each line */
 	int		indent;		/* due to timestamps if newline */
-	size_t          caller_id_size;   /* PRINTK_CALLERID max field size */
 };
 
 struct dmesg_record {
@@ -256,7 +225,6 @@ struct dmesg_record {
 	int		level;
 	int		facility;
 	struct timeval  tv;
-	char		caller_id[PID_CHARS_MAX];
 
 	const char	*next;		/* buffer with next unparsed record */
 	size_t		next_size;	/* size of the next buffer */
@@ -269,11 +237,9 @@ struct dmesg_record {
 		(_r)->level = -1; \
 		(_r)->tv.tv_sec = 0; \
 		(_r)->tv.tv_usec = 0; \
-		(_r)->caller_id[0] = 0; \
 	} while (0)
 
-static int process_kmsg(struct dmesg_control *ctl);
-static int process_kmsg_file(struct dmesg_control *ctl, char **buf);
+static int read_kmsg(struct dmesg_control *ctl);
 
 static int set_level_color(int log_level, const char *mesg, size_t mesgsz)
 {
@@ -325,7 +291,6 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -D, --console-off           disable printing messages to console\n"), out);
 	fputs(_(" -E, --console-on            enable printing messages to console\n"), out);
 	fputs(_(" -F, --file <file>           use the file instead of the kernel log buffer\n"), out);
-	fputs(_(" -K, --kmsg-file <file>      use the file in kmsg format\n"), out);
 	fputs(_(" -f, --facility <list>       restrict output to defined facilities\n"), out);
 	fputs(_(" -H, --human                 human readable output\n"), out);
 	fputs(_(" -J, --json                  use JSON output format\n"), out);
@@ -351,13 +316,13 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -T, --ctime                 show human-readable timestamp (may be inaccurate!)\n"), out);
 	fputs(_(" -t, --notime                don't show any timestamp with messages\n"), out);
 	fputs(_("     --time-format <format>  show timestamp using the given format:\n"
-		"                               [delta|reltime|ctime|notime|iso|raw]\n"
+		"                               [delta|reltime|ctime|notime|iso]\n"
 		"Suspending/resume will make ctime and iso timestamps inaccurate.\n"), out);
 	fputs(_("     --since <time>          display the lines since the specified time\n"), out);
 	fputs(_("     --until <time>          display the lines until the specified time\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(29));
+	printf(USAGE_HELP_OPTIONS(29));
 	fputs(_("\nSupported log facilities:\n"), out);
 	for (i = 0; i < ARRAY_SIZE(facility_names); i++)
 		fprintf(out, " %7s - %s\n",
@@ -370,56 +335,8 @@ static void __attribute__((__noreturn__)) usage(void)
 			level_names[i].name,
 			_(level_names[i].help));
 
-	fprintf(out, USAGE_MAN_TAIL("dmesg(1)"));
+	printf(USAGE_MAN_TAIL("dmesg(1)"));
 	exit(EXIT_SUCCESS);
-}
-
-static void reset_time_fmts(struct dmesg_control *ctl)
-{
-	memset(ctl->time_fmts, 0,
-		__DMESG_TIMEFTM_COUNT * sizeof(*(ctl->time_fmts)));
-	ctl->time_fmts[0] = DMESG_TIMEFTM_DEFAULT;
-}
-
-static int is_time_fmt_set(struct dmesg_control *ctl, unsigned int time_format)
-{
-	size_t i;
-
-	if (ctl->ntime_fmts == 0)
-		return time_format == DMESG_TIMEFTM_DEFAULT;
-
-	for (i = 0; i < ctl->ntime_fmts; i++) {
-		if (ctl->time_fmts[i] == time_format)
-			return 1;
-	}
-	return 0;
-}
-
-static void include_time_fmt(struct dmesg_control *ctl, unsigned int time_format)
-{
-	if (ctl->ntime_fmts > 0 && is_time_fmt_set(ctl, time_format))
-		return;
-
-	if (ctl->ntime_fmts < __DMESG_TIMEFTM_COUNT)
-		ctl->time_fmts[ctl->ntime_fmts++] = time_format;
-}
-
-static void exclude_time_fmt(struct dmesg_control *ctl, unsigned int time_format)
-{
-	size_t idx = 0;
-
-	while (idx < ctl->ntime_fmts && ctl->time_fmts[idx] != time_format)
-		idx++;
-
-	if (idx < ctl->ntime_fmts && ctl->time_fmts[idx] == time_format) {
-		while (idx + 1 < ctl->ntime_fmts) {
-			ctl->time_fmts[idx] = ctl->time_fmts[idx+1];
-			idx++;
-		}
-		ctl->ntime_fmts--;
-		if (ctl->ntime_fmts == 0)
-			reset_time_fmts(ctl);
-	}
 }
 
 /*
@@ -594,17 +511,18 @@ static const char *parse_kmsg_timestamp(const char *str0, struct timeval *tv)
 	usec = strtoumax(str, &end, 10);
 
 	if (!errno && end && (*end == ';' || *end == ',')) {
-		tv->tv_usec = usec % USEC_PER_SEC;
-		tv->tv_sec = usec / USEC_PER_SEC;
+		tv->tv_usec = usec % 1000000;
+		tv->tv_sec = usec / 1000000;
 	} else
 		return str0;
 
 	return end + 1;	/* skip separator */
 }
 
+
 static double time_diff(struct timeval *a, struct timeval *b)
 {
-	return (a->tv_sec - b->tv_sec) + (a->tv_usec - b->tv_usec) / (double) USEC_PER_SEC;
+	return (a->tv_sec - b->tv_sec) + (a->tv_usec - b->tv_usec) / 1E6;
 }
 
 static int get_syslog_buffer_size(void)
@@ -612,47 +530,6 @@ static int get_syslog_buffer_size(void)
 	int n = klogctl(SYSLOG_ACTION_SIZE_BUFFER, NULL, 0);
 
 	return n > 0 ? n : 0;
-}
-
-/*
- * Get the number of characters needed to hold the maximum number
- * of tasks this system supports. This size of string could hold
- * a thread id large enough for the highest thread id.
- * This is needed to determine the number of characters reserved for
- * the PRINTK_CALLER field if it has been configured in the Linux Kernel.
- *
- * The number of digits sets the max value since the value can't exceed
- * a value of that size. The /proc field defined by _PATH_PROC_PIDMAX
- * holds the maximum number of PID values that may be ussed by the system,
- * so 0 to that value minus one.
- *
- * For determining the size of the PRINTK_CALLER field, we make the safe
- * assumption that the number of threads >= number of cpus. This because
- * the PRINTK_CALLER field can hold either a thread id or a CPU id value.
- *
- * If we can't access the pid max kernel proc entry we assign a default
- * field size of 5 characters as that is what the old syslog interface
- * uses as the reserved field size. This is justified because 32-bit Linux
- * systems are limited to PID values between (0-32767).
- *
- */
-static size_t max_threads_id_size(void)
-{
-	char taskmax[PID_CHARS_MAX] = {'\0'};
-	ssize_t rdsize;
-	int fd;
-
-	fd = open(_PATH_PROC_PIDMAX, O_RDONLY);
-	if (fd == -1)
-		return PID_CHARS_DEFAULT;
-
-	rdsize = read(fd, taskmax, sizeof(taskmax));
-	close(fd);
-
-	if (rdsize == -1)
-		return PID_CHARS_DEFAULT;
-
-	return strnlen(taskmax, sizeof(taskmax));
 }
 
 /*
@@ -713,9 +590,9 @@ static ssize_t read_syslog_buffer(struct dmesg_control *ctl, char **buf)
 }
 
 /*
- * Top level function to read (and print in case of kmesg) messages
+ * Top level function to read messages
  */
-static ssize_t process_buffer(struct dmesg_control *ctl, char **buf)
+static ssize_t read_buffer(struct dmesg_control *ctl, char **buf)
 {
 	ssize_t n = -1;
 
@@ -728,17 +605,12 @@ static ssize_t process_buffer(struct dmesg_control *ctl, char **buf)
 			ctl->bufsize = get_syslog_buffer_size();
 
 		n = read_syslog_buffer(ctl, buf);
-		/* Set number of PID characters for caller_id spacing */
-		ctl->caller_id_size = SYSLOG_DEFAULT_CALLER_ID_CHARS;
 		break;
 	case DMESG_METHOD_KMSG:
-		if (ctl->filename)
-			n = process_kmsg_file(ctl, buf);
-		else
-			/*
-			 * Since kernel 3.5.0
-			 */
-			n = process_kmsg(ctl);
+		/*
+		 * Since kernel 3.5.0
+		 */
+		n = read_kmsg(ctl);
 		break;
 	default:
 		abort();	/* impossible method -> drop core */
@@ -835,39 +707,6 @@ static const char *skip_item(const char *begin, const char *end, const char *sep
 }
 
 /*
- * Checks to see if the caller (caller id) field is present in the kmsg record.
- * This is true if the PRINTK_CALLER config option has been set in the kernel.
- *
- * If the caller_id is found in the kmsg buffer then return the id and id type
- * to the caller in dmesg caller_id. Returns string pointer to next value.
- *
- */
-static const char *parse_callerid(const char *p_str, const char *end,
-				  struct dmesg_record *p_drec)
-{
-	const char *p_after;
-	const char *p_next;
-	size_t cid_size;
-	char *p_scn;
-	char *p_cid;
-
-	/* Check for PRINTK_CALLER prefix, must be before msg text */
-	p_cid = strstr(p_str, DMESG_CALLER_PREFIX);
-	p_scn = strchr(p_str, ';');
-	if (p_cid != NULL && p_drec != NULL && p_scn != NULL && p_cid < p_scn) {
-		p_next = p_cid + DMESG_CALLER_PREFIXSZ;
-		p_after = skip_item(p_next, end, ",;");
-		cid_size = p_after - p_next;
-		if (cid_size < sizeof(p_drec->caller_id))
-			xstrncpy(p_drec->caller_id, p_next, cid_size);
-		else
-			return p_str;
-		return p_after;
-	}
-	return p_str;
-}
-
-/*
  * Parses one record from syslog(2) buffer
  */
 static int get_next_syslog_record(struct dmesg_control *ctl,
@@ -925,7 +764,7 @@ static int get_next_syslog_record(struct dmesg_control *ctl,
 		if (*begin == '[' && (*(begin + 1) == ' ' ||
 				      isdigit(*(begin + 1)))) {
 
-			if (!is_time_fmt_set(ctl, DMESG_TIMEFTM_NONE))
+			if (!is_timefmt(ctl, NONE))
 				begin = parse_syslog_timestamp(begin + 1, &rec->tv);
 			else
 				begin = skip_item(begin, end, "]");
@@ -934,26 +773,8 @@ static int get_next_syslog_record(struct dmesg_control *ctl,
 				begin++;
 		}
 
-		if (*begin == '[' && (*(begin + 1) == ' ' ||
-			(*(begin + 1) == 'T' || *(begin + 1) == 'C'))) {
-			const char *start = begin + 1;
-			size_t id_size;
-
-			while (start < end && *start == ' ')
-				start++;
-
-			begin = skip_item(begin, end, "]");
-			id_size = begin - start;
-
-			if (id_size < sizeof(rec->caller_id))
-				xstrncpy(rec->caller_id, start, id_size);
-
-			rec->mesg = begin < end ? begin + 1 : NULL;
-			rec->mesg_size = begin < end ? end - begin - 1 : 0;
-		} else {
-			rec->mesg = begin;
-			rec->mesg_size = end - begin;
-		}
+		rec->mesg = begin;
+		rec->mesg_size = end - begin;
 
 		/* Don't count \n from the last message to the message size */
 		if (*end != '\n' && *(end - 1) == '\n')
@@ -1118,28 +939,19 @@ static void print_record(struct dmesg_control *ctl,
 	char buf[128];
 	char fpbuf[32] = "\0";
 	char tsbuf[64] = "\0";
-	char full_tsbuf[64 * __DMESG_TIMEFTM_COUNT] = "\0";
 	size_t mesg_size = rec->mesg_size;
 	int timebreak = 0;
 	char *mesg_copy = NULL;
 	const char *line = NULL;
-	double delta = 0;
-	size_t format_iter = 0;
 
-	if (!accept_record(ctl, rec)) {
-		/* remember time of the rejected record to not affect delta for
-		 * the following records */
-		ctl->lasttime = rec->tv;
+	if (!accept_record(ctl, rec))
 		return;
-	}
 
 	if (!rec->mesg_size) {
 		if (!ctl->json)
 			putchar('\n');
 		return;
 	}
-
-	delta = record_count_delta(ctl, rec);
 
 	if (ctl->json) {
 		if (!ul_jsonwrt_is_ready(&ctl->jfmt)) {
@@ -1155,7 +967,7 @@ static void print_record(struct dmesg_control *ctl,
 	 * backward compatibility with syslog(2) buffers only
 	 */
 	if (ctl->raw) {
-		ctl->indent = snprintf(full_tsbuf, sizeof(full_tsbuf),
+		ctl->indent = snprintf(tsbuf, sizeof(tsbuf),
 				       "<%d>[%5ld.%06ld] ",
 				       LOG_RAW_FAC_PRI(rec->facility, rec->level),
 				       (long) rec->tv.tv_sec,
@@ -1170,72 +982,64 @@ static void print_record(struct dmesg_control *ctl,
 			 level_names[rec->level].name);
 
 	/* Store the timestamp in a buffer */
-	for (format_iter = 0;
-	     format_iter < (ctl->ntime_fmts > 0 ? ctl->ntime_fmts : 1);
-	     format_iter++) {
-		switch (ctl->time_fmts[format_iter]) {
-			struct tm cur;
-		case DMESG_TIMEFTM_NONE:
-			ctl->indent = 0;
-			break;
-		case DMESG_TIMEFTM_CTIME:
+	switch (ctl->time_fmt) {
+		double delta;
+		struct tm cur;
+	case DMESG_TIMEFTM_NONE:
+		ctl->indent = 0;
+		break;
+	case DMESG_TIMEFTM_CTIME:
+		ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[%s] ",
+				      record_ctime(ctl, rec, buf, sizeof(buf)));
+		break;
+	case DMESG_TIMEFTM_CTIME_DELTA:
+		ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[%s <%12.06f>] ",
+				      record_ctime(ctl, rec, buf, sizeof(buf)),
+				      record_count_delta(ctl, rec));
+		break;
+	case DMESG_TIMEFTM_DELTA:
+		ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[<%12.06f>] ",
+				      record_count_delta(ctl, rec));
+		break;
+	case DMESG_TIMEFTM_RELTIME:
+		record_localtime(ctl, rec, &cur);
+		delta = record_count_delta(ctl, rec);
+		if (cur.tm_min != ctl->lasttm.tm_min ||
+		    cur.tm_hour != ctl->lasttm.tm_hour ||
+		    cur.tm_yday != ctl->lasttm.tm_yday) {
+			timebreak = 1;
 			ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[%s] ",
-						record_ctime(ctl, rec, buf, sizeof(buf)));
-			break;
-		case DMESG_TIMEFTM_CTIME_DELTA:
-			ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[%s <%12.06f>] ",
-						record_ctime(ctl, rec, buf, sizeof(buf)),
-						delta);
-			break;
-		case DMESG_TIMEFTM_DELTA:
-			ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[<%12.06f>] ",
-						delta);
-			break;
-		case DMESG_TIMEFTM_RELTIME:
-			record_localtime(ctl, rec, &cur);
-			if (cur.tm_min != ctl->lasttm.tm_min ||
-				cur.tm_hour != ctl->lasttm.tm_hour ||
-				cur.tm_yday != ctl->lasttm.tm_yday) {
-				timebreak = 1;
-				ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[%s] ",
-							short_ctime(&cur, buf,
-								sizeof(buf)));
-			} else {
-				if (delta < 10)
-					ctl->indent = snprintf(tsbuf, sizeof(tsbuf),
-							"[  %+8.06f] ",  delta);
-				else
-					ctl->indent = snprintf(tsbuf, sizeof(tsbuf),
-							"[ %+9.06f] ", delta);
-			}
-			ctl->lasttm = cur;
-			break;
-		case DMESG_TIMEFTM_TIME:
-			ctl->indent = snprintf(tsbuf, sizeof(tsbuf),
-						ctl->json ? "%5ld.%06ld" : "[%5ld.%06ld] ",
-						(long)rec->tv.tv_sec,
-						(long)rec->tv.tv_usec);
-			break;
-		case DMESG_TIMEFTM_TIME_DELTA:
-			ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[%5ld.%06ld <%12.06f>] ",
-						(long)rec->tv.tv_sec,
-						(long)rec->tv.tv_usec,
-						delta);
-			break;
-		case DMESG_TIMEFTM_ISO8601:
-			ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "%s ",
-						iso_8601_time(ctl, rec, buf,
-								sizeof(buf)));
-			break;
-		default:
-			abort();
+					      short_ctime(&cur, buf,
+							  sizeof(buf)));
+		} else {
+			if (delta < 10)
+				ctl->indent = snprintf(tsbuf, sizeof(tsbuf),
+						"[  %+8.06f] ",  delta);
+			else
+				ctl->indent = snprintf(tsbuf, sizeof(tsbuf),
+						"[ %+9.06f] ", delta);
 		}
-
-		if (is_time_fmt_set(ctl, DMESG_TIMEFTM_NONE))
-			break;
-		else if (*tsbuf)
-			strcat(full_tsbuf, tsbuf);
-
+		ctl->lasttm = cur;
+		break;
+	case DMESG_TIMEFTM_TIME:
+		ctl->indent = snprintf(tsbuf, sizeof(tsbuf),
+				      ctl->json ? "%5ld.%06ld" : "[%5ld.%06ld] ",
+				      (long)rec->tv.tv_sec,
+				      (long)rec->tv.tv_usec);
+		break;
+	case DMESG_TIMEFTM_TIME_DELTA:
+		ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "[%5ld.%06ld <%12.06f>] ",
+				      (long)rec->tv.tv_sec,
+				      (long)rec->tv.tv_usec,
+				      record_count_delta(ctl, rec));
+		break;
+	case DMESG_TIMEFTM_ISO8601:
+		ctl->indent = snprintf(tsbuf, sizeof(tsbuf), "%s ",
+				      iso_8601_time(ctl, rec, buf,
+						    sizeof(buf)));
+		break;
+	default:
+		abort();
 	}
 
 	ctl->indent += strlen(fpbuf);
@@ -1253,39 +1057,26 @@ full_output:
 	}
 
 	/* Output the timestamp buffer */
-	if (*full_tsbuf) {
+	if (*tsbuf) {
 		/* Colorize the timestamp */
 		if (ctl->color)
 			dmesg_enable_color(timebreak ? DMESG_COLOR_TIMEBREAK :
 						       DMESG_COLOR_TIME);
-		if (!is_time_fmt_set(ctl, DMESG_TIMEFTM_RELTIME)) {
+		if (ctl->time_fmt != DMESG_TIMEFTM_RELTIME) {
 			if (ctl->json)
-				ul_jsonwrt_value_raw(&ctl->jfmt, "time", full_tsbuf);
+				ul_jsonwrt_value_raw(&ctl->jfmt, "time", tsbuf);
 			else
-				fputs(full_tsbuf, stdout);
+				fputs(tsbuf, stdout);
 		} else {
 			/*
 			 * For relative timestamping, the first line's
 			 * timestamp is the offset and all other lines will
 			 * report an offset of 0.000000.
 			 */
-			fputs(!line ? full_tsbuf : "[  +0.000000] ", stdout);
+			fputs(!line ? tsbuf : "[  +0.000000] ", stdout);
 		}
 		if (ctl->color)
 			color_disable();
-	}
-
-	if (*rec->caller_id) {
-		if (ctl->json) {
-			ul_jsonwrt_value_s(&ctl->jfmt, "caller", rec->caller_id);
-		} else {
-			char cidbuf[PID_CHARS_MAX+3] = {'\0'};
-
-			sprintf(cidbuf, "[%*s] ",
-				(char)ctl->caller_id_size, rec->caller_id);
-			ctl->indent += strnlen(cidbuf, sizeof(cidbuf));
-			fputs(cidbuf, stdout);
-		}
 	}
 
 	/*
@@ -1407,7 +1198,7 @@ static int init_kmsg(struct dmesg_control *ctl)
 	 * but read() returns -EINVAL :-(((
 	 *
 	 * Let's try to read the first record. The record is later processed in
-	 * process_kmsg().
+	 * read_kmsg().
 	 */
 	ctl->kmsg_first_read = read_kmsg_one(ctl);
 	if (ctl->kmsg_first_read < 0) {
@@ -1463,7 +1254,7 @@ static int parse_kmsg_record(struct dmesg_control *ctl,
 		goto mesg;
 
 	/* C) timestamp */
-	if (is_time_fmt_set(ctl, DMESG_TIMEFTM_NONE))
+	if (is_timefmt(ctl, NONE))
 		p = skip_item(p, end, ",;");
 	else
 		p = parse_kmsg_timestamp(p, &rec->tv);
@@ -1471,10 +1262,7 @@ static int parse_kmsg_record(struct dmesg_control *ctl,
 		goto mesg;
 
 	/* D) optional fields (ignore) */
-	p = skip_item(p, end, ",;");
-
-	/* Include optional PRINTK_CALLER field if it is present */
-	p = parse_callerid(p, end, rec);
+	p = skip_item(p, end, ";");
 
 mesg:
 	/* E) message text */
@@ -1518,16 +1306,13 @@ mesg:
  *
  * Returns 0 on success, -1 on error.
  */
-static int process_kmsg(struct dmesg_control *ctl)
+static int read_kmsg(struct dmesg_control *ctl)
 {
 	struct dmesg_record rec;
 	ssize_t sz;
 
 	if (ctl->method != DMESG_METHOD_KMSG || ctl->kmsg < 0)
 		return -1;
-
-	/* Determine number of PID characters for caller_id spacing */
-	ctl->caller_id_size = max_threads_id_size();
 
 	/*
 	 * The very first read() call is done in kmsg_init() where we test
@@ -1549,40 +1334,6 @@ static int process_kmsg(struct dmesg_control *ctl)
 	return 0;
 }
 
-static int process_kmsg_file(struct dmesg_control *ctl, char **buf)
-{
-	char str[sizeof(ctl->kmsg_buf)];
-	struct dmesg_record rec;
-	ssize_t sz;
-	size_t len;
-
-	if (ctl->method != DMESG_METHOD_KMSG || !ctl->filename)
-		return -1;
-
-	sz = mmap_file_buffer(ctl, buf);
-	if (sz == -1)
-		return -1;
-
-	while (sz > 0) {
-		len = strnlen(ctl->mmap_buff, sz);
-		if (len > sizeof(str))
-			errx(EXIT_FAILURE, _("record too large"));
-
-		memcpy(str, ctl->mmap_buff, len);
-
-		if (parse_kmsg_record(ctl, &rec, str, len) == 0)
-			print_record(ctl, &rec);
-
-		if (len < (size_t)sz)
-			len++;
-
-		sz -= len;
-		ctl->mmap_buff += len;
-	}
-
-	return 0;
-}
-
 static int which_time_format(const char *s)
 {
 	if (!strcmp(s, "notime"))
@@ -1595,8 +1346,6 @@ static int which_time_format(const char *s)
 		return DMESG_TIMEFTM_RELTIME;
 	if (!strcmp(s, "iso"))
 		return DMESG_TIMEFTM_ISO8601;
-	if (!strcmp(s, "raw"))
-		return DMESG_TIMEFTM_TIME;
 	errx(EXIT_FAILURE, _("unknown time format: %s"), s);
 }
 
@@ -1639,9 +1388,8 @@ int main(int argc, char *argv[])
 		.action = SYSLOG_ACTION_READ_ALL,
 		.method = DMESG_METHOD_KMSG,
 		.kmsg = -1,
-		.ntime_fmts = 0,
+		.time_fmt = DMESG_TIMEFTM_TIME,
 		.indent = 0,
-		.caller_id_size = 0,
 	};
 	int colormode = UL_COLORMODE_UNDEF;
 	enum {
@@ -1667,7 +1415,6 @@ int main(int argc, char *argv[])
 		{ "help",          no_argument,	      NULL, 'h' },
 		{ "json",          no_argument,       NULL, 'J' },
 		{ "kernel",        no_argument,       NULL, 'k' },
-		{ "kmsg-file",     required_argument, NULL, 'K' },
 		{ "level",         required_argument, NULL, 'l' },
 		{ "since",	   required_argument, NULL, OPT_SINCE },
 		{ "syslog",        no_argument,       NULL, 'S' },
@@ -1689,7 +1436,6 @@ int main(int argc, char *argv[])
 
 	static const ul_excl_t excl[] = {	/* rows and cols in ASCII order */
 		{ 'C','D','E','c','n','r' },	/* clear,off,on,read-clear,level,raw*/
-		{ 'F','K' },			/* file, kmsg-file */
 		{ 'H','r' },			/* human, raw */
 		{ 'L','r' },			/* color, raw */
 		{ 'S','w' },			/* syslog,follow */
@@ -1707,9 +1453,7 @@ int main(int argc, char *argv[])
 	textdomain(PACKAGE);
 	close_stdout_atexit();
 
-	ctl.time_fmts[0] = DMESG_TIMEFTM_DEFAULT;
-
-	while ((c = getopt_long(argc, argv, "CcDdEeF:f:HhJK:kL::l:n:iPprSs:TtuVWwx",
+	while ((c = getopt_long(argc, argv, "CcDdEeF:f:HhJkL::l:n:iPprSs:TtuVWwx",
 				longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
@@ -1731,17 +1475,11 @@ int main(int argc, char *argv[])
 			ctl.action = SYSLOG_ACTION_CONSOLE_ON;
 			break;
 		case 'e':
-			include_time_fmt(&ctl, DMESG_TIMEFTM_RELTIME);
+			ctl.time_fmt = DMESG_TIMEFTM_RELTIME;
 			break;
 		case 'F':
 			ctl.filename = optarg;
 			ctl.method = DMESG_METHOD_MMAP;
-			ctl.caller_id_size = SYSLOG_DEFAULT_CALLER_ID_CHARS;
-			break;
-		case 'K':
-			ctl.filename = optarg;
-			ctl.method = DMESG_METHOD_KMSG;
-			ctl.caller_id_size = max_threads_id_size();
 			break;
 		case 'f':
 			ctl.fltr_fac = 1;
@@ -1750,7 +1488,7 @@ int main(int argc, char *argv[])
 				return EXIT_FAILURE;
 			break;
 		case 'H':
-			include_time_fmt(&ctl, DMESG_TIMEFTM_RELTIME);
+			ctl.time_fmt = DMESG_TIMEFTM_RELTIME;
 			colormode = UL_COLORMODE_AUTO;
 			ctl.pager = 1;
 			break;
@@ -1797,11 +1535,10 @@ int main(int argc, char *argv[])
 				ctl.bufsize = 4096;
 			break;
 		case 'T':
-			include_time_fmt(&ctl, DMESG_TIMEFTM_CTIME);
+			ctl.time_fmt = DMESG_TIMEFTM_CTIME;
 			break;
 		case 't':
-			reset_time_fmts(&ctl);
-			include_time_fmt(&ctl, DMESG_TIMEFTM_NONE);
+			ctl.time_fmt = DMESG_TIMEFTM_NONE;
 			break;
 		case 'u':
 			ctl.fltr_fac = 1;
@@ -1819,7 +1556,7 @@ int main(int argc, char *argv[])
 			ctl.decode = 1;
 			break;
 		case OPT_TIME_FORMAT:
-			include_time_fmt(&ctl, which_time_format(optarg));
+			ctl.time_fmt = which_time_format(optarg);
 			break;
 		case OPT_NOESC:
 			ctl.noesc = 1;
@@ -1851,8 +1588,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (ctl.json) {
-		reset_time_fmts(&ctl);
-		ctl.ntime_fmts = 0;
+		ctl.time_fmt = DMESG_TIMEFTM_TIME;
 		delta = 0;
 		ctl.force_prefix = 0;
 		ctl.raw = 0;
@@ -1860,53 +1596,45 @@ int main(int argc, char *argv[])
 		nopager = 1;
 	}
 
-	if ((is_time_fmt_set(&ctl, DMESG_TIMEFTM_RELTIME) ||
-	     is_time_fmt_set(&ctl, DMESG_TIMEFTM_CTIME)   ||
-	     is_time_fmt_set(&ctl, DMESG_TIMEFTM_ISO8601)) ||
+	if ((is_timefmt(&ctl, RELTIME) ||
+	     is_timefmt(&ctl, CTIME)   ||
+	     is_timefmt(&ctl, ISO8601)) ||
 	     ctl.since ||
 	     ctl.until) {
 		if (dmesg_get_boot_time(&ctl.boot_time) != 0)
-			include_time_fmt(&ctl, DMESG_TIMEFTM_NONE);
+			ctl.time_fmt = DMESG_TIMEFTM_NONE;
 		else
 			ctl.suspended_time = dmesg_get_suspended_time();
 	}
 
-	if (delta || is_time_fmt_set(&ctl, DMESG_TIMEFTM_DELTA)) {
-		if (is_time_fmt_set(&ctl, DMESG_TIMEFTM_TIME)) {
-			if (ctl.ntime_fmts == 0) {
-				ctl.time_fmts[ctl.ntime_fmts++] = DMESG_TIMEFTM_TIME_DELTA;
-			} else {
-				exclude_time_fmt(&ctl, DMESG_TIMEFTM_DELTA);
-				for (n = 0; (size_t) n < ctl.ntime_fmts; n++) {
-					if (ctl.time_fmts[n] == DMESG_TIMEFTM_TIME) {
-						ctl.time_fmts[n] = DMESG_TIMEFTM_TIME_DELTA;
-						break;
-					}
-				}
-			}
-		} else if (is_time_fmt_set(&ctl, DMESG_TIMEFTM_CTIME)) {
-			exclude_time_fmt(&ctl, DMESG_TIMEFTM_DELTA);
-			for (n = 0; (size_t) n < ctl.ntime_fmts; n++) {
-				if (ctl.time_fmts[n] == DMESG_TIMEFTM_CTIME) {
-					ctl.time_fmts[n] = DMESG_TIMEFTM_CTIME_DELTA;
-					break;
-				}
-			}
-		} else {
-			include_time_fmt(&ctl, DMESG_TIMEFTM_DELTA);
+	if (delta)
+		switch (ctl.time_fmt) {
+		case DMESG_TIMEFTM_CTIME:
+			ctl.time_fmt = DMESG_TIMEFTM_CTIME_DELTA;
+			break;
+		case DMESG_TIMEFTM_TIME:
+			ctl.time_fmt = DMESG_TIMEFTM_TIME_DELTA;
+			break;
+		case DMESG_TIMEFTM_ISO8601:
+			warnx(_("--show-delta is ignored when used together with iso8601 time format"));
+			break;
+		default:
+			ctl.time_fmt = DMESG_TIMEFTM_DELTA;
 		}
-	}
+
 
 	if (!ctl.json)
 		ctl.color = colors_init(colormode, "dmesg") ? 1 : 0;
 	if (ctl.follow)
 		nopager = 1;
 	ctl.pager = nopager ? 0 : ctl.pager;
+	if (ctl.pager)
+		pager_redirect();
 
 	switch (ctl.action) {
 	case SYSLOG_ACTION_READ_ALL:
 	case SYSLOG_ACTION_READ_CLEAR:
-		if (ctl.method == DMESG_METHOD_KMSG && !ctl.filename && init_kmsg(&ctl) != 0)
+		if (ctl.method == DMESG_METHOD_KMSG && init_kmsg(&ctl) != 0)
 			ctl.method = DMESG_METHOD_SYSLOG;
 
 		if (ctl.raw
@@ -1915,11 +1643,12 @@ int main(int argc, char *argv[])
 			    errx(EXIT_FAILURE, _("--raw can be used together with --level or "
 				 "--facility only when reading messages from /dev/kmsg"));
 
+		/* only kmsg supports multi-line messages */
 		if (ctl.force_prefix && ctl.method != DMESG_METHOD_KMSG)
-			errx(EXIT_FAILURE, _("only kmsg supports multi-line messages"));
+			ctl.force_prefix = 0;
 		if (ctl.pager)
 			pager_redirect();
-		n = process_buffer(&ctl, &buf);
+		n = read_buffer(&ctl, &buf);
 		if (n > 0)
 			print_buffer(&ctl, buf, n);
 		if (!ctl.mmap_buff)

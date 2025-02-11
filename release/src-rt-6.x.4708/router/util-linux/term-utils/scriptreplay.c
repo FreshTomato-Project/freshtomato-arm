@@ -68,9 +68,9 @@ usage(void)
 	fputs(_(" -m, --maxdelay <num>    wait at most this many seconds between updates\n"), out);
 	fputs(_(" -x, --stream <name>     stream type (out, in, signal or info)\n"), out);
 	fputs(_(" -c, --cr-mode <type>    CR char mode (auto, never, always)\n"), out);
-	fprintf(out, USAGE_HELP_OPTIONS(25));
+	printf(USAGE_HELP_OPTIONS(25));
 
-	fprintf(out, USAGE_MAN_TAIL("scriptreplay(1)"));
+	printf(USAGE_MAN_TAIL("scriptreplay(1)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -134,7 +134,6 @@ setterm(struct termios *backup)
 	tattr = *backup;
 	cfmakeraw(&tattr);
 	tattr.c_lflag |= ISIG;
-	tattr.c_iflag |= IXON;
 	tcsetattr(STDOUT_FILENO, TCSANOW, &tattr);
 	return 1;
 }

@@ -43,16 +43,13 @@ struct libmnt_optloc {
  * Locates the first option that matches @name. The @end is set to the
  * char behind the option (it means ',' or \0).
  *
- * @ol is optional.
- *
  * Returns negative number on parse error, 1 when not found and 0 on success.
  */
-static int mnt_optstr_locate_option(char *optstr,
-					const char *name, size_t namesz,
+static int mnt_optstr_locate_option(char *optstr, const char *name,
 					struct libmnt_optloc *ol)
 {
 	char *n;
-	size_t nsz;
+	size_t namesz, nsz;
 	int rc;
 
 	if (!optstr)
@@ -60,30 +57,27 @@ static int mnt_optstr_locate_option(char *optstr,
 
 	assert(name);
 
-	if (!namesz)
-		namesz = strlen(name);
+	namesz = strlen(name);
 	if (!namesz)
 		return 1;
 
 	do {
 		rc = ul_optstr_next(&optstr, &n, &nsz,
-					ol ? &ol->value : NULL,
-					ol ? &ol->valsz : NULL);
+					&ol->value, &ol->valsz);
 		if (rc)
 			break;
 
 		if (namesz == nsz && strncmp(n, name, nsz) == 0) {
-			if (ol) {
-				ol->begin = n;
-				ol->end = *(optstr - 1) == ',' ? optstr - 1 : optstr;
-				ol->namesz = nsz;
-			}
+			ol->begin = n;
+			ol->end = *(optstr - 1) == ',' ? optstr - 1 : optstr;
+			ol->namesz = nsz;
 			return 0;
 		}
 	} while(1);
 
 	return rc;
 }
+
 /**
  * mnt_optstr_next_option:
  * @optstr: option string, returns the position of the next option
@@ -229,7 +223,7 @@ int mnt_optstr_get_option(const char *optstr, const char *name,
 	if (!optstr || !name)
 		return -EINVAL;
 
-	rc = mnt_optstr_locate_option((char *) optstr, name, 0, &ol);
+	rc = mnt_optstr_locate_option((char *) optstr, name, &ol);
 	if (!rc) {
 		if (value)
 			*value = ol.value;
@@ -261,7 +255,7 @@ int mnt_optstr_deduplicate_option(char **optstr, const char *name)
 	do {
 		struct libmnt_optloc ol = MNT_INIT_OPTLOC;
 
-		rc = mnt_optstr_locate_option(opt, name, 0, &ol);
+		rc = mnt_optstr_locate_option(opt, name, &ol);
 		if (!rc) {
 			if (begin) {
 				/* remove the previous instance */
@@ -374,7 +368,7 @@ int mnt_optstr_set_option(char **optstr, const char *name, const char *value)
 		return -EINVAL;
 
 	if (*optstr)
-		rc = mnt_optstr_locate_option(*optstr, name, 0, &ol);
+		rc = mnt_optstr_locate_option(*optstr, name, &ol);
 	if (rc < 0)
 		return rc;			/* parse error */
 	if (rc == 1)
@@ -417,7 +411,7 @@ int mnt_optstr_remove_option(char **optstr, const char *name)
 	if (!optstr || !name)
 		return -EINVAL;
 
-	rc = mnt_optstr_locate_option(*optstr, name, 0, &ol);
+	rc = mnt_optstr_locate_option(*optstr, name, &ol);
 	if (rc != 0)
 		return rc;
 
@@ -577,51 +571,6 @@ int mnt_optstr_get_options(const char *optstr, char **subset,
 	return rc;
 }
 
-/*
- * @optstr: string with comma separated list of options
- * @wanted: options expected in @optstr
- * @missing: returns options from @wanted which missing in @optstr (optional)
- *
- * Retursn: <0 on error, 0 on missing options, 1 if nothing is missing
- */
-int mnt_optstr_get_missing(const char *optstr, const char *wanted, char **missing)
-{
-	char *name, *val, *str = (char *) wanted;
-	size_t namesz = 0, valsz = 0;
-	struct ul_buffer buf = UL_INIT_BUFFER;
-	int rc = 0;
-
-	if (!wanted)
-		return 1;
-	if (missing) {
-		/* caller wants data, prepare buffer */
-		ul_buffer_set_chunksize(&buf, strlen(wanted) + 3);	/* to call realloc() only once */
-		*missing = NULL;
-	}
-
-	while (!mnt_optstr_next_option(&str, &name, &namesz, &val, &valsz)) {
-
-		rc = mnt_optstr_locate_option((char *) optstr, name, namesz, NULL);
-		if (rc == 1) {			/* not found */
-			if (!missing)
-				return 0;
-			rc = mnt_buffer_append_option(&buf, name, namesz, val, valsz, 0);
-		}
-		if (rc < 0)
-			break;
-		rc = 0;
-	}
-
-	if (!rc && missing) {
-		if (ul_buffer_is_empty(&buf))
-			rc = 1;
-		else
-			*missing = ul_buffer_get_data(&buf, NULL, NULL);
-	} else
-		ul_buffer_free_data(&buf);
-
-	return rc;
-}
 
 /**
  * mnt_optstr_get_flags:
@@ -961,8 +910,7 @@ int mnt_match_options(const char *optstr, const char *pattern)
 }
 
 #ifdef TEST_PROGRAM
-static int test_append(struct libmnt_test *ts __attribute__((unused)),
-		       int argc, char *argv[])
+static int test_append(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *value = NULL, *name;
 	char *optstr;
@@ -985,8 +933,7 @@ static int test_append(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_prepend(struct libmnt_test *ts __attribute__((unused)),
-			int argc, char *argv[])
+static int test_prepend(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *value = NULL, *name;
 	char *optstr;
@@ -1009,8 +956,7 @@ static int test_prepend(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_split(struct libmnt_test *ts __attribute__((unused)),
-		      int argc, char *argv[])
+static int test_split(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char *optstr, *user = NULL, *fs = NULL, *vfs = NULL;
 	int rc;
@@ -1036,8 +982,7 @@ static int test_split(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_flags(struct libmnt_test *ts __attribute__((unused)),
-		      int argc, char *argv[])
+static int test_flags(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char *optstr;
 	int rc;
@@ -1065,8 +1010,7 @@ static int test_flags(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_apply(struct libmnt_test *ts __attribute__((unused)),
-		      int argc, char *argv[])
+static int test_apply(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char *optstr;
 	int rc, map;
@@ -1098,8 +1042,7 @@ static int test_apply(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_set(struct libmnt_test *ts __attribute__((unused)),
-		    int argc, char *argv[])
+static int test_set(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *value = NULL, *name;
 	char *optstr;
@@ -1122,8 +1065,7 @@ static int test_set(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_get(struct libmnt_test *ts __attribute__((unused)),
-		    int argc, char *argv[])
+static int test_get(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char *optstr;
 	const char *name;
@@ -1152,32 +1094,7 @@ static int test_get(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_missing(struct libmnt_test *ts __attribute__((unused)),
-		    int argc, char *argv[])
-{
-	const char *optstr;
-	const char *wanted;
-	char *missing = NULL;
-	int rc;
-
-	if (argc < 2)
-		return -EINVAL;
-	optstr = argv[1];
-	wanted = argv[2];
-
-	rc = mnt_optstr_get_missing(optstr, wanted, &missing);
-	if (rc == 0)
-		printf("missing: %s\n", missing);
-	else if (rc == 1) {
-		printf("nothing\n");
-		rc = 0;
-	} else
-		printf("parse error: %s\n", optstr);
-	return rc;
-}
-
-static int test_remove(struct libmnt_test *ts __attribute__((unused)),
-		       int argc, char *argv[])
+static int test_remove(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *name;
 	char *optstr;
@@ -1197,8 +1114,7 @@ static int test_remove(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_dedup(struct libmnt_test *ts __attribute__((unused)),
-		      int argc, char *argv[])
+static int test_dedup(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *name;
 	char *optstr;
@@ -1218,8 +1134,7 @@ static int test_dedup(struct libmnt_test *ts __attribute__((unused)),
 	return rc;
 }
 
-static int test_match(struct libmnt_test *ts __attribute__((unused)),
-		      int argc, char *argv[])
+static int test_match(struct libmnt_test *ts, int argc, char *argv[])
 {
 	char *optstr, *pattern;
 
@@ -1241,7 +1156,6 @@ int main(int argc, char *argv[])
 		{ "--prepend",test_prepend,"<optstr> <name> [<value>]  prepend value to optstr" },
 		{ "--set",    test_set,    "<optstr> <name> [<value>]  (un)set value" },
 		{ "--get",    test_get,    "<optstr> <name>            search name in optstr" },
-		{ "--missing",test_missing,"<optstr> <wanted>          what from wanted is missing" },
 		{ "--remove", test_remove, "<optstr> <name>            remove name in optstr" },
 		{ "--dedup",  test_dedup,  "<optstr> <name>            deduplicate name in optstr" },
 		{ "--match",  test_match,  "<optstr> <pattern>         compare optstr with pattern" },

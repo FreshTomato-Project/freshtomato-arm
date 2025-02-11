@@ -113,13 +113,6 @@ rfkill_LDADD = $(LDADD) libcommon.la libsmartcols.la
 rfkill_CFLAGS = $(AM_CFLAGS) -I$(ul_libsmartcols_incdir)
 endif
 
-if BUILD_SETPGID
-usrbin_exec_PROGRAMS += setpgid
-MANPAGES += sys-utils/setpgid.1
-dist_noinst_DATA += sys-utils/setpgid.1.adoc
-setpgid_SOURCES = sys-utils/setpgid.c
-endif
-
 if BUILD_SETSID
 usrbin_exec_PROGRAMS += setsid
 MANPAGES += sys-utils/setsid.1
@@ -531,8 +524,7 @@ if BUILD_NSENTER
 usrbin_exec_PROGRAMS += nsenter
 MANPAGES += sys-utils/nsenter.1
 dist_noinst_DATA += sys-utils/nsenter.1.adoc
-nsenter_SOURCES = sys-utils/nsenter.c lib/exec_shell.c \
-		  lib/caputils.c
+nsenter_SOURCES = sys-utils/nsenter.c lib/exec_shell.c
 nsenter_LDADD = $(LDADD) libcommon.la $(SELINUX_LIBS)
 
 if HAVE_STATIC_NSENTER
@@ -581,9 +573,5 @@ MANPAGES += sys-utils/setpriv.1
 dist_noinst_DATA += sys-utils/setpriv.1.adoc
 setpriv_SOURCES = sys-utils/setpriv.c \
 		  lib/caputils.c
-dist_noinst_HEADERS += sys-utils/setpriv-landlock.h
-if HAVE_LINUX_LANDLOCK_H
-setpriv_SOURCES += sys-utils/setpriv-landlock.c
-endif
 setpriv_LDADD = $(LDADD) -lcap-ng libcommon.la
 endif

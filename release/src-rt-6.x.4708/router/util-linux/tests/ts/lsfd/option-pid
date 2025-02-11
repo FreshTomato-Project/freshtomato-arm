@@ -72,7 +72,7 @@ POUT=
 	[ "${QOUT}" = "${POUT}" ]
 	echo "EQ[-p PID --pid=1]:" $?
 
-	echo DONE >&"${MKFDS[1]}"
+	kill -CONT ${PID}
     fi
     wait ${MKFDS_PID}
 } > $TS_OUTPUT 2>&1

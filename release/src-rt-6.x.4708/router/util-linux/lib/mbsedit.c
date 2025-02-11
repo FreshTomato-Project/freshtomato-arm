@@ -157,14 +157,13 @@ static size_t mbs_insert(char *str, wint_t c, size_t *ncells)
 
 #ifdef HAVE_WIDECHAR
 	wchar_t wc = (wchar_t) c;
-	in = malloc(MB_CUR_MAX);
-	if (!in)
-		return -1;
+	char in_buf[MB_CUR_MAX];
 
-	n = wctomb(in, wc);
+	n = wctomb(in_buf, wc);
 	if (n == (size_t) -1)
-		goto out;
+		return n;
 	*ncells = wcwidth(wc);
+	in = in_buf;
 #else
 	*ncells = 1;
 	in = (char *) &c;
@@ -174,10 +173,6 @@ static size_t mbs_insert(char *str, wint_t c, size_t *ncells)
 	memmove(str + n, str, bytes);
 	memcpy(str, in, n);
 	str[bytes + n] = '\0';
-out:
-#ifdef HAVE_WIDECHAR
-	free(in);
-#endif
 	return n;
 }
 

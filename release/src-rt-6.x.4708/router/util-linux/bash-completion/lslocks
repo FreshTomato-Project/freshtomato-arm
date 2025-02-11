@@ -31,7 +31,7 @@ _lslocks_module()
 			return 0
 			;;
 	esac
-	OPTS="--bytes
+	OPTS="
 		--json
 		--noinaccessible
 		--noheadings
@@ -40,7 +40,6 @@ _lslocks_module()
 		--pid
 		--raw
 		--notruncate
-		--list-columns
 		--help
 		--version
 	"

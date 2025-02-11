@@ -32,8 +32,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("Find a filesystem by label or UUID.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fprintf(out, USAGE_HELP_OPTIONS(16));
-	fprintf(out, USAGE_MAN_TAIL("findfs(8)"));
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("findfs(8)"));
 	exit(FINDFS_SUCCESS);
 }
 
@@ -76,3 +76,4 @@ int main(int argc, char **argv)
 	puts(dev);
 	return FINDFS_SUCCESS;
 }
+

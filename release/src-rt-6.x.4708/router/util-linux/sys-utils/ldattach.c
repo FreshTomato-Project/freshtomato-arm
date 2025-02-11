@@ -1,14 +1,17 @@
-/*
- * SPDX-License-Identifier: GPL-2.0-or-later
+/* line discipline loading daemon
+ * open a serial device and attach a line discipline on it
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * Usage:
+ *	ldattach GIGASET_M101 /dev/ttyS0
  *
- * Line discipline loading daemon open a serial device and attach a line
- * discipline on it.
+ * =====================================================================
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ * =====================================================================
  */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -214,7 +217,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -i, --iflag [-]<iflag>  set input mode flag\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(25));
+	printf(USAGE_HELP_OPTIONS(25));
 
 	fputs(_("\nKnown <ldisc> names:\n"), out);
 	print_table(out, ld_discs);
@@ -223,7 +226,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("\nKnown <iflag> names:\n"), out);
 	print_table(out, ld_iflags);
 
-	fprintf(out, USAGE_MAN_TAIL("ldattach(8)"));
+	printf(USAGE_MAN_TAIL("ldattach(8)"));
 	exit(EXIT_SUCCESS);
 }
 

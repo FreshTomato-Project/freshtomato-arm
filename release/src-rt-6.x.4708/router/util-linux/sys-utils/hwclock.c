@@ -1,22 +1,15 @@
 /*
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- *
  * Since 7a3000f7ba548cf7d74ac77cc63fe8de228a669e (v2.30) hwclock is linked
  * with parse_date.y from gnullib. This gnulib code is distributed with GPLv3.
  * Use --disable-hwclock-gplv3 to exclude this code.
  *
- * Copyright (C) 1992 Charles Hedrick, hedrick@cs.rutgers.edu
- *                    Rob Hooft <hooft@chem.ruu.nl>
- *                    Harald Koenig <koenig@nova.tat.physik.uni-tuebingen.de>
- *                    Alan Modra <alan@spri.levels.unisa.edu.au>
  *
- * Copyright (C) 2007-2023 Karel Zak <kzak@redhat.com>
+ * clock.c was written by Charles Hedrick, hedrick@cs.rutgers.edu, Apr 1992
+ * Modified for clock adjustments - Rob Hooft <hooft@chem.ruu.nl>, Nov 1992
+ * Improvements by Harald Koenig <koenig@nova.tat.physik.uni-tuebingen.de>
+ * and Alan Modra <alan@spri.levels.unisa.edu.au>.
  *
  * Major rewrite by Bryan Henderson <bryanh@giraffe-data.com>, 96.09.19.
  * The new program is called hwclock. New features:
@@ -624,7 +617,7 @@ set_hardware_clock_exact(const struct hwclock_control *ctl,
 	}
 
 	newhwtime = sethwtime
-		    + round(time_diff(nowsystime, refsystime)
+		    + ceil(time_diff(nowsystime, refsystime)
 			    - delay /* don't count this */);
 	if (ctl->verbose)
 		printf(_("%"PRId64".%06"PRId64" is close enough to %"PRId64".%06"PRId64" (%.6f < %.6f)\n"
@@ -1187,20 +1180,6 @@ manipulate_rtc_param(const struct hwclock_control *ctl)
 
 	return 1;
 }
-
-static int
-manipulate_rtc_voltage_low(const struct hwclock_control *ctl)
-{
-	if (ctl->vl_read) {
-		if (rtc_vl_read(ctl))
-			return 1;
-	}
-	if (ctl->vl_clear) {
-		if (rtc_vl_clear(ctl))
-			return 1;
-	}
-	return 0;
-}
 #endif
 
 static void out_version(void)
@@ -1236,8 +1215,6 @@ usage(void)
 #ifdef __linux__
 	puts(_("     --param-get <param>         display the RTC parameter"));
 	puts(_("     --param-set <param>=<value> set the RTC parameter"));
-	puts(_("     --vl-read                   read voltage low information"));
-	puts(_("     --vl-clear                  clear voltage low information"));
 #endif
 	puts(_("     --predict                   predict the drifted RTC time according to --date"));
 	fputs(USAGE_OPTIONS, stdout);
@@ -1263,22 +1240,22 @@ usage(void)
 	puts(_(" -v, --verbose                   display more details"));
 
 	fputs(USAGE_SEPARATOR, stdout);
-	fprintf(stdout, USAGE_HELP_OPTIONS(33));
+	printf(USAGE_HELP_OPTIONS(33));
 
 #ifdef __linux__
 	fputs(USAGE_ARGUMENTS, stdout);
-	fputsln(_(" <param> is either a numeric RTC parameter value or one of these aliases:"), stdout);
+	puts(_(" <param> is either a numeric RTC parameter value or one of these aliases:"));
 
 	while (param->name) {
-		fprintf(stdout, _("   - %1$s: %2$s (0x%3$x)\n"), param->name, param->help, param->id);
+		printf(_("   - %1$s: %2$s (0x%3$x)\n"), param->name, param->help, param->id);
 		param++;
 	}
 
-	fputsln(_("   See Kernel's include/uapi/linux/rtc.h for parameters and values."), stdout);
+	puts(_("   See Kernel's include/uapi/linux/rtc.h for parameters and values."));
 	fputs(USAGE_ARG_SEPARATOR, stdout);
-	fputsln(_(" <param> and <value> accept hexadecimal values if prefixed with 0x, otherwise decimal."), stdout);
+	puts(_(" <param> and <value> accept hexadecimal values if prefixed with 0x, otherwise decimal."));
 #endif
-	fprintf(stdout, USAGE_MAN_TAIL("hwclock(8)"));
+	printf(USAGE_MAN_TAIL("hwclock(8)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -1309,8 +1286,6 @@ int main(int argc, char **argv)
 		OPT_NOADJFILE,
 		OPT_PARAM_GET,
 		OPT_PARAM_SET,
-		OPT_VL_READ,
-		OPT_VL_CLEAR,
 		OPT_PREDICT,
 		OPT_SET,
 		OPT_SETEPOCH,
@@ -1340,8 +1315,6 @@ int main(int argc, char **argv)
 #ifdef __linux__
 		{ "param-get",    required_argument, NULL, OPT_PARAM_GET  },
 		{ "param-set",    required_argument, NULL, OPT_PARAM_SET  },
-		{ "vl-read",      no_argument,       NULL, OPT_VL_READ    },
-		{ "vl-clear",     no_argument,       NULL, OPT_VL_CLEAR   },
 #endif
 		{ "noadjfile",    no_argument,       NULL, OPT_NOADJFILE  },
 		{ "directisa",    no_argument,       NULL, OPT_DIRECTISA  },
@@ -1466,14 +1439,6 @@ int main(int argc, char **argv)
 			ctl.show = 0;
 			ctl.hwaudit_on = 1;
 			break;
-		case OPT_VL_READ:
-			ctl.vl_read = 1;
-			ctl.show = 0;
-			break;
-		case OPT_VL_CLEAR:
-			ctl.vl_clear = 1;
-			ctl.show = 0;
-			break;
 #endif
 		case OPT_NOADJFILE:
 			ctl.noadjfile = 1;
@@ -1526,7 +1491,7 @@ int main(int argc, char **argv)
 	}
 
 	if (argc -= optind) {
-		warnx(_("too many arguments"));
+		warnx(_("%d too many arguments given"), argc);
 		errtryhelp(EXIT_FAILURE);
 	}
 
@@ -1575,13 +1540,6 @@ int main(int argc, char **argv)
 
 		hwclock_exit(&ctl, EXIT_SUCCESS);
 	}
-
-	if (ctl.vl_read || ctl.vl_clear) {
-		if (manipulate_rtc_voltage_low(&ctl))
-			hwclock_exit(&ctl, EXIT_FAILURE);
-
-		hwclock_exit(&ctl, EXIT_SUCCESS);
-	}
 #endif
 
 #if defined(__linux__) && defined(__alpha__)
@@ -1623,14 +1581,10 @@ hwclock_exit(const struct hwclock_control *ctl
 	     , int status)
 {
 #ifdef HAVE_LIBAUDIT
-	int ret;
-
 	if (ctl->hwaudit_on && !ctl->testing) {
-		ret = audit_log_user_message(hwaudit_fd, AUDIT_USYS_CONFIG,
-					     "op=change-system-time", NULL, NULL, NULL,
-					     status == EXIT_SUCCESS ? 1  : 0);
-		if (ret == -1)
-			warn(_("could not send audit message"));
+		audit_log_user_message(hwaudit_fd, AUDIT_USYS_CONFIG,
+				       "op=change-system-time", NULL, NULL, NULL,
+				       status == EXIT_SUCCESS ? 1  : 0);
 	}
 	close(hwaudit_fd);
 #endif

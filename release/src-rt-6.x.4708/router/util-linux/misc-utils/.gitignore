@@ -3,6 +3,3 @@ uuidd.8
 uuidd.rc
 uuidd.service
 uuidd.socket
-uuidd-tmpfiles.conf
-lastlog2-import.service
-lastlog2-tmpfiles.conf

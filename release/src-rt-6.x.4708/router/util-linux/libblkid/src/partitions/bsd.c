@@ -47,7 +47,7 @@ static int probe_bsd_pt(blkid_probe pr, const struct blkid_idmag *mag)
 	blkid_partition parent;
 	blkid_partlist ls;
 	int i, nparts = BSD_MAXPARTITIONS;
-	const unsigned char *data;
+	unsigned char *data;
 	int rc = BLKID_PROBE_NONE;
 	uint32_t abs_offset = 0;
 

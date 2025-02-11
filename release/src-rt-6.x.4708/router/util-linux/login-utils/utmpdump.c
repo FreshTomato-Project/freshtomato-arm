@@ -108,7 +108,7 @@ static void print_utline(struct utmpx *ut, FILE *out)
 		addr_string = inet_ntop(AF_INET, &(ut->ut_addr_v6), buffer, sizeof(buffer));
 
 	tv.tv_sec = ut->ut_tv.tv_sec;
-	tv.tv_usec = ut->ut_tv.tv_usec < (int32_t) USEC_PER_SEC ? ut->ut_tv.tv_usec : 0;
+	tv.tv_usec = ut->ut_tv.tv_usec;
 
 	if (strtimeval_iso(&tv, ISO_TIMESTAMP_COMMA_GT, time_string,
 			   sizeof(time_string)) != 0)
@@ -324,9 +324,9 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -f, --follow         output appended data as the file grows\n"), out);
 	fputs(_(" -r, --reverse        write back dumped data into utmp file\n"), out);
 	fputs(_(" -o, --output <file>  write to file instead of standard output\n"), out);
-	fprintf(out, USAGE_HELP_OPTIONS(22));
+	printf(USAGE_HELP_OPTIONS(22));
 
-	fprintf(out, USAGE_MAN_TAIL("utmpdump(1)"));
+	printf(USAGE_MAN_TAIL("utmpdump(1)"));
 	exit(EXIT_SUCCESS);
 }
 

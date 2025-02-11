@@ -286,7 +286,7 @@ enum {
 struct fdisk_label {
 	const char		*name;		/* label name */
 	enum fdisk_labeltype	id;		/* FDISK_DISKLABEL_* */
-	const struct fdisk_parttype *parttypes;	/* supported partitions types */
+	struct fdisk_parttype	*parttypes;	/* supported partitions types */
 	size_t			nparttypes;	/* number of items in parttypes[] */
 
 	const struct fdisk_shortcut *parttype_cuts;	/* partition type shortcuts */

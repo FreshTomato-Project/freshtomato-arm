@@ -1,10 +1,10 @@
 aaa
 bbbbb
-cccc\x0ACCCC
-dddddddd\x0ADDDD\x0ADD
-hello\x0Ababy
-aaa\x0Abbb\x0Accc\x0Addd
+cccc\nCCCC
+dddddddd\nDDDD\nDD
+hello\nbaby
+aaa\nbbb\nccc\nddd
 eee
 fffff
-g\x0Ahhhhh
+g\nhhhhh
 ppppppppp

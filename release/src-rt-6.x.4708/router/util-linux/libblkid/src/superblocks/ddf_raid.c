@@ -80,6 +80,9 @@ static int probe_ddf(blkid_probe pr,
 	char version[DDF_REV_LENGTH + 1];
 	uint64_t off = 0, lba;
 
+	if (pr->size < 0x30000)
+		return 1;
+
 	for (i = 0; i < ARRAY_SIZE(hdrs); i++) {
 		off = ((pr->size / 0x200) - hdrs[i]) * 0x200;
 
@@ -103,7 +106,7 @@ static int probe_ddf(blkid_probe pr,
 
 	if (lba > 0) {
 		/* check primary header */
-		const unsigned char *buf;
+		unsigned char *buf;
 
 		buf = blkid_probe_get_buffer(pr,
 					lba << 9, sizeof(ddf->signature));
@@ -131,7 +134,6 @@ static int probe_ddf(blkid_probe pr,
 const struct blkid_idinfo ddfraid_idinfo = {
 	.name		= "ddf_raid_member",
 	.usage		= BLKID_USAGE_RAID,
-	.minsz		= 0x30000,
 	.probefunc	= probe_ddf,
 	.magics		= BLKID_NONE_MAGIC
 };

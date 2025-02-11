@@ -73,9 +73,6 @@ test -f sys-utils/mount.c ||
 [ -x "$(command -v gettext)" -o -x "$(command -v xgettext)" ] ||
 	warn_mesg "You need have [x]gettext binary installed to update po/ stuff."
 
-(flex --version) < /dev/null > /dev/null 2>&1 ||
-	error_mesg "You must have flex installed to build the util-linux."
-
 if ! (bison --version) < /dev/null > /dev/null 2>&1; then
 	error_mesg "You must have bison installed to build the util-linux."
 else
@@ -88,7 +85,6 @@ else
 			;;
 	esac
 fi
-
 
 LIBTOOLIZE=libtoolize
 case `uname` in Darwin*) LIBTOOLIZE=glibtoolize ;; esac
@@ -116,7 +112,6 @@ echo "   autoconf:   $(autoconf --version | head -1)"
 echo "   autoheader: $(autoheader --version | head -1)"
 echo "   automake:   $(automake --version | head -1)"
 echo "   libtoolize: $($LIBTOOLIZE --version | head -1)"
-echo "   flex:       $(flex --version | head -1)"
 echo "   bison:      $(bison --version | head -1)"
 echo
 

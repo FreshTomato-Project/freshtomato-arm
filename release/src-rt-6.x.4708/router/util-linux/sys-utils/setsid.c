@@ -1,10 +1,7 @@
 /*
- * No copyright is claimed.  This code is in the public domain; do with
- * it what you wish.
- *
- * Written by Rick Sladkey <jrs@world.std.com>
- *
  * setsid.c -- execute a command in a new session
+ * Rick Sladkey <jrs@world.std.com>
+ * In the public domain.
  *
  * 1999-02-22 Arkadiusz Miśkiewicz <misiek@pld.ORG.PL>
  * - added Native Language Support
@@ -15,6 +12,7 @@
  * 2008-08-20 Daniel Kahn Gillmor <dkg@fifthhorseman.net>
  * - if forked, wait on child process and emit its return code.
  */
+
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,9 +41,9 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -f, --fork     always fork\n"), out);
 	fputs(_(" -w, --wait     wait program to exit, and use the same return\n"), out);
 
-	fprintf(out, USAGE_HELP_OPTIONS(16));
+	printf(USAGE_HELP_OPTIONS(16));
 
-	fprintf(out, USAGE_MAN_TAIL("setsid(1)"));
+	printf(USAGE_MAN_TAIL("setsid(1)"));
 	exit(EXIT_SUCCESS);
 }
 

@@ -19,6 +19,10 @@
  * Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "xalloc.h"
+#include "nls.h"
+#include "libsmartcols.h"
+
 #include "lsfd.h"
 
 struct fifo {
@@ -64,8 +68,8 @@ static bool fifo_fill_column(struct proc *proc __attribute__((__unused__)),
 	case COL_ENDPOINTS: {
 		struct fifo *this = (struct fifo *)file;
 		struct list_head *e;
-		foreach_endpoint(e, this->endpoint) {
-			char *estr;
+		char *estr;
+		list_for_each_backwardly(e, &this->endpoint.ipc->endpoints) {
 			struct fifo *other = list_entry(e, struct fifo, endpoint.endpoints);
 			if (this == other)
 				continue;
@@ -103,7 +107,6 @@ static bool fifo_is_suitable_ipc(struct ipc *ipc, struct file *file)
 static const struct ipc_class *fifo_get_ipc_class(struct file *file __attribute__((__unused__)))
 {
 	static const struct ipc_class fifo_ipc_class = {
-		.size = sizeof(struct fifo_ipc),
 		.get_hash = fifo_get_hash,
 		.is_suitable_ipc = fifo_is_suitable_ipc,
 		.free = NULL,
@@ -117,18 +120,22 @@ static void fifo_initialize_content(struct file *file)
 	struct ipc *ipc;
 	unsigned int hash;
 
-	init_endpoint(&fifo->endpoint);
+	INIT_LIST_HEAD(&fifo->endpoint.endpoints);
 	ipc = get_ipc(file);
 	if (ipc)
 		goto link;
 
-	ipc = new_ipc(fifo_get_ipc_class(file));
+	ipc = xmalloc(sizeof(struct fifo_ipc));
+	ipc->class = fifo_get_ipc_class(file);
+	INIT_LIST_HEAD(&ipc->endpoints);
+	INIT_LIST_HEAD(&ipc->ipcs);
 	((struct fifo_ipc *)ipc)->ino = file->stat.st_ino;
 
 	hash = fifo_get_hash(file);
 	add_ipc(ipc, hash);
  link:
-	add_endpoint(&fifo->endpoint, ipc);
+	fifo->endpoint.ipc = ipc;
+	list_add(&fifo->endpoint.endpoints, &ipc->endpoints);
 }
 
 const struct file_class fifo_class = {

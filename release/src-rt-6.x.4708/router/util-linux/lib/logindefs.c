@@ -255,7 +255,11 @@ static void load_defaults(void)
 	        free_getlogindefs_data();
 
 	error = econf_readDirs(&file,
+#if USE_VENDORDIR
 			_PATH_VENDORDIR,
+#else
+			NULL,
+#endif
 			"/etc", "login", "defs", "= \t", "#");
 
 	if (error)

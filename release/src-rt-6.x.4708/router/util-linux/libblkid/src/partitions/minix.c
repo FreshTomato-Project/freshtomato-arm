@@ -17,11 +17,11 @@
 static int probe_minix_pt(blkid_probe pr,
 		const struct blkid_idmag *mag __attribute__((__unused__)))
 {
-	const struct dos_partition *p;
+	struct dos_partition *p;
 	blkid_parttable tab = NULL;
 	blkid_partition parent;
 	blkid_partlist ls;
-	const unsigned char *data;
+	unsigned char *data;
 	int i;
 
 	data = blkid_probe_get_sector(pr, 0);

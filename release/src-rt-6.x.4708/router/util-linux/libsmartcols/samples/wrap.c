@@ -92,15 +92,7 @@ int main(int argc, char *argv[])
 	if (!tb)
 		err(EXIT_FAILURE, "failed to create output table");
 
-	if (argc > 1 && strcmp(argv[1], "--export") == 0)
-		scols_table_enable_export(tb, 1);
-	else if (argc > 1 && strcmp(argv[1], "--raw") == 0)
-		scols_table_enable_raw(tb, 1);
-	else if (argc > 1 && strcmp(argv[1], "--json") == 0)
-		scols_table_enable_json(tb, 1);
-	else
-		scols_table_enable_colors(tb, isatty(STDOUT_FILENO));
-
+	scols_table_enable_colors(tb, isatty(STDOUT_FILENO));
 	setup_columns(tb);
 
 	ln = add_line(tb, NULL, "A");

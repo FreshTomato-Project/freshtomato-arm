@@ -26,7 +26,6 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
-#include <libgen.h>
 #include <security/pam_appl.h>
 #ifdef HAVE_SECURITY_PAM_MISC_H
 # include <security/pam_misc.h>
@@ -290,7 +289,7 @@ static void log_syslog(struct su_context *su, bool successful)
 {
 	DBG(LOG, ul_debug("syslog logging"));
 
-	openlog(su->runuser ? "runuser" : "su", LOG_PID, LOG_AUTH);
+	openlog(program_invocation_short_name, LOG_PID, LOG_AUTH);
 	syslog(LOG_NOTICE, "%s(to %s) %s on %s",
 	       successful ? "" :
 	       su->runuser ? "FAILED RUNUSER " : "FAILED SU ",
@@ -447,10 +446,9 @@ static void supam_open_session(struct su_context *su)
 
 	rc = pam_open_session(su->pamh, 0);
 	if (is_pam_failure(rc)) {
-		const char *msg = pam_strerror(su->pamh, rc);
-
 		supam_cleanup(su, rc);
-		errx(EXIT_FAILURE, _("cannot open session: %s"), msg);
+		errx(EXIT_FAILURE, _("cannot open session: %s"),
+		     pam_strerror(su->pamh, rc));
 	} else
 		su->pam_has_session = 1;
 }
@@ -836,25 +834,23 @@ static void run_shell(
 	size_t n_args = 1 + su->fast_startup + 2 * ! !command + n_additional_args + 1;
 	const char **args = xcalloc(n_args, sizeof *args);
 	size_t argno = 1;
-	char *tmp;
 
 	DBG(MISC, ul_debug("starting shell [shell=%s, command=\"%s\"%s%s]",
 				shell, command,
 				su->simulate_login ? " login" : "",
 				su->fast_startup ? " fast-start" : ""));
-	tmp = xstrdup(shell);
 
 	if (su->simulate_login) {
 		char *arg0;
 		char *shell_basename;
 
-		shell_basename = basename(tmp);
+		shell_basename = basename(shell);
 		arg0 = xmalloc(strlen(shell_basename) + 2);
 		arg0[0] = '-';
 		strcpy(arg0 + 1, shell_basename);
 		args[0] = arg0;
 	} else
-		args[0] = basename(tmp);
+		args[0] = basename(shell);
 
 	if (su->fast_startup)
 		args[argno++] = "-f";
@@ -902,7 +898,6 @@ static void usage_common(void)
 	fputs(_(" -f, --fast                      pass -f to the shell (for csh or tcsh)\n"), stdout);
 	fputs(_(" -s, --shell <shell>             run <shell> if /etc/shells allows it\n"), stdout);
 	fputs(_(" -P, --pty                       create a new pseudo-terminal\n"), stdout);
-	fputs(_(" -T, --no-pty                    do not create a new pseudo-terminal (bad security!)\n"), stdout);
 
 	fputs(USAGE_SEPARATOR, stdout);
 	printf(USAGE_HELP_OPTIONS(33));
@@ -1024,7 +1019,7 @@ static gid_t add_supp_group(const char *name, gid_t **groups, size_t *ngroups)
 
 	DBG(MISC, ul_debug("add %s group [name=%s, GID=%d]", name, gr->gr_name, (int) gr->gr_gid));
 
-	*groups = xreallocarray(*groups, *ngroups + 1, sizeof(gid_t));
+	*groups = xrealloc(*groups, sizeof(gid_t) * (*ngroups + 1));
 	(*groups)[*ngroups] = gr->gr_gid;
 	(*ngroups)++;
 
@@ -1058,7 +1053,6 @@ int su_main(int argc, char **argv, int mode)
 		{"login", no_argument, NULL, 'l'},
 		{"preserve-environment", no_argument, NULL, 'p'},
 		{"pty", no_argument, NULL, 'P'},
-		{"no-pty", no_argument, NULL, 'T'},
 		{"shell", required_argument, NULL, 's'},
 		{"group", required_argument, NULL, 'g'},
 		{"supp-group", required_argument, NULL, 'G'},
@@ -1084,7 +1078,7 @@ int su_main(int argc, char **argv, int mode)
 	su->conv.appdata_ptr = (void *) su;
 
 	while ((optc =
-		getopt_long(argc, argv, "c:fg:G:lmpPTs:u:hVw:", longopts,
+		getopt_long(argc, argv, "c:fg:G:lmpPs:u:hVw:", longopts,
 			    NULL)) != -1) {
 
 		err_exclusive_options(optc, longopts, excl, excl_st);
@@ -1132,10 +1126,6 @@ int su_main(int argc, char **argv, int mode)
 #else
 			errx(EXIT_FAILURE, _("--pty is not supported for your system"));
 #endif
-			break;
-
-		case 'T':
-			su->force_pty = 0;
 			break;
 
 		case 's':

@@ -1,15 +1,23 @@
 /*
- * SPDX-License-Identifier: GPL-2.0-or-later
+ *  prlimit - get/set process resource limits.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  Copyright (C) 2011 Davidlohr Bueso <dave@gnu.org>
  *
- * Copyright (C) 2011 Davidlohr Bueso <dave@gnu.org>
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * prlimit - get/set process resource limits.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+
 #include <errno.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -106,14 +114,14 @@ enum {
 
 /* column names */
 struct colinfo {
-	const char * const	name; /* header */
-	double			whint;	/* width hint (N < 1 is in percent of termwidth) */
-	int			flags;	/* SCOLS_FL_* */
-	const char		*help;
+	const char	*name;	/* header */
+	double		whint;	/* width hint (N < 1 is in percent of termwidth) */
+	int		flags;	/* SCOLS_FL_* */
+	const char      *help;
 };
 
 /* columns descriptions */
-static const struct colinfo infos[] = {
+static struct colinfo infos[] = {
 	[COL_RES]     = { "RESOURCE",    0.25, SCOLS_FL_TRUNC, N_("resource name") },
 	[COL_HELP]    = { "DESCRIPTION", 0.1,  SCOLS_FL_TRUNC, N_("resource description")},
 	[COL_SOFT]    = { "SOFT",        0.1,  SCOLS_FL_RIGHT, N_("soft limit")},
@@ -171,7 +179,7 @@ static void __attribute__((__noreturn__)) usage(void)
 		"     --raw              use the raw output format\n"
 		"     --verbose          verbose output\n"
 		), out);
-	fprintf(out, USAGE_HELP_OPTIONS(24));
+	printf(USAGE_HELP_OPTIONS(24));
 
 	fputs(_("\nResources:\n"), out);
 	fputs(_(" -c, --core             maximum size of core files created\n"
@@ -201,7 +209,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	for (i = 0; i < ARRAY_SIZE(infos); i++)
 		fprintf(out, " %11s  %s\n", infos[i].name, _(infos[i].help));
 
-	fprintf(out, USAGE_MAN_TAIL("prlimit(1)"));
+	printf(USAGE_MAN_TAIL("prlimit(1)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -214,7 +222,7 @@ static inline int get_column_id(int num)
 	return columns[num];
 }
 
-static inline const struct colinfo *get_column_info(unsigned num)
+static inline struct colinfo *get_column_info(unsigned num)
 {
 	return &infos[ get_column_id(num) ];
 }
@@ -306,7 +314,7 @@ static int show_limits(struct list_head *lims)
 	scols_table_enable_noheadings(table, no_headings);
 
 	for (i = 0; i < ncolumns; i++) {
-		const struct colinfo *col = get_column_info(i);
+		struct colinfo *col = get_column_info(i);
 
 		if (!scols_table_new_column(table, col->name, col->whint, col->flags))
 			err(EXIT_FAILURE, _("failed to allocate output column"));
@@ -447,10 +455,8 @@ static int get_range(char *str, rlim_t *soft, rlim_t *hard, int *found)
 		}
 		*found |= PRLIMIT_SOFT | PRLIMIT_HARD;
 
-	} else if (!*end)				/* <value> */
+	} else						/* <value> */
 		*found |= PRLIMIT_SOFT | PRLIMIT_HARD;
-	else
-		return -1;
 
 	return 0;
 }

@@ -47,8 +47,6 @@ SUCH DAMAGE.
 
 write - send a message to another user
 
-== SYNOPSIS
-
 *write* _user_ [_ttyname_]
 
 == DESCRIPTION

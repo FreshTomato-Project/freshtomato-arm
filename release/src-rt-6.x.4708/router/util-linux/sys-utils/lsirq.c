@@ -1,6 +1,4 @@
 /*
- * SPDX-License-Identifier: LGPL-2.1-or-later
- *
  * lsirq - utility to display kernel interrupt information.
  *
  * Copyright (C) 2019 zhenwei pi <pizhenwei@bytedance.com>
@@ -10,6 +8,15 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 #include <ctype.h>
 #include <errno.h>
@@ -50,7 +57,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	printf(_(" %s [options]\n"), program_invocation_short_name);
 	fputs(USAGE_SEPARATOR, stdout);
 
-	fputsln(_("Utility to display kernel interrupt information."), stdout);
+	puts(_("Utility to display kernel interrupt information."));
 
 	fputs(USAGE_OPTIONS, stdout);
 	fputs(_(" -J, --json           use JSON output format\n"), stdout);
@@ -60,12 +67,12 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -s, --sort <column>  specify sort column\n"), stdout);
 	fputs(_(" -S, --softirq        show softirqs instead of interrupts\n"), stdout);
 	fputs(USAGE_SEPARATOR, stdout);
-	fprintf(stdout, USAGE_HELP_OPTIONS(22));
+	printf(USAGE_HELP_OPTIONS(22));
 
 	fputs(USAGE_COLUMNS, stdout);
 	irq_print_columns(stdout, 1);
 
-	fprintf(stdout, USAGE_MAN_TAIL("lsirq(1)"));
+	printf(USAGE_MAN_TAIL("lsirq(1)"));
 	exit(EXIT_SUCCESS);
 }
 

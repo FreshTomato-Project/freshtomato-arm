@@ -594,7 +594,7 @@ static int progress_active(void)
  */
 static void print_stats(struct fsck_instance *inst)
 {
-	struct timeval delta = { 0 };
+	struct timeval delta;
 
 	if (!inst || !report_stats || noexecute)
 		return;
@@ -1416,11 +1416,11 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -V         explain what is being done\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, " -?, --help     %s\n", USAGE_OPTSTR_HELP);
-	fprintf(out, "     --version  %s\n", USAGE_OPTSTR_VERSION);
+	printf( " -?, --help     %s\n", USAGE_OPTSTR_HELP);
+	printf( "     --version  %s\n", USAGE_OPTSTR_VERSION);
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_("See the specific fsck.* commands for available fs-options."), out);
-	fprintf(out, USAGE_MAN_TAIL("fsck(8)"));
+	printf(USAGE_MAN_TAIL("fsck(8)"));
 	exit(FSCK_EX_OK);
 }
 

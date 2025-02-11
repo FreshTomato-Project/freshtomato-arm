@@ -1,17 +1,6 @@
+/* Original author unknown, may be "krishna balasub@cis.ohio-state.edu" */
 /*
- * SPDX-License-Identifier: GPL-2.0-or-later
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * Original author unknown, may be "krishna balasub@cis.ohio-state.edu"
- *
- * Copyright (C) 1995 ike Jagdis <jaggy@purplet.demon.co.uk>
- *               1996 janl@math.uio.no
- * Copyright (C) 2006-2023 Karel Zak <kzak@redhat.com>
- *
+ * Modified Sat Oct  9 10:55:28 1993 for 0.99.13
  *
  * Patches from Mike Jagdis (jaggy@purplet.demon.co.uk) applied Wed Feb 8
  * 12:12:21 1995 by faith@cs.unc.edu to print numeric uids if no passwd file
@@ -25,6 +14,7 @@
  * 1999-02-22 Arkadiusz Miśkiewicz <misiek@pld.ORG.PL>
  * - added Native Language Support
  */
+
 #include <errno.h>
 #include <getopt.h>
 
@@ -76,7 +66,7 @@ static void __attribute__((__noreturn__)) usage(void)
 
 	fputs(USAGE_OPTIONS, out);
 	fputs(_(" -i, --id <id>  print details on resource identified by <id>\n"), out);
-	fprintf(out, USAGE_HELP_OPTIONS(16));
+	printf(USAGE_HELP_OPTIONS(16));
 
 	fputs(USAGE_SEPARATOR, out);
 	fputs(_("Resource options:\n"), out);
@@ -94,7 +84,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -u, --summary     show status summary\n"), out);
 	fputs(_("     --human       show sizes in human-readable format\n"), out);
 	fputs(_(" -b, --bytes       show sizes in bytes\n"), out);
-	fprintf(out, USAGE_MAN_TAIL("ipcs(1)"));
+	printf(USAGE_MAN_TAIL("ipcs(1)"));
 
 	exit(EXIT_SUCCESS);
 }

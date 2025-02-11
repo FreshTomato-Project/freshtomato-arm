@@ -1,16 +1,3 @@
-/*
- * SPDX-License-Identifier: GPL-2.0-or-later
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * Copyright (C) 2012-2023 Karel Zak <kzak@redhat.com>
- *
- * Original implementation from Linux 0.99, without License and copyright in
- * the code. Karel Zak rewrote the code under GPL-2.0-or-later.
- */
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -90,10 +77,10 @@ enum {
 
 /* column names */
 struct colinfo {
-        const char * const	name; /* header */
-        double			whint; /* width hint (N < 1 is in percent of termwidth) */
-	int			flags; /* SCOLS_FL_* */
-        const char		*help;
+        const char *name; /* header */
+        double     whint; /* width hint (N < 1 is in percent of termwidth) */
+	int        flags; /* SCOLS_FL_* */
+        const char *help;
 };
 
 enum {
@@ -105,7 +92,7 @@ enum {
 	COL_UUID,
 	COL_LABEL
 };
-static const struct colinfo infos[] = {
+static struct colinfo infos[] = {
 	[COL_PATH]     = { "NAME",	0.20, 0, N_("device file or partition path") },
 	[COL_TYPE]     = { "TYPE",	0.20, SCOLS_FL_TRUNC, N_("type of the device")},
 	[COL_SIZE]     = { "SIZE",	0.20, SCOLS_FL_RIGHT, N_("size of the swap area")},
@@ -172,7 +159,7 @@ static inline int get_column_id(const struct swapon_ctl *ctl, int num)
 	return ctl->columns[num];
 }
 
-static inline const struct colinfo *get_column_info(const struct swapon_ctl *ctl, unsigned num)
+static inline struct colinfo *get_column_info(const struct swapon_ctl *ctl, unsigned num)
 {
 	return &infos[get_column_id(ctl, num)];
 }
@@ -312,7 +299,7 @@ static int show_table(struct swapon_ctl *ctl)
 	scols_table_enable_noheadings(table, ctl->no_heading);
 
 	for (i = 0; i < ctl->ncolumns; i++) {
-		const struct colinfo *col = get_column_info(ctl, i);
+		struct colinfo *col = get_column_info(ctl, i);
 
 		if (!scols_table_new_column(table, col->name, col->whint, col->flags))
 			err(EXIT_FAILURE, _("failed to allocate output column"));
@@ -838,7 +825,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -v, --verbose            verbose mode\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(26));
+	printf(USAGE_HELP_OPTIONS(26));
 
 	fputs(_("\nThe <spec> parameter:\n" \
 		" -L <label>             synonym for LABEL=<label>\n"
@@ -859,7 +846,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	for (i = 0; i < ARRAY_SIZE(infos); i++)
 		fprintf(out, " %-5s  %s\n", infos[i].name, _(infos[i].help));
 
-	fprintf(out, USAGE_MAN_TAIL("swapon(8)"));
+	printf(USAGE_MAN_TAIL("swapon(8)"));
 	exit(EXIT_SUCCESS);
 }
 

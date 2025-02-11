@@ -12,11 +12,6 @@ look_sources = files(
   'look.c',
 )
 
-lastlog2_sources = files(
-  'lastlog2.c',
-) + \
-  strutils_c
-
 mcookie_sources = files(
   'mcookie.c',
 ) + \
@@ -47,6 +42,10 @@ lsblk_sources = files(
 lsfd_sources = files (
   'lsfd.c',
   'lsfd.h',
+  'lsfd-filter.h',
+  'lsfd-filter.c',
+  'lsfd-counter.h',
+  'lsfd-counter.c',
   'lsfd-decode-file-flags.c',
   'lsfd-file.c',
   'lsfd-cdev.c',
@@ -56,7 +55,6 @@ lsfd_sources = files (
   'lsfd-sock-xinfo.c',
   'lsfd-unkn.c',
   'lsfd-fifo.c',
-  'lsfd-pidfd.c',
 )
 
 uuidgen_sources = files(
@@ -77,33 +75,7 @@ test_uuidd_sources = files(
   'test_uuidd.c',
 )
 
-if build_liblastlog2 and systemd.found()
-  lastlog2_tmpfiles = configure_file(
-    input : 'lastlog2-tmpfiles.conf.in',
-    output : 'lastlog2-tmpfiles.conf',
-    configuration : conf)
-  install_data(
-    lastlog2_tmpfiles,
-    install_dir : '/usr/lib/tmpfiles.d')
-
-  lastlog2_service = configure_file(
-    input : 'lastlog2-import.service.in',
-    output : 'lastlog2-import.service',
-    configuration : conf)
-  install_data(
-    lastlog2_service,
-    install_dir : systemdsystemunitdir)
-endif
-
 if build_uuidd and systemd.found()
-  uuidd_tmpfiles = configure_file(
-    input : 'uuidd-tmpfiles.conf.in',
-    output : 'uuidd-tmpfiles.conf',
-    configuration : conf)
-  install_data(
-    uuidd_tmpfiles,
-    install_dir : '/usr/lib/tmpfiles.d')
-
   uuidd_service = configure_file(
     input : 'uuidd.service.in',
     output : 'uuidd.service',
@@ -168,10 +140,6 @@ install_data(
   install_dir : docdir,
   install_mode: 'rwxr-xr-x')
 
-exch_sources = files(
-  'exch.c',
-)
-
 fincore_sources = files(
   'fincore.c',
 )
@@ -196,8 +164,4 @@ fadvise_sources = files(
 
 waitpid_sources = files(
   'waitpid.c',
-)
-
-lsclocks_sources = files(
-  'lsclocks.c',
 )

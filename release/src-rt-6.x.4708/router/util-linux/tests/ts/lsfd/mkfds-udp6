@@ -52,8 +52,8 @@ LPORT=
 
 for lite in 0 1; do
     coproc MKFDS { "$TS_HELPER_MKFDS" udp6 $FDS $FDC \
-				      server-port=56789 \
-				      client-port=45678 \
+				      server-port=34567 \
+				      client-port=23456 \
 				      lite=$lite; }
     if read -r -u "${MKFDS[0]}" PID; then
 	${TS_CMD_LSFD} -n \
@@ -61,13 +61,13 @@ for lite in 0 1; do
 		       -p "${PID}" -Q "${EXPR[$lite]}"
 	echo "ASSOC,TYPE,STTYPE,NAME,SOCK.STATE,SOCK.TYPE,SOCK.LISTENING,INET6.LADDR,INET6.RADDR,${COLNS[$lite]}.LADDR,${COLNS[$lite]}.LPORT,${COLNS[$lite]}.RADDR,${COLNS[$lite]}.RPORT": $?
 
-	echo DONE >&"${MKFDS[1]}"
+	kill -CONT "${PID}"
     fi
     wait "${MKFDS_PID}"
 
     coproc MKFDS { "$TS_HELPER_MKFDS" udp6 $FDS $FDC \
-				      server-port=56789 \
-				      client-port=45678 \
+				      server-port=34567 \
+				      client-port=23456 \
 				      server-do-bind=no \
 				      lite=$lite; }
     if read -r -u "${MKFDS[0]}" PID; then
@@ -86,13 +86,13 @@ for lite in 0 1; do
 	    echo "NAME pattern match: FAILED (NAME=$NAME)"
 	fi
 
-	echo DONE >&"${MKFDS[1]}"
+	kill -CONT "${PID}"
     fi
     wait "${MKFDS_PID}"
 
     coproc MKFDS { "$TS_HELPER_MKFDS" udp6 $FDS $FDC \
-				      server-port=56789 \
-				      client-port=45678 \
+				      server-port=34567 \
+				      client-port=23456 \
 				      client-do-bind=no \
 				      lite=$lite; }
     if read -r -u "${MKFDS[0]}" PID; then
@@ -116,13 +116,13 @@ for lite in 0 1; do
 	    echo "LADDR/LPORT pattern match: FAILED (LADDR=$LADDR, LPORT=$LPORT)"
 	fi
 
-	echo DONE >&"${MKFDS[1]}"
+	kill -CONT "${PID}"
     fi
     wait "${MKFDS_PID}"
 
     coproc MKFDS { "$TS_HELPER_MKFDS" udp6 $FDS $FDC \
-				      server-port=56789 \
-				      client-port=45678 \
+				      server-port=34567 \
+				      client-port=23456 \
 				      client-do-connect=no \
 				      lite=$lite; }
     if read -r -u "${MKFDS[0]}" PID; then
@@ -131,7 +131,7 @@ for lite in 0 1; do
 		       -p "${PID}" -Q "${EXPR[$lite]}"
 	echo "ASSOC,TYPE,STTYPE,NAME,SOCK.STATE,SOCK.TYPE,SOCK.LISTENING,INET6.LADDR,INET6.RADDR,${COLNS[$lite]}.LADDR,${COLNS[$lite]}.LPORT,${COLNS[$lite]}.RADDR,${COLNS[$lite]}.RPORT": $?
 
-	echo DONE >&"${MKFDS[1]}"
+	kill -CONT "${PID}"
     fi
     wait "${MKFDS_PID}"
 done > "$TS_OUTPUT" 2>&1

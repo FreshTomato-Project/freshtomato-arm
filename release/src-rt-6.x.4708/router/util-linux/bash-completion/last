@@ -36,7 +36,6 @@ _last_module()
 				--nohostname
 				--since
 				--until
-				--tab-separated
 				--present
 				--fullnames
 				--system
@@ -51,4 +50,4 @@ _last_module()
 	COMPREPLY=( $(compgen -u -- $cur) )
 	return 0
 }
-complete -F _last_module last lastb
+complete -F _last_module last

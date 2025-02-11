@@ -26,7 +26,7 @@
 static const struct topology_val {
 
 	/* /sys/dev/block/<maj>:<min>/<ATTR> */
-	const char * const attr;
+	const char *attr;
 
 	/* functions to set probing result */
 	int (*set_ulong)(blkid_probe, unsigned long);

@@ -46,10 +46,6 @@ config/test-driver
 configure
 cscope.out
 depcomp
-GPATH
-GRTAGS
-GTAGS
-GSYMS
 INSTALL
 install-sh
 libtool
@@ -62,20 +58,22 @@ mkinstalldirs
 stamp-h
 stamp-h.in
 stamp-h1
-syscalls.h
 tags
 test-suite.log
 tests/run.sh.log
 tests/run.sh.trs
 update.log
 ylwrap
+GPATH
+GRTAGS
+GTAGS
+GSYMS
 
 #
 # binaries
 #
 /addpart
 /agetty
-/build*/
 /blkdiscard
 /blkid
 /blkpr
@@ -97,8 +95,6 @@ ylwrap
 /delpart
 /dmesg
 /eject
-/enosys
-/exch
 /fadvise
 /fallocate
 /fdformat
@@ -131,7 +127,6 @@ ylwrap
 /look
 /losetup
 /lsblk
-/lsclocks
 /lscpu
 /lsfd
 /lsipc
@@ -173,7 +168,6 @@ ylwrap
 /scriptlive
 /scriptreplay
 /setarch
-/setpgid
 /setpriv
 /setsid
 /setterm
@@ -203,5 +197,4 @@ ylwrap
 /wipefs
 /write
 /zramctl
-/lsclocks
-/lastlog2
+/build*/

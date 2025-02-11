@@ -62,37 +62,37 @@ static char opt_verbose = 0;	/* --verbose */
 static void __attribute__((__noreturn__)) usage(void)
 {
 	fputs(USAGE_HEADER, stdout);
-	fprintf(stdout, _(" %s [options] [--set <size>] [--] [command]\n"), program_invocation_short_name);
-	fprintf(stdout, _(" %s [options] --get\n"), program_invocation_short_name);
+	printf(_(" %s [options] [--set <size>] [--] [command]\n"), program_invocation_short_name);
+	printf(_(" %s [options] --get\n"), program_invocation_short_name);
 
 	fputs(USAGE_SEPARATOR, stdout);
 	/* TRANSLATORS: 'command' refers to a program argument */
-	fputsln(_("Set or examine pipe buffer sizes and optionally execute command."), stdout);
+	puts(_("Set or examine pipe buffer sizes and optionally execute command."));
 
 	fputs(USAGE_OPTIONS, stdout);
-	fputsln(_(" -g, --get          examine pipe buffers"), stdout);
+	puts(_(" -g, --get          examine pipe buffers"));
 	/* TRANSLATORS: '%s' refers to a system file */
-	fprintf(stdout,
+	printf(
 	     _(" -s, --set <size>   set pipe buffer sizes\n"
 	       "                      size defaults to %s\n"),
 		PIPESZ_DEFAULT_SIZE_FILE);
 
 	fputs(USAGE_SEPARATOR, stdout);
-	fputsln(_(" -f, --file <path>  act on a file"), stdout);
-	fputsln(_(" -n, --fd <num>     act on a file descriptor"), stdout);
-	fputsln(_(" -i, --stdin        act on standard input"), stdout);
-	fputsln(_(" -o, --stdout       act on standard output"), stdout);
-	fputsln(_(" -e, --stderr       act on standard error"), stdout);
+	puts(_(" -f, --file <path>  act on a file"));
+	puts(_(" -n, --fd <num>     act on a file descriptor"));
+	puts(_(" -i, --stdin        act on standard input"));
+	puts(_(" -o, --stdout       act on standard output"));
+	puts(_(" -e, --stderr       act on standard error"));
 
 	fputs(USAGE_SEPARATOR, stdout);
-	fputsln(_(" -c, --check        do not continue after an error"), stdout);
-	fputsln(_(" -q, --quiet        do not warn of non-fatal errors"), stdout);
-	fputsln(_(" -v, --verbose      provide detailed output"), stdout);
+	puts(_(" -c, --check        do not continue after an error"));
+	puts(_(" -q, --quiet        do not warn of non-fatal errors"));
+	puts(_(" -v, --verbose      provide detailed output"));
 
 	fputs(USAGE_SEPARATOR, stdout);
-	fprintf(stdout, USAGE_HELP_OPTIONS(20));
+	printf(USAGE_HELP_OPTIONS(20));
 
-	fprintf(stdout, USAGE_MAN_TAIL("pipesz(1)"));
+	printf(USAGE_MAN_TAIL("pipesz(1)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -260,7 +260,7 @@ int main(int argc, char **argv)
 			++n_opt_pipe;
 			break;
 		case 'n':
-			(void) strtos32_or_err(optarg, _("invalid fd argument"));
+			fd = strtos32_or_err(optarg, _("invalid fd argument"));
 			++n_opt_pipe;
 			break;
 		case 'o':

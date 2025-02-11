@@ -66,30 +66,24 @@ static int test_uuid(const char * uuid, int isValid)
 
 static int check_uuids_in_file(const char *file)
 {
-	int ret = 0;
-	size_t alloc = 0;
-	ssize_t sz;
-	char *str = NULL;
-	FILE *f;
+	int fd, ret = 0;
+	size_t sz;
+	char str[UUID_STR_LEN];
 	uuid_t uuidBits;
 
-	if ((f = fopen(file, "r")) == NULL) {
+	if ((fd = open(file, O_RDONLY)) < 0) {
 		warn("%s", file);
 		return 1;
 	}
-	while ((sz = getline(&str, &alloc, f)) != -1) {
-		if (sz == 0 || str[0] == '\n')
-			continue;
-		if (str[sz - 1] == '\n')
-			str[sz - 1] = '\0';
+	while ((sz = read(fd, str, sizeof(str))) != 0) {
+		str[sizeof(str) - 1] = '\0';
 		if (uuid_parse(str, uuidBits)) {
 			warnx("%s: %s", file, str);
 			ret++;
 		}
 	}
 
-	fclose(f);
-	free(str);
+	close(fd);
 	return ret;
 }
 

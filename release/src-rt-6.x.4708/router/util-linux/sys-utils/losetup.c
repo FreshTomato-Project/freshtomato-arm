@@ -1,14 +1,6 @@
 /*
- * SPDX-License-Identifier: GPL-2.0-or-later
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * Original implementation from Ted Ts'o; losetup was part of mount.
- *
- * Copyright (C) 2011-2023 Karel Zak <kzak@redhat.com>
+ * Copyright (C) 2011 Karel Zak <kzak@redhat.com>
+ * Originally from Ted's losetup.c
  *
  * losetup.c - setup and control loop devices
  */
@@ -53,14 +45,9 @@ enum {
 	COL_BACK_FILE,
 	COL_BACK_INO,
 	COL_BACK_MAJMIN,
-	COL_BACK_MAJ,
-	COL_BACK_MIN,
 	COL_MAJMIN,
-	COL_MAJ,
-	COL_MIN,
 	COL_OFFSET,
 	COL_PARTSCAN,
-	COL_REF,
 	COL_RO,
 	COL_SIZELIMIT,
 	COL_DIO,
@@ -73,7 +60,7 @@ static int raw;
 static int json;
 
 struct colinfo {
-	const char * const name;
+	const char *name;
 	double whint;
 	int flags;
 	const char *help;
@@ -81,22 +68,17 @@ struct colinfo {
 	int json_type;	/* default is string */
 };
 
-static const struct colinfo infos[] = {
+static struct colinfo infos[] = {
 	[COL_AUTOCLR]     = { "AUTOCLEAR",    1, SCOLS_FL_RIGHT, N_("autoclear flag set"), SCOLS_JSON_BOOLEAN},
 	[COL_BACK_FILE]   = { "BACK-FILE",  0.3, SCOLS_FL_NOEXTREMES, N_("device backing file")},
 	[COL_BACK_INO]    = { "BACK-INO",     4, SCOLS_FL_RIGHT, N_("backing file inode number"), SCOLS_JSON_NUMBER},
 	[COL_BACK_MAJMIN] = { "BACK-MAJ:MIN", 6, 0, N_("backing file major:minor device number")},
-	[COL_BACK_MAJ]    = { "BACK-MAJ",     6, 0, N_("backing file major device number")},
-	[COL_BACK_MIN]    = { "BACK-MIN",     6, 0, N_("backing file minor device number")},
 	[COL_NAME]        = { "NAME",      0.25, 0, N_("loop device name")},
 	[COL_OFFSET]      = { "OFFSET",       5, SCOLS_FL_RIGHT, N_("offset from the beginning"), SCOLS_JSON_NUMBER},
 	[COL_PARTSCAN]    = { "PARTSCAN",     1, SCOLS_FL_RIGHT, N_("partscan flag set"), SCOLS_JSON_BOOLEAN},
-	[COL_REF]         = { "REF",        0.1, 0, N_("loop device reference string")},
 	[COL_RO]          = { "RO",           1, SCOLS_FL_RIGHT, N_("read-only device"), SCOLS_JSON_BOOLEAN},
 	[COL_SIZELIMIT]   = { "SIZELIMIT",    5, SCOLS_FL_RIGHT, N_("size limit of the file in bytes"), SCOLS_JSON_NUMBER},
 	[COL_MAJMIN]      = { "MAJ:MIN",      3, 0, N_("loop device major:minor number")},
-	[COL_MAJ]         = { "MAJ",          1, SCOLS_FL_RIGHT, N_("loop device major number"), SCOLS_JSON_NUMBER},
-	[COL_MIN]         = { "MIN",          1, SCOLS_FL_RIGHT, N_("loop device minor number"), SCOLS_JSON_NUMBER},
 	[COL_DIO]         = { "DIO",          1, SCOLS_FL_RIGHT, N_("access backing file with direct-io"), SCOLS_JSON_BOOLEAN},
 	[COL_LOGSEC]      = { "LOG-SEC",      4, SCOLS_FL_RIGHT, N_("logical sector size in bytes"), SCOLS_JSON_NUMBER},
 };
@@ -112,7 +94,7 @@ static int get_column_id(int num)
 	return columns[num];
 }
 
-static const struct colinfo *get_column_info(int num)
+static struct colinfo *get_column_info(int num)
 {
 	return &infos[ get_column_id(num) ];
 }
@@ -151,26 +133,23 @@ static int printf_loopdev(struct loopdev_cxt *lc)
 		 * Probably non-root user (no permissions to
 		 * call LOOP_GET_STATUS ioctls).
 		 */
-		printf("%s%s: []: (%s)",
-			loopcxt_get_device(lc),
-			loopcxt_is_lost(lc) ? " (lost)" : "",
-			fname);
+		printf("%s: []: (%s)",
+			loopcxt_get_device(lc), fname);
 
 		if (loopcxt_get_offset(lc, &x) == 0 && x)
 				printf(_(", offset %ju"), x);
+
 		if (loopcxt_get_sizelimit(lc, &x) == 0 && x)
 				printf(_(", sizelimit %ju"), x);
-
 		goto done;
 	}
 
-	printf("%s%s: [%04jd]:%ju (%s)",
-		loopcxt_get_device(lc),
-		loopcxt_is_lost(lc) ? " (lost)" : "",
-		(intmax_t) dev, (uintmax_t) ino, fname);
+	printf("%s: [%04jd]:%ju (%s)",
+		loopcxt_get_device(lc), (intmax_t) dev, (uintmax_t) ino, fname);
 
 	if (loopcxt_get_offset(lc, &x) == 0 && x)
 			printf(_(", offset %ju"), x);
+
 	if (loopcxt_get_sizelimit(lc, &x) == 0 && x)
 			printf(_(", sizelimit %ju"), x);
 
@@ -221,24 +200,11 @@ static int show_all_loops(struct loopdev_cxt *lc, const char *file,
 	return 0;
 }
 
-static void warn_lost(struct loopdev_cxt *lc)
-{
-	dev_t devno = loopcxt_get_devno(lc);
-
-	if (devno <= 0)
-		return;
-
-	warnx(("device node %s (%u:%u) is lost. You may use mknod(1) to recover it."),
-			loopcxt_get_device(lc), major(devno), minor(devno));
-}
-
 static int delete_loop(struct loopdev_cxt *lc)
 {
-	if (loopcxt_delete_device(lc)) {
+	if (loopcxt_delete_device(lc))
 		warn(_("%s: detach failed"), loopcxt_get_device(lc));
-		if (loopcxt_is_lost(lc))
-			warn_lost(lc);
-	} else
+	else
 		return 0;
 
 	return -1;
@@ -271,10 +237,6 @@ static int set_scols_data(struct loopdev_cxt *lc, struct libscols_line *ln)
 		switch(get_column_id(i)) {
 		case COL_NAME:
 			p = loopcxt_get_device(lc);
-			if (loopcxt_is_lost(lc)) {
-				xasprintf(&np, "%s (lost)", p);
-				p = NULL;
-			}
 			break;
 		case COL_BACK_FILE:
 			np = loopcxt_get_backing_file(lc);
@@ -295,38 +257,16 @@ static int set_scols_data(struct loopdev_cxt *lc, struct libscols_line *ln)
 						major(dev), minor(dev));
 			break;
 		}
-		case COL_BACK_MAJ:
-		{
-			dev_t dev = 0;
-			if (loopcxt_get_backing_devno(lc, &dev) == 0 && dev)
-				xasprintf(&np, "%u", major(dev));
-			break;
-		}
-		case COL_BACK_MIN:
-		{
-			dev_t dev = 0;
-			if (loopcxt_get_backing_devno(lc, &dev) == 0 && dev)
-				xasprintf(&np, "%u", minor(dev));
-			break;
-		}
 		case COL_MAJMIN:
 		{
-			dev_t dev = loopcxt_get_devno(lc);
-			if (dev)
+			struct stat st;
+
+			if (loopcxt_get_device(lc)
+			    && stat(loopcxt_get_device(lc), &st) == 0
+			    && S_ISBLK(st.st_mode)
+			    && major(st.st_rdev) == LOOPDEV_MAJOR)
 				xasprintf(&np, raw || json ? "%u:%u" :"%3u:%-3u",
-						major(dev), minor(dev));
-			break;
-		}
-		case COL_MAJ: {
-			dev_t dev = loopcxt_get_devno(lc);
-			if (dev)
-				xasprintf(&np, "%u", major(dev));
-			break;
-		}
-		case COL_MIN: {
-			dev_t dev = loopcxt_get_devno(lc);
-			if (dev)
-				xasprintf(&np, "%u", minor(dev));
+						major(st.st_rdev), minor(st.st_rdev));
 			break;
 		}
 		case COL_BACK_INO:
@@ -351,9 +291,6 @@ static int set_scols_data(struct loopdev_cxt *lc, struct libscols_line *ln)
 		case COL_LOGSEC:
 			if (loopcxt_get_blocksize(lc, &x) == 0)
 				xasprintf(&np, "%jd", x);
-			break;
-		case COL_REF:
-			np = loopcxt_get_refname(lc);
 			break;
 		default:
 			return -EINVAL;
@@ -395,7 +332,7 @@ static int show_table(struct loopdev_cxt *lc,
 		scols_table_set_name(tb, "loopdevices");
 
 	for (i = 0; i < ncolumns; i++) {
-		const struct colinfo *ci = get_column_info(i);
+		struct colinfo *ci = get_column_info(i);
 		struct libscols_column *cl;
 
 		cl = scols_table_new_column(tb, ci->name, ci->whint, ci->flags);
@@ -487,7 +424,6 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -P, --partscan                create a partitioned loop device\n"), out);
 	fputs(_(" -r, --read-only               set up a read-only loop device\n"), out);
 	fputs(_("     --direct-io[=<on|off>]    open backing file with O_DIRECT\n"), out);
-	fputs(_("     --loop-ref <string>       loop device reference\n"), out);
 	fputs(_("     --show                    print device name after setup (with -f)\n"), out);
 	fputs(_(" -v, --verbose                 verbose mode\n"), out);
 
@@ -501,13 +437,13 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("     --raw                     use raw --list output format\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(31));
+	printf(USAGE_HELP_OPTIONS(31));
 
 	fputs(USAGE_COLUMNS, out);
 	for (i = 0; i < ARRAY_SIZE(infos); i++)
 		fprintf(out, " %12s  %s\n", infos[i].name, _(infos[i].help));
 
-	fprintf(out, USAGE_MAN_TAIL("losetup(8)"));
+	printf(USAGE_MAN_TAIL("losetup(8)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -530,8 +466,8 @@ static void warn_size(const char *filename, uint64_t size, uint64_t offset, int 
 			"may be useless or invisible for system tools."),
 			filename);
 	else if (size % 512)
-		warnx(_("%s: Warning: file does not end on a 512-byte sector boundary; "
-			"the remaining end of the file will be ignored."),
+		warnx(_("%s: Warning: file does not fit into a 512-byte sector; "
+		        "the end of the file will be ignored."),
 			filename);
 }
 
@@ -556,8 +492,7 @@ static int find_unused(struct loopdev_cxt *lc)
 
 static int create_loop(struct loopdev_cxt *lc,
 		       int nooverlap, int lo_flags, int flags,
-		       const char *file, const char *refname,
-		       uint64_t offset, uint64_t sizelimit,
+		       const char *file, uint64_t offset, uint64_t sizelimit,
 		       uint64_t blocksize)
 {
 	int hasdev = loopcxt_has_device(lc);
@@ -646,10 +581,7 @@ static int create_loop(struct loopdev_cxt *lc,
 			loopcxt_set_flags(lc, lo_flags);
 		if (blocksize > 0)
 			loopcxt_set_blocksize(lc, blocksize);
-		if (refname && (rc = loopcxt_set_refname(lc, refname))) {
-			warnx(_("cannot set loop reference string"));
-			break;
-		}
+
 		if ((rc = loopcxt_set_backing_file(lc, file))) {
 			warn(_("%s: failed to use backing file"), file);
 			break;
@@ -666,7 +598,7 @@ static int create_loop(struct loopdev_cxt *lc,
 		}
 
 		/* errors */
-		errpre = hasdev && lc->fd < 0 ?
+		errpre = hasdev && loopcxt_get_fd(lc) < 0 ?
 				 loopcxt_get_device(lc) : file;
 		warn(_("%s: failed to set up loop device"), errpre);
 		break;
@@ -679,7 +611,7 @@ int main(int argc, char **argv)
 {
 	struct loopdev_cxt lc;
 	int act = 0, flags = 0, no_overlap = 0, c;
-	char *file = NULL, *refname = NULL;
+	char *file = NULL;
 	uint64_t offset = 0, sizelimit = 0, blocksize = 0;
 	int res = 0, showdev = 0, lo_flags = 0;
 	char *outarg = NULL;
@@ -690,7 +622,6 @@ int main(int argc, char **argv)
 		OPT_SIZELIMIT = CHAR_MAX + 1,
 		OPT_SHOW,
 		OPT_RAW,
-		OPT_REF,
 		OPT_DIO,
 		OPT_OUTPUT_ALL
 	};
@@ -715,7 +646,6 @@ int main(int argc, char **argv)
 		{ "read-only",    no_argument,       NULL, 'r'           },
 		{ "direct-io",    optional_argument, NULL, OPT_DIO       },
 		{ "raw",          no_argument,       NULL, OPT_RAW       },
-		{ "loop-ref",     required_argument, NULL, OPT_REF,      },
 		{ "show",         no_argument,       NULL, OPT_SHOW      },
 		{ "verbose",      no_argument,       NULL, 'v'           },
 		{ "version",      no_argument,       NULL, 'V'           },
@@ -754,19 +684,18 @@ int main(int argc, char **argv)
 			break;
 		case 'c':
 			act = A_SET_CAPACITY;
-			if (loopcxt_set_device(&lc, optarg))
+			if (!is_loopdev(optarg) ||
+			    loopcxt_set_device(&lc, optarg))
 				err(EXIT_FAILURE, _("%s: failed to use device"),
 						optarg);
 			break;
 		case 'r':
 			lo_flags |= LO_FLAGS_READ_ONLY;
 			break;
-		case OPT_REF:
-			refname = optarg;
-			break;
 		case 'd':
 			act = A_DELETE;
-			if (loopcxt_set_device(&lc, optarg))
+			if (!is_loopdev(optarg) ||
+			    loopcxt_set_device(&lc, optarg))
 				err(EXIT_FAILURE, _("%s: failed to use device"),
 						optarg);
 			break;
@@ -804,7 +733,6 @@ int main(int argc, char **argv)
 			list = 1;
 			break;
 		case OPT_OUTPUT_ALL:
-			list = 1;
 			for (ncolumns = 0; ncolumns < ARRAY_SIZE(infos); ncolumns++)
 				columns[ncolumns] = ncolumns;
 			break;
@@ -894,7 +822,8 @@ int main(int argc, char **argv)
 		else
 			act = A_SHOW_ONE;
 
-		if (loopcxt_set_device(&lc, argv[optind]))
+		if (!is_loopdev(argv[optind]) ||
+		    loopcxt_set_device(&lc, argv[optind]))
 			err(EXIT_FAILURE, _("%s: failed to use device"),
 					argv[optind]);
 		optind++;
@@ -934,7 +863,7 @@ int main(int argc, char **argv)
 
 	switch (act) {
 	case A_CREATE:
-		res = create_loop(&lc, no_overlap, lo_flags, flags, file, refname,
+		res = create_loop(&lc, no_overlap, lo_flags, flags, file,
 				  offset, sizelimit, blocksize);
 		if (res == 0) {
 			if (showdev)
@@ -945,7 +874,8 @@ int main(int argc, char **argv)
 	case A_DELETE:
 		res = delete_loop(&lc);
 		while (optind < argc) {
-			if (loopcxt_set_device(&lc, argv[optind]))
+			if (!is_loopdev(argv[optind]) ||
+			    loopcxt_set_device(&lc, argv[optind]))
 				warn(_("%s: failed to use device"),
 						argv[optind]);
 			optind++;
@@ -958,8 +888,7 @@ int main(int argc, char **argv)
 	case A_FIND_FREE:
 		res = find_unused(&lc);
 		if (!res)
-			printf("%s%s\n", loopcxt_get_device(&lc),
-				loopcxt_is_lost(&lc) ? " (lost)" : "");
+			printf("%s\n", loopcxt_get_device(&lc));
 		break;
 	case A_SHOW:
 		if (list)
@@ -999,13 +928,7 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	if (res && (act == A_SET_CAPACITY
-		    || act == A_CREATE
-		    || act == A_SET_DIRECT_IO
-		    || act == A_SET_BLOCKSIZE)
-	    && loopcxt_is_lost(&lc))
-		warn_lost(&lc);
-
 	loopcxt_deinit(&lc);
 	return res ? EXIT_FAILURE : EXIT_SUCCESS;
 }
+

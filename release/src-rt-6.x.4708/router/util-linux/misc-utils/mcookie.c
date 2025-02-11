@@ -1,8 +1,4 @@
-/*
- * No copyright is claimed.  This code is in the public domain; do with
- * it what you wish.
- *
- * mcookie.c -- Generates random numbers for xauth
+/* mcookie.c -- Generates random numbers for xauth
  * Created: Fri Feb  3 10:42:48 1995 by faith@cs.unc.edu
  * Revised: Fri Mar 19 07:48:01 1999 by faith@acm.org
  * Public Domain 1995, 1999 Rickard E. Faith (faith@acm.org)
@@ -95,12 +91,12 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -v, --verbose         explain what is being done\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(23));
+	printf(USAGE_HELP_OPTIONS(23));
 
 	fputs(USAGE_ARGUMENTS, out);
-	fprintf(out, USAGE_ARG_SIZE(_("<num>")));
+	printf(USAGE_ARG_SIZE(_("<num>")));
 
-	fprintf(out, USAGE_MAN_TAIL("mcookie(1)"));
+	printf(USAGE_MAN_TAIL("mcookie(1)"));
 
 	exit(EXIT_SUCCESS);
 }

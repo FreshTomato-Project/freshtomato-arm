@@ -9,7 +9,7 @@
 
 #include "blkidP.h"
 
-enum blkid_endianness {
+enum BLKID_ENDIANNESS {
 	BLKID_ENDIANNESS_LITTLE,
 	BLKID_ENDIANNESS_BIG,
 };
@@ -128,21 +128,9 @@ int blkid_probe_set_block_size(blkid_probe pr, unsigned block_size);
 int blkid_probe_set_fssize(blkid_probe pr, uint64_t size);
 int blkid_probe_set_fslastblock(blkid_probe pr, uint64_t lastblock);
 int blkid_probe_set_fsblocksize(blkid_probe pr, uint32_t block_size);
-int blkid_probe_set_fsendianness(blkid_probe pr, enum blkid_endianness endianness);
+int blkid_probe_set_fsendianness(blkid_probe pr, enum BLKID_ENDIANNESS endianness);
 
 extern int blkid_probe_is_bitlocker(blkid_probe pr);
 extern int blkid_probe_is_ntfs(blkid_probe pr);
-
-/*
- * utility functions
- */
-static inline int blkid32_to_cpu(enum blkid_endianness e, uint32_t i)
-{
-	if (e == BLKID_ENDIANNESS_LITTLE)
-		return le32_to_cpu(i);
-	else if (e == BLKID_ENDIANNESS_BIG)
-		return be32_to_cpu(i);
-	abort();
-}
 
 #endif /* _BLKID_SUPERBLOCKS_H */

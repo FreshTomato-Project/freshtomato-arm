@@ -165,29 +165,17 @@ static int tmptgt_cleanup(struct hookset_data *hsd)
 static int do_mount_subdir(
 			struct libmnt_context *cxt,
 			struct hookset_data *hsd,
-			const char *root)
+			const char *root,
+			const char *target)
 {
 	int rc = 0;
 	const char *subdir = hsd->subdir;
-	const char *target;
 
 #ifdef USE_LIBMOUNT_MOUNTFD_SUPPORT
-	struct libmnt_sysapi *api = mnt_context_get_sysapi(cxt);
+	struct libmnt_sysapi *api;
 
-	/* fallback only; necessary when hook_mount.c during preparation
-	 * cannot open the tree -- for example when we call /sbin/mount.<type> */
-	if (api && api->fd_tree < 0) {
-		api->fd_tree = mnt_context_open_tree(cxt, NULL, (unsigned long) -1);
-		if (api->fd_tree < 0)
-			return api->fd_tree;
-	}
-#endif
-	/* reset to the original mountpoint */
-	mnt_fs_set_target(cxt->fs, hsd->org_target);
-	target = mnt_fs_get_target(cxt->fs);
-
-#ifdef USE_LIBMOUNT_MOUNTFD_SUPPORT
-	if (api && api->fd_tree >= 0) {
+	api = mnt_context_get_sysapi(cxt);
+	if (api) {
 		/* FD based way - unfortunately, it's impossible to open
 		 * sub-directory on not-yet attached mount. It means
 		 * hook_mount.c attaches FS to temporary directory, and we
@@ -198,7 +186,7 @@ static int do_mount_subdir(
 		 */
 		int fd;
 
-		DBG(HOOK, ul_debug("attach subdir '%s'", subdir));
+		DBG(HOOK, ul_debug("attach subdir  %s", subdir));
 		fd = open_tree(api->fd_tree, subdir,
 					OPEN_TREE_CLOEXEC | OPEN_TREE_CLONE);
 		set_syscall_status(cxt, "open_tree", fd >= 0);
@@ -268,8 +256,13 @@ static int hook_mount_post(
 	if (!hsd || !hsd->subdir)
 		return 0;
 
+	/* reset to the original mountpoint */
+	mnt_fs_set_target(cxt->fs, hsd->org_target);
+
 	/* bind subdir to the real target, umount temporary target */
-	rc = do_mount_subdir(cxt, hsd, MNT_PATH_TMPTGT);
+	rc = do_mount_subdir(cxt, hsd,
+			MNT_PATH_TMPTGT,
+			mnt_fs_get_target(cxt->fs));
 	if (rc)
 		return rc;
 

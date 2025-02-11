@@ -95,9 +95,9 @@ static void __attribute__((__noreturn__)) usage(void)
 		       " -l                  this option is silently ignored\n"
 		       " --lock[=<mode>]     use exclusive device lock (yes, no or nonblock)\n"
 		       ));
-	fprintf(out, USAGE_HELP_OPTIONS(21));
+	printf(USAGE_HELP_OPTIONS(21));
 
-	fprintf(out, USAGE_MAN_TAIL("mkfs.bfs(8)"));
+	printf(USAGE_MAN_TAIL("mkfs.bfs(8)"));
 	exit(EXIT_SUCCESS);
 }
 

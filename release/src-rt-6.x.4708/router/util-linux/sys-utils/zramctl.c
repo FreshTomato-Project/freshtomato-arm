@@ -559,10 +559,10 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -t, --streams <number>    number of compression streams\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(27));
+	printf(USAGE_HELP_OPTIONS(27));
 
 	fputs(USAGE_ARGUMENTS, out);
-	fprintf(out, USAGE_ARG_SIZE(_("<size>")));
+	printf(USAGE_ARG_SIZE(_("<size>")));
 
 	fputs(_(" <alg> specify algorithm, supported are:\n"), out);
 	fputs(_("   lzo, lz4, lz4hc, deflate, 842 and zstd\n"), out);
@@ -572,7 +572,7 @@ static void __attribute__((__noreturn__)) usage(void)
 	for (i = 0; i < ARRAY_SIZE(infos); i++)
 		fprintf(out, " %11s  %s\n", infos[i].name, _(infos[i].help));
 
-	fprintf(out, USAGE_MAN_TAIL("zramctl(8)"));
+	printf(USAGE_MAN_TAIL("zramctl(8)"));
 	exit(EXIT_SUCCESS);
 }
 

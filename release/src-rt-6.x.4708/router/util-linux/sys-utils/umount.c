@@ -107,8 +107,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_(" -N, --namespace <ns>    perform umount in another namespace\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fprintf(out, USAGE_HELP_OPTIONS(25));
-	fprintf(out, USAGE_MAN_TAIL("umount(8)"));
+	printf(USAGE_HELP_OPTIONS(25));
+	printf(USAGE_MAN_TAIL("umount(8)"));
 
 	exit(MNT_EX_SUCCESS);
 }
@@ -656,3 +656,4 @@ int main(int argc, char **argv)
 
 	return (rc < 256) ? rc : 255;
 }
+

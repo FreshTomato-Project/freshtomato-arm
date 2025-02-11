@@ -25,7 +25,6 @@
 #include <inttypes.h>
 #include <wchar.h>
 #include <errno.h>
-#include <time.h>
 #include <sys/ioctl.h>
 #include <sys/mount.h>
 
@@ -126,13 +125,7 @@ static int hlp_fsopen_ok(void)
 	return 0;
 }
 
-static int hlp_sz_time(void)
-{
-	printf("%zu\n", sizeof(time_t));
-	return 0;
-}
-
-static const mntHlpfnc hlps[] =
+static mntHlpfnc hlps[] =
 {
 	{ "WORDSIZE",	hlp_wordsize	},
 	{ "pagesize",	hlp_pagesize	},
@@ -146,14 +139,13 @@ static const mntHlpfnc hlps[] =
 	{ "wcsspn-ok",  hlp_wcsspn_ok   },
 	{ "enotty-ok",  hlp_enotty_ok   },
 	{ "fsopen-ok",  hlp_fsopen_ok   },
-	{ "sz(time_t)", hlp_sz_time     },
 	{ NULL, NULL }
 };
 
 int main(int argc, char **argv)
 {
 	int re = 0;
-	const mntHlpfnc *fn;
+	mntHlpfnc *fn;
 
 	if (argc == 1) {
 		for (fn = hlps; fn->name; fn++) {

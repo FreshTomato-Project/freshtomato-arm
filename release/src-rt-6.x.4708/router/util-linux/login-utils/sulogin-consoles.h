@@ -44,10 +44,6 @@ struct console {
 	pid_t pid;
 	struct chardata cp;
 	struct termios tio;
-#ifdef HAVE_LIBSELINUX
-	char *reset_tty_context;
-	char *user_tty_context;
-#endif
 };
 
 extern int detect_consoles(const char *device, int fallback,

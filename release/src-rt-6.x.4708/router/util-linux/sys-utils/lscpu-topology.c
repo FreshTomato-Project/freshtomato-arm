@@ -1,14 +1,3 @@
-/*
- * SPDX-License-Identifier: GPL-2.0-or-later
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * Copyright (C) 2008 Cai Qian <qcai@redhat.com>
- * Copyright (C) 2008-2023 Karel Zak <kzak@redhat.com>
- */
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -253,8 +242,7 @@ struct lscpu_cache *lscpu_cpu_get_cache(struct lscpu_cxt *cxt,
 	for (i = 0; i < cxt->ncaches; i++) {
 		struct lscpu_cache *ca = &cxt->caches[i];
 
-		if (ca->sharedmap &&
-		    strcmp(ca->name, name) == 0 &&
+		if (strcmp(ca->name, name) == 0 &&
 		    CPU_ISSET_S(cpu->logical_id, cxt->setsize, ca->sharedmap))
 			return ca;
 	}
@@ -286,8 +274,8 @@ static struct lscpu_cache *add_cache(struct lscpu_cxt *cxt,
 	struct lscpu_cache *ca;
 
 	cxt->ncaches++;
-	cxt->caches = xreallocarray(cxt->caches,
-				    cxt->ncaches, sizeof(*cxt->caches));
+	cxt->caches = xrealloc(cxt->caches,
+			       cxt->ncaches * sizeof(*cxt->caches));
 
 	ca = &cxt->caches[cxt->ncaches - 1];
 	memset(ca, 0 , sizeof(*ca));

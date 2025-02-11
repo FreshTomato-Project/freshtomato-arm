@@ -1,16 +1,4 @@
-/*
- * SPDX-License-Identifier: GPL-2.0-or-later
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * Copyright (C) 2012-2023 Karel Zak <kzak@redhat.com>
- *
- * Original implementation from Linux 0.99, without License and copyright in
- * the code. Karel Zak rewrote the code under GPL-2.0-or-later.
- */
+
 #include "c.h"
 #include "nls.h"
 #include "xalloc.h"
@@ -97,7 +85,7 @@ static size_t ulct;
 
 void add_label(const char *label)
 {
-	llist = xreallocarray(llist, ++llct, sizeof(char *));
+	llist = xrealloc(llist, (++llct) * sizeof(char *));
 	llist[llct - 1] = label;
 }
 
@@ -113,7 +101,7 @@ size_t numof_labels(void)
 
 void add_uuid(const char *uuid)
 {
-	ulist = xreallocarray(ulist, ++ulct, sizeof(char *));
+	ulist = xrealloc(ulist, (++ulct) * sizeof(char *));
 	ulist[ulct - 1] = uuid;
 }
 

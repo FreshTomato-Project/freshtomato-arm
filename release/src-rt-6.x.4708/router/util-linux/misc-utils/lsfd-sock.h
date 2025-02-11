@@ -43,7 +43,6 @@ struct sock {
 	struct file file;
 	char *protoname;
 	struct sock_xinfo *xinfo;
-	struct ipc_endpoint endpoint;
 };
 
 struct sock_xinfo_class {
@@ -61,7 +60,6 @@ struct sock_xinfo_class {
 			    int,
 			    size_t,
 			    char **str);
-	struct ipc_class *(*get_ipc_class)(struct sock_xinfo *, struct sock *);
 
 	void (*free)(struct sock_xinfo *);
 };
@@ -69,6 +67,6 @@ struct sock_xinfo_class {
 void initialize_sock_xinfos(void);
 void finalize_sock_xinfos(void);
 
-struct sock_xinfo *get_sock_xinfo(ino_t inode);
+struct sock_xinfo *get_sock_xinfo(ino_t netns_inode);
 
 #endif /* UTIL_LINUX_LSFD_SOCK_H */

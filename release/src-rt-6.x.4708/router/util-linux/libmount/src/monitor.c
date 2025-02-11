@@ -64,8 +64,6 @@ struct libmnt_monitor {
 	int			fd;		/* public monitor file descriptor */
 
 	struct list_head	ents;
-
-	unsigned int		kernel_veiled: 1;
 };
 
 struct monitor_opers {
@@ -228,16 +226,18 @@ static int userspace_add_watch(struct monitor_entry *me, int *final, int *fd)
 	assert(me->path);
 
 	/*
-	 * libmount uses utab.event file to monitor and control utab updates
+	 * libmount uses rename(2) to atomically update utab, monitor
+	 * rename changes is too tricky. It seems better to monitor utab
+	 * lockfile close.
 	 */
-	if (asprintf(&filename, "%s.event", me->path) <= 0) {
-		rc = -ENOMEM;
+	if (asprintf(&filename, "%s.lock", me->path) <= 0) {
+		rc = -errno;
 		goto done;
 	}
 
-	/* try event file if already exists */
+	/* try lock file if already exists */
 	errno = 0;
-	wd = inotify_add_watch(me->fd, filename, IN_CLOSE_WRITE);
+	wd = inotify_add_watch(me->fd, filename, IN_CLOSE_NOWRITE);
 	if (wd >= 0) {
 		DBG(MONITOR, ul_debug(" added inotify watch for %s [fd=%d]", filename, wd));
 		rc = 0;
@@ -256,7 +256,7 @@ static int userspace_add_watch(struct monitor_entry *me, int *final, int *fd)
 		if (!*filename)
 			break;
 
-		/* try directory where is the event file */
+		/* try directory where is the lock file */
 		errno = 0;
 		wd = inotify_add_watch(me->fd, filename, IN_CREATE|IN_ISDIR);
 		if (wd >= 0) {
@@ -339,10 +339,10 @@ static int userspace_event_verify(struct libmnt_monitor *mn,
 			e = (const struct inotify_event *) p;
 			DBG(MONITOR, ul_debugobj(mn, " inotify event 0x%x [%s]\n", e->mask, e->len ? e->name : ""));
 
-			if (e->mask & IN_CLOSE_WRITE)
+			if (e->mask & IN_CLOSE_NOWRITE)
 				status = 1;
 			else {
-				/* add watch for the event file */
+				/* event on lock file */
 				userspace_add_watch(me, &status, &fd);
 
 				if (fd != e->wd) {
@@ -473,28 +473,12 @@ err:
 	return rc;
 }
 
-static int kernel_event_verify(struct libmnt_monitor *mn,
-			       struct monitor_entry *me)
-{
-	int status = 1;
-
-	if (!mn || !me || me->fd < 0)
-		return 0;
-
-	if (mn->kernel_veiled && access(MNT_PATH_UTAB ".act", F_OK) == 0) {
-		status = 0;
-		DBG(MONITOR, ul_debugobj(mn, "kernel event veiled"));
-	}
-	return status;
-}
-
 /*
  * kernel monitor operations
  */
 static const struct monitor_opers kernel_opers = {
 	.op_get_fd		= kernel_monitor_get_fd,
 	.op_close_fd		= kernel_monitor_close_fd,
-	.op_event_verify	= kernel_event_verify
 };
 
 /**
@@ -561,28 +545,6 @@ err:
 	free_monitor_entry(me);
 	DBG(MONITOR, ul_debugobj(mn, "failed to allocate kernel monitor [rc=%d]", rc));
 	return rc;
-}
-
-/**
- * mnt_monitor_veil_kernel:
- * @mn: monitor instance
- * @enable: 1 or 0
- *
- * Force monitor to ignore kernel events if the same mount/umount operation
- * will generate an userspace event later. The kernel-only mount operation will
- * be not affected.
- *
- * Return: 0 on success and <0 on error.
- *
- * Since: 2.40
- */
-int mnt_monitor_veil_kernel(struct libmnt_monitor *mn, int enable)
-{
-	if (!mn)
-		return -EINVAL;
-
-	mn->kernel_veiled = enable ? 1 : 0;
-	return 0;
 }
 
 /*
@@ -892,8 +854,6 @@ static struct libmnt_monitor *create_test_monitor(int argc, char *argv[])
 				warn("failed to initialize kernel monitor");
 				goto err;
 			}
-		} else if (strcmp(argv[i], "veil") == 0) {
-			mnt_monitor_veil_kernel(mn, 1);
 		}
 	}
 	if (i == 1) {
@@ -910,8 +870,7 @@ err:
 /*
  * create a monitor and add the monitor fd to epoll
  */
-static int __test_epoll(struct libmnt_test *ts __attribute__((unused)),
-			int argc, char *argv[], int cleanup)
+static int __test_epoll(struct libmnt_test *ts, int argc, char *argv[], int cleanup)
 {
 	int fd, efd = -1, rc = -1;
 	struct epoll_event ev;
@@ -941,14 +900,12 @@ static int __test_epoll(struct libmnt_test *ts __attribute__((unused)),
 		goto done;
 	}
 
+	printf("waiting for changes...\n");
 	do {
 		const char *filename = NULL;
 		struct epoll_event events[1];
-		int n;
+		int n = epoll_wait(efd, events, 1, -1);
 
-		printf("waiting for changes...\n");
-
-		n = epoll_wait(efd, events, 1, -1);
 		if (n < 0) {
 			rc = -errno;
 			warn("polling error");
@@ -990,8 +947,7 @@ static int test_epoll_cleanup(struct libmnt_test *ts, int argc, char *argv[])
 /*
  * create a monitor and wait for a change
  */
-static int test_wait(struct libmnt_test *ts __attribute__((unused)),
-		     int argc, char *argv[])
+static int test_wait(struct libmnt_test *ts, int argc, char *argv[])
 {
 	const char *filename;
 	struct libmnt_monitor *mn = create_test_monitor(argc, argv);
@@ -1006,7 +962,6 @@ static int test_wait(struct libmnt_test *ts __attribute__((unused)),
 		while (mnt_monitor_next_change(mn, &filename, NULL) == 0)
 			printf(" %s: change detected\n", filename);
 
-		printf("waiting for changes...\n");
 	}
 	mnt_unref_monitor(mn);
 	return 0;
@@ -1015,9 +970,9 @@ static int test_wait(struct libmnt_test *ts __attribute__((unused)),
 int main(int argc, char *argv[])
 {
 	struct libmnt_test tss[] = {
-		{ "--epoll", test_epoll, "<userspace kernel veil ...>  monitor in epoll" },
-		{ "--epoll-clean", test_epoll_cleanup, "<userspace kernel veil ...>  monitor in epoll and clean events" },
-		{ "--wait",  test_wait,  "<userspace kernel veil ...>  monitor wait function" },
+		{ "--epoll", test_epoll, "<userspace kernel ...>  monitor in epoll" },
+		{ "--epoll-clean", test_epoll_cleanup, "<userspace kernel ...>  monitor in epoll and clean events" },
+		{ "--wait",  test_wait,  "<userspace kernel ...>  monitor wait function" },
 		{ NULL }
 	};
 

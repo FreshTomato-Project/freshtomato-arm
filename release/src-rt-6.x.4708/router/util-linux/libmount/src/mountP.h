@@ -432,7 +432,6 @@ struct libmnt_context
 
 	int	syscall_status;	/* 1: not called yet, 0: success, <0: -errno */
 	const char *syscall_name;	/* failed syscall name */
-	char	*syscall_errmsg;	/* message from kernel */
 
 	struct libmnt_ns	ns_orig;	/* original namespace */
 	struct libmnt_ns	ns_tgt;		/* target namespace */
@@ -480,27 +479,22 @@ struct libmnt_context
 /* Flags usable with MS_BIND|MS_REMOUNT */
 #define MNT_BIND_SETTABLE	(MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_NOATIME|MS_NODIRATIME|MS_RELATIME|MS_RDONLY|MS_NOSYMFOLLOW)
 
-static inline void set_syscall_status(struct libmnt_context *cxt, const char *name, int x)
-{
-	if (!x) {
-		DBG(CXT, ul_debug("syscall '%s' [%m]", name));
-		cxt->syscall_status = -errno;
-		cxt->syscall_name = name;
-	} else {
-		DBG(CXT, ul_debug("syscall '%s' [success]", name));
-		cxt->syscall_status = 0;
-	}
-}
+#define set_syscall_status(_cxt, _name, _x) __extension__ ({ \
+		if (!(_x)) { \
+			DBG(CXT, ul_debug("syscall '%s' [%m]", _name)); \
+			(_cxt)->syscall_status = -errno; \
+			(_cxt)->syscall_name = (_name); \
+		} else { \
+			DBG(CXT, ul_debug("syscall '%s' [success]", _name)); \
+			(_cxt)->syscall_status = 0; \
+		} \
+	})
 
-static inline void reset_syscall_status(struct libmnt_context *cxt)
-{
-	DBG(CXT, ul_debug("reset syscall status"));
-	cxt->syscall_status = 0;
-	cxt->syscall_name = NULL;
-
-	free(cxt->syscall_errmsg);
-	cxt->syscall_errmsg = NULL;
-}
+#define reset_syscall_status(_cxt)	__extension__ ({ \
+		DBG(CXT, ul_debug("reset syscall status")); \
+		(_cxt)->syscall_status = 0; \
+		(_cxt)->syscall_name = NULL; \
+	})
 
 /* optmap.c */
 extern const struct libmnt_optmap *mnt_optmap_get_entry(
@@ -512,7 +506,6 @@ extern const struct libmnt_optmap *mnt_optmap_get_entry(
 
 /* optstr.c */
 extern int mnt_optstr_remove_option_at(char **optstr, char *begin, char *end);
-extern int mnt_optstr_get_missing(const char *optstr, const char *wanted, char **missing);
 
 extern int mnt_buffer_append_option(struct ul_buffer *buf,
                         const char *name, size_t namesz,
@@ -625,8 +618,6 @@ extern struct libmnt_context *mnt_copy_context(struct libmnt_context *o);
 extern int mnt_context_utab_writable(struct libmnt_context *cxt);
 extern const char *mnt_context_get_writable_tabpath(struct libmnt_context *cxt);
 
-extern int mnt_context_within_helper(struct libmnt_context *cxt);
-
 extern int mnt_context_get_mountinfo(struct libmnt_context *cxt, struct libmnt_table **tb);
 extern int mnt_context_get_mountinfo_for_target(struct libmnt_context *cxt,
 				    struct libmnt_table **mountinfo, const char *tgt);
@@ -668,11 +659,9 @@ extern int mnt_context_apply_fs(struct libmnt_context *cxt, struct libmnt_fs *fs
 extern struct libmnt_optlist *mnt_context_get_optlist(struct libmnt_context *cxt);
 
 /* tab_update.c */
-extern int mnt_update_emit_event(struct libmnt_update *upd);
 extern int mnt_update_set_filename(struct libmnt_update *upd, const char *filename);
-extern int mnt_update_already_done(struct libmnt_update *upd);
-extern int mnt_update_start(struct libmnt_update *upd);
-extern int mnt_update_end(struct libmnt_update *upd);
+extern int mnt_update_already_done(struct libmnt_update *upd,
+				   struct libmnt_lock *lc);
 
 #if __linux__
 /* btrfs.c */
@@ -692,9 +681,6 @@ static inline struct libmnt_sysapi *mnt_context_get_sysapi(struct libmnt_context
 {
 	return mnt_context_get_hookset_data(cxt, &hookset_mount);
 }
-
-int mnt_context_open_tree(struct libmnt_context *cxt, const char *path, unsigned long mflg);
-
 #endif
 
 #endif /* _LIBMOUNT_PRIVATE_H */

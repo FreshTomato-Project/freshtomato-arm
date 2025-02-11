@@ -287,7 +287,7 @@ static int nextnumber(const char *str, char **end, unsigned int *result)
  */
 int cpulist_parse(const char *str, cpu_set_t *set, size_t setsize, int fail)
 {
-	const size_t max = cpuset_nbits(setsize);
+	size_t max = cpuset_nbits(setsize);
 	const char *p, *q;
 	char *end = NULL;
 
@@ -326,12 +326,8 @@ int cpulist_parse(const char *str, cpu_set_t *set, size_t setsize, int fail)
 		if (!(a <= b))
 			return 1;
 		while (a <= b) {
-			if (a >= max) {
-				if (fail)
-					return 2;
-				else
-					break;
-			}
+			if (fail && (a >= max))
+				return 2;
 			CPU_SET_S(a, setsize, set);
 			a += s;
 		}

@@ -131,8 +131,8 @@ int blkdev_is_cdrom(int fd);
 /* get device's geometry - legacy */
 int blkdev_get_geometry(int fd, unsigned int *h, unsigned int *s);
 
-/* SCSI device types.  Copied almost as-is from kernel header
- * (include/scsi/scsi_proto.h). */
+/* SCSI device types.  Copied almost as-is from kernel header.
+ * http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/include/scsi/scsi.h */
 #define SCSI_TYPE_DISK			0x00
 #define SCSI_TYPE_TAPE			0x01
 #define SCSI_TYPE_PRINTER		0x02
@@ -156,9 +156,7 @@ int blkdev_lock(int fd, const char *devname, const char *lockmode);
 #ifdef HAVE_LINUX_BLKZONED_H
 struct blk_zone_report *blkdev_get_zonereport(int fd, uint64_t sector, uint32_t nzones);
 #else
-static inline struct blk_zone_report *blkdev_get_zonereport(int fd __attribute__((unused)),
-							    uint64_t sector __attribute__((unused)),
-							    uint32_t nzones __attribute__((unused)))
+static inline struct blk_zone_report *blkdev_get_zonereport(int fd, uint64_t sector, uint32_t nzones)
 {
 	return NULL;
 }

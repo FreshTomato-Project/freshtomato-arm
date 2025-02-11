@@ -20,7 +20,6 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <errno.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -49,7 +48,6 @@
 #include "optutils.h"
 #include "mangle.h"
 #include "buffer.h"
-#include "column-list-table.h"
 
 #include "findmnt.h"
 
@@ -62,10 +60,6 @@ enum {
 	COL_FSTYPE,
 	COL_FS_OPTIONS,
 	COL_ID,
-	COL_INO_AVAIL,
-	COL_INO_TOTAL,
-	COL_INO_USED,
-	COL_INO_USEPERC,
 	COL_LABEL,
 	COL_MAJMIN,
 	COL_OLD_OPTIONS,
@@ -96,7 +90,7 @@ enum {
 
 /* column names */
 struct colinfo {
-	const char	* const name;	/* header */
+	const char	*name;		/* header */
 	double		whint;		/* width hint (N < 1 is in percent of termwidth) */
 	int		flags;		/* libsmartcols flags */
 	const char      *help;		/* column description */
@@ -107,16 +101,12 @@ struct colinfo {
 /* columns descriptions (don't use const, this is writable) */
 static struct colinfo infos[] = {
 	[COL_ACTION]       = { "ACTION",         10, SCOLS_FL_STRICTWIDTH, N_("action detected by --poll") },
-	[COL_AVAIL]        = { "AVAIL",           5, SCOLS_FL_RIGHT, N_("filesystem size available, use <number> if --bytes is given") },
+	[COL_AVAIL]        = { "AVAIL",           5, SCOLS_FL_RIGHT, N_("filesystem size available") },
 	[COL_FREQ]         = { "FREQ",            1, SCOLS_FL_RIGHT, N_("dump(8) period in days [fstab only]") },
 	[COL_FSROOT]       = { "FSROOT",       0.25, SCOLS_FL_NOEXTREMES, N_("filesystem root") },
 	[COL_FSTYPE]       = { "FSTYPE",       0.10, SCOLS_FL_TRUNC, N_("filesystem type") },
 	[COL_FS_OPTIONS]   = { "FS-OPTIONS",   0.10, SCOLS_FL_TRUNC, N_("FS specific mount options") },
 	[COL_ID]           = { "ID",              2, SCOLS_FL_RIGHT, N_("mount ID") },
-	[COL_INO_AVAIL]    = { "INO.AVAIL",       5, SCOLS_FL_RIGHT, N_("number of available inodes") },
-	[COL_INO_TOTAL]    = { "INO.TOTAL",       5, SCOLS_FL_RIGHT, N_("total number of inodes") },
-	[COL_INO_USED]     = { "INO.USED",        5, SCOLS_FL_RIGHT, N_("number of used inodes") },
-	[COL_INO_USEPERC]  = { "INO.USE%",        3, SCOLS_FL_RIGHT, N_("percentage of INO.USED divided by INO.TOTAL") },
 	[COL_LABEL]        = { "LABEL",        0.10, 0, N_("filesystem label") },
 	[COL_MAJMIN]       = { "MAJ:MIN",         6, 0, N_("major:minor device number") },
 	[COL_OLD_OPTIONS]  = { "OLD-OPTIONS",  0.10, SCOLS_FL_TRUNC, N_("old mount options saved by --poll") },
@@ -128,12 +118,12 @@ static struct colinfo infos[] = {
 	[COL_PARTUUID]     = { "PARTUUID",       36, 0, N_("partition UUID") },
 	[COL_PASSNO]       = { "PASSNO",          1, SCOLS_FL_RIGHT, N_("pass number on parallel fsck(8) [fstab only]") },
 	[COL_PROPAGATION]  = { "PROPAGATION",  0.10, 0, N_("VFS propagation flags") },
-	[COL_SIZE]         = { "SIZE",            5, SCOLS_FL_RIGHT, N_("filesystem size, use <number> if --bytes is given") },
+	[COL_SIZE]         = { "SIZE",            5, SCOLS_FL_RIGHT, N_("filesystem size") },
 	[COL_SOURCES]      = { "SOURCES",      0.25, SCOLS_FL_WRAP, N_("all possible source devices") },
 	[COL_SOURCE]       = { "SOURCE",       0.25, SCOLS_FL_NOEXTREMES, N_("source device") },
 	[COL_TARGET]       = { "TARGET",       0.30, SCOLS_FL_TREE| SCOLS_FL_NOEXTREMES, N_("mountpoint") },
 	[COL_TID]          = { "TID",             4, SCOLS_FL_RIGHT, N_("task ID") },
-	[COL_USED]         = { "USED",            5, SCOLS_FL_RIGHT, N_("filesystem size used, use <number> if --bytes is given") },
+	[COL_USED]         = { "USED",            5, SCOLS_FL_RIGHT, N_("filesystem size used") },
 	[COL_USEPERC]      = { "USE%",            3, SCOLS_FL_RIGHT, N_("filesystem use percentage") },
 	[COL_UUID]         = { "UUID",           36, 0, N_("filesystem UUID") },
 	[COL_VFS_OPTIONS]  = { "VFS-OPTIONS",  0.20, SCOLS_FL_TRUNC, N_("VFS specific mount options") }
@@ -485,7 +475,6 @@ static char *get_vfs_attr(struct libmnt_fs *fs, int sizetype)
 	struct statvfs buf;
 	uint64_t vfs_attr = 0;
 	char *sizestr;
-	bool no_bytes = false;
 
 	if (statvfs(mnt_fs_get_target(fs), &buf) != 0)
 		return NULL;
@@ -508,38 +497,11 @@ static char *get_vfs_attr(struct libmnt_fs *fs, int sizetype)
 				(double)(buf.f_blocks - buf.f_bfree) /
 				buf.f_blocks * 100);
 		return sizestr;
-	case COL_INO_AVAIL:
-		/* Quoted from startvfs(3):
-		 *
-		 *   Under Linux, f_favail is always the same as
-		 *   f_ffree, and there's no way for a filesystem to
-		 *   report otherwise.  This is not an issue, since no
-		 *   filesystems with an inode root reservation exist.
-		 */
-		no_bytes = true;
-		vfs_attr = buf.f_ffree;
-		break;
-	case COL_INO_TOTAL:
-		no_bytes = true;
-		vfs_attr = buf.f_files;
-		break;
-	case COL_INO_USED:
-		no_bytes = true;
-		vfs_attr = buf.f_files - buf.f_ffree;
-		break;
-	case COL_INO_USEPERC:
-		if (buf.f_files == 0)
-			return xstrdup("-");
-
-		xasprintf(&sizestr, "%.0f%%",
-				(double)(buf.f_files - buf.f_ffree) /
-				buf.f_files * 100);
-		return sizestr;
 	}
 
 	if (!vfs_attr)
 		sizestr = xstrdup("0");
-	else if ((flags & FL_BYTES) || no_bytes)
+	else if (flags & FL_BYTES)
 		xasprintf(&sizestr, "%ju", vfs_attr);
 	else
 		sizestr = size_to_human_string(SIZE_SUFFIX_1LETTER, vfs_attr);
@@ -549,9 +511,10 @@ static char *get_vfs_attr(struct libmnt_fs *fs, int sizetype)
 
 /* reads sources from libmount/libblkid
  */
-static char *get_data_col_sources(struct libmnt_fs *fs, int evaluate, size_t *datasiz)
+static char *get_data_col_sources(struct libmnt_fs *fs, int evaluate)
 {
 	const char *tag = NULL, *p = NULL;
+	int i = 0;
 	const char *device = NULL;
 	char *val = NULL;
 	blkid_dev_iterate iter;
@@ -601,13 +564,15 @@ static char *get_data_col_sources(struct libmnt_fs *fs, int evaluate, size_t *da
 		dev = blkid_verify(blk_cache, dev);
 		if (!dev)
 			continue;
+		if (i != 0)
+			ul_buffer_append_data(&buf, "\n", 1);
 		ul_buffer_append_string(&buf, blkid_dev_devname(dev));
-		ul_buffer_append_data(&buf, "\0", 1);
+		i++;
 	}
 	blkid_dev_iterate_end(iter);
 	free(val);
 
-	return ul_buffer_get_data(&buf, datasiz, NULL);
+	return ul_buffer_get_data(&buf, NULL, NULL);
 
 nothing:
 	free(val);
@@ -616,7 +581,7 @@ nothing:
 
 /* reads FS data from libmount
  */
-static char *get_data(struct libmnt_fs *fs, int num, size_t *datasiz)
+static char *get_data(struct libmnt_fs *fs, int num)
 {
 	char *str = NULL;
 	int col_id = get_column_id(num);
@@ -624,7 +589,7 @@ static char *get_data(struct libmnt_fs *fs, int num, size_t *datasiz)
 	switch (col_id) {
 	case COL_SOURCES:
 		/* print all devices with the same tag (LABEL, UUID) */
-		str = get_data_col_sources(fs, flags & FL_EVALUATE, datasiz);
+		str = get_data_col_sources(fs, flags & FL_EVALUATE);
 		if (str)
 			break;
 
@@ -707,10 +672,6 @@ static char *get_data(struct libmnt_fs *fs, int num, size_t *datasiz)
 	case COL_AVAIL:
 	case COL_USED:
 	case COL_USEPERC:
-	case COL_INO_TOTAL:
-	case COL_INO_AVAIL:
-	case COL_INO_USED:
-	case COL_INO_USEPERC:
 		str = get_vfs_attr(fs, col_id);
 		break;
 	case COL_FSROOT:
@@ -769,8 +730,7 @@ static char *get_data(struct libmnt_fs *fs, int num, size_t *datasiz)
 static char *get_tabdiff_data(struct libmnt_fs *old_fs,
 				    struct libmnt_fs *new_fs,
 				    int change,
-				    int num,
-				    size_t *datasiz)
+				    int num)
 {
 	char *str = NULL;
 
@@ -809,28 +769,12 @@ static char *get_tabdiff_data(struct libmnt_fs *old_fs,
 		break;
 	default:
 		if (new_fs)
-			str = get_data(new_fs, num, datasiz);
+			str = get_data(new_fs, num);
 		else
-			str = get_data(old_fs, num, datasiz);
+			str = get_data(old_fs, num);
 		break;
 	}
 	return str;
-}
-
-static void set_line_data(struct libscols_line *ln, size_t i, char *data, size_t datasiz)
-{
-	int rc;
-	struct libscols_cell *ce;
-
-	ce = scols_line_get_cell(ln, i);
-	if (!ce)
-		return;
-	if (datasiz)
-		rc = scols_cell_refer_memory(ce, data, datasiz);
-	else
-		rc = scols_cell_refer_data(ce, data);
-	if (rc)
-		err(EXIT_FAILURE, _("failed to add output data"));
 }
 
 /* adds one line to the output @tab */
@@ -844,11 +788,8 @@ static struct libscols_line *add_line(struct libscols_table *table, struct libmn
 		err(EXIT_FAILURE, _("failed to allocate output line"));
 
 	for (i = 0; i < ncolumns; i++) {
-		size_t datasiz = 0;
-		char *data = get_data(fs, i, &datasiz);
-
-		if (data)
-			set_line_data(line, i, data, datasiz);
+		if (scols_line_refer_data(line, i, get_data(fs, i)))
+			err(EXIT_FAILURE, _("failed to add output data"));
 	}
 
 	scols_line_set_userdata(line, fs);
@@ -865,11 +806,9 @@ static struct libscols_line *add_tabdiff_line(struct libscols_table *table, stru
 		err(EXIT_FAILURE, _("failed to allocate output line"));
 
 	for (i = 0; i < ncolumns; i++) {
-		size_t datasiz = 0;
-		char *data = get_tabdiff_data(old_fs, new_fs, change, i, &datasiz);
-
-		if (data)
-			set_line_data(line, i, data, datasiz);
+		if (scols_line_refer_data(line, i,
+				get_tabdiff_data(old_fs, new_fs, change, i)))
+			err(EXIT_FAILURE, _("failed to add output data"));
 	}
 
 	return line;
@@ -962,7 +901,7 @@ static int parser_errcb(struct libmnt_table *tb __attribute__ ((__unused__)),
 
 static char **append_tabfile(char **files, int *nfiles, char *filename)
 {
-	files = xreallocarray(files, *nfiles + 1, sizeof(char *));
+	files = xrealloc(files, sizeof(char *) * (*nfiles + 1));
 	files[(*nfiles)++] = filename;
 	return files;
 }
@@ -1369,36 +1308,10 @@ static int uniq_fs_target_cmp(
 	return !mnt_fs_match_target(a, mnt_fs_get_target(b), cache);
 }
 
-static int get_column_json_type(int id, int scols_flags, int *multi)
-{
-	switch (id) {
-	case COL_SIZE:
-	case COL_AVAIL:
-	case COL_USED:
-		if (multi)
-			*multi = 1;
-		if (!(flags & FL_BYTES))
-			break;
-		/* fallthrough */
-	case COL_ID:
-	case COL_PARENT:
-	case COL_FREQ:
-	case COL_PASSNO:
-	case COL_TID:
-		return SCOLS_JSON_NUMBER;
-
-	default:
-		if (scols_flags & SCOLS_FL_WRAP)
-			return SCOLS_JSON_ARRAY_STRING;
-		break;
-	}
-
-	return SCOLS_JSON_STRING;	/* default */
-}
-
 static void __attribute__((__noreturn__)) usage(void)
 {
 	FILE *out = stdout;
+	size_t i;
 
 	fputs(USAGE_HEADER, out);
 	fprintf(out, _(
@@ -1433,14 +1346,13 @@ static void __attribute__((__noreturn__)) usage(void)
 	        "                          to device names\n"), out);
 	fputs(_(" -F, --tab-file <path>  alternative file for -s, -m or -k options\n"), out);
 	fputs(_(" -f, --first-only       print the first found filesystem only\n"), out);
-	fputs(_(" -I, --dfi              imitate the output of df(1) with -i option\n"), out);
 	fputs(_(" -i, --invert           invert the sense of matching\n"), out);
 	fputs(_(" -J, --json             use JSON output format\n"), out);
 	fputs(_(" -l, --list             use list format output\n"), out);
 	fputs(_(" -N, --task <tid>       use alternative namespace (/proc/<tid>/mountinfo file)\n"), out);
 	fputs(_(" -n, --noheadings       don't print column headings\n"), out);
 	fputs(_(" -O, --options <list>   limit the set of filesystems by mount options\n"), out);
-	fputs(_(" -o, --output <list>    output columns (see --list-columns)\n"), out);
+	fputs(_(" -o, --output <list>    the output columns to be shown\n"), out);
 	fputs(_("     --output-all       output all available columns\n"), out);
 	fputs(_(" -P, --pairs            use key=\"value\" output format\n"), out);
 	fputs(_("     --pseudo           print only pseudo-filesystems\n"), out);
@@ -1465,45 +1377,23 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("     --vfs-all          print all VFS options\n"), out);
 
 	fputs(USAGE_SEPARATOR, out);
-	fputs(_(" -H, --list-columns     list the available columns\n"), out);
-	fprintf(out, USAGE_HELP_OPTIONS(24));
+	printf(USAGE_HELP_OPTIONS(24));
 
-	fprintf(out, USAGE_MAN_TAIL("findmnt(8)"));
+	fputs(USAGE_COLUMNS, out);
+	for (i = 0; i < ARRAY_SIZE(infos); i++)
+		fprintf(out, " %11s  %s\n", infos[i].name, _(infos[i].help));
 
-	exit(EXIT_SUCCESS);
-}
-
-static void __attribute__((__noreturn__)) list_colunms(void)
-{
-	size_t i;
-	struct libscols_table *tb = xcolumn_list_table_new("findmnt-columns", stdout,
-						flags & FL_RAW,
-						flags & FL_JSON);
-
-	for (i = 0; i < ARRAY_SIZE(infos); i++) {
-		const struct colinfo *ci = &infos[i];
-		int multi = 0;
-		int json = get_column_json_type(i, ci->flags, &multi);
-
-		xcolumn_list_table_append_line(tb, ci->name,
-			multi ? -1 : json,
-			multi ? "<string|number>" : NULL,
-		       _(ci->help));
-	}
-
-	scols_print_table(tb);
-	scols_unref_table(tb);
+	printf(USAGE_MAN_TAIL("findmnt(8)"));
 
 	exit(EXIT_SUCCESS);
 }
-
 
 int main(int argc, char *argv[])
 {
 	struct libmnt_table *tb = NULL;
 	char **tabfiles = NULL;
 	int direction = MNT_ITER_FORWARD;
-	int verify = 0, collist = 0;
+	int verify = 0;
 	int c, rc = -1, timeout = -1;
 	int ntabfiles = 0, tabtype = 0;
 	char *outarg = NULL;
@@ -1529,7 +1419,6 @@ int main(int argc, char *argv[])
 		{ "canonicalize",   no_argument,       NULL, 'c'		 },
 		{ "direction",	    required_argument, NULL, 'd'		 },
 		{ "df",		    no_argument,       NULL, 'D'		 },
-		{ "dfi",	    no_argument,       NULL, 'I'		 },
 		{ "evaluate",	    no_argument,       NULL, 'e'		 },
 		{ "first-only",	    no_argument,       NULL, 'f'		 },
 		{ "fstab",	    no_argument,       NULL, 's'		 },
@@ -1567,7 +1456,6 @@ int main(int argc, char *argv[])
 		{ "pseudo",	    no_argument,       NULL, FINDMNT_OPT_PSEUDO	 },
 		{ "vfs-all",	    no_argument,       NULL, FINDMNT_OPT_VFS_ALL },
 		{ "shadowed",       no_argument,       NULL, FINDMNT_OPT_SHADOWED },
-		{ "list-columns",   no_argument,       NULL, 'H' },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1594,7 +1482,7 @@ int main(int argc, char *argv[])
 	flags |= FL_TREE;
 
 	while ((c = getopt_long(argc, argv,
-				"AabCcDd:ehIiJfF:o:O:p::PklmM:nN:rst:uvRS:T:Uw:VxyH",
+				"AabCcDd:ehiJfF:o:O:p::PklmM:nN:rst:uvRS:T:Uw:Vxy",
 				longopts, NULL)) != -1) {
 
 		err_exclusive_options(c, longopts, excl, excl_st);
@@ -1630,10 +1518,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'e':
 			flags |= FL_EVALUATE;
-			break;
-		case 'I':
-			flags &= ~FL_TREE;
-			flags |= (FL_DF_INODES | FL_DF);
 			break;
 		case 'i':
 			flags |= FL_INVERT;
@@ -1756,10 +1640,6 @@ int main(int argc, char *argv[])
 		case FINDMNT_OPT_SHADOWED:
 			flags |= FL_SHADOWED;
 			break;
-
-		case 'H':
-			collist = 1;
-			break;
 		case 'h':
 			usage();
 		case 'V':
@@ -1769,23 +1649,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (collist)
-		list_colunms();		/* print end exit */
-
 	if (!ncolumns && (flags & FL_DF)) {
 		add_column(columns, ncolumns++, COL_SOURCE);
 		add_column(columns, ncolumns++, COL_FSTYPE);
-		if (flags & FL_DF_INODES) {
-			add_column(columns, ncolumns++, COL_INO_TOTAL);
-			add_column(columns, ncolumns++, COL_INO_USED);
-			add_column(columns, ncolumns++, COL_INO_AVAIL);
-			add_column(columns, ncolumns++, COL_INO_USEPERC);
-		} else {
-			add_column(columns, ncolumns++, COL_SIZE);
-			add_column(columns, ncolumns++, COL_USED);
-			add_column(columns, ncolumns++, COL_AVAIL);
-			add_column(columns, ncolumns++, COL_USEPERC);
-		}
+		add_column(columns, ncolumns++, COL_SIZE);
+		add_column(columns, ncolumns++, COL_USED);
+		add_column(columns, ncolumns++, COL_AVAIL);
+		add_column(columns, ncolumns++, COL_USEPERC);
 		add_column(columns, ncolumns++, COL_TARGET);
 	}
 
@@ -1921,13 +1791,36 @@ int main(int argc, char *argv[])
 			goto leave;
 		}
 		/* multi-line cells (now used for SOURCES) */
-		if (fl & SCOLS_FL_WRAP)
+		if (fl & SCOLS_FL_WRAP) {
 			scols_column_set_wrapfunc(cl,
-						NULL,
-						scols_wrapzero_nextchunk,
+						scols_wrapnl_chunksize,
+						scols_wrapnl_nextchunk,
 						NULL);
-		if (flags & FL_JSON)
-	                scols_column_set_json_type(cl, get_column_json_type(id, fl, NULL));
+			scols_column_set_safechars(cl, "\n");
+		}
+		if (flags & FL_JSON) {
+			switch (id) {
+			case COL_SIZE:
+			case COL_AVAIL:
+			case COL_USED:
+				if (!(flags & FL_BYTES))
+					break;
+				/* fallthrough */
+			case COL_ID:
+			case COL_PARENT:
+			case COL_FREQ:
+			case COL_PASSNO:
+			case COL_TID:
+				scols_column_set_json_type(cl, SCOLS_JSON_NUMBER);
+				break;
+			default:
+				if (fl & SCOLS_FL_WRAP)
+					scols_column_set_json_type(cl, SCOLS_JSON_ARRAY_STRING);
+				else
+					scols_column_set_json_type(cl, SCOLS_JSON_STRING);
+				break;
+			}
+		}
 	}
 
 	/*

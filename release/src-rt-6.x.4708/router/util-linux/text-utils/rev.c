@@ -79,8 +79,8 @@ static void __attribute__((__noreturn__)) usage(void)
 	fputs(_("Reverse lines characterwise.\n"), out);
 
 	fputs(USAGE_OPTIONS, out);
-	fprintf(out, USAGE_HELP_OPTIONS(16));
-	fprintf(out, USAGE_MAN_TAIL("rev(1)"));
+	printf(USAGE_HELP_OPTIONS(16));
+	printf(USAGE_MAN_TAIL("rev(1)"));
 
 	exit(EXIT_SUCCESS);
 }
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	buf = xreallocarray(NULL, bufsiz, sizeof(wchar_t));
+	buf = xmalloc(bufsiz * sizeof(wchar_t));
 
 	do {
 		if (*argv) {
@@ -173,6 +173,8 @@ int main(int argc, char *argv[])
 		line = 0;
 		while (!feof(fp)) {
 			len = read_line(sep, buf, bufsiz, fp);
+			if (len == 0)
+				continue;
 
 			/* This is my hack from setpwnam.c -janl */
 			while (len == bufsiz && !feof(fp)) {
@@ -180,22 +182,18 @@ int main(int argc, char *argv[])
 				/* So now we double the buffer size */
 				bufsiz *= 2;
 
-				buf = xreallocarray(buf, bufsiz, sizeof(wchar_t));
+				buf = xrealloc(buf, bufsiz * sizeof(wchar_t));
 
 				/* And fill the rest of the buffer */
 				len += read_line(sep, &buf[len], bufsiz/2, fp);
 			}
-			if (ferror(fp)) {
-				warn("%s: %ju", filename, line);
-				rval = EXIT_FAILURE;
-				break;
-			}
-			if (len == 0)
-				continue;
-
 			reverse_str(buf, buf[len - 1] == sep ? len - 1 : len);
 			write_line(buf, len, stdout);
 			line++;
+		}
+		if (ferror(fp)) {
+			warn("%s: %ju", filename, line);
+			rval = EXIT_FAILURE;
 		}
 		if (fp != stdin)
 			fclose(fp);
@@ -204,3 +202,4 @@ int main(int argc, char *argv[])
 	free(buf);
 	return rval;
 }
+

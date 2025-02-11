@@ -182,10 +182,10 @@ static void __attribute__((__noreturn__)) usage(void)
 		" -x, --spaces           convert tabs to spaces\n"
 		" -l, --lines NUM        buffer at least NUM lines\n"
 		));
-	fprintf(out, " -H, --help             %s\n", USAGE_OPTSTR_HELP);
-	fprintf(out, " -V, --version          %s\n", USAGE_OPTSTR_VERSION);
+	printf( " -H, --help             %s\n", USAGE_OPTSTR_HELP);
+	printf( " -V, --version          %s\n", USAGE_OPTSTR_VERSION);
 
-	fprintf(out, USAGE_MAN_TAIL("col(1)"));
+	printf(USAGE_MAN_TAIL("col(1)"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -244,11 +244,11 @@ static void flush_line(struct col_ctl *ctl, struct col_line *l)
 		 */
 		if (sorted_size < l->l_lsize) {
 			sorted_size = l->l_lsize;
-			sorted = xreallocarray(sorted, sorted_size, sizeof(struct col_char));
+			sorted = xrealloc(sorted, sizeof(struct col_char) * sorted_size);
 		}
 		if (count_size <= l->l_max_col) {
 			count_size = l->l_max_col + 1;
-			count = xreallocarray(count, count_size, sizeof(size_t));
+			count = xrealloc(count, sizeof(size_t) * count_size);
 		}
 		memset(count, 0, sizeof(size_t) * l->l_max_col + 1);
 		for (i = nchars, c = l->l_line; c && 0 < i; i--, c++)

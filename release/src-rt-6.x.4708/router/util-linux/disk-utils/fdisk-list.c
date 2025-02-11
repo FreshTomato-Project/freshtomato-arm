@@ -449,7 +449,7 @@ void list_available_columns(FILE *out)
 
 	termwidth = get_terminal_width(80);
 
-	fputs(USAGE_COLUMNS, out);
+	fprintf(out, USAGE_COLUMNS);
 
 	while (fdisk_next_label(cxt, &lb) == 0) {
 		size_t width = 6;	/* label name and separators */
@@ -479,24 +479,21 @@ void list_available_columns(FILE *out)
 static int fieldname_to_id(const char *name, size_t namesz)
 {
 	const struct fdisk_field *fl;
-	char *buf;
+	char buf[namesz + 1];
 
 	assert(name);
 	assert(namesz);
 	assert(fields_label);
 
-	buf = strndup(name, namesz);
-	if (!buf)
-		return -1;
+	memcpy(buf, name, namesz);
+	buf[namesz] = '\0';
 
 	fl = fdisk_label_get_field_by_name(fields_label, buf);
 	if (!fl) {
 		warnx(_("%s unknown column: %s"),
 				fdisk_label_get_name(fields_label), buf);
-		free(buf);
 		return -1;
 	}
-	free(buf);
 	return fdisk_field_get_id(fl);
 }
 
@@ -553,3 +550,4 @@ done:
 		*n = fields_nids;
 	return fields_ids;
 }
+

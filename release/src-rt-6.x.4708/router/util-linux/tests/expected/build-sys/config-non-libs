@@ -1,7 +1,4 @@
-lastlog2:  liblastlog2 
-liblastlog2.so.2.0.0:  libsqlite3 
-pam_lastlog2.so:  
-agetty:  libsystemd 
+agetty:  
 blkdiscard:  
 blkpr:  
 blkzone:  
@@ -18,8 +15,6 @@ colcrt:
 colrm:  
 ctrlaltdel:  
 dmesg:  libtinfo 
-enosys:  
-exch:  
 fadvise:  
 fallocate:  
 flock:  
@@ -64,7 +59,6 @@ script:
 scriptlive:  
 scriptreplay:  
 setarch:  
-setpgid:  
 setpriv:  libcap-ng 
 setsid:  
 setterm:  libtinfo 
@@ -77,5 +71,5 @@ ul:  libtinfo
 unshare:  
 utmpdump:  
 waitpid:  
-wall:  libsystemd 
+wall:  
 whereis:  

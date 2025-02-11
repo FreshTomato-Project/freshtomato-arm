@@ -19,8 +19,6 @@
 #include "debug.h"
 #include "buffer.h"
 
-#include <stdbool.h>
-
 #include "libsmartcols.h"
 
 /*
@@ -34,8 +32,6 @@
 #define SCOLS_DEBUG_COL		(1 << 5)
 #define SCOLS_DEBUG_BUFF	(1 << 6)
 #define SCOLS_DEBUG_GROUP	(1 << 7)
-#define SCOLS_DEBUG_FLTR	(1 << 8)
-#define SCOLS_DEBUG_FPARAM	(1 << 9)
 #define SCOLS_DEBUG_ALL		0xFFFF
 
 UL_DEBUG_DECLARE_MASK(libsmartcols);
@@ -84,13 +80,10 @@ struct libscols_symbols {
  */
 struct libscols_cell {
 	char	*data;
-	size_t	datasiz;
 	char	*color;
 	void    *userdata;
 	int	flags;
 	size_t	width;
-
-	unsigned int is_filled : 1;
 };
 
 extern int scols_line_move_cells(struct libscols_line *ln, size_t newn, size_t oldn);
@@ -119,32 +112,26 @@ struct libscols_column {
 	struct libscols_wstat wstat;	/* private __scols_calculate() data */
 
 	int	json_type;	/* SCOLS_JSON_* */
-	int	data_type;	/* SCOLS_DATA_* */
 
 	int	flags;
 	char	*color;		/* default column color */
 	char	*safechars;	/* do not encode this bytes */
+
+	char	*pending_data;
+	size_t	pending_data_sz;
+	char	*pending_data_buf;
 
 	int (*cmpfunc)(struct libscols_cell *,
 		       struct libscols_cell *,
 		       void *);			/* cells comparison function */
 	void *cmpfunc_data;
 
-	/* multi-line cell data wrapping */
-	char *(*wrap_nextchunk)(const struct libscols_column *, char *, void *);
+	size_t (*wrap_chunksize)(const struct libscols_column *,
+			const char *, void *);
+	char *(*wrap_nextchunk)(const struct libscols_column *,
+			char *, void *);
 	void *wrapfunc_data;
 
-	size_t	wrap_datasz;
-	size_t  wrap_datamax;
-	char	*wrap_data;
-	char	*wrap_cur;
-	char    *wrap_next;
-	struct libscols_cell	*wrap_cell;
-
-	void *(*datafunc)(const struct libscols_column *,
-			struct libscols_cell *,
-			void *);
-	void *datafunc_data;
 
 	struct libscols_cell	header;		/* column name with color etc. */
 	char	*shellvar;			/* raw colum name in shell compatible format */
@@ -260,10 +247,6 @@ struct libscols_table {
 
 	const char *cur_color;	/* current active color when printing */
 
-	struct libscols_cell *cur_cell;		/* currently used cell */
-	struct libscols_line *cur_line;		/* currently used line */
-	struct libscols_column *cur_column;	/* currently used column */
-
 	/* flags */
 	unsigned int	ascii		:1,	/* don't use unicode */
 			colors_wanted	:1,	/* enable colors */
@@ -316,18 +299,6 @@ int scols_line_next_group_child(struct libscols_line *ln,
                           struct libscols_iter *itr,
                           struct libscols_line **chld);
 
-/*
- * column.c
- */
-void scols_column_reset_wrap(struct libscols_column *cl);
-int scols_column_next_wrap(     struct libscols_column *cl,
-                                struct libscols_cell *ce,
-                                char **data);
-int scols_column_greatest_wrap( struct libscols_column *cl,
-                                struct libscols_cell *ce,
-                                char **data);
-int scols_column_has_pending_wrap(struct libscols_column *cl);
-int scols_column_move_wrap(struct libscols_column *cl, size_t bytes);
 
 /*
  * table.c
@@ -335,13 +306,6 @@ int scols_column_move_wrap(struct libscols_column *cl, size_t bytes);
 int scols_table_next_group(struct libscols_table *tb,
                           struct libscols_iter *itr,
                           struct libscols_group **gr);
-int scols_table_set_cursor(struct libscols_table *tb,
-                           struct libscols_line *ln,
-                           struct libscols_column *cl,
-                           struct libscols_cell *ce);
-
-#define scols_table_reset_cursor(_t)	scols_table_set_cursor((_t), NULL, NULL, NULL)
-
 
 /*
  * grouping.c
@@ -375,9 +339,10 @@ extern int __scols_calculate(struct libscols_table *tb, struct ul_buffer *buf);
 /*
  * print.c
  */
-int __cursor_to_buffer(struct libscols_table *tb,
-                    struct ul_buffer *buf,
-		    int cal);
+extern int __cell_to_buffer(struct libscols_table *tb,
+                          struct libscols_line *ln,
+                          struct libscols_column *cl,
+                          struct ul_buffer *buf);
 
 void __scols_cleanup_printing(struct libscols_table *tb, struct ul_buffer *buf);
 int __scols_initialize_printing(struct libscols_table *tb, struct ul_buffer *buf);
@@ -486,125 +451,5 @@ static inline int has_group_children(struct libscols_line *ln)
 {
 	return ln && ln->group && !list_empty(&ln->group->gr_children);
 }
-
-/*
- * Filter stuff
- */
-enum filter_holder {
-	F_HOLDER_NONE,
-	F_HOLDER_COLUMN		/* column name */
-};
-
-/* node types */
-enum filter_ntype {
-	F_NODE_PARAM,
-	F_NODE_EXPR
-};
-
-/* expresion types */
-enum filter_etype {
-	F_EXPR_AND,
-	F_EXPR_OR,
-	F_EXPR_NEG,
-
-	F_EXPR_EQ,
-	F_EXPR_NE,
-
-	F_EXPR_LT,
-	F_EXPR_LE,
-	F_EXPR_GT,
-	F_EXPR_GE,
-
-	F_EXPR_REG,
-	F_EXPR_NREG,
-};
-
-struct filter_node {
-	enum filter_ntype type;
-	int refcount;
-};
-
-#define filter_node_get_type(n)	(((struct filter_node *)(n))->type)
-
-struct filter_param;
-struct filter_expr;
-
-struct libscols_counter {
-	char *name;
-	struct list_head counters;
-	struct filter_param *param;
-	struct libscols_filter *filter;
-
-	int func;
-	unsigned long long result;
-
-	unsigned int neg : 1,
-		     has_result : 1;
-};
-
-struct libscols_filter {
-	int refcount;
-	char *errmsg;
-	struct filter_node *root;
-	FILE *src;
-
-	int (*filler_cb)(struct libscols_filter *, struct libscols_line *, size_t, void *);
-	void *filler_data;
-
-	struct list_head params;
-	struct list_head counters;
-};
-
-struct filter_node *__filter_new_node(enum filter_ntype type, size_t sz);
-void filter_ref_node(struct filter_node *n);
-void filter_unref_node(struct filter_node *n);
-
-void filter_dump_node(struct ul_jsonwrt *json, struct filter_node *n);
-int filter_eval_node(struct libscols_filter *fltr, struct libscols_line *ln,
-			struct filter_node *n, int *status);
-/* param */
-int filter_compile_param(struct libscols_filter *fltr, struct filter_param *n);
-void filter_dump_param(struct ul_jsonwrt *json, struct filter_param *n);
-int filter_eval_param(struct libscols_filter *fltr, struct libscols_line *ln,
-			struct filter_param *n, int *status);
-void filter_free_param(struct filter_param *n);
-int filter_param_reset_holder(struct filter_param *n);
-int filter_param_get_datatype(struct filter_param *n);
-
-int filter_next_param(struct libscols_filter *fltr,
-                        struct libscols_iter *itr, struct filter_param **prm);
-
-int filter_compare_params(struct libscols_filter *fltr,
-                          enum filter_etype oper,
-                          struct filter_param *l,
-                          struct filter_param *r,
-                          int *status);
-int filter_cast_param(struct libscols_filter *fltr,
-                      struct libscols_line *ln,
-                      int type,
-                      struct filter_param *n,
-                      struct filter_param **result);
-
-int is_filter_holder_node(struct filter_node *n);
-
-int filter_count_param(struct libscols_filter *fltr,
-                struct libscols_line *ln,
-                struct libscols_counter *ct);
-
-/* expr */
-void filter_free_expr(struct filter_expr *n);
-void filter_dump_expr(struct ul_jsonwrt *json, struct filter_expr *n);
-int filter_eval_expr(struct libscols_filter *fltr, struct libscols_line *ln,
-			struct filter_expr *n, int *status);
-
-/* required by parser */
-struct filter_node *filter_new_param(struct libscols_filter *filter,
-                                 int type,
-				 enum filter_holder holder,
-				 void *data);
-struct filter_node *filter_new_expr(struct libscols_filter *filter,
-                                 enum filter_etype type,
-                                 struct filter_node *left,
-                                 struct filter_node *right);
 
 #endif /* _LIBSMARTCOLS_PRIVATE_H */

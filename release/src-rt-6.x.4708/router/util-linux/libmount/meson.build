@@ -1,9 +1,3 @@
-if not build_libmount
-  mount_dep = disabler()
-  mount_static_dep = disabler()
-  subdir_done()
-endif
-
 dir_libmount = include_directories('.', 'src')
 
 defs = configuration_data()
@@ -76,41 +70,45 @@ lib__mount = static_library(
   '_mount',
   lib_mount_sources,
   include_directories : [dir_include,
-                         dir_libmount],
-  dependencies : [blkid_dep])
+                         dir_libmount,
+                         dir_libblkid])
 
 lib_mount_static = static_library(
   'mount_static',
   link_whole : lib__mount,
-  link_with : [lib_common],
-  dependencies : [blkid_static_dep, realtime_libs],
+  link_with : [lib_common,
+               lib_blkid.get_static_lib()],
+  dependencies : [realtime_libs],
   install : false)
-mount_static_dep = declare_dependency(link_with: lib_mount_static, include_directories: '.')
 
 lib__mount_deps = [
   lib_selinux,
-  cryptsetup_dlopen ? lib_dl : lib_cryptsetup,
+  get_option('cryptsetup-dlopen').enabled() ? lib_dl : lib_cryptsetup,
   realtime_libs
 ]
 lib_mount = library(
   'mount',
   link_whole : lib__mount,
   include_directories : [dir_include,
-                         dir_libmount],
+                         dir_libmount,
+                         dir_libblkid],
   link_depends : libmount_sym,
   version : libmount_version,
   link_args : ['-Wl,--version-script=@0@'.format(libmount_sym_path)],
-  link_with : [lib_common],
-  dependencies : lib__mount_deps + blkid_dep,
+  link_with : [lib_common,
+               lib_blkid],
+  dependencies : lib__mount_deps,
   install : build_libmount)
 mount_dep = declare_dependency(link_with: lib_mount, include_directories: '.')
 
-pkgconfig.generate(lib_mount,
-                    description : 'mount library',
-                    subdirs : 'libmount',
-                    version : pc_version)
-if meson.version().version_compare('>=0.54.0')
-  meson.override_dependency('mount', mount_dep)
+if build_libmount
+  pkgconfig.generate(lib_mount,
+                     description : 'mount library',
+                     subdirs : 'libmount',
+                     version : pc_version)
+  if meson.version().version_compare('>=0.54.0')
+    meson.override_dependency('mount', mount_dep)
+  endif
 endif
 
 libmount_tests = [
@@ -118,7 +116,6 @@ libmount_tests = [
   'context',
   'lock',
   'optstr',
-  'optlist',
   'tab',
   'tab_diff',
   'monitor',
@@ -132,22 +129,20 @@ libmount_test_src_override = {
   'debug': 'init',
 }
 
-if program_tests
-  foreach libmount_test: libmount_tests
-    test_name = 'test_mount_' + libmount_test
-    exe = executable(
-      test_name,
-      'src/' + libmount_test_src_override.get(libmount_test, libmount_test) + '.c',
-      include_directories : [dir_include],
-      link_with : [lib__mount, lib_common],
-      dependencies : lib__mount_deps + blkid_static_dep,
-      c_args : ['-DTEST_PROGRAM'],
-    )
-    # the test-setup expects the helpers in the toplevel build-directory
-    link = meson.project_build_root() / test_name
-    run_command('ln', '-srf', exe.full_path(), link,
-      check : true)
-  endforeach
-endif
+foreach libmount_test: libmount_tests
+  test_name = 'test_mount_' + libmount_test
+  exe = executable(
+    test_name,
+    'src/' + libmount_test_src_override.get(libmount_test, libmount_test) + '.c',
+    include_directories : [dir_include, dir_libblkid],
+    link_with : [lib__mount, lib_common, lib_blkid_static],
+    dependencies : lib__mount_deps,
+    c_args : ['-DTEST_PROGRAM'],
+  )
+  # the test-setup expects the helpers in the toplevel build-directory
+  link = meson.project_build_root() / test_name
+  run_command('ln', '-srf', exe.full_path(), link,
+    check : true)
+endforeach
 
 subdir('python')

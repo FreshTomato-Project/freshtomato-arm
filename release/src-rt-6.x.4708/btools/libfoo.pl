@@ -207,7 +207,7 @@ sub fixDyn
 	fixDynDep("minidlna", "libvorbis.so.0");
 	fixDynDep("minidlna", "libid3tag.so.0.16.3");
 	fixDynDep("minidlna", "libexif.so.12");
-	fixDynDep("minidlna", "libFLAC.so.12.1.0");
+	fixDynDep("minidlna", "libFLAC.so.14.0.0");
 	fixDynDep("minidlna", "libsqlite3.so.0.8.6");
 	fixDynDep("mysql", "libz.so.1");
 	fixDynDep("mysqld", "libz.so.1");
@@ -683,7 +683,7 @@ genSO("${root}/usr/lib/libdaemon.so.0.5.0", "${router}/libdaemon/libdaemon/.libs
 genSO("${root}/usr/lib/libmnl.so.0.2.0", "${router}/libmnl/src/.libs/libmnl.a", "${stripshared}");
 genSO("${root}/usr/lib/libjpeg.so.8.3.2", "${router}/libjpeg-turbo/build/libjpeg.a", "${stripshared}");
 genSO("${root}/usr/lib/libvorbis.so.0", "${router}/libvorbis/lib/.libs/libvorbis.a", "${stripshared}", "-L${router}/libogg/src/.libs");
-genSO("${root}/usr/lib/libFLAC.so.12.1.0", "${router}/flac/src/libFLAC/.libs/libFLAC.a", "${stripshared}", "-L${router}/libogg/src/.libs");
+genSO("${root}/usr/lib/libFLAC.so.14.0.0", "${router}/flac/src/libFLAC/.libs/libFLAC.a", "${stripshared}", "-L${router}/libogg/src/.libs");
 genSO("${root}/usr/lib/libogg.so.0", "${router}/libogg/src/.libs/libogg.a", "${stripshared}");
 genSO("${root}/usr/lib/libz.so.1", "${router}/zlib/libz.a", "${stripshared}");
 genSO("${root}/usr/lib/liblzo2.so.2.0.0", "${router}/lzo/src/.libs/liblzo2.a", "${stripshared}");

@@ -1,6 +1,6 @@
 /* metaflac - Command-line FLAC metadata editor
  * Copyright (C) 2001-2009  Josh Coalson
- * Copyright (C) 2011-2023  Xiph.Org Foundation
+ * Copyright (C) 2011-2025  Xiph.Org Foundation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@
 */
 struct share__option long_options_[] = {
 	/* global options */
+	{ "output-name", 1, 0, 'o' }, /* NOTE: if this option moves in this list, change the index in parse_options */
 	{ "preserve-modtime", 0, 0, 0 },
 	{ "with-filename", 0, 0, 0 },
 	{ "no-filename", 0, 0, 0 },
@@ -158,6 +159,7 @@ void init_options(CommandLineOptions *options)
 
 	options->num_files = 0;
 	options->filenames = 0;
+	options->output_name = 0;
 }
 
 FLAC__bool parse_options(int argc, char *argv[], CommandLineOptions *options)
@@ -166,10 +168,13 @@ FLAC__bool parse_options(int argc, char *argv[], CommandLineOptions *options)
 	int option_index = 1;
 	FLAC__bool had_error = false;
 
-	while ((ret = share__getopt_long(argc, argv, "", long_options_, &option_index)) != -1) {
+	while ((ret = share__getopt_long(argc, argv, "o:", long_options_, &option_index)) != -1) {
 		switch (ret) {
 			case 0:
 				had_error |= !parse_option(option_index, share__optarg, options);
+				break;
+			case 'o':
+				had_error |= !parse_option(0, share__optarg, options);
 				break;
 			case '?':
 			case ':':
@@ -213,6 +218,10 @@ FLAC__bool parse_options(int argc, char *argv[], CommandLineOptions *options)
 
 	/* check for only one FLAC file used with certain options */
 	if(!had_error && options->num_files > 1) {
+		if(0 != options->output_name) {
+			flac_fprintf(stderr, "ERROR: you may only specify one FLAC input file when specifying an output filename\n");
+			had_error = true;
+		}
 		if(0 != find_shorthand_operation(options, OP__IMPORT_CUESHEET_FROM)) {
 			flac_fprintf(stderr, "ERROR: you may only specify one FLAC file when using '--import-cuesheet-from'\n");
 			had_error = true;
@@ -251,8 +260,11 @@ FLAC__bool parse_options(int argc, char *argv[], CommandLineOptions *options)
 		Operation *op = find_shorthand_operation(options, OP__IMPORT_CUESHEET_FROM);
 		if(0 != op) {
 			Operation *op2 = find_shorthand_operation(options, OP__ADD_SEEKPOINT);
-			if(0 == op2)
+			if(0 == op2) {
 				op2 = append_shorthand_operation(options, OP__ADD_SEEKPOINT);
+				/* Need to re-find op, because the appending might have caused realloc */
+				op = find_shorthand_operation(options, OP__IMPORT_CUESHEET_FROM);
+			}
 			op->argument.import_cuesheet_from.add_seekpoint_link = &(op2->argument.add_seekpoint);
 		}
 	}
@@ -324,10 +336,6 @@ void free_options(CommandLineOptions *options)
 				if(0 != arg->value.block_type.entries)
 					free(arg->value.block_type.entries);
 				break;
-			case ARG__FROM_FILE:
-				if(0 != arg->value.from_file.file_name)
-					free(arg->value.from_file.file_name);
-				break;
 			default:
 				break;
 		}
@@ -376,6 +384,9 @@ FLAC__bool parse_option(int option_index, const char *option_argument, CommandLi
 	}
 	else if(0 == strcmp(opt, "no-cued-seekpoints")) {
 		options->cued_seekpoints = false;
+	}
+	else if(0 == strcmp(opt, "output-name")) {
+		options->output_name = option_argument;
 	}
 	else if(0 == strcmp(opt, "show-md5sum")) {
 		(void) append_shorthand_operation(options, OP__SHOW_MD5SUM);
@@ -728,7 +739,7 @@ FLAC__bool parse_option(int option_index, const char *option_argument, CommandLi
 	else if(0 == strcmp(opt, "from-file")) {
 		arg = append_argument(options, ARG__FROM_FILE);
 		FLAC__ASSERT(0 != option_argument);
-		arg->value.from_file.file_name = local_strdup(option_argument);
+		arg->value.from_file.file_name = option_argument;
 	}
 	else {
 		FLAC__ASSERT(0);

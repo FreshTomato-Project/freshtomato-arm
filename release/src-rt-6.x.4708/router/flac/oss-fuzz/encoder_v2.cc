@@ -1,5 +1,5 @@
 /* fuzzer_encoder_v2
- * Copyright (C) 2022-2023  Xiph.Org Foundation
+ * Copyright (C) 2022-2025  Xiph.Org Foundation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -54,6 +54,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 	FLAC__bool encoder_valid = true;
 	FLAC__StreamEncoder *encoder = 0;
 	FLAC__StreamEncoderState state;
+	const char* state_string = "";
 	FLAC__StreamMetadata *metadata[16] = {NULL};
 	unsigned num_metadata = 0;
 	FLAC__StreamMetadata_VorbisComment_Entry VorbisCommentField;
@@ -76,8 +77,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
 	/* allocate the encoder */
 	if((encoder = FLAC__stream_encoder_new()) == NULL) {
-		fprintf(stderr, "ERROR: allocating encoder\n");
-		return 1;
+		return 0;
 	}
 
 	/* Use first 20 byte for configuration */
@@ -121,6 +121,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 	encoder_valid &= FLAC__stream_encoder_set_total_samples_estimate(encoder, samples_estimate);
 	encoder_valid &= FLAC__stream_encoder_disable_instruction_set(encoder, instruction_set_disable_mask);
 	encoder_valid &= FLAC__stream_encoder_set_limit_min_bitrate(encoder, data_bools[15]);
+	encoder_valid &= (FLAC__stream_encoder_set_num_threads(encoder,data[9]) == FLAC__STREAM_ENCODER_SET_NUM_THREADS_OK); /* reuse data[9] */
 
 	/* Set compression related parameters */
 	encoder_valid &= FLAC__stream_encoder_set_compression_level(encoder, compression_level);
@@ -228,9 +229,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 			if(!vorbiscomment_valid) {
 				FLAC__metadata_object_delete(metadata[num_metadata]);
 				metadata[num_metadata] = 0;
+				encoder_valid = false;
 			}
 			else
 				num_metadata++;
+		}
+		else {
+			encoder_valid = false;
 		}
 	}
 	if(encoder_valid && (metadata_mask & 32)){
@@ -238,11 +243,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 			if(!FLAC__metadata_object_cuesheet_insert_blank_track(metadata[num_metadata],0)) {
 				FLAC__metadata_object_delete(metadata[num_metadata]);
 				metadata[num_metadata] = 0;
+				encoder_valid = false;
 			}
 			else {
 				if(!FLAC__metadata_object_cuesheet_track_insert_blank_index(metadata[num_metadata],0,0)) {
 					FLAC__metadata_object_delete(metadata[num_metadata]);
 					metadata[num_metadata] = 0;
+					encoder_valid = false;
 				}
 				else {
 					metadata[num_metadata]->data.cue_sheet.tracks[0].number = 1;
@@ -250,10 +257,16 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 				}
 			}
 		}
+		else {
+			encoder_valid = false;
+		}
 	}
 	if(encoder_valid && (metadata_mask & 64)){
 		if((metadata[num_metadata] = FLAC__metadata_object_new(FLAC__METADATA_TYPE_PICTURE)) != NULL) {
 			num_metadata++;
+		}
+		else {
+			encoder_valid = false;
 		}
 	}
 	if(encoder_valid && (metadata_mask & 128)){
@@ -262,10 +275,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 			metadata[num_metadata]->data.unknown.data = (FLAC__byte *)calloc(24, 1);
 			num_metadata++;
 		}
+		else {
+			encoder_valid = false;
+		}
 	}
 
 	if(num_metadata && encoder_valid)
-			encoder_valid = FLAC__stream_encoder_set_metadata(encoder, metadata, num_metadata);
+		encoder_valid = FLAC__stream_encoder_set_metadata(encoder, metadata, num_metadata);
 
 	/* initialize encoder */
 	if(encoder_valid) {
@@ -320,6 +336,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 	}
 
 	state = FLAC__stream_encoder_get_state(encoder);
+	state_string = FLAC__stream_encoder_get_resolved_state_string(encoder);
 	if(!(state == FLAC__STREAM_ENCODER_OK ||
 	     state == FLAC__STREAM_ENCODER_UNINITIALIZED ||
 	     state == FLAC__STREAM_ENCODER_CLIENT_ERROR ||

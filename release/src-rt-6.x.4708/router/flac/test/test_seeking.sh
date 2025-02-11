@@ -2,7 +2,7 @@
 
 #  FLAC - Free Lossless Audio Codec
 #  Copyright (C) 2004-2009  Josh Coalson
-#  Copyright (C) 2011-2023  Xiph.Org Foundation
+#  Copyright (C) 2011-2025  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
 #  components distributed under different licenses.  The codec libraries
@@ -134,6 +134,38 @@ if [ $has_ogg = "yes" ] ; then
 	echo "testing small.oga:"
 	if run_test_seeking small.oga $small_seek_count $small_samples noise.raw ; then : ; else
 		die "ERROR: during test_seeking"
+	fi
+
+	echo "generating chained Ogg FLAC files for seeking:"
+	# need to generate a second set with a different serial number
+	tail -c 750000 noise.raw > noise-secondhalf.raw
+	run_flac --verify --force --silent --force-raw-format --endian=big --sign=signed --sample-rate=44100 --bps=16 --channels=2 --blocksize=576 --output-name=small2.oga --ogg noise-secondhalf.raw || die "ERROR generating Ogg FLAC file"
+
+	cat small.oga small2.oga > chained.oga
+	cat noise.raw noise-secondhalf.raw > chained.raw
+
+	echo "testing chained.oga:"
+	chained_samples=$(($small_samples+187500))
+	if run_test_seeking chained.oga $small_seek_count $chained_samples chained.raw ; then : ; else
+		die "ERROR: during test_seeking"
+	fi
+
+	if command -v oggz > /dev/null ; then
+		if command -v oggenc > /dev/null ; then
+			oggenc -Q --skeleton -o small-vorbis.oga small.flac
+			oggenc -Q --skeleton -o small2-vorbis.oga small.flac
+			oggz merge -o small-merged.oga small-vorbis.oga small.oga
+			oggz merge -o small2-merged.oga small2-vorbis.oga small2.oga
+			cat small2-merged.oga small-merged.oga > chained-merged.oga
+			cat noise-secondhalf.raw noise.raw > chained.raw
+
+			echo "testing chained-merged.oga:"
+			echo run_test_seeking chained-merged.oga $small_seek_count $chained_samples chained.raw
+			if run_test_seeking chained-merged.oga $small_seek_count $chained_samples chained.raw ; then : ; else
+				die "ERROR: during test_seeking"
+			fi
+
+		fi
 	fi
 
 fi

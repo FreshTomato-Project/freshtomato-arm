@@ -1,6 +1,6 @@
 /* flac - Command-line FLAC encoder/decoder
  * Copyright (C) 2000-2009  Josh Coalson
- * Copyright (C) 2011-2023  Xiph.Org Foundation
+ * Copyright (C) 2011-2025  Xiph.Org Foundation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -68,6 +68,7 @@ typedef struct {
 	int padding;
 	size_t num_compression_settings;
 	compression_setting_t compression_settings[64];
+	uint32_t threads;
 	char *requested_seek_points;
 	int num_requested_seek_points;
 	const char *cuesheet_filename;

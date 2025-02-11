@@ -1,5 +1,5 @@
 /* fuzzer_tool_flac
- * Copyright (C) 2023  Xiph.Org Foundation
+ * Copyright (C) 2023-2025  Xiph.Org Foundation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,12 +57,21 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 	share__opterr = 0;
 	share__optind = 0;
 
-	if(size < 2)
+	if(size < 3)
 		return 0;
 
 	maxarg = data[0] & 63;
 	use_stdin = data[0] & 64;
 	size_left--;
+
+	alloc_check_counter = 0;
+	if(data[0] & 128) {
+		alloc_check_keep_failing = data[1] & 1;
+		alloc_check_threshold = data[1] >> 1;
+		size_left--;
+	}
+	else
+		alloc_check_threshold = INT32_MAX;
 
 	argv[0] = exename;
 	numarg++;

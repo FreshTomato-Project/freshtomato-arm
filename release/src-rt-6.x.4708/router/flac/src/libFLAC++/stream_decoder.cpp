@@ -1,6 +1,6 @@
 /* libFLAC++ - Free Lossless Audio Codec library
  * Copyright (C) 2002-2009  Josh Coalson
- * Copyright (C) 2011-2023  Xiph.Org Foundation
+ * Copyright (C) 2011-2025  Xiph.Org Foundation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,6 +74,12 @@ namespace FLAC {
 			return static_cast<bool>(::FLAC__stream_decoder_set_ogg_serial_number(decoder_, value));
 		}
 
+		bool Stream::set_decode_chained_stream(bool value)
+		{
+			FLAC__ASSERT(is_valid());
+			return static_cast<bool>(::FLAC__stream_decoder_set_decode_chained_stream(decoder_, value));
+		}
+
 		bool Stream::set_md5_checking(bool value)
 		{
 			FLAC__ASSERT(is_valid());
@@ -122,6 +128,12 @@ namespace FLAC {
 			return State(::FLAC__stream_decoder_get_state(decoder_));
 		}
 
+		bool Stream::get_decode_chained_stream() const
+		{
+			FLAC__ASSERT(is_valid());
+			return static_cast<bool>(::FLAC__stream_decoder_get_decode_chained_stream(decoder_));
+		}
+
 		bool Stream::get_md5_checking() const
 		{
 			FLAC__ASSERT(is_valid());
@@ -132,6 +144,12 @@ namespace FLAC {
 		{
 			FLAC__ASSERT(is_valid());
 			return ::FLAC__stream_decoder_get_total_samples(decoder_);
+		}
+
+		FLAC__uint64 Stream::find_total_samples()
+		{
+			FLAC__ASSERT(is_valid());
+			return ::FLAC__stream_decoder_find_total_samples(decoder_);
 		}
 
 		uint32_t Stream::get_channels() const
@@ -170,6 +188,12 @@ namespace FLAC {
 			return ::FLAC__stream_decoder_get_decode_position(decoder_, position);
 		}
 
+		int32_t Stream::get_link_lengths(FLAC__uint64 **link_lengths)
+		{
+			FLAC__ASSERT(is_valid());
+			return ::FLAC__stream_decoder_get_link_lengths(decoder_, link_lengths);
+		}
+
 		::FLAC__StreamDecoderInitStatus Stream::init()
 		{
 			FLAC__ASSERT(is_valid());
@@ -186,6 +210,12 @@ namespace FLAC {
 		{
 			FLAC__ASSERT(is_valid());
 			return static_cast<bool>(::FLAC__stream_decoder_finish(decoder_));
+		}
+
+		bool Stream::finish_link()
+		{
+			FLAC__ASSERT(is_valid());
+			return static_cast<bool>(::FLAC__stream_decoder_finish_link(decoder_));
 		}
 
 		bool Stream::flush()
@@ -212,6 +242,12 @@ namespace FLAC {
 			return static_cast<bool>(::FLAC__stream_decoder_process_until_end_of_metadata(decoder_));
 		}
 
+		bool Stream::process_until_end_of_link()
+		{
+			FLAC__ASSERT(is_valid());
+			return static_cast<bool>(::FLAC__stream_decoder_process_until_end_of_link(decoder_));
+		}
+
 		bool Stream::process_until_end_of_stream()
 		{
 			FLAC__ASSERT(is_valid());
@@ -222,6 +258,12 @@ namespace FLAC {
 		{
 			FLAC__ASSERT(is_valid());
 			return static_cast<bool>(::FLAC__stream_decoder_skip_single_frame(decoder_));
+		}
+
+		bool Stream::skip_single_link()
+		{
+			FLAC__ASSERT(is_valid());
+			return static_cast<bool>(::FLAC__stream_decoder_skip_single_link(decoder_));
 		}
 
 		bool Stream::seek_absolute(FLAC__uint64 sample)

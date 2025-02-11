@@ -1,6 +1,6 @@
 /* libFLAC++ - Free Lossless Audio Codec library
  * Copyright (C) 2002-2009  Josh Coalson
- * Copyright (C) 2011-2023  Xiph.Org Foundation
+ * Copyright (C) 2011-2025  Xiph.Org Foundation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -123,6 +123,7 @@ namespace FLAC {
 			//@}
 
 			virtual bool set_ogg_serial_number(long value);                        ///< See FLAC__stream_decoder_set_ogg_serial_number()
+			virtual bool set_decode_chained_stream(bool value);                    ///< See FLAC__stream_decoder_set_decode_chained_stream()
 			virtual bool set_md5_checking(bool value);                             ///< See FLAC__stream_decoder_set_md5_checking()
 			virtual bool set_metadata_respond(::FLAC__MetadataType type);          ///< See FLAC__stream_decoder_set_metadata_respond()
 			virtual bool set_metadata_respond_application(const FLAC__byte id[4]); ///< See FLAC__stream_decoder_set_metadata_respond_application()
@@ -133,27 +134,33 @@ namespace FLAC {
 
 			/* get_state() is not virtual since we want subclasses to be able to return their own state */
 			State get_state() const;                                          ///< See FLAC__stream_decoder_get_state()
+			virtual bool get_decode_chained_stream() const;                   ///< See FLAC__stream_decoder_get_decode_chained_stream()
 			virtual bool get_md5_checking() const;                            ///< See FLAC__stream_decoder_get_md5_checking()
 			virtual FLAC__uint64 get_total_samples() const;                   ///< See FLAC__stream_decoder_get_total_samples()
+			virtual FLAC__uint64 find_total_samples();			  ///< See FLAC__stream_decoder_find_total_samples()
 			virtual uint32_t get_channels() const;                            ///< See FLAC__stream_decoder_get_channels()
 			virtual ::FLAC__ChannelAssignment get_channel_assignment() const; ///< See FLAC__stream_decoder_get_channel_assignment()
 			virtual uint32_t get_bits_per_sample() const;                     ///< See FLAC__stream_decoder_get_bits_per_sample()
 			virtual uint32_t get_sample_rate() const;                         ///< See FLAC__stream_decoder_get_sample_rate()
 			virtual uint32_t get_blocksize() const;                           ///< See FLAC__stream_decoder_get_blocksize()
 			virtual bool get_decode_position(FLAC__uint64 *position) const;   ///< See FLAC__stream_decoder_get_decode_position()
+			virtual int32_t get_link_lengths(FLAC__uint64 **link_lengths);    ///< See FLAC__stream_decoder_get_link_lengths()
 
 			virtual ::FLAC__StreamDecoderInitStatus init();      ///< Seek FLAC__stream_decoder_init_stream()
 			virtual ::FLAC__StreamDecoderInitStatus init_ogg();  ///< Seek FLAC__stream_decoder_init_ogg_stream()
 
 			virtual bool finish(); ///< See FLAC__stream_decoder_finish()
+			virtual bool finish_link(); ///< See FLAC__stream_decoder_finish_link()
 
 			virtual bool flush(); ///< See FLAC__stream_decoder_flush()
 			virtual bool reset(); ///< See FLAC__stream_decoder_reset()
 
 			virtual bool process_single();                ///< See FLAC__stream_decoder_process_single()
 			virtual bool process_until_end_of_metadata(); ///< See FLAC__stream_decoder_process_until_end_of_metadata()
+			virtual bool process_until_end_of_link();     ///< See FLAC__stream_decoder_process_until_end_of_link()
 			virtual bool process_until_end_of_stream();   ///< See FLAC__stream_decoder_process_until_end_of_stream()
 			virtual bool skip_single_frame();             ///< See FLAC__stream_decoder_skip_single_frame()
+			virtual bool skip_single_link();              ///< See FLAC__stream_decoder_skip_single_link()
 
 			virtual bool seek_absolute(FLAC__uint64 sample); ///< See FLAC__stream_decoder_seek_absolute()
 		protected:

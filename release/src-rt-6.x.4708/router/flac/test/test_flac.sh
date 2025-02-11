@@ -2,7 +2,7 @@
 
 #  FLAC - Free Lossless Audio Codec
 #  Copyright (C) 2001-2009  Josh Coalson
-#  Copyright (C) 2011-2023  Xiph.Org Foundation
+#  Copyright (C) 2011-2025  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
 #  components distributed under different licenses.  The codec libraries
@@ -266,6 +266,34 @@ rt_test_aiff ()
 	rm -f rt.flac rt.aiff
 }
 
+rt_test_aifc ()
+{
+	f="$1"
+	extra="$2"
+	echo $ECHO_N "round-trip test ($f) encode... " $ECHO_C
+	run_flac --force --verify --channel-map=none --no-padding --lax -o rt.flac $extra $f || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --channel-map=none -o rt.aifc --force-aiff-c-none-format $extra rt.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
+	cmp $f rt.aifc || die "ERROR: file mismatch"
+	echo "OK"
+	rm -f rt.flac rt.aifc
+}
+
+rt_test_aifc_le ()
+{
+	f="$1"
+	extra="$2"
+	echo $ECHO_N "round-trip test ($f) encode... " $ECHO_C
+	run_flac --force --verify --channel-map=none --no-padding --lax -o rt.flac $extra $f || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --channel-map=none -o rt.aifc --force-aiff-c-sowt-format $extra rt.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
+	cmp $f rt.aifc || die "ERROR: file mismatch"
+	echo "OK"
+	rm -f rt.flac rt.aifc
+}
+
 rt_test_autokf ()
 {
 	f="$1"
@@ -328,6 +356,12 @@ for f in rt-*.rf64 ; do
 done
 for f in rt-*.aiff ; do
 	rt_test_aiff $f
+done
+for f in rt-*[0-9].aifc ; do
+	rt_test_aifc $f
+done
+for f in rt-*le.aifc ; do
+	rt_test_aifc_le $f
 done
 for f in rt-*.wav ; do
 	rt_test_flac $f
@@ -1274,6 +1308,20 @@ if [ "$size" -lt "1022" ]; then
 fi
 
 echo OK
+
+############################################################################
+# test threads
+############################################################################
+
+
+for J in 1 2 3 4 5 6 7 8 15 16 32 63 64; do
+	echo $ECHO_N "Testing --threads $J... " $ECHO_C
+	run_flac -f -V -o out.flac --threads $J "noisy-sine.wav" || die "ERROR on encoding"
+	run_flac -f -d out.flac || die "ERROR on decoding"
+	echo OK
+done
+
+rm -f out.wav
 
 ############################################################################
 # test overflow of total samples field in STREAMINFO

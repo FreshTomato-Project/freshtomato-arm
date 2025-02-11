@@ -91,8 +91,8 @@ if(TARGET Ogg::ogg)
 endif()
 if(BUILD_SHARED_LIBS)
     set_target_properties(FLAC PROPERTIES
-        VERSION 12.1.0
-        SOVERSION 12)
+        VERSION 14.0.0
+        SOVERSION 14)
     if(NOT WIN32)
         set_target_properties(FLAC PROPERTIES C_VISIBILITY_PRESET hidden)
     endif()
@@ -106,6 +106,10 @@ else()
     if(HAVE_ASSOC_MATH)
         target_compile_options(FLAC BEFORE PRIVATE -fassociative-math -fno-signed-zeros -fno-trapping-math -freciprocal-math)
     endif()
+endif()
+
+if(HAVE_PTHREAD)
+    target_link_libraries(FLAC PUBLIC Threads::Threads)
 endif()
 
 add_library(FLAC::FLAC ALIAS FLAC)

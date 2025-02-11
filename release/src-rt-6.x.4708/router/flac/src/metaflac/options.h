@@ -1,6 +1,6 @@
 /* metaflac - Command-line FLAC metadata editor
  * Copyright (C) 2001-2009  Josh Coalson
- * Copyright (C) 2011-2023  Xiph.Org Foundation
+ * Copyright (C) 2011-2025  Xiph.Org Foundation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -135,7 +135,7 @@ typedef struct {
 } Argument_DataFormat;
 
 typedef struct {
-	char *file_name;
+	const char *file_name;
 } Argument_FromFile;
 
 typedef struct {
@@ -212,6 +212,7 @@ typedef struct {
 	} args;
 	unsigned num_files;
 	char **filenames;
+	const char *output_name;
 } CommandLineOptions;
 
 void init_options(CommandLineOptions *options);

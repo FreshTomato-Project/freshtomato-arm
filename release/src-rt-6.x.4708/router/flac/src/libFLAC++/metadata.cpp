@@ -1,6 +1,6 @@
 /* libFLAC++ - Free Lossless Audio Codec library
  * Copyright (C) 2002-2009  Josh Coalson
- * Copyright (C) 2011-2023  Xiph.Org Foundation
+ * Copyright (C) 2011-2025  Xiph.Org Foundation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1617,6 +1617,12 @@ namespace FLAC {
 		{
 			FLAC__ASSERT(is_valid());
 			return static_cast<bool>(::FLAC__metadata_chain_write(chain_, use_padding, preserve_file_stats));
+		}
+
+		bool Chain::write(const char* filename, bool use_padding)
+		{
+			FLAC__ASSERT(is_valid());
+			return static_cast<bool>(::FLAC__metadata_chain_write_new_file(chain_, filename, use_padding));
 		}
 
 		bool Chain::write(bool use_padding, ::FLAC__IOHandle handle, ::FLAC__IOCallbacks callbacks)

@@ -1,6 +1,6 @@
 /* flac - Command-line FLAC encoder/decoder
  * Copyright (C) 2000-2009  Josh Coalson
- * Copyright (C) 2011-2023  Xiph.Org Foundation
+ * Copyright (C) 2011-2025  Xiph.Org Foundation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -94,8 +94,10 @@ typedef struct {
 	uint32_t stats_frames_interval;
 	uint32_t old_frames_written;
 #else
-	clock_t old_clock_t;
+	uint32_t old_samples_written;
+	clock_t old_clock;
 #endif
+	FLAC__byte md5sum_input[16];
 
 	SampleInfo info;
 
@@ -800,10 +802,10 @@ static FLAC__bool get_sample_info_aiff(EncoderSession *e, encode_options_t optio
 	return true;
 }
 
-static FLAC__bool get_sample_info_flac(EncoderSession *e)
+static FLAC__bool get_sample_info_flac(EncoderSession *e, FLAC__bool do_check_md5)
 {
 	if (!(
-		FLAC__stream_decoder_set_md5_checking(e->fmt.flac.decoder, false) &&
+		FLAC__stream_decoder_set_md5_checking(e->fmt.flac.decoder, do_check_md5) &&
 		FLAC__stream_decoder_set_metadata_respond_all(e->fmt.flac.decoder)
 	)) {
 		flac__utils_printf(stderr, 1, "%s: ERROR: setting up decoder for FLAC input\n", e->inbasefilename);
@@ -920,7 +922,7 @@ int flac__encode_file(FILE *infile, FLAC__off_t infilesize, const char *infilena
 				flac__utils_printf(stderr, 1, "%s: ERROR: creating decoder for FLAC input\n", encoder_session.inbasefilename);
 				return EncoderSession_finish_error(&encoder_session);
 			}
-			if(!get_sample_info_flac(&encoder_session))
+			if(!get_sample_info_flac(&encoder_session, encoder_session.is_stdout && flac__utils_check_empty_skip_until_specification(&options.skip_specification) && flac__utils_check_empty_skip_until_specification(&options.until_specification)))
 				return EncoderSession_finish_error(&encoder_session);
 			break;
 		default:
@@ -991,6 +993,11 @@ int flac__encode_file(FILE *infile, FLAC__off_t infilesize, const char *infilena
 				FLAC__ASSERT(0);
 				/* double protection */
 				return EncoderSession_finish_error(&encoder_session);
+		}
+
+		/* Get md5sum from FLAC */
+		if(options.format == FORMAT_FLAC || options.format == FORMAT_OGGFLAC) {
+			memcpy(encoder_session.md5sum_input,encoder_session.fmt.flac.client_data.metadata_blocks[0]->data.stream_info.md5sum,16);
 		}
 
 		/*
@@ -1107,7 +1114,12 @@ int flac__encode_file(FILE *infile, FLAC__off_t infilesize, const char *infilena
 		if(options.format == FORMAT_FLAC || options.format == FORMAT_OGGFLAC)
 			encoder_session.fmt.flac.client_data.samples_left_to_process = encoder_session.total_samples_to_encode;
 
-		stats_new_file();
+		/* Input MD5sum is only usable when reencoding the whole file, to a file */
+		if(skip > 0 || until > 0 || encoder_session.is_stdout) {
+			memset(encoder_session.md5sum_input,0,16);
+		}
+
+		stats_new_line();
 		/* init the encoder */
 		if(!EncoderSession_init_encoder(&encoder_session, options))
 			return EncoderSession_finish_error(&encoder_session);
@@ -1117,7 +1129,7 @@ int flac__encode_file(FILE *infile, FLAC__off_t infilesize, const char *infilena
 			switch(options.format) {
 				case FORMAT_RAW:
 					{
-						uint32_t skip_bytes = encoder_session.info.bytes_per_wide_sample * (uint32_t)skip;
+						uint64_t skip_bytes = encoder_session.info.bytes_per_wide_sample * skip;
 						if(skip_bytes > lookahead_length) {
 							skip_bytes -= lookahead_length;
 							lookahead_length = 0;
@@ -1407,9 +1419,11 @@ FLAC__bool EncoderSession_construct(EncoderSession *e, encode_options_t options,
 	e->stats_frames_interval = 0;
 	e->old_frames_written = 0;
 #else
-	e->old_clock_t = 0;
+	e->old_clock = 0;
+	e->old_samples_written = 0;
 #endif
 	e->compression_ratio = 0.0;
+	memset(e->md5sum_input,0,16);
 
 	memset(&e->info, 0, sizeof(e->info));
 
@@ -1493,6 +1507,7 @@ int EncoderSession_finish_ok(EncoderSession *e, foreign_metadata_t *foreign_meta
 {
 	FLAC__StreamEncoderState fse_state = FLAC__STREAM_ENCODER_OK;
 	int ret = 0;
+	FLAC__byte empty_md5sum[16] = {0};
 	FLAC__bool verify_error = false;
 
 	if(e->encoder) {
@@ -1516,7 +1531,25 @@ int EncoderSession_finish_ok(EncoderSession *e, foreign_metadata_t *foreign_meta
 		ret = 1;
 	}
 
-	/*@@@@@@ should this go here or somewhere else? */
+	if(ret == 0 && memcmp(e->md5sum_input,&empty_md5sum,16) != 0) {
+		FLAC__StreamMetadata streaminfo;
+		if(!FLAC__metadata_get_streaminfo(e->outfilename, &streaminfo)) {
+			flac__utils_printf(stderr, 1, "%s: ERROR: could not read back MD5sum of output\n", e->inbasefilename);
+			ret = 1;
+		}
+		else if(memcmp(streaminfo.data.stream_info.md5sum,e->md5sum_input,16) != 0) {
+			flac__utils_printf(stderr, 1, "%s: ERROR: MD5sum of input is different from MD5sum of output\n", e->inbasefilename);
+			ret = 1;
+		}
+	}
+	
+	if(ret == 0 && (e->format == FORMAT_FLAC || e->format == FORMAT_OGGFLAC) && e->fmt.flac.decoder) {
+		if(!FLAC__stream_decoder_finish(e->fmt.flac.decoder)) {
+			flac__utils_printf(stderr, 1, "%s: ERROR:  MD5sum of input FLAC file mismatched\n", e->inbasefilename);
+			ret = 1;
+		}
+	}
+
 	if(ret == 0 && foreign_metadata) {
 		const char *error;
 		if(!flac__foreign_metadata_write_to_flac(foreign_metadata, e->infilename, e->outfilename, &error)) {
@@ -1902,10 +1935,18 @@ FLAC__bool EncoderSession_init_encoder(EncoderSession *e, encode_options_t optio
 
 		if(e->seek_table_template->data.seek_table.num_points > 0) {
 			e->seek_table_template->is_last = false; /* the encoder will set this for us */
-			static_metadata_append(&static_metadata, e->seek_table_template, /*needs_delete=*/false);
+			if(!static_metadata_append(&static_metadata, e->seek_table_template, /*needs_delete=*/false)) {
+				flac__utils_printf(stderr, 1, "%s: ERROR allocating memory for SEEKTABLE block\n", e->inbasefilename);
+				static_metadata_clear(&static_metadata);
+				return false;
+				}
 		}
 		if(0 != static_metadata.cuesheet)
-			static_metadata_append(&static_metadata, static_metadata.cuesheet, /*needs_delete=*/false);
+			if(!static_metadata_append(&static_metadata, static_metadata.cuesheet, /*needs_delete=*/false)) {
+				flac__utils_printf(stderr, 1, "%s: ERROR allocating memory for CUESHEET block\n", e->inbasefilename);
+				static_metadata_clear(&static_metadata);
+				return false;
+			}
 		if(e->info.channel_mask) {
 			options.vorbis_comment_with_channel_mask_tag = FLAC__metadata_object_clone(options.vorbis_comment);
 			if(!flac__utils_set_channel_mask_tag(options.vorbis_comment_with_channel_mask_tag, e->info.channel_mask)) {
@@ -1913,12 +1954,24 @@ FLAC__bool EncoderSession_init_encoder(EncoderSession *e, encode_options_t optio
 				static_metadata_clear(&static_metadata);
 				return false;
 			}
-			static_metadata_append(&static_metadata, options.vorbis_comment_with_channel_mask_tag, /*needs_delete=*/true);
+			if(!static_metadata_append(&static_metadata, options.vorbis_comment_with_channel_mask_tag, /*needs_delete=*/true)) {
+				flac__utils_printf(stderr, 1, "%s: ERROR allocating memory for VORBIS_COMMENT block\n", e->inbasefilename);
+				static_metadata_clear(&static_metadata);
+				return false;
+			}
 		}
 		else
-			static_metadata_append(&static_metadata, options.vorbis_comment, /*needs_delete=*/false);
+			if(!static_metadata_append(&static_metadata, options.vorbis_comment, /*needs_delete=*/false)) {
+				flac__utils_printf(stderr, 1, "%s: ERROR allocating memory for VORBIS_COMMENT block\n", e->inbasefilename);
+				static_metadata_clear(&static_metadata);
+				return false;
+			}
 		for(i = 0; i < options.num_pictures; i++)
-			static_metadata_append(&static_metadata, options.pictures[i], /*needs_delete=*/false);
+			if(!static_metadata_append(&static_metadata, options.pictures[i], /*needs_delete=*/false)) {
+				flac__utils_printf(stderr, 1, "%s: ERROR allocating memory for PICTURE block\n", e->inbasefilename);
+				static_metadata_clear(&static_metadata);
+				return false;
+			}
 		if(foreign_metadata) {
 			for(i = 0; i < foreign_metadata->num_blocks; i++) {
 				FLAC__StreamMetadata *p = FLAC__metadata_object_new(FLAC__METADATA_TYPE_PADDING);
@@ -1927,7 +1980,12 @@ FLAC__bool EncoderSession_init_encoder(EncoderSession *e, encode_options_t optio
 					static_metadata_clear(&static_metadata);
 					return false;
 				}
-				static_metadata_append(&static_metadata, p, /*needs_delete=*/true);
+				if(!static_metadata_append(&static_metadata, p, /*needs_delete=*/true)) {
+					flac__utils_printf(stderr, 1, "%s: ERROR allocating memory for foreign metadata block\n", e->inbasefilename);
+					FLAC__metadata_object_delete(p);
+					static_metadata_clear(&static_metadata);
+					return false;
+				}
 				static_metadata.metadata[static_metadata.num_metadata-1]->length = FLAC__STREAM_METADATA_APPLICATION_ID_LEN/8 + foreign_metadata->blocks[i].size;
 			}
 		}
@@ -1939,7 +1997,11 @@ FLAC__bool EncoderSession_init_encoder(EncoderSession *e, encode_options_t optio
 			else
 				padding.length = (uint32_t)(options.padding>0? options.padding : (e->total_samples_to_encode / sample_rate < 20*60? FLAC_ENCODE__DEFAULT_PADDING : FLAC_ENCODE__DEFAULT_PADDING*8)) + (e->replay_gain ? GRABBAG__REPLAYGAIN_MAX_TAG_SPACE_REQUIRED : 0);
 			padding.length = min(padding.length, (1u << FLAC__STREAM_METADATA_LENGTH_LEN) - 1);
-			static_metadata_append(&static_metadata, &padding, /*needs_delete=*/false);
+			if(!static_metadata_append(&static_metadata, &padding, /*needs_delete=*/false)) {
+				flac__utils_printf(stderr, 1, "%s: ERROR allocating memory for PADDING block\n", e->inbasefilename);
+				static_metadata_clear(&static_metadata);
+				return false;
+			}
 		}
 		metadata = static_metadata.metadata;
 		num_metadata = static_metadata.num_metadata;
@@ -2042,6 +2104,27 @@ FLAC__bool EncoderSession_init_encoder(EncoderSession *e, encode_options_t optio
 		if(e->treat_warnings_as_errors) {
 			static_metadata_clear(&static_metadata);
 			return false;
+		}
+	}
+
+	if(options.threads != 1) {
+		uint32_t retval = FLAC__stream_encoder_set_num_threads(e->encoder, options.threads);
+		if(retval == FLAC__STREAM_ENCODER_SET_NUM_THREADS_NOT_COMPILED_WITH_MULTITHREADING_ENABLED) {
+			flac__utils_printf(stderr, 1, "%s: WARNING, cannot set number of threads: multithreading was not enabled during compilation of this binary\n", e->inbasefilename);
+	                if(e->treat_warnings_as_errors) {
+				static_metadata_clear(&static_metadata);
+				return false;
+	                }
+		}
+		if(retval == FLAC__STREAM_ENCODER_SET_NUM_THREADS_TOO_MANY_THREADS) {
+			flac__utils_printf(stderr, 1, "%s: WARNING, cannot set number of threads: too many\n", e->inbasefilename);
+	                if(e->treat_warnings_as_errors) {
+				static_metadata_clear(&static_metadata);
+				return false;
+	                }
+		}
+		if(retval == FLAC__STREAM_ENCODER_SET_NUM_THREADS_ALREADY_INITIALIZED) {
+			FLAC__ASSERT(0);
 		}
 	}
 
@@ -2422,9 +2505,16 @@ void encoder_progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 
 		e->old_frames_written = frames_written;
 	}
 #else
-	if(e->total_samples_to_encode > 0 && (clock() - e->old_clock_t) > (CLOCKS_PER_SEC/4)) {
-		print_stats(e);
-		e->old_clock_t = clock();
+	if(e->total_samples_to_encode > 0 && samples_written - e->old_samples_written > 10000) {
+		/* We're assuming that except for extremely slow settings, libFLAC can easily
+		 * process 40.000 samples per second, even on old hardware. To limit the number
+		 * of (expensive) syscalls, we only check clock every 10.000 samples */
+		clock_t cur_clock = clock();
+		e->old_samples_written = samples_written;
+		if((cur_clock - e->old_clock) > (CLOCKS_PER_SEC/4)) {
+			print_stats(e);
+			e->old_clock = cur_clock;
+		}
 	}
 
 #endif
@@ -2824,6 +2914,9 @@ FLAC__bool fskip_ahead(FILE *f, FLAC__uint64 offset)
 {
 	static uint8_t dump[8192];
 	struct flac_stat_s stb;
+
+	if(offset > (FLAC__uint64)FLAC__OFF_T_MAX)
+		return false;
 
 	if(flac_fstat(fileno(f), &stb) == 0 && (stb.st_mode & S_IFMT) == S_IFREG)
 	{

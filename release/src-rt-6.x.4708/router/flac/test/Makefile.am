@@ -1,6 +1,6 @@
 #  FLAC - Free Lossless Audio Codec
 #  Copyright (C) 2001-2009  Josh Coalson
-#  Copyright (C) 2011-2023  Xiph.Org Foundation
+#  Copyright (C) 2011-2025  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
 #  components distributed under different licenses.  The codec libraries
@@ -59,4 +59,4 @@ EXTRA_DIST = \
 	write_iff.pl
 
 clean-local:
-	-rm -f *.raw *.flac *.oga *.ogg *.cmp *.aiff *.wav *.w64 *.rf64 *.diff *.log *.cue core
+	-rm -f *.raw *.flac *.oga *.ogg *.cmp *.aifc *.aiff *.wav *.w64 *.rf64 *.diff *.log *.cue core

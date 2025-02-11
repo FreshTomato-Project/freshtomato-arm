@@ -16,7 +16,7 @@
 
 #  FLAC - Free Lossless Audio Codec
 #  Copyright (C) 2001-2009  Josh Coalson
-#  Copyright (C) 2011-2023  Xiph.Org Foundation
+#  Copyright (C) 2011-2025  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
 #  components distributed under different licenses.  The codec libraries
@@ -113,14 +113,14 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/add_cflags.m4 \
 	$(top_srcdir)/m4/ax_add_fortify_source.m4 \
 	$(top_srcdir)/m4/ax_check_compile_flag.m4 \
 	$(top_srcdir)/m4/ax_check_enable_debug.m4 \
-	$(top_srcdir)/m4/bswap.m4 $(top_srcdir)/m4/clang.m4 \
-	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/gcc_version.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/ogg.m4 \
-	$(top_srcdir)/m4/really_gcc.m4 \
+	$(top_srcdir)/m4/ax_pthread.m4 $(top_srcdir)/m4/bswap.m4 \
+	$(top_srcdir)/m4/clang.m4 $(top_srcdir)/m4/codeset.m4 \
+	$(top_srcdir)/m4/gcc_version.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/ogg.m4 $(top_srcdir)/m4/really_gcc.m4 \
 	$(top_srcdir)/m4/stack_protect.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -218,6 +218,8 @@ ENABLE_64_BIT_WORDS = @ENABLE_64_BIT_WORDS@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
+FILECMD = @FILECMD@
+FLAC_STATIC_LIBS = @FLAC_STATIC_LIBS@
 FLAC__HAS_OGG = @FLAC__HAS_OGG@
 FLAC__TEST_LEVEL = @FLAC__TEST_LEVEL@
 FLAC__TEST_WITH_VALGRIND = @FLAC__TEST_WITH_VALGRIND@
@@ -267,6 +269,10 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PANDOC = @PANDOC@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
+PTHREAD_CXX = @PTHREAD_CXX@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
 RC = @RC@
 SED = @SED@
@@ -287,6 +293,7 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+ax_pthread_config = @ax_pthread_config@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@

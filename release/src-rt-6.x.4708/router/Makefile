@@ -1922,9 +1922,9 @@ flac: flac/stamp-h1
 	@$(MAKE) -C flac/src/libFLAC all $(PARALLEL_BUILD)
 
 flac-install:
-	install -D flac/src/libFLAC/.libs/libFLAC.so.12.1.0 $(INSTALLDIR)/flac/usr/lib/libFLAC.so.12.1.0
-	$(STRIP) $(INSTALLDIR)/flac/usr/lib/libFLAC.so.12.1.0
-	cd $(INSTALLDIR)/flac/usr/lib/ && ln -sf libFLAC.so.12.1.0 libFLAC.so.12
+	install -D flac/src/libFLAC/.libs/libFLAC.so.14.0.0 $(INSTALLDIR)/flac/usr/lib/libFLAC.so.14.0.0
+	$(STRIP) $(INSTALLDIR)/flac/usr/lib/libFLAC.so.14.0.0
+	cd $(INSTALLDIR)/flac/usr/lib/ && ln -sf libFLAC.so.14.0.0 libFLAC.so.14
 
 flac-clean:
 	-@$(MAKE) -C flac clean

@@ -1,6 +1,6 @@
 #  FLAC - Free Lossless Audio Codec
 #  Copyright (C) 2001-2009  Josh Coalson
-#  Copyright (C) 2011-2023  Xiph.Org Foundation
+#  Copyright (C) 2011-2025  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
 #  components distributed under different licenses.  The codec libraries
@@ -20,7 +20,7 @@
 # instead of FLAC__ since autoconf triggers off 'AC_' in strings
 
 AC_PREREQ(2.60)
-AC_INIT([flac],[1.4.3],[flac-dev@xiph.org],[flac],[https://www.xiph.org/flac/])
+AC_INIT([flac],[1.5.0],[flac-dev@xiph.org],[flac],[https://www.xiph.org/flac/])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src/flac/main.c])
 AC_CONFIG_MACRO_DIR([m4])
@@ -53,7 +53,7 @@ AM_PROG_CC_C_O
 AC_C_INLINE
 AC_C_TYPEOF
 
-AC_CHECK_HEADERS([stdint.h stdbool.h inttypes.h byteswap.h sys/auxv.h sys/param.h sys/ioctl.h termios.h x86intrin.h cpuid.h arm_neon.h])
+AC_CHECK_HEADERS([stdint.h stdbool.h inttypes.h byteswap.h sys/auxv.h sys/param.h sys/ioctl.h sys/time.h termios.h x86intrin.h cpuid.h arm_neon.h])
 
 if test "x$ac_cv_header_stdint_h" != xyes -o "x$ac_cv_header_stdbool_h" != xyes; then
 AC_MSG_ERROR("Header stdint.h and/or stdbool.h not found")
@@ -79,7 +79,7 @@ AC_DEFINE_UNQUOTED(CPU_IS_LITTLE_ENDIAN, ${ac_cv_c_little_endian},
 AC_DEFINE_UNQUOTED(WORDS_BIGENDIAN, ${ac_cv_c_big_endian},
 					[Target processor is big endian.])
 
-AC_ARG_ENABLE(asm-optimizations, AS_HELP_STRING([--disable-asm-optimizations],[Do not use any CPU specific optimization routines]), asm_opt=no, asm_opt=yes)
+AC_ARG_ENABLE(asm-optimizations, AS_HELP_STRING([--disable-asm-optimizations],[Do not use any CPU specific optimization routines]), asm_opt=${enableval}, asm_opt=yes)
 AM_CONDITIONAL(FLaC__NO_ASM, test "x$asm_opt" = xno)
 if test "x$asm_opt" = xno ; then
 AC_DEFINE(FLAC__NO_ASM)
@@ -371,6 +371,25 @@ AC_ARG_ENABLE([version-from-git],
 	AS_HELP_STRING([--disable-version-from-git], [Do not use git tag, commit hash and commit date for version number]),
        [ enable_version_from_git=$enableval ], [ enable_version_from_git=yes ])
 
+dnl Build with multithreading?
+AC_ARG_ENABLE([multithreading],
+	AS_HELP_STRING([--disable-multithreading], [Disable multithreading in libFLAC]))
+
+HAVE_PTHREAD=no
+if test "x$enable_multithreading" != "xno" ; then
+	AX_PTHREAD([
+		HAVE_PTHREAD=yes
+		AC_DEFINE(HAVE_PTHREAD,1,[Define if pthread is enabled])
+		LIBS="$PTHREAD_LIBS $LIBS"
+		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+		CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+		CC="$PTHREAD_CC"
+		CXX="$PTHREAD_CXX"
+		],[HAVE_PTHREAD=no])
+	if test "x${HAVE_PTHREAD}" == "xno"; then
+		AC_MSG_WARN("pthread support, needed for multithreading, is not found")
+	fi
+fi
 
 dnl check for i18n(internationalization); these are from libiconv/gettext
 AM_ICONV
@@ -493,7 +512,7 @@ AC_CHECK_PROG(GIT_FOUND,git,yes)
 
 if test x$GIT_FOUND$enable_version_from_git = "xyesyes"; then
 	GIT_COMMIT_TAG=`git -C $srcdir --git-dir=.git describe --tags --exact-match 2>/dev/null`
-	GIT_COMMIT_HASH=`git -C $srcdir --git-dir=.git log -1 --pretty=format:%h 2>/dev/null`
+	GIT_COMMIT_HASH=`git -C $srcdir --git-dir=.git log -1 --pretty=format:%H 2>/dev/null | head -c 8`
 	GIT_COMMIT_DATE=`git -C $srcdir --git-dir=.git log -1 --pretty=format:%cd --date=format:%Y%m%d 2>/dev/null`
 	if test ${#GIT_COMMIT_HASH} = 8 && test ${#GIT_COMMIT_DATE} = 8; then
 		GIT_COMMIT_VERSION_AVAIL=yes
@@ -513,6 +532,7 @@ AC_SUBST(GIT_COMMIT_VERSION_HASH)
 AX_CHECK_COMPILE_FLAG([-fassociative-math -fno-signed-zeros -fno-trapping-math -freciprocal-math],HAVE_ASSOC_MATH=yes)
 AM_CONDITIONAL(ASSOC_MATH_AVAILABLE, test "x$HAVE_ASSOC_MATH" = "xyes")
 
+AC_SUBST(FLAC_STATIC_LIBS) dnl unused here
 
 AC_CONFIG_FILES([ \
 	Makefile \
@@ -567,7 +587,6 @@ AC_CONFIG_FILES([ \
 	test/flac-to-flac-metadata-test-files/Makefile \
 	test/metaflac-test-files/Makefile \
 	test/pictures/Makefile \
-	microbench/Makefile \
 	oss-fuzz/Makefile
 ])
 AC_OUTPUT
@@ -597,6 +616,7 @@ fi
 	echo "    Compiler is Clang : ....................... ${xiph_cv_c_compiler_clang}"
 	echo "    Asm optimizations : ....................... ${asm_optimisation}"
 	echo "    Ogg/FLAC support : ........................ ${have_ogg}"
+	echo "    Multithreading   : ........................ ${HAVE_PTHREAD}"
 	echo "    Stack protector  : ........................ ${enable_stack_smash_protection}"
 	echo "    Fuzzing support (Clang only) : ............ ${have_oss_fuzzers}"
 echo

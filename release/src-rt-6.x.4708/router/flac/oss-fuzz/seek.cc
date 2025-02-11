@@ -1,5 +1,5 @@
 /* fuzzer_seek
- * Copyright (C) 2022-2023  Xiph.Org Foundation
+ * Copyright (C) 2022-2025  Xiph.Org Foundation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +34,13 @@
 #include "FLAC/stream_decoder.h"
 #include "common.h"
 
+#if MSAN == 1
+extern "C" void __msan_check_mem_is_initialized(const volatile void *x, size_t size);
+#endif
+
 int write_abort_check_counter = -1;
+int written_uncompressed_bytes = 0;
+int errors_received_counter = 0;
 
 #if 0 /* set to 1 to debug */
 #define FPRINTF_DEBUG_ONLY(...) fprintf(__VA_ARGS__)
@@ -42,11 +48,11 @@ int write_abort_check_counter = -1;
 #define FPRINTF_DEBUG_ONLY(...)
 #endif
 
-#define CONFIG_LENGTH 2
+#define CONFIG_LENGTH 3
 
 static FLAC__StreamDecoderWriteStatus write_callback(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame, const FLAC__int32 *const buffer[], void *client_data)
 {
-        (void)decoder, (void)frame, (void)buffer, (void)client_data;
+	(void)decoder, (void)buffer, (void)client_data;
 	if(write_abort_check_counter > 0) {
 		write_abort_check_counter--;
 		if(write_abort_check_counter == 0)
@@ -54,12 +60,22 @@ static FLAC__StreamDecoderWriteStatus write_callback(const FLAC__StreamDecoder *
 	} else if(write_abort_check_counter == 0)
 		/* This must not happen: write callback called after abort is returned */
 		abort();
+
+	written_uncompressed_bytes += frame->header.blocksize * frame->header.channels * frame->header.bits_per_sample / 8;
+	if(written_uncompressed_bytes > (1 << 24))
+		return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+
+
+	if(errors_received_counter > 10000)
+		return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+
         return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
 static void error_callback(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus error, void *client_data)
 {
-        (void)decoder, (void)error, (void)client_data;
+	(void)decoder, (void)error, (void)client_data;
+	errors_received_counter++;
 }
 
 
@@ -70,31 +86,35 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 	uint8_t command_length;
 	FLAC__bool init_bools[16], ogg;
 
-	if(size > 2 && data[1] < 128) /* Use MSB as on/off */
-		alloc_check_threshold = data[1];
+	if(size < 1)
+		return 1;
+
+	if(data[0] < 128) /* Use MSB as on/off */
+		alloc_check_threshold = data[0];
 	else
 		alloc_check_threshold = INT32_MAX;
 	alloc_check_counter = 0;
 
 	write_abort_check_counter = -1;
+	written_uncompressed_bytes = 0;
+	errors_received_counter = 0;
 
 	/* allocate the decoder */
 	if((decoder = FLAC__stream_decoder_new()) == NULL) {
-		fprintf(stderr, "ERROR: allocating decoder\n");
 		return 1;
 	}
 
-	/* Use first byte for configuration, leave at least one byte of input */
+	/* Use first CONFIG_LENGTH bytes for configuration, leave at least one byte of input */
 	if(size < 1 + CONFIG_LENGTH){
 		FLAC__stream_decoder_delete(decoder);
 		return 0;
 	}
 
-	/* First 4 bits for configuration bools, next 4 for length of command section */
-	for(int i = 0; i < 4; i++)
-		init_bools[i] = data[i/8] & (1 << (i % 8));
+	/* bit 8 to 19 bits for configuration bools, bit 20 to 23 for length of command section */
+	for(int i = 0; i < 12; i++)
+		init_bools[i] = data[1+i/8] & (1 << (i % 8));
 
-	command_length = data[0] >> 4;
+	command_length = data[CONFIG_LENGTH-1] >> 4;
 
 	/* Leave at least one byte as input */
 	if(command_length >= size - 1 - CONFIG_LENGTH)
@@ -107,13 +127,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 		fclose(file_to_decode);
 	}
 
-	ogg =  init_bools[0];
+	ogg = init_bools[0];
 
 	FLAC__stream_decoder_set_md5_checking(decoder,init_bools[1]);
 	if(init_bools[2])
 		FLAC__stream_decoder_set_metadata_respond_all(decoder);
 	if(init_bools[3])
 		FLAC__stream_decoder_set_metadata_ignore_all(decoder);
+	if(init_bools[4])
+		FLAC__stream_decoder_set_decode_chained_stream(decoder, true);
 
 	/* initialize decoder */
 	if(decoder_valid) {
@@ -183,6 +205,59 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 				/* Set abort on write callback */
 				write_abort_check_counter = (command[0] >> 4) + 1;
 				break;
+			case 9:
+				FPRINTF_DEBUG_ONLY(stderr,"end_of_link\n");
+				decoder_valid = FLAC__stream_decoder_process_until_end_of_link(decoder);
+				break;
+			case 10:
+				FPRINTF_DEBUG_ONLY(stderr,"finish_link\n");
+				if(FLAC__stream_decoder_get_state(decoder) == FLAC__STREAM_DECODER_END_OF_LINK)
+					FLAC__stream_decoder_finish_link(decoder);
+				break;
+			case 11:
+				FPRINTF_DEBUG_ONLY(stderr,"skip_single_link\n");
+				decoder_valid = FLAC__stream_decoder_skip_single_link(decoder);
+				break;
+			case 12:
+				FPRINTF_DEBUG_ONLY(stderr,"find_total_samples\n");
+				if(FLAC__stream_decoder_find_total_samples(decoder) == 0) {
+					FLAC__StreamDecoderState state = FLAC__stream_decoder_get_state(decoder);
+					if(state == FLAC__STREAM_DECODER_OGG_ERROR ||
+					state == FLAC__STREAM_DECODER_SEEK_ERROR ||
+					state == FLAC__STREAM_DECODER_ABORTED ||
+					state == FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR ||
+					state == FLAC__STREAM_DECODER_UNINITIALIZED)
+						decoder_valid = false;
+				}
+				break;
+			case 13:
+				int32_t retval;
+				FLAC__uint64 *link_lengths;
+				FPRINTF_DEBUG_ONLY(stderr,"get_link_lengths\n");
+				retval = FLAC__stream_decoder_get_link_lengths(decoder, &link_lengths);
+				if(retval == FLAC__STREAM_DECODER_GET_LINK_LENGTHS_MEMORY_ALLOCATION_ERROR) {
+					decoder_valid = false;
+				}
+				if(retval > 0) {
+					for(int32_t j = 0; j < retval; j++) {
+#if MSAN == 1
+						 __msan_check_mem_is_initialized(&link_lengths[j],sizeof(link_lengths[j]));
+#else
+						;
+#endif
+					}
+					free(link_lengths);
+				}
+				break;
+			/* case 14 is already used above */
+		}
+		if(!decoder_valid) {
+			/* Try again if possible */
+			FLAC__StreamDecoderState state = FLAC__stream_decoder_get_state(decoder);
+			if(state != FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR && state != FLAC__STREAM_DECODER_ABORTED) {
+				FPRINTF_DEBUG_ONLY(stderr,"reset invalid\n");
+				decoder_valid = FLAC__stream_decoder_reset(decoder);
+			}
 		}
 	}
 

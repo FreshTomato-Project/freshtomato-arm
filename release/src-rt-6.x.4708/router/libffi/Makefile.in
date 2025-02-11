@@ -221,7 +221,6 @@ am__depfiles_remade = src/$(DEPDIR)/closures.Plo \
 	src/microblaze/$(DEPDIR)/sysv.Plo src/mips/$(DEPDIR)/ffi.Plo \
 	src/mips/$(DEPDIR)/n32.Plo src/mips/$(DEPDIR)/o32.Plo \
 	src/moxie/$(DEPDIR)/eabi.Plo src/moxie/$(DEPDIR)/ffi.Plo \
-	src/nios2/$(DEPDIR)/ffi.Plo src/nios2/$(DEPDIR)/sysv.Plo \
 	src/or1k/$(DEPDIR)/ffi.Plo src/or1k/$(DEPDIR)/sysv.Plo \
 	src/pa/$(DEPDIR)/ffi.Plo src/pa/$(DEPDIR)/hpux32.Plo \
 	src/pa/$(DEPDIR)/hpux64.Plo src/pa/$(DEPDIR)/linux.Plo \
@@ -470,6 +469,7 @@ ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_ct_READELF = @ac_ct_READELF@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -560,7 +560,7 @@ noinst_HEADERS = src/aarch64/ffitarget.h src/aarch64/internal.h		\
 	src/m32r/ffitarget.h src/m68k/ffitarget.h			\
 	src/m88k/ffitarget.h src/metag/ffitarget.h			\
 	src/microblaze/ffitarget.h src/mips/ffitarget.h			\
-	src/moxie/ffitarget.h src/nios2/ffitarget.h			\
+	src/moxie/ffitarget.h \
 	src/or1k/ffitarget.h src/pa/ffitarget.h				\
 	src/powerpc/ffitarget.h src/powerpc/asm.h			\
 	src/powerpc/ffi_powerpc.h src/riscv/ffitarget.h			\
@@ -585,7 +585,7 @@ EXTRA_libffi_la_SOURCES = src/aarch64/ffi.c src/aarch64/sysv.S		\
 	src/metag/ffi.c src/metag/sysv.S src/microblaze/ffi.c		\
 	src/microblaze/sysv.S src/mips/ffi.c src/mips/o32.S		\
 	src/mips/n32.S src/moxie/ffi.c src/moxie/eabi.S			\
-	src/nios2/ffi.c src/nios2/sysv.S src/or1k/ffi.c			\
+	src/or1k/ffi.c			\
 	src/or1k/sysv.S src/pa/ffi.c src/pa/linux.S src/pa/hpux32.S	\
 	src/pa/hpux64.S src/powerpc/ffi.c src/powerpc/ffi_sysv.c	\
 	src/powerpc/ffi_linux64.c src/powerpc/sysv.S			\
@@ -913,16 +913,6 @@ src/moxie/ffi.lo: src/moxie/$(am__dirstamp) \
 	src/moxie/$(DEPDIR)/$(am__dirstamp)
 src/moxie/eabi.lo: src/moxie/$(am__dirstamp) \
 	src/moxie/$(DEPDIR)/$(am__dirstamp)
-src/nios2/$(am__dirstamp):
-	@$(MKDIR_P) src/nios2
-	@: > src/nios2/$(am__dirstamp)
-src/nios2/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/nios2/$(DEPDIR)
-	@: > src/nios2/$(DEPDIR)/$(am__dirstamp)
-src/nios2/ffi.lo: src/nios2/$(am__dirstamp) \
-	src/nios2/$(DEPDIR)/$(am__dirstamp)
-src/nios2/sysv.lo: src/nios2/$(am__dirstamp) \
-	src/nios2/$(DEPDIR)/$(am__dirstamp)
 src/or1k/$(am__dirstamp):
 	@$(MKDIR_P) src/or1k
 	@: > src/or1k/$(am__dirstamp)
@@ -1158,8 +1148,6 @@ mostlyclean-compile:
 	-rm -f src/mips/*.lo
 	-rm -f src/moxie/*.$(OBJEXT)
 	-rm -f src/moxie/*.lo
-	-rm -f src/nios2/*.$(OBJEXT)
-	-rm -f src/nios2/*.lo
 	-rm -f src/or1k/*.$(OBJEXT)
 	-rm -f src/or1k/*.lo
 	-rm -f src/pa/*.$(OBJEXT)
@@ -1238,8 +1226,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/mips/$(DEPDIR)/o32.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/moxie/$(DEPDIR)/eabi.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/moxie/$(DEPDIR)/ffi.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/nios2/$(DEPDIR)/ffi.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/nios2/$(DEPDIR)/sysv.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/or1k/$(DEPDIR)/ffi.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/or1k/$(DEPDIR)/sysv.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/pa/$(DEPDIR)/ffi.Plo@am__quote@ # am--include-marker
@@ -1365,7 +1351,6 @@ clean-libtool:
 	-rm -rf src/microblaze/.libs src/microblaze/_libs
 	-rm -rf src/mips/.libs src/mips/_libs
 	-rm -rf src/moxie/.libs src/moxie/_libs
-	-rm -rf src/nios2/.libs src/nios2/_libs
 	-rm -rf src/or1k/.libs src/or1k/_libs
 	-rm -rf src/pa/.libs src/pa/_libs
 	-rm -rf src/powerpc/.libs src/powerpc/_libs
@@ -1783,8 +1768,6 @@ distclean-generic:
 	-rm -f src/mips/$(am__dirstamp)
 	-rm -f src/moxie/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/moxie/$(am__dirstamp)
-	-rm -f src/nios2/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/nios2/$(am__dirstamp)
 	-rm -f src/or1k/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/or1k/$(am__dirstamp)
 	-rm -f src/pa/$(DEPDIR)/$(am__dirstamp)
@@ -1871,8 +1854,6 @@ distclean: distclean-recursive
 	-rm -f src/mips/$(DEPDIR)/o32.Plo
 	-rm -f src/moxie/$(DEPDIR)/eabi.Plo
 	-rm -f src/moxie/$(DEPDIR)/ffi.Plo
-	-rm -f src/nios2/$(DEPDIR)/ffi.Plo
-	-rm -f src/nios2/$(DEPDIR)/sysv.Plo
 	-rm -f src/or1k/$(DEPDIR)/ffi.Plo
 	-rm -f src/or1k/$(DEPDIR)/sysv.Plo
 	-rm -f src/pa/$(DEPDIR)/ffi.Plo
@@ -2013,8 +1994,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f src/mips/$(DEPDIR)/o32.Plo
 	-rm -f src/moxie/$(DEPDIR)/eabi.Plo
 	-rm -f src/moxie/$(DEPDIR)/ffi.Plo
-	-rm -f src/nios2/$(DEPDIR)/ffi.Plo
-	-rm -f src/nios2/$(DEPDIR)/sysv.Plo
 	-rm -f src/or1k/$(DEPDIR)/ffi.Plo
 	-rm -f src/or1k/$(DEPDIR)/sysv.Plo
 	-rm -f src/pa/$(DEPDIR)/ffi.Plo

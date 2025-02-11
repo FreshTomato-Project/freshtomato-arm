@@ -1,14 +1,13 @@
-This is libffi.info, produced by makeinfo version 7.0.3 from
-libffi.texi.
+This is libffi.info, produced by makeinfo version 7.1 from libffi.texi.
 
 This manual is for libffi, a portable foreign function interface
 library.
 
-   Copyright © 2008–2024 Anthony Green and Red Hat, Inc.
+   Copyright © 2008-2024 Anthony Green and Red Hat, Inc.
 
    Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
-“Software”), to deal in the Software without restriction, including
+"Software"), to deal in the Software without restriction, including
 without limitation the rights to use, copy, modify, merge, publish,
 distribute, sublicense, and/or sell copies of the Software, and to
 permit persons to whom the Software is furnished to do so, subject to
@@ -17,7 +16,7 @@ the following conditions:
    The above copyright notice and this permission notice shall be
 included in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
@@ -39,11 +38,11 @@ libffi
 This manual is for libffi, a portable foreign function interface
 library.
 
-   Copyright © 2008–2024 Anthony Green and Red Hat, Inc.
+   Copyright © 2008-2024 Anthony Green and Red Hat, Inc.
 
    Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
-“Software”), to deal in the Software without restriction, including
+"Software"), to deal in the Software without restriction, including
 without limitation the rights to use, copy, modify, merge, publish,
 distribute, sublicense, and/or sell copies of the Software, and to
 permit persons to whom the Software is furnished to do so, subject to
@@ -52,7 +51,7 @@ the following conditions:
    The above copyright notice and this permission notice shall be
 included in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
@@ -65,7 +64,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 * Introduction::                What is libffi?
 * Using libffi::                How to use libffi.
 * Memory Usage::                Where memory for closures comes from.
-* Missing Features::            Things libffi can’t do.
+* Missing Features::            Things libffi can't do.
 * Index::                       Index.
 
 
@@ -174,7 +173,7 @@ prepare a call interface object, use the function ‘ffi_prep_cif’.
      ‘ffi_type_double’ first), or any integer type small than an int
      (promote to an int-sized type first).
 
-     Note that, different cif’s must be prepped for calls to the same
+     Note that, different cif's must be prepped for calls to the same
      function when different numbers of arguments are passed.
 
      Also note that a call to ‘ffi_prep_cif_var’ with
@@ -197,7 +196,7 @@ function:
      RVALUE is a pointer to a chunk of memory that will hold the result
      of the function call.  This must be large enough to hold the
      result, no smaller than the system register size (generally 32 or
-     64 bits), and must be suitably aligned; it is the caller’s
+     64 bits), and must be suitably aligned; it is the caller's
      responsibility to ensure this.  If CIF declares that the function
      returns ‘void’ (using ‘ffi_type_void’), then RVALUE is ignored.
 
@@ -220,7 +219,7 @@ function:
      should exactly match their declared type.  For example, if an
      argument is a ‘short’, then the entry in AVALUES should point to an
      object declared as ‘short’; but if the return type is ‘short’, then
-     RVALUE should point to an object declared as a larger type –
+     RVALUE should point to an object declared as a larger type -
      usually ‘ffi_arg’.
 
 
@@ -449,10 +448,10 @@ structure.
      layout depends on the ABI.
 
      OFFSETS is an out parameter.  The caller is responsible for
-     providing enough space for all the results to be written – one
+     providing enough space for all the results to be written - one
      element per element type in STRUCT_TYPE.  If OFFSETS is ‘NULL’,
      then the type will be laid out but not otherwise modified.  This
-     can be useful for accessing the type’s size or layout, as mentioned
+     can be useful for accessing the type's size or layout, as mentioned
      above.
 
      This function returns ‘FFI_OK’ on success; ‘FFI_BAD_ABI’ if ABI is
@@ -488,7 +487,7 @@ array.
      array_type.type = FFI_TYPE_STRUCT;
      array_type.elements = elements;
 
-   Note that arrays cannot be passed or returned by value in C –
+   Note that arrays cannot be passed or returned by value in C -
 structure types created like this should only be used to refer to
 members of real ‘FFI_TYPE_STRUCT’ objects.
 
@@ -543,7 +542,7 @@ element type is laid out.
 
 ‘libffi’ does not have any special support for C ‘enum’s.  Although any
 given ‘enum’ is implemented using a specific underlying integral type,
-exactly which type will be used cannot be determined by ‘libffi’ – it
+exactly which type will be used cannot be determined by ‘libffi’ - it
 may depend on the values in the enumeration or on compiler flags such as
 ‘-fshort-enums’.  *Note (gcc)Structures unions enumerations and
 bit-fields implementation::, for more information about how GCC handles
@@ -556,7 +555,7 @@ File: libffi.info,  Node: Type Example,  Next: Complex,  Prev: Arrays Unions Enu
 ------------------
 
 The following example initializes a ‘ffi_type’ object representing the
-‘tm’ struct from Linux’s ‘time.h’.
+‘tm’ struct from Linux's ‘time.h’.
 
    Here is how the struct is defined:
 
@@ -584,7 +583,7 @@ The following example initializes a ‘ffi_type’ object representing the
 
            tm_type.size = tm_type.alignment = 0;
            tm_type.type = FFI_TYPE_STRUCT;
-           tm_type.elements = &tm_type_elements;
+           tm_type.elements = tm_type_elements;
 
            for (i = 0; i < 9; i++)
                tm_type_elements[i] = &ffi_type_sint;
@@ -627,7 +626,7 @@ built-in type descriptors ‘ffi_type_complex_float’,
 
           This is a ‘NULL’-terminated array of pointers to ‘ffi_type’
           objects.  The first element is set to the ‘ffi_type’ of the
-          complex’s base type.  The second element must be set to
+          complex's base type.  The second element must be set to
           ‘NULL’.
 
    The section *note Complex Type Example:: shows a way to determine the
@@ -742,7 +741,7 @@ File: libffi.info,  Node: The Closure API,  Next: Closure Example,  Prev: Multip
 2.5 The Closure API
 ===================
 
-‘libffi’ also provides a way to write a generic function – a function
+‘libffi’ also provides a way to write a generic function - a function
 that can accept and decode any combination of arguments.  This can be
 useful when writing an interpreter, or to provide wrappers for arbitrary
 functions.
@@ -800,7 +799,7 @@ closure function:
                The ‘ffi_cif’ passed to ‘ffi_prep_closure_loc’.
 
           RET
-               A pointer to the memory used for the function’s return
+               A pointer to the memory used for the function's return
                value.
 
                If the function is declared as returning ‘void’, then
@@ -942,7 +941,7 @@ execute it).  The search follows this list, using the first that works:
 
    • A file created in ‘/dev/shm’.
 
-   • A file created in the user’s home directory (‘$HOME’).
+   • A file created in the user's home directory (‘$HOME’).
 
    • A file created in any directory listed in ‘/etc/mtab’.
 
@@ -964,7 +963,7 @@ for these.
 
    • There is no support for bit fields in structures.
 
-   • The “raw” API is undocumented.
+   • The "raw" API is undocumented.
 
    • The Go API is undocumented.
 
@@ -985,9 +984,9 @@ Index
 * closures:                              The Closure API.      (line 13)
 * FFI:                                   Introduction.         (line 31)
 * ffi_call:                              The Basics.           (line 72)
-* FFI_CLOSURES:                          The Closure API.      (line 13)
 * ffi_closure_alloc:                     The Closure API.      (line 19)
 * ffi_closure_free:                      The Closure API.      (line 26)
+* FFI_CLOSURES:                          The Closure API.      (line 13)
 * ffi_get_struct_offsets:                Size and Alignment.   (line 39)
 * ffi_prep_cif:                          The Basics.           (line 16)
 * ffi_prep_cif_var:                      The Basics.           (line 39)
@@ -1032,26 +1031,26 @@ Index
 
 
 Tag Table:
-Node: Top1399
-Node: Introduction2933
-Node: Using libffi4593
-Node: The Basics5122
-Node: Simple Example10240
-Node: Types11275
-Node: Primitive Types11786
-Node: Structures14103
-Node: Size and Alignment15214
-Node: Arrays Unions Enums17489
-Node: Type Example20470
-Node: Complex21779
-Node: Complex Type Example23295
-Node: Multiple ABIs26347
-Node: The Closure API26730
-Node: Closure Example30648
-Node: Thread Safety32292
-Node: Memory Usage33125
-Node: Missing Features34402
-Node: Index34783
+Node: Top1387
+Node: Introduction2909
+Node: Using libffi4569
+Node: The Basics5098
+Node: Simple Example10210
+Node: Types11245
+Node: Primitive Types11756
+Node: Structures14073
+Node: Size and Alignment15184
+Node: Arrays Unions Enums17455
+Node: Type Example20432
+Node: Complex21738
+Node: Complex Type Example23252
+Node: Multiple ABIs26304
+Node: The Closure API26687
+Node: Closure Example30601
+Node: Thread Safety32245
+Node: Memory Usage33078
+Node: Missing Features34353
+Node: Index34730
 
 End Tag Table
 

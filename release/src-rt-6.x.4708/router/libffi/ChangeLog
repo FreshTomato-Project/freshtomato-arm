@@ -1,3 +1,465 @@
+commit 1716f81e9a115d340429504563bc8e7fb2eeef2b
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Feb 8 11:32:05 2025 -0500
+
+    feat: remove nios2 support
+    
+    Acked-by: Anthony Green <green@moxielogic.com>
+
+commit 252c0f463641e6100169c3f0a4a590d7df438278
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Feb 8 09:37:31 2025 -0500
+
+    chore: Bump version to 3.4.7 and update change log
+
+commit adfe4489c17b542216a502efaaf6b0156e2197ab
+Author: Kleis Auke Wolthuizen <github@kleisauke.nl>
+Date:   Fri Jan 31 21:41:56 2025 +0100
+
+    Emscripten: remove support for `-sWASM_BIGINT=0` (#874)
+    
+    * Emscripten: cleanup
+    
+    * Emscripten: remove support for `-sWASM_BIGINT=0`
+    
+    * Emscripten: remove redundant CircleCI config
+    
+    * Emscripten: modernize CI
+    
+    * Ensure test helper methods are static
+    
+    Similar to #644.
+    
+    * Fix test failures in `cls_multi_{s,u}shortchar`
+
+commit 2f34cf639cab60123a7725fc9488657766ba665d
+Author: Matthew Flatt <mflatt@cs.utah.edu>
+Date:   Fri Jan 31 13:40:40 2025 -0700
+
+    x86 Darwin returns structs of size 1, 2, 4, and 8 in registers (#876)
+
+commit a0d8074a672312dbc757320d8bc42e39aa5b3d9a
+Author: zye2-sc <140619768+zye2-sc@users.noreply.github.com>
+Date:   Fri Jan 31 21:40:00 2025 +0100
+
+    Disable go closures on Android (#877)
+    
+    * x18 register shouldn't be used on Android due to the shadow call stack feature in llvm
+    * https://source.android.com/docs/security/test/shadow-call-stack
+
+commit d77b9fefa25f7f11dcc4e6380c661c4cf2960a85
+Author: 杨萧玉 <yulingtianxia@users.noreply.github.com>
+Date:   Fri Dec 13 18:38:01 2024 +0800
+
+    Fix config.sub on Apple platforms (#860)
+    
+    * update config.sub
+    
+    * update config.sub
+
+commit 593cb01a46e63d5361f2df803947cb657bb4e822
+Author: Satadru Pramanik, DO, MPH, MEng <satadru@gmail.com>
+Date:   Fri Dec 13 05:37:15 2024 -0500
+
+    Add mold linker to linker checks. (#866)
+    
+    Signed-off-by: Satadru Pramanik <satadru@gmail.com>
+
+commit f515eac04cf8e5f594d5d9dee5fb7dfc3a186a4c
+Author: Icenowy Zheng <uwu@icenowy.me>
+Date:   Fri Dec 13 18:36:02 2024 +0800
+
+    MIPS: add .note.GNU-stack section to assembly sources (#872)
+    
+    To build ELF shared libraries that do not require executable stack on
+    MIPS, every object file linked should have a .note.GNU-stack section,
+    otherwise the linker defaults to executable stack.
+    
+    As libffi shouldn't require executable stack, add the .note.GNU-stack
+    section to the assembly source files under src/mips, like other
+    architectures.
+    
+    Signed-off-by: Icenowy Zheng <uwu@icenowy.me>
+
+commit 458b2ae2829f1916ea3a3e07c944b4668732290f
+Author: Eddy S. <fneddy@users.noreply.github.com>
+Date:   Sat Nov 16 13:03:24 2024 +0100
+
+    Add static trampoline support for s390 (#862)
+    
+    * added static trampoline support for s390
+    
+    * enable static tramp only for  s390x 64bit
+
+commit 0859f8431242d5adff21420b9cab538d2af527b5
+Author: Joseph Myers <jsm@polyomino.org.uk>
+Date:   Thu Oct 24 18:26:58 2024 +0000
+
+    Fix testsuite for C23 `va_start` (#861)
+    
+    In the C23 revision of the C standard, `va_start` ignores its second
+    argument, which is no longer required (previously the last named
+    function parameter - which the compiler knows anyway, so it's
+    redundant information).
+    
+    This has the consequence for the libffi testsuite, when making GCC
+    default to `-std=gnu23`, of making two tests fail with warnings about
+    an unused function argument (only passed to `va_start` and not
+    otherwise used).  Fix those test failures by explicitly casting the
+    argument to `void`.
+
+commit 8308bed5b2423878aa20d7884a99cf2e30b8daf7
+Author: Ivan Tadeu Ferreira Antunes Filho <antunesi@google.com>
+Date:   Fri Sep 20 06:01:23 2024 -0400
+
+    Move cfi_startproc after CNAME(label) (#857)
+    
+    This is a fix for https://github.com/libffi/libffi/issues/852: error: invalid CFI advance_loc expression on apple targets.
+    
+    The CFI for darwin arm64 was broken because the CNAME macro was being used after the
+    cfi_startproc macro.
+
+commit 01db744b4af8665f9b7494d00cc2a1cc45ee9636
+Author: KJ Tsanaktsidis <kj@kjtsanaktsidis.id.au>
+Date:   Fri Sep 20 20:00:49 2024 +1000
+
+    Disable ASAN in ffi_call_int functions (#858)
+    
+    The pattern for several of the architectures is for ffi_call_int to
+    stack-allocate some arguments + the registers, and then
+    ffi_call_$ARCH will pop the top of that structure into registers, and
+    then adjust the stack pointer such that the alloca'd buffer _becomes_
+    the stack-passed arguments for the function being called.
+    
+    If libffi is compiled with ASAN, then there will be a redzone inserted
+    after the alloca'd buffer which is marked as poisoned. This redzone
+    appears beyond the end of $sp upon entry to the called function.
+    
+    If the called function does anything to use this stack memory, ASAN will
+    notice that it's poisoned and report an error.
+    
+    This commit fixes the situation (on the architectures that I have access
+    to) disabling instrumentation for ffi_call_int; that means there will be
+    no alloca redzone left on the shadow-stack.
+
+commit f7e4992789fa563b4cc74521c37ff703555da21c
+Author: Sam James <sam@cmpct.info>
+Date:   Fri Sep 20 10:58:06 2024 +0100
+
+    testsuite: fix dejagnu directive typo (#859)
+
+commit 084f36903f56b280283f3f4473a80b8e77727a29
+Merge: 92d384d 348e70e
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Sep 15 12:32:58 2024 -0400
+
+    Merge remote-tracking branch 'refs/remotes/origin/master'
+
+commit 92d384df196a099fde384f9178864dbfe8c6b0fc
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Sep 15 12:32:29 2024 -0400
+
+    Fix floating point compare
+
+commit 348e70ef1c785b85e194e47d47b7c4c2b1cec861
+Author: Richard Barnes <rbarnes@umn.edu>
+Date:   Sun Sep 15 07:39:51 2024 -0400
+
+    Suppress unused variable warning in dlmalloc.c (#843)
+    
+    Allows `-Wunused-but-set-variable` to pass
+
+commit 30e887f84e70c16df5c421983f074d07a93b4e58
+Author: Yuriy Kolerov <ykolerov@synopsys.com>
+Date:   Sun Sep 15 14:39:01 2024 +0300
+
+    A series of fixes for ARC port (#844)
+    
+    * arc: Fix warnings
+    
+    These warnings are fixed:
+    
+    1. A series of "unused variables".
+    2. Implicit conversion from a pointer to uint32_t.
+    
+    Signed-off-by: Yuriy Kolerov <ykolerov@synopsys.com>
+    
+    * arc: Do not use mov_s and movl_s instructions
+    
+    mov_s and movl_s instructions use a restricted set of registers.
+    However, a list of available registers for such instructions for
+    one ARC target may not match a list for another ARC targets. For
+    example, it is applicable to ARC700 and ARC HS3x/4x - build
+    fails because mov_s formats may be incompatible in some cases.
+    
+    The easiest and the most straightforward way to fix this issue
+    is to use mov and movl instead of mov_s and movl_s.
+    
+    Signed-off-by: Yuriy Kolerov <ykolerov@synopsys.com>
+    
+    ---------
+    
+    Signed-off-by: Yuriy Kolerov <ykolerov@synopsys.com>
+
+commit 377a13696928aabc6f0df378ecd25437a1ff1d17
+Author: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Date:   Sun Sep 15 07:38:22 2024 -0400
+
+    Bump actions/download-artifact from 3 to 4.1.7 in /.github/workflows (#856)
+    
+    Bumps [actions/download-artifact](https://github.com/actions/download-artifact) from 3 to 4.1.7.
+    - [Release notes](https://github.com/actions/download-artifact/releases)
+    - [Commits](https://github.com/actions/download-artifact/compare/v3...v4.1.7)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: actions/download-artifact
+      dependency-type: direct:production
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+    Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+commit c7437f671e20f8864fd98b06f167af6e8ab6514b
+Author: Yury V. Zaytsev <yury@shurup.com>
+Date:   Sun Sep 15 13:37:28 2024 +0200
+
+    configure: fix shared build on Solaris 10 (#846)
+    
+    GNU tools are often installed with g-prefix on Solaris. Unfortunately, a check
+    in configure was using grep directly instead of through a variable, which lead
+    to wrong results due to missing option `-q`. Additionally, the check will fail
+    silently if `readelf` is not on `PATH` instead of trying `greadelf`.
+
+commit 63b925fe98058a433c7bda6a6c2c6330b8ac77cd
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Sep 15 07:32:50 2024 -0400
+
+    feat(testsuite): add struct_int_float.c to Makefile.am
+
+commit efb98a72d8b9bdb71b4f972efced073bee3b30fc
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sun Sep 15 07:31:33 2024 -0400
+
+    Robustify floating point comparison in test
+
+commit d21881f55ed4a44d464c9091871e69b0bb47611a
+Author: kellda <59569234+kellda@users.noreply.github.com>
+Date:   Sun Sep 15 13:29:42 2024 +0200
+
+    Fix x86/ffi64 calls with 6 gp and some sse registers (#848)
+    
+    * Fix x86/ffi64 calls with 6 gp and some sse registers
+    
+    * Add test demonstating issue when mixing gp and sse registers
+
+commit 8a0d029244d9b0393db19898e603f24febfb53ee
+Author: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+Date:   Sun Sep 15 13:22:36 2024 +0200
+
+    OpenRISC/or1k build fixes (#854)
+    
+    * src/or1k/ffi.c: fix prototype of ffi_call_SYSV()
+    
+    The current code base of libffi on OpenRISC (or1k) fails to build with
+    GCC 14.x with the following error:
+    
+    ../src/or1k/ffi.c: In function 'ffi_call':
+    ../src/or1k/ffi.c:167:34: error: passing argument 3 of 'ffi_call_SYSV' from incompatible pointer type [-Wincompatible-pointer-types]
+      167 |       ffi_call_SYSV(size, &ecif, ffi_prep_args, rvalue, fn, cif->flags);
+          |                                  ^~~~~~~~~~~~~
+          |                                  |
+          |                                  void * (*)(char *, extended_cif *)
+    ../src/or1k/ffi.c:113:27: note: expected 'void * (*)(int *, extended_cif *)' but argument is of type 'void * (*)(char *, extended_cif *)'
+      113 |                           void *(*)(int *, extended_cif *),
+          |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    This is due to the fact that ffi_prep_args() is in fact defined as:
+    
+      void* ffi_prep_args(char *stack, extended_cif *ecif)
+    
+    so, let's fix the prototype of the function pointer, which anyway gets
+    passed to assembly code, so the typing gets lost.
+    
+    Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+    
+    * src/or1k/ffi.c: fix incompatible pointer type
+    
+    The current code base of libffi on OpenRISC (or1k) fails to build with
+    GCC 14.x with the following error:
+    
+    ../src/or1k/ffi.c: In function 'ffi_closure_SYSV':
+    ../src/or1k/ffi.c:183:22: error: initialization of 'char *' from incompatible pointer type 'int *' [-Wincompatible-pointer-types]
+      183 |   char *stack_args = sp;
+          |                      ^~
+    
+    Indeed:
+    
+      register int *sp __asm__ ("r17");
+      [..]
+      char *stack_args = sp;
+    
+    Adopt the same logic used for:
+    
+      char *ptr = (char *) register_args;
+    
+    which consists in casting to the desired pointer type. Indeed, later
+    in the code stack_args is assigned to ptr (so they need to be the same
+    pointer type), and some arithmetic is done on ptr, so changing its
+    pointer type would change the behavior.
+    
+    Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+    
+    ---------
+    
+    Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
+
+commit 8e3ef965c2d0015ed129a06d0f11f30c2120a413
+Author: Anthony Green <green@moxielogic.com>
+Date:   Fri Jun 28 04:07:09 2024 -0400
+
+    Fix struct args (Rainer Orth)
+
+commit 9c9e8368e49804c4f7c35ac9f0d7c1d0d533308b
+Author: Martin Storsjö <martin@martin.st>
+Date:   Tue Jun 4 14:13:08 2024 +0300
+
+    aarch64: Add a missing no-op define of SIGN_LR_LINUX_ONLY (#838)
+    
+    This is needed at least if building for Linux, with a toolchain
+    that doesn't default to having PAC enabled, fixing build errors
+    since 45d284f2d066cc3a080c5be88e51b4d934349797.
+
+commit 6993bc14dad1cd24294d64bf91e4503a4d7835d6
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Jun 1 13:42:29 2024 -0400
+
+    Import from upstream
+
+commit 00bf6e679160886cfa12de617ae1640721455ca5
+Author: Florian <florian.atteneder@gmail.com>
+Date:   Sat Jun 1 19:39:24 2024 +0200
+
+    A fix to the struct type example (#837)
+    
+    Section 2.3.2 Structures of the docs declare `ffi_type`'s  `elements` field to be of type `ffi_type **`.
+
+commit 45d284f2d066cc3a080c5be88e51b4d934349797
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Sat Jun 1 12:34:53 2024 -0500
+
+    aarch64: support pointer authentication (#834)
+    
+    * aarch64: fix callstack in ffi_call_SYSV
+    
+    The debug stack gets corrupted between the frame and stack pivots, update
+    the CFI directives so the call stack stays correct in the debugger.
+    
+    str     x9, [x1, #32] // stack is ffi_call_SYSV() -> ffi_call_int() -> ffi_call_int() -> main() (good)
+    mov     x29, x1       // stack is ffi_call_SYSV() -> ffi_call_int() -> ffi_call_int() -> ffi_call() -> main() (bad)
+    mov     sp, x0        // stack is ffi_call_SYSV() -> ffi_call_int() -> ffi_call_int() -> main() (good)
+    
+    The CFA data needs to be updated around the pivots, after this patch the
+    callstack stays correct.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * aarch64: remove uneeded CFI directive
+    
+    This directive doesn't actually set the CFA to anything valid, and
+    during unwinding this isn't even used. Note that the PAC/Darwin usage
+    is quite suspect as well, as the CFA is either x1 or x29 after the frame
+    pivot, and the CFA address is what's used as the modifier when verifying
+    the PAC. At least this is the behavior on Linux with PAC, I need to
+    verify ARME ABI unwinding. So for now leave Darwin as is.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * ptrauth: rename define for clarity
+    
+    Rename the HAVE_PTRAUTH define for clarity that its associated with the
+    ARM64E ABI and not the ARM64 ABI that can be supported on Linux and
+    enabled with -mbranch-protection=standard.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * aarch64: add PAC support to ffi_call_SYSV
+    
+    Support AARCH64 Pointer Authentication Codes (PAC) within ffi_call_SYSV
+    and support exception unwinding.
+    
+    The Linux ABI for PAC is to use paciasp/autiasp instructions which also
+    have hint space equivelent instructions. They sign the LR (x30) with the
+    A key and the current stack pointer as the salt. Note that this can also be
+    configured to use the B key and will use pacibsp/autibsp hint instructions.
+    
+    The Linux ABI for exception frame data when PAC is enabled assumes that the
+    Connonical Frame Address, or CFA is equal to the stack pointer. I.E sp is
+    equal to x29 (fp). When the unwinder is invoked the cfa will point to
+    the frame which will include the *signed* return address from the LR.
+    This will then be passed to __builtin_aarch64_autia1716 where the CFA
+    will be used as the salt and stored to register x16 and register x17
+    will contain the signed address to demangle. This can be noted in:
+      - https://github.com/gcc-mirror/gcc/blob/d6d7afcdbc04adb0ec42a44b2d7e05600945af42/libgcc/config/aarch64/aarch64-unwind.h#L56
+    
+    The other required portion of this is to indicate to the unwinder that
+    this is a signed address that needs to go the special demangle route in
+    the unwinder. This is accomplished by using CFI directive "cfi_window_save"
+    which marks that frame as being signed.
+    
+    Putting all of this together is a bit tricky, as the internals of
+    ffi_call_SYSV the callee allocates its stack and frame and passes it in
+    arg1 (x0) and arg2 (x1) to the called function, where that function
+    pivots its stack, so care must be taken to get the sp == fp before
+    paciasp is called and also restore that state before autiasp is called.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    ---------
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
+commit 38732240c125b6af9db66d940c0725a69292cc49
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Sat Jun 1 12:33:28 2024 -0500
+
+    ffi: fix spelling mistake (#833)
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
+commit f64141ee3f9e455a060bd09e9ab72b6c94653d7c
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Tue Mar 19 11:44:55 2024 -0500
+
+    Fix bti support (#830)
+    
+    * bti: add identifier to ffi_closure_SYSV_V_alt
+    
+    This was missing BTI_C identifier.
+    
+    Old Code:
+    ffi_closure_SYSV_V_alt:
+    0000fffff7f70500:   ldr     x17, [sp, #8]
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * testsuite: fix whitespace in Makefile.am
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    * aarch64: correct comment describing BTI
+    
+    The comment is incorrect, BTI is enabled per mapping via mprotect with
+    PROT_BTI flag set, not per-process. When the loader loads the library,
+    if the GNU Notes section is missing this, PROT_BTI will not be enabled
+    for that mapping, but is independent of other mappings.
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+    
+    ---------
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
 commit 3d0ce1e6fcf19f853894862abcbac0ae78a7be60
 Author: Anthony Green <green@moxielogic.org>
 Date:   Sun Feb 18 09:22:51 2024 -0500

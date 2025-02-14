@@ -149,7 +149,7 @@
  #else
  	/* strictly time_t is opaque, but this hack should work on all sane systems,
  	   even when sizeof(time_t) == 8 */
-@@ -268,10 +271,19 @@
+@@ -268,7 +271,16 @@
  	    continue;
  #endif
  
@@ -157,20 +157,15 @@
 +#ifdef HAVE_LEASEFILE_EXPIRE
 +	  ourprintf(&err, "%u ",
  #ifdef HAVE_BROKEN_RTC
--	  ourprintf(&err, "%u ", lease->length);
 +		    (lease->length == 0) ? 0 :
- #else
--	  ourprintf(&err, "%lu ", (unsigned long)lease->expires);
++#else
 +		    (lease->expires == 0) ? 0 :
 +#endif
 +		    (unsigned int)difftime(lease->expires, now));
 +#elif defined(HAVE_BROKEN_RTC)
-+	  ourprintf(&err, "%u ", lease->length);
-+#else
-+	  ourprintf(&err, "%lu ", (unsigned long)lease->expires);
- #endif
- 
- 	  if (lease->hwaddr_type != ARPHRD_ETHER || lease->hwaddr_len == 0) 
+ 	  ourprintf(&err, "%u ", lease->length);
+ #else
+ 	  ourprintf(&err, "%lu ", (unsigned long)lease->expires);
 @@ -312,12 +324,21 @@
  	      if (!(lease->flags & (LEASE_TA | LEASE_NA)))
  		continue;
@@ -179,28 +174,25 @@
 +#ifdef HAVE_LEASEFILE_EXPIRE
 +	      ourprintf(&err, "%u ",
  #ifdef HAVE_BROKEN_RTC
--	      ourprintf(&err, "%u ", lease->length);
 +			(lease->length == 0) ? 0 :
- #else
--	      ourprintf(&err, "%lu ", (unsigned long)lease->expires);
++#else
 +			(lease->expires == 0) ? 0 :
- #endif
--    
++#endif
 +			(unsigned int)difftime(lease->expires, now));
 +#elif defined(HAVE_BROKEN_RTC)
-+	      ourprintf(&err, "%u ", lease->length);
-+#else
-+	      ourprintf(&err, "%lu ", (unsigned long)lease->expires);
-+#endif
+ 	      ourprintf(&err, "%u ", lease->length);
+ #else
+ 	      ourprintf(&err, "%lu ", (unsigned long)lease->expires);
+ #endif
+-    
 +
  	      inet_ntop(AF_INET6, &lease->addr6, daemon->addrbuff, ADDRSTRLEN);
  	 
  	      ourprintf(&err, "%s%u %s ", (lease->flags & LEASE_TA) ? "T" : "",
-@@ -1225,4 +1246,66 @@
+@@ -1225,4 +1246,67 @@
  }
  #endif
  
--#endif /* HAVE_DHCP */
 +
 +#ifdef HAVE_TOMATO
 +void tomato_helper(time_t now)
@@ -213,11 +205,12 @@
 +  /* if delete exists... */
 +  if ((f = fopen("/var/tmp/dhcp/delete", "r")) != NULL) {
 +    while (fgets(buf, sizeof(buf), f)) {
-+	ia.s_addr = inet_addr(buf);
-+	lease = lease_find_by_addr(ia);
-+	if (lease) {
++	buf[strcspn(buf, "\n")] = 0;
++	inet_aton(buf, &ia);
++	if (lease = lease_find_by_addr(ia)) {
 +	  lease_prune(lease, 0);
 +	  lease_update_file(now);
++	  lease_update_dns(0);
 +	}
 +    }
 +    fclose(f);
@@ -263,4 +256,4 @@
 +}
 +#endif /* HAVE_LEASEFILE_EXPIRE */
 +
-+#endif /* HAVE_DHCP */
+ #endif /* HAVE_DHCP */

@@ -88,18 +88,19 @@ function earlyInit() {
 	<div class="section">
 		<div class="fields" id="upgradenotice" style="display:none"><div class="about"><b>Note: Remote upgrade is disabled. You can enable it (not recommended) <a href="admin-access.asp">here</a>.</b></div></div>
 		<div>
-			<div class="afu-form">Select the file to use:</div>
+            <form name="form_reset" action="javascript:{}">
+				<div class="afu-form">
+					<input type="checkbox" id="f_reset">&nbsp; &nbsp; Erase all data in NVRAM. Optional. This is performed between the firmware upload and the reboot.
+				</div>
+			</form>
+			<div class="afu-form">Select a valid <a href="https://freshtomato.org/downloads/">firmware</a> to install (.trx or .bin):</div>
 			<form name="form_upgrade" method="post" action="upgrade.cgi" enctype="multipart/form-data">
 				<div class="afu-form">
-					<input type="file" name="file" class="upgrade-file"> <input type="button" id="afu-upgrade-button" value="Upgrade" onclick="upgrade()">
+					<input type="file" name="file" class="upgrade-file">
+                    <p>
+                    <input type="button" id="afu-upgrade-button" value="Upgrade" onclick="upgrade()">
 				</div>
 			</form>
-			<form name="form_reset" action="javascript:{}">
-				<div class="afu-form">
-					<input type="checkbox" id="f_reset">&nbsp; Erase NVRAM configuration and restore firmware defaults
-				</div>
-			</form>
-
 			<table class="afu-info-table"><tr>
 				<td>Current Version:</td>
 				<td>&nbsp; <% version(1); %></td>

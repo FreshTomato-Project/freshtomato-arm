@@ -1078,7 +1078,12 @@ img[id^="barnoise_"] {
 	width: 23%;
 }
 
-.upgrade-file,
+.upgrade-file {
+    width: 90%;
+    overflow: auto;
+    white-space: nowrap;
+}
+
 .import-file,
 #qos-cl-grid .x2c {
 	width: 41%;

@@ -2183,38 +2183,41 @@ TomatoRefresh.prototype = {
 	}
 }
 
-function genStdTimeList(id, zero, min) {
-	var b = [];
-	var t = [1,2,3,4,5,6,7,8,9,10,12,15,20,30,60,2*60,3*60,4*60,5*60];
-	var i, v;
+function genStdTimeList(id, zero, min, oneOff = true) {
+    var b = [];
+    var t = [1,2,3,4,5,6,7,8,9,10,12,15,20,30,60,2*60,3*60,4*60,5*60];
+    var i, v;
 
-	if (min >= 0) {
-		b.push('<select id="'+id+'"><option value="0">' + zero);
-		for (i = 0; i < t.length; ++i) {
-			v = t[i];
-			if (v < min) continue;
-			b.push('<option value='+v+'>');
-			if (v == 60)
-				b.push('1 minute');
-			else if (v > 60)
-				b.push((v / 60)+' minutes');
-			else if (v == 1)
-				b.push(v +' second');
-			else
-				b.push(v +' seconds');
-		}
-		b.push('</select> ');
-	}
-	W(b.join(''));
+    if (min >= 0) {
+        b.push('<select id="' + id + '">');
+        if (oneOff) {
+            b.push('<option value="0">' + zero);
+        }
+        for (i = 0; i < t.length; ++i) {
+            v = t[i];
+            if (v < min) continue;
+            b.push('<option value=' + v + '>');
+            if (v == 60)
+                b.push('1 minute');
+            else if (v > 60)
+                b.push((v / 60) + ' minutes');
+            else if (v == 1)
+                b.push(v + ' second');
+            else
+                b.push(v + ' seconds');
+            b.push('</option>'); // Closing </option> tag was missing
+        }
+        b.push('</select> ');
+    }
+    W(b.join(''));
 }
 
-function genStdRefresh(spin, min, exec) {
-	W('<div style="text-align:right">');
-	if (spin) W('<img src="spin.gif" id="refresh-spinner" alt=""> ');
-	genStdTimeList('refresh-time', 'One off', min);
-	W('<input type="button" value="Refresh" onclick="'+(exec ? exec : 'refreshClick()')+'" id="refresh-button"></div>');
+function genStdRefresh(spin, min, exec, oneOff = true) {
+    W('<div style="text-align:right">');
+    if (spin) W('<img src="spin.gif" id="refresh-spinner" alt=""> ');
+    genStdTimeList('refresh-time', 'One off', min, oneOff);
+    W('<input type="button" value="Refresh" onclick="' + (exec ? exec : 'refreshClick()') + '" id="refresh-button"></div>');
 }
-
 
 // -----------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/home/root
-# Network discovery script v2.62 - ARM and MIPSR2 - 02/2025 - rs232 
+# Network discovery script v2.63 - ARM and MIPSR2 - 02/2025 - rs232 
 #------------------------------------------------------
 #	FreshTomato Network Discovery - usage
 #
@@ -57,6 +57,7 @@ check_procs() {
 		arping) pidof arping ;;
 		traceroute) pidof traceroute ;;
 		nc) pidof nc ;;
+		discovery) pidof discovery.sh | grep -vw "$$" ;;
 	esac | wc -w
 }
 
@@ -92,8 +93,8 @@ for param in "$@"; do
 done
 [ "$runlan" -eq 0 ] && [ "$runwan" -eq 0 ] && runlan=1
 
-[ "$(ps | grep -c '[t]raceroute -i\|[a]rping -I\|[n]c -w')" -gt 5 -a "$fkill" -ne 1 ] && {
-	echo "Status-devices - Background discovery processes already running; skipping this run." | tee /dev/tty | logger
+[ "$(check_procs discovery)" -gt 0 -a "$fkill" -ne 1 ] {
+	echo "Network Discovery - Background processes already running; skipping this run." | tee /dev/tty | logger
 	exit
 }
 

@@ -57,7 +57,7 @@ check_procs() {
 		arping) pidof arping ;;
 		traceroute) pidof traceroute ;;
 		nc) pidof nc ;;
-		discovery) pidof discovery.sh | grep -vw "$$" ;;
+		discovery) pidof discovery.sh | sed "s/\b$$\b//;s/  */ /g" ;;
 	esac | wc -w
 }
 
@@ -93,10 +93,10 @@ for param in "$@"; do
 done
 [ "$runlan" -eq 0 ] && [ "$runwan" -eq 0 ] && runlan=1
 
-[ "$(check_procs discovery)" -gt 0 -a "$fkill" -ne 1 ] {
-	echo "Network Discovery - Background processes already running; skipping this run." | tee /dev/tty | logger
+if [ "$(check_procs discovery)" -gt 0 -a "$fkill" -ne 1 ]; then
+	echo "Status-devices - Background discovery processes already running; skipping this run." | tee /dev/tty | logger
 	exit
-}
+fi
 
 scanthis() {
 	for iface in $this; do

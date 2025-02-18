@@ -267,7 +267,7 @@ sub fixDyn
 	fixDynDep("nginx", "libpcre2-8.so.0.13.0");
 	fixDynDep("nginx", "libpcre2-posix.so.3.0.5");
 	fixDynDep("nginx", "libwolfssl.so.42.2.0");
-	fixDynDep("php-cgi", "libxml2.so.2.13.5");
+	fixDynDep("php-cgi", "libxml2.so.2.13.6");
 	fixDynDep("php-cgi", "libpng16.so.16.46.0");
 	fixDynDep("php-cgi", "libiconv.so.2.7.0");
 	fixDynDep("php-cgi", "libsqlite3.so.0.8.6");
@@ -278,7 +278,7 @@ sub fixDyn
 	fixDynDep("php-cgi", "libpcre2-8.so.0.13.0");
 	fixDynDep("php-cgi", "libpcre2-posix.so.3.0.5");
 	fixDynDep("php-cgi", "libzip.so.5.5");
-	fixDynDep("php-cli", "libxml2.so.2.13.5");
+	fixDynDep("php-cli", "libxml2.so.2.13.6");
 	fixDynDep("php-cli", "libpng16.so.16.46.0");
 	fixDynDep("php-cli", "libiconv.so.2.7.0");
 	fixDynDep("php-cli", "libsqlite3.so.0.8.6");
@@ -289,7 +289,7 @@ sub fixDyn
 	fixDynDep("php-cli", "libpcre2-8.so.0.13.0");
 	fixDynDep("php-cli", "libpcre2-posix.so.3.0.5");
 	fixDynDep("php-cli", "libzip.so.5.5");
-	fixDynDep("php-fpm", "libxml2.so.2.13.5");
+	fixDynDep("php-fpm", "libxml2.so.2.13.6");
 	fixDynDep("php-fpm", "libpng16.so.16.46.0");
 	fixDynDep("php-fpm", "libiconv.so.2.7.0");
 	fixDynDep("php-fpm", "libsqlite3.so.0.8.6");
@@ -692,7 +692,7 @@ genSO("${root}/usr/lib/libcurl.so.4.8.0", "${router}/libcurl/lib/.libs/libcurl.a
 genSO("${root}/usr/lib/libevent-2.1.so.7", "${router}/libevent/.libs/libevent.a", "${stripshared}");
 genSO("${root}/usr/lib/libiconv.so.2.7.0", "${router}/libiconv/lib/.libs/libiconv.a", "${stripshared}");
 genSO("${root}/usr/lib/libpng16.so.16.46.0", "${router}/libpng/staged/usr/lib/libpng16.a", "${stripshared}", "-L${router}/zlib");
-genSO("${root}/usr/lib/libxml2.so.2.13.5", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
+genSO("${root}/usr/lib/libxml2.so.2.13.6", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
 genSO("${root}/usr/lib/libpcre.so.1.2.13", "${router}/pcre/.libs/libpcre.a", "${stripshared}");
 genSO("${root}/usr/lib/libpcre2-8.so.0.13.0", "${router}/pcre2/staged/usr/lib/libpcre2-8.a", "${stripshared}");
 #genSO("${root}/usr/lib/libpcre2-posix.so.3.0.5", "${router}/pcre2/staged/usr/lib/libpcre2-posix.a", "${stripshared}"); # (deleted)

@@ -361,6 +361,76 @@ testReaderContent(void) {
     return err;
 }
 
+static int
+testReaderNode(xmlTextReader *reader) {
+    xmlChar *string;
+    int type;
+    int err = 0;
+
+    type = xmlTextReaderNodeType(reader);
+    string = xmlTextReaderReadString(reader);
+
+    if (type == XML_READER_TYPE_ELEMENT) {
+        xmlNodePtr node = xmlTextReaderCurrentNode(reader);
+
+        if ((node->children == NULL) != (string == NULL))
+            err = 1;
+    } else if (type == XML_READER_TYPE_TEXT ||
+               type == XML_READER_TYPE_CDATA ||
+               type == XML_READER_TYPE_WHITESPACE ||
+               type == XML_READER_TYPE_SIGNIFICANT_WHITESPACE) {
+        if (string == NULL)
+            err = 1;
+    } else {
+        if (string != NULL)
+            err = 1;
+    }
+
+    if (err)
+        fprintf(stderr, "xmlTextReaderReadString failed for %d\n", type);
+
+    xmlFree(string);
+
+    return err;
+}
+
+static int
+testReader(void) {
+    xmlTextReader *reader;
+    const xmlChar *xml = BAD_CAST
+        "<d>\n"
+        "  x<e a='v'>y</e><f>z</f>\n"
+        "  <![CDATA[cdata]]>\n"
+        "  <!-- comment -->\n"
+        "  <?pi content?>\n"
+        "  <empty/>\n"
+        "</d>";
+    int err = 0;
+
+    reader = xmlReaderForDoc(xml, NULL, NULL, 0);
+
+    while (xmlTextReaderRead(reader) > 0) {
+        if (testReaderNode(reader) > 0) {
+            err = 1;
+            break;
+        }
+
+        if (xmlTextReaderMoveToFirstAttribute(reader) > 0) {
+            do {
+                if (testReaderNode(reader) > 0) {
+                    err = 1;
+                    break;
+                }
+            } while (xmlTextReaderMoveToNextAttribute(reader) > 0);
+
+            xmlTextReaderMoveToElement(reader);
+        }
+    }
+
+    xmlFreeTextReader(reader);
+    return err;
+}
+
 #ifdef LIBXML_XINCLUDE_ENABLED
 typedef struct {
     char *message;
@@ -613,6 +683,81 @@ testBuildRelativeUri(void) {
     return err;
 }
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+static int
+testWindowsUri(void) {
+    const char *url = "c:/a%20b/file.txt";
+    xmlURIPtr uri;
+    xmlChar *res;
+    int err = 0;
+    int i;
+
+    static const xmlRelativeUriTest tests[] = {
+        {
+            "c:/a%20b/file.txt",
+            "base.xml",
+            "c:/a b/file.txt"
+        }, {
+            "file:///c:/a%20b/file.txt",
+            "base.xml",
+            "file:///c:/a%20b/file.txt"
+        }, {
+            "Z:/a%20b/file.txt",
+            "http://example.com/",
+            "Z:/a b/file.txt"
+        }, {
+            "a%20b/b1/c1",
+            "C:/a/b2/c2",
+            "C:/a/b2/a b/b1/c1"
+        }, {
+            "a%20b/b1/c1",
+            "\\a\\b2\\c2",
+            "/a/b2/a b/b1/c1"
+        }, {
+            "a%20b/b1/c1",
+            "\\\\?\\a\\b2\\c2",
+            "//?/a/b2/a b/b1/c1"
+        }, {
+            "a%20b/b1/c1",
+            "\\\\\\\\server\\b2\\c2",
+            "//server/b2/a b/b1/c1"
+        }
+    };
+
+    uri = xmlParseURI(url);
+    if (uri == NULL) {
+        fprintf(stderr, "xmlParseURI failed\n");
+        err = 1;
+    } else {
+        if (uri->scheme != NULL) {
+            fprintf(stderr, "invalid scheme: %s\n", uri->scheme);
+            err = 1;
+        }
+        if (uri->path == NULL || strcmp(uri->path, "c:/a b/file.txt") != 0) {
+            fprintf(stderr, "invalid path: %s\n", uri->path);
+            err = 1;
+        }
+
+        xmlFreeURI(uri);
+    }
+
+    for (i = 0; (size_t) i < sizeof(tests) / sizeof(tests[0]); i++) {
+        const xmlRelativeUriTest *test = tests + i;
+
+        res = xmlBuildURI(BAD_CAST test->uri, BAD_CAST test->base);
+        if (res == NULL || !xmlStrEqual(res, BAD_CAST test->result)) {
+            fprintf(stderr, "xmlBuildURI failed uri=%s base=%s "
+                    "result=%s expected=%s\n", test->uri, test->base,
+                    res, test->result);
+            err = 1;
+        }
+        xmlFree(res);
+    }
+
+    return err;
+}
+#endif /* WIN32 */
+
 int
 main(void) {
     int err = 0;
@@ -638,6 +783,7 @@ main(void) {
 #ifdef LIBXML_READER_ENABLED
     err |= testReaderEncoding();
     err |= testReaderContent();
+    err |= testReader();
 #ifdef LIBXML_XINCLUDE_ENABLED
     err |= testReaderXIncludeError();
 #endif
@@ -646,6 +792,9 @@ main(void) {
     err |= testWriterClose();
 #endif
     err |= testBuildRelativeUri();
+#if defined(_WIN32) || defined(__CYGWIN__)
+    err |= testWindowsUri();
+#endif
 
     return err;
 }

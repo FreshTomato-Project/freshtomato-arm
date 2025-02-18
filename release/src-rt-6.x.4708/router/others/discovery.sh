@@ -57,7 +57,7 @@ check_procs() {
 		arping) pidof arping ;;
 		traceroute) pidof traceroute ;;
 		nc) pidof nc ;;
-	esac | wc -l
+	esac | wc -w
 }
 
 md5_param=$(echo "$@" | md5sum | cut -d' ' -f1)

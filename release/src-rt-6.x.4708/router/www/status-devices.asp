@@ -32,9 +32,13 @@ var xob = null;
 var cmd = null;
 var wol = null;
 var cmdresult = '';
-/* DISCOVERY-BEGIN */
 var cprefix = 'status_devices';
-var discovery_mode = cookie.get(cprefix+'_discovery') || 'off';
+/* DISCOVERY-BEGIN */
+var discovery_clear = parseInt(cookie.get(cprefix + '_discovery_clear')) || 0;
+var clear2 = (discovery_clear === 1) ? 'clear' : '';
+var discovery_limit = cookie.get(cprefix+'_discovery_limit') || '60';
+var discovery_target = cookie.get(cprefix+'_discovery_target') || 'lan';
+var discovery_mode = cookie.get(cprefix+'_discovery_mode') || 'off';
 var wait = gc_time;
 var time_o;
 /* DISCOVERY-END */
@@ -60,7 +64,7 @@ ref.refresh = function(text) {
 }
 
 /* DISCOVERY-BEGIN */
-var discovery = new TomatoRefresh('update.cgi', 'exec=discovery&arg0='+discovery_mode, gc_time, '', 1);
+var discovery = new TomatoRefresh('update.cgi', 'exec=discovery&arg0=' + discovery_mode + '&arg1=' + discovery_target+ '&arg2=' + clear2 + '&arg3=' + discovery_limit, gc_time, '', 1);
 discovery.refresh = function() { }
 /* DISCOVERY-END */
 
@@ -392,10 +396,10 @@ dg.populate = function() {
 
 		if ((e.mac.match(/^(..):(..):(..)/)) && e.proto != 'pppoe' && e.proto != 'pptp' && e.proto != 'l2tp') {
 			b = '<a href="javascript:searchOUI(\''+RegExp.$1+'-'+RegExp.$2+'-'+RegExp.$3+'\','+i+')" title="OUI Search">'+e.mac+'<\/a><div style="display:none" id="gW_'+i+'">&nbsp; <img src="spin.gif" alt="" style="vertical-align:middle"><\/div>'+
-			    '<br><small class="pics">'+
-			    '<a href="javascript:addStatic('+i+')" title="DHCP Reservation">[DR]<\/a> '+
-			    '<a href="javascript:addbwlimit('+i+')" title="BW Limiter">[BWL]<\/a> '+
-			    '<a href="javascript:addRestrict('+i+')" title="Access Restriction">[AR]<\/a>';
+				'<br><small class="pics">'+
+				'<a href="javascript:addStatic('+i+')" title="DHCP Reservation">[DR]<\/a> '+
+				'<a href="javascript:addbwlimit('+i+')" title="BW Limiter">[BWL]<\/a> '+
+				'<a href="javascript:addRestrict('+i+')" title="Access Restriction">[AR]<\/a>';
 
 			if (e.rssi != '')
 				b += ' <a href="javascript:addWF('+i+')" title="Wireless Filter">[WLF]<\/a>';
@@ -457,7 +461,7 @@ dg.populate = function() {
 			}
 			else
 /* USB-END */
-			     if (e.rssi != 1) {
+			if (e.rssi != 1) {
 				f = '<img src="eth.gif"'+c+' alt="" title="Ethernet">';
 				e.media = 4;
 			}
@@ -472,8 +476,8 @@ dg.populate = function() {
 		}
 
 		this.insert(-1, e, [ a, '<div id="media_'+i+'">'+f+'<\/div>', b, (e.mode == 'wds' ? '' : e.ip), e.name, (e.rssi < 0 ? e.rssi+' <small>dBm<\/small>' : ''),
-		                     (e.qual < 0 ? '' : '<small>'+e.qual+'<\/small> <img src="bar'+MIN(MAX(Math.floor(e.qual / 12), 1), 6)+'.gif" id="bar_'+i+'" alt="">'),
-		                     e.txrx, e.lease], false);
+				(e.qual < 0 ? '' : '<small>'+e.qual+'<\/small> <img src="bar'+MIN(MAX(Math.floor(e.qual / 12), 1), 6)+'.gif" id="bar_'+i+'" alt="">'),
+				e.txrx, e.lease], false);
 	}
 }
 
@@ -651,16 +655,18 @@ function tick() {
 	var clock = E('wait');
 	var spin = E('spin');
 
-	if (ref.running && discovery_mode != 'off' && E('refresh-button').value == 'Stop' && E('refresh-time').value != 0) {
-		elem.setInnerHTML(clock, wait+' sec');
+	if (ref.running && discovery_mode !== 'off' && E('refresh-button').value == 'Stop' && E('refresh-time').value != 0) {
+		elem.setInnerHTML(clock, wait + ' sec');
 		clock.style.display = 'inline-block';
 		spin.style.display = 'inline';
 
-		if (wait-- <= 0) {
+		if (wait <= 0) {
+			discovery.initPage(0, gc_time);
 			wait = gc_time;
-			clearTimeout(time_o);
 		}
-
+		else {
+			wait--;
+		}
 		time_o = setTimeout(tick, 1000);
 	}
 	else {
@@ -672,17 +678,24 @@ function tick() {
 }
 
 function verifyFields(f, c) {
-	if (discovery.running)
-		discovery.stop();
-
+	if (discovery.running) discovery.stop();
+	discovery_clear = E('_discovery_clear').checked ? 1 : 0;
+	cookie.set(cprefix + '_discovery_clear', discovery_clear);
+	clear2 = (discovery_clear === 1) ? 'clear' : '';
+	discovery_limit = E('_discovery_limit').value;
+	cookie.set(cprefix+'_discovery_limit', discovery_limit);
+	discovery_target = E('_discovery_target').value;
+	cookie.set(cprefix+'_discovery_target', discovery_target);
 	discovery_mode = E('_discovery_mode').value;
-	cookie.set(cprefix+'_discovery', discovery_mode);
-	discovery = new TomatoRefresh('update.cgi', 'exec=discovery&arg0='+discovery_mode, gc_time, '', 1);
-	discovery.refresh = function() { }
+	cookie.set(cprefix+'_discovery_mode', discovery_mode);
+	discovery = new TomatoRefresh('update.cgi', 'exec=discovery&arg0=' + discovery_mode + '&arg1=' + discovery_target + '&arg2=' + clear2 + '&arg3=' + discovery_limit, gc_time, '', 1);
+	discovery.refresh = function() { 
+	}
+	
 	if (ref.running)
 		discovery.initPage(0, gc_time);
 
-	if (discovery_mode != 'off') {
+	if (discovery_mode !== 'off') {
 		wait = gc_time;
 		clearTimeout(time_o);
 		tick();
@@ -717,8 +730,10 @@ function earlyInit() {
 			setNoiseBar(uidx, wlnoise[uidx]);
 		}
 	}
-
 	dg.setup();
+/* DISCOVERY-BEGIN */
+	E('_discovery_clear').checked = (discovery_clear === 1);
+/* DISCOVERY-END */
 }
 
 function init() {
@@ -760,13 +775,18 @@ function init() {
 			if (nvram['wl'+u+'_radio'] == 1 && wl_sunit(uidx) < 0)
 					f.push( { title: '<span id="nf'+u+'" title="Noise Floor"><b>Noise<\/b> '+wl_display_ifname(uidx)+'&nbsp;<b>:<\/b><\/span>', prefix: '<span id="noiseimg_'+uidx+'"><\/span>&nbsp;<span id="noise'+uidx+'">', custom: wlnoise[uidx], suffix: '<\/span>&nbsp;<small>dBm<\/small>' } );
 		}
-/* DISCOVERY-BEGIN */
-		f.push(
-			null,
-			{ title: 'Network Discovery mode', name: 'discovery_mode', type: 'select', options: [['off','off'],['arping','arping (preferred)'],['traceroute','traceroute']], suffix: '&nbsp; <img src="spin.gif" alt="" id="spin"><div id="wait"><\/div>', value: discovery_mode }
-		);
-/* DISCOVERY-END */
 		createFieldTable('', f);
+/* DISCOVERY-BEGIN */
+		var f = [];
+		f.push(
+			{ title: 'Sanitize results', name: 'discovery_clear', type: 'checkbox', value: 'clear', checked: (discovery_clear === 1) ? 'checked' : '' },
+			{ title: 'Max Probes', name: 'discovery_limit', type: 'text', maxlen: 3, size: 3, value: discovery_limit,  placeholder: '60', suffix: '<\/span>&nbsp;<small> 5 - 200<\/small>' },	
+			{ title: 'Scan Target', name: 'discovery_target', type: 'select', options: [['lan','LANs *'],['wan','WANs'],['both','LANs & WANs']], value: discovery_target },
+			{ title: 'Scan Mode', name: 'discovery_mode', type: 'select', options: [['off','Off *'],['arping','arping (preferred)'],['traceroute','traceroute'],['nc','netcat'],['all','all (round-robin)']], suffix: '&nbsp; <img src="spin.gif" alt="" id="spin"><div id="wait"></div>', value: discovery_mode }
+		);
+		W('<p><div class="section-title">Network Discovery</div>');
+		createFieldTable('', f);
+/* DISCOVERY-END */
 	</script>
 </div>
 

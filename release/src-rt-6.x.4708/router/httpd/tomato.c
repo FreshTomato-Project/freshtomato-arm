@@ -2106,19 +2106,57 @@ static void asp_css(int argc, char **argv)
 		if ((strncmp(argv[0], "svg-js", 6) == 0) && (nvram_get_int("web_adv_scripts"))) /* special case, outer JS file for bwm-graph.svg */
 			web_printf("<script href=\"resize-charts.js\" />");
 	}
-#endif
-}
-
 #if defined(TCONFIG_BCMARM) || defined(TCONFIG_MIPSR2)
-static void asp_discovery(int argc, char **argv)
-{
-	char buf[64] = "/usr/sbin/discovery.sh ";
+static void asp_discovery(int argc, char **argv) {
+	char buf[128] = "/usr/sbin/discovery.sh ";
 
-	if (strncmp(argv[0], "off", 3) == 0)
+	if (argc == 0 || (argc == 1 && strcmp(argv[0], "off") == 0))
+	return;
+
+	// Include 'arping' as a valid command
+	const char* valid_commands[] = {"arping", "traceroute", "nc", "all"};
+	int valid_command = 0;
+
+	for (int i = 0; i < sizeof(valid_commands)/sizeof(valid_commands[0]); i++) {
+		if (strcmp(argv[0], valid_commands[i]) == 0) {
+			valid_command = 1;
+			strlcat(buf, argv[0], sizeof(buf));
+		break;
+	}
+	}
+
+	if (!valid_command) {
+		fprintf(stderr, "Invalid discovery command: %s\n", argv[0]);
 		return;
-	else if (strncmp(argv[0], "traceroute", 10) == 0)
-		strlcat(buf, argv[0], sizeof(buf));
+	}
 
+	// Append target (wan/lan/both)
+	if (argc > 1) {
+	 const char *target = argv[1];
+	if (strcmp(target, "lan") == 0 || strcmp(target, "wan") == 0 || strcmp(target, "both") == 0) {
+		strlcat(buf, " ", sizeof(buf));
+		strlcat(buf, target, sizeof(buf));
+	}
+	}
+
+	// Append 'clear' flag
+	if (argc > 2 && strcmp(argv[2], "clear") == 0) {
+		strlcat(buf, " clear", sizeof(buf));
+	}
+
+	// Append probe limit (numeric)
+	if (argc > 3) {
+		int is_number = 1;
+	 	for (const char *p = argv[3]; *p; ++p) {
+			if (!isdigit(*p)) {
+			is_number = 0;
+			break;
+			}
+	}
+	if (is_number) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %s", argv[3]);
+	}
+	}
 	system(buf);
 }
 #endif

@@ -158,23 +158,18 @@ function refreshChannels(uidx) {
 
 function scan() {
 	if (xob) return;
-
 	var unit = wscan.unit;
 	var uidx = wl_uidx(unit);
-
 	xob = new XmlHttp();
 	xob.onCompleted = function(text, xml) {
 		try {
 			var i;
-
 			wlscandata = [];
 			eval(text);
-
 			for (i = 0; i < wlscandata.length; ++i) {
 				var data = wlscandata[i];
 				var ch = data[3];
 				var mac = data[0];
-
 				if (!wscan.inuse[ch]) {
 					wscan.inuse[ch] = {
 						count: 0,
@@ -182,12 +177,10 @@ function scan() {
 						ssid: ''
 					};
 				}
-
 				if (!wscan.seen[mac]) {
 					wscan.seen[mac] = 1;
 					++wscan.inuse[ch].count;
 				}
-
 				if (data[4] > wscan.inuse[ch].rssi) {
 					wscan.inuse[ch].rssi = data[2];
 					wscan.inuse[ch].ssid = data[1];
@@ -202,9 +195,7 @@ function scan() {
 				e.options[i].innerHTML = s;
 			}
 			e.style.width = '400px';
-
 			xob = null;
-
 			if (wscan.tries < 4) {
 				++wscan.tries;
 				setTimeout(scan, 1000);
@@ -220,36 +211,121 @@ function scan() {
 		spin(0, unit);
 		xob = null;
 	}
-
 	spin(1, unit);
 	xob.post('update.cgi', 'exec=wlscan&arg0='+unit);
 }
 
-function spin(x, unit) {
+function spin(x, unit, type) {
 	for (var u = 0; u < wl_ifaces.length; ++u) {
-		E('_f_wl'+wl_unit(u)+'_scan').disabled = x;
+		if (type === 'ssid') {
+			E('_f_wl'+wl_unit(u)+'_ssidscan').disabled = x;
+		} else {
+			E('_f_wl'+wl_unit(u)+'_scan').disabled = x;
+		}
 	}
-	var e = E('_f_wl'+unit+'_scan');
-
+	var e = type === 'ssid' ? E('_f_wl'+unit+'_ssidscan') : E('_f_wl'+unit+'_scan');
 	if (x)
 		e.value = 'Scan ' + (wscan.tries + 1);
 	else
 		e.value = 'Scan';
-
-	E('spin'+unit).style.display = (x ? 'inline' : 'none');
+	E(type === 'ssid' ? 'spinSsid'+unit : 'spin'+unit).style.display = (x ? 'inline' : 'none');
 }
 
-function scanButton(u) {
+function scanButton(u, type) {
 	if (xob) return;
-
 	wscan = {
 		unit: u,
 		seen: [],
 		inuse: [],
-		tries: 0
+		tries: 0,
+		scanned: false
 	};
+	if (type === 'ssid') {
+		scanSSID();
+	} else {
+		scan();
+	}
+}
 
-	scan();
+function scanSSID() {
+	var unit = wscan.unit;
+	var ssidInput = document.getElementsByName('wl' + unit + '_ssid')[0];
+	var spinElement = document.getElementById('spinSsid' + unit);
+
+	ssidInput.outerHTML = '<select name="wl' + unit + '_ssid" id="ssidList' + unit + '" style="width: ' + ssidInput.offsetWidth + 'px; min-width: ' + ssidInput.offsetWidth + 'px;" onchange="selectSsid(this, ' + unit + ')"></select>';
+	var list = document.getElementById('ssidList' + unit);
+
+	while (list.firstChild) {
+		list.removeChild(list.firstChild);
+	}
+
+	spinElement.style.display = 'inline';
+
+	xob = new XmlHttp();
+	xob.onCompleted = function(text, xml) {
+		try {
+			spinElement.style.display = 'none';
+			list.style.display = '';
+
+			var option = document.createElement('option');
+			option.value = '';
+			option.text = '< Scan Result >';
+			option.disabled = true;
+			option.style.color = 'grey';
+			option.selected = true;
+			list.appendChild(option);
+
+			wlscandata = [];
+			eval(text);
+			var seenSSIDs = {};
+			wlscandata.forEach(function(data) {
+				var ssid = data[1];
+				var quality = data[5];
+				if (ssid.trim() !== '' && !seenSSIDs[ssid]) {
+					var option = document.createElement('option');
+					option.value = ssid;
+					option.text = ssid + ' 🛜 ' + quality + '%';
+					list.appendChild(option);
+					seenSSIDs[ssid] = true;
+				}
+			});
+
+			var typeManuallyOption = document.createElement('option');
+			typeManuallyOption.value = 'manual';
+			typeManuallyOption.text = '< switch to manual input >';
+			list.appendChild(typeManuallyOption);
+
+			wscan.scanned = true;
+		} catch (x) {
+			console.error(x);
+		}
+		xob = null;
+		spin(0, unit, 'ssid');
+	};
+	xob.onError = function(x) {
+		alert('error: ' + x);
+		spinElement.style.display = 'none';
+		xob = null;
+		spin(0, unit, 'ssid');
+	};
+	spin(1, unit, 'ssid');
+	xob.post('update.cgi', 'exec=wlscan&arg0=' + unit);
+}
+
+function selectSsid(select, u) {
+	var ssidInput = document.createElement('input');
+	ssidInput.type = 'text';
+	ssidInput.name = 'wl' + u + '_ssid';
+	ssidInput.id = '_wl' + u + '_ssid';
+	ssidInput.style.width = select.style.width;
+	ssidInput.style.minWidth = select.style.minWidth;
+	if (select.value === 'manual') {
+		select.parentNode.replaceChild(ssidInput, select);
+	} else {
+		ssidInput.value = select.options[select.selectedIndex].value.trim();
+		select.parentNode.replaceChild(ssidInput, select);
+	}
+	verifyFields(ssidInput, 1);
 }
 
 function joinAddr(a) {

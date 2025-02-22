@@ -51,7 +51,7 @@ lg.setup = function() {
 		{ type: 'text', maxlen: 15, size: 17 },
 		{ type: 'text', maxlen: 15, size: 17 },
 		{ type: 'checkbox', prefix: '<div class="centered">', suffix: '<\/div>' },
-		{ multi: [ { type: 'text', maxlen: 15, size: 17}, { type: 'text', maxlen: 15, size: 17 } ] },
+		{ multi: [ { type: 'text', maxlen: 15, size: 17 }, { type: 'text', maxlen: 15, size: 17 } ] },
 		{ type: 'text', maxlen: 6, size: 8 }] );
 	this.headerSet(['Bridge','STP','IP Address','Netmask','DHCP','IP&nbsp;Range&nbsp;<i>(first/last)<\/i>','Lease&nbsp;Time&nbsp;<i>(mins)<\/i>']);
 
@@ -68,7 +68,7 @@ lg.setup = function() {
 				}
 			}
 			lg.insertData(-1, [i.toString(), nvram['lan'+j+'_stp'], nvram['lan'+j+'_ipaddr'], nvram['lan'+j+'_netmask'], (nvram['lan'+j+'_proto'] == 'dhcp') ? 1 : 0, nvram['dhcpd'+j+'_startip'], 
-			                   nvram['dhcpd'+j+'_endip'], (nvram['lan'+j+'_proto'] == 'dhcp') ? (((nvram['dhcp'+j+'_lease']) * 1 == 0) ? '1440' : (nvram['dhcp'+j+'_lease']).toString()) : '']) ;
+							   nvram['dhcpd'+j+'_endip'], (nvram['lan'+j+'_proto'] == 'dhcp') ? (((nvram['dhcp'+j+'_lease']) * 1 == 0) ? '1440' : (nvram['dhcp'+j+'_lease']).toString()) : '']) ;
 			numBridges++;
 		}
 	}
@@ -308,9 +308,9 @@ lg.verifyFields = function(row, quiet) {
 		}
 /* first IP valid? */
 		if ((getNetworkAddress(f[5].value, f[3].value) != getNetworkAddress(f[2].value, f[3].value)) ||
-		    (f[5].value == getBroadcastAddress(getNetworkAddress(f[2].value, f[3].value), f[3].value)) ||
-		    (f[5].value == getNetworkAddress(f[2].value, f[3].value)) ||
-		    (f[2].value == f[5].value)) {
+			(f[5].value == getBroadcastAddress(getNetworkAddress(f[2].value, f[3].value), f[3].value)) ||
+			(f[5].value == getNetworkAddress(f[2].value, f[3].value)) ||
+			(f[2].value == f[5].value)) {
 			ferror.set(f[5], 'Invalid first IP address or subnet mask', quiet || !ok);
 			return 0;
 		}
@@ -318,9 +318,9 @@ lg.verifyFields = function(row, quiet) {
 			ferror.clear(f[5]);
 /* last IP valid? */
 		if ((getNetworkAddress(f[6].value, f[3].value) != getNetworkAddress(f[2].value, f[3].value)) ||
-		    (f[6].value == getBroadcastAddress(getNetworkAddress(f[2].value, f[3].value), f[3].value)) ||
-		    (f[6].value == getNetworkAddress(f[2].value, f[3].value)) ||
-		    (f[2].value == f[6].value)) {
+			(f[6].value == getBroadcastAddress(getNetworkAddress(f[2].value, f[3].value), f[3].value)) ||
+			(f[6].value == getNetworkAddress(f[2].value, f[3].value)) ||
+			(f[2].value == f[6].value)) {
 			ferror.set(f[6], 'Invalid last IP address or subnet mask', quiet || !ok);
 			return 0;
 		}
@@ -667,9 +667,9 @@ function verifyFields(focused, quiet) {
 
 			if ((wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
-			   ) {
+				) {
 				E('_mwan_num').value = 1;
 				E('_mwan_cktime').value = 0;
 				elem.display('mwan-title', 'mwan-section', 0);
@@ -680,7 +680,7 @@ function verifyFields(focused, quiet) {
 					wanproto[wan_uidx - 1] = 'disabled';
 					elem.display('wan'+u+'-title', 'sesdiv_wan'+u, 0);
 				}
-				break; /* break the loop! one wlan module is using wireless ethernet bridge or media bridge mode --> hide wan options! */
+				break; /* break the loop! one wlan module is using wireless ethernet bridge or media bridge mode -> hide wan options! */
 			}
 			else { /* not in wireless bridge mode - show wan options */
 				elem.display('mwan-title', 'mwan-section', 1);
@@ -1141,7 +1141,11 @@ REMOVE-END */
 				if (a.substr(0, 6) == '_f_wl_')
 					i = 5;
 
-				b = E(a.substr(0, i) + wl_unit(uidx) + a.substr(i, a.length));
+					b = E(a.substr(0, i) + wl_unit(uidx) + a.substr(i, a.length));
+					if (!b) {
+						console.error('Element not found:', a.substr(0, i) + wl_unit(uidx) + a.substr(i, a.length));
+						return;
+					}
 				c = wl_vis[uidx][a];
 				b.disabled = (c != 1);
 				PR(b).style.display = (c ? 'table-row' : 'none');
@@ -1190,7 +1194,7 @@ REMOVE-END */
 			ferror.clear(b);
 			if ((wmode == 'sta') || (wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
 			   ) {
 				++wlclnt;
@@ -1281,7 +1285,7 @@ REMOVE-END */
 
 			if ((wmode == 'sta') || (wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
 			   ) {
 				if (a.value.length > 16) {
@@ -1516,7 +1520,7 @@ function save() {
 
 			if ((wmode == 'sta') || (wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
 			   ) {
 				E('_wl'+u+'_clap_hwaddr').value = E('_f_wl'+u+'_clap_hwaddr').value;
@@ -1543,7 +1547,7 @@ function save() {
 
 			if ((wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
 			   ) {
 				for (wan_uidx = 1; wan_uidx <= MAXWAN_NUM; ++wan_uidx) {
@@ -1723,7 +1727,7 @@ function save() {
 		fom['dhcpd'+j+'_endip'].value = (d[i][4] != '0') ? d[i][6] : '';
 
 /* REMOVE-BEGIN
-alert('lan'+j+'_ifname=' + fom['lan'+j+'_ifname'].value + '\n' +
+	alert('lan'+j+'_ifname=' + fom['lan'+j+'_ifname'].value + '\n' +
 	'lan'+j+'_stp=' + fom['lan'+j+'_stp'].value + '\n' +
 	'lan'+j+'_ipaddr=' + fom['lan'+j+'_ipaddr'].value + '\n' +
 	'lan'+j+'_netmask=' + fom['lan'+j+'_netmask'].value + '\n' +
@@ -1853,6 +1857,14 @@ function init() {
 			refreshNetModes(uidx);
 			refreshChannels(uidx);
 			refreshBandWidth(uidx);
+			var u = wl_unit(uidx);
+			var wmode = E('_f_wl'+u+'_mode').value;
+			var ssidScanButton = E('_f_wl' + u + '_ssidscan');
+			if (wmode === 'ap') {
+				ssidScanButton.style.display = 'none';
+			} else {
+				ssidScanButton.style.display = '';
+			}
 		}
 	}
 	refreshWanSection();
@@ -1921,7 +1933,7 @@ function init() {
 	createFieldTable('', [
 		{ title: 'Number of logical WANs', name: 'mwan_num', type: 'select', options: [['1','1 WAN'],['2','2 WAN']
 /* MULTIWAN-BEGIN */
-											   ,['3','3 WAN'],['4','4 WAN']
+					,['3','3 WAN'],['4','4 WAN']
 /* MULTIWAN-END */
 			], value: nvram.mwan_num, suffix: '&nbsp; <small>Please configure <a href="advanced-vlan.asp">VLAN<\/a> first<\/small>' },
 		{ title: 'Tune route cache', name: 'f_mwan_tune_gc', type: 'checkbox', suffix: '&nbsp; <small>for multiwan in load balancing mode<\/small>', value: (nvram['mwan_tune_gc'] == 1) },
@@ -2117,16 +2129,16 @@ function init() {
 				{ title: 'Wireless Mode', name: 'f_wl'+u+'_mode', type: 'select',
 					options: [['ap','Access Point'],['apwds','Access Point + WDS'],['sta','Wireless Client'],['wet','Wireless Ethernet Bridge'],['wds','WDS']
 /* BCMWL6-BEGIN */
-						  ,['psta','Media Bridge']
+						,['psta','Media Bridge']
 /* BCMWL6-END */
-						 ],
+						],
 					value: ((eval('nvram.wl'+u+'_mode') == 'ap') && (eval('nvram.wl'+u+'_wds_enable') == '1')) ? 'apwds' : eval('nvram.wl'+u+'_mode') },
 				{ title: 'Radio Band', name: 'f_wl'+u+'_nband', type: 'select', options: bands[uidx],
 					value: eval('nvram.wl'+u+'_nband') || '0' == '0' ? bands[uidx][0][0] : eval('nvram.wl'+u+'_nband') },
 				{ title: 'Wireless Network Mode', name: 'wl'+u+'_net_mode', type: 'select',
 					value: (eval('nvram.wl'+u+'_net_mode') == 'disabled') ? 'mixed' : eval('nvram.wl'+u+'_net_mode'),
 					options: [], prefix: '<span id="__wl'+u+'_net_mode">', suffix: '<\/span>' },
-				{ title: 'SSID', name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: eval('nvram.wl'+u+'_ssid') },
+				{ title: 'SSID', name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: eval('nvram.wl'+u+'_ssid'), prefix: '<span id="__wl'+u+'_ssid">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_ssidscan" value="Scan" onclick="scanButton('+u+', \'ssid\')"> <img src="spin.gif" alt="" id="spinSsid'+u+'" style="display:none;"> <select id="ssidList'+u+'" style="display:none" onchange="selectSsid(this, '+u+')"> <input type="hidden" id="_wl'+u+'_ssid" name="dummy_wl'+u+'_ssid" value=""> </select>' },
 				{ title: 'Broadcast', indent: 2, name: 'f_wl'+u+'_bcast', type: 'checkbox', value: (eval('nvram.wl'+u+'_closed') == '0') },
 				{ title: 'Channel', name: 'wl'+u+'_channel', type: 'select', options: ghz[uidx], prefix: '<span id="__wl'+u+'_channel">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_scan" value="Scan" onclick="scanButton('+u+')"> <img src="spin.gif" alt="" id="spin'+u+'">',
 					value: eval('nvram.wl'+u+'_channel') },
@@ -2146,13 +2158,16 @@ function init() {
 				{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_radius_key', type: 'password', maxlen: 80, size: 32, peekaboo: 1,
 					suffix: ' <input type="button" id="_f_wl'+u+'_psk_random2" value="Random" onclick="random_psk(\'_wl'+u+'_radius_key\')">',
 					value: eval('nvram.wl'+u+'_radius_key') },
-/* RTNPLUS-NO-BEGIN */
-				{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey', type: 'text', maxlen: 4, size: 6, suffix: '&nbsp; <small>seconds<\/small>',
-/* RTNPLUS-NO-END */
+				{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey',  type: 'text', 
 /* RTNPLUS-BEGIN */
-				{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey', type: 'text', maxlen: 7, size: 9, suffix: '&nbsp; <small>seconds<\/small>',
+					maxlen: 7, 
+					size: 9, 
 /* RTNPLUS-END */
-					value: eval('nvram.wl'+u+'_wpa_gtk_rekey') },
+/* RTNPLUS-NO-BEGIN */
+					maxlen: 4, 
+					size: 6, 
+/* RTNPLUS-NO-END */
+					suffix: '&nbsp; <small>seconds<\/small>', value: eval('nvram.wl'+u+'_wpa_gtk_rekey') },
 				{ title: 'Radius Server', indent: 2, multi: [
 					{ name: 'wl'+u+'_radius_ipaddr', type: 'text', maxlen: 15, size: 17, value: eval('nvram.wl'+u+'_radius_ipaddr') },
 					{ name: 'wl'+u+'_radius_port', type: 'text', maxlen: 5, size: 7, prefix: ' : ', value: eval('nvram.wl'+u+'_radius_port') } ] },
@@ -2175,16 +2190,16 @@ function init() {
 			f.push(null, { title: 'WDS', name: 'f_wl'+u+'_lazywds', type: 'select', options: [['0','Link With...'],['1','Automatic']], value: nvram['wl'+u+'_lazywds'] } );
 
 			var wds = eval('nvram.wl'+u+'_wds').split(/\s+/);
-			for (i = 0; i < 10; i += 2) {
-				f.push(
-					{ title: (i ? '' : 'MAC Address'), indent: 2, multi: [
+				for (i = 0; i < 10; i += 2) {
+					f.push(
+						{ title: (i ? '' : 'MAC Address'), indent: 2, multi: [
 						{ name: 'f_wl'+u+'_wds_'+i, type: 'text', maxlen: 17, size: 20, value: wds[i] || mac_null },
 						{ name: 'f_wl'+u+'_wds_'+(i + 1), type: 'text', maxlen: 17, size: 20, value: wds[i + 1] || mac_null } ] } );
-			}
-			createFieldTable('', f);
-			W('<\/div>');
-		}
+				}
+				createFieldTable('', f);
+				W('<\/div>');
 	}
+}
 /* for each wlif */
 </script>
 

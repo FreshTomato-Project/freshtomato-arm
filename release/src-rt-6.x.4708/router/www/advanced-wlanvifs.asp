@@ -45,9 +45,9 @@ var wl_modes_available = [];
 
 var wmo = {'ap':'Access Point','apwds':'Access Point + WDS','sta':'Wireless Client','wet':'Wireless Ethernet Bridge','wds':'WDS'
 /* BCMWL6-BEGIN */
-	   ,'psta':'Media Bridge'
+		,'psta':'Media Bridge'
 /* BCMWL6-END */
-	   };
+		};
 var macmode = {'disabled':'Disabled','deny':'Block','allow':'Permit'};
 
 var tabs = [['overview','Overview']];
@@ -177,11 +177,11 @@ wlg.dataToView = function(data) {
 		ifname = wl_display_ifname(uidx);
 
 	return ([ifname,(data[1] == 1) ? '&#x2b50' : '',
-	                 data[2] || '<small><i>(unset)<\/i><\/small>',
-	                 wmo[data[3]] || '<small><i>(unset)<\/i><\/small>',
-	                 ['LAN0 (br0)','LAN1 (br1)','LAN2 (br2)','LAN3 (br3)','none' ][data[4]],
-	                 macmode[data[5]] || macmode[nvram['wl'+data[0].toString()+'_macmode']]
-	       ]);
+					data[2] || '<small><i>(unset)<\/i><\/small>',
+					wmo[data[3]] || '<small><i>(unset)<\/i><\/small>',
+					['LAN0 (br0)','LAN1 (br1)','LAN2 (br2)','LAN3 (br3)','none' ][data[4]],
+					macmode[data[5]] || macmode[nvram['wl'+data[0].toString()+'_macmode']]
+			]);
 }
 
 wlg.dataToFieldValues = function (data) {
@@ -450,7 +450,7 @@ function do_pre_submit_form(fom) {
 	var s = '';
 
 	for (var vidx = 0; vidx < vifs_possible.length; ++vidx) {
-		var u = vifs_possible[vidx][0].toString();  /* WL unit (primary) or unit.subunit (virtual) */
+		var u = vifs_possible[vidx][0].toString();/* WL unit (primary) or unit.subunit (virtual) */
 		if (u.indexOf('.') > 0) { /* only if virtual VIF */
 			var vif = definedVIFidx(u);
 			if (vif >= 0) {
@@ -878,9 +878,9 @@ REMOVE-END */
 
 		if ((wmode == 'sta') || (wmode == 'wet') ||
 /* BCMWL6-BEGIN */
-		    (wmode == 'psta') ||
+			(wmode == 'psta') ||
 /* BCMWL6-END */
-		    0) {
+			0) {
 			++wlclnt;
 			if (wlclnt > 1) {
 				ferror.set(b, 'Only one wireless interface can be configured in client mode.', quiet || !ok);
@@ -1336,6 +1336,18 @@ function earlyInit() {
 }
 
 function init() {
+	for (var uidx = 0; uidx < wl_ifaces.length; ++uidx) {
+		if (wl_sunit(uidx) < 0) {
+			var u = wl_unit(uidx);
+			var wmode = E('_f_wl'+u+'_mode').value;
+			var ssidScanButton = E('_f_wl' + u + '_ssidscan');
+			if (wmode === 'ap') {
+				ssidScanButton.style.display = 'none';
+			} else {
+				ssidScanButton.style.display = '';
+			}
+		}
+	}
 	var uninit = wl_ifaces.length - 1;
 	while (uninit > 0) {
 		if (((nvram['wl'+wl_unit(uninit)+'_corerev']) * 1) >= 9)
@@ -1526,7 +1538,8 @@ function init() {
 					nvram['wl'+u+'_closed'] = '0';
 
 				f.push (
-					{ title: 'SSID', name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: eval('nvram["wl'+u+'_ssid"]') },
+//					{ title: 'SSID', name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: eval('nvram["wl'+u+'_ssid"]') },
+					{ title: 'SSID', name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: eval('nvram["wl'+u+'_ssid"]'), prefix: '<span id="__wl'+u+'_ssid">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_ssidscan" value="Scan" onclick="scanButton('+u+', \'ssid\')"> <img src="spin.gif" alt="" id="spinSsid'+u+'" style="display:none;"> <select id="ssidList'+u+'" style="display:none" onchange="selectSsid(this, '+u+')"> <input type="hidden" id="_wl'+u+'_ssid" name="dummy_wl'+u+'_ssid" value=""> </select>' },
 					{ title: 'Broadcast', indent: 2, name: 'f_wl'+u+'_bcast', type: 'checkbox', value: (eval('nvram["wl'+u+'_closed"]') == '0') }
 				);
 

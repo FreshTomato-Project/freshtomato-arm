@@ -722,6 +722,8 @@ function earlyInit() {
 }
 
 function init() {
+	if (((c = cookie.get(cprefix+'_notes_vis')) != null) && (c == '1'))
+	toggleVisibility(cprefix, 'notes');	
 	dg.recolor();
 
 	ref.initPage(3000, 3);
@@ -768,6 +770,34 @@ function init() {
 /* DISCOVERY-END */
 		createFieldTable('', f);
 	</script>
+</div>
+
+<!-- / / / -->
+
+<div class="section-title">Notes <small><i><a href='javascript:toggleVisibility(cprefix,"notes");'><span id="sesdiv_notes_showhide">(Show)</span></a></i></small></div>
+<div class="section" id="sesdiv_notes" style="display:none">
+<b>Device List</b>
+<ul>
+	<li>You can hover over the fields in device list to find shortcuts to pre-populated pages: [DR] DHCP Reservation, [BWL] BandWidth Limiter, [AR] Access Restriction and [WLF] WireLess Filter.</li>
+	<li>Clicking on the MAC address will lookup the manufacturer by looking at the first half of the MAC address, this is purely informational.</li>
+	<li>When present, pressing an ON/OFF icon will send a Wake-up On Line datagram to the device, if the device supports that it will become active.</li>
+	<li>Clicking on the remaining lease time lets you terminate that lease, and if it is wireless connected it will also de-authenticate it. use with care.</li>
+</ul>
+<b>Network Discovery</b>
+<ul>
+	<li><b>Sanitize results:</b> Before and after discovery has run, the reported state of devices known to FT may not have settled completely, but eventually it will by itself. Ticking "Sanitize results" will speed up that process after the scan has run.</li>
+	<li><b>Max Probes:</b> determines the maximum concurrent number of probes. Each eligible IP address is probed, not limiting the simultaneous probes may be too large a load for the router and negatively affect its core job: routing traffic.Range is from 5 to 200 simultaneous probes, default 60, which is the optimum on the most popular routers at the moment. That's why it is not an good idea to leave the discovery running with the web page open.</li>
+	<li><b>Scan Target:</b> You can scan LANs ( default ), WANs or both, but not individual LANs or individual WANs if you have multiple. The maximum size of a subnet to scan is /22, being 1022 individual IP addresses. There is no need to do a WAN scan if the FT router and an upstream device are the only two devices in that WAN.</li>
+	<li><b>Scan Mode:</b> selects the method to obtain the status of a device on the network. the choices are:
+		<ul>
+		<li>Off - This is the default. No scanning is done at all. The device list is populated only by devices which have frequent contact with the router themselves. WAN devices other than the upstream router will often go undetected.</li>
+		<li>arping - the most lightweight and preferred method</li>
+		<li>traceroute - alternative might work better with certain devices (e.g. old Apple kit)</li>
+		<li>nc - netcat is a well known alternative for scanning</li>
+		<li>all - Each consecutive discovery scan is done round robin with the next discovery method</li>
+	</li></ul>
+	<li>When enabled the discovery runs once in 60 or 120 seconds (depending on the device) when on the right side the screen refresh is activated. As the discovery itself runs for a number of seconds - depending on your choices, network and router this may be between 10 and 30 seconds, or even more - be prepared that it may take some time before the results that appear have settled. When "One off" is chosen, please refresh the screen by ctrl-F5 instead of pressing "Refresh" again.</li>
+</ul>
 </div>
 
 <!-- / / / -->

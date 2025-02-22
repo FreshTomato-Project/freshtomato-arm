@@ -783,6 +783,7 @@ function init() {
 	<li>When present, pressing an ON/OFF icon will send a Wake-up On Line datagram to the device, if the device supports that it will become active.</li>
 	<li>Clicking on the remaining lease time lets you terminate that lease, and if it is wireless connected it will also de-authenticate it. use with care.</li>
 </ul>
+/* DISCOVERY-BEGIN */
 <b>Network Discovery</b>
 <ul>
 	<li><b>Sanitize results:</b> Before and after discovery has run, the reported state of devices known to FT may not have settled completely, but eventually it will by itself. Ticking "Sanitize results" will speed up that process after the scan has run.</li>
@@ -798,6 +799,7 @@ function init() {
 	</li></ul>
 	<li>When enabled the discovery runs once in 60 or 120 seconds (depending on the device) when on the right side the screen refresh is activated. As the discovery itself runs for a number of seconds - depending on your choices, network and router this may be between 10 and 30 seconds, or even more - be prepared that it may take some time before the results that appear have settled. When "One off" is chosen, please refresh the screen by ctrl-F5 instead of pressing "Refresh" again.</li>
 </ul>
+/* DISCOVERY-END */
 </div>
 
 <!-- / / / -->

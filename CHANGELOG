@@ -5,6 +5,60 @@ FreshTomato-ARM Changelog
 
 
 
+2025.1          2025.02.27
+---------------------------
+
+- kernel: bridge: fixes from the upstream
+- kernel: netfilter: xt_set: update to work with iptables 1.8.10+; also add some fixes from the upstream for ipset and bridge
+- kernel: enable ipset hash:net,iface set by default
+- kernel: netfilter: xt_recent: fixes from the upstream
+- php: update to 8.3.17
+- dnsmasq: update to v2.91rc5
+- nano: update to 8.3
+- pppd: update to 2.5.2
+- nettle: update to 3.10.1
+- openvpn: update to 2.6.13
+- libexif: update to 0.6.25
+- libiconv: update to 1.18
+- libpng: update to 1.6.47
+- libsodium: update to latest 1.0.20-stable
+- libzip: update to 1.11.3
+- meson: update to 1.7.0
+- sqlite: update to 3.48.0
+- adminer: update to 4.14
+- e2fsprogs: update to 1.47.2
+- openssl-3.0: update to 3.0.16
+- nginx: update to 1.27.4
+- libcurl: update to 8.12.0
+- libffi: update to 3.4.7
+- tor: update to 0.4.8.14
+- flac: update to 1.5.0
+- libxml2: update to 2.13.6
+- discovery.sh: update to v2.64
+- rom: update CA bundle to 2024-12-31
+- build: add libltdl-dev to Dockerfile
+- GUI: Basic: DDNS: hide 'Custom IP address' when 'IP address -> Custom IP Address...' is set but given Service is disabled
+- dnsmasq: fixes in dnsmasq Tomato-helper patch
+- mdu: the eNom service has its cert fixed
+- mdu: fix memory leak in curl_dump_cb() callback function
+- mdu: make update_cloudflare() work again
+- openssl-1.1: add fix for CVE-2024-9143
+- openssl-1.1: add fix for CVE-2024-13176
+- others: fix export PATH
+- shared: process.c: check for zombie in pidof()
+- shared: process.c: enhance pidof() matching
+- rc: samba.c: do not remove samba config directory on stop/restart (prevents inability to add additional users) (fix [BB] #349)
+- rc: wireguard.c: warn about not being able to add default routing (when needed) due to unpatched kernel
+- rc: wireguard.c: fix adding subnet mask in routing table (fix [BB] #350)
+- rc: ddns.c: fix path to IP cache file
+- tomatoanon: update url to https://anon.freshtomato.org
+- UPnP IGD & PCP: Add Expires to port forward listing
+- USB: disable USB 3.0 by default and add 2.4G interference warning when enabling
+- www: tomato.js: add button case to createFieldTable() function
+- www: tomato.css: fix ports images on advanced vlan page
+- www: add link to '/' in header that point to Status -> Overview
+
+
 2024.5          2024.12.24
 ---------------------------
 

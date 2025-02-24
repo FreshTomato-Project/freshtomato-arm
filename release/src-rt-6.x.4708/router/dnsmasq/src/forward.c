@@ -205,6 +205,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 	 may fall through below and forward the query in the packet buffer again and we
 	 want to use the same case scrambling as the first time. */
       blockdata_retrieve(forward->stash, forward->stash_len, (void *)header); 
+      plen = forward->stash_len;
 
       for (src = &forward->frec_src; src; src = src->next)
 	if (src->orig_id == id && 
@@ -292,8 +293,9 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 
 	      if (gobig && !bitvector)
 		{
-		  casediff = (i/BITS_IN_INT) + 1; /* length of array */
-		  if ((bitvector = whine_malloc(casediff)))
+		  casediff = ((i - 1)/BITS_IN_INT) + 1; /* length of array */
+		  /* whine_malloc() zeros memory */
+		  if ((bitvector = whine_malloc(casediff * sizeof(unsigned int))))
 		    goto big_redo;
 		}
 	    }
@@ -390,6 +392,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
       header->id = ntohs(forward->new_id);
       
       forward->frec_src.encode_bitmap = option_bool(OPT_NO_0x20) ? 0 : rand32();
+      forward->frec_src.encode_bigmap = NULL;
       p = (unsigned char *)(header+1);
       if (!extract_name(header, plen, &p, (char *)&forward->frec_src.encode_bitmap, EXTR_NAME_FLIP, 1))
 	goto reply;
@@ -1039,6 +1042,7 @@ static void dnssec_validate(struct frec *forward, struct dns_header *header,
 		  new->flags |= flags;
 		  new->forwardall = 0;
 		  new->frec_src.encode_bitmap = 0;
+		  new->frec_src.encode_bigmap = NULL;
 
 		  forward->next_dependent = NULL;
 		  new->dependent = forward; /* to find query awaiting new one. */
@@ -1489,13 +1493,13 @@ void return_reply(time_t now, struct frec *forward, struct dns_header *header, s
 	  log_query(F_UPSTREAM, NULL, NULL, "truncated", 0);
 
 	  /* This gets the name back to the state it was in when we started. */
-	  flip_queryname(header, nn, prev, &forward->frec_src);
+	  flip_queryname(header, new, prev, &forward->frec_src);
 	  
 	  for (src = &forward->frec_src, prev = NULL; src; prev = src, src = src->next)
 	    {
 	      /* If you didn't undertand this above, you won't understand it here either. */
 	      if (prev)
-		flip_queryname(header, nn, prev, src);
+		flip_queryname(header, new, prev, src);
 	      
 	      if (src->fd != -1 && nn > src->udp_pkt_size)
 		{
@@ -3041,7 +3045,7 @@ static void free_frec(struct frec *f)
   struct frec_src *last;
   
   /* add back to freelist if not the record builtin to every frec,
-     also free any bigmaps they's been decorated with. */
+     also free any bigmaps they've been decorated with. */
   for (last = f->frec_src.next; last && last->next; last = last->next)
     if (last->encode_bigmap)
       {
@@ -3051,6 +3055,12 @@ static void free_frec(struct frec *f)
   
   if (last)
     {
+      /* final link in the chain loses bigmap too. */
+      if (last->encode_bigmap)
+	{
+	  free(last->encode_bigmap);
+	  last->encode_bigmap = NULL;
+	}
       last->next = daemon->free_frec_src;
       daemon->free_frec_src = f->frec_src.next;
     }

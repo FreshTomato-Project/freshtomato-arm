@@ -1,21 +1,19 @@
 --- dropbear/localoptions.h
 +++ dropbear/localoptions.h
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,20 @@
 +/* Override SSH 2.0 ident */
 +#define LOCAL_IDENT "SSH-2.0-dropbear"
 +
 +#define DROPBEAR_X11FWD 0
 +#define INETD_MODE 0
 +
-+/* encryption/hostkey/public-key algo (disable 3DES, DSS) */
-+#define DROPBEAR_3DES 0
-+#define DROPBEAR_DSS 0
++ /* post-quantum kex */
++#define DROPBEAR_SNTRUP761 0
++#define DROPBEAR_MLKEM768 0
 +
 +#define XAUTH_COMMAND "/opt/X11R6/X11/xauth -q"
 +#define SFTPSERVER_PATH "/opt/libexec/sftp-server"
 +
-+#define DROPBEAR_ENABLE_CBC_MODE 0
-+#define DROPBEAR_SHA1_96_HMAC 0
 +#define DEFAULT_PATH "/bin:/usr/bin:/sbin:/usr/sbin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"
 +#define DEFAULT_ROOT_PATH "/bin:/usr/bin:/sbin:/usr/sbin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"
 +
@@ -35,7 +33,7 @@
  #define PROGNAME "dropbear"
  
  #ifndef DROPBEAR_CLIENT
-@@ -376,7 +378,7 @@
+@@ -416,7 +418,7 @@
   * Currently server is enabled but client is disabled by default until there
   * is further compatibility testing */
  #ifdef __linux__

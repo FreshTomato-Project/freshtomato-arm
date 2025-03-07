@@ -201,7 +201,7 @@ function loadConfig(unit) {
 
 	var reader = new FileReader();
 	reader.unit = unit;
-	reader.addEventListener('load', mapConfigToFields);
+	addEvent(reader, 'load', mapConfigToFields);
 	reader.readAsText(file);
 }
 
@@ -249,7 +249,6 @@ function mapConfigToFields(event) {
 
 	if (config.interface.keepalive)
 		E('_wg'+unit+'_ka').value = 25; /* default for keepalive, user may change */
-
 	else
 		E('_wg'+unit+'_ka').value = 0;
 
@@ -260,9 +259,15 @@ function mapConfigToFields(event) {
 
 	for (var i = 0; i < config.peers.length; ++i) {
 		var peer = config.peers[i];
-		var [ip, allowed_ips] = peer.allowed_ips.split(',', 2);
 
-		ip = ip.trim().split('/')[0]+'/32';
+		if (E('_wg'+unit+'_com').value == 3) { /* 'External - VPN Provider' */
+			var ip = '';
+			var allowed_ips = peer.allowed_ips;
+		}
+		else {
+			var [ip, allowed_ips] = peer.allowed_ips.split(',', 2);
+			ip = ip.trim().split('/')[0]+'/32';
+		}
 
 		var data = [
 			peer.alias ? peer.alias : '',
@@ -270,8 +275,8 @@ function mapConfigToFields(event) {
 			peer.privkey ? peer.privkey : '',
 			peer.pubkey,
 			peer.psk ? peer.psk : '',
-			ip,
-			allowed_ips ? allowed_ips : '',
+			ip ? ip.trim() : '',
+			allowed_ips ? allowed_ips.trim() : '',
 			peer.keepalive ? 25 : 0 /* default for keepalive, user may change */
 		];
 
@@ -1236,10 +1241,10 @@ function generateWGConfig(unit, name, privkey, psk, ip, port, fwmark, keepalive,
 
 	/* build allowed ips for router peer */
 	var allowed_ips;
-	if (eval('nvram.wg'+unit+'_rgw') == 1) /* forward all peer traffic? */
+	if (nvram['wg'+unit+'_rgw'] == 1) /* forward all peer traffic? */
 		allowed_ips = '0.0.0.0/0'
 	else {
-		if (eval('nvram.wg'+unit+'_com') > 0) /* not 'Hub and Spoke' */
+		if (nvram['wg'+unit+'_com'] > 0) /* not 'Hub and Spoke' */
 			var netmask = interface_nm;
 		else
 			var netmask = '32'; /* 'Hub and Spoke' */
@@ -1284,13 +1289,13 @@ function generateWGConfig(unit, name, privkey, psk, ip, port, fwmark, keepalive,
 
 	/* add remaining peers to config */
 	var pubkey = window.wireguard.generatePublicKey(privkey);
-	if (eval('nvram.wg'+unit+'_com') > 0) { /* not 'Hub and Spoke' */
+	if (nvram['wg'+unit+'_com'] > 0) { /* not 'Hub and Spoke' */
 		var interface_peers = peerTables[unit].getAllData();
 
 		for (var i = 0; i < interface_peers.length; ++i) {
 			var peer = interface_peers[i];
 
-			if (eval('nvram.wg'+unit+'_com') == 1 && endpoint == '' && peer[2] == '')
+			if (nvram['wg'+unit+'_com'] == 1 && endpoint == '' && peer[2] == '')
 				continue;
 
 			var peer_pubkey = peer[3];
@@ -1549,11 +1554,6 @@ function verifyFWMark(fwmark) {
 function verifyFields(focused, quiet) {
 	var ok = 1;
 
-	/* FIX ME!!! */
-	E('_wg0_com').lastChild.disabled = true;
-	E('_wg1_com').lastChild.disabled = true;
-	E('_wg2_com').lastChild.disabled = true;
-
 	/* When settings change, make sure we restart the right services */
 	if (focused) {
 		changed = 1;
@@ -1593,7 +1593,7 @@ function verifyFields(focused, quiet) {
 		for (var j = 0; j <= MAX_BRIDGE_ID; ++j) {
 			t = (j == 0 ? '' : j);
 
-			if (eval('nvram.lan'+t+'_ifname.length') < 1) {
+			if (nvram['lan'+t+'_ifname.length'] < 1) {
 				E('_f_wg'+i+'_lan'+j).checked = 0;
 				E('_f_wg'+i+'_lan'+j).disabled = 1;
 			}
@@ -1913,11 +1913,13 @@ function init() {
 				{ title: 'Push LAN1 (br1) to peers', name: 'f_'+t+'_lan1', type: 'checkbox', value: (nvram[t+'_lan'] & 0x02) },
 				{ title: 'Push LAN2 (br2) to peers', name: 'f_'+t+'_lan2', type: 'checkbox', value: (nvram[t+'_lan'] & 0x04) },
 				{ title: 'Push LAN3 (br3) to peers', name: 'f_'+t+'_lan3', type: 'checkbox', value: (nvram[t+'_lan'] & 0x08) },
-				{ title: 'Forward all peer traffic', name: 'f_'+t+'_rgw', type: 'checkbox', value: nvram[t+'_rgw'] == 1 }
+				{ title: 'Forward all peer traffic', name: 'f_'+t+'_rgw', type: 'checkbox', value: nvram[t+'_rgw'] == 1 },
+				{ title: 'Type of VPN', name: t+'_com', type: 'select', options: [['0','Internal - Hub (this device) and Spoke (peers)'],['1','Internal - Full Mesh (defined Endpoint only)'],['2','Internal - Full Mesh'],['3','External - VPN Provider']], value: nvram[t+'_com'] || 0 }
 			]);
 			W('<br>');
 
 			W('<div class="section-title">Import Config from File<\/div>');
+			W('<div>Before importing the configuration, set the correct "Type of VPN".<\/div>');
 			W('<div class="import-section">');
 			W('<input type="file" class="import-file" id="'+t+'_config_file" accept=".conf" name="Browse File">');
 			W('<input type="button" id="'+t+'_config_import" value="Import" onclick="loadConfig('+i+')" >');
@@ -1928,14 +1930,6 @@ function init() {
 
 			/* peers tab start */
 			W('<div id="'+t+'-wg-peers">');
-			W('<div class="section-title">VPN Connectivity<\/div>');
-			createFieldTable('', [
-				{ title: 'Type of VPN', name: t+'_com', type: 'select', options: [['0','Internal - Hub (this device) and Spoke (peers)'],['1','Internal - Full Mesh (defined Endpoint only)'],['2','Internal - Full Mesh'],['3','External - VPN Provider']], value: nvram[t+'_com'] || 0 },
-				{ title: 'Port', name: 'f_'+t+'_peer_port', type: 'text', maxlen: 5, size: 10, value: nvram[t+'_port'] == '' ? (51820 + i) : nvram[t+'_port'], hidden: 1 },
-				{ title: 'FWMark', name: 'f_'+t+'_peer_fwmark', type: 'text', maxlen: 8, size: 8, value: '0', hidden: 1 }
-			]);
-			W('<br>');
-
 			W('<div class="section-title">Peers<\/div>');
 			W('<div class="tomato-grid" id="'+t+'-peers-grid"><\/div>');
 			peerTables[i].setup();
@@ -1946,7 +1940,11 @@ function init() {
 			W('<img src="qr-icon.svg" alt="'+t+'_qrcode_img" style="max-width:100px">');
 			W('<div id="'+t+'_qrcode_labels" class="qrcode-labels" title="Message">Point your mobile phone camera <br>here above to connect automatically<\/div>');
 			W('<\/div>');
-			W('<br>');
+
+			createFieldTable('', [
+				{ title: 'Port', name: 'f_'+t+'_peer_port', type: 'text', maxlen: 5, size: 10, value: nvram[t+'_port'] == '' ? (51820 + i) : nvram[t+'_port'], hidden: 1 },
+				{ title: 'FWMark', name: 'f_'+t+'_peer_fwmark', type: 'text', maxlen: 8, size: 8, value: '0', hidden: 1 }
+			]);
 
 			W('<div class="section-title">Peer Generation<\/div>');
 			createFieldTable('', [

@@ -350,7 +350,7 @@ sub fixDyn
 # avahi
 	fixDynDep("avahi-daemon", "libavahi-core.so.7.1.0");
 	fixDynDep("avahi-daemon", "libavahi-common.so.3.5.4");
-	fixDynDep("avahi-daemon", "libexpat.so.1.10.0");
+	fixDynDep("avahi-daemon", "libexpat.so.1.10.1");
 	fixDynDep("avahi-daemon", "libdaemon.so.0.5.0");
 
 	fixDynDep("xtables-legacy-multi", "libxtables.so");
@@ -669,7 +669,7 @@ elsif ($openssldir eq "openssl-3.0") {
 #genSO("${root}/usr/lib/libwolfssl.so.42.2.0", "${router}/wolfssl/src/.libs/libwolfssl.a", "${stripshared}");
 
 if ($is_arm ne "y") { # MIPS only (ARM - bigger)
-	genSO("${root}/usr/lib/libexpat.so.1.10.0", "${router}/expat/lib/.libs/libexpat.a", "${stripshared}");
+	genSO("${root}/usr/lib/libexpat.so.1.10.1", "${router}/expat/lib/.libs/libexpat.a", "${stripshared}");
 	genSO("${root}/usr/lib/libid3tag.so.0.16.3", "${router}/libid3tag/static/libid3tag.a", "${stripshared}", "-L${router}/zlib");
 	genSO("${root}/usr/lib/libexif.so.12", "${router}/libexif/libexif/.libs/libexif.a", "${stripshared}");
 	genSO("${root}/usr/lib/libavcodec.so.54", "${router}/ffmpeg//libavcodec/libavcodec.a", "${stripshared}", "-L${router}/ffmpeg/libavutil -L${router}/zlib");

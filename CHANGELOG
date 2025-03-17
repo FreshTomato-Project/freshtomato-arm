@@ -5,6 +5,25 @@ FreshTomato-ARM Changelog
 
 
 
+2025.2          2025.03.20
+---------------------------
+
+- Note: Mainly a bugfix release due to a serious bug in dnsmasq causing a SIGSEGV (segmentation violation) in some cases: https://thekelleys.org.uk/gitweb/?p=dnsmasq.git;a=commitdiff;h=9af15871e6ef0ac845412e9a6c3ecfb0849374c8
+
+- dnsmasq: update to 2.91rc6 remove patch 300, fix already in upstream
+- dropbear: update to 2025.87
+- adminer: update to 4.17.2
+- php: update to 8.3.19
+- expat: update to 2.7.0
+- pcre2: update to 10.45
+- GUI: VPN: Wireguard: fix warning and add keep alive when importing configuration
+- GUI: VPN: Wireguard: enable 'External - VPN Provider' type of VPN, fix adding 'VPN Interface IP' and 'Allowed IPs' for Peers, remove evals
+- discovery.sh: fix wan scanning when IPv6 is enabled
+- libshared: Default DSCP fix to off. Looks like comcast fixed this issue back in 2023
+- rom: update CA bundle to 2025-02-25
+- www: do not use 'eval' if possible
+
+
 2025.1          2025.02.27
 ---------------------------
 

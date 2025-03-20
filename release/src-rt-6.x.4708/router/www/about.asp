@@ -226,7 +226,7 @@ function init() {
 	<hr>
 	<br><b>FreshTomato-ARM - is an alternative, customized version, forked off from Tomato-ARM by Shibby</b>
 	<br>
-	Copyright (C) 2016-2024 by Pedro
+	Copyright (C) 2016-2025 by Pedro
 	<br>
 	<br>
 	Built on <% build_time(); %> by Pedro

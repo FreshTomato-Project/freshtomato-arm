@@ -233,7 +233,7 @@ if (port_vlan_supported) {
 /* EXTSW-BEGIN */
 		                '<div id="vport_5"><img src="eth_off.gif" id="eth_off_6" alt=""><\/div>5-8', '<br>Tag<br>5-8',
 /* EXTSW-END */
-		                '<br>Default<br>VLAN', 'Ethernet to<br>bridge<br>mapping']);
+		                '<br>Default<br>VLAN', 'VLAN to<br>bridge<br>mapping']);
 
 		vlg.populate();
 		vlg.canDelete = false;
@@ -1114,7 +1114,7 @@ function init() {
 			<li><b>1-4 &amp; WAN</b> - Which ethernet ports on the router chassis should be members of this VLAN.</li>
 			<li><b>Tag</b> - Enable 802.1Q tagging of ethernet frames on a particular port/VLAN</li>
 			<li><b>Default VLAN</b> - VLAN ID assigned to untagged frames received by the router.</li>
-			<li><b>Ethernet to Bridge mapping</b> - One and only one VLAN can be assigned to a bridge. Do not confuse Ethernet WAN (physical port) with WAN bridge (logical interface), they might or might not map onto each other</li>
+			<li><b>VLAN to Bridge mapping</b> - One and only one VLAN can be assigned to a bridge. Do not confuse Ethernet WAN (physical port) with WAN bridge (logical interface), they might or might not map onto each other</li>
 		</ul>
 		<br>
 		<i>VLAN Wireless:</i> Assignments of wireless interfaces to predefined LAN bridges.<br>

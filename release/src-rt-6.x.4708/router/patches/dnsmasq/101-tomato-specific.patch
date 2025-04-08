@@ -1,6 +1,6 @@
 --- dnsmasq/src/config.h
 +++ dnsmasq/src/config.h
-@@ -82,6 +82,10 @@
+@@ -83,6 +83,10 @@
     NOTE: when enabling or disabling this, be sure to delete any old
     leases file, otherwise dnsmasq may get very confused.
  
@@ -11,7 +11,7 @@
  HAVE_TFTP
     define this to get dnsmasq's built-in TFTP server.
  
-@@ -354,6 +358,10 @@
+@@ -355,6 +359,10 @@
  #undef HAVE_LOOP
  #endif
  
@@ -22,7 +22,7 @@
  #ifdef NO_DUMPFILE
  #undef HAVE_DUMPFILE
  #endif
-@@ -435,6 +443,9 @@
+@@ -436,6 +444,9 @@
  "no-"
  #endif
  "nftset "
@@ -79,7 +79,7 @@
  
  /* Declare static char *compiler_opts  in config.h */
  #define DNSMASQ_COMPILE_OPTS
-@@ -1610,8 +1648,22 @@
+@@ -1612,8 +1650,22 @@
  	/* Note: this may leave TCP-handling processes with the old file still open.
  	   Since any such process will die in CHILD_LIFETIME or probably much sooner,
  	   we leave them logging to the old file. */
@@ -102,7 +102,7 @@
  	break;
  
        case EVENT_NEWADDR:
-@@ -1655,6 +1707,12 @@
+@@ -1657,6 +1709,12 @@
  	    close(daemon->helperfd);
  	  }
  #endif
@@ -207,7 +207,7 @@
 +    while (fgets(buf, sizeof(buf), f)) {
 +	buf[strcspn(buf, "\n")] = 0;
 +	inet_aton(buf, &ia);
-+	if (lease = lease_find_by_addr(ia)) {
++	if ((lease = lease_find_by_addr(ia))) {
 +	  lease_prune(lease, 0);
 +	  lease_update_file(now);
 +	  lease_update_dns(0);

@@ -3818,9 +3818,9 @@ expat: expat/stamp-h1
 	@$(MAKE) -C $@ DESTDIR=$(TOP)/expat/staged install
 
 expat-install:
-	install -D expat/staged/usr/lib/libexpat.so.1.10.1 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.10.1
-	$(STRIP) $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.10.1
-	cd $(INSTALLDIR)/expat/usr/lib && ln -sf libexpat.so.1.10.1 libexpat.so.1
+	install -D expat/staged/usr/lib/libexpat.so.1.10.2 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.10.2
+	$(STRIP) $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.10.2
+	cd $(INSTALLDIR)/expat/usr/lib && ln -sf libexpat.so.1.10.2 libexpat.so.1
 
 expat-clean:
 	-@$(MAKE) -C expat clean

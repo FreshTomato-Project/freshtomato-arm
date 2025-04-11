@@ -1,7 +1,7 @@
 /**************************************************************************
  *   help.c  --  This file is part of GNU nano.                           *
  *                                                                        *
- *   Copyright (C) 2000-2011, 2013-2024 Free Software Foundation, Inc.    *
+ *   Copyright (C) 2000-2011, 2013-2025 Free Software Foundation, Inc.    *
  *   Copyright (C) 2017 Rishabh Dave                                      *
  *   Copyright (C) 2014-2019 Benno Schulenberg                            *
  *                                                                        *
@@ -476,13 +476,6 @@ void show_help(void)
 
 #ifndef NANO_TINY
 		spotlighted = FALSE;
-
-		while (bracketed_paste)
-			kbinput = get_kbinput(midwin, BLIND);
-		if (kbinput == BRACKETED_PASTE_MARKER) {
-			beep();
-			continue;
-		}
 #endif
 		function = interpret(kbinput);
 
@@ -511,6 +504,10 @@ void show_help(void)
 			get_mouseinput(&dummy_row, &dummy_col, TRUE);
 #endif
 #ifndef NANO_TINY
+		} else if (kbinput == START_OF_PASTE) {
+			while (get_kbinput(midwin, BLIND) != END_OF_PASTE)
+				;
+			statusline(AHEM, _("Paste is ignored"));
 		} else if (kbinput == THE_WINDOW_RESIZED) {
 			;  /* Nothing to do. */
 #endif

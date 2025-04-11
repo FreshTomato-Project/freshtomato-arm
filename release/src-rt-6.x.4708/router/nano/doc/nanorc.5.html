@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Sat Dec 21 10:27:31 2024 -->
+<!-- CreationDate: Wed Apr  2 08:56:33 2025 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -88,7 +88,7 @@ configuration file accepts a series of <b>set</b> and
 <b>unset</b> commands, which can be used to configure nano
 on startup without using command-line options. Additionally,
 there are some commands to define syntax highlighting and to
-rebind keys -- see the two separate sections on those.
+rebind keys &mdash; see the two separate sections on those.
 <b>nano</b> reads one command per line. All commands and
 keywords should be written in lowercase.</p>
 
@@ -145,9 +145,9 @@ name.</p>
 
 <p style="margin-left:15%;">Make and keep not just one
 backup file, but make and keep a uniquely numbered one every
-time a file is saved -- when backups are enabled with <b>set
-backup</b> or <b>--backup</b> or <b>-B</b>. The uniquely
-numbered files are stored in the specified
+time a file is saved &mdash; when backups are enabled with
+<b>set backup</b> or <b>--backup</b> or <b>-B</b>. The
+uniquely numbered files are stored in the specified
 <i>directory</i>.</p>
 
 <p style="margin-left:11%;"><b>set boldtext</b></p>
@@ -201,8 +201,8 @@ use <b>+1</b> or similar before the relevant filename.</p>
 
 <p style="margin-left:11%;"><b>set constantshow</b></p>
 
-<p style="margin-left:15%;">Constantly display the cursor
-position in the status bar. This overrides the option
+<p style="margin-left:15%;">Constantly report the cursor
+position on the status bar. This overrides the option
 <b>quickblank</b>.</p>
 
 <p style="margin-left:11%;"><b>set cutfromcursor</b></p>
@@ -414,8 +414,8 @@ for more details.</p>
 closing punctuation when justifying paragraphs. This may not
 include blank characters. Only the specified closing
 punctuation, optionally followed by closing brackets (see
-<b>brackets</b>), can end sentences. The default value is
-&quot;<b>!.?</b>&quot;.</p>
+<b>set brackets</b>), can end sentences. The default value
+is &quot;<b>!.?</b>&quot;.</p>
 
 <p style="margin-left:11%;"><b>set quickblank</b></p>
 
@@ -556,7 +556,7 @@ The default value is <b>8</b>.</p>
 <p style="margin-left:11%;"><b>set tabstospaces</b></p>
 
 <p style="margin-left:15%;">Convert each typed tab to
-spaces -- to the number of spaces that a tab at that
+spaces &mdash; to the number of spaces that a tab at that
 position would take up. (Note: pasted tabs are not
 converted.)</p>
 
@@ -580,7 +580,7 @@ colors, other valid (but unprefixable) color names are:
 <b>sea</b>, <b>sky</b>, <b>slate</b>, <b>teal</b>,
 <b>sage</b>, <b>brown</b>, <b>ocher</b>, <b>sand</b>,
 <b>tawny</b>, <b>brick</b>, <b>crimson</b>, and
-<b>normal</b> -- where <b>normal</b> means the default
+<b>normal</b> &mdash; where <b>normal</b> means the default
 foreground or background color. On such emulators, the color
 may also be specified as a three-digit hexadecimal number
 prefixed with <b>#</b>, with the digits representing the
@@ -790,13 +790,13 @@ unprefixable) color names are: <b>pink</b>, <b>purple</b>,
 <b>beet</b>, <b>plum</b>, <b>sea</b>, <b>sky</b>,
 <b>slate</b>, <b>teal</b>, <b>sage</b>, <b>brown</b>,
 <b>ocher</b>, <b>sand</b>, <b>tawny</b>, <b>brick</b>,
-<b>crimson</b>, and <b>normal</b> -- where <b>normal</b>
-means the default foreground or background color. On such
-emulators, the color may also be specified as a three-digit
-hexadecimal number prefixed with <b>#</b>, with the digits
-representing the amounts of red, green, and blue,
-respectively. This tells <b>nano</b> to select from the
-available palette the color that approximates the given
+<b>crimson</b>, and <b>normal</b> &mdash; where
+<b>normal</b> means the default foreground or background
+color. On such emulators, the color may also be specified as
+a three-digit hexadecimal number prefixed with <b>#</b>,
+with the digits representing the amounts of red, green, and
+blue, respectively. This tells <b>nano</b> to select from
+the available palette the color that approximates the given
 values.</p>
 
 <p style="margin-left:22%; margin-top: 1em">The color pair
@@ -854,7 +854,7 @@ defined as <i>name</i> with another <i>command</i>. This
 allows adding a new <b>color</b>, <b>icolor</b>,
 <b>header</b>, <b>magic</b>, <b>formatter</b>,
 <b>linter</b>, <b>comment</b>, or <b>tabgives</b> command to
-an already defined syntax -- useful when you want to
+an already defined syntax &mdash; useful when you want to
 slightly improve a syntax defined in one of the
 system-installed files (which normally are not
 writable).</p>
@@ -1011,14 +1011,14 @@ buffer when option <b>multibuffer</b> is set.</p>
 <p style="margin-left:15%;"><b>whereis</b></p>
 
 <p style="margin-left:18%;">Starts a forward search for
-text in the current buffer -- or for filenames matching a
-string in the current list in the file browser.</p>
+text in the current buffer &mdash; or for filenames matching
+a string in the current list in the file browser.</p>
 
 <p style="margin-left:15%;"><b>wherewas</b></p>
 
 <p style="margin-left:18%;">Starts a backward search for
-text in the current buffer -- or for filenames matching a
-string in the current list in the file browser.</p>
+text in the current buffer &mdash; or for filenames matching
+a string in the current list in the file browser.</p>
 
 <p style="margin-left:15%;"><b>findprevious</b></p>
 
@@ -1348,8 +1348,8 @@ the cursor.</p>
 <p style="margin-left:15%;"><b>recordmacro</b></p>
 
 <p style="margin-left:18%;">Starts the recording of
-keystrokes -- the keystrokes are stored as a macro. When
-already recording, the recording is stopped.</p>
+keystrokes &mdash; the keystrokes are stored as a macro.
+When already recording, the recording is stopped.</p>
 
 <p style="margin-left:15%;"><b>runmacro</b></p>
 
@@ -1453,7 +1453,7 @@ the end instead of overwriting.</p>
 <p style="margin-left:15%;"><b>prepend</b></p>
 
 <p style="margin-left:18%;">When writing a file,
-&rsquo;prepends&rsquo; (writes at the beginning) instead of
+&quot;prepends&quot; (writes at the beginning) instead of
 overwriting.</p>
 
 <p style="margin-left:15%;"><b>backup</b></p>
@@ -1505,8 +1505,9 @@ bar and status bar.</p>
 
 <p style="margin-left:15%;"><b>constantshow</b></p>
 
-<p style="margin-left:18%;">Toggles the constant display of
-the current line, column, and character positions.</p>
+<p style="margin-left:18%;">Toggles the constant reporting
+(on the status bar) of the current line, column, and
+character positions.</p>
 
 <p style="margin-left:15%;"><b>softwrap</b></p>
 
@@ -1537,8 +1538,8 @@ Home key.</p>
 
 <p style="margin-left:18%;">Toggles whether a newly created
 line will contain the same amount of leading whitespace as
-the preceding line -- or as the next line if the preceding
-line is the beginning of a paragraph.</p>
+the preceding line &mdash; or as the next line if the
+preceding line is the beginning of a paragraph.</p>
 
 <p style="margin-left:15%;"><b>cutfromcursor</b></p>
 

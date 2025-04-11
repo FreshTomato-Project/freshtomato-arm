@@ -3015,8 +3015,8 @@ nano/stamp-h1:
 		CPPFLAGS="-Os -Wall $(EXTRACFLAGS) -I$(TOP)/libncurses/staged/usr/include -ffunction-sections -fdata-sections -fPIC" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libncurses/staged/usr/lib -fPIC" \
 		NCURSES_LIBS="-lncurses" \
-		ac_cv_lib_ncursesw_get_wch=no \
-		$(CONFIGURE) --prefix=/usr --disable-nls --enable-tiny --without-libiconv-prefix --disable-utf8
+		ac_cv_lib_ncursesw_get_wch=no ac_cv_func_strcasecmp=no ac_cv_func_strncasecmp=no \
+		$(CONFIGURE) --prefix=/usr --enable-tiny --disable-color --disable-utf8 --disable-nls --without-libiconv-prefix
 	@touch $@
 
 nano: nano/stamp-h1

@@ -1,7 +1,7 @@
 /**************************************************************************
  *   winio.c  --  This file is part of GNU nano.                          *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
+ *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
  *   Copyright (C) 2014-2022 Benno Schulenberg                            *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
@@ -304,7 +304,7 @@ void read_keys_from(WINDOW *frame)
 	nodelay(frame, FALSE);
 
 #ifdef DEBUG
-	fprintf(stderr, "\nSequence of hex codes:");
+	fprintf(stderr, "Sequence of hex codes:");
 	for (size_t i = 0; i < waiting_codes; i++)
 		fprintf(stderr, " %3x", key_buffer[i]);
 	fprintf(stderr, "\n");
@@ -728,19 +728,10 @@ int convert_CSI_sequence(const int *seq, size_t length, int *consumed)
 				/* Esc [ 2 0 0 ~ == start of a bracketed paste,
 				 * Esc [ 2 0 1 ~ == end of a bracketed paste. */
 				*consumed = 4;
-				if (seq[2] == '0') {
-					bracketed_paste = TRUE;
-					return BRACKETED_PASTE_MARKER;
-				} else if (seq[2] == '1') {
-					bracketed_paste = FALSE;
-					return BRACKETED_PASTE_MARKER;
-				}
+				return (seq[2] == '0') ? START_OF_PASTE : END_OF_PASTE;
 			} else {
-				/* When invalid, assume it's a truncated end-of-paste sequence,
-				 * in order to avoid a hang -- https://sv.gnu.org/bugs/?64996. */
-				bracketed_paste = FALSE;
 				*consumed = length;
-				return ERR;
+				return FOREIGN_SEQUENCE;
 			}
 #endif
 			break;
@@ -3662,7 +3653,7 @@ void do_credits(void)
 		NULL,                /* "Thank you for using nano!" */
 		"",
 		"",
-		"(C) 2024",
+		"(C) 2025",
 		"Free Software Foundation, Inc.",
 		"",
 		"",

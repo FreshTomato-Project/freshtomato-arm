@@ -1,5 +1,5 @@
 # DO NOT EDIT! GENERATED AUTOMATICALLY!
-# Copyright (C) 2002-2024 Free Software Foundation, Inc.
+# Copyright (C) 2002-2025 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module at-internal:
   # Code from module attribute:
   # Code from module basename-lgpl:
+  # Code from module bool:
   # Code from module btoc32:
   # Code from module btowc:
   # Code from module builtin-expect:
@@ -76,15 +77,15 @@ AC_DEFUN([gl_EARLY],
   # Code from module cloexec:
   # Code from module close:
   # Code from module closedir:
-  # Code from module ctype:
+  # Code from module ctype-h:
   # Code from module d-type:
-  # Code from module dirent:
+  # Code from module dirent-h:
   # Code from module dirfd:
   # Code from module dirname-lgpl:
   # Code from module double-slash-root:
   # Code from module dup2:
   # Code from module eloop-threshold:
-  # Code from module errno:
+  # Code from module errno-h:
   # Code from module error:
   # Code from module error-h:
   # Code from module exitfail:
@@ -101,7 +102,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module filename:
   # Code from module filenamecat-lgpl:
   # Code from module flexmember:
-  # Code from module float:
+  # Code from module float-h:
   # Code from module fnmatch:
   # Code from module fnmatch-h:
   # Code from module fpieee:
@@ -136,7 +137,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module include_next:
   # Code from module inline:
   # Code from module intprops:
-  # Code from module inttypes-incomplete:
+  # Code from module inttypes-h-incomplete:
   # Code from module isblank:
   # Code from module isnand-nolibm:
   # Code from module isnanf-nolibm:
@@ -146,20 +147,20 @@ AC_DEFUN([gl_EARLY],
   # Code from module iswdigit:
   # Code from module iswpunct:
   # Code from module iswxdigit:
-  # Code from module langinfo:
+  # Code from module langinfo-h:
   # Code from module largefile:
   AC_REQUIRE([AC_SYS_LARGEFILE])
   # Code from module libc-config:
   # Code from module limits-h:
   # Code from module localcharset:
-  # Code from module locale:
+  # Code from module locale-h:
   # Code from module localeconv:
   # Code from module lock:
   # Code from module lstat:
   # Code from module malloc-gnu:
   # Code from module malloc-posix:
   # Code from module malloca:
-  # Code from module math:
+  # Code from module math-h:
   # Code from module mbrtoc32:
   # Code from module mbrtowc:
   # Code from module mbsinit:
@@ -199,7 +200,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module realloc-posix:
   # Code from module regex:
   # Code from module save-cwd:
-  # Code from module sched:
+  # Code from module sched-h:
   # Code from module setlocale-null:
   # Code from module setlocale-null-unlocked:
   # Code from module sigaction:
@@ -218,38 +219,41 @@ AC_DEFUN([gl_EARLY],
   # Code from module stat-time:
   # Code from module std-gnu11:
   # Code from module stdarg:
+  # Code from module stdarg-h:
   dnl Some compilers (e.g., AIX 5.3 cc) need to be in c99 mode
   dnl for the builtin va_copy to work.  gl_PROG_CC_C99 arranges for this.
   gl_PROG_CC_C99
-  # Code from module stdbool:
-  # Code from module stdckdint:
-  # Code from module stddef:
-  # Code from module stdint:
-  # Code from module stdio:
+  # Code from module stdckdint-h:
+  # Code from module stddef-h:
+  # Code from module stdint-h:
+  # Code from module stdio-h:
   gl_STDIO_H_EARLY
-  # Code from module stdlib:
+  # Code from module stdlib-h:
   # Code from module strcase:
+  # Code from module strcasecmp:
   # Code from module strcasestr-simple:
   # Code from module strdup-posix:
   # Code from module streq:
   # Code from module strerror:
   # Code from module strerror-override:
-  # Code from module string:
-  # Code from module strings:
+  # Code from module string-h:
+  # Code from module strings-h:
+  # Code from module strncasecmp:
   # Code from module strnlen:
   # Code from module strnlen1:
-  # Code from module sys_random:
-  # Code from module sys_stat:
-  # Code from module sys_time:
-  # Code from module sys_types:
+  # Code from module sys_random-h:
+  # Code from module sys_stat-h:
+  # Code from module sys_time-h:
+  # Code from module sys_types-h:
   AC_REQUIRE([AC_USE_SYSTEM_EXTENSIONS])
   # Code from module sys_wait:
+  # Code from module sys_wait-h:
   # Code from module tempname:
   # Code from module threadlib:
   gl_THREADLIB_EARLY
   # Code from module time-h:
   # Code from module timespec:
-  # Code from module uchar:
+  # Code from module uchar-h:
   # Code from module unicase/base:
   # Code from module unicase/tolower:
   # Code from module unictype/base:
@@ -266,14 +270,14 @@ AC_DEFUN([gl_EARLY],
   # Code from module unictype/ctype-upper:
   # Code from module unictype/ctype-xdigit:
   # Code from module uninorm/base:
-  # Code from module unistd:
+  # Code from module unistd-h:
   # Code from module unistr/base:
   # Code from module unistr/u32-chr:
   # Code from module unistr/u32-cpy:
   # Code from module unistr/u32-pcpy:
   # Code from module unistr/u32-strcat:
   # Code from module unistr/u32-strlen:
-  # Code from module unitypes:
+  # Code from module unitypes-h:
   # Code from module uniwidth/base:
   # Code from module uniwidth/width:
   # Code from module utime:
@@ -286,6 +290,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module vsnprintf-posix:
   # Code from module vsnzprintf:
   # Code from module wchar:
+  # Code from module wchar-h:
   # Code from module wcrtomb:
   # Code from module wctype:
   # Code from module wctype-h:
@@ -327,6 +332,7 @@ AC_DEFUN([gl_INIT],
   gl_CONDITIONAL_HEADER([assert.h])
   AC_PROG_MKDIR_P
   AC_REQUIRE([AC_CANONICAL_HOST])
+  gl_C_BOOL
   gl_UCHAR_MODULE_INDICATOR([btoc32])
   gl_FUNC_BTOWC
   gl_CONDITIONAL([GL_COND_OBJ_BTOWC],
@@ -607,6 +613,7 @@ AC_DEFUN([gl_INIT],
     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_UNISTD_H_GETOPT], [1])
   ])
   gl_UNISTD_MODULE_INDICATOR([getopt-posix])
+  gl_MUSL_LIBC
   AC_REQUIRE([AC_CANONICAL_HOST])
   gl_FUNC_GETPROGNAME
   gl_CONDITIONAL([GL_COND_OBJ_GETPROGNAME],
@@ -956,7 +963,6 @@ AC_DEFUN([gl_INIT],
   gl_STDARG_H
   gl_CONDITIONAL_HEADER([stdarg.h])
   AC_PROG_MKDIR_P
-  gl_C_BOOL
   AC_CHECK_HEADERS_ONCE([stdckdint.h])
   if test $ac_cv_header_stdckdint_h = yes; then
     GL_GENERATE_STDCKDINT_H=false
@@ -1005,15 +1011,13 @@ AC_DEFUN([gl_INIT],
   gl_STDLIB_H
   gl_STDLIB_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
-  gl_STRCASE
-  gl_CONDITIONAL([GL_COND_OBJ_STRCASECMP], [test $HAVE_STRCASECMP = 0])
+  gl_FUNC_STRCASECMP
+  gl_CONDITIONAL([GL_COND_OBJ_STRCASECMP],
+                 [test $HAVE_STRCASECMP = 0 || test $REPLACE_STRCASECMP = 1])
   AM_COND_IF([GL_COND_OBJ_STRCASECMP], [
     gl_PREREQ_STRCASECMP
   ])
-  gl_CONDITIONAL([GL_COND_OBJ_STRNCASECMP], [test $HAVE_STRNCASECMP = 0])
-  AM_COND_IF([GL_COND_OBJ_STRNCASECMP], [
-    gl_PREREQ_STRNCASECMP
-  ])
+  gl_STRINGS_MODULE_INDICATOR([strcasecmp])
   gl_FUNC_STRCASESTR_SIMPLE
   if test $HAVE_STRCASESTR = 0 || test $REPLACE_STRCASESTR = 1; then
     AC_LIBOBJ([strcasestr])
@@ -1043,6 +1047,13 @@ AC_DEFUN([gl_INIT],
   gl_STRINGS_H
   gl_STRINGS_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
+  gl_FUNC_STRNCASECMP
+  gl_CONDITIONAL([GL_COND_OBJ_STRNCASECMP],
+                 [test $HAVE_STRNCASECMP = 0 || test $REPLACE_STRNCASECMP = 1])
+  AM_COND_IF([GL_COND_OBJ_STRNCASECMP], [
+    gl_PREREQ_STRNCASECMP
+  ])
+  gl_STRINGS_MODULE_INDICATOR([strncasecmp])
   gl_FUNC_STRNLEN
   gl_CONDITIONAL([GL_COND_OBJ_STRNLEN],
                  [test $HAVE_DECL_STRNLEN = 0 || test $REPLACE_STRNLEN = 1])
@@ -1226,27 +1237,35 @@ AC_DEFUN([gl_INIT],
     gl_libobjs=
     gl_ltlibobjs=
     gl_libobjdeps=
+    gl_libgnu_libobjs=
+    gl_libgnu_ltlibobjs=
+    gl_libgnu_libobjdeps=
     if test -n "$gl_LIBOBJS"; then
       # Remove the extension.
 changequote(,)dnl
       sed_drop_objext='s/\.o$//;s/\.obj$//'
       sed_dirname1='s,//*,/,g'
       sed_dirname2='s,\(.\)/$,\1,'
-      sed_dirname3='s,^[^/]*$,.,'
-      sed_dirname4='s,\(.\)/[^/]*$,\1,'
+      sed_dirname3='s,[^/]*$,,'
       sed_basename1='s,.*/,,'
 changequote([, ])dnl
       for i in `for i in $gl_LIBOBJS; do echo "$i"; done | sed -e "$sed_drop_objext" | sort | uniq`; do
         gl_libobjs="$gl_libobjs $i.$ac_objext"
         gl_ltlibobjs="$gl_ltlibobjs $i.lo"
-        i_dir=`echo "$i" | sed -e "$sed_dirname1" -e "$sed_dirname2" -e "$sed_dirname3" -e "$sed_dirname4"`
+        i_dir=`echo "$i" | sed -e "$sed_dirname1" -e "$sed_dirname2" -e "$sed_dirname3"`
         i_base=`echo "$i" | sed -e "$sed_basename1"`
-        gl_libobjdeps="$gl_libobjdeps $i_dir/\$(DEPDIR)/$i_base.Po"
+        gl_libgnu_libobjs="$gl_libgnu_libobjs $i_dir""libgnu_a-$i_base.$ac_objext"
+        gl_libgnu_ltlibobjs="$gl_libgnu_ltlibobjs $i_dir""libgnu_la-$i_base.lo"
+        gl_libobjdeps="$gl_libobjdeps $i_dir\$(DEPDIR)/$i_base.Po"
+        gl_libgnu_libobjdeps="$gl_libgnu_libobjdeps $i_dir\$(DEPDIR)/libgnu_a-$i_base.Po"
       done
     fi
     AC_SUBST([gl_LIBOBJS], [$gl_libobjs])
     AC_SUBST([gl_LTLIBOBJS], [$gl_ltlibobjs])
     AC_SUBST([gl_LIBOBJDEPS], [$gl_libobjdeps])
+    AC_SUBST([gl_libgnu_LIBOBJS], [$gl_libgnu_libobjs])
+    AC_SUBST([gl_libgnu_LTLIBOBJS], [$gl_libgnu_ltlibobjs])
+    AC_SUBST([gl_libgnu_LIBOBJDEPS], [$gl_libgnu_libobjdeps])
   ])
   gltests_libdeps=
   gltests_ltlibdeps=
@@ -1289,27 +1308,35 @@ changequote([, ])dnl
     gltests_libobjs=
     gltests_ltlibobjs=
     gltests_libobjdeps=
+    gltests_libgnu_libobjs=
+    gltests_libgnu_ltlibobjs=
+    gltests_libgnu_libobjdeps=
     if test -n "$gltests_LIBOBJS"; then
       # Remove the extension.
 changequote(,)dnl
       sed_drop_objext='s/\.o$//;s/\.obj$//'
       sed_dirname1='s,//*,/,g'
       sed_dirname2='s,\(.\)/$,\1,'
-      sed_dirname3='s,^[^/]*$,.,'
-      sed_dirname4='s,\(.\)/[^/]*$,\1,'
+      sed_dirname3='s,[^/]*$,,'
       sed_basename1='s,.*/,,'
 changequote([, ])dnl
       for i in `for i in $gltests_LIBOBJS; do echo "$i"; done | sed -e "$sed_drop_objext" | sort | uniq`; do
         gltests_libobjs="$gltests_libobjs $i.$ac_objext"
         gltests_ltlibobjs="$gltests_ltlibobjs $i.lo"
-        i_dir=`echo "$i" | sed -e "$sed_dirname1" -e "$sed_dirname2" -e "$sed_dirname3" -e "$sed_dirname4"`
+        i_dir=`echo "$i" | sed -e "$sed_dirname1" -e "$sed_dirname2" -e "$sed_dirname3"`
         i_base=`echo "$i" | sed -e "$sed_basename1"`
-        gltests_libobjdeps="$gltests_libobjdeps $i_dir/\$(DEPDIR)/$i_base.Po"
+        gltests_libgnu_libobjs="$gltests_libgnu_libobjs $i_dir""libgnu_a-$i_base.$ac_objext"
+        gltests_libgnu_ltlibobjs="$gltests_libgnu_ltlibobjs $i_dir""libgnu_la-$i_base.lo"
+        gltests_libobjdeps="$gltests_libobjdeps $i_dir\$(DEPDIR)/$i_base.Po"
+        gltests_libgnu_libobjdeps="$gltests_libgnu_libobjdeps $i_dir\$(DEPDIR)/libgnu_a-$i_base.Po"
       done
     fi
     AC_SUBST([gltests_LIBOBJS], [$gltests_libobjs])
     AC_SUBST([gltests_LTLIBOBJS], [$gltests_ltlibobjs])
     AC_SUBST([gltests_LIBOBJDEPS], [$gltests_libobjdeps])
+    AC_SUBST([gltests_libgnu_LIBOBJS], [$gltests_libgnu_libobjs])
+    AC_SUBST([gltests_libgnu_LTLIBOBJS], [$gltests_libgnu_ltlibobjs])
+    AC_SUBST([gltests_libgnu_LIBOBJDEPS], [$gltests_libgnu_libobjdeps])
   ])
   AC_REQUIRE([gl_CC_GNULIB_WARNINGS])
   LIBGNU_LIBDEPS="$gl_libdeps"
@@ -1881,12 +1908,13 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/stdint_h.m4
   m4/stdio_h.m4
   m4/stdlib_h.m4
-  m4/strcase.m4
+  m4/strcasecmp.m4
   m4/strcasestr.m4
   m4/strdup.m4
   m4/strerror.m4
   m4/string_h.m4
   m4/strings_h.m4
+  m4/strncasecmp.m4
   m4/strnlen.m4
   m4/sys_cdefs_h.m4
   m4/sys_random_h.m4

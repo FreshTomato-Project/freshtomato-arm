@@ -1,7 +1,7 @@
 /**************************************************************************
  *   files.c  --  This file is part of GNU nano.                          *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
+ *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
  *   Copyright (C) 2015-2022 Benno Schulenberg                            *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
@@ -1197,6 +1197,12 @@ void insert_a_file_or(bool execute)
 	/* Reset the flag that is set by the Spell Checker and Linter and such. */
 	ran_a_tool = FALSE;
 
+#ifndef NANO_TINY
+	/* If something was typed at the Execute prompt without being run, restore it. */
+	if (execute && *foretext)
+		given = mallocstrcpy(given, foretext);
+#endif
+
 	while (TRUE) {
 #ifndef NANO_TINY
 		if (execute) {
@@ -2156,11 +2162,11 @@ int write_it_out(bool exiting, bool withprompt)
 						(method == APPEND) ? _("Append Selection to File") :
 						_("Write Selection to File");
 		else if (method != OVERWRITE)
-			msg = (method == PREPEND) ? _("File Name to Prepend to") :
-										_("File Name to Append to");
+			/* TRANSLATORS: Next three prompts are analogous to the above three. */
+			msg = (method == PREPEND) ? _("Prepend to File") : _("Append to File");
 		else
 #endif
-			msg = _("File Name to Write");
+			msg = _("Write to File");
 
 		present_path = mallocstrcpy(present_path, "./");
 

@@ -1,4 +1,4 @@
-.\" Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.
+.\" Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.
 .\"
 .\" This document is dual-licensed.  You may distribute and/or modify it
 .\" under the terms of either of the following licenses:
@@ -16,7 +16,7 @@
 .\"   Documentation License along with this program.  If not, see
 .\"   <https://www.gnu.org/licenses/>.
 .\"
-.TH NANO 1 "version 8.3" "December 2024"
+.TH NANO 1 "version 8.4" "April 2025"
 
 .SH NAME
 nano \- Nano's ANOther text editor, inspired by Pico
@@ -46,7 +46,7 @@ lines at the end of your \fInanorc\fR file:
 .sp
 
 .SH DESCRIPTION
-\fBnano\fP is a small and friendly text editor.  It copies the look and feel
+\fBnano\fR is a small and friendly text editor.  It copies the look and feel
 of Pico, but is free software, and implements several features that Pico
 lacks, such as: opening multiple files, scrolling per line, undo/redo,
 syntax coloring, line numbering, and soft-wrapping overlong lines.
@@ -101,7 +101,7 @@ A literal control code (except \fB^J\fR) can be inserted by typing
 .sp
 The two lines at the bottom of the screen show some important commands;
 the built-in help (\fB^G\fR) lists all the available ones.
-The default key bindings can be changed via a \fInanorc\fR file -- see
+The default key bindings can be changed via a \fInanorc\fR file \(em see
 .BR nanorc (5).
 
 .\" Never hyphenate these:
@@ -117,22 +117,22 @@ already at that position, it jumps to the true beginning of the line.
 .TP
 .BR \-B ", " \-\-backup
 When saving a file, back up the previous version of it, using the current
-filename suffixed with a tilde (\fB~\fP).
+filename suffixed with a tilde (\fB~\fR).
 .TP
-.BR \-C\ \fIdirectory ", " \-\-backupdir= \fIdirectory
-Make and keep not just one backup file, but make and keep a uniquely
-numbered one every time a file is saved -- when backups are enabled (\fB\-B\fR).
+.BI \-C " directory\fR, " \-\-backupdir= directory
+Make and keep not just one backup file, but make and keep a uniquely numbered
+one every time a file is saved \(em when backups are enabled (\fB\-B\fR).
 The uniquely numbered files are stored in the specified \fIdirectory\fR.
 .TP
 .BR \-D ", " \-\-boldtext
 For the interface, use bold instead of reverse video.
 This can be overridden for specific elements by setting the options
-\fBtitlecolor\fP, \fBstatuscolor\fP, \fBpromptcolor\fP, \fBminicolor\fP,
-\fBkeycolor\fP, \fBnumbercolor\fP, and/or \fBselectedcolor\fP in your
-nanorc file.  See \fBnanorc\fR(5).
+\fB\%titlecolor\fR, \fB\%statuscolor\fR, \fB\%promptcolor\fR,
+\fB\%minicolor\fR, \fB\%keycolor\fR, \fB\%numbercolor\fR, and/or
+\fB\%selectedcolor\fR in your nanorc file.  See \fBnanorc\fR(5).
 .TP
 .BR \-E ", " \-\-tabstospaces
-Convert each typed tab to spaces -- to the number of spaces
+Convert each typed tab to spaces \(em to the number of spaces
 that a tab at that position would take up.
 (Note: pasted tabs are not converted.)
 .TP
@@ -149,9 +149,9 @@ executed commands, so they can be easily reused in later sessions.
 .BR \-I ", " \-\-ignorercfiles
 Don't look at the system's \fInanorc\fR nor at the user's \fInanorc\fR.
 .TP
-.BR \-J\ \fInumber ", " \-\-guidestripe= \fInumber
+.BI \-J " number\fR, " \-\-guidestripe= number
 Draw a vertical stripe at the given column, to help judge the width of the
-text.  (The color of the stripe can be changed with \fBset stripecolor\fR
+text.  (The color of the stripe can be changed with \fBset \%stripecolor\fR
 in your \fInanorc\fR file.)
 .TP
 .BR \-K ", " \-\-rawsequences
@@ -181,10 +181,10 @@ beginning of a paragraph (unless auto-indenting is on).
 For the 200 most recent files, log the last position of the cursor,
 and place it at that position again upon reopening such a file.
 .TP
-.BR "\-Q ""\fIregex\fB""" ", " "\-\-quotestr=""" \fIregex """
+.BI "\-Q """ regex\fB"\fR, " \-\-quotestr=""" regex """"
 Set the regular expression for matching the quoting part of a line.
 The default value is "\fB^([\ \\t]*([!#%:;>|}]|//))+\fR".
-(Note that \fB\\t\fP stands for an actual Tab.)
+(Note that \fB\\t\fR stands for an actual Tab.)
 This makes it possible to rejustify blocks of quoted text when composing
 email, and to rewrap blocks of line comments when writing source code.
 .TP
@@ -194,16 +194,16 @@ command line.  This means: don't read or write history files;
 don't allow suspending; don't allow spell checking;
 don't allow a file to be appended to, prepended to, or saved under a
 different name if it already has one; and don't make backup files.
-Restricted mode can also be activated by invoking \fBnano\fP
-with any name beginning with 'r' (e.g. "rnano").
+Restricted mode can also be activated by invoking \fBnano\fR
+with any name beginning with 'r' (e.g.\& "rnano").
 .TP
 .BR \-S ", " \-\-softwrap
 Display over multiple screen rows lines that exceed the screen's width.
 (You can make this soft-wrapping occur at whitespace instead of rudely at
 the screen's edge, by using also \fB\-\-atblanks\fR.)
 .TP
-.BR \-T\ \fInumber ", " \-\-tabsize= \fInumber
-Set the size (width) of a tab to \fInumber\fP columns.  The value of
+.BI \-T " number\fR, " \-\-tabsize= number
+Set the size (width) of a tab to \fInumber\fR columns.  The value of
 \fInumber\fR must be greater than 0.  The default value is \fB8\fR.
 .TP
 .BR \-U ", " \-\-quickblank
@@ -221,14 +221,14 @@ Show the current version number and exit.
 Detect word boundaries differently by treating punctuation
 characters as part of a word.
 .TP
-.BR "\-X ""\fIcharacters\fB""" ", " "\-\-wordchars=""" \fIcharacters """
+.BI "\-X """ characters\fB"\fR, " \-\-wordchars=""" characters """"
 Specify which other characters (besides the normal alphanumeric ones)
 should be considered as part of a word.  When using this option, you
 probably want to omit \fB\-W\fR (\fB\-\-wordbounds\fR).
 .TP
-.BR \-Y\ \fIname ", " \-\-syntax= \fIname
+.BI \-Y " name\fR, " \-\-syntax= name
 Specify the name of the syntax highlighting to use from among the ones
-defined in the \fInanorc\fP files.
+defined in the \fInanorc\fR files.
 .TP
 .BR \-Z ", " \-\-zap
 Let an unmodified Backspace or Delete erase the marked region
@@ -244,7 +244,7 @@ Automatically hard-wrap the current line when it becomes overlong.
 the last one given takes effect.)
 .TP
 .BR \-c ", " \-\-constantshow
-Constantly show the cursor position on the status bar.
+Constantly report the cursor position on the status bar.
 Note that this overrides option \fB\-U\fR (\fB\-\-quickblank\fR).
 .TP
 .BR \-d ", " \-\-rebinddelete
@@ -255,7 +255,7 @@ system either Backspace acts like Delete or Delete acts like Backspace.
 .BR \-e ", " \-\-emptyline
 Do not use the line below the title bar, leaving it entirely blank.
 .TP
-.BR \-f\ \fIfile ", " \-\-rcfile= \fIfile
+.BI \-f " file\fR, " \-\-rcfile= file
 Read only this \fIfile\fR for setting nano's options, instead of reading
 both the system-wide and the user's nanorc files.
 .TP
@@ -297,8 +297,8 @@ and writes to the pipe when the user saves the "file".  This way
 \fBnano\fR can be used as an editor in combination with for instance
 \fBgpg\fR without having to write sensitive data to disk first.
 .TP
-.BR \-o\ \fIdirectory ", " \-\-operatingdir= \fIdirectory
-Set the operating directory.  This makes \fBnano\fP set up something
+.BI \-o " directory\fR, " \-\-operatingdir= directory
+Set the operating directory.  This makes \fBnano\fR set up something
 similar to a chroot.
 .TP
 .BR \-p ", " \-\-preserve
@@ -311,7 +311,7 @@ Display a "scrollbar" on the righthand side of the edit window.
 It shows the position of the viewport in the buffer
 and how much of the buffer is covered by the viewport.
 .TP
-.BR \-r\ \fInumber ", " \-\-fill= \fInumber
+.BI \-r " number\fR, " \-\-fill= number
 Set the target width for justifying and automatic hard-wrapping at this
 \fInumber\fR of columns.  If the value is 0 or less, wrapping occurs
 at the width of the screen minus \fInumber\fR columns, allowing the wrap
@@ -338,7 +338,7 @@ unless \fB\-\-restricted\fR is given too.
 .BR \-w ", " \-\-nowrap
 Do not automatically hard-wrap the current line when it becomes overlong.
 This is the default.  (This option is the opposite of \fB\-b\fR
-(\fB\-\-breaklonglines\fR) -- the last one given takes effect.)
+(\fB\-\-breaklonglines\fR) \(em the last one given takes effect.)
 .TP
 .BR \-x ", " \-\-nohelp
 Don't show the two help lines at the bottom of the screen.
@@ -446,20 +446,20 @@ When you want to copy marked text from \fBnano\fR to the system's clipboard,
 see one of the examples in the \fBnanorc\fR(5) man page.
 .sp
 If no alternative spell checker command is specified on the command
-line nor in one of the \fInanorc\fP files, \fBnano\fP checks the
-\fBSPELL\fP environment variable for one.
+line nor in one of the \fInanorc\fR files, \fBnano\fR checks the
+\fBSPELL\fR environment variable for one.
 .sp
-In some cases \fBnano\fP tries to dump the buffer into an emergency file.
-This happens mainly if \fBnano\fP receives a SIGHUP or SIGTERM or runs out
-of memory.  It writes the buffer into a file named \fInano.save\fP if the
+In some cases \fBnano\fR tries to dump the buffer into an emergency file.
+This happens mainly if \fBnano\fR receives a SIGHUP or SIGTERM or runs out
+of memory.  It writes the buffer into a file named \fInano.save\fR if the
 buffer didn't have a name already, or adds a ".save" suffix to the current
 filename.  If an emergency file with that name already exists in the
 current directory, it adds ".save" plus a number (e.g.\& ".save.1") to
 the current filename in order to make it unique.  In multibuffer mode,
-\fBnano\fP writes all open buffers to their respective emergency files.
+\fBnano\fR writes all open buffers to their respective emergency files.
 .sp
 If you have any question about how to use \fBnano\fR in some specific
-situation, you can ask on \fIhelp-nano@gnu.org\fR.
+situation, you can ask on \fIhelp\-nano@gnu.org\fR.
 
 .SH BUGS
 The recording and playback of keyboard macros works correctly only on a
@@ -480,4 +480,4 @@ the environment variable \fBNANO_NOCATCH\fR.
 .SH SEE ALSO
 .BR nanorc (5)
 .sp
-\fI/usr/share/doc/nano/\fP (or equivalent on your system)
+\fI/usr/share/doc/nano/\fR (or equivalent on your system)

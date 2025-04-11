@@ -11,7 +11,7 @@ File: nano.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The GNU nano text editor
 ************************
 
-This manual documents GNU ‘nano’, version 8.3.
+This manual documents GNU ‘nano’, version 8.4.
 
 * Menu:
 
@@ -513,7 +513,7 @@ File: nano.info,  Node: Command-line Options,  Next: Feature Toggles,  Prev: The
 
 ‘-c’
 ‘--constantshow’
-     Constantly display the cursor position (line number, column number,
+     Constantly report the cursor position (line number, column number,
      and character number) on the status bar.  Note that this overrides
      option ‘-U’ (‘--quickblank’).
 
@@ -892,8 +892,8 @@ The supported settings in a nanorc file are:
      relevant filename.
 
 ‘set constantshow’
-     Constantly display the cursor position on the status bar.  Note
-     that this overrides ‘quickblank’.
+     Constantly report the cursor position on the status bar.  Note that
+     this overrides ‘quickblank’.
 
 ‘set cutfromcursor’
      Use cut-from-cursor-to-end-of-line by default, instead of cutting
@@ -1754,8 +1754,8 @@ that of the Backspace key.
      Toggles the presence of title bar and status bar.
 
 ‘constantshow’
-     Toggles the constant display of the current line, column, and
-     character positions.
+     Toggles the constant reporting (on the status bar) of the current
+     line, column, and character positions.
 
 ‘softwrap’
      Toggles the displaying of overlong lines on multiple screen lines.
@@ -2095,17 +2095,17 @@ Node: Limitations11514
 Node: The Help Viewer11831
 Node: The File Browser12255
 Node: Command-line Options13146
-Ref: --speller22774
-Node: Feature Toggles28310
-Node: Nanorc Files30382
-Node: Settings31935
-Ref: set keycolor36745
-Ref: set matchbrackets38910
-Ref: Whitespace47267
-Node: Syntax Highlighting48445
-Node: Rebinding Keys56193
-Node: Pico Compatibility72372
-Node: Building and its Options76915
+Ref: --speller22773
+Node: Feature Toggles28309
+Node: Nanorc Files30381
+Node: Settings31934
+Ref: set keycolor36743
+Ref: set matchbrackets38908
+Ref: Whitespace47265
+Node: Syntax Highlighting48443
+Node: Rebinding Keys56191
+Node: Pico Compatibility72392
+Node: Building and its Options76935
 
 End Tag Table
 

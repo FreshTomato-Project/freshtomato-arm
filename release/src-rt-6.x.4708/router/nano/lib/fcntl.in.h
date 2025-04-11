@@ -1,6 +1,6 @@
 /* Like <fcntl.h>, but with non-working flags defined to 0.
 
-   Copyright (C) 2006-2024 Free Software Foundation, Inc.
+   Copyright (C) 2006-2025 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -22,8 +22,12 @@
 #endif
 @PRAGMA_COLUMNS@
 
-#if defined __need_system_fcntl_h
-/* Special invocation convention.  */
+#if defined __need_system_fcntl_h || defined _@GUARD_PREFIX@_ALREADY_INCLUDING_FCNTL_H
+/* Special invocation convention:
+   - On Haiku we have a sequence of nested includes
+       <fcntl.h> -> <unistd.h> -> <fcntl.h>
+     In this situation, GNULIB_defined_O_NONBLOCK gets defined before the
+     system's definition of O_NONBLOCK is processed.  */
 
 /* Needed before <sys/stat.h>.
    May also define off_t to a 64-bit type on native Windows.  */
@@ -50,6 +54,8 @@
 
 #ifndef _@GUARD_PREFIX@_FCNTL_H
 
+#define _@GUARD_PREFIX@_ALREADY_INCLUDING_FCNTL_H
+
 /* Needed before <sys/stat.h>.
    May also define off_t to a 64-bit type on native Windows.
    Also defines off64_t on macOS, NetBSD, OpenBSD, MSVC, Cygwin, Haiku.  */
@@ -71,6 +77,8 @@
     && (defined _WIN32 && ! defined __CYGWIN__)
 # include <io.h>
 #endif
+
+#undef _@GUARD_PREFIX@_ALREADY_INCLUDING_FCNTL_H
 
 #ifndef _@GUARD_PREFIX@_FCNTL_H
 #define _@GUARD_PREFIX@_FCNTL_H
@@ -369,8 +377,12 @@ _GL_WARN_ON_USE (openat, "openat is not portable - "
 # define O_RSYNC 0
 #endif
 
+#if defined O_SEARCH && defined O_PATH && O_SEARCH == O_PATH
+# undef O_SEARCH /* musl mistakenly #defines O_SEARCH to O_PATH.  */
+#endif
+
 #ifndef O_SEARCH
-# define O_SEARCH O_RDONLY /* This is often close enough in older systems.  */
+# define O_SEARCH O_RDONLY /* Often close enough in non-POSIX systems.  */
 #endif
 
 #ifndef O_SYNC

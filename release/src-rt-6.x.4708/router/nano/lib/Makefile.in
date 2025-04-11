@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright (C) 2002-2024 Free Software Foundation, Inc.
+# Copyright (C) 2002-2025 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -214,10 +214,10 @@ host_triplet = @host@
 @GL_COND_OBJ_STDIO_READ_TRUE@am__append_65 = stdio-read.c
 @GL_COND_OBJ_STDIO_WRITE_TRUE@am__append_66 = stdio-write.c
 @GL_COND_OBJ_STRCASECMP_TRUE@am__append_67 = strcasecmp.c
-@GL_COND_OBJ_STRNCASECMP_TRUE@am__append_68 = strncasecmp.c
-@GL_COND_OBJ_STRDUP_TRUE@am__append_69 = strdup.c
-@GL_COND_OBJ_STRERROR_TRUE@am__append_70 = strerror.c
-@GL_COND_OBJ_STRERROR_OVERRIDE_TRUE@am__append_71 = strerror-override.c
+@GL_COND_OBJ_STRDUP_TRUE@am__append_68 = strdup.c
+@GL_COND_OBJ_STRERROR_TRUE@am__append_69 = strerror.c
+@GL_COND_OBJ_STRERROR_OVERRIDE_TRUE@am__append_70 = strerror-override.c
+@GL_COND_OBJ_STRNCASECMP_TRUE@am__append_71 = strncasecmp.c
 @GL_COND_OBJ_STRNLEN_TRUE@am__append_72 = strnlen.c
 @LIBUNISTRING_COMPILE_UNICASE_TOLOWER_TRUE@am__append_73 = unicase/tolower.c
 @LIBUNISTRING_COMPILE_UNICTYPE_CTYPE_ALNUM_TRUE@am__append_74 = unictype/ctype_alnum.c
@@ -342,10 +342,11 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/stdarg.m4 $(top_srcdir)/m4/stddef_h.m4 \
 	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/m4/stdint_h.m4 \
 	$(top_srcdir)/m4/stdio_h.m4 $(top_srcdir)/m4/stdlib_h.m4 \
-	$(top_srcdir)/m4/strcase.m4 $(top_srcdir)/m4/strcasestr.m4 \
+	$(top_srcdir)/m4/strcasecmp.m4 $(top_srcdir)/m4/strcasestr.m4 \
 	$(top_srcdir)/m4/strdup.m4 $(top_srcdir)/m4/strerror.m4 \
 	$(top_srcdir)/m4/string_h.m4 $(top_srcdir)/m4/strings_h.m4 \
-	$(top_srcdir)/m4/strnlen.m4 $(top_srcdir)/m4/sys_cdefs_h.m4 \
+	$(top_srcdir)/m4/strncasecmp.m4 $(top_srcdir)/m4/strnlen.m4 \
+	$(top_srcdir)/m4/sys_cdefs_h.m4 \
 	$(top_srcdir)/m4/sys_random_h.m4 \
 	$(top_srcdir)/m4/sys_socket_h.m4 \
 	$(top_srcdir)/m4/sys_stat_h.m4 $(top_srcdir)/m4/sys_time_h.m4 \
@@ -412,7 +413,7 @@ am__libgnu_a_SOURCES_DIST = openat-priv.h openat-proc.c \
 	setlocale_null-unlocked.c sigaction.c sig-handler.c signbitf.c \
 	signbitd.c signbitl.c sigprocmask.c size_max.h stat.c \
 	stat-time.c stdio-read.c stdio-write.c stdlib.c strcasecmp.c \
-	strncasecmp.c strdup.c strerror.c strerror-override.c \
+	strdup.c strerror.c strerror-override.c strncasecmp.c \
 	strnlen.c strnlen1.h strnlen1.c tempname.c \
 	glthread/threadlib.c timespec.c unicase/tolower.c \
 	unictype/ctype_alnum.c unictype/ctype_alpha.c \
@@ -526,12 +527,12 @@ am__dirstamp = $(am__leading_dot)dirstamp
 @GL_COND_OBJ_STDIO_WRITE_TRUE@	libgnu_a-stdio-write.$(OBJEXT)
 @GL_COND_OBJ_STRCASECMP_TRUE@am__objects_67 =  \
 @GL_COND_OBJ_STRCASECMP_TRUE@	libgnu_a-strcasecmp.$(OBJEXT)
-@GL_COND_OBJ_STRNCASECMP_TRUE@am__objects_68 =  \
-@GL_COND_OBJ_STRNCASECMP_TRUE@	libgnu_a-strncasecmp.$(OBJEXT)
-@GL_COND_OBJ_STRDUP_TRUE@am__objects_69 = libgnu_a-strdup.$(OBJEXT)
-@GL_COND_OBJ_STRERROR_TRUE@am__objects_70 =  \
+@GL_COND_OBJ_STRDUP_TRUE@am__objects_68 = libgnu_a-strdup.$(OBJEXT)
+@GL_COND_OBJ_STRERROR_TRUE@am__objects_69 =  \
 @GL_COND_OBJ_STRERROR_TRUE@	libgnu_a-strerror.$(OBJEXT)
-@GL_COND_OBJ_STRERROR_OVERRIDE_TRUE@am__objects_71 = libgnu_a-strerror-override.$(OBJEXT)
+@GL_COND_OBJ_STRERROR_OVERRIDE_TRUE@am__objects_70 = libgnu_a-strerror-override.$(OBJEXT)
+@GL_COND_OBJ_STRNCASECMP_TRUE@am__objects_71 =  \
+@GL_COND_OBJ_STRNCASECMP_TRUE@	libgnu_a-strncasecmp.$(OBJEXT)
 @GL_COND_OBJ_STRNLEN_TRUE@am__objects_72 = libgnu_a-strnlen.$(OBJEXT)
 @LIBUNISTRING_COMPILE_UNICASE_TOLOWER_TRUE@am__objects_73 = unicase/libgnu_a-tolower.$(OBJEXT)
 @LIBUNISTRING_COMPILE_UNICTYPE_CTYPE_ALNUM_TRUE@am__objects_74 = unictype/libgnu_a-ctype_alnum.$(OBJEXT)
@@ -1118,6 +1119,7 @@ GL_GNULIB_FPURGE = @GL_GNULIB_FPURGE@
 GL_GNULIB_FPUTC = @GL_GNULIB_FPUTC@
 GL_GNULIB_FPUTS = @GL_GNULIB_FPUTS@
 GL_GNULIB_FREAD = @GL_GNULIB_FREAD@
+GL_GNULIB_FREELOCALE = @GL_GNULIB_FREELOCALE@
 GL_GNULIB_FREE_POSIX = @GL_GNULIB_FREE_POSIX@
 GL_GNULIB_FREOPEN = @GL_GNULIB_FREOPEN@
 GL_GNULIB_FREXP = @GL_GNULIB_FREXP@
@@ -1146,6 +1148,8 @@ GL_GNULIB_GETGROUPS = @GL_GNULIB_GETGROUPS@
 GL_GNULIB_GETHOSTNAME = @GL_GNULIB_GETHOSTNAME@
 GL_GNULIB_GETLINE = @GL_GNULIB_GETLINE@
 GL_GNULIB_GETLOADAVG = @GL_GNULIB_GETLOADAVG@
+GL_GNULIB_GETLOCALENAME_L = @GL_GNULIB_GETLOCALENAME_L@
+GL_GNULIB_GETLOCALENAME_L_UNSAFE = @GL_GNULIB_GETLOCALENAME_L_UNSAFE@
 GL_GNULIB_GETLOGIN = @GL_GNULIB_GETLOGIN@
 GL_GNULIB_GETLOGIN_R = @GL_GNULIB_GETLOGIN_R@
 GL_GNULIB_GETOPT_POSIX = @GL_GNULIB_GETOPT_POSIX@
@@ -1172,19 +1176,31 @@ GL_GNULIB_ILOGBF = @GL_GNULIB_ILOGBF@
 GL_GNULIB_ILOGBL = @GL_GNULIB_ILOGBL@
 GL_GNULIB_IMAXABS = @GL_GNULIB_IMAXABS@
 GL_GNULIB_IMAXDIV = @GL_GNULIB_IMAXDIV@
+GL_GNULIB_ISALNUM_L = @GL_GNULIB_ISALNUM_L@
+GL_GNULIB_ISALPHA_L = @GL_GNULIB_ISALPHA_L@
 GL_GNULIB_ISATTY = @GL_GNULIB_ISATTY@
 GL_GNULIB_ISBLANK = @GL_GNULIB_ISBLANK@
+GL_GNULIB_ISBLANK_L = @GL_GNULIB_ISBLANK_L@
+GL_GNULIB_ISCNTRL_L = @GL_GNULIB_ISCNTRL_L@
+GL_GNULIB_ISDIGIT_L = @GL_GNULIB_ISDIGIT_L@
 GL_GNULIB_ISFINITE = @GL_GNULIB_ISFINITE@
+GL_GNULIB_ISGRAPH_L = @GL_GNULIB_ISGRAPH_L@
 GL_GNULIB_ISINF = @GL_GNULIB_ISINF@
+GL_GNULIB_ISLOWER_L = @GL_GNULIB_ISLOWER_L@
 GL_GNULIB_ISNAN = @GL_GNULIB_ISNAN@
 GL_GNULIB_ISNAND = @GL_GNULIB_ISNAND@
 GL_GNULIB_ISNANF = @GL_GNULIB_ISNANF@
 GL_GNULIB_ISNANL = @GL_GNULIB_ISNANL@
+GL_GNULIB_ISPRINT_L = @GL_GNULIB_ISPRINT_L@
+GL_GNULIB_ISPUNCT_L = @GL_GNULIB_ISPUNCT_L@
+GL_GNULIB_ISSPACE_L = @GL_GNULIB_ISSPACE_L@
+GL_GNULIB_ISUPPER_L = @GL_GNULIB_ISUPPER_L@
 GL_GNULIB_ISWBLANK = @GL_GNULIB_ISWBLANK@
 GL_GNULIB_ISWCTYPE = @GL_GNULIB_ISWCTYPE@
 GL_GNULIB_ISWDIGIT = @GL_GNULIB_ISWDIGIT@
 GL_GNULIB_ISWPUNCT = @GL_GNULIB_ISWPUNCT@
 GL_GNULIB_ISWXDIGIT = @GL_GNULIB_ISWXDIGIT@
+GL_GNULIB_ISXDIGIT_L = @GL_GNULIB_ISXDIGIT_L@
 GL_GNULIB_LCHMOD = @GL_GNULIB_LCHMOD@
 GL_GNULIB_LCHOWN = @GL_GNULIB_LCHOWN@
 GL_GNULIB_LDEXP = @GL_GNULIB_LDEXP@
@@ -1243,6 +1259,8 @@ GL_GNULIB_MBSTOC32S = @GL_GNULIB_MBSTOC32S@
 GL_GNULIB_MBSTOK_R = @GL_GNULIB_MBSTOK_R@
 GL_GNULIB_MBSTOWCS = @GL_GNULIB_MBSTOWCS@
 GL_GNULIB_MBSZERO = @GL_GNULIB_MBSZERO@
+GL_GNULIB_MBS_ENDSWITH = @GL_GNULIB_MBS_ENDSWITH@
+GL_GNULIB_MBS_STARTSWITH = @GL_GNULIB_MBS_STARTSWITH@
 GL_GNULIB_MBTOWC = @GL_GNULIB_MBTOWC@
 GL_GNULIB_MDA_ACCESS = @GL_GNULIB_MDA_ACCESS@
 GL_GNULIB_MDA_CHDIR = @GL_GNULIB_MDA_CHDIR@
@@ -1313,6 +1331,7 @@ GL_GNULIB_MODF = @GL_GNULIB_MODF@
 GL_GNULIB_MODFF = @GL_GNULIB_MODFF@
 GL_GNULIB_MODFL = @GL_GNULIB_MODFL@
 GL_GNULIB_NANOSLEEP = @GL_GNULIB_NANOSLEEP@
+GL_GNULIB_NEWLOCALE = @GL_GNULIB_NEWLOCALE@
 GL_GNULIB_NL_LANGINFO = @GL_GNULIB_NL_LANGINFO@
 GL_GNULIB_NONBLOCKING = @GL_GNULIB_NONBLOCKING@
 GL_GNULIB_OBSTACK_PRINTF = @GL_GNULIB_OBSTACK_PRINTF@
@@ -1413,13 +1432,18 @@ GL_GNULIB_STDIO_H_NONBLOCKING = @GL_GNULIB_STDIO_H_NONBLOCKING@
 GL_GNULIB_STDIO_H_SIGPIPE = @GL_GNULIB_STDIO_H_SIGPIPE@
 GL_GNULIB_STPCPY = @GL_GNULIB_STPCPY@
 GL_GNULIB_STPNCPY = @GL_GNULIB_STPNCPY@
+GL_GNULIB_STRCASECMP = @GL_GNULIB_STRCASECMP@
+GL_GNULIB_STRCASECMP_L = @GL_GNULIB_STRCASECMP_L@
 GL_GNULIB_STRCASESTR = @GL_GNULIB_STRCASESTR@
 GL_GNULIB_STRCHRNUL = @GL_GNULIB_STRCHRNUL@
 GL_GNULIB_STRDUP = @GL_GNULIB_STRDUP@
 GL_GNULIB_STRERROR = @GL_GNULIB_STRERROR@
 GL_GNULIB_STRERRORNAME_NP = @GL_GNULIB_STRERRORNAME_NP@
+GL_GNULIB_STRERROR_L = @GL_GNULIB_STRERROR_L@
 GL_GNULIB_STRERROR_R = @GL_GNULIB_STRERROR_R@
 GL_GNULIB_STRFTIME = @GL_GNULIB_STRFTIME@
+GL_GNULIB_STRNCASECMP = @GL_GNULIB_STRNCASECMP@
+GL_GNULIB_STRNCASECMP_L = @GL_GNULIB_STRNCASECMP_L@
 GL_GNULIB_STRNCAT = @GL_GNULIB_STRNCAT@
 GL_GNULIB_STRNDUP = @GL_GNULIB_STRNDUP@
 GL_GNULIB_STRNLEN = @GL_GNULIB_STRNLEN@
@@ -1439,6 +1463,8 @@ GL_GNULIB_STRTOUL = @GL_GNULIB_STRTOUL@
 GL_GNULIB_STRTOULL = @GL_GNULIB_STRTOULL@
 GL_GNULIB_STRTOUMAX = @GL_GNULIB_STRTOUMAX@
 GL_GNULIB_STRVERSCMP = @GL_GNULIB_STRVERSCMP@
+GL_GNULIB_STR_ENDSWITH = @GL_GNULIB_STR_ENDSWITH@
+GL_GNULIB_STR_STARTSWITH = @GL_GNULIB_STR_STARTSWITH@
 GL_GNULIB_SYMLINK = @GL_GNULIB_SYMLINK@
 GL_GNULIB_SYMLINKAT = @GL_GNULIB_SYMLINKAT@
 GL_GNULIB_SYSTEM_POSIX = @GL_GNULIB_SYSTEM_POSIX@
@@ -1453,12 +1479,14 @@ GL_GNULIB_TIMESPEC_GETRES = @GL_GNULIB_TIMESPEC_GETRES@
 GL_GNULIB_TIME_R = @GL_GNULIB_TIME_R@
 GL_GNULIB_TIME_RZ = @GL_GNULIB_TIME_RZ@
 GL_GNULIB_TMPFILE = @GL_GNULIB_TMPFILE@
+GL_GNULIB_TOLOWER_L = @GL_GNULIB_TOLOWER_L@
 GL_GNULIB_TOTALORDER = @GL_GNULIB_TOTALORDER@
 GL_GNULIB_TOTALORDERF = @GL_GNULIB_TOTALORDERF@
 GL_GNULIB_TOTALORDERL = @GL_GNULIB_TOTALORDERL@
 GL_GNULIB_TOTALORDERMAG = @GL_GNULIB_TOTALORDERMAG@
 GL_GNULIB_TOTALORDERMAGF = @GL_GNULIB_TOTALORDERMAGF@
 GL_GNULIB_TOTALORDERMAGL = @GL_GNULIB_TOTALORDERMAGL@
+GL_GNULIB_TOUPPER_L = @GL_GNULIB_TOUPPER_L@
 GL_GNULIB_TOWCTRANS = @GL_GNULIB_TOWCTRANS@
 GL_GNULIB_TRUNC = @GL_GNULIB_TRUNC@
 GL_GNULIB_TRUNCATE = @GL_GNULIB_TRUNCATE@
@@ -1700,6 +1728,8 @@ HAVE_ATAN2F = @HAVE_ATAN2F@
 HAVE_ATANF = @HAVE_ATANF@
 HAVE_ATANL = @HAVE_ATANL@
 HAVE_ATOLL = @HAVE_ATOLL@
+HAVE_BLKCNT_T = @HAVE_BLKCNT_T@
+HAVE_BLKSIZE_T = @HAVE_BLKSIZE_T@
 HAVE_BTOWC = @HAVE_BTOWC@
 HAVE_C32RTOMB = @HAVE_C32RTOMB@
 HAVE_C99_STDINT_H = @HAVE_C99_STDINT_H@
@@ -1849,6 +1879,7 @@ HAVE_GETDTABLESIZE = @HAVE_GETDTABLESIZE@
 HAVE_GETENTROPY = @HAVE_GETENTROPY@
 HAVE_GETGROUPS = @HAVE_GETGROUPS@
 HAVE_GETHOSTNAME = @HAVE_GETHOSTNAME@
+HAVE_GETLOCALENAME_L = @HAVE_GETLOCALENAME_L@
 HAVE_GETLOGIN = @HAVE_GETLOGIN@
 HAVE_GETOPT_H = @HAVE_GETOPT_H@
 HAVE_GETPAGESIZE = @HAVE_GETPAGESIZE@
@@ -1876,12 +1907,25 @@ HAVE_IMAXDIV = @HAVE_IMAXDIV@
 HAVE_IMAXDIV_T = @HAVE_IMAXDIV_T@
 HAVE_INITSTATE = @HAVE_INITSTATE@
 HAVE_INTTYPES_H = @HAVE_INTTYPES_H@
+HAVE_ISALNUM_L = @HAVE_ISALNUM_L@
+HAVE_ISALPHA_L = @HAVE_ISALPHA_L@
 HAVE_ISBLANK = @HAVE_ISBLANK@
+HAVE_ISBLANK_L = @HAVE_ISBLANK_L@
+HAVE_ISCNTRL_L = @HAVE_ISCNTRL_L@
+HAVE_ISDIGIT_L = @HAVE_ISDIGIT_L@
+HAVE_ISGRAPH_L = @HAVE_ISGRAPH_L@
+HAVE_ISLOWER_L = @HAVE_ISLOWER_L@
 HAVE_ISNAND = @HAVE_ISNAND@
 HAVE_ISNANF = @HAVE_ISNANF@
 HAVE_ISNANL = @HAVE_ISNANL@
+HAVE_ISPRINT_L = @HAVE_ISPRINT_L@
+HAVE_ISPUNCT_L = @HAVE_ISPUNCT_L@
+HAVE_ISSPACE_L = @HAVE_ISSPACE_L@
+HAVE_ISUPPER_L = @HAVE_ISUPPER_L@
 HAVE_ISWBLANK = @HAVE_ISWBLANK@
 HAVE_ISWCNTRL = @HAVE_ISWCNTRL@
+HAVE_ISXDIGIT_L = @HAVE_ISXDIGIT_L@
+HAVE_LANGINFO_ABALTMON = @HAVE_LANGINFO_ABALTMON@
 HAVE_LANGINFO_ALTMON = @HAVE_LANGINFO_ALTMON@
 HAVE_LANGINFO_CODESET = @HAVE_LANGINFO_CODESET@
 HAVE_LANGINFO_ERA = @HAVE_LANGINFO_ERA@
@@ -1893,6 +1937,7 @@ HAVE_LCHOWN = @HAVE_LCHOWN@
 HAVE_LDEXPF = @HAVE_LDEXPF@
 HAVE_LINK = @HAVE_LINK@
 HAVE_LINKAT = @HAVE_LINKAT@
+HAVE_LOCALE_T = @HAVE_LOCALE_T@
 HAVE_LOG10F = @HAVE_LOG10F@
 HAVE_LOG10L = @HAVE_LOG10L@
 HAVE_LOG1P = @HAVE_LOG1P@
@@ -2062,10 +2107,14 @@ HAVE_STPCPY = @HAVE_STPCPY@
 HAVE_STPNCPY = @HAVE_STPNCPY@
 HAVE_STR2SIG = @HAVE_STR2SIG@
 HAVE_STRCASECMP = @HAVE_STRCASECMP@
+HAVE_STRCASECMP_L = @HAVE_STRCASECMP_L@
 HAVE_STRCASESTR = @HAVE_STRCASESTR@
 HAVE_STRCHRNUL = @HAVE_STRCHRNUL@
 HAVE_STRERRORNAME_NP = @HAVE_STRERRORNAME_NP@
+HAVE_STRERROR_L = @HAVE_STRERROR_L@
 HAVE_STRINGS_H = @HAVE_STRINGS_H@
+HAVE_STRNCASECMP = @HAVE_STRNCASECMP@
+HAVE_STRNCASECMP_L = @HAVE_STRNCASECMP_L@
 HAVE_STRPBRK = @HAVE_STRPBRK@
 HAVE_STRPTIME = @HAVE_STRPTIME@
 HAVE_STRSEP = @HAVE_STRSEP@
@@ -2098,12 +2147,14 @@ HAVE_TIMEGM = @HAVE_TIMEGM@
 HAVE_TIMESPEC_GET = @HAVE_TIMESPEC_GET@
 HAVE_TIMESPEC_GETRES = @HAVE_TIMESPEC_GETRES@
 HAVE_TIMEZONE_T = @HAVE_TIMEZONE_T@
+HAVE_TOLOWER_L = @HAVE_TOLOWER_L@
 HAVE_TOTALORDER = @HAVE_TOTALORDER@
 HAVE_TOTALORDERF = @HAVE_TOTALORDERF@
 HAVE_TOTALORDERL = @HAVE_TOTALORDERL@
 HAVE_TOTALORDERMAG = @HAVE_TOTALORDERMAG@
 HAVE_TOTALORDERMAGF = @HAVE_TOTALORDERMAGF@
 HAVE_TOTALORDERMAGL = @HAVE_TOTALORDERMAGL@
+HAVE_TOUPPER_L = @HAVE_TOUPPER_L@
 HAVE_TYPE_VOLATILE_SIG_ATOMIC_T = @HAVE_TYPE_VOLATILE_SIG_ATOMIC_T@
 HAVE_TZALLOC = @HAVE_TZALLOC@
 HAVE_UCHAR_H = @HAVE_UCHAR_H@
@@ -2149,6 +2200,7 @@ HAVE_WCSXFRM = @HAVE_WCSXFRM@
 HAVE_WCTRANS_T = @HAVE_WCTRANS_T@
 HAVE_WCTYPE_H = @HAVE_WCTYPE_H@
 HAVE_WCTYPE_T = @HAVE_WCTYPE_T@
+HAVE_WINDOWS_LOCALE_T = @HAVE_WINDOWS_LOCALE_T@
 HAVE_WINSOCK2_H = @HAVE_WINSOCK2_H@
 HAVE_WINT_T = @HAVE_WINT_T@
 HAVE_WMEMCHR = @HAVE_WMEMCHR@
@@ -2413,6 +2465,7 @@ REPLACE_GETENTROPY = @REPLACE_GETENTROPY@
 REPLACE_GETGROUPS = @REPLACE_GETGROUPS@
 REPLACE_GETLINE = @REPLACE_GETLINE@
 REPLACE_GETLOADAVG = @REPLACE_GETLOADAVG@
+REPLACE_GETLOGIN = @REPLACE_GETLOGIN@
 REPLACE_GETLOGIN_R = @REPLACE_GETLOGIN_R@
 REPLACE_GETPAGESIZE = @REPLACE_GETPAGESIZE@
 REPLACE_GETPASS = @REPLACE_GETPASS@
@@ -2619,13 +2672,18 @@ REPLACE_STDIO_READ_FUNCS = @REPLACE_STDIO_READ_FUNCS@
 REPLACE_STDIO_WRITE_FUNCS = @REPLACE_STDIO_WRITE_FUNCS@
 REPLACE_STPCPY = @REPLACE_STPCPY@
 REPLACE_STPNCPY = @REPLACE_STPNCPY@
+REPLACE_STRCASECMP = @REPLACE_STRCASECMP@
+REPLACE_STRCASECMP_L = @REPLACE_STRCASECMP_L@
 REPLACE_STRCASESTR = @REPLACE_STRCASESTR@
 REPLACE_STRCHRNUL = @REPLACE_STRCHRNUL@
 REPLACE_STRDUP = @REPLACE_STRDUP@
 REPLACE_STRERROR = @REPLACE_STRERROR@
 REPLACE_STRERRORNAME_NP = @REPLACE_STRERRORNAME_NP@
+REPLACE_STRERROR_L = @REPLACE_STRERROR_L@
 REPLACE_STRERROR_R = @REPLACE_STRERROR_R@
 REPLACE_STRFTIME = @REPLACE_STRFTIME@
+REPLACE_STRNCASECMP = @REPLACE_STRNCASECMP@
+REPLACE_STRNCASECMP_L = @REPLACE_STRNCASECMP_L@
 REPLACE_STRNCAT = @REPLACE_STRNCAT@
 REPLACE_STRNDUP = @REPLACE_STRNDUP@
 REPLACE_STRNLEN = @REPLACE_STRNLEN@
@@ -2757,10 +2815,16 @@ exec_prefix = @exec_prefix@
 gl_LIBOBJDEPS = @gl_LIBOBJDEPS@
 gl_LIBOBJS = @gl_LIBOBJS@
 gl_LTLIBOBJS = @gl_LTLIBOBJS@
+gl_libgnu_LIBOBJDEPS = @gl_libgnu_LIBOBJDEPS@
+gl_libgnu_LIBOBJS = @gl_libgnu_LIBOBJS@
+gl_libgnu_LTLIBOBJS = @gl_libgnu_LTLIBOBJS@
 gltests_LIBOBJDEPS = @gltests_LIBOBJDEPS@
 gltests_LIBOBJS = @gltests_LIBOBJS@
 gltests_LTLIBOBJS = @gltests_LTLIBOBJS@
 gltests_WITNESS = @gltests_WITNESS@
+gltests_libgnu_LIBOBJDEPS = @gltests_libgnu_LIBOBJDEPS@
+gltests_libgnu_LIBOBJS = @gltests_libgnu_LIBOBJS@
+gltests_libgnu_LTLIBOBJS = @gltests_libgnu_LTLIBOBJS@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
@@ -2957,9 +3021,9 @@ libgnu_a_SOURCES = openat-priv.h openat-proc.c basename-lgpl.c \
 	$(am__append_96) $(am__append_97) $(am__append_98) \
 	$(am__append_99) $(am__append_100) $(am__append_101) xsize.h \
 	xsize.c
-libgnu_a_CFLAGS = $(AM_CFLAGS) $(GL_CFLAG_GNULIB_WARNINGS)
-libgnu_a_LIBADD = $(gl_LIBOBJS) @ALLOCA@
-libgnu_a_DEPENDENCIES = $(gl_LIBOBJS) @ALLOCA@
+libgnu_a_CFLAGS = $(AM_CFLAGS) $(GL_CFLAG_GNULIB_WARNINGS) $(GL_CFLAG_ALLOW_WARNINGS)
+libgnu_a_LIBADD = $(gl_libgnu_LIBOBJS) @ALLOCA@
+libgnu_a_DEPENDENCIES = $(gl_libgnu_LIBOBJS) @ALLOCA@
 EXTRA_libgnu_a_SOURCES = alloca.c fnmatch.c fnmatch_loop.c frexp.c \
 	frexp.c frexpl.c stat-w32.c at-func.c \
 	malloc/dynarray-skeleton.c isnan.c isnand.c isnan.c isnanf.c \
@@ -5083,20 +5147,6 @@ libgnu_a-strcasecmp.obj: strcasecmp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-strcasecmp.obj `if test -f 'strcasecmp.c'; then $(CYGPATH_W) 'strcasecmp.c'; else $(CYGPATH_W) '$(srcdir)/strcasecmp.c'; fi`
 
-libgnu_a-strncasecmp.o: strncasecmp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-strncasecmp.o -MD -MP -MF $(DEPDIR)/libgnu_a-strncasecmp.Tpo -c -o libgnu_a-strncasecmp.o `test -f 'strncasecmp.c' || echo '$(srcdir)/'`strncasecmp.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-strncasecmp.Tpo $(DEPDIR)/libgnu_a-strncasecmp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='strncasecmp.c' object='libgnu_a-strncasecmp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-strncasecmp.o `test -f 'strncasecmp.c' || echo '$(srcdir)/'`strncasecmp.c
-
-libgnu_a-strncasecmp.obj: strncasecmp.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-strncasecmp.obj -MD -MP -MF $(DEPDIR)/libgnu_a-strncasecmp.Tpo -c -o libgnu_a-strncasecmp.obj `if test -f 'strncasecmp.c'; then $(CYGPATH_W) 'strncasecmp.c'; else $(CYGPATH_W) '$(srcdir)/strncasecmp.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-strncasecmp.Tpo $(DEPDIR)/libgnu_a-strncasecmp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='strncasecmp.c' object='libgnu_a-strncasecmp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-strncasecmp.obj `if test -f 'strncasecmp.c'; then $(CYGPATH_W) 'strncasecmp.c'; else $(CYGPATH_W) '$(srcdir)/strncasecmp.c'; fi`
-
 libgnu_a-strdup.o: strdup.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-strdup.o -MD -MP -MF $(DEPDIR)/libgnu_a-strdup.Tpo -c -o libgnu_a-strdup.o `test -f 'strdup.c' || echo '$(srcdir)/'`strdup.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-strdup.Tpo $(DEPDIR)/libgnu_a-strdup.Po
@@ -5138,6 +5188,20 @@ libgnu_a-strerror-override.obj: strerror-override.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='strerror-override.c' object='libgnu_a-strerror-override.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-strerror-override.obj `if test -f 'strerror-override.c'; then $(CYGPATH_W) 'strerror-override.c'; else $(CYGPATH_W) '$(srcdir)/strerror-override.c'; fi`
+
+libgnu_a-strncasecmp.o: strncasecmp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-strncasecmp.o -MD -MP -MF $(DEPDIR)/libgnu_a-strncasecmp.Tpo -c -o libgnu_a-strncasecmp.o `test -f 'strncasecmp.c' || echo '$(srcdir)/'`strncasecmp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-strncasecmp.Tpo $(DEPDIR)/libgnu_a-strncasecmp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='strncasecmp.c' object='libgnu_a-strncasecmp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-strncasecmp.o `test -f 'strncasecmp.c' || echo '$(srcdir)/'`strncasecmp.c
+
+libgnu_a-strncasecmp.obj: strncasecmp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-strncasecmp.obj -MD -MP -MF $(DEPDIR)/libgnu_a-strncasecmp.Tpo -c -o libgnu_a-strncasecmp.obj `if test -f 'strncasecmp.c'; then $(CYGPATH_W) 'strncasecmp.c'; else $(CYGPATH_W) '$(srcdir)/strncasecmp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-strncasecmp.Tpo $(DEPDIR)/libgnu_a-strncasecmp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='strncasecmp.c' object='libgnu_a-strncasecmp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-strncasecmp.obj `if test -f 'strncasecmp.c'; then $(CYGPATH_W) 'strncasecmp.c'; else $(CYGPATH_W) '$(srcdir)/strncasecmp.c'; fi`
 
 libgnu_a-strnlen.o: strnlen.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-strnlen.o -MD -MP -MF $(DEPDIR)/libgnu_a-strnlen.Tpo -c -o libgnu_a-strnlen.o `test -f 'strnlen.c' || echo '$(srcdir)/'`strnlen.c
@@ -6805,16 +6869,45 @@ uninstall-am: uninstall-pkgdataDATA
 
 # We need the following in order to create <ctype.h> when the system
 # doesn't have one that works with the given compiler.
-ctype.h: ctype.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
+ctype.h: ctype.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
 	$(gl_V_at)$(SED_HEADER_STDOUT) \
 	      -e 's|@''GUARD_PREFIX''@|GL|g' \
 	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
 	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
 	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
 	      -e 's|@''NEXT_CTYPE_H''@|$(NEXT_CTYPE_H)|g' \
+	      -e 's/@''GNULIB_ISALNUM_L''@/$(GL_GNULIB_ISALNUM_L)/g' \
+	      -e 's/@''GNULIB_ISALPHA_L''@/$(GL_GNULIB_ISALPHA_L)/g' \
 	      -e 's/@''GNULIB_ISBLANK''@/$(GL_GNULIB_ISBLANK)/g' \
+	      -e 's/@''GNULIB_ISBLANK_L''@/$(GL_GNULIB_ISBLANK_L)/g' \
+	      -e 's/@''GNULIB_ISCNTRL_L''@/$(GL_GNULIB_ISCNTRL_L)/g' \
+	      -e 's/@''GNULIB_ISDIGIT_L''@/$(GL_GNULIB_ISDIGIT_L)/g' \
+	      -e 's/@''GNULIB_ISGRAPH_L''@/$(GL_GNULIB_ISGRAPH_L)/g' \
+	      -e 's/@''GNULIB_ISLOWER_L''@/$(GL_GNULIB_ISLOWER_L)/g' \
+	      -e 's/@''GNULIB_ISPRINT_L''@/$(GL_GNULIB_ISPRINT_L)/g' \
+	      -e 's/@''GNULIB_ISPUNCT_L''@/$(GL_GNULIB_ISPUNCT_L)/g' \
+	      -e 's/@''GNULIB_ISSPACE_L''@/$(GL_GNULIB_ISSPACE_L)/g' \
+	      -e 's/@''GNULIB_ISUPPER_L''@/$(GL_GNULIB_ISUPPER_L)/g' \
+	      -e 's/@''GNULIB_ISXDIGIT_L''@/$(GL_GNULIB_ISXDIGIT_L)/g' \
+	      -e 's/@''GNULIB_TOLOWER_L''@/$(GL_GNULIB_TOLOWER_L)/g' \
+	      -e 's/@''GNULIB_TOUPPER_L''@/$(GL_GNULIB_TOUPPER_L)/g' \
+	      -e 's/@''HAVE_ISALNUM_L''@/$(HAVE_ISALNUM_L)/g' \
+	      -e 's/@''HAVE_ISALPHA_L''@/$(HAVE_ISALPHA_L)/g' \
 	      -e 's/@''HAVE_ISBLANK''@/$(HAVE_ISBLANK)/g' \
+	      -e 's/@''HAVE_ISBLANK_L''@/$(HAVE_ISBLANK_L)/g' \
+	      -e 's/@''HAVE_ISCNTRL_L''@/$(HAVE_ISCNTRL_L)/g' \
+	      -e 's/@''HAVE_ISDIGIT_L''@/$(HAVE_ISDIGIT_L)/g' \
+	      -e 's/@''HAVE_ISGRAPH_L''@/$(HAVE_ISGRAPH_L)/g' \
+	      -e 's/@''HAVE_ISLOWER_L''@/$(HAVE_ISLOWER_L)/g' \
+	      -e 's/@''HAVE_ISPRINT_L''@/$(HAVE_ISPRINT_L)/g' \
+	      -e 's/@''HAVE_ISPUNCT_L''@/$(HAVE_ISPUNCT_L)/g' \
+	      -e 's/@''HAVE_ISSPACE_L''@/$(HAVE_ISSPACE_L)/g' \
+	      -e 's/@''HAVE_ISUPPER_L''@/$(HAVE_ISUPPER_L)/g' \
+	      -e 's/@''HAVE_ISXDIGIT_L''@/$(HAVE_ISXDIGIT_L)/g' \
+	      -e 's/@''HAVE_TOLOWER_L''@/$(HAVE_TOLOWER_L)/g' \
+	      -e 's/@''HAVE_TOUPPER_L''@/$(HAVE_TOUPPER_L)/g' \
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
 	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
 	      $(srcdir)/ctype.in.h > $@-t
 	$(AM_V_at)mv $@-t $@
@@ -7093,6 +7186,7 @@ langinfo.h: langinfo.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_U
 	      -e 's|@''HAVE_LANGINFO_CODESET''@|$(HAVE_LANGINFO_CODESET)|g' \
 	      -e 's|@''HAVE_LANGINFO_T_FMT_AMPM''@|$(HAVE_LANGINFO_T_FMT_AMPM)|g' \
 	      -e 's|@''HAVE_LANGINFO_ALTMON''@|$(HAVE_LANGINFO_ALTMON)|g' \
+	      -e 's|@''HAVE_LANGINFO_ABALTMON''@|$(HAVE_LANGINFO_ABALTMON)|g' \
 	      -e 's|@''HAVE_LANGINFO_ERA''@|$(HAVE_LANGINFO_ERA)|g' \
 	      -e 's|@''HAVE_LANGINFO_YESEXPR''@|$(HAVE_LANGINFO_YESEXPR)|g' \
 	      -e 's|@''HAVE_NL_LANGINFO''@|$(HAVE_NL_LANGINFO)|g' \
@@ -7125,14 +7219,21 @@ locale.h: locale.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
 	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
 	      -e 's|@''NEXT_LOCALE_H''@|$(NEXT_LOCALE_H)|g' \
+	      -e 's|@''HAVE_LOCALE_T''@|$(HAVE_LOCALE_T)|g' \
+	      -e 's|@''HAVE_WINDOWS_LOCALE_T''@|$(HAVE_WINDOWS_LOCALE_T)|g' \
 	      -e 's/@''GNULIB_LOCALECONV''@/$(GL_GNULIB_LOCALECONV)/g' \
 	      -e 's/@''GNULIB_SETLOCALE''@/$(GL_GNULIB_SETLOCALE)/g' \
 	      -e 's/@''GNULIB_SETLOCALE_NULL''@/$(GL_GNULIB_SETLOCALE_NULL)/g' \
+	      -e 's/@''GNULIB_NEWLOCALE''@/$(GL_GNULIB_NEWLOCALE)/g' \
 	      -e 's/@''GNULIB_DUPLOCALE''@/$(GL_GNULIB_DUPLOCALE)/g' \
+	      -e 's/@''GNULIB_FREELOCALE''@/$(GL_GNULIB_FREELOCALE)/g' \
+	      -e 's/@''GNULIB_GETLOCALENAME_L''@/$(GL_GNULIB_GETLOCALENAME_L)/g' \
+	      -e 's/@''GNULIB_GETLOCALENAME_L_UNSAFE''@/$(GL_GNULIB_GETLOCALENAME_L_UNSAFE)/g' \
 	      -e 's/@''GNULIB_LOCALENAME_UNSAFE''@/$(GL_GNULIB_LOCALENAME_UNSAFE)/g' \
 	      -e 's|@''HAVE_NEWLOCALE''@|$(HAVE_NEWLOCALE)|g' \
 	      -e 's|@''HAVE_DUPLOCALE''@|$(HAVE_DUPLOCALE)|g' \
 	      -e 's|@''HAVE_FREELOCALE''@|$(HAVE_FREELOCALE)|g' \
+	      -e 's|@''HAVE_GETLOCALENAME_L''@|$(HAVE_GETLOCALENAME_L)|g' \
 	      -e 's|@''HAVE_XLOCALE_H''@|$(HAVE_XLOCALE_H)|g' \
 	      -e 's|@''REPLACE_LOCALECONV''@|$(REPLACE_LOCALECONV)|g' \
 	      -e 's|@''REPLACE_SETLOCALE''@|$(REPLACE_SETLOCALE)|g' \
@@ -8101,6 +8202,8 @@ string.h: string.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's/@''GNULIB_MBSSPN''@/$(GL_GNULIB_MBSSPN)/g' \
 	      -e 's/@''GNULIB_MBSSEP''@/$(GL_GNULIB_MBSSEP)/g' \
 	      -e 's/@''GNULIB_MBSTOK_R''@/$(GL_GNULIB_MBSTOK_R)/g' \
+	      -e 's/@''GNULIB_MBS_ENDSWITH''@/$(GL_GNULIB_MBS_ENDSWITH)/g' \
+	      -e 's/@''GNULIB_MBS_STARTSWITH''@/$(GL_GNULIB_MBS_STARTSWITH)/g' \
 	      -e 's/@''GNULIB_MEMCHR''@/$(GL_GNULIB_MEMCHR)/g' \
 	      -e 's/@''GNULIB_MEMMEM''@/$(GL_GNULIB_MEMMEM)/g' \
 	      -e 's/@''GNULIB_MEMPCPY''@/$(GL_GNULIB_MEMPCPY)/g' \
@@ -8119,8 +8222,11 @@ string.h: string.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's/@''GNULIB_STRSTR''@/$(GL_GNULIB_STRSTR)/g' \
 	      -e 's/@''GNULIB_STRCASESTR''@/$(GL_GNULIB_STRCASESTR)/g' \
 	      -e 's/@''GNULIB_STRTOK_R''@/$(GL_GNULIB_STRTOK_R)/g' \
+	      -e 's/@''GNULIB_STR_ENDSWITH''@/$(GL_GNULIB_STR_ENDSWITH)/g' \
+	      -e 's/@''GNULIB_STR_STARTSWITH''@/$(GL_GNULIB_STR_STARTSWITH)/g' \
 	      -e 's/@''GNULIB_STRERROR''@/$(GL_GNULIB_STRERROR)/g' \
 	      -e 's/@''GNULIB_STRERROR_R''@/$(GL_GNULIB_STRERROR_R)/g' \
+	      -e 's/@''GNULIB_STRERROR_L''@/$(GL_GNULIB_STRERROR_L)/g' \
 	      -e 's/@''GNULIB_STRERRORNAME_NP''@/$(GL_GNULIB_STRERRORNAME_NP)/g' \
 	      -e 's/@''GNULIB_SIGABBREV_NP''@/$(GL_GNULIB_SIGABBREV_NP)/g' \
 	      -e 's/@''GNULIB_SIGDESCR_NP''@/$(GL_GNULIB_SIGDESCR_NP)/g' \
@@ -8151,6 +8257,7 @@ string.h: string.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''HAVE_STRCASESTR''@|$(HAVE_STRCASESTR)|g' \
 	      -e 's|@''HAVE_DECL_STRTOK_R''@|$(HAVE_DECL_STRTOK_R)|g' \
 	      -e 's|@''HAVE_DECL_STRERROR_R''@|$(HAVE_DECL_STRERROR_R)|g' \
+	      -e 's|@''HAVE_STRERROR_L''@|$(HAVE_STRERROR_L)|g' \
 	      -e 's|@''HAVE_STRERRORNAME_NP''@|$(HAVE_STRERRORNAME_NP)|g' \
 	      -e 's|@''HAVE_SIGABBREV_NP''@|$(HAVE_SIGABBREV_NP)|g' \
 	      -e 's|@''HAVE_SIGDESCR_NP''@|$(HAVE_SIGDESCR_NP)|g' \
@@ -8174,6 +8281,7 @@ string.h: string.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''REPLACE_STRTOK_R''@|$(REPLACE_STRTOK_R)|g' \
 	      -e 's|@''REPLACE_STRERROR''@|$(REPLACE_STRERROR)|g' \
 	      -e 's|@''REPLACE_STRERROR_R''@|$(REPLACE_STRERROR_R)|g' \
+	      -e 's|@''REPLACE_STRERROR_L''@|$(REPLACE_STRERROR_L)|g' \
 	      -e 's|@''REPLACE_STRERRORNAME_NP''@|$(REPLACE_STRERRORNAME_NP)|g' \
 	      -e 's|@''REPLACE_STRSIGNAL''@|$(REPLACE_STRSIGNAL)|g' \
 	      -e 's|@''REPLACE_STRVERSCMP''@|$(REPLACE_STRVERSCMP)|g' \
@@ -8196,9 +8304,20 @@ strings.h: strings.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE
 	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
 	      -e 's|@''NEXT_STRINGS_H''@|$(NEXT_STRINGS_H)|g' \
 	      -e 's/@''GNULIB_FFS''@/$(GL_GNULIB_FFS)/g' \
+	      -e 's/@''GNULIB_STRCASECMP''@/$(GL_GNULIB_STRCASECMP)/g' \
+	      -e 's/@''GNULIB_STRCASECMP_L''@/$(GL_GNULIB_STRCASECMP_L)/g' \
+	      -e 's/@''GNULIB_STRNCASECMP''@/$(GL_GNULIB_STRNCASECMP)/g' \
+	      -e 's/@''GNULIB_STRNCASECMP_L''@/$(GL_GNULIB_STRNCASECMP_L)/g' \
 	      -e 's|@''HAVE_FFS''@|$(HAVE_FFS)|g' \
 	      -e 's|@''HAVE_STRCASECMP''@|$(HAVE_STRCASECMP)|g' \
+	      -e 's|@''HAVE_STRCASECMP_L''@|$(HAVE_STRCASECMP_L)|g' \
+	      -e 's|@''HAVE_STRNCASECMP''@|$(HAVE_STRNCASECMP)|g' \
+	      -e 's|@''HAVE_STRNCASECMP_L''@|$(HAVE_STRNCASECMP_L)|g' \
 	      -e 's|@''HAVE_DECL_STRNCASECMP''@|$(HAVE_DECL_STRNCASECMP)|g' \
+	      -e 's|@''REPLACE_STRCASECMP''@|$(REPLACE_STRCASECMP)|g' \
+	      -e 's|@''REPLACE_STRCASECMP_L''@|$(REPLACE_STRCASECMP_L)|g' \
+	      -e 's|@''REPLACE_STRNCASECMP''@|$(REPLACE_STRNCASECMP)|g' \
+	      -e 's|@''REPLACE_STRNCASECMP_L''@|$(REPLACE_STRNCASECMP_L)|g' \
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
 	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
 	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
@@ -8324,6 +8443,8 @@ sys/types.h: sys_types.in.h $(top_builddir)/config.status
 	      -e 's|@''WINDOWS_64_BIT_OFF_T''@|$(WINDOWS_64_BIT_OFF_T)|g' \
 	      -e 's|@''HAVE_OFF64_T''@|$(HAVE_OFF64_T)|g' \
 	      -e 's|@''WINDOWS_STAT_INODES''@|$(WINDOWS_STAT_INODES)|g' \
+	      -e 's|@''HAVE_BLKSIZE_T''@|$(HAVE_BLKSIZE_T)|g' \
+	      -e 's|@''HAVE_BLKCNT_T''@|$(HAVE_BLKCNT_T)|g' \
 	      $(srcdir)/sys_types.in.h > $@-t
 	$(AM_V_at)mv $@-t $@
 
@@ -8809,6 +8930,7 @@ unistd.h: unistd.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''REPLACE_GETDOMAINNAME''@|$(REPLACE_GETDOMAINNAME)|g' \
 	      -e 's|@''REPLACE_GETDTABLESIZE''@|$(REPLACE_GETDTABLESIZE)|g' \
 	      -e 's|@''REPLACE_GETENTROPY''@|$(REPLACE_GETENTROPY)|g' \
+	      -e 's|@''REPLACE_GETLOGIN''@|$(REPLACE_GETLOGIN)|g' \
 	      -e 's|@''REPLACE_GETLOGIN_R''@|$(REPLACE_GETLOGIN_R)|g' \
 	      -e 's|@''REPLACE_GETGROUPS''@|$(REPLACE_GETGROUPS)|g' \
 	      -e 's|@''REPLACE_GETPAGESIZE''@|$(REPLACE_GETPAGESIZE)|g' \
@@ -9061,7 +9183,7 @@ mostlyclean-local: mostlyclean-generic
 	:
 distclean-local: distclean-gnulib-libobjs
 distclean-gnulib-libobjs:
-	-rm -f @gl_LIBOBJDEPS@
+	-rm -f @gl_libgnu_LIBOBJDEPS@
 maintainer-clean-local: distclean-gnulib-libobjs
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

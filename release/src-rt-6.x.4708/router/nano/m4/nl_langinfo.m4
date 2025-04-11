@@ -1,6 +1,6 @@
 # nl_langinfo.m4
-# serial 11
-dnl Copyright (C) 2009-2024 Free Software Foundation, Inc.
+# serial 12
+dnl Copyright (C) 2009-2025 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -51,6 +51,7 @@ AC_DEFUN([gl_FUNC_NL_LANGINFO],
     if test $HAVE_LANGINFO_CODESET = 1 \
        && test $HAVE_LANGINFO_T_FMT_AMPM = 1 \
        && test $HAVE_LANGINFO_ALTMON = 1 \
+       && test $HAVE_LANGINFO_ABALTMON = 1 \
        && test $HAVE_LANGINFO_ERA = 1 \
        && test $FUNC_NL_LANGINFO_YESEXPR_WORKS = 1 \
        && test $NL_LANGINFO_MTSAFE = 1; then

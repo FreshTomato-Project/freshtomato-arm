@@ -1,7 +1,7 @@
 /**************************************************************************
  *   prompt.c  --  This file is part of GNU nano.                         *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
+ *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
  *   Copyright (C) 2016, 2018, 2020, 2022 Benno Schulenberg               *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
@@ -261,7 +261,7 @@ void absorb_character(int input, functionptrtype function)
 	 * Apart from that, only accept input when not in restricted mode, or when
 	 * not at the "Write File" prompt, or when there is no filename yet. */
 	if (!function) {
-		if (input < 0x20 || input > 0xFF || meta_key)
+		if ((input < 0x20 && input != '\t') || meta_key || input > 0xFF)
 			beep();
 		else if (!ISSET(RESTRICTED) || currmenu != MWRITEFILE ||
 						openfile->filename[0] == '\0') {
@@ -427,6 +427,9 @@ functionptrtype acquire_an_answer(int *actual, bool *listed,
 		/* The length of the fragment that the user tries to tab complete. */
 #endif
 #endif
+#ifndef NANO_TINY
+	bool bracketed_paste = FALSE;
+#endif
 	const keystruct *shortcut;
 	functionptrtype function;
 	int input;
@@ -450,6 +453,8 @@ functionptrtype acquire_an_answer(int *actual, bool *listed,
 #endif
 			return NULL;
 		}
+		if (input == START_OF_PASTE || input == END_OF_PASTE)
+			bracketed_paste = (input == START_OF_PASTE);
 #endif
 #ifdef ENABLE_MOUSE
 		/* For a click on a shortcut, read in the resulting keycode. */
@@ -462,9 +467,22 @@ functionptrtype acquire_an_answer(int *actual, bool *listed,
 		/* Check for a shortcut in the current list. */
 		shortcut = get_shortcut(input);
 		function = (shortcut ? shortcut->func : NULL);
-
+#ifndef NANO_TINY
+		/* Tabs in an external paste are not commands. */
+		if (input == '\t' && bracketed_paste)
+			function = NULL;
+#endif
 		/* When it's a normal character, add it to the answer. */
 		absorb_character(input, function);
+
+#ifndef NANO_TINY
+		/* Ignore any commands inside an external paste. */
+		if (bracketed_paste) {
+			if (function && function != do_nothing)
+				beep();
+			continue;
+		}
+#endif
 
 		if (function == do_cancel || function == do_enter)
 			break;
@@ -538,6 +556,11 @@ functionptrtype acquire_an_answer(int *actual, bool *listed,
 		else if (function && !handle_editing(function)) {
 			/* When it's a permissible shortcut, run it and done. */
 			if (!ISSET(VIEW_MODE) || !changes_something(function)) {
+#ifndef NANO_TINY
+				/* When invoking a tool at the Execute prompt, stash an "answer". */
+				if (currmenu == MEXECUTE)
+					foretext = mallocstrcpy(foretext, answer);
+#endif
 				function();
 				break;
 			} else
@@ -549,6 +572,11 @@ functionptrtype acquire_an_answer(int *actual, bool *listed,
 #endif
 	}
 
+#ifndef NANO_TINY
+	/* When an external command was run, clear a possibly stashed answer. */
+	if (currmenu == MEXECUTE && function == do_enter)
+		*foretext = '\0';
+#endif
 #ifdef ENABLE_HISTORIES
 	/* If the history pointer was moved, point it at the bottom again. */
 	if (stored_string != NULL) {
@@ -701,10 +729,11 @@ int ask_user(bool withall, const char *question)
 			continue;
 
 		/* Accept first character of an external paste and ignore the rest. */
-		if (bracketed_paste)
+		if (kbinput == START_OF_PASTE) {
 			kbinput = get_kbinput(footwin, BLIND);
-		while (bracketed_paste)
-			get_kbinput(footwin, BLIND);
+			while (get_kbinput(footwin, BLIND) != END_OF_PASTE)
+				;
+		}
 #endif
 
 #ifdef ENABLE_NLS

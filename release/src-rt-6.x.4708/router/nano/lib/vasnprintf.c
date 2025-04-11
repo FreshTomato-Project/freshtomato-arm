@@ -1,5 +1,5 @@
 /* vsprintf with automatic memory allocation.
-   Copyright (C) 1999, 2002-2024 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002-2025 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -6211,7 +6211,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                       }
                   }
 
-                switch (type)
+                switch (+type)
                   {
                   case TYPE_LONGLONGINT:
                   case TYPE_ULONGLONGINT:
@@ -6507,7 +6507,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
 #endif
 
                     errno = 0;
-                    switch (type)
+                    switch (+type)
                       {
                       case TYPE_SCHAR:
                         {

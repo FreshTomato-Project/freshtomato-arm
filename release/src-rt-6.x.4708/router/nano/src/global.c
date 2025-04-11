@@ -1,7 +1,7 @@
 /**************************************************************************
  *   global.c  --  This file is part of GNU nano.                         *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
+ *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
  *   Copyright (C) 2014-2022 Benno Schulenberg                            *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
@@ -43,8 +43,6 @@ bool shift_held;
 		/* Whether Shift was being held together with a movement key. */
 bool mute_modifiers = FALSE;
 		/* Whether to ignore modifier keys while running a macro or string bind. */
-bool bracketed_paste = FALSE;
-		/* Whether text is being pasted into nano from outside. */
 
 bool we_are_running = FALSE;
 		/* Becomes TRUE as soon as all options and files have been read. */
@@ -52,8 +50,13 @@ bool more_than_one = FALSE;
 		/* Whether more than one buffer is or has been open. */
 bool report_size = TRUE;
 		/* Whether to show the number of lines when the minibar is used. */
+
 bool ran_a_tool = FALSE;
 		/* Whether a tool has been run at the Execute-Command prompt. */
+#ifndef NANO_TINY
+char *foretext = NULL;
+		/* What was typed at the Execute prompt before invoking a tool. */
+#endif
 
 bool inhelp = FALSE;
 		/* Whether we are in the help viewer. */
@@ -100,7 +103,7 @@ int controlleft, controlright, controlup, controldown;
 int controlhome, controlend;
 #ifndef NANO_TINY
 int controldelete, controlshiftdelete;
-int shiftleft, shiftright, shiftup, shiftdown;
+int shiftup, shiftdown;
 int shiftcontrolleft, shiftcontrolright, shiftcontrolup, shiftcontroldown;
 int shiftcontrolhome, shiftcontrolend;
 int altleft, altright, altup, altdown;
@@ -475,11 +478,6 @@ const keystruct *get_shortcut(const int keycode)
 	if (meta_key && keycode < 0x20)
 		return NULL;
 
-#ifndef NANO_TINY
-	/* During a paste at a prompt, ignore all command keycodes. */
-	if (bracketed_paste && keycode != BRACKETED_PASTE_MARKER)
-		return NULL;
-#endif
 #ifdef ENABLE_NANORC
 	if (keycode == PLANTED_A_COMMAND)
 		return planted_shortcut;
@@ -507,7 +505,7 @@ functionptrtype func_from_key(const int keycode)
  * with Pico or to mimic 'less' and similar text viewers. */
 functionptrtype interpret(const int keycode)
 {
-	if (!meta_key) {
+	if (!meta_key && keycode < 0x7F) {
 		if (keycode == 'N')
 			return do_findprevious;
 		if (keycode == 'n')
@@ -1578,8 +1576,9 @@ void shortcut_init(void)
 	add_to_sclist((MMOST & ~MMAIN) | MYESNO, "", KEY_CANCEL, do_cancel, 0);
 	add_to_sclist(MMAIN, "", KEY_CENTER, do_center, 0);
 	add_to_sclist(MMAIN, "", KEY_SIC, do_insertfile, 0);
-	/* Catch and ignore bracketed paste marker keys. */
-	add_to_sclist(MMOST|MBROWSER|MHELP|MYESNO, "", BRACKETED_PASTE_MARKER, do_nothing, 0);
+	add_to_sclist(MMAIN, "", START_OF_PASTE, suck_up_input_and_paste_it, 0);
+	add_to_sclist(MMOST, "", START_OF_PASTE, do_nothing, 0);
+	add_to_sclist(MMOST, "", END_OF_PASTE, do_nothing, 0);
 #else
 	add_to_sclist(MMOST|MBROWSER|MHELP|MYESNO, "", KEY_FRESH, full_refresh, 0);
 #endif

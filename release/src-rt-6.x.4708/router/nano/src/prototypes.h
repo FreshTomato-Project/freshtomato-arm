@@ -1,7 +1,7 @@
 /**************************************************************************
  *   prototypes.h  --  This file is part of GNU nano.                     *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
+ *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -32,12 +32,13 @@ extern bool shifted_metas;
 extern bool meta_key;
 extern bool shift_held;
 extern bool mute_modifiers;
-extern bool bracketed_paste;
 
 extern bool we_are_running;
 extern bool more_than_one;
 extern bool report_size;
+
 extern bool ran_a_tool;
+extern char *foretext;
 
 extern bool inhelp;
 extern char *title;
@@ -68,7 +69,6 @@ extern int controlup, controldown;
 extern int controlhome, controlend;
 #ifndef NANO_TINY
 extern int controldelete, controlshiftdelete;
-extern int shiftleft, shiftright;
 extern int shiftup, shiftdown;
 extern int shiftcontrolleft, shiftcontrolright;
 extern int shiftcontrolup, shiftcontroldown;
@@ -440,6 +440,7 @@ void confirm_margin(void);
 #endif
 void unbound_key(int code);
 bool changes_something(functionptrtype f);
+void suck_up_input_and_paste_it(void);
 void inject(char *burst, size_t count);
 
 /* Most functions in prompt.c. */

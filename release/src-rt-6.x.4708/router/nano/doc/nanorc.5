@@ -1,4 +1,4 @@
-.\" Copyright (C) 2003-2011, 2013-2024 Free Software Foundation, Inc.
+.\" Copyright (C) 2003-2011, 2013-2025 Free Software Foundation, Inc.
 .\"
 .\" This document is dual-licensed.  You may distribute and/or modify it
 .\" under the terms of either of the following licenses:
@@ -16,16 +16,16 @@
 .\"   Documentation License along with this program.  If not, see
 .\"   <https://www.gnu.org/licenses/>.
 .\"
-.TH NANORC 5 "version 8.3" "December 2024"
+.TH NANORC 5 "version 8.4" "April 2025"
 
 .SH NAME
 nanorc \- GNU nano's configuration file
 
 .SH DESCRIPTION
-The \fInanorc\fP files contain the default settings for \fBnano\fP,
+The \fInanorc\fR files contain the default settings for \fBnano\fR,
 a small and friendly text editor.  During startup, if \fB\-\-rcfile\fR
 is not given, \fBnano\fR reads two files: first the system-wide settings,
-from \fI/etc/nanorc\fP (the exact path might be different on your system),
+from \fI/etc/nanorc\fR (the exact path might be different on your system),
 and then the user-specific settings, either from \fI~/.nanorc\fR or from
 \fI$XDG_CONFIG_HOME/nano/nanorc\fR or from \fI~/.config/nano/nanorc\fR,
 whichever is encountered first.  If \fB\-\-rcfile\fR is given,
@@ -53,15 +53,15 @@ lines at the end of your \fInanorc\fR file:
 .hw ncurses terminfo
 
 .SH OPTIONS
-The configuration file accepts a series of \fBset\fP and \fBunset\fP
+The configuration file accepts a series of \fBset\fR and \fBunset\fR
 commands, which can be used to configure nano on startup without using
 command-line options.  Additionally, there are some commands to define
-syntax highlighting and to rebind keys -- see the two separate sections
-on those.  \fBnano\fP reads one command per line.
+syntax highlighting and to rebind keys \(em see the two separate sections
+on those.  \fBnano\fR reads one command per line.
 All commands and keywords should be written in lowercase.
 .sp
-Options in \fInanorc\fP files take precedence over nano's defaults, and
-command-line options override \fInanorc\fP settings.  Also, options that
+Options in \fInanorc\fR files take precedence over nano's defaults, and
+command-line options override \fInanorc\fR settings.  Also, options that
 do not take an argument are unset by default.  So using the \fBunset\fR
 command is only needed when wanting to override a setting of the system's
 \fInanorc\fR file in your own \fInanorc\fR.  Options that take an
@@ -90,30 +90,30 @@ and/or spaces as the previous line (or as the next line if the previous
 line is the beginning of a paragraph).
 .TP
 .B set backup
-When saving a file, create a backup file by adding a tilde (\fB~\fP) to
+When saving a file, create a backup file by adding a tilde (\fB~\fR) to
 the file's name.
 .TP
-.B set backupdir "\fIdirectory\fP"
+.B set backupdir \fIdirectory\fR
 Make and keep not just one backup file, but make and keep a uniquely
-numbered one every time a file is saved -- when backups are enabled
+numbered one every time a file is saved \(em when backups are enabled
 with \fBset backup\fR or \fB\-\-backup\fR or \fB\-B\fR.
 The uniquely numbered files are stored in the specified \fIdirectory\fR.
 .TP
 .B set boldtext
 Use bold instead of reverse video for the title bar, status bar,
 prompt bar, mini bar, key combos, line numbers, and selected text.
-This can be overridden by setting the options
-\fBtitlecolor\fP, \fBstatuscolor\fP, \fBpromptcolor\fP, \fBminicolor\fP,
-\fBkeycolor\fP, \fBnumbercolor\fP, and/or \fBselectedcolor\fP.
+This can be overridden by setting the options \fB\%titlecolor\fR,
+\fB\%statuscolor\fR, \fB\%promptcolor\fR, \fB\%minicolor\fR,
+\fB\%keycolor\fR, \fB\%numbercolor\fR, and/or \fB\%selectedcolor\fR.
 .TP
 .B set bookstyle
 When justifying, treat any line that starts with whitespace as the
 beginning of a paragraph (unless auto-indenting is on).
 .TP
-.BI "set brackets """ characters """
+.BI "set brackets """ characters """"
 Set the characters treated as closing brackets when justifying
 paragraphs.  This may not include blank characters.  Only closing
-punctuation (see \fBset punct\fP), optionally followed by the specified
+punctuation (see \fBset punct\fR), optionally followed by the specified
 closing brackets, can end sentences.  The default value is "\fB\(dq')>]}\fR".
 .TP
 .B set breaklonglines
@@ -133,7 +133,7 @@ the original filename as is.  To disable this colon parsing for some
 file, use \fB+1\fR or similar before the relevant filename.
 .TP
 .B set constantshow
-Constantly display the cursor position in the status bar.
+Constantly report the cursor position on the status bar.
 This overrides the option \fBquickblank\fR.
 .TP
 .B set cutfromcursor
@@ -145,7 +145,7 @@ Do not use the line below the title bar, leaving it entirely blank.
 .B set errorcolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the status bar when an error message is displayed.
 The default value is \fBbold,white,red\fR.
-See \fBset titlecolor\fR for valid color names.
+See \fBset \%titlecolor\fR for valid color names.
 .TP
 .B set fill \fInumber\fR
 Set the target width for justifying and automatic hard-wrapping at this
@@ -157,7 +157,7 @@ The default value is \fB\-8\fR.
 .B set functioncolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the concise function descriptions
 in the two help lines at the bottom of the screen.
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
 .B set guidestripe \fInumber
 Draw a vertical stripe at the given column, to help judge the width of the
@@ -178,7 +178,7 @@ Scroll the buffer contents per half-screen instead of per line.
 .B set keycolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the shortcut key combos
 in the two help lines at the bottom of the screen.
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
 .B set linenumbers
 Display line numbers to the left of the text area.
@@ -193,11 +193,11 @@ try using libmagic to determine the applicable syntax.
 (Calling libmagic can be relatively time consuming.
 It is therefore not done by default.)
 .TP
-.BI "set matchbrackets """ characters """
+.BI "set matchbrackets """ characters """"
 Specify the opening and closing brackets that can be found by bracket
 searches.  This may not include blank characters.  The opening set must
 come before the closing set, and the two sets must be in the same order.
-The default value is "\fB(<[{)>]}\fP".
+The default value is "\fB(<[{)>]}\fR".
 .TP
 .B set minibar
 Suppress the title bar and instead show information about
@@ -219,7 +219,7 @@ The state flags are displayed only when \fBset stateflags\fR is used.
 .B set minicolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the mini bar.
 (When this option is not specified, the colors of the title bar are used.)
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
 .B set mouse
 Enable mouse support, if available for your system.  When enabled,
@@ -247,10 +247,10 @@ When needed, use \fBunset breaklonglines\fR instead.
 .TP
 .B set numbercolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for line numbers.
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
-.B set operatingdir "\fIdirectory\fP"
-\fBnano\fP only reads and writes files inside \fIdirectory\fP and its
+.B set operatingdir \fIdirectory\fR
+\fBnano\fR only reads and writes files inside \fIdirectory\fR and its
 subdirectories.  Also, the current directory is changed to here, so
 files are inserted from this directory.  By default, the operating
 directory feature is turned off.
@@ -266,13 +266,13 @@ they are caught by the terminal (stopping and resuming the output).
 .B set promptcolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the prompt bar.
 (When this option is not specified, the colors of the title bar are used.)
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
-.BI "set punct """ characters """
+.BI "set punct """ characters """"
 Set the characters treated as closing punctuation when justifying
 paragraphs.  This may not include blank characters.  Only the
 specified closing punctuation, optionally followed by closing brackets
-(see \fBbrackets\fP), can end sentences.  The default value is "\fB!.?\fP".
+(see \fBset brackets\fR), can end sentences.  The default value is "\fB!.?\fR".
 .TP
 .B set quickblank
 Make status-bar messages disappear after 1 keystroke instead of after 20.
@@ -281,10 +281,10 @@ When option \fBminibar\fR or \fBzero\fR is in effect,
 \fBquickblank\fR makes a message disappear after
 0.8 seconds instead of after the default 1.5 seconds.
 .TP
-.BI "set quotestr """ regex """
+.BI "set quotestr """ regex """"
 Set the regular expression for matching the quoting part of a line.
-The default value is "\fB^([\ \\t]*([!#%:;>|}]|//))+\fP".
-(Note that \fB\\t\fR stands for an actual Tab character.)
+The default value is "\fB^([\ \et]*([!#%:;>|}]|//))+\fR".
+(Note that \fB\et\fR stands for an actual Tab character.)
 This makes it possible to rejustify blocks of quoted text when composing
 email, and to rewrap blocks of line comments when writing source code.
 .TP
@@ -310,11 +310,11 @@ Save a changed buffer automatically on exit (\fB^X\fR); don't prompt.
 .TP
 .B set scrollercolor \fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the indicator alias "scrollbar".
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
 .B set selectedcolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for selected text.
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
 .B set showcursor
 Put the cursor on the highlighted item in the file browser, and show
@@ -338,8 +338,8 @@ using the built-in corrector that calls \fBhunspell\fR(1) or \fBspell\fR(1).
 .TP
 .B set spotlightcolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for highlighting a search match.
-The default value is \fBblack,lightyellow\fR.
-See \fBset titlecolor\fR for valid color names.
+The default value is \fBblack,\%lightyellow\fR.
+See \fBset \%titlecolor\fR for valid color names.
 .TP
 .B set stateflags
 Use the top-right corner of the screen for showing some state flags:
@@ -351,47 +351,46 @@ filename in the center of the title bar.
 .TP
 .B set statuscolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the status bar.
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
 .B set stripecolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the vertical guiding stripe.
-See \fBset titlecolor\fR for more details.
+See \fBset \%titlecolor\fR for more details.
 .TP
 .B set tabsize \fInumber\fR
-Use a tab size of \fInumber\fR columns.  The value of \fInumber\fP must be
+Use a tab size of \fInumber\fR columns.  The value of \fInumber\fR must be
 greater than 0.  The default value is \fB8\fR.
 .TP
 .B set tabstospaces
-Convert each typed tab to spaces -- to the number of spaces
+Convert each typed tab to spaces \(em to the number of spaces
 that a tab at that position would take up.
 (Note: pasted tabs are not converted.)
 .TP
 .B set titlecolor \fR[\fBbold,\fR][\fBitalic,\fR]\fIfgcolor\fB,\fIbgcolor\fR
 Use this color combination for the title bar.
 Valid names for the foreground and background colors are:
-.BR red ", " green ", " blue ", " magenta ", " yellow ", " cyan ", "
+.BR red ", " green ", " blue ", " \%magenta ", " \%yellow ", " \%cyan ,
 .BR white ", and " black .
 Each of these eight names may be prefixed with the word \fBlight\fR
 to get a brighter version of that color.
 The word \fBgrey\fR or \fBgray\fR may be used
-as a synonym for \fBlightblack\fR.
+as a synonym for \fB\%lightblack\fR.
 On a Linux console, \fBlight\fR does not have
 any effect for a background color.
 On terminal emulators that can do at least 256 colors,
 other valid (but unprefixable) color names are:
-.BR pink ", " purple ", " mauve ", " lagoon ", " mint ", "
-.BR lime ", " peach ", " orange ", " latte ", "
-.BR rosy ", " beet ", " plum ", " sea ", " sky ", " slate ", "
-.BR teal ", " sage ", " brown ", " ocher ", " sand ", " tawny ", "
-.BR brick ", " crimson ", and " normal
--- where \fBnormal\fR means the default foreground or background color.
+.BR pink ", " \%purple ", " mauve ", " \%lagoon ", " mint ", " lime ", " peach ,
+.BR \%orange ", " \%latte ", " \%rosy ", " beet ", " plum ", " sea ", " sky ,
+.BR slate ", " teal ", " sage ", " brown ", " \%ocher ", " sand ", " \%tawny ,
+.BR brick ", " \%crimson ", and " \%normal
+\(em where \fB\%normal\fR means the default foreground or background color.
 On such emulators, the color may also be specified as a three-digit hexadecimal
 number prefixed with \fB#\fR, with the digits representing the amounts of red,
 green, and blue, respectively.  This tells \fBnano\fR to select from the
 available palette the color that approximates the given values.
 
 Either "\fIfgcolor\fR" or "\fB,\fIbgcolor\fR" may be left out,
-and the pair may be preceded by \fBbold\fR and/or \fBitalic\fR
+and the pair may be preceded by \fBbold\fR and/or \fB\%italic\fR
 (separated by commas) to get a bold and/or slanting typeface,
 if your terminal can do those.
 .TP
@@ -404,7 +403,7 @@ Save a file by default in Unix format.  This overrides nano's
 default behavior of saving a file in the format that it had.
 (This option has no effect when you also use \fBset noconvert\fR.)
 .TP
-.BI "set whitespace """ characters """
+.BI "set whitespace """ characters """"
 Set the two characters used to indicate the presence of tabs and
 spaces.  They must be single-column characters.  The default pair
 for a UTF-8 locale is "\fB\[Fc]\[md]\fR", and for other locales "\fB>.\fR".
@@ -413,7 +412,7 @@ for a UTF-8 locale is "\fB\[Fc]\[md]\fR", and for other locales "\fB>.\fR".
 Detect word boundaries differently by treating punctuation
 characters as parts of words.
 .TP
-.BI "set wordchars """ characters """
+.BI "set wordchars """ characters """"
 Specify which other characters (besides the normal alphanumeric ones)
 should be considered as parts of words.  When using this option, you
 probably want to unset \fBwordbounds\fR.
@@ -446,8 +445,8 @@ The period \fB.\fR matches any single character,
 \fB*\fR means the preceding item may be matched zero or more times,
 \fB+\fR means the preceding item must be matched one or more times,
 \fB^\fR matches the beginning of a line, and \fB$\fR the end,
-\fB\\<\fR matches the start of a word, and \fB\\>\fR the end,
-and \fB\\s\fR matches a blank.
+\fB\e<\fR matches the start of a word, and \fB\e>\fR the end,
+and \fB\es\fR matches a blank.
 It also means that lookahead and lookbehind are not possible.
 A complete explanation can be found in the manual page of GNU grep:
 \fBman grep\fR.
@@ -476,20 +475,20 @@ Or the syntax can be explicitly activated (for all buffers)
 by using the \fB\-Y\fR or \fB\-\-syntax\fR
 command-line option followed by the \fIname\fR.
 .sp
-The syntax \fBdefault\fP is special: it takes no \fIfileregex\fR,
+The syntax \fBdefault\fR is special: it takes no \fIfileregex\fR,
 and applies to files that don't match any syntax's regexes.
-The syntax \fBnone\fP is reserved; specifying it on the command line
+The syntax \fBnone\fR is reserved; specifying it on the command line
 is the same as not having a syntax at all.
 .TP
-.BI "header """ regex """ \fR...
+.BI "header """ regex """ " \fR...
 If from all defined syntaxes no \fIfileregex\fR matched, then compare
 this \fIregex\fR (or regexes) against the first line of the current file,
 to determine whether this syntax should be used for it.
 .TP
-.BI "magic """ regex """ \fR...
+.BI "magic """ regex """ " \fR...
 If no \fIfileregex\fR matched and no \fBheader\fR regex matched
 either, then compare this \fIregex\fR (or regexes) against the
-result of querying the \fBmagic\fP database about the current
+result of querying the \fBmagic\fR database about the current
 file, to determine whether this syntax should be used for it.
 (This querying is done only when \fBlibmagic\fR is actually installed
 on the system and \fB\-\-magic\fR or \fBset magic\fR was given.)
@@ -500,7 +499,7 @@ Run the given \fIprogram\fR on the full contents of the current buffer.
 .BI linter " program " \fR[ "argument " \fR...]
 Use the given \fIprogram\fR to run a syntax check on the current buffer.
 .TP
-.BI "comment """ string """
+.BI "comment """ string """"
 Use the given \fIstring\fR for commenting and uncommenting lines.
 If the string contains a vertical bar or pipe character (\fB|\fR),
 this designates bracket-style comments; for example, "\fB/*|*/\fR" for
@@ -509,39 +508,38 @@ characters after the pipe are appended at the end of the line.  If no pipe
 character is present, the full string is prepended; for example, "\fB#\fR"
 for Python files.  If empty double quotes are specified, the comment/uncomment
 function is disabled; for example, "" for JSON.
-The default value is "\fB#\fP".
+The default value is "\fB#\fR".
 .TP
-.BI "tabgives """ string """
+.BI "tabgives """ string """"
 Make the <Tab> key produce the given \fIstring\fR.  Useful for languages like
 Python that want to see only spaces for indentation.
 This overrides the setting of the \fBtabstospaces\fR option.
 .TP
 .BI "color \fR[\fBbold,\fR][\fBitalic,\fR]" fgcolor , bgcolor " """ regex """ " \fR...
 Paint all pieces of text that match the extended regular expression
-\fIregex\fP with the given foreground and background colors, at least
+\fIregex\fR with the given foreground and background colors, at least
 one of which must be specified.  Valid color names are:
-.BR red ", " green ", " blue ", " magenta ", " yellow ", " cyan ", "
+.BR red ", " green ", " blue ", " \%magenta ", " \%yellow ", " \%cyan ,
 .BR white ", and " black .
 Each of these eight names may be prefixed with the word \fBlight\fR
 to get a brighter version of that color.
 The word \fBgrey\fR or \fBgray\fR may be used
-as a synonym for \fBlightblack\fR.
+as a synonym for \fB\%lightblack\fR.
 On a Linux console, \fBlight\fR does not have
 any effect for a background color.
 On terminal emulators that can do at least 256 colors,
 other valid (but unprefixable) color names are:
-.BR pink ", " purple ", " mauve ", " lagoon ", " mint ", "
-.BR lime ", " peach ", " orange ", " latte ", "
-.BR rosy ", " beet ", " plum ", " sea ", " sky ", " slate ", "
-.BR teal ", " sage ", " brown ", " ocher ", " sand ", " tawny ", "
-.BR brick ", " crimson ", and " normal
--- where \fBnormal\fR means the default foreground or background color.
+.BR pink ", " \%purple ", " mauve ", " \%lagoon ", " mint ", " lime ", " peach ,
+.BR \%orange ", " \%latte ", " \%rosy ", " beet ", " plum ", " sea ", " sky ,
+.BR slate ", " teal ", " sage ", " brown ", " \%ocher ", " sand ", " \%tawny ,
+.BR brick ", " \%crimson ", and " \%normal
+\(em where \fB\%normal\fR means the default foreground or background color.
 On such emulators, the color may also be specified as a three-digit hexadecimal
 number prefixed with \fB#\fR, with the digits representing the amounts of red,
 green, and blue, respectively.  This tells \fBnano\fR to select from the
 available palette the color that approximates the given values.
 
-The color pair may be preceded by \fBbold\fR and/or \fBitalic\fR
+The color pair may be preceded by \fBbold\fR and/or \fB\%italic\fR
 (separated by commas) to get a bold and/or slanting typeface,
 if your terminal can do those.
 .sp
@@ -551,29 +549,29 @@ which means that later commands can recolor stuff that was colored earlier.
 .BI "icolor \fR[\fBbold,\fR][\fBitalic,\fR]" fgcolor , bgcolor " """ regex """ " \fR...
 Same as above, except that the matching is case insensitive.
 .TP
-.BI "color \fR[\fBbold,\fR][\fBitalic,\fR]" fgcolor , bgcolor " start=""" fromrx """ end=""" torx """
+.BI "color \fR[\fBbold,\fR][\fBitalic,\fR]" fgcolor , bgcolor " start=""" fromrx """ end=""" torx """"
 Paint all pieces of text whose start matches extended regular expression
-\fIfromrx\fP and whose end matches extended regular expression \fItorx\fP
+\fIfromrx\fR and whose end matches extended regular expression \fItorx\fR
 with the given foreground and background colors,
 at least one of which must be specified.  This means that, after an
-initial instance of \fIfromrx\fP, all text until the first instance of
-\fItorx\fP is colored.  This allows syntax highlighting to span
+initial instance of \fIfromrx\fR, all text until the first instance of
+\fItorx\fR is colored.  This allows syntax highlighting to span
 multiple lines.
 .TP
-.BI "icolor \fR[\fBbold,\fR][\fBitalic,\fR]" fgcolor , bgcolor " start=""" fromrx """ end=""" torx """
+.BI "icolor \fR[\fBbold,\fR][\fBitalic,\fR]" fgcolor , bgcolor " start=""" fromrx """ end=""" torx """"
 Same as above, except that the matching is case insensitive.
 .TP
-.BI "include """ syntaxfile """
-Read in self-contained color syntaxes from \fIsyntaxfile\fP.  Note that
-\fIsyntaxfile\fP may contain only the above commands, from \fBsyntax\fP
-to \fBicolor\fP.
+.BI "include """ syntaxfile """"
+Read in self-contained color syntaxes from \fIsyntaxfile\fR.  Note that
+\fIsyntaxfile\fR may contain only the above commands, from \fBsyntax\fR
+to \fBicolor\fR.
 .TP
 .BI extendsyntax " name command argument " \fR...
 Extend the syntax previously defined as \fIname\fR with another
-\fIcommand\fR.  This allows adding a new \fBcolor\fP, \fBicolor\fP,
-\fBheader\fR, \fBmagic\fR, \fBformatter\fR, \fBlinter\fR, \fBcomment\fR,
-or \fBtabgives\fR
-command to an already defined syntax -- useful when you want to
+\fI\%command\fR.  This allows adding a new \fB\%color\fR, \fB\%icolor\fR,
+\fB\%header\fR, \fB\%magic\fR, \fB\%formatter\fR, \fB\%linter\fR,
+\fB\%comment\fR, or \fB\%tabgives\fR
+command to an already defined syntax \(em useful when you want to
 slightly improve a syntax defined in one of the system-installed
 files (which normally are not writable).
 
@@ -582,8 +580,8 @@ Key bindings can be changed via the following three commands:
 .RS 3
 .TP
 .BI bind " key function menu"
-Rebinds the given \fIkey\fP to the given \fIfunction\fP in the given \fImenu\fP
-(or in all menus where the function exists when \fBall\fP is used).
+Rebinds the given \fIkey\fR to the given \fIfunction\fR in the given \fImenu\fR
+(or in all menus where the function exists when \fBall\fR is used).
 .TP
 .BI bind " key " """" string """" " menu"
 Makes the given \fIkey\fR produce the given \fIstring\fR in the given
@@ -593,8 +591,8 @@ function names between braces.  These functions are invoked when
 the key is typed.  To include a literal opening brace, use \fB{{}\fR.
 .TP
 .BI unbind " key menu"
-Unbinds the given \fIkey\fP from the given \fImenu\fP (or from all
-menus where the key exists when \fBall\fP is used).
+Unbinds the given \fIkey\fR from the given \fImenu\fR (or from all
+menus where the key exists when \fBall\fR is used).
 .RE
 .sp
 Note that \fBbind \fIkey\fR \fB"{\fIfunction\fB}"\fR \fImenu\fR is equivalent
@@ -607,12 +605,12 @@ that a function name between braces (or any sequence of them) is appropriate.
 Strange behavior or even a crash can result when the braced name is unfitting.
 
 .TP
-The format of \fIkey\fP should be one of:
+The format of \fIkey\fR should be one of:
 .RS 3
 .TP 7
 .BI ^ X
 where \fIX\fR is a Latin letter, or one of several ASCII characters
-(@, ], \\, ^, _), or the word "Space".
+(@, ], \e, ^, _), or the word "Space".
 Example: ^C.
 .TP
 .BI M\- X
@@ -643,7 +641,7 @@ On some terminals it's not possible to rebind \fB^H\fR (unless \fB\-\-raw\fR
 is used) because its keycode is identical to that of the Backspace key.
 
 .TP
-Valid \fIfunction\fP names to be bound are:
+Valid \fIfunction\fR names to be bound are:
 .RS 3
 .TP 2
 .B help
@@ -666,11 +664,11 @@ Inserts a file into the current buffer (at the current cursor position),
 or into a new buffer when option \fBmultibuffer\fR is set.
 .TP
 .B whereis
-Starts a forward search for text in the current buffer -- or for filenames
+Starts a forward search for text in the current buffer \(em or for filenames
 matching a string in the current list in the file browser.
 .TP
 .B wherewas
-Starts a backward search for text in the current buffer -- or for filenames
+Starts a backward search for text in the current buffer \(em or for filenames
 matching a string in the current list in the file browser.
 .TP
 .B findprevious
@@ -847,7 +845,7 @@ Goes to a specific line (and column if specified).  Negative numbers count
 from the end of the file (and end of the line).
 .TP
 .B findbracket
-Moves the cursor to the bracket (or brace or parenthesis, etc.) that matches
+Moves the cursor to the bracket (or brace or parenthesis, etc.\&) that matches
 (pairs) with the one under the cursor.  See \fBset matchbrackets\fR.
 .TP
 .B anchor
@@ -883,7 +881,7 @@ Deletes the character under the cursor.
 Deletes the character before the cursor.
 .TP
 .B recordmacro
-Starts the recording of keystrokes -- the keystrokes are stored
+Starts the recording of keystrokes \(em the keystrokes are stored
 as a macro.  When already recording, the recording is stopped.
 .TP
 .B runmacro
@@ -949,7 +947,7 @@ When writing a file, switches to writing a Mac format.
 When writing a file, appends to the end instead of overwriting.
 .TP
 .B prepend
-When writing a file, 'prepends' (writes at the beginning) instead of overwriting.
+When writing a file, "prepends" (writes at the beginning) instead of overwriting.
 .TP
 .B backup
 When writing a file, creates a backup of the current file.
@@ -982,7 +980,8 @@ and the linter.  All further toggles are available in the main menu only.)
 Toggles the presence of title bar and status bar.
 .TP
 .B constantshow
-Toggles the constant display of the current line, column, and character positions.
+Toggles the constant reporting (on the status bar)
+of the current line, column, and character positions.
 .TP
 .B softwrap
 Toggles the displaying of overlong lines on multiple screen lines.
@@ -1001,7 +1000,7 @@ Toggles the smartness of the Home key.
 .TP
 .B autoindent
 Toggles whether a newly created line will contain the same amount of leading
-whitespace as the preceding line -- or as the next line if the preceding line
+whitespace as the preceding line \(em or as the next line if the preceding line
 is the beginning of a paragraph.
 .TP
 .B cutfromcursor
@@ -1019,7 +1018,7 @@ Toggles mouse support.
 .RE
 
 .TP
-Valid \fImenu\fP sections are:
+Valid \fImenu\fR sections are:
 .RS 3
 .TP 2
 .B main
@@ -1032,32 +1031,32 @@ The help-viewer menu.
 The search menu (AKA whereis).
 .TP
 .B replace
-The 'search to replace' menu.
+The \&'search to replace' menu.
 .TP
 .B replacewith
-The 'replace with' menu, which comes up after 'search to replace'.
+The \&'replace with' menu, which comes up after \&'search to replace'.
 .TP
 .B yesno
-The 'yesno' menu, where the Yes/No/All/Cancel question is asked.
+The \&'yesno' menu, where the Yes/No/All/Cancel question is asked.
 .TP
 .B gotoline
-The 'goto line (and column)' menu.
+The \&'goto line (and column)' menu.
 .TP
 .B writeout
-The 'write file' menu.
+The \&'write file' menu.
 .TP
 .B insert
-The 'insert file' menu.
+The \&'insert file' menu.
 .TP
 .B browser
-The 'file browser' menu, for selecting a file to be opened or
+The \&'file browser' menu, for selecting a file to be opened or
 inserted or written to.
 .TP
 .B whereisfile
-The 'search for a file' menu in the file browser.
+The \&'search for a file' menu in the file browser.
 .TP
 .B gotodir
-The 'go to directory' menu in the file browser.
+The \&'go to directory' menu in the file browser.
 .TP
 .B execute
 The menu for inserting the output from an external command,
@@ -1086,7 +1085,7 @@ To make \fBCtrl+Z\fR suspend nano:
 To make \fBShift+Alt+C\fR copy the marked region to the system's clipboard:
 .sp
 .RS
-.B bind Sh-M-C """{execute}| xsel -ib {enter}{undo}""" main
+.B bind Sh\-M\-C """{execute}| xsel \-ib {enter}{undo}""" main
 .RE
 .sp
 
@@ -1105,5 +1104,5 @@ Syntax definitions for the syntax coloring of common file types
 .SH SEE ALSO
 .BR nano (1)
 .TP
-.I https://nano-editor.org/cheatsheet.html
+.I https://nano\-editor.org/cheatsheet.html
 An overview of the default key bindings.

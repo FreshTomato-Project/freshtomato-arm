@@ -1,7 +1,7 @@
 /**************************************************************************
  *   nano.c  --  This file is part of GNU nano.                           *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2024 Free Software Foundation, Inc.    *
+ *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
  *   Copyright (C) 2014-2022 Benno Schulenberg                            *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
@@ -667,7 +667,7 @@ void version(void)
 #endif
 #ifndef NANO_TINY
 	/* TRANSLATORS: The %s is the year of the latest release. */
-	printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2024");
+	printf(_(" (C) %s the Free Software Foundation and various contributors\n"), "2025");
 #endif
 	printf(_(" Compiled options:"));
 
@@ -1439,31 +1439,34 @@ void suck_up_input_and_paste_it(void)
 	linestruct *was_cutbuffer = cutbuffer;
 	linestruct *line = make_new_node(NULL);
 	size_t index = 0;
+	int input = ERR;
 
 	line->data = copy_of("");
 	cutbuffer = line;
 
-	while (bracketed_paste) {
-		int input = get_kbinput(midwin, BLIND);
+	while (TRUE) {
+		input = get_kbinput(midwin, BLIND);
 
-		if (input == '\r' || input == '\n') {
+		if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) || input == '\t') {
+			line->data = nrealloc(line->data, index + 2);
+			line->data[index++] = (char)input;
+			line->data[index] = '\0';
+		} else if (input == '\r' || input == '\n') {
 			line->next = make_new_node(line);
 			line = line->next;
 			line->data = copy_of("");
 			index = 0;
-		} else if ((0x20 <= input && input <= 0xFF && input != DEL_CODE) ||
-														input == '\t') {
-			line->data = nrealloc(line->data, index + 2);
-			line->data[index++] = (char)input;
-			line->data[index] = '\0';
-		} else if (input != BRACKETED_PASTE_MARKER)
-			beep();
+		} else
+			break;
 	}
 
 	if (ISSET(VIEW_MODE))
 		print_view_warning();
 	else
 		paste_text();
+
+	if (input != END_OF_PASTE)
+		statusline(ALERT, _("Flawed paste"));
 
 	free_lines(cutbuffer);
 	cutbuffer = was_cutbuffer;
@@ -1719,9 +1722,6 @@ void process_a_keystroke(void)
 		refresh_needed = TRUE;
 	} else if (openfile->current != was_current)
 		also_the_last = FALSE;
-
-	if (bracketed_paste)
-		suck_up_input_and_paste_it();
 
 	if (ISSET(STATEFLAGS) && openfile->mark != was_mark)
 		titlebar(NULL);
@@ -2384,6 +2384,9 @@ int main(int argc, char **argv)
 			whitelen[1] = 1;
 		}
 	}
+
+	/* Initialize a special stash for something typed at the Execute prompt. */
+	foretext = copy_of("");
 #endif /* !NANO_TINY */
 
 	/* Initialize the search string. */
@@ -2475,6 +2478,10 @@ int main(int argc, char **argv)
 	shiftaltright = get_keycode("kRIT4", SHIFT_ALT_RIGHT);
 	shiftaltup = get_keycode("kUP4", SHIFT_ALT_UP);
 	shiftaltdown = get_keycode("kDN4", SHIFT_ALT_DOWN);
+
+	/* Tell ncurses to transform bracketed-paste sequences into keycodes. */
+	define_key("\e[200~", START_OF_PASTE);
+	define_key("\e[201~", END_OF_PASTE);
 #endif
 	mousefocusin = get_keycode("kxIN", FOCUS_IN);
 	mousefocusout = get_keycode("kxOUT", FOCUS_OUT);
@@ -2675,6 +2682,16 @@ int main(int argc, char **argv)
 			report_cursor_position();
 
 		as_an_at = TRUE;
+
+#if defined(ENABLE_UTF8) && !defined(NANO_TINY)
+#define byte(n)  (unsigned char)openfile->current->data[n]
+		/* Tell the user when the cursor sits on a BOM. */
+		if (openfile->current_x == 0 && byte(0) == 0xEF && byte(1) == 0xBB &&
+										byte(2) == 0xBF && using_utf8()) {
+			statusline(NOTICE, _("Byte Order Mark"));
+			set_blankdelay_to_one();
+		}
+#endif
 
 		if ((refresh_needed && LINES > 1) || (LINES == 1 && lastmessage <= HUSH))
 			edit_refresh();

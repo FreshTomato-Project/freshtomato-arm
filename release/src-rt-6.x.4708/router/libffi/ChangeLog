@@ -1,3 +1,154 @@
+commit 6a99edb8082f75e523e0d6ebaba42218b80e10c8
+Author: Sam James <sam@gentoo.org>
+Date:   Thu Apr 10 03:44:45 2025 +0100
+
+    testsuite: add two tests to Makefile.am (#893)
+    
+    * Add libffi.call/overread.c and libffi.call/x32.c to Makefile.am
+      so they're included in dist tarballs
+    
+    * Fix indentation and rewrap
+
+commit bfb5b005a08239c751db667f68a67aeb72a9b9ff
+Author: Anthony Green <green@moxielogic.com>
+Date:   Wed Apr 9 10:32:42 2025 -0400
+
+    feat: Update version of libffi to 3.4.8 with various fixes and enhancements
+
+commit 3429ed6b9414dfbe9d9da7609ab043291a01a148
+Author: Peter Bergner <bergner@linux.ibm.com>
+Date:   Tue Apr 8 05:52:37 2025 -0500
+
+    powerpc: Add static trampoline support (#894) (#895)
+    
+    Add static trampoline support to all three powerpc Linux ABIs, specifically
+    powerpc-linux (32-bit SYSV BE), powerpc64-linux (64-bit ELFv1 BE) and
+    powerpc64le-linux (64-bit ELFv2 LE).  This follows the s390x implementation
+    and does not introduce a ffi_closure_*_alt function, but rather jumps
+    directly to the ffi_closure_* function itself.  If compiling with
+    --with-gcc-arch=power10 and pc-relative is enabled, we use a simpler and
+    smaller trampoline that utilizes Power10's new pc-relative load instructions.
+
+commit bb1a84ed9772ee65e00762dab1c4ae50100d5a27
+Author: mikulas-patocka <94898783+mikulas-patocka@users.noreply.github.com>
+Date:   Sun Mar 30 12:07:59 2025 +0200
+
+    Add the "ABI_ATTR" attribute to called functions (#891) (#892)
+    
+    I accidentally omitted the "ABI_ATTR" attribute, so that the testsuite
+    fails when testing the Microsoft ABI.
+    
+    Fixes: fe203ffbb2bd ("Fix bugs in the x86-64 and x32 target (#887) (#889)")
+    
+    Signed-off-by: Mikulas Patocka <mikulas@twibright.com>
+
+commit fe203ffbb2bd7f93a86013d341aa767a406150bc
+Author: mikulas-patocka <94898783+mikulas-patocka@users.noreply.github.com>
+Date:   Thu Mar 27 01:31:49 2025 +0100
+
+    Fix bugs in the x86-64 and x32 target (#887) (#889)
+    
+    This commit fixes two bugs in ffi in the x86-64 target. The bugs were
+    introduced by the commit d21881f55ed4a44d464c9091871e69b0bb47611a ("Fix
+    x86/ffi64 calls with 6 gp and some sse registers").
+    
+    The first bug is that when we pass an argument with less than 8 bytes,
+    ffi will read memory beyond argument end, causing a crash if the argument
+    is located just before the end of the mapped region.
+    
+    The second bug is in the x32 ABI - pointers in x32 are 4-byte, but GCC
+    assumes that the pointer values in the registers are zero-extended. ffi
+    doesn't respect this assumption, causing crashes in the called library.
+    
+    For example, when we compile this function for x32:
+    int fn(int *a)
+    {
+            if (a)
+                    return *a;
+            return -1;
+    }
+    we get this code:
+    fn:
+            testq   %rdi, %rdi
+            je      .L3
+            movl    (%edi), %eax
+            ret
+    .L3:
+            movl    $-1, %eax
+            ret
+    When we call this function using ffi with the argument NULL, the function
+    crashes because top 4 bytes of the RDI register are not cleared.
+    
+    
+    Fixes: d21881f55ed4 ("Fix x86/ffi64 calls with 6 gp and some sse registers (#848)")
+    
+    Signed-off-by: Mikulas Patocka <mikulas@twibright.com>
+
+commit cf69efabcaefcb6803f6cefd970741d10c17cec1
+Author: Nikita Samusev <127026067+Nikitf777@users.noreply.github.com>
+Date:   Sat Mar 8 14:41:02 2025 +0300
+
+    Update the Simple Example to fix a compile error (#886)
+    
+    Fixes the following error:
+    candidate function not viable: no known conversion from 'int (const char *)' to 'void (*)()' for 2nd argument
+
+commit 89c99d738fd564da61b7ec70ab08fede475ba351
+Author: fossdd <fossdd@pwned.life>
+Date:   Fri Feb 28 22:10:10 2025 +0100
+
+    MIPS: Dont import asm/sgidefs.h on linux (#885)
+    
+    Removed from Linux since Linux 3.7
+    
+    Ref: https://web.git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=61730c538f8281efa7ac12596da9f3f9a31b9272
+
+commit 5ceddf4071e8bce3bdb20f8795d57d5ef0bc5503
+Author: Bill Roberts <152999275+billatarm@users.noreply.github.com>
+Date:   Thu Feb 20 04:25:21 2025 -0600
+
+    aarch64: add PAC to GNU Notes (#882)
+    
+    While PAC was enabled, the bit to indicate support in the GNU Notes
+    section of the ELF was missing.
+    
+    Before:
+    readelf -n ./aarch64-unknown-linux-gnu/.libs/libffi.so
+    
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI
+    
+    This was caused by this file not having PAC indicated in GNU Notes and
+    the linker discarding it:
+    File: ./aarch64-unknown-linux-gnu/src/aarch64/sysv.o
+    
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI
+    
+    Now it has it:
+    File: ./aarch64-unknown-linux-gnu/src/aarch64/sysv.o
+    
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI, PAC
+    
+    As well as the output shared object:
+    readelf -n ./aarch64-unknown-linux-gnu/.libs/libffi.so
+    
+    Displaying notes found in: .note.gnu.property
+      Owner                Data size        Description
+      GNU                  0x00000010       NT_GNU_PROPERTY_TYPE_0
+          Properties: AArch64 feature: BTI, PAC
+    
+    Fixes: #881
+    
+    Signed-off-by: Bill Roberts <bill.roberts@arm.com>
+
 commit 1716f81e9a115d340429504563bc8e7fb2eeef2b
 Author: Anthony Green <green@moxielogic.com>
 Date:   Sat Feb 8 11:32:05 2025 -0500

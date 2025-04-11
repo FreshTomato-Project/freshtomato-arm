@@ -250,14 +250,14 @@ Here is a trivial example that calls ‘puts’ a few times.
      		       &ffi_type_sint, args) == FFI_OK)
          {
            s = "Hello World!";
-           ffi_call(&cif, puts, &rc, values);
+           ffi_call(&cif, (void(*)())puts, &rc, values);
            /* rc now holds the result of the call to puts */
 
            /* values holds a pointer to the function's arg, so to
               call puts() again all we need to do is change the
               value of s */
            s = "This is cool!";
-           ffi_call(&cif, puts, &rc, values);
+           ffi_call(&cif, (void(*)())puts, &rc, values);
          }
 
        return 0;
@@ -1036,21 +1036,21 @@ Node: Introduction2909
 Node: Using libffi4569
 Node: The Basics5098
 Node: Simple Example10210
-Node: Types11245
-Node: Primitive Types11756
-Node: Structures14073
-Node: Size and Alignment15184
-Node: Arrays Unions Enums17455
-Node: Type Example20432
-Node: Complex21738
-Node: Complex Type Example23252
-Node: Multiple ABIs26304
-Node: The Closure API26687
-Node: Closure Example30601
-Node: Thread Safety32245
-Node: Memory Usage33078
-Node: Missing Features34353
-Node: Index34730
+Node: Types11267
+Node: Primitive Types11778
+Node: Structures14095
+Node: Size and Alignment15206
+Node: Arrays Unions Enums17477
+Node: Type Example20454
+Node: Complex21760
+Node: Complex Type Example23274
+Node: Multiple ABIs26326
+Node: The Closure API26709
+Node: Closure Example30623
+Node: Thread Safety32267
+Node: Memory Usage33100
+Node: Missing Features34375
+Node: Index34752
 
 End Tag Table
 

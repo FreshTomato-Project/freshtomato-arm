@@ -158,7 +158,7 @@ static void php_dom_iterator_current_key(zend_object_iterator *iter, zval *key) 
 	zval *object = &iterator->intern.data;
 
 	if (instanceof_function(Z_OBJCE_P(object), dom_nodelist_class_entry)) {
-		ZVAL_LONG(key, iter->index);
+		ZVAL_LONG(key, iterator->index);
 	} else {
 		dom_object *intern = Z_DOMOBJ_P(&iterator->curobj);
 
@@ -188,6 +188,8 @@ static void php_dom_iterator_move_forward(zend_object_iterator *iter) /* {{{ */
 	if (Z_ISUNDEF(iterator->curobj)) {
 		return;
 	}
+
+	iterator->index++;
 
 	intern = Z_DOMOBJ_P(&iterator->curobj);
 	object = &iterator->intern.data;
@@ -227,18 +229,18 @@ static void php_dom_iterator_move_forward(zend_object_iterator *iter) /* {{{ */
 							curnode = basenode->children;
 						}
 					} else {
-						previndex = iter->index - 1;
+						previndex = iterator->index - 1;
 						curnode = (xmlNodePtr)((php_libxml_node_ptr *)intern->ptr)->node;
 					}
 					curnode = dom_get_elements_by_tag_name_ns_raw(
-						basenode, curnode, (char *) objmap->ns, (char *) objmap->local, &previndex, iter->index);
+						basenode, curnode, (char *) objmap->ns, (char *) objmap->local, &previndex, iterator->index);
 				}
 			}
 		} else {
 			if (objmap->nodetype == XML_ENTITY_NODE) {
-				curnode = php_dom_libxml_hash_iter(objmap->ht, iter->index);
+				curnode = php_dom_libxml_hash_iter(objmap->ht, iterator->index);
 			} else {
-				curnode = php_dom_libxml_notation_iter(objmap->ht, iter->index);
+				curnode = php_dom_libxml_notation_iter(objmap->ht, iterator->index);
 			}
 		}
 	}
@@ -278,14 +280,12 @@ zend_object_iterator *php_dom_get_iterator(zend_class_entry *ce, zval *object, i
 		zend_throw_error(NULL, "An iterator cannot be used with foreach by reference");
 		return NULL;
 	}
-	iterator = emalloc(sizeof(php_dom_iterator));
+	iterator = emalloc(sizeof(*iterator));
+	memset(iterator, 0, sizeof(*iterator));
 	zend_iterator_init(&iterator->intern);
-	iterator->cache_tag.modification_nr = 0;
 
 	ZVAL_OBJ_COPY(&iterator->intern.data, Z_OBJ_P(object));
 	iterator->intern.funcs = &php_dom_iterator_funcs;
-
-	ZVAL_UNDEF(&iterator->curobj);
 
 	intern = Z_DOMOBJ_P(object);
 	objmap = (dom_nnodemap_object *)intern->ptr;

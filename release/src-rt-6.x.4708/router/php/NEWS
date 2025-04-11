@@ -1,5 +1,64 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+10 Apr 2025, PHP 8.3.20
+
+- Core:
+  . Fixed bug GH-17961 (use-after-free during dl()'ed module class destruction).
+    (Arnaud)
+  . Fixed bug GH-15367 (dl() of module with aliased class crashes in shutdown).
+    (Arnaud)
+  . Fixed bug GH-13193 again (Significant performance degradation in 'foreach').
+    (nielsdos)
+
+- DOM:
+  . Fix weird unpack behaviour in DOM. (nielsdos)
+  . Fix xinclude destruction of live attributes. (nielsdos)
+
+- Embed:
+  . Fixed bug GH-8533 (Unable to link dynamic libphp on Mac). (Kévin Dunglas)
+
+- Fuzzer:
+  . Fixed bug GH-18081 (Memory leaks in error paths of fuzzer SAPI).
+    (Lung-Alexandra)
+
+- GD:
+  . Fixed bug GH-17984 (calls with arguments as array with references).
+    (David Carlier)
+
+- Intl:
+  . Fix locale_compose and locale_lookup to work with their array argument
+    with values as references. (David Carlier)
+  . Fix dateformat_format when the time is an array of references.
+    (David Carlier)
+  . Fix UConverter::transcode with substitutes as references. (David Carlier)
+
+- Mbstring:
+  . Fixed bug GH-17989 (mb_output_handler crash with unset
+    http_output_conv_mimetypes). (nielsdos)
+
+- Opcache:
+  . Fixed bug GH-18112 (NULL access with preloading and INI option). (nielsdos)
+  . Fixed bug GH-18107 (Opcache CFG jmp optimization with try-finally breaks
+    the exception table). (nielsdos)
+
+- PDO:
+  . Fix memory leak when destroying PDORow. (nielsdos)
+
+- SOAP:
+  . Fixed bug #66049 (Typemap can break parsing in parse_packet_soap leading to
+    a segfault) . (Remi)
+
+- SPL:
+  . Fixed bug GH-18018 (RC1 data returned from offsetGet causes UAF in
+    ArrayObject). (nielsdos)
+
+- Treewide:
+  . Fixed bug GH-17736 (Assertion failure zend_reference_destroy()). (nielsdos)
+
+- Windows:
+  . Fixed bug GH-17836 (zend_vm_gen.php shouldn't break on Windows line
+    endings). (DanielEScherzer)
+
 13 Mar 2025, PHP 8.3.19
 
 - BCMath:
@@ -69,6 +128,10 @@ PHP                                                                        NEWS
   . Fixed bug GH-15902 (Core dumped in ext/reflection/php_reflection.c).
     (DanielEScherzer)
 
+- Sockets:
+  . Fixed bug GH-17921 (socket_read/socket_recv overflow on buffer size).
+    (David Carlier)
+
 - Standard:
   . Fixed bug #72666 (stat cache clearing inconsistent between file:// paths
     and plain paths). (Jakub Zelenka)
@@ -76,7 +139,7 @@ PHP                                                                        NEWS
 - Streams:
   . Fixed bug GH-17650 (realloc with size 0 in user_filters.c). (nielsdos)
   . Fix memory leak on overflow in _php_stream_scandir(). (nielsdos)
-  . Fixed GHSA-hgf54-96fm-v528 (Stream HTTP wrapper header check might omit
+  . Fixed GHSA-hgf5-96fm-v528 (Stream HTTP wrapper header check might omit
     basic auth header). (CVE-2025-1736) (Jakub Zelenka)
   . Fixed GHSA-52jp-hrpf-2jff (Stream HTTP wrapper truncate redirect location
     to 1024 bytes). (CVE-2025-1861) (Jakub Zelenka)
@@ -172,7 +235,7 @@ PHP                                                                        NEWS
   . Fixed bug GH-17139 (Fix zip_entry_name() crash on invalid entry).
     (nielsdos)
 
-02 Jan 2025, PHP 8.3.16
+16 Jan 2025, PHP 8.3.16
 
 - Core:
   . Fixed bug GH-17106 (ZEND_MATCH_ERROR misoptimization). (ilutov)
@@ -371,7 +434,7 @@ PHP                                                                        NEWS
 - Windows:
   . Fixed bug GH-16849 (Error dialog causes process to hang). (cmb)
 
-07 Nov 2024, PHP 8.3.14
+21 Nov 2024, PHP 8.3.14
 
 - CLI:
   . Fixed bug GH-16373 (Shebang is not skipped for router script in cli-server
@@ -892,7 +955,7 @@ PHP                                                                        NEWS
   . Fixed bug GH-14834 (Error installing PHP when --with-pear is used).
     (nielsdos)
 
-20 Jun 2024, PHP 8.3.9
+04 Jul 2024, PHP 8.3.9
 
 - Core:
   . Fixed bug GH-14315 (Incompatible pointer type warnings). (Peter Kokot)
@@ -1124,7 +1187,7 @@ PHP                                                                        NEWS
 - Treewide:
   . Fix gcc-14 Wcalloc-transposed-args warnings. (Cristian Rodríguez)
 
-28 Mar 2024, PHP 8.3.5
+11 Apr 2024, PHP 8.3.6
 
 - Core:
   . Fixed GH-13569 (GC buffer unnecessarily grows up to GC_MAX_BUF_SIZE when
@@ -1393,7 +1456,7 @@ PHP                                                                        NEWS
   . Fixed bug GH-12980 (tidynode.props.attribute is missing
     "Boolean Attributes" and empty attributes). (nielsdos)
 
-07 Dec 2023, PHP 8.3.1
+21 Dec 2023, PHP 8.3.1
 
 - Core:
   . Fixed bug GH-12758 / GH-12768 (Invalid opline in OOM handlers within

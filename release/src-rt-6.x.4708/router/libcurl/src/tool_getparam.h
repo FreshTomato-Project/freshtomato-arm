@@ -293,6 +293,7 @@ typedef enum {
   C_IP_TOS,
   C_UNIX_SOCKET,
   C_UPLOAD_FILE,
+  C_UPLOAD_FLAGS,
   C_URL,
   C_URL_QUERY,
   C_USE_ASCII,
@@ -315,6 +316,7 @@ typedef enum {
 #define ARG_TYPEMASK 0x03
 #define ARGTYPE(x) ((x) & ARG_TYPEMASK)
 
+#define ARG_TLS 0x40 /* requires TLS support */
 #define ARG_NO 0x80 /* set if the option is documented as --no-* */
 
 struct LongShort {
@@ -359,8 +361,9 @@ struct OperationConfig;
 const struct LongShort *findlongopt(const char *opt);
 const struct LongShort *findshortopt(char letter);
 
-ParameterError getparameter(const char *flag, char *nextarg,
-                            argv_item_t cleararg,
+ParameterError getparameter(const char *flag, const char *nextarg,
+                            argv_item_t cleararg1,
+                            argv_item_t cleararg2,
                             bool *usedarg,
                             struct GlobalConfig *global,
                             struct OperationConfig *operation);
@@ -373,5 +376,19 @@ void parse_cert_parameter(const char *cert_parameter,
 
 ParameterError parse_args(struct GlobalConfig *config, int argc,
                           argv_item_t argv[]);
+
+#if defined(UNICODE) && defined(_WIN32) && !defined(UNDER_CE)
+
+#define convert_UTF8_to_tchar(ptr) curlx_convert_UTF8_to_wchar((ptr))
+#define convert_tchar_to_UTF8(ptr) curlx_convert_wchar_to_UTF8((ptr))
+#define unicodefree(ptr) curlx_unicodefree(ptr)
+
+#else
+
+#define convert_UTF8_to_tchar(ptr) (const char *)(ptr)
+#define convert_tchar_to_UTF8(ptr) (const char *)(ptr)
+#define unicodefree(ptr) do {} while(0)
+
+#endif
 
 #endif /* HEADER_CURL_TOOL_GETPARAM_H */

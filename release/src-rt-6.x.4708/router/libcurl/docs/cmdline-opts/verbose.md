@@ -20,10 +20,11 @@ Example:
 
 # `--verbose`
 
-Makes curl verbose during the operation. Useful for debugging and seeing
-what's going on under the hood. A line starting with \> means header data sent
-by curl, \< means header data received by curl that is hidden in normal cases,
-and a line starting with * means additional info provided by curl.
+Make curl output verbose information during the operation. Useful for
+debugging and seeing what's going on under the hood. A line starting with \>
+means header data sent by curl, \< means header data received by curl that is
+hidden in normal cases, and a line starting with * means additional info
+provided by curl.
 
 If you only want HTTP headers in the output, --show-headers or --dump-header
 might be more suitable options.
@@ -53,3 +54,8 @@ to trace the specific components you wish to see.
 Note that verbose output of curl activities and network traffic might contain
 sensitive data, including usernames, credentials or secret data content. Be
 aware and be careful when sharing trace logs with others.
+
+When the output contains protocol headers, those lines might include carriage
+return (ASCII code 13) characters, even on platforms that otherwise normally
+only use linefeed to signify line separations - as curl shows the exact
+contents arriving from the server.

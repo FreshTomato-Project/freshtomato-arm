@@ -64,10 +64,10 @@
 
 struct OutStruct {
   char *filename;
-  bool alloc_filename;
-  bool is_cd_filename;
-  bool s_isreg;
-  bool fopened;
+  BIT(alloc_filename);
+  BIT(is_cd_filename);
+  BIT(s_isreg);
+  BIT(fopened);
   FILE *stream;
   curl_off_t bytes;
   curl_off_t init;
@@ -96,6 +96,7 @@ struct getout {
 #define GETOUT_USEREMOTE  (1<<2)  /* use remote filename locally */
 #define GETOUT_UPLOAD     (1<<3)  /* if set, -T has been used */
 #define GETOUT_NOUPLOAD   (1<<4)  /* if set, -T "" has been used */
+#define GETOUT_NOGLOB     (1<<5)  /* disable globbing for this URL */
 
 /*
  * 'trace' enumeration represents curl's output look'n feel possibilities.

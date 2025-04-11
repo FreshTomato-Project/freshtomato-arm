@@ -111,8 +111,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@CROSSCOMPILING_FALSE@@USE_TEST_BUNDLES_TRUE@am__append_1 = -bundle
-@BUILD_DOCS_FALSE@@CROSSCOMPILING_FALSE@am__append_2 = !documentation
+@BUILD_DOCS_FALSE@@CROSSCOMPILING_FALSE@am__append_1 = !documentation
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/curl-amissl.m4 \
@@ -453,7 +452,6 @@ EXTRA_DIST = \
  smbserver.py       \
  sshhelp.pm         \
  sshserver.pl       \
- stunnel.pem        \
  testcurl.pl        \
  testutil.pm        \
  tftpserver.pl      \
@@ -475,7 +473,7 @@ SUBDIRS = certs data server libtest http $(BUILD_UNIT)
 DIST_SUBDIRS = $(SUBDIRS) $(DIST_UNIT)
 PERLFLAGS = -I$(srcdir)
 CLEANFILES = .http.pid .https.pid .ftp.pid .ftps.pid $(MANDISTPAGES)
-TEST_COMMON = $(am__append_1) $(am__append_2)
+TEST_COMMON = $(am__append_1)
 @CROSSCOMPILING_FALSE@TEST = srcdir=$(srcdir) $(PERL) $(PERLFLAGS) $(srcdir)/runtests.pl $(TEST_COMMON)
 @CROSSCOMPILING_TRUE@TEST = @echo "NOTICE: we can't run the tests when cross-compiling!"
 @CROSSCOMPILING_FALSE@PYTEST = pytest
@@ -491,7 +489,7 @@ TEST_COMMON = $(am__append_1) $(am__append_2)
 @CROSSCOMPILING_FALSE@TEST_NF = -a -p ~flaky ~timing-dependent
 
 # special CI target derived from nonflaky with CI-specific flags
-@CROSSCOMPILING_FALSE@TEST_CI = $(TEST_NF) -r -rm -j20
+@CROSSCOMPILING_FALSE@TEST_CI = $(TEST_NF) -r -j20
 CD2NROFF = $(top_srcdir)/scripts/cd2nroff $< >$@
 SUFFIXES = .1 .md
 all: all-recursive
@@ -822,6 +820,9 @@ curl:
 perlcheck:
 	@if ! test -x "$(PERL)"; then echo "No perl!"; exit 2; fi
 
+build-certs:
+	(cd certs && $(MAKE))
+
 test: perlcheck all
 	$(TEST) $(TFLAGS)
 
@@ -857,7 +858,7 @@ checksrc:
 	(cd server && $(MAKE) checksrc)
 	(cd http && $(MAKE) checksrc)
 
-all-local: $(MANFILES)
+all-local: $(MANFILES) build-certs
 
 distclean:
 	rm -f $(MANFILES)

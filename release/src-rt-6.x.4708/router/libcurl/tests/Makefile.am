@@ -87,7 +87,6 @@ EXTRA_DIST =        \
  smbserver.py       \
  sshhelp.pm         \
  sshserver.pl       \
- stunnel.pem        \
  testcurl.pl        \
  testutil.pm        \
  tftpserver.pl      \
@@ -124,9 +123,6 @@ if CROSSCOMPILING
 TEST = @echo "NOTICE: we can't run the tests when cross-compiling!"
 PYTEST = $(TEST)
 else # if not cross-compiling:
-if USE_TEST_BUNDLES
-TEST_COMMON += -bundle
-endif
 
 if BUILD_DOCS
 else
@@ -145,7 +141,7 @@ TEST_E = -a -e
 TEST_NF = -a -p ~flaky ~timing-dependent
 
 # special CI target derived from nonflaky with CI-specific flags
-TEST_CI = $(TEST_NF) -r -rm -j20
+TEST_CI = $(TEST_NF) -r -j20
 
 PYTEST = pytest
 endif
@@ -160,6 +156,9 @@ SUFFIXES = .1 .md
 # make sure that PERL is pointing to an executable
 perlcheck:
 	@if ! test -x "$(PERL)"; then echo "No perl!"; exit 2; fi
+
+build-certs:
+	(cd certs && $(MAKE))
 
 test: perlcheck all
 	$(TEST) $(TFLAGS)
@@ -196,7 +195,7 @@ checksrc:
 	(cd server && $(MAKE) checksrc)
 	(cd http && $(MAKE) checksrc)
 
-all-local: $(MANFILES)
+all-local: $(MANFILES) build-certs
 
 distclean:
 	rm -f $(MANFILES)

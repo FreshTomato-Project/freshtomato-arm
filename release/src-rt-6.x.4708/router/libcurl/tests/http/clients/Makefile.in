@@ -136,6 +136,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @USE_CPPFLAG_CURL_STATICLIB_TRUE@am__append_1 = -DCURL_STATICLIB
+@DOING_NATIVE_WINDOWS_TRUE@am__append_2 = -DWIN32_LEAN_AND_MEAN
 check_PROGRAMS = h2-pausing$(EXEEXT) h2-serverpush$(EXEEXT) \
 	h2-upgrade-extreme$(EXEEXT) hx-download$(EXEEXT) \
 	hx-upload$(EXEEXT) tls-session-reuse$(EXEEXT) \
@@ -463,7 +464,8 @@ EXTRA_DIST = CMakeLists.txt
 
 # Avoid libcurl obsolete stuff
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/lib \
-	-I$(top_srcdir)/lib -DCURL_NO_OLDIES $(am__append_1)
+	-I$(top_srcdir)/lib -DCURL_NO_OLDIES $(am__append_1) \
+	$(am__append_2)
 LIBDIR = $(top_builddir)/lib
 
 # Dependencies

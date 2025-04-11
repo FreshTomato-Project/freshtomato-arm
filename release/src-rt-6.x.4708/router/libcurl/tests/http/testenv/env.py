@@ -24,6 +24,7 @@
 #
 ###########################################################################
 #
+import gzip
 import logging
 import os
 import re
@@ -382,6 +383,18 @@ class Env:
         return Env.CONFIG.curl_is_debug
 
     @staticmethod
+    def curl_can_early_data() -> bool:
+        return Env.curl_uses_lib('gnutls') or \
+            Env.curl_uses_lib('wolfssl') or \
+            Env.curl_uses_lib('quictls') or \
+            Env.curl_uses_lib('openssl')
+
+    @staticmethod
+    def curl_can_h3_early_data() -> bool:
+        return Env.curl_can_early_data() and \
+            Env.curl_uses_lib('ngtcp2')
+
+    @staticmethod
     def have_h3() -> bool:
         return Env.have_h3_curl() and Env.have_h3_server()
 
@@ -617,4 +630,25 @@ class Env:
             if remain != 0:
                 i = int(fsize / line_length) + 1
                 fd.write(f"{i:09d}-{s}"[0:remain-1] + "\n")
+        return fpath
+
+    def make_data_gzipbomb(self, indir: str, fname: str, fsize: int) -> str:
+        fpath = os.path.join(indir, fname)
+        gzpath = f'{fpath}.gz'
+        varpath = f'{fpath}.var'
+
+        with open(fpath, 'w') as fd:
+            fd.write('not what we are looking for!\n')
+        count = int(fsize / 1024)
+        zero1k = bytearray(1024)
+        with gzip.open(gzpath, 'wb') as fd:
+            for _ in range(count):
+                fd.write(zero1k)
+        with open(varpath, 'w') as fd:
+            fd.write(f'URI: {fname}\n')
+            fd.write('\n')
+            fd.write(f'URI: {fname}.gz\n')
+            fd.write('Content-Type: text/plain\n')
+            fd.write('Content-Encoding: x-gzip\n')
+            fd.write('\n')
         return fpath

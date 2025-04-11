@@ -433,6 +433,9 @@
 /* If you have poll */
 #cmakedefine HAVE_POLL 1
 
+/* If you have realpath */
+#cmakedefine HAVE_REALPATH 1
+
 /* Define to 1 if you have the <poll.h> header file. */
 #cmakedefine HAVE_POLL_H 1
 
@@ -465,6 +468,9 @@
 
 /* Define to 1 if you have the sendmmsg function. */
 #cmakedefine HAVE_SENDMMSG 1
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H 1
 
 /* Define to 1 if you have the 'fsetxattr' function. */
 #cmakedefine HAVE_FSETXATTR 1
@@ -543,12 +549,6 @@
 
 /* Define to 1 if you have the <stropts.h> header file. */
 #cmakedefine HAVE_STROPTS_H 1
-
-/* Define to 1 if you have the strtok_r function. */
-#cmakedefine HAVE_STRTOK_R 1
-
-/* Define to 1 if you have the strtoll function. */
-#cmakedefine HAVE_STRTOLL 1
 
 /* Define to 1 if you have the memrchr function. */
 #cmakedefine HAVE_MEMRCHR 1
@@ -793,9 +793,6 @@ ${SIZEOF_TIME_T_CODE}
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #cmakedefine const ${const}
-
-/* Type to use in place of in_addr_t when system does not provide it. */
-#cmakedefine in_addr_t ${in_addr_t}
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #cmakedefine size_t ${size_t}

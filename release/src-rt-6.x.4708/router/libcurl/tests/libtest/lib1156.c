@@ -96,10 +96,10 @@ static int onetest(CURL *curl, const char *url, const struct testparams *p,
   msnprintf(urlbuf, sizeof(urlbuf), "%s%04u", url, replyselector);
   test_setopt(curl, CURLOPT_URL, urlbuf);
   test_setopt(curl, CURLOPT_VERBOSE, 1L);
-  test_setopt(curl, CURLOPT_RESUME_FROM, (p->flags & F_RESUME) ? 3 : 0);
+  test_setopt(curl, CURLOPT_RESUME_FROM, (p->flags & F_RESUME) ? 3L : 0L);
   test_setopt(curl, CURLOPT_RANGE, !(p->flags & F_RESUME) ?
                                    "3-1000000": (char *) NULL);
-  test_setopt(curl, CURLOPT_FAILONERROR, (p->flags & F_FAIL) ? 1 : 0);
+  test_setopt(curl, CURLOPT_FAILONERROR, (p->flags & F_FAIL) ? 1L : 0L);
   hasbody = 0;
   res = curl_easy_perform(curl);
   if(res != p->result) {
@@ -143,7 +143,7 @@ CURLcode test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  for(i = 0; i < sizeof(testparams) / sizeof(testparams[0]); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(testparams); i++) {
     curl = curl_easy_init();
     if(!curl) {
       fprintf(stderr, "curl_easy_init() failed\n");

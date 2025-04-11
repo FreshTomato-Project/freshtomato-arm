@@ -85,13 +85,9 @@
 #include "curl_memory.h"
 #include "memdebug.h"
 
-#ifndef ARRAYSIZE
-#define ARRAYSIZE(A) (sizeof(A)/sizeof((A)[0]))
-#endif
-
 #if !defined(CURL_DISABLE_ALTSVC) || defined(USE_HTTPSRR)
 
-enum alpnid Curl_alpn2alpnid(char *name, size_t len)
+enum alpnid Curl_alpn2alpnid(const char *name, size_t len)
 {
   if(len == 2) {
     if(strncasecompare(name, "h1", 2))
@@ -165,7 +161,7 @@ timediff_t Curl_timeleft(struct Curl_easy *data,
 }
 
 void Curl_shutdown_start(struct Curl_easy *data, int sockindex,
-                         struct curltime *nowp)
+                         int timeout_ms, struct curltime *nowp)
 {
   struct curltime now;
 
@@ -175,8 +171,13 @@ void Curl_shutdown_start(struct Curl_easy *data, int sockindex,
     nowp = &now;
   }
   data->conn->shutdown.start[sockindex] = *nowp;
-  data->conn->shutdown.timeout_ms = (data->set.shutdowntimeout > 0) ?
-    data->set.shutdowntimeout : DEFAULT_SHUTDOWN_TIMEOUT_MS;
+  data->conn->shutdown.timeout_ms = (timeout_ms >= 0) ?
+    (unsigned int)timeout_ms :
+    ((data->set.shutdowntimeout > 0) ?
+     data->set.shutdowntimeout : DEFAULT_SHUTDOWN_TIMEOUT_MS);
+  if(data->conn->shutdown.timeout_ms)
+    Curl_expire_ex(data, nowp, data->conn->shutdown.timeout_ms,
+                   EXPIRE_SHUTDOWN);
 }
 
 timediff_t Curl_shutdown_timeleft(struct connectdata *conn, int sockindex,
@@ -253,7 +254,7 @@ addr_next_match(const struct Curl_addrinfo *addr, int family)
 }
 
 /* retrieves ip address and port from a sockaddr structure.
-   note it calls Curl_inet_ntop which sets errno on fail, not SOCKERRNO. */
+   note it calls curlx_inet_ntop which sets errno on fail, not SOCKERRNO. */
 bool Curl_addr2string(struct sockaddr *sa, curl_socklen_t salen,
                       char *addr, int *port)
 {
@@ -270,8 +271,8 @@ bool Curl_addr2string(struct sockaddr *sa, curl_socklen_t salen,
   switch(sa->sa_family) {
     case AF_INET:
       si = (struct sockaddr_in *)(void *) sa;
-      if(Curl_inet_ntop(sa->sa_family, &si->sin_addr,
-                        addr, MAX_IPADR_LEN)) {
+      if(curlx_inet_ntop(sa->sa_family, &si->sin_addr,
+                         addr, MAX_IPADR_LEN)) {
         unsigned short us_port = ntohs(si->sin_port);
         *port = us_port;
         return TRUE;
@@ -280,8 +281,8 @@ bool Curl_addr2string(struct sockaddr *sa, curl_socklen_t salen,
 #ifdef USE_IPV6
     case AF_INET6:
       si6 = (struct sockaddr_in6 *)(void *) sa;
-      if(Curl_inet_ntop(sa->sa_family, &si6->sin6_addr,
-                        addr, MAX_IPADR_LEN)) {
+      if(curlx_inet_ntop(sa->sa_family, &si6->sin6_addr,
+                         addr, MAX_IPADR_LEN)) {
         unsigned short us_port = ntohs(si6->sin6_port);
         *port = us_port;
         return TRUE;
@@ -305,7 +306,7 @@ bool Curl_addr2string(struct sockaddr *sa, curl_socklen_t salen,
 
   addr[0] = '\0';
   *port = 0;
-  errno = EAFNOSUPPORT;
+  CURL_SETERRNO(SOCKEAFNOSUPPORT);
   return FALSE;
 }
 
@@ -597,7 +598,7 @@ static CURLcode baller_connect(struct Curl_cfilter *cf,
   *connected = baller->connected;
   if(!baller->result &&  !*connected) {
     /* evaluate again */
-    baller->result = Curl_conn_cf_connect(baller->cf, data, 0, connected);
+    baller->result = Curl_conn_cf_connect(baller->cf, data, connected);
 
     if(!baller->result) {
       if(*connected) {
@@ -607,8 +608,8 @@ static CURLcode baller_connect(struct Curl_cfilter *cf,
       else if(Curl_timediff(*now, baller->started) >= baller->timeoutms) {
         infof(data, "%s connect timeout after %" FMT_TIMEDIFF_T
               "ms, move on!", baller->name, baller->timeoutms);
-#if defined(ETIMEDOUT)
-        baller->error = ETIMEDOUT;
+#ifdef SOCKETIMEDOUT
+        baller->error = SOCKETIMEDOUT;
 #endif
         baller->result = CURLE_OPERATION_TIMEDOUT;
       }
@@ -644,7 +645,7 @@ evaluate:
   *connected = FALSE; /* a negative world view is best */
   now = Curl_now();
   ongoing = not_started = 0;
-  for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
     struct eyeballer *baller = ctx->baller[i];
 
     if(!baller || baller->is_done)
@@ -705,7 +706,7 @@ evaluate:
   if(not_started > 0) {
     int added = 0;
 
-    for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+    for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
       struct eyeballer *baller = ctx->baller[i];
 
       if(!baller || baller->has_started)
@@ -739,7 +740,7 @@ evaluate:
   /* all ballers have failed to connect. */
   CURL_TRC_CF(data, cf, "all eyeballers failed");
   result = CURLE_COULDNT_CONNECT;
-  for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
     struct eyeballer *baller = ctx->baller[i];
     if(!baller)
       continue;
@@ -769,11 +770,8 @@ evaluate:
         Curl_timediff(now, data->progress.t_startsingle),
         curl_easy_strerror(result));
 
-#ifdef WSAETIMEDOUT
-  if(WSAETIMEDOUT == data->state.os_errno)
-    result = CURLE_OPERATION_TIMEDOUT;
-#elif defined(ETIMEDOUT)
-  if(ETIMEDOUT == data->state.os_errno)
+#ifdef SOCKETIMEDOUT
+  if(SOCKETIMEDOUT == data->state.os_errno)
     result = CURLE_OPERATION_TIMEDOUT;
 #endif
 
@@ -884,7 +882,7 @@ static void cf_he_ctx_clear(struct Curl_cfilter *cf, struct Curl_easy *data)
 
   DEBUGASSERT(ctx);
   DEBUGASSERT(data);
-  for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
     baller_free(ctx->baller[i], data);
     ctx->baller[i] = NULL;
   }
@@ -907,7 +905,7 @@ static CURLcode cf_he_shutdown(struct Curl_cfilter *cf,
 
   /* shutdown all ballers that have not done so already. If one fails,
    * continue shutting down others until all are shutdown. */
-  for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
     struct eyeballer *baller = ctx->baller[i];
     bool bdone = FALSE;
     if(!baller || !baller->cf || baller->shutdown)
@@ -918,12 +916,12 @@ static CURLcode cf_he_shutdown(struct Curl_cfilter *cf,
   }
 
   *done = TRUE;
-  for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
     if(ctx->baller[i] && !ctx->baller[i]->shutdown)
       *done = FALSE;
   }
   if(*done) {
-    for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+    for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
       if(ctx->baller[i] && ctx->baller[i]->result)
         result = ctx->baller[i]->result;
     }
@@ -940,7 +938,7 @@ static void cf_he_adjust_pollset(struct Curl_cfilter *cf,
   size_t i;
 
   if(!cf->connected) {
-    for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+    for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
       struct eyeballer *baller = ctx->baller[i];
       if(!baller || !baller->cf)
         continue;
@@ -952,7 +950,7 @@ static void cf_he_adjust_pollset(struct Curl_cfilter *cf,
 
 static CURLcode cf_he_connect(struct Curl_cfilter *cf,
                               struct Curl_easy *data,
-                              bool blocking, bool *done)
+                              bool *done)
 {
   struct cf_he_ctx *ctx = cf->ctx;
   CURLcode result = CURLE_OK;
@@ -962,7 +960,6 @@ static CURLcode cf_he_connect(struct Curl_cfilter *cf,
     return CURLE_OK;
   }
 
-  (void)blocking; /* TODO: do we want to support this? */
   DEBUGASSERT(ctx);
   *done = FALSE;
 
@@ -1037,7 +1034,7 @@ static bool cf_he_data_pending(struct Curl_cfilter *cf,
   if(cf->connected)
     return cf->next->cft->has_data_pending(cf->next, data);
 
-  for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
     struct eyeballer *baller = ctx->baller[i];
     if(!baller || !baller->cf)
       continue;
@@ -1056,7 +1053,7 @@ static struct curltime get_max_baller_time(struct Curl_cfilter *cf,
   size_t i;
 
   memset(&tmax, 0, sizeof(tmax));
-  for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
     struct eyeballer *baller = ctx->baller[i];
 
     memset(&t, 0, sizeof(t));
@@ -1081,7 +1078,7 @@ static CURLcode cf_he_query(struct Curl_cfilter *cf,
       int reply_ms = -1;
       size_t i;
 
-      for(i = 0; i < ARRAYSIZE(ctx->baller); i++) {
+      for(i = 0; i < CURL_ARRAYSIZE(ctx->baller); i++) {
         struct eyeballer *baller = ctx->baller[i];
         int breply_ms;
 
@@ -1215,7 +1212,7 @@ struct transport_provider transport_providers[] = {
 static cf_ip_connect_create *get_cf_create(int transport)
 {
   size_t i;
-  for(i = 0; i < ARRAYSIZE(transport_providers); ++i) {
+  for(i = 0; i < CURL_ARRAYSIZE(transport_providers); ++i) {
     if(transport == transport_providers[i].transport)
       return transport_providers[i].cf_create;
   }
@@ -1267,7 +1264,7 @@ struct cf_setup_ctx {
 
 static CURLcode cf_setup_connect(struct Curl_cfilter *cf,
                                  struct Curl_easy *data,
-                                 bool blocking, bool *done)
+                                 bool *done)
 {
   struct cf_setup_ctx *ctx = cf->ctx;
   CURLcode result = CURLE_OK;
@@ -1280,7 +1277,7 @@ static CURLcode cf_setup_connect(struct Curl_cfilter *cf,
   /* connect current sub-chain */
 connect_sub_chain:
   if(cf->next && !cf->next->connected) {
-    result = Curl_conn_cf_connect(cf->next, data, blocking, done);
+    result = Curl_conn_cf_connect(cf->next, data, done);
     if(result || !*done)
       return result;
   }
@@ -1469,7 +1466,7 @@ void Curl_debug_set_transport_provider(int transport,
                                        cf_ip_connect_create *cf_create)
 {
   size_t i;
-  for(i = 0; i < ARRAYSIZE(transport_providers); ++i) {
+  for(i = 0; i < CURL_ARRAYSIZE(transport_providers); ++i) {
     if(transport == transport_providers[i].transport) {
       transport_providers[i].cf_create = cf_create;
       return;

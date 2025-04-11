@@ -97,6 +97,7 @@ my %warnings = (
     'EMPTYLINEBRACE'        => 'Empty line before the open brace',
     'EQUALSNOSPACE'         => 'equals sign without following space',
     'EQUALSNULL'            => 'if/while comparison with == NULL',
+    'ERRNOVAR'              => 'use of bare errno define',
     'EXCLAMATIONSPACE'      => 'Whitespace after exclamation mark in expression',
     'FOPENMODE'             => 'fopen needs a macro for the mode string',
     'INCLUDEDUP',           => 'same file is included again',
@@ -524,6 +525,12 @@ sub scanfile {
             checkwarn("COMMENTNOSPACEEND",
                       $line, length($1) + 1, $file, $l,
                       "Missing space end comment end");
+        }
+
+        if($l =~ /(.*)(FIXME|TODO)/) {
+            checkwarn("FIXME",
+                      $line, length($1), $file, $l,
+                      "Avoid $2 comments. Add to documentation instead");
         }
         # ------------------------------------------------------------
         # Above this marker, the checks were done on lines *including*
@@ -1014,6 +1021,12 @@ sub scanfile {
             checkwarn("EXCLAMATIONSPACE",
                       $line, length($1)+1, $file, $ol,
                       "space after exclamation mark");
+        }
+
+        if($nostr =~ /(.*)\b(EACCES|EADDRINUSE|EADDRNOTAVAIL|EAFNOSUPPORT|EBADF|ECONNREFUSED|ECONNRESET|EINPROGRESS|EINTR|EINVAL|EISCONN|EMSGSIZE|ENOMEM|ETIMEDOUT|EWOULDBLOCK)\b/) {
+            checkwarn("ERRNOVAR",
+                      $line, length($1), $file, $ol,
+                      "use of bare errno define $2, use SOCK$2");
         }
 
         # check for more than one consecutive space before open brace or

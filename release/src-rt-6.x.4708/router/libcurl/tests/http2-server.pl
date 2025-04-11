@@ -37,7 +37,7 @@ my $listenport = 9015;
 my $listenport2 = 9016;
 my $connect = "127.0.0.1,8990";
 my $conf = "nghttpx.conf";
-my $cert = "Server-localhost-sv";
+my $cert = "test-localhost";
 my $dev_null = ($^O eq 'MSWin32' ? 'NUL' : '/dev/null');
 
 #***************************************************************************
@@ -102,11 +102,8 @@ while(@ARGV) {
     shift @ARGV;
 }
 
-my $srcdir = dirname(__FILE__);
-$certfile = "$srcdir/certs/$cert.pem";
-$keyfile = "$srcdir/certs/$cert.key";
-$certfile = abs_path($certfile);
-$keyfile = abs_path($keyfile);
+$certfile = abs_path("certs/$cert.pem");
+$keyfile = abs_path("certs/$cert.key");
 
 my $cmdline="$nghttpx --backend=$connect ".
     "--backend-keep-alive-timeout=500ms ".

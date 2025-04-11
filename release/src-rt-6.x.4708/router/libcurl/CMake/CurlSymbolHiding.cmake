@@ -29,7 +29,7 @@ if(WIN32 AND (ENABLE_DEBUG OR ENABLE_CURLDEBUG))
   # e.g. curl_easy_perform_ev() or curl_dbg_*(),
   # so disable symbol hiding for debug builds and for memory tracking.
   set(CURL_HIDDEN_SYMBOLS OFF)
-elseif(DOS OR AMIGA)
+elseif(DOS OR AMIGA OR MINGW32CE)
   set(CURL_HIDDEN_SYMBOLS OFF)
 endif()
 
@@ -42,7 +42,7 @@ if(CURL_HIDDEN_SYMBOLS)
     set(CURL_HIDES_PRIVATE_SYMBOLS TRUE)
     set(CURL_EXTERN_SYMBOL "__attribute__((__visibility__(\"default\")))")
     set(CURL_CFLAG_SYMBOLS_HIDE "-fvisibility=hidden")
-  elseif(CMAKE_COMPILER_IS_GNUCC)
+  elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     if(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 3.4)
       # Note: This is considered buggy prior to 4.0 but the autotools do not care, so let us ignore that fact
       set(CURL_HIDES_PRIVATE_SYMBOLS TRUE)

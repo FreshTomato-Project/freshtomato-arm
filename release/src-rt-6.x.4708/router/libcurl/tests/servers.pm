@@ -54,7 +54,6 @@ BEGIN {
         # functions
         qw(
             checkcmd
-            clearlocks
             serverfortest
             stopserver
             stopservers
@@ -77,6 +76,7 @@ use serverhelp qw(
     server_pidfilename
     server_portfilename
     server_logfilename
+    server_exe
     );
 
 use sshhelp qw(
@@ -112,6 +112,8 @@ use testutil qw(
     logmsg
     runclient
     runclientoutput
+    exerunner
+    shell_quote
     );
 
 
@@ -130,9 +132,6 @@ my $CLIENTIP="127.0.0.1";  # address which curl uses for incoming connections
 my $CLIENT6IP="[::1]";     # address which curl uses for incoming connections
 my $posix_pwd = build_sys_abs_path($pwd);  # current working directory in POSIX format
 my $h2cver = "h2c"; # this version is decided by the nghttp2 lib being used
-my $portrange = 999;       # space from which to choose a random port
-                           # don't increase without making sure generated port
-                           # numbers will always be valid (<=65535)
 my $HOSTIP="127.0.0.1";    # address on which the test server listens
 my $HOST6IP="[::1]";       # address on which the test server listens
 my $HTTPUNIXPATH;          # HTTP server Unix domain socket path
@@ -262,54 +261,6 @@ sub init_serverpidfile_hash {
   }
 }
 
-
-#######################################################################
-# Kill the processes that still have lock files in a directory
-#
-sub clearlocks {
-    my $dir = $_[0];
-    my $done = 0;
-
-    if(os_is_win()) {
-        $dir = sys_native_abs_path($dir);
-        # Must use backslashes for handle64 to find a match
-        if ($^O eq 'MSWin32') {
-            $dir =~ s/\//\\/g;
-        }
-        else {
-            $dir =~ s/\//\\\\/g;
-        }
-        my $handle = "handle";
-        if($ENV{"PROCESSOR_ARCHITECTURE"} =~ /64$/) {
-            $handle = "handle64";
-        }
-        if(checkcmd($handle)) {
-            # https://learn.microsoft.com/sysinternals/downloads/handle#usage
-            my $cmd = "$handle $dir -accepteula -nobanner";
-            logmsg "clearlocks: Executing query: '$cmd'\n";
-            my @handles = `$cmd`;
-            for my $tryhandle (@handles) {
-                # Skip the "No matching handles found." warning when returned
-                if($tryhandle =~ /^(\S+)\s+pid:\s+(\d+)\s+type:\s+(\w+)\s+([0-9A-F]+):\s+(.+)\r\r/) {
-                    logmsg "clearlocks: Found $3 lock of '$5' ($4) by $1 ($2)\n";
-                    # Ignore stunnel since we cannot do anything about its locks
-                    if("$3" eq "File" && "$1" ne "tstunnel.exe") {
-                        logmsg "clearlocks: Killing IMAGENAME eq $1 and PID eq $2\n";
-                        # https://ss64.com/nt/taskkill.html
-                        my $cmd = "taskkill.exe -f -t -fi \"IMAGENAME eq $1\" -fi \"PID eq $2\" >nul 2>&1";
-                        logmsg "clearlocks: Executing kill: '$cmd'\n";
-                        system($cmd);
-                        $done = 1;
-                    }
-                }
-            }
-        }
-        else {
-            logmsg "Warning: 'handle' tool not found.\n";
-        }
-    }
-    return $done;
-}
 
 #######################################################################
 # Check if a given child process has just died. Reaps it if so.
@@ -592,7 +543,7 @@ sub verifyhttp {
     $flags .= "--http3-only " if($do_http3);
     $flags .= "\"$proto://$ip:$port/${bonus}verifiedserver\"";
 
-    my $cmd = "$VCURL $flags 2>$verifylog";
+    my $cmd = exerunner() . "$VCURL $flags 2>$verifylog";
 
     # verify if our/any server is running on this port
     logmsg "RUN: $cmd\n" if($verbose);
@@ -669,7 +620,7 @@ sub verifyftp {
     }
     $flags .= "\"$proto://$ip:$port/verifiedserver\"";
 
-    my $cmd = "$VCURL $flags 2>$verifylog";
+    my $cmd = exerunner() . "$VCURL $flags 2>$verifylog";
 
     # check if this is our server running on this port:
     logmsg "RUN: $cmd\n" if($verbose);
@@ -735,7 +686,7 @@ sub verifyrtsp {
     # currently verification is done using http
     $flags .= "\"http://$ip:$port/verifiedserver\"";
 
-    my $cmd = "$VCURL $flags 2>$verifylog";
+    my $cmd = exerunner() . "$VCURL $flags 2>$verifylog";
 
     # verify if our/any server is running on this port
     logmsg "RUN: $cmd\n" if($verbose);
@@ -868,7 +819,7 @@ sub verifyhttptls {
     }
     $flags .= "\"https://$ip:$port/verifiedserver\"";
 
-    my $cmd = "$VCURL $flags 2>$verifylog";
+    my $cmd = exerunner() . "$VCURL $flags 2>$verifylog";
 
     # verify if our/any server is running on this port
     logmsg "RUN: $cmd\n" if($verbose);
@@ -969,7 +920,7 @@ sub verifysmb {
     $flags .= $extra;
     $flags .= "\"$proto://$ip:$port/SERVER/verifiedserver\"";
 
-    my $cmd = "$VCURL $flags 2>$verifylog";
+    my $cmd = exerunner() . "$VCURL $flags 2>$verifylog";
 
     # check if this is our server running on this port:
     logmsg "RUN: $cmd\n" if($verbose);
@@ -1029,7 +980,8 @@ sub verifytelnet {
     $flags .= $extra;
     $flags .= "\"$proto://$ip:$port\"";
 
-    my $cmd = "echo 'verifiedserver' | $VCURL $flags 2>$verifylog";
+    my $cmd = "echo 'verifiedserver' | " .
+        exerunner() . "$VCURL $flags 2>$verifylog";
 
     # check if this is our server running on this port:
     logmsg "RUN: $cmd\n" if($verbose);
@@ -1153,7 +1105,7 @@ sub runhttpserver {
     my $ip = $HOSTIP;
     my $ipvnum = 4;
     my $idnum = 1;
-    my $exe = "$perl $srcdir/http-server.pl";
+    my $exe = "$perl " . shell_quote("$srcdir/http-server.pl");
     my $verbose_flag = "--verbose ";
     my $keepalive_secs = 30; # forwarded to sws, was 5 by default which
                              # led to pukes in CI jobs
@@ -1253,7 +1205,7 @@ sub runhttp2server {
     my $proto="http/2";
     my $ipvnum = 4;
     my $idnum = 0;
-    my $exe = "$perl $srcdir/http2-server.pl";
+    my $exe = "$perl " . shell_quote("$srcdir/http2-server.pl");
     my $verbose_flag = "--verbose ";
 
     my $server = servername_id($proto, $ipvnum, $idnum);
@@ -1314,7 +1266,7 @@ sub runhttp3server {
     my $proto="http/3";
     my $ipvnum = 4;
     my $idnum = 0;
-    my $exe = "$perl $srcdir/http3-server.pl";
+    my $exe = "$perl " . shell_quote("$srcdir/http3-server.pl");
     my $verbose_flag = "--verbose ";
 
     my $server = servername_id($proto, $ipvnum, $idnum);
@@ -1399,7 +1351,7 @@ sub runhttpsserver {
     unlink($pidfile) if(-f $pidfile);
 
     my $srvrname = servername_str($proto, $ipvnum, $idnum);
-    $certfile = 'stunnel.pem' unless($certfile);
+    $certfile = 'certs/test-localhost.pem' unless($certfile);
     my $logfile = server_logfilename($LOGDIR, $proto, $ipvnum, $idnum);
 
     my $flags = "";
@@ -1408,7 +1360,7 @@ sub runhttpsserver {
     $flags .= "--logdir \"$LOGDIR\" ";
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--ipv$ipvnum --proto $proto ";
-    $flags .= "--certfile \"$certfile\" " if($certfile ne 'stunnel.pem');
+    $flags .= "--certfile \"$certfile\" " if($certfile ne 'certs/test-localhost.pem');
     $flags .= "--stunnel \"$stunnel\" --srcdir \"$srcdir\" ";
     if($proto eq "gophers") {
         $flags .= "--connect " . protoport("gopher");
@@ -1423,7 +1375,7 @@ sub runhttpsserver {
 
     my $port = getfreeport($ipvnum);
     my $options = "$flags --accept $port";
-    my $cmd = "$perl $srcdir/secureserver.pl $options";
+    my $cmd = "$perl " . shell_quote("$srcdir/secureserver.pl") . " " . $options;
     my ($httpspid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
     if($httpspid <= 0 || !pidexists($httpspid)) {
@@ -1551,7 +1503,7 @@ sub runpingpongserver {
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--ipv$ipvnum --port 0 --addr \"$ip\"";
 
-    my $cmd = "$perl $srcdir/ftpserver.pl $flags";
+    my $cmd = "$perl " . shell_quote("$srcdir/ftpserver.pl") . " " . $flags;
     my ($ftppid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
     if($ftppid <= 0 || !pidexists($ftppid)) {
@@ -1615,7 +1567,7 @@ sub runsecureserver {
     unlink($pidfile) if(-f $pidfile);
 
     my $srvrname = servername_str($proto, $ipvnum, $idnum);
-    $certfile = 'stunnel.pem' unless($certfile);
+    $certfile = 'certs/test-localhost.pem' unless($certfile);
     my $logfile = server_logfilename($LOGDIR, $proto, $ipvnum, $idnum);
 
     my $flags = "";
@@ -1624,14 +1576,14 @@ sub runsecureserver {
     $flags .= "--logdir \"$LOGDIR\" ";
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--ipv$ipvnum --proto $proto ";
-    $flags .= "--certfile \"$certfile\" " if($certfile ne 'stunnel.pem');
+    $flags .= "--certfile \"$certfile\" " if($certfile ne 'certs/test-localhost.pem');
     $flags .= "--stunnel \"$stunnel\" --srcdir \"$srcdir\" ";
     $flags .= "--connect $clearport";
 
     my $port = getfreeport($ipvnum);
     my $options = "$flags --accept $port";
 
-    my $cmd = "$perl $srcdir/secureserver.pl $options";
+    my $cmd = "$perl " . shell_quote("$srcdir/secureserver.pl") . " " . $options;
     my ($protospid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
     if($protospid <= 0 || !pidexists($protospid)) {
@@ -1698,7 +1650,7 @@ sub runtftpserver {
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--ipv$ipvnum --port 0 --srcdir \"$srcdir\"";
 
-    my $cmd = "$perl $srcdir/tftpserver.pl $flags";
+    my $cmd = "$perl " . shell_quote("$srcdir/tftpserver.pl") . " " . $flags;
     my ($tftppid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
     if($tftppid <= 0 || !pidexists($tftppid)) {
@@ -1774,7 +1726,7 @@ sub runrtspserver {
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--ipv$ipvnum --port 0 --srcdir \"$srcdir\"";
 
-    my $cmd = "$perl $srcdir/rtspserver.pl $flags";
+    my $cmd = "$perl " . shell_quote("$srcdir/rtspserver.pl") . " " . $flags;
     my ($rtsppid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
     if($rtsppid <= 0 || !pidexists($rtsppid)) {
@@ -1861,7 +1813,7 @@ sub runsshserver {
 
     my $options = "$flags --sshport $port";
 
-    my $cmd = "$perl $srcdir/sshserver.pl $options";
+    my $cmd = "$perl " . shell_quote("$srcdir/sshserver.pl") . " " . $options;
     my ($sshpid, $pid2) = startnew($cmd, $pidfile, 60, 0);
 
     # on loaded systems sshserver start up can take longer than the
@@ -1958,8 +1910,8 @@ sub runmqttserver {
     my $logfile = server_logfilename($LOGDIR, $proto, $ipvnum, $idnum);
 
     # start our MQTT server - on a random port!
-    my $cmd="server/mqttd".exe_ext('SRV').
-        " --port 0 ".
+    my $cmd=server_exe('mqttd').
+        " --port 0".
         " --pidfile $pidfile".
         " --portfile $portfile".
         " --config $LOGDIR/$SERVERCMD".
@@ -2016,7 +1968,7 @@ sub runsocksserver {
     # start our socks server, get commands from the FTP cmd file
     my $cmd="";
     if($is_unix) {
-        $cmd="server/socksd".exe_ext('SRV').
+        $cmd=server_exe('socksd').
             " --pidfile $pidfile".
             " --reqfile $LOGDIR/$SOCKSIN".
             " --logfile $logfile".
@@ -2024,8 +1976,8 @@ sub runsocksserver {
             " --backend $HOSTIP".
             " --config $LOGDIR/$SERVERCMD";
     } else {
-        $cmd="server/socksd".exe_ext('SRV').
-            " --port 0 ".
+        $cmd=server_exe('socksd').
+            " --port 0".
             " --pidfile $pidfile".
             " --portfile $portfile".
             " --reqfile $LOGDIR/$SOCKSIN".
@@ -2385,7 +2337,7 @@ sub startservers {
 
         my $certfile;
         if($what =~ /^(ftp|gopher|http|imap|pop3|smtp)s((\d*)(-ipv6|-unix|))$/) {
-            $certfile = ($whatlist[1]) ? $whatlist[1] : 'stunnel.pem';
+            $certfile = ($whatlist[1]) ? $whatlist[1] : 'certs/test-localhost.pem';
         }
 
         if(($what eq "pop3") ||
@@ -3113,6 +3065,8 @@ sub subvariables {
     $$thing =~ s/${prefix}VERNUM/$CURLVERNUM/g;
     $$thing =~ s/${prefix}DATE/$DATE/g;
     $$thing =~ s/${prefix}TESTNUMBER/$testnum/g;
+    my $resolve = server_exe('resolve', 'TOOL');
+    $$thing =~ s/${prefix}RESOLVE/$resolve/g;
 
     # POSIX/MSYS/Cygwin curl needs: file://localhost/d/path/to
     # Windows native    curl needs: file://localhost/D:/path/to
@@ -3131,6 +3085,7 @@ sub subvariables {
     $$thing =~ s/${prefix}FILE_PWD/$file_pwd/g;
     $$thing =~ s/${prefix}SSH_PWD/$ssh_pwd/g;
     $$thing =~ s/${prefix}SRCDIR/$srcdir/g;
+    $$thing =~ s/${prefix}CERTDIR/./g;
     $$thing =~ s/${prefix}USER/$USER/g;
     $$thing =~ s/${prefix}DEV_NULL/$dev_null/g;
 

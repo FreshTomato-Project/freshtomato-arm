@@ -114,6 +114,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@DEBUGBUILD_TRUE@am__append_1 = -DDEBUGBUILD
+@CURLDEBUG_TRUE@am__append_2 = -DCURLDEBUG
 @BUILD_UNITTESTS_TRUE@@USE_TEST_BUNDLES_FALSE@noinst_PROGRAMS =  \
 @BUILD_UNITTESTS_TRUE@@USE_TEST_BUNDLES_FALSE@	$(am__EXEEXT_1)
 @BUILD_UNITTESTS_TRUE@@USE_TEST_BUNDLES_TRUE@noinst_PROGRAMS =  \
@@ -977,7 +979,7 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/lib \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/src \
 	-I$(top_srcdir)/tests/libtest -I$(top_srcdir)/tests/unit \
-	-DCURL_STATICLIB -DUNITTESTS
+	-DCURL_STATICLIB -DUNITTESTS $(am__append_1) $(am__append_2)
 EXTRA_DIST = CMakeLists.txt README.md
 LDADD = $(top_builddir)/src/libcurltool.la   \
         $(top_builddir)/lib/libcurlu.la      \
@@ -1748,7 +1750,7 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
-@BUILD_UNITTESTS_TRUE@@USE_TEST_BUNDLES_TRUE@unit_bundle.c: $(top_srcdir)/tests/mk-bundle.pl
+@BUILD_UNITTESTS_TRUE@@USE_TEST_BUNDLES_TRUE@unit_bundle.c: $(top_srcdir)/tests/mk-bundle.pl Makefile.inc
 @BUILD_UNITTESTS_TRUE@@USE_TEST_BUNDLES_TRUE@	@PERL@ $(top_srcdir)/tests/mk-bundle.pl $(srcdir) > unit_bundle.c
 
 # ignore generated C files since they play by slightly different rules!

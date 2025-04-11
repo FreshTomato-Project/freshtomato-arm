@@ -128,6 +128,9 @@ Introduced in 7.8. See curl_global_init(3).
 ## CURL_GLOBAL_WIN32
 Introduced in 7.8.1. See curl_global_init(3).
 
+## CURL_HAS_DECLSPEC_ATTRIBUTE
+Introduced in 8.13.0.
+
 ## CURL_HET_DEFAULT
 Introduced in 7.59.0. See CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS(3).
 
@@ -1001,6 +1004,9 @@ Introduced in 7.16.3. See libcurl-errors(3).
 ## CURLE_URL_MALFORMAT
 Introduced in 7.1. See libcurl-errors(3).
 
+## CURLE_ECH_REQUIRED
+Introduced in 8.8.0. See libcurl-errors(3).
+
 ## CURLE_URL_MALFORMAT_USER
 Introduced in 7.1. Deprecated since 7.17.0.
 
@@ -1012,9 +1018,6 @@ Introduced in 7.51.0. See libcurl-errors(3).
 
 ## CURLE_WRITE_ERROR
 Introduced in 7.1. See libcurl-errors(3).
-
-## CURLE_ECH_REQUIRED
-Introduced in 8.8.0. See libcurl-errors(3).
 
 ## CURLFILETYPE_DEVICE_BLOCK
 Introduced in 7.21.0. See CURLOPT_CHUNK_BGN_FUNCTION(3).
@@ -1066,6 +1069,15 @@ Introduced in 7.21.0. See CURLOPT_CHUNK_BGN_FUNCTION(3).
 
 ## CURLFINFOFLAG_KNOWN_UID
 Introduced in 7.21.0. See CURLOPT_CHUNK_BGN_FUNCTION(3).
+
+## CURLFOLLOW_ALL
+Introduced in 8.13.0.
+
+## CURLFOLLOW_OBEYCODE
+Introduced in 8.13.0.
+
+## CURLFOLLOW_FIRSTONLY
+Introduced in 8.13.0.
 
 ## CURLFORM_ARRAY
 Introduced in 7.9.1. Deprecated since 7.56.0.
@@ -2666,6 +2678,9 @@ Introduced in 7.1. See CURLOPT_UPLOAD(3).
 ## CURLOPT_UPLOAD_BUFFERSIZE
 Introduced in 7.62.0. See CURLOPT_UPLOAD_BUFFERSIZE(3).
 
+## CURLOPT_UPLOAD_FLAGS
+Introduced in 8.13.0. See CURLOPT_UPLOAD_FLAGS(3).
+
 ## CURLOPT_URL
 Introduced in 7.1. See CURLOPT_URL(3).
 
@@ -3364,6 +3379,21 @@ Introduced in 7.62.0. See curl_url_get(3).
 
 ## CURLUPART_ZONEID
 Introduced in 7.65.0. See curl_url_get(3).
+
+## CURLULFLAG_ANSWERED
+Introduced in 8.13.0.
+
+## CURLULFLAG_DELETED
+Introduced in 8.13.0.
+
+## CURLULFLAG_DRAFT
+Introduced in 8.13.0.
+
+## CURLULFLAG_FLAGGED
+Introduced in 8.13.0.
+
+## CURLULFLAG_SEEN
+Introduced in 8.13.0.
 
 ## CURLUSESSL_ALL
 Introduced in 7.17.0. See CURLOPT_USE_SSL(3).

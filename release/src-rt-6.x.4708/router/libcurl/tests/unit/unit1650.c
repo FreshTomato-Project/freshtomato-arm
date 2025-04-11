@@ -160,7 +160,7 @@ UNITTEST_START
   size_t i;
   unsigned char *p;
 
-  for(i = 0; i < sizeof(req) / sizeof(req[0]); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(req); i++) {
     DOHcode rc = doh_req_encode(req[i].name, req[i].type,
                                 buffer, sizeof(buffer), &size);
     if(rc != req[i].rc) {
@@ -177,13 +177,13 @@ UNITTEST_START
     if(req[i].packet && memcmp(req[i].packet, buffer, size)) {
       fprintf(stderr, "DNS encode made: %s\n", hexdump(buffer, size));
       fprintf(stderr, "... instead of: %s\n",
-             hexdump((unsigned char *)req[i].packet, size));
+             hexdump((const unsigned char *)req[i].packet, size));
       abort_if(req[i].packet && memcmp(req[i].packet, buffer, size),
                "contents");
     }
   }
 
-  for(i = 0; i < sizeof(resp) / sizeof(resp[0]); i++) {
+  for(i = 0; i < CURL_ARRAYSIZE(resp); i++) {
     struct dohentry d;
     DOHcode rc;
     char *ptr;

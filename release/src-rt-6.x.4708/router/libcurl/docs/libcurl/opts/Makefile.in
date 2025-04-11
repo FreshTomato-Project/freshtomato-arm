@@ -777,6 +777,7 @@ AUTOMAKE_OPTIONS = foreign no-dependencies
 @BUILD_DOCS_TRUE@  CURLOPT_UPKEEP_INTERVAL_MS.3                  \
 @BUILD_DOCS_TRUE@  CURLOPT_UPLOAD.3                              \
 @BUILD_DOCS_TRUE@  CURLOPT_UPLOAD_BUFFERSIZE.3                   \
+@BUILD_DOCS_TRUE@  CURLOPT_UPLOAD_FLAGS.3                        \
 @BUILD_DOCS_TRUE@  CURLOPT_URL.3                                 \
 @BUILD_DOCS_TRUE@  CURLOPT_USE_SSL.3                             \
 @BUILD_DOCS_TRUE@  CURLOPT_USERAGENT.3                           \

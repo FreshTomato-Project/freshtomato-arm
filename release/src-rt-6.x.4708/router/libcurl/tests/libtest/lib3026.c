@@ -29,7 +29,7 @@
 #define NUM_THREADS 100
 
 #ifdef _WIN32
-#if defined(_WIN32_WCE) || defined(CURL_WINDOWS_UWP)
+#if defined(CURL_WINDOWS_UWP) || defined(UNDER_CE)
 static DWORD WINAPI run_thread(LPVOID ptr)
 #else
 #include <process.h>
@@ -47,7 +47,7 @@ static unsigned int WINAPI run_thread(void *ptr)
 
 CURLcode test(char *URL)
 {
-#if defined(_WIN32_WCE) || defined(CURL_WINDOWS_UWP)
+#if defined(CURL_WINDOWS_UWP) || defined(UNDER_CE)
   typedef HANDLE curl_win_thread_handle_t;
 #else
   typedef uintptr_t curl_win_thread_handle_t;
@@ -55,7 +55,7 @@ CURLcode test(char *URL)
   CURLcode results[NUM_THREADS];
   curl_win_thread_handle_t ths[NUM_THREADS];
   unsigned tid_count = NUM_THREADS, i;
-  int test_failure = 0;
+  CURLcode test_failure = CURLE_OK;
   curl_version_info_data *ver;
   (void) URL;
 
@@ -64,7 +64,7 @@ CURLcode test(char *URL)
     fprintf(stderr, "%s:%d On Windows but the "
             "CURL_VERSION_THREADSAFE feature flag is not set\n",
             __FILE__, __LINE__);
-    return (CURLcode)-1;
+    return TEST_ERR_MAJOR_BAD;
   }
 
   /* On Windows libcurl global init/cleanup calls LoadLibrary/FreeLibrary for
@@ -78,7 +78,7 @@ CURLcode test(char *URL)
   for(i = 0; i < tid_count; i++) {
     curl_win_thread_handle_t th;
     results[i] = CURL_LAST; /* initialize with invalid value */
-#if defined(_WIN32_WCE) || defined(CURL_WINDOWS_UWP)
+#if defined(CURL_WINDOWS_UWP) || defined(UNDER_CE)
     th = CreateThread(NULL, 0, run_thread, &results[i], 0, NULL);
 #else
     th = _beginthreadex(NULL, 0, run_thread, &results[i], 0, NULL);
@@ -87,7 +87,7 @@ CURLcode test(char *URL)
       fprintf(stderr, "%s:%d Couldn't create thread, errno %lu\n",
               __FILE__, __LINE__, GetLastError());
       tid_count = i;
-      test_failure = -1;
+      test_failure = TEST_ERR_MAJOR_BAD;
       goto cleanup;
     }
     ths[i] = th;
@@ -101,11 +101,11 @@ cleanup:
       fprintf(stderr, "%s:%d thread[%u]: curl_global_init() failed,"
               "with code %d (%s)\n", __FILE__, __LINE__,
               i, (int) results[i], curl_easy_strerror(results[i]));
-      test_failure = -1;
+      test_failure = TEST_ERR_MAJOR_BAD;
     }
   }
 
-  return (CURLcode)test_failure;
+  return test_failure;
 }
 
 #elif defined(HAVE_PTHREAD_H)
@@ -137,7 +137,7 @@ CURLcode test(char *URL)
     fprintf(stderr, "%s:%d Have pthread but the "
             "CURL_VERSION_THREADSAFE feature flag is not set\n",
             __FILE__, __LINE__);
-    return (CURLcode)-1;
+    return TEST_ERR_MAJOR_BAD;
   }
 
   for(i = 0; i < tid_count; i++) {
@@ -148,7 +148,7 @@ CURLcode test(char *URL)
       fprintf(stderr, "%s:%d Couldn't create thread, errno %d\n",
               __FILE__, __LINE__, res);
       tid_count = i;
-      test_failure = (CURLcode)-1;
+      test_failure = TEST_ERR_MAJOR_BAD;
       goto cleanup;
     }
   }
@@ -160,7 +160,7 @@ cleanup:
       fprintf(stderr, "%s:%d thread[%u]: curl_global_init() failed,"
               "with code %d (%s)\n", __FILE__, __LINE__,
               i, (int) results[i], curl_easy_strerror(results[i]));
-      test_failure = (CURLcode)-1;
+      test_failure = TEST_ERR_MAJOR_BAD;
     }
   }
 
@@ -178,7 +178,7 @@ CURLcode test(char *URL)
     fprintf(stderr, "%s:%d No pthread but the "
             "CURL_VERSION_THREADSAFE feature flag is set\n",
             __FILE__, __LINE__);
-    return (CURLcode)-1;
+    return TEST_ERR_MAJOR_BAD;
   }
   return CURLE_OK;
 }

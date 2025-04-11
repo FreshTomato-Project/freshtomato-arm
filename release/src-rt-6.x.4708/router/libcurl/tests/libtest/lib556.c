@@ -26,17 +26,6 @@
 #include "warnless.h"
 #include "memdebug.h"
 
-/* For Windows, mainly (may be moved in a config file?) */
-#ifndef STDIN_FILENO
-#define STDIN_FILENO 0
-#endif
-#ifndef STDOUT_FILENO
-#define STDOUT_FILENO 1
-#endif
-#ifndef STDERR_FILENO
-#define STDERR_FILENO 2
-#endif
-
 CURLcode test(char *URL)
 {
   CURLcode res;
@@ -94,7 +83,11 @@ again:
 
       if(nread) {
         /* send received stuff to stdout */
+#ifdef UNDER_CE
+        if((size_t)fwrite(buf, sizeof(buf[0]), nread, stdout) != nread) {
+#else
         if((size_t)write(STDOUT_FILENO, buf, nread) != nread) {
+#endif
           fprintf(stderr, "write() failed: errno %d (%s)\n",
                   errno, strerror(errno));
           res = TEST_ERR_FAILURE;

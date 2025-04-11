@@ -34,11 +34,14 @@ macro(check_include_file_concat_curl _file _variable)
   endif()
 endmacro()
 
+set(CURL_TEST_DEFINES "")  # Initialize global variable
+
 # For other curl specific tests, use this macro.
 # Return result in variable: CURL_TEST_OUTPUT
 macro(curl_internal_test _curl_test)
   if(NOT DEFINED "${_curl_test}")
     string(REPLACE ";" " " _cmake_required_definitions "${CMAKE_REQUIRED_DEFINITIONS}")
+    set(_curl_test_add_libraries "")
     if(CMAKE_REQUIRED_LIBRARIES)
       set(_curl_test_add_libraries
         "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}")
@@ -83,4 +86,11 @@ macro(curl_required_libpaths _libpaths_arg)
   else()
     list(APPEND CMAKE_REQUIRED_LINK_DIRECTORIES "${_libpaths_arg}")
   endif()
+endmacro()
+
+# Pre-fill variables set by a check_type_size() call.
+macro(curl_prefill_type_size _type _size)
+  set(HAVE_SIZEOF_${_type} TRUE)
+  set(SIZEOF_${_type} ${_size})
+  set(SIZEOF_${_type}_CODE "#define SIZEOF_${_type} ${_size}")
 endmacro()

@@ -56,19 +56,23 @@ CURLcode test(char *URL)
 
   hd_src = fopen(libtest_arg2, "rb");
   if(!hd_src) {
-    fprintf(stderr, "fopen failed with error: %d (%s)\n",
+    fprintf(stderr, "fopen failed with error (%d) %s\n",
             errno, strerror(errno));
-    fprintf(stderr, "Error opening file: (%s)\n", libtest_arg2);
+    fprintf(stderr, "Error opening file '%s'\n", libtest_arg2);
     return TEST_ERR_FOPEN;
   }
 
   /* get the file size of the local file */
+#ifdef UNDER_CE
+  hd = stat(libtest_arg2, &file_info);
+#else
   hd = fstat(fileno(hd_src), &file_info);
+#endif
   if(hd == -1) {
     /* can't open file, bail out */
-    fprintf(stderr, "fstat() failed with error: %d (%s)\n",
+    fprintf(stderr, "fstat() failed with error (%d) %s\n",
             errno, strerror(errno));
-    fprintf(stderr, "ERROR: cannot open file (%s)\n", libtest_arg2);
+    fprintf(stderr, "Error opening file '%s'\n", libtest_arg2);
     fclose(hd_src);
     return TEST_ERR_FSTAT;
   }

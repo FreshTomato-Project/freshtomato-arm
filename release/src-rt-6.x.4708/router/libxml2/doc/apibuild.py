@@ -21,9 +21,8 @@ debugsym=None
 ignored_files = {
   "config.h": "generated portability layer",
   "libxml.h": "internal only",
-  "rngparser.c": "not yet integrated",
+  "lintmain.c": "executable",
   "testModule.c": "test tool",
-  "testThreads.c": "test tool",
   "testapi.c": "generated regression tests",
   "runtest.c": "regression tests program",
   "runsuite.c": "regression tests program",
@@ -32,6 +31,11 @@ ignored_files = {
   "testdso.c": "test for dynamid shared libraries",
   "testrecurse.c": "test for entities recursions",
   "timsort.h": "Internal header only for xpath.c 2.9.0",
+  "nanoftp.h": "empty",
+  "SAX.h": "empty",
+  "xmlunicode.h": "empty",
+  "xmllint.c": "executable",
+  "xmlcatalog.c": "executable",
 }
 
 ignored_words = {
@@ -57,12 +61,9 @@ ignored_words = {
   "LIBXML_ATTR_ALLOC_SIZE": (3, "macro for gcc checking extension"),
   "ATTRIBUTE_NO_SANITIZE": (3, "macro keyword"),
   "ATTRIBUTE_NO_SANITIZE_INTEGER": (0, "macro keyword"),
+  "ATTRIBUTE_COUNTED_BY": (3, "macro keyword"),
   "XML_DEPRECATED": (0, "macro keyword"),
-  "XML_GLOBALS_ALLOC": (0, "macro keyword"),
-  "XML_GLOBALS_ERROR": (0, "macro keyword"),
-  "XML_GLOBALS_IO": (0, "macro keyword"),
-  "XML_GLOBALS_PARSER": (0, "macro keyword"),
-  "XML_GLOBALS_TREE": (0, "macro keyword"),
+  "XML_DEPRECATED_MEMBER": (0, "macro keyword"),
   "XML_THREAD_LOCAL": (0, "macro keyword"),
 }
 
@@ -1161,10 +1162,8 @@ class CParser:
                     fname = token[1]
                     token = self.token()
                     if token[0] == "sep" and token[1] == ";":
-                        self.comment = None
                         token = self.token()
-                        fields.append((self.type, fname, self.comment))
-                        self.comment = None
+                        fields.append((self.type, fname))
                     else:
                         self.error("parseStruct: expecting ;", token)
                 elif token != None and token[0] == "sep" and token[1] == "{":
@@ -1714,12 +1713,7 @@ class docBuilder:
                 output.write(">\n");
                 try:
                     for field in self.idx.structs[name].info:
-                        desc = field[2]
-                        if desc == None:
-                            desc = ''
-                        else:
-                            desc = escape(desc)
-                        output.write("      <field name='%s' type='%s' info='%s'/>\n" % (field[1] , field[0], desc))
+                        output.write("      <field name='%s' type='%s'/>\n" % (field[1] , field[0]))
                 except:
                     print("Failed to serialize struct %s" % (name))
                 output.write("    </struct>\n")

@@ -71,9 +71,9 @@ while test $# -gt 0; do
        	;;
 
     --libtool-libs)
-	if [ -r ${libdir}/@XML_LIBTOOLLIBS@ ]
+	if [ -r ${libdir}/libxml2.la ]
 	then
-	    echo ${libdir}/@XML_LIBTOOLLIBS@
+	    echo ${libdir}/libxml2.la
 	fi
         ;;
 
@@ -86,10 +86,10 @@ while test $# -gt 0; do
             shift
             libs="@XML_LIBS@ @XML_PRIVATE_LIBS_NO_SHARED@"
         else
-            libs="@XML_LIBS@ @XML_PRIVATE_LIBS@ @MODULE_PLATFORM_LIBS@ @LIBS@"
+            libs="@XML_LIBS@ @XML_PRIVATE_LIBS@ @LIBS@"
         fi
 
-        if [ "@XML_LIBDIR@" != "-L/usr/lib" -a "@XML_LIBDIR@" != "-L/usr/lib64" ]; then
+        if [ "@libdir@" != "/usr/lib" -a "@libdir@" != "/usr/lib64" ]; then
             libs="@XML_LIBDIR@ $libs"
         fi
         ;;

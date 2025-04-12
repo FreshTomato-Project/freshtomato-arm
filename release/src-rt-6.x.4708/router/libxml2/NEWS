@@ -1,5 +1,162 @@
 NEWS file for libxml2
 
+v2.14.1: Apr 3 2025
+
+### Regressions
+
+- parser: Fix XML_PARSE_NOBLANKS dropping non-whitespace text
+
+### Build systems
+
+- win32-legacy: Fix build (ThomasK)
+- meson: Fix build from tarball
+- cmake, meson: Change library filename to libxml2.so.16.0.0
+
+
+v2.14.0: Mar 27 2025
+
+### Major changes
+
+The HTML tokenizer now conforms fully to HTML5. Several non-standard
+syntax warnings were removed. Note that HTML5 tree construction isn't
+implemented yet.
+
+Binary compatibility is restricted to versions 2.14 or newer. On ELF
+systems, the soname was bumped from libxml2.so.2 to libxml2.so.16.
+
+The serialization API will now take user-provided or default encodings
+into account when serializing attribute values, matching the
+serialization of text and avoiding unnecessary escaping.
+
+The XML parser won't try to merge consecutive CDATA sections as before
+to align with web standards. Each CDATA section will create exactly one
+node or SAX callback.
+
+Support for RELAX NG can now be disabled with a new configuration
+option independently of XML Schemas support. It is still enabled by
+default.
+
+The "legacy" configuration option won't enable support for HTTP and
+LZMA anymore. These features will be removed in the next release.
+
+Parts of the xmllint executable were refactored, allowing the
+combination of more options. OOM errors should be reported reliably now.
+
+Several improvements were made to the build systems. Meson is fully
+supported now.
+
+Parts of the buffering code were reworked and simplified.
+
+Overflow checks before reallocations were hardenend.
+
+Some unprefixed symbols were renamed to avoid namespace pollution.
+
+### Other potentially incompatible changes
+
+Strings passed to the "characters" callback of the HTML SAX parser
+aren't null-terminated anymore, matching the behavior of the XML
+parser. Custom SAX parsers must use the "len" argument.
+
+xmlIOParseDTD doesn't allow null bytes at the end of the input anymore.
+
+### New features
+
+Input callbacks can now be set on a parser context and an improved API
+to create parser input is available. The following new functions,
+taking a parser input object, were added:
+
+- xmlCtxtParseDocument
+- xmlCtxtParseContent as replacement for xmlParseBalancedChunkMemory
+  and xmlParseInNodeContext
+- xmlCtxtParseDtd
+
+The xmlSave API now has additional options to replace global settings.
+
+Parser options XML_PARSE_UNZIP, XML_PARSE_NO_SYS_CATALOG and
+XML_PARSE_CATALOG_PI were added.
+
+An API function to install a custom character encoding converter is
+now available. This makes it possible to use ICU for encoding conversion
+even if libxml2 was compiled without ICU support, see example/icu.c.
+
+### Deprecations
+
+Access to many public struct members is now deprecated. Several accessor
+functions were added to use instead.
+
+More internal functions were deprecated.
+
+### Removals
+
+Metadata about the HTML4 content model was removed from the htmlElemDesc
+struct and related functions were deprecated.
+
+The FTP module and related functions were removed.
+
+Support for the range and point extensions of the xpointer() scheme
+was removed. The rest of the XPointer implementation isn't affected.
+The xpointer() scheme now behaves like the xpath1() scheme.
+
+Several legacy symbols and the functions in xmlunicode.h were removed.
+
+ELF version information was removed.
+
+The shell was moved from libxml2 to xmllint. Several related functions
+are no longer available.
+
+The libxml.m4 file containing autoconf macros was removed.
+
+The --with-tree configuration option was removed.
+
+The hack to detect single-threaded programs under glibc was removed.
+
+### Planned removals
+
+Support for HTTP and LZMA compression is planned to be removed in the
+2.15 release.
+
+The following features are considered for removal:
+
+- Modules API (xmlmodule.h)
+- Schematron support
+- Support for zlib compressed file I/O
+- Legacy Windows build system in win32
+
+RELAX NG support is still in a bad state and a long-term removal
+candidate.
+
+### Thanks
+
+Thanks to the following contributors:
+
+- Andrew Potter
+- Benjamin Gilbert
+- Chun-wei Fan
+- correctmost
+- Daniel Cheng
+- Daniel E
+- Florin Haja
+- Grzegorz Szymaszek
+- Heiko Becker
+- Himanshibansal
+- Jan Alexander Steffens (heftig)
+- Kjell Ahlstedt
+- makise-homura
+- Markus Rickert
+- Mike Dalessio
+- Miklos Vajna
+- Rosen Penev
+- Ruslan Garipov
+- Ryan Carsten Schmidt
+- Saleem Abdulrasool
+- Sam James
+- Satadru Pramanik
+- Taylor R Campbell
+- triallax
+- Yegor Yefremov
+- Zak Ridouh
+
+
 v2.13.7: Mar 27 2025
 
 ### Regressions

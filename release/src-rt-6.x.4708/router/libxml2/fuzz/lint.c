@@ -1,5 +1,5 @@
 /*
- * xml.c: a libFuzzer target to test several XML parser interfaces.
+ * lint.c: a libFuzzer target to test the xmllint executable.
  *
  * See Copyright for the status of this software.
  */
@@ -14,10 +14,31 @@
 #include <libxml/xmlerror.h>
 #include <libxml/xmlmemory.h>
 
+#include "private/lint.h"
+
 #include "fuzz.h"
 
-#define XMLLINT_FUZZ
-#include "../xmllint.c"
+/*
+ * Untested options:
+ *
+ * --memory: Requires temp file
+ *
+ * --catalogs: Requires XML catalogs
+ *
+ * --dtdvalid:
+ * --dtdvalidfpi: Requires an external DTD
+ *
+ * --output: Writes to disk
+ *
+ * --path: Requires cooperation with resource loader
+ *
+ * --relaxng:
+ * --schema:
+ * --schematron: Requires schemas
+ *
+ * --shell: We could pipe fuzz data to stdin but this is probably
+ *          not worth it.
+ */
 
 static const char *const switches[] = {
     "--auto",
@@ -36,7 +57,7 @@ static const char *const switches[] = {
     "--insert",
     "--loaddtd",
     "--load-trace",
-    "--memory",
+    NULL,
     "--noblanks",
     "--nocdata",
     "--nocompact",
@@ -58,6 +79,7 @@ static const char *const switches[] = {
     "--pushsmall",
     "--quiet",
     "--recover",
+    "--repeat",
     "--sax1",
     "--testIO",
     "--timing",
@@ -108,6 +130,11 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
     size_t ssize, docSize, i;
     unsigned uval;
     int ival;
+
+    if (xmlMemUsed() != 0) {
+        fprintf(stderr, "Undetected leak in previous iteration\n");
+        abort();
+    }
 
     vars.argv = malloc((numSwitches + 5 + 6 * 2) * sizeof(vars.argv[0]));
     vars.argi = 0;
@@ -198,12 +225,11 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
     pushArg(NULL);
 
     xmlSetGenericErrorFunc(NULL, xmlFuzzErrorFunc);
-    xmlSetExternalEntityLoader(xmlFuzzEntityLoader);
 #ifdef LIBXML_CATALOG_ENABLED
     xmlCatalogSetDefaults(XML_CATA_ALLOW_NONE);
 #endif
 
-    xmllintMain(vars.argi - 1, vars.argv);
+    xmllintMain(vars.argi - 1, vars.argv, stdout, xmlFuzzResourceLoader);
 
     xmlMemSetup(free, malloc, realloc, xmlMemStrdup);
 
@@ -212,3 +238,19 @@ exit:
     free(vars.argv);
     return(0);
 }
+
+size_t
+LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
+                        unsigned seed) {
+    static const xmlFuzzChunkDesc chunks[] = {
+        { 8, XML_FUZZ_PROB_ONE / 10  }, /* switches */
+        { 4, XML_FUZZ_PROB_ONE / 10  }, /* maxmem */
+        { 1, XML_FUZZ_PROB_ONE / 100 }, /* maxAmpl */
+        { 1, XML_FUZZ_PROB_ONE / 100 }, /* pretty */
+        { 0, 0 }
+    };
+
+    return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
+                               LLVMFuzzerMutate);
+}
+

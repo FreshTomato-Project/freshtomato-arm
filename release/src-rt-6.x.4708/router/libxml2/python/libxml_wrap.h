@@ -4,7 +4,6 @@
 #include <libxml/parserInternals.h>
 #include <libxml/catalog.h>
 #include <libxml/threads.h>
-#include <libxml/nanoftp.h>
 #include <libxml/nanohttp.h>
 #include <libxml/uri.h>
 #include <libxml/xpath.h>
@@ -14,14 +13,14 @@
 #include <libxml/HTMLtree.h>
 #include <libxml/xinclude.h>
 #include <libxml/xpointer.h>
-#include <libxml/xmlunicode.h>
 #include <libxml/xmlregexp.h>
 #include <libxml/xmlautomata.h>
 #include <libxml/xmlreader.h>
-#include <libxml/globals.h>
 #include <libxml/xmlsave.h>
-#ifdef LIBXML_SCHEMAS_ENABLED
+#ifdef LIBXML_RELAXNG_ENABLED
 #include <libxml/relaxng.h>
+#endif
+#ifdef LIBXML_SCHEMAS_ENABLED
 #include <libxml/xmlschemas.h>
 #endif
 
@@ -51,7 +50,7 @@
  * Repeated here since the definition is not available when
  * compiled outside the libxml2 build tree.
  */
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 #ifdef ATTRIBUTE_UNUSED
 #undef ATTRIBUTE_UNUSED
 #endif
@@ -66,19 +65,22 @@
  * Macros to ignore deprecation warnings
  */
 #if defined(__LCC__)
-#define XML_IGNORE_DEPRECATION_WARNINGS \
-    _Pragma("diag_suppress 1215")
+  #define XML_IGNORE_DEPRECATION_WARNINGS _Pragma("diag_suppress 1215")
+  #define XML_POP_WARNINGS _Pragma("diag_default 1215")
 #elif defined(__clang__) || \
-    (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 406))
-#define XML_IGNORE_DEPRECATION_WARNINGS \
+      (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 406))
+  #define XML_IGNORE_DEPRECATION_WARNINGS \
     _Pragma("GCC diagnostic push") \
     _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+  #define XML_POP_WARNINGS _Pragma("GCC diagnostic pop")
 #elif defined (_MSC_VER) && (_MSC_VER >= 1400)
-#define XML_IGNORE_DEPRECATION_WARNINGS \
+  #define XML_IGNORE_DEPRECATION_WARNINGS \
     __pragma(warning(push)) \
     __pragma(warning(disable : 4996))
+  #define XML_POP_WARNINGS __pragma(warning(pop))
 #else
-#define XML_IGNORE_DEPRECATION_WARNINGS
+  #define XML_IGNORE_DEPRECATION_WARNINGS
+  #define XML_POP_WARNINGS
 #endif
 
 #define PyxmlNode_Get(v) (((v) == Py_None) ? NULL : \
@@ -205,7 +207,7 @@ void libxml_PyFileRelease(FILE *f);
 #define PyFile_Release(f)
 #endif
 
-#ifdef LIBXML_SCHEMAS_ENABLED
+#ifdef LIBXML_RELAXNG_ENABLED
 typedef struct {
     PyObject_HEAD
     xmlRelaxNGPtr obj;
@@ -230,6 +232,9 @@ typedef struct {
 #define PyrelaxNgValidCtxt_Get(v) (((v) == Py_None) ? NULL : \
 	(((PyrelaxNgValidCtxt_Object *)(v))->obj))
 
+#endif /* LIBXML_RELAXNG_ENABLED */
+
+#ifdef LIBXML_SCHEMAS_ENABLED
 typedef struct {
 	PyObject_HEAD
 	xmlSchemaPtr obj;
@@ -293,10 +298,12 @@ PyObject * libxml_xmlTextReaderPtrWrap(xmlTextReaderPtr reader);
 PyObject * libxml_xmlTextReaderLocatorPtrWrap(xmlTextReaderLocatorPtr locator);
 #endif
 
-#ifdef LIBXML_SCHEMAS_ENABLED
+#ifdef LIBXML_RELAXNG_ENABLED
 PyObject * libxml_xmlRelaxNGPtrWrap(xmlRelaxNGPtr ctxt);
 PyObject * libxml_xmlRelaxNGParserCtxtPtrWrap(xmlRelaxNGParserCtxtPtr ctxt);
 PyObject * libxml_xmlRelaxNGValidCtxtPtrWrap(xmlRelaxNGValidCtxtPtr valid);
+#endif /* LIBXML_RELAXNG_ENABLED */
+#ifdef LIBXML_SCHEMAS_ENABLED
 PyObject * libxml_xmlSchemaPtrWrap(xmlSchemaPtr ctxt);
 PyObject * libxml_xmlSchemaParserCtxtPtrWrap(xmlSchemaParserCtxtPtr ctxt);
 PyObject * libxml_xmlSchemaValidCtxtPtrWrap(xmlSchemaValidCtxtPtr valid);

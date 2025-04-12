@@ -50,23 +50,13 @@ You can get started by running
 
 ### Bump the version number
 
-Edit the version number in `configure.ac` if you haven't done so already.
+Update the version number in `VERSION` if you haven't done so already.
 
-### Build the tarball
+### Commit and verify tarball
 
-I'd recommend to build the tarball by running
-
-    make distcheck
-
-which performs some useful checks as well.
-
-### Upload the tarball
-
-Follow the instructions at
-<https://wiki.gnome.org/MaintainersCorner/Releasing>:
-
-    scp libxml2-[version].tar.xz master.gnome.org:
-    ssh master.gnome.org ftpadmin install libxml2-[version].tar.xz
+Release tarballs are generated with a CI job and the `.gitlab-ci/dist.sh`
+script. Push the release commit and inspect the tarball artifact generated
+by Gitlab CI.
 
 ### Tag the release
 
@@ -75,9 +65,13 @@ Create an annotated tag and push it:
     git tag -a [version] -m 'Release [version]'
     git push origin [version]
 
+This will upload the release to the downloads server using the GNOME
+Release Service. For more details, see
+<https://handbook.gnome.org/maintainers/release-pipeline.html>
+
 ### Create a GitLab release
 
-Create a new GitLab release on
+Create or update a GitLab release on
 <https://gitlab.gnome.org/GNOME/libxml2/-/releases>.
 
 ### Announce the release
@@ -106,9 +100,9 @@ The following changes are allowed (after careful consideration):
 ## Updating the CI Docker image
 
 Note that the CI image is used for libxslt as well. First create a
-GitLab access token with `read_registry` and `write_registry`
-permissions. Then run the following commands with the Dockerfile in the
-.gitlab-ci directory:
+GitLab access token with maintainer role and `read_registry` and
+`write_registry` permissions. Then run the following commands with the
+Dockerfile in the .gitlab-ci directory:
 
     docker login -u <username> -p <access_token> \
         registry.gitlab.gnome.org

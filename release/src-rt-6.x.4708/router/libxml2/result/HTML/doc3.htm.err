@@ -1,18 +1,3 @@
-./test/HTML/doc3.htm:10: HTML parser error : Misplaced DOCTYPE declaration
-<!-- END Naviscope Javascript --><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN
-                                 ^
-./test/HTML/doc3.htm:52: HTML parser error : htmlParseEntityRef: expecting ';'
- href="http://ads.gamesquad.net/addclick.exe/adclick.cgi?REGION=game|tech|ent&id
-                                                                               ^
-./test/HTML/doc3.htm:52: HTML parser error : htmlParseEntityRef: expecting ';'
-_top"><img src="http://ads.gamesquad.net/addclick.exe/adcycle.cgi?group=52&media
-                                                                               ^
-./test/HTML/doc3.htm:52: HTML parser error : htmlParseEntityRef: expecting ';'
-><img src="http://ads.gamesquad.net/addclick.exe/adcycle.cgi?group=52&media=1&id
-                                                                               ^
-./test/HTML/doc3.htm:145: HTML parser error : error parsing attribute name
-                        width=70 Gentus?.?></A><BR><A 
-                                       ^
 ./test/HTML/doc3.htm:148: HTML parser error : Unexpected end tag : p
   </P></TD></TR></TBODY></TABLE></CENTER></TD></TR></TBODY></TABLE></CENTER></P>
                                                                                ^
@@ -22,12 +7,6 @@ _top"><img src="http://ads.gamesquad.net/addclick.exe/adcycle.cgi?group=52&media
 ./test/HTML/doc3.htm:236: HTML parser error : Unexpected end tag : a
             Specials<BR><BR></FONT></A><BR></FONT></A><B><FONT color=yellow 
                                                       ^
-./test/HTML/doc3.htm:747: HTML parser error : htmlParseEntityRef: expecting ';'
-er=0 alt="Advertisement" src="http://ads.adflight.com/ad_static.asp?pid=2097&sid
-                                                                               ^
-./test/HTML/doc3.htm:747: HTML parser error : htmlParseEntityRef: expecting ';'
-Advertisement" src="http://ads.adflight.com/ad_static.asp?pid=2097&sid=1881&asid
-                                                                               ^
 ./test/HTML/doc3.htm:747: HTML parser error : Unexpected end tag : li
 light.com/ad_static.asp?pid=2097&sid=1881&asid=7708"></a></IFRAME></CENTER></LI>
                                                                                ^
@@ -40,18 +19,6 @@ om/ad_static.asp?pid=2097&sid=1881&asid=7708"></a></IFRAME></CENTER></LI></FONT>
 ./test/HTML/doc3.htm:772: HTML parser error : Unexpected end tag : form
             archive</A></FONT> </FORM></CENTER></TD></TR></TBODY></TABLE><!--			
                                       ^
-./test/HTML/doc3.htm:795: HTML parser error : Unexpected end tag : iframe
-							document.write("42DF8478957377></IFRAME>");
-							                                        ^
-./test/HTML/doc3.htm:803: HTML parser error : End tag : expected '>'
-							document.write("DF8478957377></SC");
-							                                 ^
-./test/HTML/doc3.htm:804: HTML parser error : Unexpected end tag : sc
-							document.write("RIPT>");
-							                     ^
-./test/HTML/doc3.htm:811: HTML parser error : Unexpected end tag : a
-							document.write("ype=gif&size=100x90></A>");
-							                                        ^
 ./test/HTML/doc3.htm:820: HTML parser error : Unexpected end tag : a
             </A></A></B><B></NOSCRIPT></B><B><!-- END GoTo.com Search Box --></B
                     ^

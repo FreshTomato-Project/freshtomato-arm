@@ -11,7 +11,9 @@ meson  setup \
        --werror \
        --buildtype=debugoptimized \
        --default-library shared \
+       -Dlegacy=enabled \
        builddir
 
-ninja -C builddir test
+ninja -C builddir
 
+meson test --verbose -C builddir

@@ -35,7 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define XML_DEPRECATED
+#ifndef XML_DEPRECATED
+  #define XML_DEPRECATED
+#endif
 
 #include <libxml/catalog.h>
 #include <libxml/HTMLtree.h>
@@ -964,14 +966,13 @@ LLVMFuzzerInitialize(int *argc ATTRIBUTE_UNUSED,
     xmlCatalogSetDefaults(XML_CATA_ALLOW_NONE);
 #endif
     xmlSetGenericErrorFunc(NULL, xmlFuzzErrorFunc);
-    xmlSetExternalEntityLoader(xmlFuzzEntityLoader);
 
     return 0;
 }
 
 int
 LLVMFuzzerTestOneInput(const char *data, size_t size) {
-    size_t maxAlloc;
+    size_t failurePos;
     int i;
 
     if (size > 1000)
@@ -981,8 +982,8 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
     xmlFuzzDataInit(data, size);
 
-    maxAlloc = xmlFuzzReadInt(4) % (size * 50 + 10);
-    xmlFuzzMemSetLimit(maxAlloc);
+    failurePos = xmlFuzzReadInt(4) % (size * 50 + 10);
+    xmlFuzzInjectFailure(failurePos);
 
     /*
      * Interpreter loop
@@ -1003,6 +1004,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
         size_t readSize;
         int op = xmlFuzzReadInt(1);
         int oomReport = -1; /* -1 means unknown */
+        int ioReport = 0;
 
         vars->opName = "[unset]";
 
@@ -1805,7 +1807,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                     node,
                     BAD_CAST "lang",
                     XML_XML_NAMESPACE);
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
                 removeChildren((xmlNodePtr) attr, 0);
                 res = xmlNodeSetLang(
                     node,
@@ -1839,7 +1841,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                     node,
                     BAD_CAST "space",
                     XML_XML_NAMESPACE);
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
                 removeChildren((xmlNodePtr) attr, 0);
                 res = xmlNodeSetSpacePreserve(
                     node,
@@ -1891,7 +1893,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                     node,
                     BAD_CAST "base",
                     XML_XML_NAMESPACE);
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
                 removeChildren((xmlNodePtr) attr, 0);
                 res = xmlNodeSetBase(
                     node,
@@ -2030,7 +2032,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                     oldAttr = xmlHasNsProp(node, name, NULL);
                 else
                     oldAttr = xmlHasNsProp(node, localName, ns->href);
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
                 if (oldAttr != NULL)
                     removeChildren((xmlNodePtr) oldAttr, 0);
 
@@ -2057,7 +2059,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 name = getStr(0);
                 value = getStr(1);
                 oldAttr = xmlHasNsProp(node, name, ns ? ns->href : NULL);
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
                 if (oldAttr != NULL)
                     removeChildren((xmlNodePtr) oldAttr, 0);
                 attr = xmlSetNsProp(node, ns, name, value);
@@ -2106,7 +2108,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 node = getNode(0);
                 name = getStr(0);
                 attr = xmlHasNsProp(node, name, NULL);
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
                 if (attr != NULL)
                     removeChildren((xmlNodePtr) attr, 1);
                 setInt(0, xmlUnsetProp(node, name));
@@ -2128,7 +2130,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 ns = nodeGetNs(getNode(1), getInt(1));
                 name = getStr(0);
                 attr = xmlHasNsProp(node, name, ns ? ns->href : NULL);
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
                 if (attr != NULL)
                     removeChildren((xmlNodePtr) attr, 1);
                 setInt(0, xmlUnsetNsProp(node, ns, name));
@@ -2288,7 +2290,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
             case OP_XML_REPLACE_NODE: {
                 xmlNodePtr old, oldParent, node, oldNodeParent, result;
-                xmlDocPtr oldNodeDoc;
+                xmlDocPtr oldDoc, oldNodeDoc;
 
                 startOp("xmlReplaceNode");
                 old = getNode(0);
@@ -2297,8 +2299,18 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 /*
                  * Unlinking DTD children can cause invalid references
                  * which would be expensive to fix.
+                 *
+                 * Don't unlink DTD if it is the internal or external
+                 * subset of the document.
                  */
-                if (isDtdChild(old))
+                old = old ? old->parent : NULL;
+                oldDoc = old ? old->doc : NULL;
+                if (old != NULL &&
+                    (isDtdChild(old) ||
+                     (old->type == XML_DTD_NODE &&
+                      oldDoc != NULL &&
+                      ((xmlDtdPtr) old == oldDoc->intSubset ||
+                       (xmlDtdPtr) old == oldDoc->extSubset))))
                     old = NULL;
                 if (old != NULL && !isValidChild(old->parent, node))
                     node = NULL;
@@ -2380,7 +2392,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                         xmlAttrPtr attr = xmlHasNsProp(parent, node->name,
                             node->ns ? node->ns->href : NULL);
 
-                        xmlFuzzResetMallocFailed();
+                        xmlFuzzResetFailure();
                         /* Attribute might be replaced */
                         if (attr != NULL && attr != (xmlAttrPtr) node)
                             removeChildren((xmlNodePtr) attr, 1);
@@ -2500,7 +2512,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 list = xmlStringGetNodeList(
                     getDoc(0),
                     value = getStr(0));
-                oomReport = (value != NULL && list == NULL);
+                oomReport = (value != NULL && value[0] != 0 && list == NULL);
                 xmlFreeNodeList(list);
                 endOp();
                 break;
@@ -2518,7 +2530,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                     doc,
                     value,
                     xmlStrlen(value));
-                oomReport = (value != NULL && list == NULL);
+                oomReport = (value != NULL && value[0] != 0 && list == NULL);
                 xmlFreeNodeList(list);
                 endOp();
                 break;
@@ -3010,7 +3022,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 node = getNode(0);
                 type = node ? node->type : 0;
                 xmlValidCtxtPtr vctxt = xmlNewValidCtxt();
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
 
                 switch (type) {
                     case XML_DOCUMENT_NODE:
@@ -3172,7 +3184,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
                 incStrIdx();
                 buffer = xmlBufferCreate();
-                xmlFuzzResetMallocFailed();
+                xmlFuzzResetFailure();
                 node = getNode(0);
                 doc = node ? node->doc : NULL;
                 level = getInt(0);
@@ -3295,8 +3307,9 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 }
 
                 incStrIdx();
-                output = xmlAllocOutputBuffer(NULL);
-                xmlFuzzResetMallocFailed();
+                output = xmlOutputBufferCreateIO(xmlFuzzOutputWrite,
+                                                 xmlFuzzOutputClose, NULL, NULL);
+                xmlFuzzResetFailure();
                 node = getNode(0);
                 doc = node ? node->doc : NULL;
                 encoding = (const char *) getStr(1);
@@ -3347,16 +3360,17 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 if (closed) {
                     if (res >= 0)
                         oomReport = 0;
+                    else
+                        ioReport = -1;
                     moveStr(0, NULL);
                 } else {
-                    oomReport =
-                        (output != NULL &&
-                         output->error == XML_ERR_NO_MEMORY);
                     if (argsOk && !output->error)
                         copyStr(0, xmlBufContent(output->buffer));
                     else
                         moveStr(0, NULL);
-                    xmlOutputBufferClose(output);
+                    res = xmlOutputBufferClose(output);
+                    oomReport = (res == -XML_ERR_NO_MEMORY);
+                    ioReport  = (res == -XML_IO_EIO);
                 }
                 endOp();
                 break;
@@ -3564,7 +3578,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
                 break;
         }
 
-        xmlFuzzCheckMallocFailure(vars->opName, oomReport);
+        xmlFuzzCheckFailureReport(vars->opName, oomReport, ioReport);
     }
 
     for (i = 0; i < REG_MAX; i++)
@@ -3577,9 +3591,21 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
         dropNode(node);
     }
 
-    xmlFuzzMemSetLimit(0);
+    xmlFuzzInjectFailure(0);
     xmlFuzzDataCleanup();
     xmlResetLastError();
     return(0);
+}
+
+size_t
+LLVMFuzzerCustomMutator(char *data, size_t size, size_t maxSize,
+                        unsigned seed) {
+    static const xmlFuzzChunkDesc chunks[] = {
+        { 4, XML_FUZZ_PROB_ONE / 10 }, /* failurePos */
+        { 0, 0 }
+    };
+
+    return xmlFuzzMutateChunks(chunks, data, size, maxSize, seed,
+                               LLVMFuzzerMutate);
 }
 

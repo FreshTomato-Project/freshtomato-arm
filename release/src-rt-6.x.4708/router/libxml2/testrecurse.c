@@ -10,13 +10,16 @@
  * daniel@veillard.com
  */
 
-#include "config.h"
+#define XML_DEPRECATED_MEMBER
+
+#include "libxml.h"
 #include <stdio.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
+#include <libxml/catalog.h>
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h>
 #include <libxml/tree.h>
@@ -142,9 +145,35 @@ static void globfree(glob_t *pglob) {
     }
 }
 
-#else
+#elif HAVE_DECL_GLOB
+
 #include <glob.h>
-#endif
+
+#else /* _WIN32, HAVE_DECL_GLOB */
+
+#define GLOB_DOOFFS 0
+
+typedef struct {
+      size_t gl_pathc;    /* Count of paths matched so far  */
+      char **gl_pathv;    /* List of matched pathnames.  */
+      size_t gl_offs;     /* Slots to reserve in 'gl_pathv'.  */
+} glob_t;
+
+static int
+glob(const char *pattern ATTRIBUTE_UNUSED, int flags ATTRIBUTE_UNUSED,
+     int errfunc(const char *epath, int eerrno) ATTRIBUTE_UNUSED,
+     glob_t *pglob) {
+    pglob->gl_pathc = 0;
+    pglob->gl_pathv = NULL;
+
+    return(0);
+}
+
+static void
+globfree(glob_t *pglob ATTRIBUTE_UNUSED) {
+}
+
+#endif /* _WIN32, HAVE_DECL_GLOB */
 
 /************************************************************************
  *									*
@@ -330,7 +359,6 @@ hugeRead(void *context, char *buffer, int len)
 static int nb_tests = 0;
 static int nb_errors = 0;
 static int nb_leaks = 0;
-static int extraMemoryFromResolver = 0;
 
 static int
 fatalError(void) {
@@ -338,32 +366,14 @@ fatalError(void) {
     exit(1);
 }
 
-/*
- * We need to trap calls to the resolver to not account memory for the catalog
- * which is shared to the current running test. We also don't want to have
- * network downloads modifying tests.
- */
-static xmlParserInputPtr
-testExternalEntityLoader(const char *URL, const char *ID,
-			 xmlParserCtxtPtr ctxt) {
-    xmlParserInputPtr ret;
-
-    if (checkTestFile(URL)) {
-	ret = xmlNoNetExternalEntityLoader(URL, ID, ctxt);
-    } else {
-	int memused = xmlMemUsed();
-	ret = xmlNoNetExternalEntityLoader(URL, ID, ctxt);
-	extraMemoryFromResolver += xmlMemUsed() - memused;
-    }
-
-    return(ret);
-}
-
 static void
 initializeLibxml2(void) {
     xmlMemSetup(xmlMemFree, xmlMemMalloc, xmlMemRealloc, xmlMemoryStrdup);
     xmlInitParser();
-    xmlSetExternalEntityLoader(testExternalEntityLoader);
+#ifdef LIBXML_CATALOG_ENABLED
+    xmlInitializeCatalog();
+    xmlCatalogSetDefaults(XML_CATA_ALLOW_NONE);
+#endif
     /*
      * register the new I/O handlers
      */
@@ -835,7 +845,6 @@ launchTests(testDescPtr tst) {
 	        fprintf(stderr, "Missing error file %s\n", error);
 	    } else {
 		mem = xmlMemUsed();
-		extraMemoryFromResolver = 0;
 		res = tst->func(globbuf.gl_pathv[i], result, error,
 		                tst->options | XML_PARSE_COMPACT);
 		xmlResetLastError();
@@ -846,13 +855,10 @@ launchTests(testDescPtr tst) {
 		    err++;
 		}
 		else if (xmlMemUsed() != mem) {
-		    if ((xmlMemUsed() != mem) &&
-		        (extraMemoryFromResolver == 0)) {
-			fprintf(stderr, "File %s leaked %d bytes\n",
-				globbuf.gl_pathv[i], xmlMemUsed() - mem);
-			nb_leaks++;
-			err++;
-		    }
+                    fprintf(stderr, "File %s leaked %d bytes\n",
+                            globbuf.gl_pathv[i], xmlMemUsed() - mem);
+                    nb_leaks++;
+                    err++;
 		}
 	    }
 	    if (result)
@@ -862,7 +868,6 @@ launchTests(testDescPtr tst) {
 	}
 	globfree(&globbuf);
     } else {
-	extraMemoryFromResolver = 0;
         res = tst->func(NULL, NULL, NULL, tst->options);
 	if (res != 0) {
 	    nb_errors++;

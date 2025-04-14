@@ -49,6 +49,11 @@ ifneq ($(TCONFIG_STUBBY),y)
 else
 	sed -i $(INSTALLDIR)/usr/sbin/tomatoanon -e "/STUBBYNO-BEGIN/,/STUBBYNO-END/d"
 endif
+ifneq ($(TCONFIG_BCMARM),y)
+	sed -i $(INSTALLDIR)/usr/sbin/tomatoanon -e "/BCMARM-BEGIN/,/BCMARM-END/d"
+else
+	sed -i $(INSTALLDIR)/usr/sbin/tomatoanon -e "/BCMARMNO-BEGIN/,/BCMARMNO-END/d"
+endif
 
 # Adblock
 ifeq ($(TCONFIG_HTTPS),y)

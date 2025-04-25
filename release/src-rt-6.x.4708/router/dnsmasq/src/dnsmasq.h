@@ -281,7 +281,8 @@ struct event_desc {
 #define OPT_LOG_PROTO      73
 #define OPT_NO_0x20        74
 #define OPT_DO_0x20        75
-#define OPT_LAST           76
+#define OPT_AUTH_LOG       76
+#define OPT_LAST           77
 
 #define OPTION_BITS (sizeof(unsigned int)*8)
 #define OPTION_SIZE ( (OPT_LAST/OPTION_BITS)+((OPT_LAST%OPTION_BITS)!=0) )
@@ -536,6 +537,10 @@ struct crec {
 #define SRC_HOSTS     2
 #define SRC_AH        3
 
+#define PIPE_OP_RR      1  /* Resource record */
+#define PIPE_OP_END     2  /* Cache entry complete: commit */
+#define PIPE_OP_RESULT  3  /* validation result. */
+#define PIPE_OP_STATS   4  /* Update parent's stats */
 
 /* struct sockaddr is not large enough to hold any address,
    and specifically not big enough to hold an IPv6 address.
@@ -1353,6 +1358,9 @@ void cache_end_insert(void);
 void cache_start_insert(void);
 unsigned int cache_remove_uid(const unsigned int uid);
 int cache_recv_insert(time_t now, int fd);
+#ifdef HAVE_DNSSEC
+void cache_update_hwm(void);
+#endif
 struct crec *cache_insert(char *name, union all_addr *addr, unsigned short class, 
 			  time_t now, unsigned long ttl, unsigned int flags);
 void cache_reload(void);

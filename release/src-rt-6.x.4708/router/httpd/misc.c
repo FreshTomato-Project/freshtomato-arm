@@ -507,7 +507,7 @@ mtd1: 007d0000 00010000 "linux"
 #ifdef TCONFIG_BCMARM
 void asp_jiffies(int argc, char **argv)
 {
-	char sa[64];
+	char sa[128];
 	FILE *a;
 	char *e = NULL;
 	char *f= NULL;
@@ -602,7 +602,7 @@ void asp_sysinfo(int argc, char **argv)
 
 #ifdef TCONFIG_BCMARM
 	char cputemp[8];
-	char sa[64];
+	char sa[128];
 	FILE *a;
 	char *e = NULL;
 	char *f= NULL;

@@ -1698,6 +1698,7 @@ struct nvram_tuple router_defaults[] = {
 #ifdef TCONFIG_WIREGUARD
 	{"wg_adns",			""				, 0},
 	{"wg0_enable",			"0"				, 0 },
+	{"wg0_poll",			"0"				, 0 },
 	{"wg0_file",			""				, 0 },
 	{"wg0_key",			""				, 0 },
 	{"wg0_endpoint",		""				, 0 },
@@ -1719,6 +1720,7 @@ struct nvram_tuple router_defaults[] = {
 	{"wg0_peer_dns",		""				, 0 },
 	{"wg0_peers",			""				, 0 },
 	{"wg1_enable",			"0"				, 0 },
+	{"wg1_poll",			"0"				, 0 },
 	{"wg1_file",			""				, 0 },
 	{"wg1_key",			""				, 0 },
 	{"wg1_endpoint",		""				, 0 },
@@ -1740,6 +1742,7 @@ struct nvram_tuple router_defaults[] = {
 	{"wg1_peer_dns",		""				, 0 },
 	{"wg1_peers",			""				, 0 },
 	{"wg2_enable",			"0"				, 0 },
+	{"wg2_poll",			"0"				, 0 },
 	{"wg2_file",			""				, 0 },
 	{"wg2_key",			""				, 0 },
 	{"wg2_endpoint",		""				, 0 },

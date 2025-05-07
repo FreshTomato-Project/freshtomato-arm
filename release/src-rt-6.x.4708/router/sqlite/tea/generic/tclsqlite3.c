@@ -1,7 +1,7 @@
 #ifdef USE_SYSTEM_SQLITE
 # include <sqlite3.h>
 #else
-#include "sqlite3.c"
+# include "sqlite3.c"
 #endif
 /*
 ** 2001 September 15
@@ -515,7 +515,7 @@ static int createIncrblobChannel(
 ** or {...} or ; to be seen anywhere.  Most callback scripts consist
 ** of just a single procedure name and they meet this requirement.
 */
-static int safeToUseEvalObjv(Tcl_Interp *interp, Tcl_Obj *pCmd){
+static int safeToUseEvalObjv(Tcl_Obj *pCmd){
   /* We could try to do something with Tcl_Parse().  But we will instead
   ** just do a search for forbidden characters.  If any of the forbidden
   ** characters appear in pCmd, we will report the string as unsafe.
@@ -1969,7 +1969,7 @@ static void DbHookCmd(
   }
   if( pArg ){
     assert( !(*ppHook) );
-    if( Tcl_GetCharLength(pArg)>0 ){
+    if( Tcl_GetString(pArg)[0] ){
       *ppHook = pArg;
       Tcl_IncrRefCount(*ppHook);
     }
@@ -2998,7 +2998,7 @@ deserialize_error:
     }
     pFunc->pScript = pScript;
     Tcl_IncrRefCount(pScript);
-    pFunc->useEvalObjv = safeToUseEvalObjv(interp, pScript);
+    pFunc->useEvalObjv = safeToUseEvalObjv(pScript);
     pFunc->eType = eType;
     rc = sqlite3_create_function(pDb->db, zName, nArg, flags,
         pFunc, tclSqlFunc, 0, 0);
@@ -4026,7 +4026,9 @@ EXTERN int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 EXTERN int Sqlite_SafeInit(Tcl_Interp *interp){ return TCL_ERROR; }
 EXTERN int Sqlite_SafeUnload(Tcl_Interp *interp, int flags){return TCL_ERROR;}
 
-/* Also variants with a lowercase "s" */
+/* Also variants with a lowercase "s".  I'm told that these are
+** deprecated in Tcl9, but they continue to be included for backwards
+** compatibility. */
 EXTERN int sqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 

@@ -1,0 +1,10 @@
+#!/do/not/tclsh
+# ^^^ help out editors which guess this file's content type.
+#
+# This is the main autosetup-compatible configure script for the
+# "autoconf" bundle of the SQLite project.
+use sqlite-config
+sqlite-configure autoconf {
+  sqlite-check-common-bins
+  sqlite-check-common-system-deps
+}

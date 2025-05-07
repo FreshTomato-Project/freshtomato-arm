@@ -1856,32 +1856,32 @@ zlib-clean:
 	@rm -rf zlib/staged
 	$(call unpatch_files,zlib)
 
-sqlite/stamp-h1:
-	cd sqlite && autoreconf -fsi && \
-		CC=$(CC) CFLAGS="-Os $(EXTRACFLAGS) -fPIC $(GCC_CMODE) -I$(TOP)/zlib/staged/usr/include -ffunction-sections -fdata-sections" \
-		LDFLAGS="-L$(TOP)/zlib/staged/usr/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		$(CONFIGURE) --prefix=/usr --enable-shared --enable-static=no \
-			--disable-readline --enable-dynamic-extensions=no --enable-threadsafe
-	@touch $@
+sqlite/Makefile:
+	cd sqlite && \
+		CFLAGS="-Os $(EXTRACFLAGS) -fPIC $(GCC_CMODE) -DHAVE_ISNAN -ffunction-sections -fdata-sections -I$(TOP)/zlib/staged/usr/include" \
+		LDFLAGS="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib" \
+		$(CONFIGURE) --prefix=/usr --enable-shared --disable-static --enable-threadsafe \
+			--disable-editline --disable-readline --disable-session --disable-fts3 \
+			--disable-fts4 --disable-fts5 --disable-rtree --soname=legacy
 
-sqlite: sqlite/stamp-h1
+sqlite: sqlite/Makefile
 	@$(SEP)
 	@$(MAKE) -C $@ all $(PARALLEL_BUILD)
 	@$(MAKE) -C $@ DESTDIR=$(TOP)/sqlite/staged install
 
 sqlite-install:
 ifeq ($(or $(TCONFIG_NGINX),$(TCONFIG_MEDIA_SERVER)),y)
-	install -D sqlite/.libs/libsqlite3.so.0.8.6 $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.0.8.6
-	$(STRIP) $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.0.8.6
+	install -D sqlite/staged/usr/lib/libsqlite3.so.3.49.2 $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.49.2
+	$(STRIP) $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.49.2
 	cd $(INSTALLDIR)/sqlite/usr/lib/ && \
-		ln -sf libsqlite3.so.0.8.6 libsqlite3.so.0 && \
-		ln -sf libsqlite3.so.0.8.6 libsqlite3.so
+		ln -sf libsqlite3.so.3.49.2 libsqlite3.so.0 && \
+		ln -sf libsqlite3.so.3.49.2 libsqlite3.so
 endif
 	@true
 
 sqlite-clean:
 	-@$(MAKE) -C sqlite clean
-	@rm -f sqlite/stamp-h1
+	@rm -f sqlite/Makefile
 	@rm -rf sqlite/staged
 
 libogg/stamp-h1:
@@ -2088,9 +2088,9 @@ minidlna/stamp-h1:
 	$(call patch_files,minidlna)
 	cd minidlna && ./autogen.sh && \
 		CFLAGS="-Os -Wall $(EXTRACFLAGS) -fPIC -ffunction-sections -fdata-sections" \
-		CPPFLAGS="-I$(TOP)/shared -I$(TOP)/ffmpeg/libavutil -I$(TOP)/ffmpeg/libavcodec -I$(TOP)/ffmpeg/libavformat -I$(TOP)/ffmpeg -I$(TOP)/flac/include -I$(TOP)/sqlite \
+		CPPFLAGS="-I$(TOP)/shared -I$(TOP)/ffmpeg/libavutil -I$(TOP)/ffmpeg/libavcodec -I$(TOP)/ffmpeg/libavformat -I$(TOP)/ffmpeg -I$(TOP)/flac/include -I$(TOP)/sqlite/staged/usr/include \
 			-I$(TOP)/libjpeg-turbo/staged/usr/include -I$(TOP)/libexif -I$(TOP)/libid3tag/build -I$(TOP)/libogg/include -I$(TOP)/libvorbis/include -I$(TOP)/zlib/staged/usr/include" \
-		LDFLAGS="-Wl,--gc-sections -ffunction-sections -fdata-sections -L$(TOP)/shared -L$(TOP)/libvorbis/lib/.libs -L$(TOP)/libogg/src/.libs -L$(TOP)/sqlite/.libs -L$(TOP)/libexif/libexif/.libs -L$(TOP)/libjpeg-turbo/staged/usr/lib \
+		LDFLAGS="-Wl,--gc-sections -ffunction-sections -fdata-sections -L$(TOP)/shared -L$(TOP)/libvorbis/lib/.libs -L$(TOP)/libogg/src/.libs -L$(TOP)/sqlite/staged/usr/lib -L$(TOP)/libexif/libexif/.libs -L$(TOP)/libjpeg-turbo/staged/usr/lib \
 			-L$(TOP)/flac/src/libFLAC/.libs -L$(TOP)/libid3tag/build -L$(TOP)/zlib/staged/usr/lib -L$(TOP)/ffmpeg/libavformat -L$(TOP)/ffmpeg/libavcodec -L$(TOP)/ffmpeg/libavutil" \
 		LIBS="-lm -lpthread -lgcc_s -lvorbis -lz -logg -lsqlite3 -lexif -ljpeg -lFLAC -lid3tag -lavformat -lavcodec -lavutil" \
 		$(CONFIGURE) --prefix=/usr --libdir=/usr/lib --with-db-path=/tmp/minidlna --with-log-path=/var/log --with-os-name="FreshTomato" --with-os-url="https://freshtomato.org/" \

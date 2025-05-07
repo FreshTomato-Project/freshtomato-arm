@@ -1,4 +1,36 @@
 
+Changes with nginx 1.28.0                                        23 Apr 2025
+
+    *) 1.28.x stable branch.
+
+    *) Bugfix: nginx could not be built by gcc 15 if ngx_http_v2_module or
+       ngx_http_v3_module modules were used.
+
+    *) Bugfix: nginx might not be built by gcc 14 or newer with -O3 -flto
+       optimization if ngx_http_v3_module was used.
+
+
+Changes with nginx 1.27.5                                        16 Apr 2025
+
+    *) Feature: CUBIC congestion control in QUIC connections.
+
+    *) Change: the maximum size limit for SSL sessions cached in shared
+       memory has been raised to 8192.
+
+    *) Bugfix: in the "grpc_ssl_password_file", "proxy_ssl_password_file",
+       and "uwsgi_ssl_password_file" directives when loading SSL
+       certificates and encrypted keys from variables; the bug had appeared
+       in 1.23.1.
+
+    *) Bugfix: in the $ssl_curve and $ssl_curves variables when using
+       pluggable curves in OpenSSL.
+
+    *) Bugfix: nginx could not be built with musl libc.
+       Thanks to Piotr Sikora.
+
+    *) Performance improvements and bugfixes in HTTP/3.
+
+
 Changes with nginx 1.27.4                                        05 Feb 2025
 
     *) Security: insufficient check in virtual servers handling with TLSv1.3

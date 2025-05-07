@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2012-2021 The Meson development team
-# Copyright © 2023-2024 Intel Corporation
+# Copyright © 2023-2025 Intel Corporation
 
 from __future__ import annotations
 
-import hashlib, io, sys
+import io, sys, traceback
 
 from .. import mparser
 from .. import environment
@@ -13,13 +13,12 @@ from .. import dependencies
 from .. import mlog
 from .. import options
 from .. import build
-from .. import optinterpreter
 from .. import compilers
 from .. import envconfig
 from ..wrap import wrap, WrapMode
 from .. import mesonlib
 from ..mesonlib import (EnvironmentVariables, ExecutableSerialisation, MesonBugException, MesonException, HoldableObject,
-                        FileMode, MachineChoice, listify,
+                        FileMode, MachineChoice, is_parent_path, listify,
                         extract_as_list, has_path_sep, path_is_in_root, PerMachine)
 from ..options import OptionKey
 from ..programs import ExternalProgram, NonExistingExternalProgram
@@ -55,6 +54,7 @@ from .type_checking import (
     CT_BUILD_BY_DEFAULT,
     CT_INPUT_KW,
     CT_INSTALL_DIR_KW,
+    _EXCLUSIVE_EXECUTABLE_KWS,
     EXECUTABLE_KWS,
     JAR_KWS,
     LIBRARY_KWS,
@@ -131,6 +131,7 @@ if T.TYPE_CHECKING:
 
     ProgramVersionFunc = T.Callable[[T.Union[ExternalProgram, build.Executable, OverrideProgram]], str]
 
+    TestClass = T.TypeVar('TestClass', bound=Test)
 
 def _project_version_validator(value: T.Union[T.List, str, mesonlib.File, None]) -> T.Optional[str]:
     if isinstance(value, list):
@@ -274,24 +275,20 @@ class Interpreter(InterpreterBase, HoldableObject):
                 relaxations: T.Optional[T.Set[InterpreterRuleRelaxation]] = None,
                 user_defined_options: T.Optional[coredata.SharedCMDOptions] = None,
             ) -> None:
-        super().__init__(_build.environment.get_source_dir(), subdir, subproject)
+        super().__init__(_build.environment.get_source_dir(), subdir, subproject, subproject_dir, _build.environment)
         self.active_projectname = ''
         self.build = _build
-        self.environment = self.build.environment
-        self.coredata = self.environment.get_coredata()
         self.backend = backend
         self.summary: T.Dict[str, 'Summary'] = {}
         self.modules: T.Dict[str, NewExtensionModule] = {}
-        self.subproject_dir = subproject_dir
         self.relaxations = relaxations or set()
-        self.build_def_files: mesonlib.OrderedSet[str] = mesonlib.OrderedSet()
         if ast is None:
             self.load_root_meson_file()
         else:
             self.ast = ast
         self.sanity_check_ast()
         self.builtin.update({'meson': MesonMain(self.build, self)})
-        self.processed_buildfiles: T.Set[str] = set()
+        self.validated_cache: T.Set[str] = set()
         self.project_args_frozen = False
         self.global_args_frozen = False  # implies self.project_args_frozen
         self.subprojects: T.Dict[str, SubprojectHolder] = {}
@@ -299,10 +296,12 @@ class Interpreter(InterpreterBase, HoldableObject):
         self.configure_file_outputs: T.Dict[str, int] = {}
         # Passed from the outside, only used in subprojects.
         if default_project_options:
-            self.default_project_options = default_project_options.copy()
+            self.default_project_options = default_project_options if isinstance(default_project_options, str) else default_project_options.copy()
+            if isinstance(default_project_options, dict):
+                pass
         else:
             self.default_project_options = {}
-        self.project_default_options: T.Dict[OptionKey, str] = {}
+        self.project_default_options: T.List[str] = []
         self.build_func_dict()
         self.build_holder_map()
         self.user_defined_options = user_defined_options
@@ -330,11 +329,6 @@ class Interpreter(InterpreterBase, HoldableObject):
             OBJ.MachineHolder(self.build.environment.machines.host, self)
         self.builtin['target_machine'] = \
             OBJ.MachineHolder(self.build.environment.machines.target, self)
-
-    def load_root_meson_file(self) -> None:
-        build_filename = os.path.join(self.subdir, environment.build_filename)
-        self.build_def_files.add(build_filename)
-        super().load_root_meson_file()
 
     def build_func_dict(self) -> None:
         self.funcs.update({'add_global_arguments': self.func_add_global_arguments,
@@ -622,8 +616,18 @@ class Interpreter(InterpreterBase, HoldableObject):
         if real_modname in self.modules:
             return self.modules[real_modname]
         try:
-            module = importlib.import_module(f'mesonbuild.modules.{real_modname}')
-        except ImportError:
+            full_module_path = f'mesonbuild.modules.{real_modname}'
+            module = importlib.import_module(full_module_path)
+        except ImportError as e:
+            if e.name != full_module_path:
+                if required:
+                    raise e
+
+                mlog.warning(f'Module "{modname}" exists but failed to import.')
+
+                for line in traceback.format_exception(e):
+                    mlog.debug(line)
+
             if required:
                 raise InvalidArguments(f'Module "{modname}" does not exist')
             ext_module = NotFoundExtensionModule(real_modname)
@@ -700,20 +704,18 @@ class Interpreter(InterpreterBase, HoldableObject):
             version = self.project_version
         d_module_versions = kwargs['d_module_versions']
         d_import_dirs = self.extract_incdirs(kwargs, 'd_import_dirs')
-        srcdir = Path(self.environment.source_dir)
+        srcdir = self.environment.source_dir
+        subproject_dir = os.path.abspath(os.path.join(srcdir, self.subproject_dir))
+        project_root = os.path.abspath(os.path.join(srcdir, self.root_subdir))
         # convert variables which refer to an -uninstalled.pc style datadir
         for k, v in variables.items():
             if not v:
                 FeatureNew.single_use('empty variable value in declare_dependency', '1.4.0', self.subproject, location=node)
-            try:
-                p = Path(v)
-            except ValueError:
-                continue
-            else:
-                if not self.is_subproject() and srcdir / self.subproject_dir in p.parents:
-                    continue
-                if p.is_absolute() and p.is_dir() and srcdir / self.root_subdir in [p] + list(Path(os.path.abspath(p)).parents):
-                    variables[k] = P_OBJ.DependencyVariableString(v)
+            if os.path.isabs(v) \
+                    and (self.is_subproject() or not is_parent_path(subproject_dir, v)) \
+                    and is_parent_path(project_root, v) \
+                    and os.path.isdir(v):
+                variables[k] = P_OBJ.DependencyVariableString(v)
 
         dep = dependencies.InternalDependency(version, incs, compile_args,
                                               link_args, libs, libs_whole, sources, extra_files,
@@ -796,13 +798,12 @@ class Interpreter(InterpreterBase, HoldableObject):
             if not cmd.found():
                 raise InterpreterException(f'command {cmd.get_name()!r} not found or not executable')
         elif isinstance(cmd, compilers.Compiler):
-            exelist = cmd.get_exelist()
-            cmd = exelist[0]
+            expanded_args = cmd.get_exe_args()
+            cmd = cmd.get_exe()
             prog = ExternalProgram(cmd, silent=True)
             if not prog.found():
                 raise InterpreterException(f'Program {cmd!r} not found or not executable')
             cmd = prog
-            expanded_args = exelist[1:]
         else:
             if isinstance(cmd, mesonlib.File):
                 cmd = cmd.absolute_path(srcdir, builddir)
@@ -821,7 +822,7 @@ class Interpreter(InterpreterBase, HoldableObject):
                 expanded_args.append(a.get_path())
             elif isinstance(a, compilers.Compiler):
                 FeatureNew.single_use('Compiler object as a variadic argument to `run_command`', '0.61.0', self.subproject, location=self.current_node)
-                prog = ExternalProgram(a.exelist[0], silent=True)
+                prog = ExternalProgram(a.get_exe(), silent=True)
                 if not prog.found():
                     raise InterpreterException(f'Program {cmd!r} not found or not executable')
                 expanded_args.append(prog.get_path())
@@ -868,13 +869,15 @@ class Interpreter(InterpreterBase, HoldableObject):
         return sub
 
     def do_subproject(self, subp_name: str, kwargs: kwtypes.DoSubproject, force_method: T.Optional[wrap.Method] = None) -> SubprojectHolder:
+        if subp_name == 'sub_static':
+            pass
         disabled, required, feature = extract_required_kwarg(kwargs, self.subproject)
         if disabled:
             assert feature, 'for mypy'
             mlog.log('Subproject', mlog.bold(subp_name), ':', 'skipped: feature', mlog.bold(feature), 'disabled')
             return self.disabled_subproject(subp_name, disabled_feature=feature)
 
-        default_options = {k.evolve(subproject=subp_name): v for k, v in kwargs['default_options'].items()}
+        default_options = kwargs['default_options']
 
         if subp_name == '':
             raise InterpreterException('Subproject name must not be empty.')
@@ -949,7 +952,7 @@ class Interpreter(InterpreterBase, HoldableObject):
             raise e
 
     def _do_subproject_meson(self, subp_name: str, subdir: str,
-                             default_options: T.Dict[OptionKey, str],
+                             default_options: T.List[str],
                              kwargs: kwtypes.DoSubproject,
                              ast: T.Optional[mparser.CodeBlockNode] = None,
                              build_def_files: T.Optional[T.List[str]] = None,
@@ -1009,21 +1012,21 @@ class Interpreter(InterpreterBase, HoldableObject):
         return self.subprojects[subp_name]
 
     def _do_subproject_cmake(self, subp_name: str, subdir: str,
-                             default_options: T.Dict[OptionKey, str],
+                             default_options: T.List[str],
                              kwargs: kwtypes.DoSubproject) -> SubprojectHolder:
         from ..cmake import CMakeInterpreter
         with mlog.nested(subp_name):
-            prefix = self.coredata.optstore.get_value('prefix')
+            prefix = self.coredata.optstore.get_value_for('prefix')
 
             from ..modules.cmake import CMakeSubprojectOptions
-            options = kwargs.get('options') or CMakeSubprojectOptions()
-            cmake_options = kwargs.get('cmake_options', []) + options.cmake_options
+            kw_opts = kwargs.get('options') or CMakeSubprojectOptions()
+            cmake_options = kwargs.get('cmake_options', []) + kw_opts.cmake_options
             cm_int = CMakeInterpreter(Path(subdir), Path(prefix), self.build.environment, self.backend)
             cm_int.initialise(cmake_options)
             cm_int.analyse()
 
             # Generate a meson ast and execute it with the normal do_subproject_meson
-            ast = cm_int.pretend_to_be_meson(options.target_options)
+            ast = cm_int.pretend_to_be_meson(kw_opts.target_options)
             result = self._do_subproject_meson(
                     subp_name, subdir, default_options,
                     kwargs, ast,
@@ -1036,7 +1039,7 @@ class Interpreter(InterpreterBase, HoldableObject):
         return result
 
     def _do_subproject_cargo(self, subp_name: str, subdir: str,
-                             default_options: T.Dict[OptionKey, str],
+                             default_options: T.List[str],
                              kwargs: kwtypes.DoSubproject) -> SubprojectHolder:
         from .. import cargo
         FeatureNew.single_use('Cargo subproject', '1.3.0', self.subproject, location=self.current_node)
@@ -1051,63 +1054,59 @@ class Interpreter(InterpreterBase, HoldableObject):
                 # FIXME: Are there other files used by cargo interpreter?
                 [os.path.join(subdir, 'Cargo.toml')])
 
-    def get_option_internal(self, optname: str) -> options.UserOption:
-        key = OptionKey.from_string(optname).evolve(subproject=self.subproject)
-
-        if not self.environment.coredata.optstore.is_project_option(key):
-            for opts in [self.coredata.optstore, compilers.base_options]:
-                v = opts.get(key)
-                if v is None or v.yielding:
-                    v = opts.get(key.as_root())
-                if v is not None:
-                    assert isinstance(v, options.UserOption), 'for mypy'
-                    return v
-
-        try:
-            opt = self.coredata.optstore.get_value_object(key)
-            if opt.yielding and key.subproject and key.as_root() in self.coredata.optstore:
-                popt = self.coredata.optstore.get_value_object(key.as_root())
-                if type(opt) is type(popt):
-                    opt = popt
-                else:
-                    # Get class name, then option type as a string
-                    opt_type = opt.__class__.__name__[4:][:-6].lower()
-                    popt_type = popt.__class__.__name__[4:][:-6].lower()
-                    # This is not a hard error to avoid dependency hell, the workaround
-                    # when this happens is to simply set the subproject's option directly.
-                    mlog.warning('Option {0!r} of type {1!r} in subproject {2!r} cannot yield '
-                                 'to parent option of type {3!r}, ignoring parent value. '
-                                 'Use -D{2}:{0}=value to set the value for this option manually'
-                                 '.'.format(optname, opt_type, self.subproject, popt_type),
-                                 location=self.current_node)
-            return opt
-        except KeyError:
-            pass
-
-        raise InterpreterException(f'Tried to access unknown option {optname!r}.')
-
     @typed_pos_args('get_option', str)
     @noKwargs
-    def func_get_option(self, nodes: mparser.BaseNode, args: T.Tuple[str],
-                        kwargs: 'TYPE_kwargs') -> T.Union[options.UserOption, 'TYPE_var']:
+    def func_get_option(self, node: mparser.BaseNode, args: T.Tuple[str],
+                        kwargs: TYPE_kwargs) -> T.Union[options.UserOption, 'TYPE_var']:
         optname = args[0]
+
         if ':' in optname:
             raise InterpreterException('Having a colon in option name is forbidden, '
                                        'projects are not allowed to directly access '
                                        'options of other subprojects.')
-
         if optname_regex.search(optname.split('.', maxsplit=1)[-1]) is not None:
             raise InterpreterException(f'Invalid option name {optname!r}')
 
-        opt = self.get_option_internal(optname)
-        if isinstance(opt, options.UserFeatureOption):
-            opt.name = optname
-            return opt
-        elif isinstance(opt, options.UserOption):
-            if isinstance(opt.value, str):
-                return P_OBJ.OptionString(opt.value, f'{{{optname}}}')
-            return opt.value
-        return opt
+        # Will be None only if the value comes from the default
+        value_object: T.Optional[options.AnyOptionType]
+
+        try:
+            optkey = options.OptionKey(optname, self.subproject)
+            value_object, value = self.coredata.optstore.get_value_object_and_value_for(optkey)
+        except KeyError:
+            if self.coredata.optstore.is_base_option(optkey):
+                # Due to backwards compatibility return the default
+                # option for base options instead of erroring out.
+                #
+                # TODO: This will have issues if we expect to return a user FeatureOption
+                #       Of course, there's a bit of a layering violation here in
+                #       that we return a UserFeatureOption, but otherwise the held value
+                #       We probably need a lower level feature thing, or an enum
+                #       instead of strings
+                value = self.coredata.optstore.get_default_for_b_option(optkey)
+                value_object = None
+            else:
+                if self.subproject:
+                    raise MesonException(f'Option {optname} does not exist for subproject {self.subproject}.')
+                raise MesonException(f'Option {optname} does not exist.')
+        if isinstance(value_object, options.UserFeatureOption):
+            ocopy = copy.copy(value_object)
+            ocopy.name = optname
+            ocopy.value = value
+            return ocopy
+        elif optname == 'b_sanitize':
+            assert value_object is None or isinstance(value_object, options.UserStringArrayOption)
+            # To ensure backwards compatibility this always returns a string.
+            # We may eventually want to introduce a new "format" kwarg that
+            # allows the user to modify this behaviour, but for now this is
+            # likely good enough for most usecases.
+            if not value:
+                return 'none'
+            return ','.join(sorted(value))
+
+        if isinstance(value, str):
+            return P_OBJ.OptionString(value, f'{{{optname}}}')
+        return value
 
     @typed_pos_args('configuration_data', optargs=[dict])
     @noKwargs
@@ -1131,10 +1130,10 @@ class Interpreter(InterpreterBase, HoldableObject):
         if OptionKey('genvslite') in self.user_defined_options.cmd_line_options:
             # Use of the '--genvslite vsxxxx' option ultimately overrides any '--backend xxx'
             # option the user may specify.
-            backend_name = self.coredata.get_option(OptionKey('genvslite'))
+            backend_name = self.coredata.optstore.get_value_for(OptionKey('genvslite'))
             self.backend = backends.get_genvslite_backend(backend_name, self.build, self)
         else:
-            backend_name = self.coredata.get_option(OptionKey('backend'))
+            backend_name = self.coredata.optstore.get_value_for(OptionKey('backend'))
             self.backend = backends.get_backend_from_name(backend_name, self.build, self)
 
         if self.backend is None:
@@ -1182,56 +1181,24 @@ class Interpreter(InterpreterBase, HoldableObject):
         else:
             mesonlib.project_meson_versions[self.subproject] = mesonlib.NoProjectVersion()
 
-        # Load "meson.options" before "meson_options.txt", and produce a warning if
-        # it is being used with an old version. I have added check that if both
-        # exist the warning isn't raised
-        option_file = os.path.join(self.source_root, self.subdir, 'meson.options')
-        old_option_file = os.path.join(self.source_root, self.subdir, 'meson_options.txt')
+        self._load_option_file()
 
-        if os.path.exists(option_file):
-            if os.path.exists(old_option_file):
-                if os.path.samefile(option_file, old_option_file):
-                    mlog.debug("Not warning about meson.options with version minimum < 1.1 because meson_options.txt also exists")
-                else:
-                    raise MesonException("meson.options and meson_options.txt both exist, but are not the same file.")
-            else:
-                FeatureNew.single_use('meson.options file', '1.1', self.subproject, 'Use meson_options.txt instead')
-        else:
-            option_file = old_option_file
-        if os.path.exists(option_file):
-            with open(option_file, 'rb') as f:
-                # We want fast  not cryptographically secure, this is just to
-                # see if the option file has changed
-                self.coredata.options_files[self.subproject] = (option_file, hashlib.sha1(f.read()).hexdigest())
-            oi = optinterpreter.OptionInterpreter(self.environment.coredata.optstore, self.subproject)
-            oi.process(option_file)
-            self.coredata.update_project_options(oi.options, self.subproject)
-            self.add_build_def_file(option_file)
-        else:
-            self.coredata.options_files[self.subproject] = None
-
-        if self.subproject:
-            self.project_default_options = {k.evolve(subproject=self.subproject): v
-                                            for k, v in kwargs['default_options'].items()}
-        else:
-            self.project_default_options = kwargs['default_options']
-
-        # Do not set default_options on reconfigure otherwise it would override
-        # values previously set from command line. That means that changing
-        # default_options in a project will trigger a reconfigure but won't
-        # have any effect.
-        #
-        # If this is the first invocation we always need to initialize
-        # builtins, if this is a subproject that is new in a re-invocation we
-        # need to initialize builtins for that
+        self.project_default_options = kwargs['default_options']
+        if isinstance(self.project_default_options, str):
+            self.project_default_options = [self.project_default_options]
+        assert isinstance(self.project_default_options, (list, dict))
         if self.environment.first_invocation or (self.subproject != '' and self.subproject not in self.coredata.initialized_subprojects):
-            default_options = self.project_default_options.copy()
-            default_options.update(self.default_project_options)
-            self.coredata.init_builtins(self.subproject)
-            self.coredata.initialized_subprojects.add(self.subproject)
-        else:
-            default_options = {}
-        self.coredata.set_default_options(default_options, self.subproject, self.environment)
+            if self.subproject == '':
+                self.coredata.optstore.initialize_from_top_level_project_call(self.project_default_options,
+                                                                              self.user_defined_options.cmd_line_options,
+                                                                              self.environment.options)
+            else:
+                invoker_method_default_options = self.default_project_options
+                self.coredata.optstore.initialize_from_subproject_call(self.subproject,
+                                                                       invoker_method_default_options,
+                                                                       self.project_default_options,
+                                                                       self.user_defined_options.cmd_line_options)
+                self.coredata.initialized_subprojects.add(self.subproject)
 
         if not self.is_subproject():
             self.build.project_name = proj_name
@@ -1293,7 +1260,7 @@ class Interpreter(InterpreterBase, HoldableObject):
         # Load wrap files from this (sub)project.
         subprojects_dir = os.path.join(self.subdir, spdirname)
         if not self.is_subproject():
-            wrap_mode = WrapMode.from_string(self.coredata.get_option(OptionKey('wrap_mode')))
+            wrap_mode = WrapMode.from_string(self.coredata.optstore.get_value_for(OptionKey('wrap_mode')))
             self.environment.wrap_resolver = wrap.Resolver(self.environment.get_source_dir(), subprojects_dir, self.subproject, wrap_mode)
         else:
             assert self.environment.wrap_resolver is not None, 'for mypy'
@@ -1308,9 +1275,9 @@ class Interpreter(InterpreterBase, HoldableObject):
             # self.set_backend() otherwise it wouldn't be able to detect which
             # vs backend version we need. But after setting default_options in case
             # the project sets vs backend by default.
-            backend = self.coredata.get_option(OptionKey('backend'))
+            backend = self.coredata.optstore.get_value_for(OptionKey('backend'))
             assert backend is None or isinstance(backend, str), 'for mypy'
-            vsenv = self.coredata.get_option(OptionKey('vsenv'))
+            vsenv = self.coredata.optstore.get_value_for(OptionKey('vsenv'))
             assert isinstance(vsenv, bool), 'for mypy'
             force_vsenv = vsenv or backend.startswith('vs')
             mesonlib.setup_vsenv(force_vsenv)
@@ -1343,8 +1310,8 @@ class Interpreter(InterpreterBase, HoldableObject):
                 mlog.warning('add_languages is missing native:, assuming languages are wanted for both host and build.',
                              location=node)
 
-            success = self.add_languages(langs, False, MachineChoice.BUILD)
-            success &= self.add_languages(langs, required, MachineChoice.HOST)
+            success = self.add_languages(langs, required, MachineChoice.HOST)
+            success &= self.add_languages(langs, False, MachineChoice.BUILD)
             return success
 
     def _stringify_user_arguments(self, args: T.List[TYPE_var], func_name: str) -> T.List[str]:
@@ -1418,7 +1385,14 @@ class Interpreter(InterpreterBase, HoldableObject):
                 values['Cross files'] = self.user_defined_options.cross_file
             if self.user_defined_options.native_file:
                 values['Native files'] = self.user_defined_options.native_file
-            sorted_options = sorted(self.user_defined_options.cmd_line_options.items())
+
+            def compatibility_sort_helper(s):
+                if isinstance(s, tuple):
+                    s = s[0]
+                if isinstance(s, str):
+                    return s
+                return s.name
+            sorted_options = sorted(self.user_defined_options.cmd_line_options.items(), key=compatibility_sort_helper)
             values.update({str(k): v for k, v in sorted_options})
             if values:
                 self.summary_impl('User defined options', values, {'bool_yn': False, 'list_sep': None})
@@ -1471,6 +1445,7 @@ class Interpreter(InterpreterBase, HoldableObject):
                 super().__init__(subproject)
                 self.old_stdout = sys.stdout
                 sys.stdout = self.new_stdout = io.StringIO()
+                sys.stdout.colorize_console = getattr(self.old_stdout, 'colorize_console', None)
                 self.msg = msg
                 self.how = how
 
@@ -1554,15 +1529,6 @@ class Interpreter(InterpreterBase, HoldableObject):
             else:
                 # update new values from commandline, if it applies
                 self.coredata.process_compiler_options(lang, comp, self.environment, self.subproject)
-
-            # Add per-subproject compiler options. They inherit value from main project.
-            if self.subproject:
-                options = {}
-                for k in comp.get_options():
-                    v = copy.copy(self.coredata.optstore.get_value_object(k))
-                    k = k.evolve(subproject=self.subproject)
-                    options[k] = v
-                self.coredata.add_compiler_options(options, lang, for_machine, self.environment, self.subproject)
 
             if for_machine == MachineChoice.HOST or self.environment.is_cross_build():
                 logger_fun = mlog.log
@@ -1657,7 +1623,7 @@ class Interpreter(InterpreterBase, HoldableObject):
     # the host machine.
     def find_program_impl(self, args: T.List[mesonlib.FileOrString],
                           for_machine: MachineChoice = MachineChoice.HOST,
-                          default_options: T.Optional[T.Dict[OptionKey, T.Union[str, int, bool, T.List[str]]]] = None,
+                          default_options: T.Optional[T.Dict[OptionKey, options.ElementaryOptionValues]] = None,
                           required: bool = True, silent: bool = True,
                           wanted: T.Union[str, T.List[str]] = '',
                           search_dirs: T.Optional[T.List[str]] = None,
@@ -1688,7 +1654,7 @@ class Interpreter(InterpreterBase, HoldableObject):
         return progobj
 
     def program_lookup(self, args: T.List[mesonlib.FileOrString], for_machine: MachineChoice,
-                       default_options: T.Optional[T.Dict[OptionKey, T.Union[str, int, bool, T.List[str]]]],
+                       default_options: T.Optional[T.Dict[OptionKey, options.ElementaryOptionValues]],
                        required: bool,
                        search_dirs: T.Optional[T.List[str]],
                        wanted: T.Union[str, T.List[str]],
@@ -1705,7 +1671,7 @@ class Interpreter(InterpreterBase, HoldableObject):
             return ExternalProgram('meson', self.environment.get_build_command(), silent=True)
 
         fallback = None
-        wrap_mode = WrapMode.from_string(self.coredata.get_option(OptionKey('wrap_mode')))
+        wrap_mode = WrapMode.from_string(self.coredata.optstore.get_value_for(OptionKey('wrap_mode')))
         if wrap_mode != WrapMode.nofallback and self.environment.wrap_resolver:
             fallback = self.environment.wrap_resolver.find_program_provider(args)
         if fallback and wrap_mode == WrapMode.forcefallback:
@@ -1756,7 +1722,7 @@ class Interpreter(InterpreterBase, HoldableObject):
         return True
 
     def find_program_fallback(self, fallback: str, args: T.List[mesonlib.FileOrString],
-                              default_options: T.Dict[OptionKey, T.Union[str, int, bool, T.List[str]]],
+                              default_options: T.Dict[OptionKey, options.ElementaryOptionValues],
                               required: bool, extra_info: T.List[mlog.TV_Loggable]
                               ) -> T.Optional[T.Union[ExternalProgram, build.Executable, OverrideProgram]]:
         mlog.log('Fallback to subproject', mlog.bold(fallback), 'which provides program',
@@ -1856,12 +1822,24 @@ class Interpreter(InterpreterBase, HoldableObject):
     def func_disabler(self, node, args, kwargs):
         return Disabler()
 
+    def _strip_exe_specific_kwargs(self, kwargs: kwtypes.Executable) -> kwtypes._BuildTarget:
+        kwargs = kwargs.copy()
+        for exe_kwarg in _EXCLUSIVE_EXECUTABLE_KWS:
+            del kwargs[exe_kwarg.name]
+        return kwargs
+
     @permittedKwargs(build.known_exe_kwargs)
     @typed_pos_args('executable', str, varargs=SOURCES_VARARGS)
     @typed_kwargs('executable', *EXECUTABLE_KWS, allow_unknown=True)
     def func_executable(self, node: mparser.BaseNode,
                         args: T.Tuple[str, SourcesVarargsType],
                         kwargs: kwtypes.Executable) -> build.Executable:
+        for_machine = kwargs['native']
+        m = self.environment.machines[for_machine]
+        if m.is_android() and kwargs.get('android_exe_type') == 'application':
+            holder = self.build_target(node, args, self._strip_exe_specific_kwargs(kwargs), build.SharedLibrary)
+            holder.shared_library_only = True
+            return holder
         return self.build_target(node, args, kwargs, build.Executable)
 
     @permittedKwargs(build.known_stlib_kwargs)
@@ -2253,7 +2231,8 @@ class Interpreter(InterpreterBase, HoldableObject):
 
     def make_test(self, node: mparser.BaseNode,
                   args: T.Tuple[str, T.Union[build.Executable, build.Jar, ExternalProgram, mesonlib.File, build.CustomTarget, build.CustomTargetIndex]],
-                  kwargs: 'kwtypes.BaseTest') -> Test:
+                  kwargs: 'kwtypes.BaseTest',
+                  klass: T.Type[TestClass] = Test) -> TestClass:
         name = args[0]
         if ':' in name:
             mlog.deprecation(f'":" is not allowed in test name "{name}", it has been replaced with "_"',
@@ -2283,20 +2262,20 @@ class Interpreter(InterpreterBase, HoldableObject):
                 s = ':' + s
             suite.append(prj.replace(' ', '_').replace(':', '_') + s)
 
-        return Test(name,
-                    prj,
-                    suite,
-                    exe,
-                    kwargs['depends'],
-                    kwargs.get('is_parallel', False),
-                    kwargs['args'],
-                    env,
-                    kwargs['should_fail'],
-                    kwargs['timeout'],
-                    kwargs['workdir'],
-                    kwargs['protocol'],
-                    kwargs['priority'],
-                    kwargs['verbose'])
+        return klass(name,
+                     prj,
+                     suite,
+                     exe,
+                     kwargs['depends'],
+                     kwargs.get('is_parallel', False),
+                     kwargs['args'],
+                     env,
+                     kwargs['should_fail'],
+                     kwargs['timeout'],
+                     kwargs['workdir'],
+                     kwargs['protocol'],
+                     kwargs['priority'],
+                     kwargs['verbose'])
 
     def add_test(self, node: mparser.BaseNode,
                  args: T.Tuple[str, T.Union[build.Executable, build.Jar, ExternalProgram, mesonlib.File, build.CustomTarget, build.CustomTargetIndex]],
@@ -2464,39 +2443,21 @@ class Interpreter(InterpreterBase, HoldableObject):
             raise InvalidArguments('The "meson-" prefix is reserved and cannot be used for top-level subdir().')
         if args[0] == '':
             raise InvalidArguments("The argument given to subdir() is the empty string ''. This is prohibited.")
+        if os.path.isabs(args[0]):
+            raise InvalidArguments('Subdir argument must be a relative path.')
         for i in kwargs['if_found']:
             if not i.found():
                 return
 
-        prev_subdir = self.subdir
-        subdir = os.path.join(prev_subdir, args[0])
-        if os.path.isabs(subdir):
-            raise InvalidArguments('Subdir argument must be a relative path.')
-        absdir = os.path.join(self.environment.get_source_dir(), subdir)
-        symlinkless_dir = os.path.realpath(absdir)
-        build_file = os.path.join(symlinkless_dir, 'meson.build')
-        if build_file in self.processed_buildfiles:
+        subdir, is_new = self._resolve_subdir(self.environment.get_source_dir(), args[0])
+        if not is_new:
             raise InvalidArguments(f'Tried to enter directory "{subdir}", which has already been visited.')
-        self.processed_buildfiles.add(build_file)
-        self.subdir = subdir
+
         os.makedirs(os.path.join(self.environment.build_dir, subdir), exist_ok=True)
-        buildfilename = os.path.join(self.subdir, environment.build_filename)
-        self.build_def_files.add(buildfilename)
-        absname = os.path.join(self.environment.get_source_dir(), buildfilename)
-        if not os.path.isfile(absname):
-            self.subdir = prev_subdir
+
+        if not self._evaluate_subdir(self.environment.get_source_dir(), subdir):
+            buildfilename = os.path.join(subdir, environment.build_filename)
             raise InterpreterException(f"Nonexistent build file '{buildfilename!s}'")
-        code = self.read_buildfile(absname, buildfilename)
-        try:
-            codeblock = mparser.Parser(code, absname).parse()
-        except mesonlib.MesonException as me:
-            me.file = absname
-            raise me
-        try:
-            self.evaluate_codeblock(codeblock)
-        except SubdirDoneRequest:
-            pass
-        self.subdir = prev_subdir
 
     # This is either ignored on basically any OS nowadays, or silently gets
     # ignored (Solaris) or triggers an "illegal operation" error (FreeBSD).
@@ -3102,7 +3063,7 @@ class Interpreter(InterpreterBase, HoldableObject):
         if OptionKey('b_sanitize') not in self.coredata.optstore:
             return
         if (self.coredata.optstore.get_value('b_lundef') and
-                self.coredata.optstore.get_value('b_sanitize') != 'none'):
+                self.coredata.optstore.get_value('b_sanitize')):
             value = self.coredata.optstore.get_value('b_sanitize')
             mlog.warning(textwrap.dedent(f'''\
                     Trying to use {value} sanitizer on Clang with b_lundef.
@@ -3121,8 +3082,8 @@ class Interpreter(InterpreterBase, HoldableObject):
     # subproject than it is defined in (due to e.g. a
     # declare_dependency).
     def validate_within_subproject(self, subdir, fname):
-        srcdir = Path(self.environment.source_dir)
-        builddir = Path(self.environment.build_dir)
+        srcdir = self.environment.source_dir
+        builddir = self.environment.build_dir
         if isinstance(fname, P_OBJ.DependencyVariableString):
             def validate_installable_file(fpath: Path) -> bool:
                 installablefiles: T.Set[Path] = set()
@@ -3142,27 +3103,39 @@ class Interpreter(InterpreterBase, HoldableObject):
             # subproject files, as long as they are scheduled to be installed.
             if validate_installable_file(norm):
                 return
-        norm = Path(os.path.abspath(Path(srcdir, subdir, fname)))
-        if os.path.isdir(norm):
-            inputtype = 'directory'
-        else:
-            inputtype = 'file'
-        if InterpreterRuleRelaxation.ALLOW_BUILD_DIR_FILE_REFERENCES in self.relaxations and builddir in norm.parents:
+
+        def do_validate_within_subproject(norm: str) -> None:
+            if os.path.isdir(norm):
+                inputtype = 'directory'
+            else:
+                inputtype = 'file'
+            if InterpreterRuleRelaxation.ALLOW_BUILD_DIR_FILE_REFERENCES in self.relaxations and is_parent_path(builddir, norm):
+                return
+
+            if not is_parent_path(srcdir, norm):
+                # Grabbing files outside the source tree is ok.
+                # This is for vendor stuff like:
+                #
+                # /opt/vendorsdk/src/file_with_license_restrictions.c
+                return
+
+            project_root = os.path.join(srcdir, self.root_subdir)
+            if not is_parent_path(project_root, norm):
+                name = os.path.basename(norm)
+                raise InterpreterException(f'Sandbox violation: Tried to grab {inputtype} {name} outside current (sub)project.')
+
+            subproject_dir = os.path.join(project_root, self.subproject_dir)
+            if is_parent_path(subproject_dir, norm):
+                name = os.path.basename(norm)
+                raise InterpreterException(f'Sandbox violation: Tried to grab {inputtype} {name} from a nested subproject.')
+
+        fname = os.path.join(subdir, fname)
+        if fname in self.validated_cache:
             return
-        if srcdir not in norm.parents:
-            # Grabbing files outside the source tree is ok.
-            # This is for vendor stuff like:
-            #
-            # /opt/vendorsdk/src/file_with_license_restrictions.c
-            return
-        project_root = Path(srcdir, self.root_subdir)
-        subproject_dir = project_root / self.subproject_dir
-        if norm == project_root:
-            return
-        if project_root not in norm.parents:
-            raise InterpreterException(f'Sandbox violation: Tried to grab {inputtype} {norm.name} outside current (sub)project.')
-        if subproject_dir == norm or subproject_dir in norm.parents:
-            raise InterpreterException(f'Sandbox violation: Tried to grab {inputtype} {norm.name} from a nested subproject.')
+
+        norm = os.path.abspath(os.path.join(srcdir, fname))
+        do_validate_within_subproject(norm)
+        self.validated_cache.add(fname)
 
     @T.overload
     def source_strings_to_files(self, sources: T.List['mesonlib.FileOrString'], strict: bool = True) -> T.List['mesonlib.File']: ...
@@ -3270,9 +3243,9 @@ class Interpreter(InterpreterBase, HoldableObject):
     def build_both_libraries(self, node: mparser.BaseNode, args: T.Tuple[str, SourcesVarargsType], kwargs: kwtypes.Library) -> build.BothLibraries:
         shared_lib = self.build_target(node, args, kwargs, build.SharedLibrary)
         static_lib = self.build_target(node, args, kwargs, build.StaticLibrary)
-        preferred_library = self.coredata.get_option(OptionKey('default_both_libraries'))
+        preferred_library = self.coredata.optstore.get_value_for(OptionKey('default_both_libraries'))
         if preferred_library == 'auto':
-            preferred_library = self.coredata.get_option(OptionKey('default_library'))
+            preferred_library = self.coredata.optstore.get_value_for(OptionKey('default_library'))
             if preferred_library == 'both':
                 preferred_library = 'shared'
 
@@ -3313,12 +3286,12 @@ class Interpreter(InterpreterBase, HoldableObject):
         return build.BothLibraries(shared_lib, static_lib, preferred_library)
 
     def build_library(self, node: mparser.BaseNode, args: T.Tuple[str, SourcesVarargsType], kwargs: kwtypes.Library):
-        default_library = self.coredata.get_option(OptionKey('default_library', subproject=self.subproject))
+        default_library = self.coredata.optstore.get_value_for(OptionKey('default_library', subproject=self.subproject))
         assert isinstance(default_library, str), 'for mypy'
         if default_library == 'shared':
-            return self.build_target(node, args, T.cast('kwtypes.StaticLibrary', kwargs), build.SharedLibrary)
+            return self.build_target(node, args, T.cast('kwtypes.SharedLibrary', kwargs), build.SharedLibrary)
         elif default_library == 'static':
-            return self.build_target(node, args, T.cast('kwtypes.SharedLibrary', kwargs), build.StaticLibrary)
+            return self.build_target(node, args, T.cast('kwtypes.StaticLibrary', kwargs), build.StaticLibrary)
         elif default_library == 'both':
             return self.build_both_libraries(node, args, kwargs)
         else:
@@ -3435,6 +3408,7 @@ class Interpreter(InterpreterBase, HoldableObject):
                 kwargs['language_args'][lang].extend(args)
                 kwargs['depend_files'].extend(deps)
         if targetclass is not build.Jar:
+            self.check_for_jar_sources(sources, targetclass)
             kwargs['d_import_dirs'] = self.extract_incdirs(kwargs, 'd_import_dirs')
 
         # Filter out kwargs from other target types. For example 'soversion'
@@ -3503,6 +3477,8 @@ class Interpreter(InterpreterBase, HoldableObject):
 
         target = targetclass(name, self.subdir, self.subproject, for_machine, srcs, struct, objs,
                              self.environment, self.compilers[for_machine], kwargs)
+        if objs and target.uses_rust():
+            FeatureNew.single_use('objects in Rust targets', '1.8.0', self.subproject)
 
         self.add_target(name, target)
         self.project_args_frozen = True
@@ -3521,6 +3497,13 @@ class Interpreter(InterpreterBase, HoldableObject):
             fname = os.path.join(subdir, s)
             if not os.path.isfile(fname):
                 raise InterpreterException(f'Tried to add non-existing source file {s}.')
+
+    def check_for_jar_sources(self, sources, targetclass):
+        for s in sources:
+            if isinstance(s, (str, mesonlib.File)) and compilers.is_java(s):
+                raise InvalidArguments(f'Build target of type "{targetclass.typename}" cannot build java source: "{s}". Use "{build.Jar.typename}" instead.')
+            elif isinstance(s, build.StructuredSources):
+                self.check_for_jar_sources(s.as_list(), targetclass)
 
     # Only permit object extraction from the same subproject
     def validate_extraction(self, buildtarget: mesonlib.HoldableObject) -> None:

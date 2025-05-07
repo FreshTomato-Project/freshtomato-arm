@@ -106,6 +106,7 @@ __all__ = [
     'generate_list',
     'get_compiler_for_source',
     'get_filenames_templates_dict',
+    'get_rsp_threshold',
     'get_variable_regex',
     'get_wine_shortpath',
     'git',
@@ -124,6 +125,7 @@ __all__ = [
     'is_netbsd',
     'is_openbsd',
     'is_osx',
+    'is_parent_path',
     'is_qnx',
     'is_sunos',
     'is_windows',
@@ -502,10 +504,10 @@ class MachineChoice(enum.IntEnum):
         return MACHINE_PREFIXES[self.value]
 
 
+@dataclasses.dataclass(eq=False, order=False)
 class PerMachine(T.Generic[_T]):
-    def __init__(self, build: _T, host: _T) -> None:
-        self.build = build
-        self.host = host
+    build: _T
+    host: _T
 
     def __getitem__(self, machine: MachineChoice) -> _T:
         return [self.build, self.host][machine.value]
@@ -513,7 +515,7 @@ class PerMachine(T.Generic[_T]):
     def __setitem__(self, machine: MachineChoice, val: _T) -> None:
         setattr(self, machine.get_lower_case_name(), val)
 
-    def miss_defaulting(self) -> "PerMachineDefaultable[T.Optional[_T]]":
+    def miss_defaulting(self) -> PerMachineDefaultable[T.Optional[_T]]:
         """Unset definition duplicated from their previous to None
 
         This is the inverse of ''default_missing''. By removing defaulted
@@ -531,10 +533,8 @@ class PerMachine(T.Generic[_T]):
         self.build = build
         self.host = host
 
-    def __repr__(self) -> str:
-        return f'PerMachine({self.build!r}, {self.host!r})'
 
-
+@dataclasses.dataclass(eq=False, order=False)
 class PerThreeMachine(PerMachine[_T]):
     """Like `PerMachine` but includes `target` too.
 
@@ -542,9 +542,8 @@ class PerThreeMachine(PerMachine[_T]):
     need to computer the `target` field so we don't bother overriding the
     `__getitem__`/`__setitem__` methods.
     """
-    def __init__(self, build: _T, host: _T, target: _T) -> None:
-        super().__init__(build, host)
-        self.target = target
+
+    target: _T
 
     def miss_defaulting(self) -> "PerThreeMachineDefaultable[T.Optional[_T]]":
         """Unset definition duplicated from their previous to None
@@ -566,29 +565,23 @@ class PerThreeMachine(PerMachine[_T]):
     def matches_build_machine(self, machine: MachineChoice) -> bool:
         return self.build == self[machine]
 
-    def __repr__(self) -> str:
-        return f'PerThreeMachine({self.build!r}, {self.host!r}, {self.target!r})'
 
-
+@dataclasses.dataclass(eq=False, order=False)
 class PerMachineDefaultable(PerMachine[T.Optional[_T]]):
     """Extends `PerMachine` with the ability to default from `None`s.
     """
-    def __init__(self, build: T.Optional[_T] = None, host: T.Optional[_T] = None) -> None:
-        super().__init__(build, host)
 
-    def default_missing(self) -> "PerMachine[_T]":
+    build: T.Optional[_T] = None
+    host: T.Optional[_T] = None
+
+    def default_missing(self) -> PerMachine[_T]:
         """Default host to build
 
         This allows just specifying nothing in the native case, and just host in the
         cross non-compiler case.
         """
-        freeze = PerMachine(self.build, self.host)
-        if freeze.host is None:
-            freeze.host = freeze.build
-        return freeze
-
-    def __repr__(self) -> str:
-        return f'PerMachineDefaultable({self.build!r}, {self.host!r})'
+        assert self.build is not None, 'Cannot fill in missing when all fields are empty'
+        return PerMachine(self.build, self.host if self.host is not None else self.build)
 
     @classmethod
     def default(cls, is_cross: bool, build: _T, host: _T) -> PerMachine[_T]:
@@ -605,28 +598,24 @@ class PerMachineDefaultable(PerMachine[T.Optional[_T]]):
         return m.default_missing()
 
 
+@dataclasses.dataclass(eq=False, order=False)
 class PerThreeMachineDefaultable(PerMachineDefaultable[T.Optional[_T]], PerThreeMachine[T.Optional[_T]]):
     """Extends `PerThreeMachine` with the ability to default from `None`s.
     """
-    def __init__(self) -> None:
-        PerThreeMachine.__init__(self, None, None, None)
 
-    def default_missing(self) -> "PerThreeMachine[T.Optional[_T]]":
+    target: T.Optional[_T] = None
+
+    def default_missing(self) -> PerThreeMachine[_T]:
         """Default host to build and target to host.
 
         This allows just specifying nothing in the native case, just host in the
         cross non-compiler case, and just target in the native-built
         cross-compiler case.
         """
-        freeze = PerThreeMachine(self.build, self.host, self.target)
-        if freeze.host is None:
-            freeze.host = freeze.build
-        if freeze.target is None:
-            freeze.target = freeze.host
-        return freeze
-
-    def __repr__(self) -> str:
-        return f'PerThreeMachineDefaultable({self.build!r}, {self.host!r}, {self.target!r})'
+        assert self.build is not None, 'Cannot default a PerMachine when all values are None'
+        host = self.host if self.host is not None else self.build
+        target = self.target if self.target is not None else host
+        return PerThreeMachine(self.build, host, target)
 
 
 def is_sunos() -> bool:
@@ -1125,6 +1114,26 @@ def determine_worker_count(varnames: T.Optional[T.List[str]] = None) -> int:
         except Exception:
             num_workers = 1
     return num_workers
+
+def is_parent_path(parent: str, trial: str) -> bool:
+    '''Checks if @trial is a file under the directory @parent. Both @trial and @parent should be
+       adequately normalized, though empty and '.' segments in @parent and @trial are accepted
+       and discarded, matching the behavior of os.path.commonpath.  Either both or none should
+       be absolute.'''
+    assert os.path.isabs(parent) == os.path.isabs(trial)
+    if is_windows():
+        parent = parent.replace('\\', '/')
+        trial = trial.replace('\\', '/')
+
+    split_parent = parent.split('/')
+    split_trial = trial.split('/')
+
+    split_parent = [c for c in split_parent if c and c != '.']
+    split_trial = [c for c in split_trial if c and c != '.']
+
+    components = len(split_parent)
+    return len(split_trial) >= components and split_trial[:components] == split_parent
+
 
 def has_path_sep(name: str, sep: str = '/\\') -> bool:
     'Checks if any of the specified @sep path separators are in @name'
@@ -2382,6 +2391,27 @@ def first(iter: T.Iterable[_T], predicate: T.Callable[[_T], bool]) -> T.Optional
     return None
 
 
+def get_rsp_threshold() -> int:
+    '''Return a conservative estimate of the commandline size in bytes
+    above which a response file should be used.  May be overridden for
+    debugging by setting environment variable MESON_RSP_THRESHOLD.'''
+
+    if is_windows():
+        # Usually 32k, but some projects might use cmd.exe,
+        # and that has a limit of 8k.
+        limit = 8192
+    else:
+        # Unix-like OSes usually have very large command line limits, (On Linux,
+        # for example, this is limited by the kernel's MAX_ARG_STRLEN). However,
+        # some programs place much lower limits, notably Wine which enforces a
+        # 32k limit like Windows. Therefore, we limit the command line to 32k.
+        limit = 32768
+
+    # Be conservative
+    limit = limit // 2
+    return int(os.environ.get('MESON_RSP_THRESHOLD', limit))
+
+
 class lazy_property(T.Generic[_T]):
     """Descriptor that replaces the function it wraps with the value generated.
 
@@ -2392,10 +2422,17 @@ class lazy_property(T.Generic[_T]):
     Due to Python's MRO that means that the calculated value will be found
     before this property, speeding up subsequent lookups.
     """
-    def __init__(self, func: T.Callable[[T.Any], _T]):
+    def __init__(self, func: T.Callable[[T.Any], _T]) -> None:
+        self.__name: T.Optional[str] = None
         self.__func = func
+
+    def __set_name__(self, owner: T.Any, name: str) -> None:
+        if self.__name is None:
+            self.__name = name
+        else:
+            assert name == self.__name
 
     def __get__(self, instance: object, cls: T.Type) -> _T:
         value = self.__func(instance)
-        setattr(instance, self.__func.__name__, value)
+        setattr(instance, self.__name, value)
         return value

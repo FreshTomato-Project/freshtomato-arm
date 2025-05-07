@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2015-2016 The Meson development team
+# Copyright © 2023-2024 Intel Corporation
 
 '''This module provides helper functions for Gnome/GLib related
 functionality such as gobject-introspection, gresources and gtk-doc'''
@@ -82,6 +83,7 @@ if T.TYPE_CHECKING:
 
         build_by_default: bool
         dependencies: T.List[Dependency]
+        doc_format: T.Optional[str]
         export_packages: T.List[str]
         extra_args: T.List[str]
         fatal_warnings: bool
@@ -520,7 +522,7 @@ class GnomeModule(ExtensionModule):
         if gresource: # Only one target for .gresource files
             return ModuleReturnValue(target_c, [target_c])
 
-        install_dir = kwargs['install_dir'] or state.environment.coredata.get_option(OptionKey('includedir'))
+        install_dir = kwargs['install_dir'] or state.environment.coredata.optstore.get_value_for(OptionKey('includedir'))
         assert isinstance(install_dir, str), 'for mypy'
         target_h = GResourceHeaderTarget(
             f'{target_name}_h',
@@ -702,14 +704,14 @@ class GnomeModule(ExtensionModule):
                         lib_dir = os.path.dirname(flag)
                         external_ldflags.update([f'-L{lib_dir}'])
                         if include_rpath:
-                            external_ldflags.update([f'-Wl,-rpath {lib_dir}'])
+                            external_ldflags.update([f'-Wl,-rpath,{lib_dir}'])
                         libname = os.path.basename(flag)
                         if libname.startswith("lib"):
                             libname = libname[3:]
                         libname = libname.split(".so")[0]
                         flag = f"-l{libname}"
                     # FIXME: Hack to avoid passing some compiler options in
-                    if flag.startswith("-W"):
+                    if flag.startswith("-W") and not flag.startswith('-Wl,-rpath,'):
                         continue
                     # If it's a framework arg, slurp the framework name too
                     # to preserve the order of arguments
@@ -911,8 +913,8 @@ class GnomeModule(ExtensionModule):
                 cflags += state.project_args[lang]
             if OptionKey('b_sanitize') in compiler.base_options:
                 sanitize = state.environment.coredata.optstore.get_value('b_sanitize')
+                assert isinstance(sanitize, list)
                 cflags += compiler.sanitizer_compile_args(sanitize)
-                sanitize = sanitize.split(',')
                 # These must be first in ldflags
                 if 'address' in sanitize:
                     internal_ldflags += ['-lasan']
@@ -962,6 +964,7 @@ class GnomeModule(ExtensionModule):
             scan_command: T.Sequence[T.Union['FileOrString', Executable, ExternalProgram, OverrideProgram]],
             generated_files: T.Sequence[T.Union[str, mesonlib.File, CustomTarget, CustomTargetIndex, GeneratedList]],
             depends: T.Sequence[T.Union['FileOrString', build.BuildTarget, 'build.GeneratedTypes', build.StructuredSources]],
+            env_flags: T.Sequence[str],
             kwargs: T.Dict[str, T.Any]) -> GirTarget:
         install = kwargs['install_gir']
         if install is None:
@@ -982,6 +985,7 @@ class GnomeModule(ExtensionModule):
         # g-ir-scanner uses Python's distutils to find the compiler, which uses 'CC'
         cc_exelist = state.environment.coredata.compilers.host['c'].get_exelist()
         run_env.set('CC', [quote_arg(x) for x in cc_exelist], ' ')
+        run_env.set('CFLAGS', [quote_arg(x) for x in env_flags], ' ')
         run_env.merge(kwargs['env'])
 
         return GirTarget(
@@ -1088,11 +1092,12 @@ class GnomeModule(ExtensionModule):
                 yield f
 
     @staticmethod
-    def _get_scanner_ldflags(ldflags: T.Iterable[str]) -> T.Iterable[str]:
+    def _get_scanner_ldflags(ldflags: T.Iterable[str]) -> tuple[list[str], list[str]]:
         'g-ir-scanner only accepts -L/-l; must ignore -F and other linker flags'
-        for f in ldflags:
-            if f.startswith(('-L', '-l', '--extra-library')):
-                yield f
+        return (
+            [f for f in ldflags if f.startswith(('-L', '-l', '--extra-library'))],
+            [f for f in ldflags if f.startswith(('-Wl,-rpath,'))],
+        )
 
     @typed_pos_args('gnome.generate_gir', varargs=(Executable, build.SharedLibrary, build.StaticLibrary), min_varargs=1)
     @typed_kwargs(
@@ -1102,6 +1107,7 @@ class GnomeModule(ExtensionModule):
         _EXTRA_ARGS_KW,
         ENV_KW.evolve(since='1.2.0'),
         KwargInfo('dependencies', ContainerTypeInfo(list, Dependency), default=[], listify=True),
+        KwargInfo('doc_format', (str, NoneType), since='1.8.0'),
         KwargInfo('export_packages', ContainerTypeInfo(list, str), default=[], listify=True),
         KwargInfo('fatal_warnings', bool, default=False, since='0.55.0'),
         KwargInfo('header', ContainerTypeInfo(list, str), default=[], listify=True),
@@ -1161,11 +1167,14 @@ class GnomeModule(ExtensionModule):
         scan_cflags += list(self._get_scanner_cflags(dep_cflags))
         scan_cflags += list(self._get_scanner_cflags(self._get_external_args_for_langs(state, [lc[0] for lc in langs_compilers])))
         scan_internal_ldflags = []
-        scan_internal_ldflags += list(self._get_scanner_ldflags(internal_ldflags))
-        scan_internal_ldflags += list(self._get_scanner_ldflags(dep_internal_ldflags))
         scan_external_ldflags = []
-        scan_external_ldflags += list(self._get_scanner_ldflags(external_ldflags))
-        scan_external_ldflags += list(self._get_scanner_ldflags(dep_external_ldflags))
+        scan_env_ldflags = []
+        for cli_flags, env_flags in (self._get_scanner_ldflags(internal_ldflags), self._get_scanner_ldflags(dep_internal_ldflags)):
+            scan_internal_ldflags += cli_flags
+            scan_env_ldflags = env_flags
+        for cli_flags, env_flags in (self._get_scanner_ldflags(external_ldflags), self._get_scanner_ldflags(dep_external_ldflags)):
+            scan_external_ldflags += cli_flags
+            scan_env_ldflags = env_flags
         girtargets_inc_dirs = self._get_gir_targets_inc_dirs(girtargets)
         inc_dirs = kwargs['include_directories']
 
@@ -1207,6 +1216,9 @@ class GnomeModule(ExtensionModule):
             scan_command += ['--sources-top-dirs', os.path.join(state.environment.get_source_dir(), state.root_subdir)]
             scan_command += ['--sources-top-dirs', os.path.join(state.environment.get_build_dir(), state.root_subdir)]
 
+        if kwargs['doc_format'] is not None and self._gir_has_option('--doc-format'):
+            scan_command += ['--doc-format', kwargs['doc_format']]
+
         if '--warn-error' in scan_command:
             FeatureDeprecated.single_use('gnome.generate_gir argument --warn-error', '0.55.0',
                                          state.subproject, 'Use "fatal_warnings" keyword argument', state.current_node)
@@ -1216,7 +1228,7 @@ class GnomeModule(ExtensionModule):
         generated_files = [f for f in libsources if isinstance(f, (GeneratedList, CustomTarget, CustomTargetIndex))]
 
         scan_target = self._make_gir_target(
-            state, girfile, scan_command, generated_files, depends,
+            state, girfile, scan_command, generated_files, depends, scan_env_ldflags,
             # We have to cast here because mypy can't figure this out
             T.cast('T.Dict[str, T.Any]', kwargs))
 
@@ -1649,7 +1661,7 @@ class GnomeModule(ExtensionModule):
 
         targets = []
         install_header = kwargs['install_header']
-        install_dir = kwargs['install_dir'] or state.environment.coredata.get_option(OptionKey('includedir'))
+        install_dir = kwargs['install_dir'] or state.environment.coredata.optstore.get_value_for(OptionKey('includedir'))
         assert isinstance(install_dir, str), 'for mypy'
 
         output = namebase + '.c'
@@ -1961,7 +1973,7 @@ class GnomeModule(ExtensionModule):
             ) -> build.CustomTarget:
         real_cmd: T.List[T.Union[str, 'ToolType']] = [self._find_tool(state, 'glib-mkenums')]
         real_cmd.extend(cmd)
-        _install_dir = install_dir or state.environment.coredata.get_option(OptionKey('includedir'))
+        _install_dir = install_dir or state.environment.coredata.optstore.get_value_for(OptionKey('includedir'))
         assert isinstance(_install_dir, str), 'for mypy'
 
         return CustomTarget(
@@ -2173,7 +2185,7 @@ class GnomeModule(ExtensionModule):
                 cmd.append(gir_file)
 
         vapi_output = library + '.vapi'
-        datadir = state.environment.coredata.get_option(OptionKey('datadir'))
+        datadir = state.environment.coredata.optstore.get_value_for(OptionKey('datadir'))
         assert isinstance(datadir, str), 'for mypy'
         install_dir = kwargs['install_dir'] or os.path.join(datadir, 'vala', 'vapi')
 

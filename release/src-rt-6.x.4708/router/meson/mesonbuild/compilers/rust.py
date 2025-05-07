@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2012-2022 The Meson development team
+# Copyright © 2023-2025 Intel Corporation
 
 from __future__ import annotations
 
@@ -12,15 +13,16 @@ import typing as T
 from .. import options
 from ..mesonlib import EnvironmentException, MesonException, Popen_safe_logged
 from ..options import OptionKey
-from .compilers import Compiler, clike_debug_args
+from .compilers import Compiler, CompileCheckMode, clike_debug_args
 
 if T.TYPE_CHECKING:
-    from ..coredata import MutableKeyedOptionDictType, KeyedOptionDictType
+    from ..options import MutableKeyedOptionDictType
     from ..envconfig import MachineInfo
     from ..environment import Environment  # noqa: F401
     from ..linkers.linkers import DynamicLinker
     from ..mesonlib import MachineChoice
     from ..dependencies import Dependency
+    from ..build import BuildTarget
 
 
 rust_optimization_args: T.Dict[str, T.List[str]] = {
@@ -99,13 +101,15 @@ class RustCompiler(Compiler):
         if 'link' in self.linker.id:
             self.base_options.add(OptionKey('b_vscrt'))
         self.native_static_libs: T.List[str] = []
+        self.is_beta = '-beta' in full_version
+        self.is_nightly = '-nightly' in full_version
 
     def needs_static_linker(self) -> bool:
         return False
 
-    def sanity_check(self, work_dir: str, environment: 'Environment') -> None:
+    def sanity_check(self, work_dir: str, environment: Environment) -> None:
         source_name = os.path.join(work_dir, 'sanity.rs')
-        output_name = os.path.join(work_dir, 'rusttest')
+        output_name = os.path.join(work_dir, 'rusttest.exe')
         cmdlist = self.exelist.copy()
 
         with open(source_name, 'w', encoding='utf-8') as ofile:
@@ -166,11 +170,14 @@ class RustCompiler(Compiler):
         # are always part of C/C++ linkers. Rustc probably should not print
         # them, pkg-config for example never specify them.
         # FIXME: https://github.com/rust-lang/rust/issues/55120
-        exclude = {'-lc', '-lgcc_s', '-lkernel32', '-ladvapi32'}
+        exclude = {'-lc', '-lgcc_s', '-lkernel32', '-ladvapi32', '/defaultlib:msvcrt'}
         self.native_static_libs = [i for i in match.group(1).split() if i not in exclude]
 
     def get_dependency_gen_args(self, outtarget: str, outfile: str) -> T.List[str]:
-        return ['--dep-info', outfile]
+        return ['--emit', f'dep-info={outfile}']
+
+    def get_output_args(self, outputname: str) -> T.List[str]:
+        return ['--emit', f'link={outputname}']
 
     @functools.lru_cache(maxsize=None)
     def get_sysroot(self) -> str:
@@ -196,6 +203,20 @@ class RustCompiler(Compiler):
     def get_optimization_args(self, optimization_level: str) -> T.List[str]:
         return rust_optimization_args[optimization_level]
 
+    def build_rpath_args(self, env: 'Environment', build_dir: str, from_dir: str,
+                         rpath_paths: T.Tuple[str, ...], build_rpath: str,
+                         install_rpath: str) -> T.Tuple[T.List[str], T.Set[bytes]]:
+        args, to_remove = super().build_rpath_args(env, build_dir, from_dir, rpath_paths,
+                                                   build_rpath, install_rpath)
+
+        # ... but then add rustc's sysroot to account for rustup
+        # installations
+        rustc_rpath_args = []
+        for arg in args:
+            rustc_rpath_args.append('-C')
+            rustc_rpath_args.append(f'link-arg={arg}:{self.get_target_libdir()}')
+        return rustc_rpath_args, to_remove
+
     def compute_parameters_with_absolute_paths(self, parameter_list: T.List[str],
                                                build_dir: str) -> T.List[str]:
         for idx, i in enumerate(parameter_list):
@@ -208,9 +229,6 @@ class RustCompiler(Compiler):
 
         return parameter_list
 
-    def get_output_args(self, outputname: str) -> T.List[str]:
-        return ['-o', outputname]
-
     @classmethod
     def use_linker_args(cls, linker: str, version: str) -> T.List[str]:
         return ['-C', f'linker={linker}']
@@ -220,11 +238,16 @@ class RustCompiler(Compiler):
     # use_linker_args method instead.
 
     def get_options(self) -> MutableKeyedOptionDictType:
-        return dict((self.create_option(options.UserComboOption,
-                                        self.form_compileropt_key('std'),
-                                        'Rust edition to use',
-                                        ['none', '2015', '2018', '2021', '2024'],
-                                        'none'),))
+        opts = super().get_options()
+
+        key = self.form_compileropt_key('std')
+        opts[key] = options.UserComboOption(
+            self.make_option_name(key),
+            'Rust edition to use',
+            'none',
+            choices=['none', '2015', '2018', '2021', '2024'])
+
+        return opts
 
     def get_dependency_compile_args(self, dep: 'Dependency') -> T.List[str]:
         # Rust doesn't have dependency compile arguments so simply return
@@ -232,10 +255,10 @@ class RustCompiler(Compiler):
         # provided by the linker flags.
         return []
 
-    def get_option_compile_args(self, options: 'KeyedOptionDictType') -> T.List[str]:
+    def get_option_std_args(self, target: BuildTarget, env: Environment, subproject: T.Optional[str] = None) -> T.List[str]:
         args = []
-        key = self.form_compileropt_key('std')
-        std = options.get_value(key)
+        std = self.get_compileropt_value('std', env, target, subproject)
+        assert isinstance(std, str)
         if std != 'none':
             args.append('--edition=' + std)
         return args
@@ -256,6 +279,8 @@ class RustCompiler(Compiler):
 
     def get_linker_always_args(self) -> T.List[str]:
         args: T.List[str] = []
+        # Rust is super annoying, calling -C link-arg foo does not work, it has
+        # to be -C link-arg=foo
         for a in super().get_linker_always_args():
             args.extend(['-C', f'link-arg={a}'])
         return args
@@ -289,7 +314,7 @@ class RustCompiler(Compiler):
             exelist = rustup_exelist + [name]
         else:
             exelist = [name]
-            args = self.exelist[1:]
+            args = self.get_exe_args()
 
         from ..programs import find_external_program
         for prog in find_external_program(env, self.for_machine, exelist[0], exelist[0],
@@ -301,6 +326,22 @@ class RustCompiler(Compiler):
 
         return exelist + args
 
+    def has_multi_arguments(self, args: T.List[str], env: Environment) -> T.Tuple[bool, bool]:
+        return self.compiles('fn main { std::process::exit(0) };\n', env, extra_args=args, mode=CompileCheckMode.COMPILE)
+
+    def has_multi_link_arguments(self, args: T.List[str], env: Environment) -> T.Tuple[bool, bool]:
+        args = self.linker.fatal_warnings() + args
+        return self.compiles('fn main { std::process::exit(0) };\n', env, extra_args=args, mode=CompileCheckMode.LINK)
+
+    @functools.lru_cache(maxsize=None)
+    def get_rustdoc(self, env: 'Environment') -> T.Optional[RustdocTestCompiler]:
+        exelist = self.get_rust_tool('rustdoc', env)
+        if not exelist:
+            return None
+
+        return RustdocTestCompiler(exelist, self.version, self.for_machine,
+                                   self.is_cross, self.info, full_version=self.full_version,
+                                   linker=self.linker)
 
 class ClippyRustCompiler(RustCompiler):
 
@@ -310,3 +351,21 @@ class ClippyRustCompiler(RustCompiler):
     """
 
     id = 'clippy-driver rustc'
+
+
+class RustdocTestCompiler(RustCompiler):
+
+    """We invoke Rustdoc to run doctests.  Some of the flags
+       are different from rustc and some (e.g. --emit link) are
+       ignored."""
+
+    id = 'rustdoc --test'
+
+    def get_debug_args(self, is_debug: bool) -> T.List[str]:
+        return []
+
+    def get_dependency_gen_args(self, outtarget: str, outfile: str) -> T.List[str]:
+        return []
+
+    def get_output_args(self, outputname: str) -> T.List[str]:
+        return []

@@ -23,7 +23,6 @@ import signal
 import subprocess
 import shlex
 import sys
-import textwrap
 import time
 import typing as T
 import unicodedata
@@ -99,6 +98,29 @@ def uniwidth(s: str) -> int:
         result += UNIWIDTH_MAPPING[w]
     return result
 
+def test_slice(arg: str) -> T.Tuple[int, int]:
+    values = arg.split('/')
+    if len(values) != 2:
+        raise argparse.ArgumentTypeError("value does not conform to format 'SLICE/NUM_SLICES'")
+
+    try:
+        nrslices = int(values[1])
+    except ValueError:
+        raise argparse.ArgumentTypeError('NUM_SLICES is not an integer')
+    if nrslices <= 0:
+        raise argparse.ArgumentTypeError('NUM_SLICES is not a positive integer')
+
+    try:
+        subslice = int(values[0])
+    except ValueError:
+        raise argparse.ArgumentTypeError('SLICE is not an integer')
+    if subslice <= 0:
+        raise argparse.ArgumentTypeError('SLICE is not a positive integer')
+    if subslice > nrslices:
+        raise argparse.ArgumentTypeError('SLICE exceeds NUM_SLICES')
+
+    return subslice, nrslices
+
 # Note: when adding arguments, please also add them to the completion
 # scripts in $MESONSRC/data/shell-completions/
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -149,11 +171,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help='Arguments to pass to the specified test(s) or all tests')
     parser.add_argument('--max-lines', default=100, dest='max_lines', type=int,
                         help='Maximum number of lines to show from a long test log. Since 1.5.0.')
+    parser.add_argument('--slice', default=None, type=test_slice, metavar='SLICE/NUM_SLICES',
+                        help='Split tests into NUM_SLICES slices and execute slice SLICE. Since 1.8.0.')
     parser.add_argument('args', nargs='*',
                         help='Optional list of test names to run. "testname" to run all tests with that name, '
                         '"subprojname:testname" to specifically run "testname" from "subprojname", '
                         '"subprojname:" to run all tests defined by "subprojname".')
-
 
 def print_safe(s: str) -> None:
     end = '' if s[-1] == '\n' else '\n'
@@ -243,6 +266,7 @@ class TestResult(enum.Enum):
     EXPECTEDFAIL = 'EXPECTEDFAIL'
     UNEXPECTEDPASS = 'UNEXPECTEDPASS'
     ERROR = 'ERROR'
+    IGNORED = 'IGNORED'
 
     @staticmethod
     def maxlen() -> int:
@@ -264,7 +288,7 @@ class TestResult(enum.Enum):
     def colorize(self, s: str) -> mlog.AnsiDecorator:
         if self.is_bad():
             decorator = mlog.red
-        elif self in (TestResult.SKIP, TestResult.EXPECTEDFAIL):
+        elif self in (TestResult.SKIP, TestResult.IGNORED, TestResult.EXPECTEDFAIL):
             decorator = mlog.yellow
         elif self.is_finished():
             decorator = mlog.green
@@ -834,7 +858,8 @@ class JunitBuilder(TestLogger):
                                {TestResult.INTERRUPT, TestResult.ERROR})),
                 failures=str(sum(1 for r in test.results if r.result in
                                  {TestResult.FAIL, TestResult.UNEXPECTEDPASS, TestResult.TIMEOUT})),
-                skipped=str(sum(1 for r in test.results if r.result is TestResult.SKIP)),
+                skipped=str(sum(1 for r in test.results if r.result in
+                                {TestResult.SKIP, TestResult.IGNORED})),
                 time=str(test.duration),
             )
 
@@ -844,6 +869,9 @@ class JunitBuilder(TestLogger):
                 testcase = et.SubElement(suite, 'testcase', name=str(subtest), classname=suitename)
                 if subtest.result is TestResult.SKIP:
                     et.SubElement(testcase, 'skipped')
+                elif subtest.result is TestResult.IGNORED:
+                    skip = et.SubElement(testcase, 'skipped')
+                    skip.text = 'Test output was not parsed.'
                 elif subtest.result is TestResult.ERROR:
                     et.SubElement(testcase, 'error')
                 elif subtest.result is TestResult.FAIL:
@@ -878,6 +906,10 @@ class JunitBuilder(TestLogger):
                                      classname=test.project, time=str(test.duration))
             if test.res is TestResult.SKIP:
                 et.SubElement(testcase, 'skipped')
+                suite.attrib['skipped'] = str(int(suite.attrib['skipped']) + 1)
+            elif test.res is TestResult.IGNORED:
+                skip = et.SubElement(testcase, 'skipped')
+                skip.text = 'Test output was not parsed.'
                 suite.attrib['skipped'] = str(int(suite.attrib['skipped']) + 1)
             elif test.res is TestResult.ERROR:
                 et.SubElement(testcase, 'error')
@@ -925,7 +957,8 @@ class TestRun:
         return super().__new__(TestRun.PROTOCOL_TO_CLASS[test.protocol])
 
     def __init__(self, test: TestSerialisation, test_env: T.Dict[str, str],
-                 name: str, timeout: T.Optional[int], is_parallel: bool, verbose: bool):
+                 name: str, timeout: T.Optional[int], is_parallel: bool, verbose: bool,
+                 interactive: bool):
         self.res = TestResult.PENDING
         self.test = test
         self._num: T.Optional[int] = None
@@ -945,6 +978,7 @@ class TestRun:
         self.junit: T.Optional[et.ElementTree] = None
         self.is_parallel = is_parallel
         self.verbose = verbose
+        self.interactive = interactive
         self.warnings: T.List[str] = []
 
     def start(self, cmd: T.List[str]) -> None:
@@ -960,6 +994,15 @@ class TestRun:
         return self._num
 
     @property
+    def console_mode(self) -> ConsoleUser:
+        if self.interactive:
+            return ConsoleUser.INTERACTIVE
+        elif self.direct_stdout:
+            return ConsoleUser.STDOUT
+        else:
+            return ConsoleUser.LOGGER
+
+    @property
     def direct_stdout(self) -> bool:
         return self.verbose and not self.is_parallel and not self.needs_parsing
 
@@ -967,7 +1010,7 @@ class TestRun:
         if self.results:
             # running or succeeded
             passed = sum(x.result.is_ok() for x in self.results)
-            ran = sum(x.result is not TestResult.SKIP for x in self.results)
+            ran = sum(x.result not in {TestResult.SKIP, TestResult.IGNORED} for x in self.results)
             if passed == ran:
                 return f'{passed} subtests passed'
             else:
@@ -987,6 +1030,8 @@ class TestRun:
     def _complete(self) -> None:
         if self.res == TestResult.RUNNING:
             self.res = TestResult.OK
+        if self.needs_parsing and self.console_mode is ConsoleUser.INTERACTIVE:
+            self.res = TestResult.IGNORED
         assert isinstance(self.res, TestResult)
         if self.should_fail and self.res in (TestResult.OK, TestResult.FAIL):
             self.res = TestResult.UNEXPECTEDPASS if self.res is TestResult.OK else TestResult.EXPECTEDFAIL
@@ -1440,6 +1485,15 @@ class SingleTestRunner:
         if ('MSAN_OPTIONS' not in env or not env['MSAN_OPTIONS']):
             env['MSAN_OPTIONS'] = 'halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1'
 
+        # Valgrind also doesn't reflect errors in its exit code by default.
+        if 'VALGRIND_OPTS' not in env or not env['VALGRIND_OPTS']:
+            try:
+                wrapper_name = TestHarness.get_wrapper(self.options)[0]
+                if 'valgrind' in wrapper_name:
+                    env['VALGRIND_OPTS'] = '--error-exitcode=1'
+            except IndexError:
+                pass
+
         if self.options.interactive or self.test.timeout is None or self.test.timeout <= 0:
             timeout = None
         elif self.options.timeout_multiplier is None:
@@ -1451,14 +1505,11 @@ class SingleTestRunner:
 
         is_parallel = test.is_parallel and self.options.num_processes > 1 and not self.options.interactive
         verbose = (test.verbose or self.options.verbose) and not self.options.quiet
-        self.runobj = TestRun(test, env, name, timeout, is_parallel, verbose)
+        self.runobj = TestRun(test, env, name, timeout, is_parallel, verbose, self.options.interactive)
 
-        if self.options.interactive:
-            self.console_mode = ConsoleUser.INTERACTIVE
-        elif self.runobj.direct_stdout:
-            self.console_mode = ConsoleUser.STDOUT
-        else:
-            self.console_mode = ConsoleUser.LOGGER
+    @property
+    def console_mode(self) -> ConsoleUser:
+        return self.runobj.console_mode
 
     def _get_test_cmd(self) -> T.Optional[T.List[str]]:
         testentry = self.test.fname[0]
@@ -1579,7 +1630,7 @@ class SingleTestRunner:
                                        env=self.runobj.env,
                                        cwd=self.test.workdir)
 
-        if self.runobj.needs_parsing:
+        if self.runobj.needs_parsing and self.console_mode is not ConsoleUser.INTERACTIVE:
             parse_coro = self.runobj.parse(harness, p.stdout_lines())
             parse_task = asyncio.ensure_future(parse_coro)
         else:
@@ -1607,6 +1658,7 @@ class TestHarness:
         self.unexpectedpass_count = 0
         self.success_count = 0
         self.skip_count = 0
+        self.ignored_count = 0
         self.timeout_count = 0
         self.test_count = 0
         self.name_max_len = 0
@@ -1750,6 +1802,8 @@ class TestHarness:
             self.timeout_count += 1
         elif result.res is TestResult.SKIP:
             self.skip_count += 1
+        elif result.res is TestResult.IGNORED:
+            self.ignored_count += 1
         elif result.res is TestResult.OK:
             self.success_count += 1
         elif result.res in {TestResult.FAIL, TestResult.ERROR, TestResult.INTERRUPT}:
@@ -1808,15 +1862,22 @@ class TestHarness:
         return prefix + left + middle + right
 
     def summary(self) -> str:
-        return textwrap.dedent('''
-            Ok:                 {:<4}
-            Expected Fail:      {:<4}
-            Fail:               {:<4}
-            Unexpected Pass:    {:<4}
-            Skipped:            {:<4}
-            Timeout:            {:<4}
-            ''').format(self.success_count, self.expectedfail_count, self.fail_count,
-                        self.unexpectedpass_count, self.skip_count, self.timeout_count)
+        results = {
+          'Ok:                ': self.success_count,
+          'Expected Fail:     ': self.expectedfail_count,
+          'Fail:              ': self.fail_count,
+          'Unexpected Pass:   ': self.unexpectedpass_count,
+          'Skipped:           ': self.skip_count,
+          'Ignored:           ': self.ignored_count,
+          'Timeout:           ': self.timeout_count,
+        }
+
+        summary = []
+        for result, count in results.items():
+            if count > 0 or result.startswith('Ok:') or result.startswith('Fail:'):
+                summary.append(result + '{:<4}'.format(count))
+
+        return '\n{}\n'.format('\n'.join(summary))
 
     def total_failure_count(self) -> int:
         return self.fail_count + self.unexpectedpass_count + self.timeout_count
@@ -1977,6 +2038,11 @@ class TestHarness:
         tests = [t for t in self.tests if self.test_suitable(t)]
         if self.options.args:
             tests = list(self.tests_from_args(tests))
+        if self.options.slice:
+            our_slice, nslices = self.options.slice
+            if nslices > len(tests):
+                raise MesonException(f'number of slices ({nslices}) exceeds number of tests ({len(tests)})')
+            tests = tests[our_slice - 1::nslices]
 
         if not tests:
             print('No suitable tests defined.', file=errorfile)
@@ -1998,15 +2064,16 @@ class TestHarness:
 
     @staticmethod
     def get_wrapper(options: argparse.Namespace) -> T.List[str]:
-        wrap: T.List[str] = []
         if options.gdb:
             wrap = [options.gdb_path, '--quiet']
             if options.repeat > 1:
                 wrap += ['-ex', 'run', '-ex', 'quit']
             # Signal the end of arguments to gdb
             wrap += ['--args']
-        if options.wrapper:
-            wrap += options.wrapper
+        elif options.wrapper:
+            wrap = options.wrapper
+        else:
+            wrap = []
         return wrap
 
     def get_pretty_suite(self, test: TestSerialisation) -> str:
@@ -2216,11 +2283,11 @@ def run(options: argparse.Namespace) -> int:
             return 1
 
     b = build.load(options.wd)
-    need_vsenv = T.cast('bool', b.environment.coredata.get_option(OptionKey('vsenv')))
+    need_vsenv = T.cast('bool', b.environment.coredata.optstore.get_value_for(OptionKey('vsenv')))
     setup_vsenv(need_vsenv)
 
     if not options.no_rebuild:
-        backend = b.environment.coredata.get_option(OptionKey('backend'))
+        backend = b.environment.coredata.optstore.get_value_for(OptionKey('backend'))
         if backend == 'none':
             # nothing to build...
             options.no_rebuild = True

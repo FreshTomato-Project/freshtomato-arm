@@ -416,11 +416,11 @@ class CMakeDependency(ExternalDependency):
         if not self.is_found:
             not_found_message = self.traceparser.get_cmake_var('PACKAGE_NOT_FOUND_MESSAGE')
             if len(not_found_message) > 0:
-                mlog.warning(
+                mlog.notice(
                     'CMake reported that the package {} was not found with the following reason:\n'
-                    '{}'.format(name, not_found_message[0]))
+                    '{}'.format(name, not_found_message[0]), fatal=False)
             else:
-                mlog.warning(
+                mlog.debug(
                     'CMake reported that the package {} was not found, '
                     'even though Meson\'s preliminary check succeeded.'.format(name))
             raise self._gen_exception('PACKAGE_FOUND is false')
@@ -555,7 +555,7 @@ class CMakeDependency(ExternalDependency):
         # Make sure all elements in the lists are unique and sorted
         incDirs = sorted(set(incDirs))
         compileOptions = sorted(set(compileOptions))
-        libraries = sorted(set(libraries))
+        libraries = sort_link_args(libraries)
 
         mlog.debug(f'Include Dirs:         {incDirs}')
         mlog.debug(f'Compiler Options:     {compileOptions}')
@@ -663,3 +663,27 @@ class CMakeDependencyFactory:
     @staticmethod
     def log_tried() -> str:
         return CMakeDependency.log_tried()
+
+
+def sort_link_args(args: T.List[str]) -> T.List[str]:
+    itr = iter(args)
+    result: T.Set[T.Union[T.Tuple[str], T.Tuple[str, str]]] = set()
+
+    while True:
+        try:
+            arg = next(itr)
+        except StopIteration:
+            break
+
+        if arg == '-framework':
+            # Frameworks '-framework ...' are two arguments that need to stay together
+            try:
+                arg2 = next(itr)
+            except StopIteration:
+                raise MesonException(f'Linker arguments contain \'-framework\' with no argument value: {args}')
+
+            result.add((arg, arg2))
+        else:
+            result.add((arg,))
+
+    return [x for xs in sorted(result) for x in xs]

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2021 The Meson Developers
-# Copyright © 2021-2024 Intel Corporation
+# Copyright © 2021-2025 Intel Corporation
+# Copyright © 2021-2025 Intel Corporation
 from __future__ import annotations
 
 """Keyword Argument type annotations."""
@@ -18,6 +18,9 @@ from ..options import OptionKey
 from ..modules.cmake import CMakeSubprojectOptions
 from ..programs import ExternalProgram
 from .type_checking import PkgConfigDefineType, SourcesVarargsType
+
+if T.TYPE_CHECKING:
+    TestArgs = T.Union[str, File, build.Target, ExternalProgram]
 
 class FuncAddProjectArgs(TypedDict):
 
@@ -38,7 +41,6 @@ class BaseTest(TypedDict):
 
     """Shared base for the Rust module."""
 
-    args: T.List[T.Union[str, File, build.Target, ExternalProgram]]
     should_fail: bool
     timeout: int
     workdir: T.Optional[str]
@@ -52,6 +54,7 @@ class FuncBenchmark(BaseTest):
 
     """Keyword Arguments shared between `test` and `benchmark`."""
 
+    args: T.List[TestArgs]
     protocol: Literal['exitcode', 'tap', 'gtest', 'rust']
 
 
@@ -209,7 +212,7 @@ class Project(TypedDict):
 
     version: T.Optional[FileOrString]
     meson_version: T.Optional[str]
-    default_options: T.Dict[OptionKey, T.Union[str, int, bool, T.List[str]]]
+    default_options: T.List[str]
     license: T.List[str]
     license_files: T.List[str]
     subproject_dir: str
@@ -239,7 +242,7 @@ class Summary(TypedDict):
 
 class FindProgram(ExtractRequired, ExtractSearchDirs):
 
-    default_options: T.Dict[OptionKey, T.Union[str, int, bool, T.List[str]]]
+    default_options: T.Dict[OptionKey, options.ElementaryOptionValues]
     native: MachineChoice
     version: T.List[str]
 
@@ -312,13 +315,13 @@ class ConfigureFile(TypedDict):
 
 class Subproject(ExtractRequired):
 
-    default_options: T.Dict[OptionKey, T.Union[str, int, bool, T.List[str]]]
+    default_options: T.Dict[OptionKey, options.ElementaryOptionValues]
     version: T.List[str]
 
 
 class DoSubproject(ExtractRequired):
 
-    default_options: T.Dict[OptionKey, T.Union[str, int, bool, T.List[str]]]
+    default_options: T.List[str]
     version: T.List[str]
     cmake_options: T.List[str]
     options: T.Optional[CMakeSubprojectOptions]
@@ -346,7 +349,7 @@ class _BaseBuildTarget(TypedDict):
     name_suffix: T.Optional[str]
     native: MachineChoice
     objects: T.List[build.ObjectTypes]
-    override_options: T.Dict[OptionKey, T.Union[str, int, bool, T.List[str]]]
+    override_options: T.Dict[OptionKey, options.ElementaryOptionValues]
     depend_files: NotRequired[T.List[File]]
     resources: T.List[str]
 
@@ -390,6 +393,7 @@ class Executable(_BuildTarget):
     pie: T.Optional[bool]
     vs_module_defs: T.Optional[T.Union[str, File, build.CustomTarget, build.CustomTargetIndex]]
     win_subsystem: T.Optional[str]
+    android_exe_type: T.Optional[Literal['application', 'executable']]
 
 
 class _StaticLibMixin(TypedDict):

@@ -673,8 +673,6 @@ def detect_cuda_compiler(env: 'Environment', for_machine: MachineChoice) -> Comp
         if key in env.options:
             # To fix LDFLAGS issue
             val = env.options[key]
-            if isinstance(val, str):
-                val = [val]
             assert isinstance(val, list)
             env.coredata.set_options({key: cls.to_host_flags_base(val, Phase.LINKER)})
         linker = CudaLinker(compiler, for_machine, CudaCompiler.LINKER_PREFIX, [], version=CudaLinker.parse_version())
@@ -899,9 +897,13 @@ def _detect_objc_or_objcpp_compiler(env: 'Environment', lang: str, for_machine: 
             version = _get_gnu_version_from_defines(defines)
             comp = objc.GnuObjCCompiler if lang == 'objc' else objcpp.GnuObjCPPCompiler
             linker = guess_nix_linker(env, compiler, comp, version, for_machine)
-            return comp(
+            c = comp(
                 ccache, compiler, version, for_machine, is_cross, info,
                 defines, linker=linker)
+            if not c.compiles('int main(void) { return 0; }', env)[0]:
+                popen_exceptions[join_args(compiler)] = f'GCC was not built with support for {"objective-c" if lang == "objc" else "objective-c++"}'
+                continue
+            return c
         if 'clang' in out:
             linker = None
             defines = _get_clang_compiler_defines(compiler, lang)
@@ -1045,7 +1047,11 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
             popen_exceptions[join_args(compiler + arg)] = e
             continue
 
-        version = search_version(out)
+        # Full version contains the "-nightly" or "-beta" suffixes, but version
+        # should just be X.Y.Z
+        full_version = search_version(out)
+        version = full_version.split('-', 1)[0]
+
         cls: T.Type[RustCompiler] = rust.RustCompiler
 
         # Clippy is a wrapper around rustc, but it doesn't have rustc in its
@@ -1061,7 +1067,8 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
             except OSError as e:
                 popen_exceptions[join_args(compiler + arg)] = e
                 continue
-            version = search_version(out)
+            full_version = search_version(out)
+            version = full_version.split('-', 1)[0]
 
             cls = rust.ClippyRustCompiler
             mlog.deprecation(
@@ -1092,7 +1099,7 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
                 extra_args: T.Dict[str, T.Union[str, bool]] = {}
                 always_args: T.List[str] = []
                 if is_link_exe:
-                    compiler.extend(cls.use_linker_args(cc.linker.exelist[0], ''))
+                    compiler.extend(cls.use_linker_args(cc.linker.get_exe(), ''))
                     extra_args['direct'] = True
                     extra_args['machine'] = cc.linker.machine
                 else:
@@ -1115,8 +1122,8 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
                                              version=cc.linker.version, **extra_args)               # type: ignore
                 else:
                     linker = type(cc.linker)(compiler, for_machine, cc.LINKER_PREFIX,
-                                             always_args=always_args, version=cc.linker.version,
-                                             **extra_args)
+                                             always_args=always_args, system=cc.linker.system,
+                                             version=cc.linker.version, **extra_args)
             elif 'link' in override[0]:
                 linker = guess_win_linker(env,
                                           override, cls, version, for_machine, use_linker_prefix=False)
@@ -1124,7 +1131,7 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
                 # inserts the correct prefix itself.
                 assert isinstance(linker, linkers.VisualStudioLikeLinkerMixin)
                 linker.direct = True
-                compiler.extend(cls.use_linker_args(linker.exelist[0], ''))
+                compiler.extend(cls.use_linker_args(linker.get_exe(), ''))
             else:
                 # On linux and macos rust will invoke the c compiler for
                 # linking, on windows it will use lld-link or link.exe.
@@ -1141,7 +1148,7 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
             env.coredata.add_lang_args(cls.language, cls, for_machine, env)
             return cls(
                 compiler, version, for_machine, is_cross, info,
-                linker=linker)
+                linker=linker, full_version=full_version)
 
     _handle_exceptions(popen_exceptions, compilers)
     raise EnvironmentException('Unreachable code (exception to make mypy happy)')
@@ -1184,7 +1191,11 @@ def detect_d_compiler(env: 'Environment', for_machine: MachineChoice) -> Compile
         version = search_version(out)
         full_version = out.split('\n', 1)[0]
 
-        if 'LLVM D compiler' in out:
+        # The OpenD fork should stay close enough to upstream D (in
+        # the areas that interest us) to allow supporting them both
+        # without much hassle.
+        # See: https://github.com/orgs/opendlang/discussions/56
+        if 'LLVM D compiler' in out or 'LLVM Open D compiler' in out:
             cls = d.LLVMDCompiler
             # LDC seems to require a file
             # We cannot use NamedTemporaryFile on windows, its documented

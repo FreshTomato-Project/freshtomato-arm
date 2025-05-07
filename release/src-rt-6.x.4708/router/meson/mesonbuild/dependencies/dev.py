@@ -586,14 +586,14 @@ class JNISystemDependency(SystemDependency):
                 self.is_found = False
                 return
 
-        if 'version' in kwargs and not version_compare(self.version, kwargs['version']):
+        if 'version' in kwargs and not version_compare_many(self.version, kwargs['version'])[0]:
             mlog.error(f'Incorrect JDK version found ({self.version}), wanted {kwargs["version"]}')
             self.is_found = False
             return
 
         self.java_home = environment.properties[self.for_machine].get_java_home()
         if not self.java_home:
-            self.java_home = pathlib.Path(shutil.which(self.javac.exelist[0])).resolve().parents[1]
+            self.java_home = pathlib.Path(shutil.which(self.javac.get_exe())).resolve().parents[1]
             if m.is_darwin():
                 problem_java_prefix = pathlib.Path('/System/Library/Frameworks/JavaVM.framework/Versions')
                 if problem_java_prefix in self.java_home.parents:

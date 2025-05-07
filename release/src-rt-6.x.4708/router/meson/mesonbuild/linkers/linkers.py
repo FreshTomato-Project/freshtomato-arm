@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2012-2022 The Meson development team
+# Copyright © 2023 Intel Corporation
 
 from __future__ import annotations
 
@@ -14,9 +15,10 @@ from ..mesonlib import EnvironmentException, MesonException
 from ..arglist import CompilerArgs
 
 if T.TYPE_CHECKING:
-    from ..coredata import KeyedOptionDictType
     from ..environment import Environment
     from ..mesonlib import MachineChoice
+    from ..build import BuildTarget
+    from ..compilers import Compiler
 
 
 class StaticLinker:
@@ -29,6 +31,9 @@ class StaticLinker:
     def get_id(self) -> str:
         return self.id
 
+    def get_exe(self) -> str:
+        return self.exelist[0]
+
     def compiler_args(self, args: T.Optional[T.Iterable[str]] = None) -> CompilerArgs:
         return CompilerArgs(self, args)
 
@@ -38,7 +43,10 @@ class StaticLinker:
         """
         return mesonlib.is_windows()
 
-    def get_base_link_args(self, options: 'KeyedOptionDictType') -> T.List[str]:
+    def get_base_link_args(self,
+                           target: 'BuildTarget',
+                           linker: 'Compiler',
+                           env: 'Environment') -> T.List[str]:
         """Like compilers.get_base_link_args, but for the static linker."""
         return []
 
@@ -68,7 +76,7 @@ class StaticLinker:
     def openmp_flags(self, env: Environment) -> T.List[str]:
         return []
 
-    def get_option_link_args(self, options: 'KeyedOptionDictType') -> T.List[str]:
+    def get_option_link_args(self, target: 'BuildTarget', env: 'Environment', subproject: T.Optional[str] = None) -> T.List[str]:
         return []
 
     @classmethod
@@ -133,9 +141,11 @@ class DynamicLinker(metaclass=abc.ABCMeta):
 
     def __init__(self, exelist: T.List[str],
                  for_machine: mesonlib.MachineChoice, prefix_arg: T.Union[str, T.List[str]],
-                 always_args: T.List[str], *, version: str = 'unknown version'):
+                 always_args: T.List[str], *, system: str = 'unknown system',
+                 version: str = 'unknown version'):
         self.exelist = exelist
         self.for_machine = for_machine
+        self.system = system
         self.version = version
         self.prefix_arg = prefix_arg
         self.always_args = always_args
@@ -146,6 +156,9 @@ class DynamicLinker(metaclass=abc.ABCMeta):
 
     def get_id(self) -> str:
         return self.id
+
+    def get_exe(self) -> str:
+        return self.exelist[0]
 
     def get_version_string(self) -> str:
         return f'({self.id} {self.version})'
@@ -174,7 +187,10 @@ class DynamicLinker(metaclass=abc.ABCMeta):
 
     # XXX: is use_ldflags a compiler or a linker attribute?
 
-    def get_option_args(self, options: 'KeyedOptionDictType') -> T.List[str]:
+    def get_option_args(self, target: 'BuildTarget', env: 'Environment', subproject: T.Optional[str] = None) -> T.List[str]:
+        return []
+
+    def get_option_link_args(self, target: 'BuildTarget', env: 'Environment', subproject: T.Optional[str] = None) -> T.List[str]:
         return []
 
     def has_multi_arguments(self, args: T.List[str], env: 'Environment') -> T.Tuple[bool, bool]:
@@ -201,7 +217,7 @@ class DynamicLinker(metaclass=abc.ABCMeta):
     def get_std_shared_lib_args(self) -> T.List[str]:
         return []
 
-    def get_std_shared_module_args(self, options: 'KeyedOptionDictType') -> T.List[str]:
+    def get_std_shared_module_args(self, Target: 'BuildTarget') -> T.List[str]:
         return self.get_std_shared_lib_args()
 
     def get_pie_args(self) -> T.List[str]:
@@ -216,7 +232,7 @@ class DynamicLinker(metaclass=abc.ABCMeta):
     def get_thinlto_cache_args(self, path: str) -> T.List[str]:
         return []
 
-    def sanitizer_args(self, value: str) -> T.List[str]:
+    def sanitizer_args(self, value: T.List[str]) -> T.List[str]:
         return []
 
     def get_asneeded_args(self) -> T.List[str]:
@@ -592,6 +608,9 @@ class PosixDynamicLinkerMixin(DynamicLinkerBase):
     def get_search_args(self, dirname: str) -> T.List[str]:
         return ['-L' + dirname]
 
+    def sanitizer_args(self, value: T.List[str]) -> T.List[str]:
+        return []
+
 
 class GnuLikeDynamicLinkerMixin(DynamicLinkerBase):
 
@@ -647,10 +666,10 @@ class GnuLikeDynamicLinkerMixin(DynamicLinkerBase):
     def get_lto_args(self) -> T.List[str]:
         return ['-flto']
 
-    def sanitizer_args(self, value: str) -> T.List[str]:
-        if value == 'none':
-            return []
-        return ['-fsanitize=' + value]
+    def sanitizer_args(self, value: T.List[str]) -> T.List[str]:
+        if not value:
+            return value
+        return [f'-fsanitize={",".join(value)}']
 
     def get_coverage_args(self) -> T.List[str]:
         return ['--coverage']
@@ -792,10 +811,17 @@ class AppleDynamicLinker(PosixDynamicLinkerMixin, DynamicLinker):
         return self._apply_prefix('-dead_strip_dylibs')
 
     def get_allow_undefined_args(self) -> T.List[str]:
-        return self._apply_prefix('-undefined,dynamic_lookup')
+        # iOS doesn't allow undefined symbols when linking
+        if self.system == 'ios':
+            return []
+        else:
+            return self._apply_prefix('-undefined,dynamic_lookup')
 
-    def get_std_shared_module_args(self, options: 'KeyedOptionDictType') -> T.List[str]:
-        return ['-bundle'] + self._apply_prefix('-undefined,dynamic_lookup')
+    def get_std_shared_module_args(self, target: 'BuildTarget') -> T.List[str]:
+        if self.system == 'ios':
+            return ['-dynamiclib']
+        else:
+            return ['-bundle'] + self.get_allow_undefined_args()
 
     def get_pie_args(self) -> T.List[str]:
         return []
@@ -810,10 +836,10 @@ class AppleDynamicLinker(PosixDynamicLinkerMixin, DynamicLinker):
     def get_coverage_args(self) -> T.List[str]:
         return ['--coverage']
 
-    def sanitizer_args(self, value: str) -> T.List[str]:
-        if value == 'none':
-            return []
-        return ['-fsanitize=' + value]
+    def sanitizer_args(self, value: T.List[str]) -> T.List[str]:
+        if not value:
+            return value
+        return [f'-fsanitize={",".join(value)}']
 
     def no_undefined_args(self) -> T.List[str]:
         # We used to emit -undefined,error, but starting with Xcode 15 /
@@ -840,7 +866,7 @@ class AppleDynamicLinker(PosixDynamicLinkerMixin, DynamicLinker):
         install_name = ['@rpath/', prefix, shlib_name]
         if soversion is not None:
             install_name.append('.' + soversion)
-        install_name.append('.dylib')
+        install_name.append('.' + suffix)
         args = ['-install_name', ''.join(install_name)]
         if darwin_versions:
             args.extend(['-compatibility_version', darwin_versions[0],
@@ -919,8 +945,9 @@ class LLVMDynamicLinker(GnuLikeDynamicLinkerMixin, PosixDynamicLinkerMixin, Dyna
 
     def __init__(self, exelist: T.List[str],
                  for_machine: mesonlib.MachineChoice, prefix_arg: T.Union[str, T.List[str]],
-                 always_args: T.List[str], *, version: str = 'unknown version'):
-        super().__init__(exelist, for_machine, prefix_arg, always_args, version=version)
+                 always_args: T.List[str], *, system: str = 'unknown system',
+                 version: str = 'unknown version'):
+        super().__init__(exelist, for_machine, prefix_arg, always_args, system=system, version=version)
 
         # Some targets don't seem to support this argument (windows, wasm, ...)
         self.has_allow_shlib_undefined = self._supports_flag('--allow-shlib-undefined', always_args)
@@ -1539,7 +1566,7 @@ class AIXDynamicLinker(PosixDynamicLinkerMixin, DynamicLinker):
     def get_command_to_archive_shlib(self) -> T.List[str]:
         # Archive shared library object and remove the shared library object,
         # since it already exists in the archive.
-        command = ['ar', '-q', '-v', '$out', '$in', '&&', 'rm', '-f', '$in']
+        command = ['ar', '-r', '-s', '-v', '$out', '$in', '&&', 'rm', '-f', '$in']
         return command
 
     def get_link_whole_for(self, args: T.List[str]) -> T.List[str]:

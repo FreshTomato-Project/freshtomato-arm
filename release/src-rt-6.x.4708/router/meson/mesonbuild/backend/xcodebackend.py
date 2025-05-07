@@ -230,7 +230,7 @@ class XCodeBackend(backends.Backend):
     def __init__(self, build: T.Optional[build.Build], interpreter: T.Optional[Interpreter]):
         super().__init__(build, interpreter)
         self.project_uid = self.environment.coredata.lang_guids['default'].replace('-', '')[:24]
-        self.buildtype = T.cast('str', self.environment.coredata.get_option(OptionKey('buildtype')))
+        self.buildtype = T.cast('str', self.environment.coredata.optstore.get_value_for(OptionKey('buildtype')))
         self.project_conflist = self.gen_id()
         self.maingroup_id = self.gen_id()
         self.all_id = self.gen_id()
@@ -272,7 +272,7 @@ class XCodeBackend(backends.Backend):
 
     @functools.lru_cache(maxsize=None)
     def get_target_dir(self, target: T.Union[build.Target, build.CustomTargetIndex]) -> str:
-        dirname = os.path.join(target.get_subdir(), T.cast('str', self.environment.coredata.get_option(OptionKey('buildtype'))))
+        dirname = os.path.join(target.get_subdir(), T.cast('str', self.environment.coredata.optstore.get_value_for(OptionKey('buildtype'))))
         #os.makedirs(os.path.join(self.environment.get_build_dir(), dirname), exist_ok=True)
         return dirname
 
@@ -1686,9 +1686,9 @@ class XCodeBackend(backends.Backend):
                 if compiler is None:
                     continue
                 # Start with warning args
-                warn_args = compiler.get_warn_args(target.get_option(OptionKey('warning_level')))
-                copt_proxy = target.get_options()
-                std_args = compiler.get_option_compile_args(copt_proxy)
+                warn_args = compiler.get_warn_args(self.get_target_option(target, 'warning_level'))
+                std_args = compiler.get_option_compile_args(target, self.environment, target.subproject)
+                std_args += compiler.get_option_std_args(target, self.environment, target.subproject)
                 # Add compile args added using add_project_arguments()
                 pargs = self.build.projects_args[target.for_machine].get(target.subproject, {}).get(lang, [])
                 # Add compile args added using add_global_arguments()
@@ -1736,9 +1736,9 @@ class XCodeBackend(backends.Backend):
             if target.suffix:
                 suffix = '.' + target.suffix
                 settings_dict.add_item('EXECUTABLE_SUFFIX', suffix)
-            settings_dict.add_item('GCC_GENERATE_DEBUGGING_SYMBOLS', BOOL2XCODEBOOL[target.get_option(OptionKey('debug'))])
+            settings_dict.add_item('GCC_GENERATE_DEBUGGING_SYMBOLS', BOOL2XCODEBOOL[self.get_target_option(target, 'debug')])
             settings_dict.add_item('GCC_INLINES_ARE_PRIVATE_EXTERN', 'NO')
-            opt_flag = OPT2XCODEOPT[target.get_option(OptionKey('optimization'))]
+            opt_flag = OPT2XCODEOPT[self.get_target_option(target, 'optimization')]
             if opt_flag is not None:
                 settings_dict.add_item('GCC_OPTIMIZATION_LEVEL', opt_flag)
             if target.has_pch:
@@ -1793,7 +1793,7 @@ class XCodeBackend(backends.Backend):
         header_arr = PbxArray()
         for i in header_dirs:
             np = os.path.normpath(i)
-            # Make sure Xcode will not split single path into separate entries, escaping space with a slash is not enought
+            # Make sure Xcode will not split single path into separate entries, escaping space with a slash is not enough
             item = f'"\\\"{np}\\\""' if ' ' in np else f'"{np}"'
             header_arr.add_item(item)
         return header_arr

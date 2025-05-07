@@ -42,7 +42,6 @@ from run_tests import (
 # e.g. for assertXXX helpers.
 __unittest = True
 
-@mock.patch.dict(os.environ)
 class BasePlatformTests(TestCase):
     prefix = '/usr'
     libdir = 'lib'
@@ -79,6 +78,7 @@ class BasePlatformTests(TestCase):
         cls.objc_test_dir = os.path.join(src_root, 'test cases/objc')
         cls.objcpp_test_dir = os.path.join(src_root, 'test cases/objcpp')
         cls.darwin_test_dir = os.path.join(src_root, 'test cases/darwin')
+        cls.fortran_test_dir = os.path.join(src_root, 'test cases/fortran')
 
         # Misc stuff
         if cls.backend is Backend.ninja:
@@ -87,8 +87,17 @@ class BasePlatformTests(TestCase):
             # VS doesn't have a stable output when no changes are done
             # XCode backend is untested with unit tests, help welcome!
             cls.no_rebuild_stdout = [f'UNKNOWN BACKEND {cls.backend.name!r}']
+
+        cls.env_patch = mock.patch.dict(os.environ)
+        cls.env_patch.start()
+
         os.environ['COLUMNS'] = '80'
         os.environ['PYTHONIOENCODING'] = 'utf8'
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        super().tearDownClass()
+        cls.env_patch.stop()
 
     def setUp(self):
         super().setUp()
@@ -279,6 +288,8 @@ class BasePlatformTests(TestCase):
         else:
             arg = list(arg)
         self._run(self.mconf_command + arg + [self.builddir])
+        if will_build:
+            self.build()
 
     def getconf(self, optname: str):
         opts = self.introspect('--buildoptions')

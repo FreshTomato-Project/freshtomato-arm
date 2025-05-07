@@ -19,6 +19,7 @@ from .toolchain import CMakeToolchain, CMakeExecScope
 from .traceparser import CMakeTraceParser
 from .tracetargets import resolve_cmake_trace_targets
 from .. import mlog, mesonlib
+from .. import options
 from ..mesonlib import MachineChoice, OrderedSet, path_is_in_root, relative_to_if_possible
 from ..options import OptionKey
 from ..mesondata import DataFile
@@ -294,6 +295,17 @@ class ConverterTarget:
             else:
                 self.sources += i.sources
 
+        self.clib_compiler = None
+        compilers = self.env.coredata.compilers[self.for_machine]
+
+        for lang in ['objcpp', 'cpp', 'objc', 'fortran', 'c']:
+            if lang in self.languages:
+                try:
+                    self.clib_compiler = compilers[lang]
+                    break
+                except KeyError:
+                    pass
+
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}: {self.name}>'
 
@@ -345,7 +357,7 @@ class ConverterTarget:
         if tgt:
             self.depends_raw = trace.targets[self.cmake_name].depends
 
-            rtgt = resolve_cmake_trace_targets(self.cmake_name, trace, self.env)
+            rtgt = resolve_cmake_trace_targets(self.cmake_name, trace, self.env, clib_compiler=self.clib_compiler)
             self.includes += [Path(x) for x in rtgt.include_directories]
             self.link_flags += rtgt.link_flags
             self.public_link_flags += rtgt.public_link_flags
@@ -420,9 +432,8 @@ class ConverterTarget:
         def non_optional(inputs: T.Iterable[T.Optional[Path]]) -> T.List[Path]:
             return [p for p in inputs if p is not None]
 
-        build_dir_rel = self.build_dir.relative_to(Path(self.env.get_build_dir()) / subdir)
         self.generated_raw = non_optional(rel_path(x, False, True) for x in self.generated_raw)
-        self.includes = non_optional(itertools.chain((rel_path(x, True, False) for x in OrderedSet(self.includes)), [build_dir_rel]))
+        self.includes = non_optional(itertools.chain((rel_path(x, True, False) for x in OrderedSet(self.includes))))
         self.sys_includes = non_optional(rel_path(x, True, False) for x in OrderedSet(self.sys_includes))
         self.sources = non_optional(rel_path(x, False, False) for x in self.sources)
 
@@ -533,16 +544,11 @@ class ConverterTarget:
     @lru_cache(maxsize=None)
     def _all_lang_stds(self, lang: str) -> 'ImmutableListProtocol[str]':
         try:
-            res = self.env.coredata.optstore.get_value_object(OptionKey(f'{lang}_std', machine=MachineChoice.BUILD)).choices
+            opt = self.env.coredata.optstore.get_value_object(OptionKey(f'{lang}_std', machine=MachineChoice.BUILD))
+            assert isinstance(opt, (options.UserStdOption, options.UserComboOption)), 'for mypy'
+            return opt.choices or []
         except KeyError:
             return []
-
-        # TODO: Get rid of this once we have proper typing for options
-        assert isinstance(res, list)
-        for i in res:
-            assert isinstance(i, str)
-
-        return res
 
     def process_inter_target_dependencies(self) -> None:
         # Move the dependencies from all TRANSFER_DEPENDENCIES_FROM to the target
@@ -832,7 +838,7 @@ class CMakeInterpreter:
         cmake_args += extra_cmake_options
         if not any(arg.startswith('-DCMAKE_BUILD_TYPE=') for arg in cmake_args):
             # Our build type is favored over any CMAKE_BUILD_TYPE environment variable
-            buildtype = T.cast('str', self.env.coredata.get_option(OptionKey('buildtype')))
+            buildtype = T.cast('str', self.env.coredata.optstore.get_value_for(OptionKey('buildtype')))
             if buildtype in BUILDTYPE_MAP:
                 cmake_args += [f'-DCMAKE_BUILD_TYPE={BUILDTYPE_MAP[buildtype]}']
         trace_args = self.trace.trace_args()

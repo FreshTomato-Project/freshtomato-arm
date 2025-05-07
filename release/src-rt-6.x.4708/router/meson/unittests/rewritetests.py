@@ -391,7 +391,7 @@ class RewriterTests(BasePlatformTests):
         self.assertDictEqual(out, expected)
 
     def test_raw_printer_is_idempotent(self):
-        test_path = Path(self.unit_test_dir, '121 rewrite')
+        test_path = Path(self.unit_test_dir, '120 rewrite')
         meson_build_file = test_path / 'meson.build'
         # original_contents = meson_build_file.read_bytes()
         original_contents = meson_build_file.read_text(encoding='utf-8')
@@ -407,3 +407,17 @@ class RewriterTests(BasePlatformTests):
         # Do it line per line because it is easier to debug like that
         for orig_line, new_line in zip_longest(original_contents.splitlines(), new_contents.splitlines()):
             self.assertEqual(orig_line, new_line)
+
+    def test_rewrite_prefix(self) -> None:
+        self.prime('7 prefix')
+        out = self.rewrite_raw(self.builddir, ['kwargs', 'info', 'project', '/'])
+        expected = {
+            'kwargs': {
+                'project#/': {
+                    "default_options": [
+                        'prefix=/export/doocs'
+                    ]
+                }
+            }
+        }
+        self.assertDictEqual(out, expected)

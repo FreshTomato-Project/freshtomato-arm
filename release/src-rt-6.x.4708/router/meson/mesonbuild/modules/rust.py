@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright © 2020-2024 Intel Corporation
+# Copyright © 2020-2025 Intel Corporation
 
 from __future__ import annotations
 import itertools
 import os
+import re
 import typing as T
 
 from mesonbuild.interpreterbase.decorators import FeatureNew
@@ -11,34 +12,43 @@ from mesonbuild.interpreterbase.decorators import FeatureNew
 from . import ExtensionModule, ModuleReturnValue, ModuleInfo
 from .. import mesonlib, mlog
 from ..build import (BothLibraries, BuildTarget, CustomTargetIndex, Executable, ExtractedObjects, GeneratedList,
-                     CustomTarget, InvalidArguments, Jar, StructuredSources, SharedLibrary)
-from ..compilers.compilers import are_asserts_disabled, lang_suffixes
+                     CustomTarget, InvalidArguments, Jar, StructuredSources, SharedLibrary, StaticLibrary)
+from ..compilers.compilers import are_asserts_disabled_for_subproject, lang_suffixes
 from ..interpreter.type_checking import (
-    DEPENDENCIES_KW, LINK_WITH_KW, SHARED_LIB_KWS, TEST_KWS, OUTPUT_KW,
-    INCLUDE_DIRECTORIES, SOURCES_VARARGS, NoneType, in_set_validator
+    DEPENDENCIES_KW, LINK_WITH_KW, LINK_WHOLE_KW, SHARED_LIB_KWS, TEST_KWS, TEST_KWS_NO_ARGS,
+    OUTPUT_KW, INCLUDE_DIRECTORIES, SOURCES_VARARGS, NoneType, in_set_validator
 )
 from ..interpreterbase import ContainerTypeInfo, InterpreterException, KwargInfo, typed_kwargs, typed_pos_args, noPosargs, permittedKwargs
-from ..mesonlib import File
-from ..programs import ExternalProgram
+from ..interpreter.interpreterobjects import Doctest
+from ..mesonlib import File, MesonException, PerMachine
+from ..programs import ExternalProgram, NonExistingExternalProgram
 
 if T.TYPE_CHECKING:
     from . import ModuleState
     from ..build import IncludeDirs, LibTypes
+    from ..compilers.rust import RustCompiler
     from ..dependencies import Dependency, ExternalLibrary
     from ..interpreter import Interpreter
     from ..interpreter import kwargs as _kwargs
     from ..interpreter.interpreter import SourceInputs, SourceOutputs
+    from ..interpreter.interpreterobjects import Test
     from ..programs import OverrideProgram
     from ..interpreter.type_checking import SourcesVarargsType
 
     from typing_extensions import TypedDict, Literal
 
-    class FuncTest(_kwargs.BaseTest):
+    ArgsType = T.TypeVar('ArgsType')
 
+    class FuncRustTest(_kwargs.BaseTest, T.Generic[ArgsType]):
+        args: T.List[ArgsType]
         dependencies: T.List[T.Union[Dependency, ExternalLibrary]]
         is_parallel: bool
         link_with: T.List[LibTypes]
+        link_whole: T.List[LibTypes]
         rust_args: T.List[str]
+
+    FuncTest = FuncRustTest[_kwargs.TestArgs]
+    FuncDoctest = FuncRustTest[str]
 
     class FuncBindgen(TypedDict):
 
@@ -53,41 +63,48 @@ if T.TYPE_CHECKING:
         bindgen_version: T.List[str]
 
 
+RUST_TEST_KWS: T.List[KwargInfo] = [
+     KwargInfo(
+         'rust_args',
+         ContainerTypeInfo(list, str),
+         listify=True,
+         default=[],
+         since='1.2.0',
+     ),
+     KwargInfo('is_parallel', bool, default=False),
+]
+
+def no_spaces_validator(arg: T.Optional[T.Union[str, T.List]]) -> T.Optional[str]:
+    if any(bool(re.search(r'\s', x)) for x in arg):
+        return 'must not contain spaces due to limitations of rustdoc'
+    return None
+
+
 class RustModule(ExtensionModule):
 
     """A module that holds helper functions for rust."""
 
     INFO = ModuleInfo('rust', '0.57.0', stabilized='1.0.0')
+    _bindgen_rust_target: T.Optional[str]
+    rustdoc: PerMachine[T.Optional[ExternalProgram]] = PerMachine(None, None)
 
     def __init__(self, interpreter: Interpreter) -> None:
         super().__init__(interpreter)
         self._bindgen_bin: T.Optional[T.Union[ExternalProgram, Executable, OverrideProgram]] = None
         if 'rust' in interpreter.compilers.host:
-            self._bindgen_rust_target: T.Optional[str] = interpreter.compilers.host['rust'].version
+            rustc = T.cast('RustCompiler', interpreter.compilers.host['rust'])
+            self._bindgen_rust_target = 'nightly' if rustc.is_nightly else rustc.version
         else:
             self._bindgen_rust_target = None
+        self._bindgen_set_std = False
         self.methods.update({
             'test': self.test,
+            'doctest': self.doctest,
             'bindgen': self.bindgen,
             'proc_macro': self.proc_macro,
         })
 
-    @typed_pos_args('rust.test', str, BuildTarget)
-    @typed_kwargs(
-        'rust.test',
-        *TEST_KWS,
-        DEPENDENCIES_KW,
-        LINK_WITH_KW.evolve(since='1.2.0'),
-        KwargInfo(
-            'rust_args',
-            ContainerTypeInfo(list, str),
-            listify=True,
-            default=[],
-            since='1.2.0',
-        ),
-        KwargInfo('is_parallel', bool, default=False),
-    )
-    def test(self, state: ModuleState, args: T.Tuple[str, BuildTarget], kwargs: FuncTest) -> ModuleReturnValue:
+    def test_common(self, funcname: str, state: ModuleState, args: T.Tuple[str, BuildTarget], kwargs: FuncRustTest) -> T.Tuple[Executable, _kwargs.FuncTest]:
         """Generate a rust test target from a given rust target.
 
         Rust puts its unitests inside its main source files, unlike most
@@ -131,19 +148,21 @@ class RustModule(ExtensionModule):
         """
         if any(isinstance(t, Jar) for t in kwargs.get('link_with', [])):
             raise InvalidArguments('Rust tests cannot link with Jar targets')
+        if any(isinstance(t, Jar) for t in kwargs.get('link_whole', [])):
+            raise InvalidArguments('Rust tests cannot link with Jar targets')
 
         name = args[0]
         base_target: BuildTarget = args[1]
         if not base_target.uses_rust():
-            raise InterpreterException('Second positional argument to rustmod.test() must be a rust based target')
+            raise InterpreterException(f'Second positional argument to rustmod.{funcname}() must be a rust based target')
         extra_args = kwargs['args']
 
         # Delete any arguments we don't want passed
         if '--test' in extra_args:
-            mlog.warning('Do not add --test to rustmod.test arguments')
+            mlog.warning(f'Do not add --test to rustmod.{funcname}() arguments')
             extra_args.remove('--test')
         if '--format' in extra_args:
-            mlog.warning('Do not add --format to rustmod.test arguments')
+            mlog.warning(f'Do not add --format to rustmod.{funcname}() arguments')
             i = extra_args.index('--format')
             # Also delete the argument to --format
             del extra_args[i + 1]
@@ -165,6 +184,7 @@ class RustModule(ExtensionModule):
         new_target_kwargs['install'] = False
         new_target_kwargs['dependencies'] = new_target_kwargs.get('dependencies', []) + kwargs['dependencies']
         new_target_kwargs['link_with'] = new_target_kwargs.get('link_with', []) + kwargs['link_with']
+        new_target_kwargs['link_whole'] = new_target_kwargs.get('link_whole', []) + kwargs['link_whole']
         del new_target_kwargs['rust_crate_type']
         for kw in ['pic', 'prelink', 'rust_abi', 'version', 'soversion', 'darwin_versions']:
             if kw in new_target_kwargs:
@@ -183,11 +203,86 @@ class RustModule(ExtensionModule):
             base_target.objects, base_target.environment, base_target.compilers,
             new_target_kwargs
         )
+        return new_target, tkwargs
 
-        test = self.interpreter.make_test(
+    @typed_pos_args('rust.test', str, BuildTarget)
+    @typed_kwargs(
+        'rust.test',
+        *TEST_KWS,
+        DEPENDENCIES_KW,
+        LINK_WITH_KW.evolve(since='1.2.0'),
+        LINK_WHOLE_KW.evolve(since='1.8.0'),
+        *RUST_TEST_KWS,
+    )
+    def test(self, state: ModuleState, args: T.Tuple[str, BuildTarget], kwargs: FuncTest) -> ModuleReturnValue:
+        name, _ = args
+        new_target, tkwargs = self.test_common('test', state, args, kwargs)
+        test: Test = self.interpreter.make_test(
             self.interpreter.current_node, (name, new_target), tkwargs)
 
         return ModuleReturnValue(None, [new_target, test])
+
+    @FeatureNew('rust.doctest', '1.8.0')
+    @typed_pos_args('rust.doctest', str, BuildTarget)
+    @typed_kwargs(
+        'rust.doctest',
+        *TEST_KWS_NO_ARGS,
+        DEPENDENCIES_KW,
+        LINK_WITH_KW,
+        LINK_WHOLE_KW,
+        *RUST_TEST_KWS,
+        KwargInfo(
+            'args',
+            ContainerTypeInfo(list, str),
+            listify=True,
+            default=[],
+            validator=no_spaces_validator,
+        ),
+    )
+    def doctest(self, state: ModuleState, args: T.Tuple[str, T.Union[SharedLibrary, StaticLibrary]], kwargs: FuncDoctest) -> ModuleReturnValue:
+        name, base_target = args
+
+        # Link the base target's crate into the tests
+        kwargs['link_with'].append(base_target)
+        kwargs['depends'].append(base_target)
+        workdir = kwargs['workdir']
+        kwargs['workdir'] = None
+        new_target, tkwargs = self.test_common('doctest', state, args, kwargs)
+
+        # added automatically by rustdoc; keep things simple
+        tkwargs['args'].remove('--test')
+
+        # --test-args= is "parsed" simply via the Rust function split_whitespace().
+        # This means no quoting nightmares (pfew) but it also means no spaces.
+        # Unfortunately it's pretty hard at this point to accept e.g. CustomTarget,
+        # because their paths may not be known.  This is not a big deal because the
+        # user does not control the test harness, so make things easy and allow
+        # strings only.
+        if tkwargs['args']:
+            tkwargs['args'] = ['--test-args=' + ' '.join(T.cast('T.Sequence[str]', tkwargs['args']))]
+        if workdir:
+            tkwargs['args'].append('--test-run-directory=' + workdir)
+
+        if self.rustdoc[base_target.for_machine] is None:
+            rustc = T.cast('RustCompiler', base_target.compilers['rust'])
+            rustdoc = rustc.get_rustdoc(state.environment)
+            if rustdoc:
+                self.rustdoc[base_target.for_machine] = ExternalProgram(rustdoc.get_exe())
+            else:
+                self.rustdoc[base_target.for_machine] = NonExistingExternalProgram()
+
+        rustdoc_prog = self.rustdoc[base_target.for_machine]
+        if not rustdoc_prog.found():
+            raise MesonException(f'could not find rustdoc for {base_target.for_machine} machine')
+
+        doctests: Doctest = self.interpreter.make_test(
+            self.interpreter.current_node, (name, rustdoc_prog), tkwargs, Doctest)
+
+        # Note that the new_target is intentionally not returned, as it
+        # is only reached via the base_target and never built by "ninja"
+        doctests.target = new_target
+        base_target.doctests = doctests
+        return ModuleReturnValue(None, [doctests])
 
     @noPosargs
     @typed_kwargs(
@@ -238,7 +333,7 @@ class RustModule(ExtensionModule):
             # bindgen always uses clang, so it's safe to hardcode -I here
             clang_args.extend([f'-I{x}' for x in i.to_string_list(
                 state.environment.get_source_dir(), state.environment.get_build_dir())])
-        if are_asserts_disabled(state.environment.coredata.optstore):
+        if are_asserts_disabled_for_subproject(state.subproject, state.environment):
             clang_args.append('-DNDEBUG')
 
         for de in kwargs['dependencies']:
@@ -259,10 +354,16 @@ class RustModule(ExtensionModule):
                 _, _, err = mesonlib.Popen_safe(
                     T.cast('T.List[str]', self._bindgen_bin.get_command()) +
                     ['--rust-target', self._bindgen_rust_target])
-                # Sometimes this is "invalid Rust target" and sometimes "invalid
-                # rust target"
-                if 'Got an invalid' in err:
+                # < 0.71: Sometimes this is "invalid Rust target" and
+                # sometimes "invalid # rust target"
+                # >= 0.71: error: invalid value '...' for '--rust-target <RUST_TARGET>': "..." is not a valid Rust target, accepted values are of the form ...
+                # It's also much harder to hit this in 0.71 than in previous versions
+                if 'Got an invalid' in err or 'is not a valid Rust target' in err:
                     self._bindgen_rust_target = None
+
+            # TODO: Executable needs to learn about get_version
+            if isinstance(self._bindgen_bin, ExternalProgram):
+                self._bindgen_set_std = mesonlib.version_compare(self._bindgen_bin.get_version(), '>= 0.71')
 
         name: str
         if isinstance(header, File):
@@ -333,6 +434,11 @@ class RustModule(ExtensionModule):
             kwargs['args'] + inline_wrapper_args
         if self._bindgen_rust_target and '--rust-target' not in cmd:
             cmd.extend(['--rust-target', self._bindgen_rust_target])
+        if self._bindgen_set_std and '--rust-edition' not in cmd:
+            rust_std = state.environment.coredata.optstore.get_value('rust_std')
+            assert isinstance(rust_std, str), 'for mypy'
+            if rust_std != 'none':
+                cmd.extend(['--rust-edition', rust_std])
         cmd.append('--')
         cmd.extend(kwargs['c_args'])
         cmd.extend(clang_args)

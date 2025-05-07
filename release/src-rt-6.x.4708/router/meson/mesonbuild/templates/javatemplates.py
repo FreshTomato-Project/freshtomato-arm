@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2019 The Meson development team
+# Copyright © 2023-2025 Intel Corporation
 
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ public class {class_name} {{
     final static String PROJECT_NAME = "{project_name}";
 
     public static void main (String args[]) {{
-        if(args.length != 0) {{
+        if (args.length != 0) {{
             System.out.println(args + " takes no arguments.");
             System.exit(0);
         }}
@@ -23,13 +24,24 @@ public class {class_name} {{
 
 '''
 
-hello_java_meson_template = '''project('{project_name}', 'java',
+hello_java_meson_template = '''project(
+  '{project_name}',
+  'java',
   version : '{version}',
-  default_options : ['warning_level=3'])
+  meson_version : '>= {meson_version}',
+  default_options : ['warning_level=3'],
+)
 
-exe = jar('{exe_name}', '{source_name}',
+dependencies = [{dependencies}
+]
+
+exe = jar(
+  '{exe_name}',
+  '{source_name}',
   main_class : '{exe_name}',
-  install : true)
+  dependencies : dependencies,
+  install : true,
+)
 
 test('basic', exe)
 '''
@@ -50,7 +62,7 @@ lib_java_test_template = '''
 
 public class {class_test} {{
     public static void main (String args[]) {{
-        if(args.length != 0) {{
+        if (args.length != 0) {{
             System.out.println(args + " takes no arguments.");
             System.exit(1);
         }}
@@ -63,24 +75,41 @@ public class {class_test} {{
 
 '''
 
-lib_java_meson_template = '''project('{project_name}', 'java',
+lib_java_meson_template = '''project(
+  '{project_name}',
+  'java',
   version : '{version}',
-  default_options : ['warning_level=3'])
+  meson_version : '>= {meson_version}',
+  default_options : ['warning_level=3'],
+)
 
-jarlib = jar('{class_name}', '{source_file}',
+dependencies = [{dependencies}
+]
+
+jarlib = jar(
+  '{class_name}',
+  '{source_file}',
+  dependencies : dependencies,
   main_class : '{class_name}',
   install : true,
 )
 
-test_jar = jar('{class_test}', '{test_source_file}',
+test_jar = jar(
+  '{class_test}',
+  '{test_source_file}',
   main_class : '{class_test}',
-  link_with : jarlib)
+  dependencies : dependencies,
+  link_with : jarlib,
+)
 test('{test_name}', test_jar)
 
 # Make this library usable as a Meson subproject.
 {ltoken}_dep = declare_dependency(
-  include_directories: include_directories('.'),
-  link_with : jarlib)
+  include_directories : include_directories('.'),
+  dependencies : dependencies,
+  link_with : jarlib,
+)
+meson.override_dependency('{project_name}', {ltoken}_dep)
 '''
 
 

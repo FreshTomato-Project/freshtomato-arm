@@ -29,7 +29,9 @@ def netcdf_factory(env: 'Environment',
                    for_machine: 'mesonlib.MachineChoice',
                    kwargs: T.Dict[str, T.Any],
                    methods: T.List[DependencyMethods]) -> T.List['DependencyGenerator']:
-    language = kwargs.get('language', 'c')
+    language = kwargs.get('language')
+    if language is None:
+        language = 'c'
     if language not in ('c', 'cpp', 'fortran'):
         raise DependencyException(f'Language {language} is not supported with NetCDF.')
 
@@ -390,7 +392,7 @@ class CursesSystemDependency(SystemDependency):
                         req = kwargs.get('version')
                         if req:
                             if self.version:
-                                self.is_found = mesonlib.version_compare(self.version, req)
+                                self.is_found, *_ = mesonlib.version_compare_many(self.version, req)
                             else:
                                 mlog.warning('Cannot determine version of curses to compare against.')
 
@@ -570,7 +572,7 @@ def shaderc_factory(env: 'Environment',
         shared_libs = ['shaderc']
         static_libs = ['shaderc_combined', 'shaderc_static']
 
-        if kwargs.get('static', env.coredata.get_option(OptionKey('prefer_static'))):
+        if kwargs.get('static', env.coredata.optstore.get_value_for(OptionKey('prefer_static'))):
             c = [functools.partial(PkgConfigDependency, name, env, kwargs)
                  for name in static_libs + shared_libs]
         else:

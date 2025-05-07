@@ -185,7 +185,7 @@ feature = get_option('schemas') \
     .require(want_pattern, error_message: 'schemas requires pattern') \
     .require(want_regexps, error_message: 'schemas requires regexps')
 want_schemas = not want_minimum \
-    or get_option('relaxng') ? \
+    or get_option('relaxng').enabled() ? \
     feature.allowed() : feature.enabled()
 
 feature = get_option('relaxng') \
@@ -335,7 +335,7 @@ if want_modules and host_machine.system() != 'windows'
 endif
 
 ### threads
-if want_threads
+if want_threads and host_os != 'windows'
     threads_dep = dependency('threads')
     xml_deps += threads_dep
 else
@@ -480,6 +480,7 @@ endforeach
 v_min_compat = 14
 so_version = v_maj + v_min_compat
 age = v_min - v_min_compat
+darwin_compat = v_maj + v_min + 1
 xml_lib = library(
     'xml2',
     files(xml_src),
@@ -489,6 +490,7 @@ xml_lib = library(
     install: true,
     version: f'@so_version@.@age@.@v_mic@',
     soversion: so_version,
+    darwin_versions: [ darwin_compat, f'@darwin_compat@.@v_mic@' ],
 )
 
 dep_inc = include_directories('include')

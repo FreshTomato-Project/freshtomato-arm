@@ -534,8 +534,7 @@ function init() {
 		]);
 	</script>
 	<div class="fields">
-		<span id="_sshd_notice"></span>
-		<input type="button" id="_sshd_button">&nbsp; <img src="spin.gif" alt="" id="spin">
+		<span id="_sshd_notice"></span><input type="button" id="_sshd_button">&nbsp; <img src="spin.gif" alt="" id="spin">
 	</div>
 </div>
 
@@ -550,8 +549,7 @@ function init() {
 		]);
 	</script>
 	<div class="fields">
-		<span id="_telnetd_notice"></span>
-		<input type="button" id="_telnetd_button">&nbsp; <img src="spin.gif" alt="" id="spin2">
+		<span id="_telnetd_notice"></span><input type="button" id="_telnetd_button">&nbsp; <img src="spin.gif" alt="" id="spin2">
 	</div>
 </div>
 

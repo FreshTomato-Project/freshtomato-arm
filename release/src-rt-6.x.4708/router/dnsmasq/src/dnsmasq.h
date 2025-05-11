@@ -539,8 +539,10 @@ struct crec {
 
 #define PIPE_OP_RR      1  /* Resource record */
 #define PIPE_OP_END     2  /* Cache entry complete: commit */
-#define PIPE_OP_RESULT  3  /* validation result. */
+#define PIPE_OP_RESULT  3  /* Validation result */
 #define PIPE_OP_STATS   4  /* Update parent's stats */
+#define PIPE_OP_IPSET   5  /* Update IPset */
+#define PIPE_OP_NFTSET  6  /* Update NFTset */
 
 /* struct sockaddr is not large enough to hold any address,
    and specifically not big enough to hold an IPv6 address.
@@ -1361,6 +1363,10 @@ int cache_recv_insert(time_t now, int fd);
 #ifdef HAVE_DNSSEC
 void cache_update_hwm(void);
 #endif
+#if defined(HAVE_IPSET) || defined(HAVE_NFTSET)
+void cache_send_ipset(unsigned char op, struct ipsets *sets,
+		      int flags, union all_addr *addr);
+#endif
 struct crec *cache_insert(char *name, union all_addr *addr, unsigned short class, 
 			  time_t now, unsigned long ttl, unsigned int flags);
 void cache_reload(void);
@@ -1424,6 +1430,7 @@ int add_resource_record(struct dns_header *header, char *limit, int *truncp,
 			int *offset, unsigned short type, unsigned short class, char *format, ...);
 int in_arpa_name_2_addr(char *namein, union all_addr *addrp);
 int private_net(struct in_addr addr, int ban_localhost);
+int private_net6(struct in6_addr *a, int ban_localhost);
 /* extract_name ops */
 #define EXTR_NAME_EXTRACT   1
 #define EXTR_NAME_COMPARE   2

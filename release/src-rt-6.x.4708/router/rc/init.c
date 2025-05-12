@@ -11539,6 +11539,22 @@ static void sysinit(void)
 
 	set_jumbo_frame(); /* enable or disable jumbo_frame and set jumbo frame size */
 
+	switch (get_model()) {
+	case MODEL_EX7000:
+		// switch won't be enabled without this
+		eval("et", "robowr", "0x10", "0x0", "0x1940");
+		eval("et", "robowr", "0x11", "0x0", "0x1940");
+		eval("et", "robowr", "0x12", "0x0", "0x1940");
+		eval("et", "robowr", "0x13", "0x0", "0x1940");
+		eval("et", "robowr", "0x14", "0x0", "0x1940");
+		eval("et", "robowr", "0x10", "0x0", "0x1140");
+		eval("et", "robowr", "0x11", "0x0", "0x1140");
+		eval("et", "robowr", "0x12", "0x0", "0x1140");
+		eval("et", "robowr", "0x13", "0x0", "0x1140");
+		eval("et", "robowr", "0x14", "0x0", "0x1140");
+		break;
+	}
+
 	/* load after init_nvram */
 #if defined(TCONFIG_USBAP) || defined(TCONFIG_DHDAP)
 	load_wl(); /* for non-USBAP/sdk6 see function start_lan() */

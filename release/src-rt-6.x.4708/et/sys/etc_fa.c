@@ -2058,7 +2058,8 @@ fa_regs_show(fa_t *fa, struct bcmstrbuf *b)
 {
 #ifdef BCMDBG
 	osl_t *osh;
-	uint32 val, *reg;
+	// uint32 val;
+	uint32 *reg;
 	int i, nregs = sizeof(fareg)/sizeof(fareg[0]);
 	fa_info_t *fai = (fa_info_t *)fa;
 
@@ -2104,7 +2105,7 @@ fa_regs_show(fa_t *fa, struct bcmstrbuf *b)
 
 	reg = (uint32 *)((unsigned long)(fai->regs) + OFFSETOF(faregs_t, m_accdata));
 	CTF_FA_WAR777_ON(fai);
-	val = R_REG(osh, reg);
+	// val = R_REG(osh, reg);
 	bcm_bprintf(b, "%s(0x%p):0x%08x\n", "MEM_ACC_DATA7", &reg[7], R_REG(osh, &reg[7]));
 	bcm_bprintf(b, "%s(0x%p):0x%08x\n", "MEM_ACC_DATA6", &reg[6], R_REG(osh, &reg[6]));
 	bcm_bprintf(b, "%s(0x%p):0x%08x\n", "MEM_ACC_DATA5", &reg[5], R_REG(osh, &reg[5]));

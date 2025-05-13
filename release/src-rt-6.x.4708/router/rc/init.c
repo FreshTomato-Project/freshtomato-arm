@@ -11541,7 +11541,7 @@ static void sysinit(void)
 
 	switch (get_model()) {
 	case MODEL_EX7000:
-		// switch won't be enabled without this
+		// toggle power-down bit for all ports, switch won't be enabled without this
 		eval("et", "robowr", "0x10", "0x0", "0x1940");
 		eval("et", "robowr", "0x11", "0x0", "0x1940");
 		eval("et", "robowr", "0x12", "0x0", "0x1940");

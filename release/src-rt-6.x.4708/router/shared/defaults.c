@@ -1718,6 +1718,9 @@ struct nvram_tuple router_defaults[] = {
 	{"wg0_route",			""				, 0 },
 	{"wg0_peer_dns",		""				, 0 },
 	{"wg0_peers",			""				, 0 },
+	{"wg0_firewall",		"auto"				, 0 },	/* auto, custom */
+	{"wg0_nat",			"1"				, 0 },
+	{"wg0_fw",			"1"				, 0 },
 	{"wg1_enable",			"0"				, 0 },
 	{"wg1_poll",			"0"				, 0 },
 	{"wg1_file",			""				, 0 },
@@ -1740,6 +1743,9 @@ struct nvram_tuple router_defaults[] = {
 	{"wg1_route",			""				, 0 },
 	{"wg1_peer_dns",		""				, 0 },
 	{"wg1_peers",			""				, 0 },
+	{"wg1_firewall",		"auto"				, 0 },	/* auto, custom */
+	{"wg1_nat",			"1"				, 0 },
+	{"wg1_fw",			"1"				, 0 },
 	{"wg2_enable",			"0"				, 0 },
 	{"wg2_poll",			"0"				, 0 },
 	{"wg2_file",			""				, 0 },
@@ -1762,6 +1768,9 @@ struct nvram_tuple router_defaults[] = {
 	{"wg2_route",			""				, 0 },
 	{"wg2_peer_dns",		""				, 0 },
 	{"wg2_peers",			""				, 0 },
+	{"wg2_firewall",		"auto"				, 0 },	/* auto, custom */
+	{"wg2_nat",			"1"				, 0 },
+	{"wg2_fw",			"1"				, 0 },
 #endif /* TCONFIG_WIREGUARD */
 
 #ifdef TCONFIG_BT

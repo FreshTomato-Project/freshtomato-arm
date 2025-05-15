@@ -117,7 +117,7 @@
  	  fclose(daemon->lease_stream);
 --- dnsmasq/src/dnsmasq.h
 +++ dnsmasq/src/dnsmasq.h
-@@ -1662,6 +1662,12 @@
+@@ -1669,6 +1669,12 @@
  int icmp_ping(struct in_addr addr);
  int delay_dhcp(time_t start, int sec, int fd, uint32_t addr, unsigned short id);
  #endif
@@ -132,7 +132,7 @@
  void send_event(int fd, int event, int data, char *msg);
 --- dnsmasq/src/lease.c
 +++ dnsmasq/src/lease.c
-@@ -113,12 +113,15 @@
+@@ -141,12 +141,15 @@
  
  	ei = atol(daemon->dhcp_buff3);
  
@@ -149,7 +149,7 @@
  #else
  	/* strictly time_t is opaque, but this hack should work on all sane systems,
  	   even when sizeof(time_t) == 8 */
-@@ -268,7 +271,16 @@
+@@ -298,7 +301,16 @@
  	    continue;
  #endif
  
@@ -166,7 +166,7 @@
  	  ourprintf(&err, "%u ", lease->length);
  #else
  	  ourprintf(&err, "%lu ", (unsigned long)lease->expires);
-@@ -312,12 +324,21 @@
+@@ -342,12 +354,21 @@
  	      if (!(lease->flags & (LEASE_TA | LEASE_NA)))
  		continue;
  
@@ -189,7 +189,7 @@
  	      inet_ntop(AF_INET6, &lease->addr6, daemon->addrbuff, ADDRSTRLEN);
  	 
  	      ourprintf(&err, "%s%u %s ", (lease->flags & LEASE_TA) ? "T" : "",
-@@ -1225,4 +1246,67 @@
+@@ -1343,4 +1364,67 @@
  }
  #endif
  

@@ -1,0 +1,22 @@
+--- dnsmasq/src/option.c
++++ dnsmasq/src/option.c
+@@ -2916,15 +2916,19 @@
+       } while (arg);
+       break;
+ 
++#if defined(__GNUC__) && __GNUC__ >= 5
+ #ifdef HAVE_DHCP
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
++#endif
+     case LOPT_LEASEQUERY:
+       set_option_bool(OPT_LEASEQUERY);
+       if (!arg)
+ 	break;
++#if defined(__GNUC__) && __GNUC__ >= 5
+ #pragma GCC diagnostic pop
+ #endif
++#endif
+     case 'B':  /* --bogus-nxdomain */
+     case LOPT_IGNORE_ADDR: /* --ignore-address */
+      {

@@ -2465,9 +2465,9 @@ libxml2: libxml2/static/Makefile libxml2/build/Makefile
 
 libxml2-install:
 ifeq ($(TCONFIG_BCMARM),y)
-	install -D libxml2/staged/usr/lib/libxml2.so.16.0.2 $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.16.0.2
-	$(STRIP) $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.16.0.2
-	cd $(INSTALLDIR)/libxml2/usr/lib && ln -sf libxml2.so.16.0.2 libxml2.so.16 && ln -sf libxml2.so.16.0.2 libxml2.so
+	install -D libxml2/staged/usr/lib/libxml2.so.16.0.3 $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.16.0.3
+	$(STRIP) $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.16.0.3
+	cd $(INSTALLDIR)/libxml2/usr/lib && ln -sf libxml2.so.16.0.3 libxml2.so.16 && ln -sf libxml2.so.16.0.3 libxml2.so
 else
 	install -D libxml2/staged/usr/lib/libxml2.so.2.13.7 $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.2.13.7
 	$(STRIP) $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.2.13.7

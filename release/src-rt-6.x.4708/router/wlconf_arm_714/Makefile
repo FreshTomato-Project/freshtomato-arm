@@ -23,7 +23,7 @@ ifeq ($(TCONFIG_BCMARM),y)
 CFLAGS += -D__CONFIG_TOAD__
 CFLAGS += -DMFP
 endif
-ifeq ($(CONFIG_RTR_OPTIMIZE_SIZE),y)
+ifeq ($(TCONFIG_OPTIMIZE_SIZE),y)
 CFLAGS  += -Os
 else
 CFLAGS  += -O2

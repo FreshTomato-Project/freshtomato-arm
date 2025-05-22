@@ -38,7 +38,7 @@ endif
 UTILS := epi_ttcp
 CFLAGS += -s -I$(SRCBASE)/include ${WLAN_StdIncPathA} -I$(SRCBASE)/common/include
 CFLAGS += $(if $(WLAN_ComponentIncPath),$(WLAN_ComponentIncPath),$(addprefix -I,$(wildcard $(SRCBASE)/shared/bcmwifi/include)))
-ifeq ($(CONFIG_TR_OPTIMIZE_SIZE),y)
+ifeq ($(TCONFIG_OPTIMIZE_SIZE),y)
 CFLAGS  += -Os
 else
 CFLAGS  += -O2

@@ -738,6 +738,12 @@ function earlyInit() {
 /* DISCOVERY-BEGIN */
 	E('_discovery_clear').checked = (discovery_clear === 1);
 /* DISCOVERY-END */
+	document.addEventListener('DOMContentLoaded', function() {
+		var sel = E('_show_wan_entries');
+		sel && addEvent(sel, 'change', function() {
+	    ref.initPage(0, 3);
+		});
+	});
 }
 
 function init() {

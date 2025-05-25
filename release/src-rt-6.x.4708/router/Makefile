@@ -3760,11 +3760,11 @@ sd-idle-clean:
 iperf/stamp-h1:
 	$(call patch_files,iperf)
 	cd iperf && autoreconf -fsi && \
-		CFLAGS="-Os -Wall $(EXTRACFLAGS) -fPIC" \
+		CFLAGS="-Os -Wall $(EXTRACFLAGS) -D_GNU_SOURCE -fPIC" \
 		LIBS="-lgcc_s" \
 		ac_cv_func_clock_gettime="no" \
 		ac_cv_func_daemon="no" \
-		$(CONFIGURE) --prefix=/usr --disable-profiling --without-openssl
+		$(CONFIGURE) --prefix=/usr --disable-profiling --without-openssl --without-sctp
 	@touch $@
 
 iperf: iperf/stamp-h1

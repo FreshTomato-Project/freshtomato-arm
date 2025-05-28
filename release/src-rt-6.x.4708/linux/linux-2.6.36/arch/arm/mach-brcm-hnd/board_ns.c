@@ -515,42 +515,10 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 	}
 #endif	/* CONFIG_FAILSAFE_UPGRADE */
 
-    	/*  BOOT and NVRAM size NETGEAR*/
-	/* R6900, R7000 and R6700v1 */
-	if (nvram_match("boardnum", "32") &&
-		 nvram_match("boardtype", "0x0665") &&
-		 nvram_match("boardrev", "0x1301")) {
-	        maxsize = 0x200000; /* 2 MB */
-	        size = maxsize;
-	}
-	/* R6400, R6400v2, R6700v3 and XR300 */
-	else if (nvram_match("boardnum", "32") &&
-		 nvram_match("boardtype", "0x0646") &&
-		 nvram_match("boardrev", "0x1601")) {
-	        maxsize = 0x200000; /* 2 MB */
-	        size = maxsize;
-	}
-#ifdef CONFIG_SMP
-	/* AC1450, R6300V2 / R6250 */
-	else if (nvram_match("boardnum", "679") &&
-	     nvram_match("boardtype", "0x0646") &&
-	     nvram_match("boardrev", "0x1110")) {
-	        maxsize = 0x200000; /* 2 MB */
-	        size = maxsize;
-	}
-#else /* single core */
-	/* R6200v2 */
-	else if (nvram_match("boardnum", "679") &&
-	         nvram_match("boardtype", "0x0646") &&
-	         nvram_match("boardrev", "0x1110")) {
-			maxsize = 0x200000; /* 2 MB */
-			size = maxsize;
-	}
-#endif /* CONFIG_SMP */
 	/* Buffalo WZR-1750DHP */
-	else if (nvram_match("boardnum", "00") &&
-	     nvram_match("boardtype","0xF646") &&
-	     nvram_match("boardrev", "0x1100")) {
+	if (nvram_match("boardnum", "00") &&
+	    nvram_match("boardtype","0xF646") &&
+	    nvram_match("boardrev", "0x1100")) {
 		size = 0x100000;	/* flash0 ST Compatible Serial flash size 1024KB */
 		bootsz = 0x40000;	/* flash0.boot ST Compatible Serial flash offset 00000000 size 256KB */
 					/* flash0.nvram ST Compatible Serial flash offset 000F0000 size 64KB */

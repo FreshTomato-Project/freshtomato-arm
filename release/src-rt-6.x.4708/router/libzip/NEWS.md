@@ -1,3 +1,8 @@
+# 1.11.4 [2025-05-23]
+
+* Use separate cmake package files for library and programs.
+* Improve documentation.
+
 # 1.11.3 [2025-01-20]
 
 * Report read error for corrupted encrypted file data.

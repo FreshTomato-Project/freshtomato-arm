@@ -30,7 +30,7 @@
 .\" OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 .\" IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.TH "LIBZIP" "3" "August 21, 2024" "NiH" "Library Functions Manual"
+.TH "LIBZIP" "3" "May 5, 2025" "NiH" "Library Functions Manual"
 .nh
 .if n .ad l
 .SH "NAME"
@@ -50,6 +50,9 @@ were:
 .PD 0
 .TP 4n
 \fB\(bu\fR
+Maintain a stable API without breaking backwards compatibility.
+.TP 4n
+\fB\(bu\fR
 Do not create corrupt files, even in case of errors.
 .TP 4n
 \fB\(bu\fR
@@ -63,13 +66,43 @@ For this reason, when modifying zip archives,
 \fBlibzip\fR
 writes to a temporary file and replaces the original
 zip archive atomically.
-.PP
-Below there are two sections listing functions: one for how to read
-from zip archives and one for how to create/modify them.
 .SH "GENERAL NOTES"
+When adding files to an archive, the file data is only read when the
+new archive is written.
+Therefore all files added must remain valid until the archive is
+closed with
+zip_close(3)
+or
+zip_discard(3).
+.PP
 Unless explicitly documented, functions should not be passed
 \fRNULL\fR
 pointers as arguments.
+.SH "DATA TYPES"
+These data types correspond to central concepts in
+\fBlibzip\fR.
+Most of them are private, meaning you can't allocate them or access their members directly.
+This allows extending the structures in the future without breaking compatibility.
+.SS "zip_t"
+This type represents an opened archive.
+See
+zip(5).
+.SS "zip_file_t"
+This type represents a file from an archive that has been opened for reading.
+See
+zip_file(5).
+.SS "zip_source_t"
+This type represents a source (or destination) of data.
+It is used in
+\fBlibzip\fR
+for providing data when adding or replacing files, accessing data from a file inside an archive, and the data for the archive as a whole.
+See
+zip_source(5).
+.SS "zip_error_t"
+This type represents information about an error.
+Its type can be checked against pre-defined constants and it can be converted to a human readable string.
+See
+zip_error(5).
 .SH "FILE NAMES"
 .SS "Encoding"
 Names of files in the host file system are expected in UTF-8 encoding.
@@ -115,7 +148,22 @@ zip_open(3)
 .PD 0
 .TP 4n
 \fB\(bu\fR
+zip_open_from_source(3)
+.TP 4n
+\fB\(bu\fR
 zip_fdopen(3)
+.PD
+.SS "Get Archive Attributes"
+.TP 4n
+\fB\(bu\fR
+zip_get_archive_comment(3)
+.PD 0
+.TP 4n
+\fB\(bu\fR
+zip_get_archive_flag(3)
+.TP 4n
+\fB\(bu\fR
+zip_get_num_entries(3)
 .PD
 .SS "Find Files"
 .TP 4n
@@ -156,17 +204,11 @@ zip_fclose(3)
 .TP 4n
 \fB\(bu\fR
 zip_close(3)
-.SS "Miscellaneous"
+.SS "Get File Attributes"
 .TP 4n
 \fB\(bu\fR
 zip_stat(3)
 .PD 0
-.TP 4n
-\fB\(bu\fR
-zip_compression_method_supported(3)
-.TP 4n
-\fB\(bu\fR
-zip_encryption_method_supported(3)
 .TP 4n
 \fB\(bu\fR
 zip_file_get_comment(3)
@@ -175,22 +217,19 @@ zip_file_get_comment(3)
 zip_file_get_external_attributes(3)
 .TP 4n
 \fB\(bu\fR
-zip_get_archive_comment(3)
-.TP 4n
-\fB\(bu\fR
-zip_get_archive_flag(3)
-.TP 4n
-\fB\(bu\fR
 zip_get_name(3)
+.PD
+.SS "Miscellaneous"
 .TP 4n
 \fB\(bu\fR
-zip_get_num_entries(3)
+zip_compression_method_supported(3)
+.PD 0
+.TP 4n
+\fB\(bu\fR
+zip_encryption_method_supported(3)
 .TP 4n
 \fB\(bu\fR
 zip_set_default_password(3)
-.TP 4n
-\fB\(bu\fR
-zip_source_pass_to_lower_layer(3)
 .PD
 .SH "CREATING/MODIFYING ZIP ARCHIVES"
 .SS "Create/Open Archive"
@@ -235,15 +274,6 @@ zip_source_file(3)
 .TP 4n
 \fB\(bu\fR
 zip_source_filep(3)
-.TP 4n
-\fB\(bu\fR
-zip_source_free(3)
-.TP 4n
-\fB\(bu\fR
-zip_source_function(3)
-.TP 4n
-\fB\(bu\fR
-zip_source_layered(3)
 .TP 4n
 \fB\(bu\fR
 zip_source_zip(3)
@@ -323,7 +353,54 @@ zip_set_archive_comment(3)
 zip_set_archive_flag(3)
 .TP 4n
 \fB\(bu\fR
-zip_source(3)
+zip_source(5)
+.PD
+.SH "SOURCES"
+.SS "Create Source"
+.TP 4n
+\fB\(bu\fR
+zip_source_buffer(3)
+.PD 0
+.TP 4n
+\fB\(bu\fR
+zip_source_file(3)
+.TP 4n
+\fB\(bu\fR
+zip_source_filep(3)
+.TP 4n
+\fB\(bu\fR
+zip_source_function(3)
+.TP 4n
+\fB\(bu\fR
+zip_source_layered(3)
+.TP 4n
+\fB\(bu\fR
+zip_source_zip(3)
+.PD
+.SS "Using Source"
+.TP 4n
+\fB\(bu\fR
+zip_file_add(3)
+.PD 0
+.TP 4n
+\fB\(bu\fR
+zip_file_replace(3)
+.TP 4n
+\fB\(bu\fR
+zip_open_from_source(3)
+.PD
+.SS "Implementing Source"
+.TP 4n
+\fB\(bu\fR
+zip_source_pass_to_lower_layer(3)
+.SS "Source Life Cycle"
+.TP 4n
+\fB\(bu\fR
+zip_source_free(3)
+.PD 0
+.TP 4n
+\fB\(bu\fR
+zip_source_keep(3)
 .PD
 .SH "ERROR HANDLING"
 .TP 4n

@@ -6,7 +6,7 @@ if (${CMAKE_VERSION} VERSION_LESS "3.17.0")
 endif()
 
 project(libzip
-  VERSION 1.11.3
+  VERSION 1.11.4
   LANGUAGES C)
 
 if(NOT libzip_VERSION_PATCH)
@@ -495,4 +495,9 @@ if(LIBZIP_DO_INSTALL)
   install(EXPORT ${PROJECT_NAME}-targets NAMESPACE libzip:: FILE ${PROJECT_NAME}-targets.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
     )
+  if(BUILD_TOOLS)
+    install(EXPORT ${PROJECT_NAME}-bin-targets NAMESPACE libzip:: FILE ${PROJECT_NAME}-bin-targets.cmake
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    )
+  endif()
 endif()

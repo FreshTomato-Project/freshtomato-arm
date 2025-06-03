@@ -34,6 +34,7 @@
    -->
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="../nih-man.css" type="text/css" media="all"/>
   <title>LIBZIP(3)</title>
 </head>
@@ -48,24 +49,26 @@
 <div class="manual-text">
 <section class="Sh">
 <h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
-<code class="Nm">libzip</code> &#x2014;
-<div class="Nd">library for manipulating zip archives</div>
+<p class="Pp"><code class="Nm">libzip</code> &#x2014; <span class="Nd">library
+    for manipulating zip archives</span></p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="LIBRARY"><a class="permalink" href="#LIBRARY">LIBRARY</a></h1>
-libzip (-lzip)
+<p class="Pp">libzip (-lzip)</p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
-<code class="In">#include &lt;<a class="In">zip.h</a>&gt;</code>
+<p class="Pp"><code class="In">#include
+  &lt;<a class="In">zip.h</a>&gt;</code></p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
-<code class="Nm">libzip</code> is a library for reading, creating, and modifying
-  zip archives.
+<p class="Pp"><code class="Nm">libzip</code> is a library for reading, creating,
+    and modifying zip archives.</p>
 <p class="Pp">The main design criteria for <code class="Nm">libzip</code>
   were:</p>
 <ul class="Bl-bullet Bl-compact">
+  <li>Maintain a stable API without breaking backwards compatibility.</li>
   <li>Do not create corrupt files, even in case of errors.</li>
   <li>Do not delete data.</li>
   <li>Be efficient.</li>
@@ -73,22 +76,58 @@ libzip (-lzip)
 <p class="Pp">For this reason, when modifying zip archives,
     <code class="Nm">libzip</code> writes to a temporary file and replaces the
     original zip archive atomically.</p>
-<p class="Pp">Below there are two sections listing functions: one for how to
-    read from zip archives and one for how to create/modify them.</p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="GENERAL_NOTES"><a class="permalink" href="#GENERAL_NOTES">GENERAL
   NOTES</a></h1>
-Unless explicitly documented, functions should not be passed
-  <code class="Dv">NULL</code> pointers as arguments.
+<p class="Pp">When adding files to an archive, the file data is only read when
+    the new archive is written. Therefore all files added must remain valid
+    until the archive is closed with
+    <a class="Xr" href="zip_close.html">zip_close(3)</a> or
+    <a class="Xr" href="zip_discard.html">zip_discard(3)</a>.</p>
+<p class="Pp">Unless explicitly documented, functions should not be passed
+    <code class="Dv">NULL</code> pointers as arguments.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DATA_TYPES"><a class="permalink" href="#DATA_TYPES">DATA
+  TYPES</a></h1>
+<p class="Pp">These data types correspond to central concepts in
+    <code class="Nm">libzip</code>. Most of them are private, meaning you can't
+    allocate them or access their members directly. This allows extending the
+    structures in the future without breaking compatibility.</p>
+<section class="Ss">
+<h2 class="Ss" id="zip_t"><a class="permalink" href="#zip_t">zip_t</a></h2>
+<p class="Pp">This type represents an opened archive. See
+    <a class="Xr" href="zip.html">zip(5)</a>.</p>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="zip_file_t"><a class="permalink" href="#zip_file_t">zip_file_t</a></h2>
+<p class="Pp">This type represents a file from an archive that has been opened
+    for reading. See <a class="Xr" href="zip_file.html">zip_file(5)</a>.</p>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="zip_source_t"><a class="permalink" href="#zip_source_t">zip_source_t</a></h2>
+<p class="Pp">This type represents a source (or destination) of data. It is used
+    in <code class="Nm">libzip</code> for providing data when adding or
+    replacing files, accessing data from a file inside an archive, and the data
+    for the archive as a whole. See
+    <a class="Xr" href="zip_source.html">zip_source(5)</a>.</p>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="zip_error_t"><a class="permalink" href="#zip_error_t">zip_error_t</a></h2>
+<p class="Pp">This type represents information about an error. Its type can be
+    checked against pre-defined constants and it can be converted to a human
+    readable string. See
+  <a class="Xr" href="zip_error.html">zip_error(5)</a>.</p>
+</section>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="FILE_NAMES"><a class="permalink" href="#FILE_NAMES">FILE
   NAMES</a></h1>
 <section class="Ss">
 <h2 class="Ss" id="Encoding"><a class="permalink" href="#Encoding">Encoding</a></h2>
-Names of files in the host file system are expected in UTF-8 encoding. On
-  Windows, variants for ASCII and UTF-16 are also available.
+<p class="Pp">Names of files in the host file system are expected in UTF-8
+    encoding. On Windows, variants for ASCII and UTF-16 are also available.</p>
 <p class="Pp">Names of files inside archives are by default expected in UTF-8
     encoding. Other encodings can be requested by using the flags
     <code class="Dv">ZIP_FL_ENC_CP437</code> and
@@ -98,25 +137,27 @@ Names of files in the host file system are expected in UTF-8 encoding. On
 <section class="Ss">
 <h2 class="Ss" id="Directory_Separator"><a class="permalink" href="#Directory_Separator">Directory
   Separator</a></h2>
-The zip format requires the use of forward slash (&#x2018;/&#x2019;) as
-  directory separator. Since backslash (&#x2018;\&#x2019;) can be part of a
-  valid file name on Unix systems, <code class="Nm">libzip</code> does not
-  automatically convert them, even on Windows. It is the responsibility of the
-  programmer to ensure that all directory separators are passed as forward
-  slashes to <code class="Nm">libzip</code>.
+<p class="Pp">The zip format requires the use of forward slash
+    (&#x2018;/&#x2019;) as directory separator. Since backslash
+    (&#x2018;\&#x2019;) can be part of a valid file name on Unix systems,
+    <code class="Nm">libzip</code> does not automatically convert them, even on
+    Windows. It is the responsibility of the programmer to ensure that all
+    directory separators are passed as forward slashes to
+    <code class="Nm">libzip</code>.</p>
 </section>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="THREAD_SAFETY"><a class="permalink" href="#THREAD_SAFETY">THREAD
   SAFETY</a></h1>
-In general, different zip archives opened by <code class="Nm">libzip</code> are
-  independent of each other and can be used by parallel-running threads without
-  locking. If you want to use an archive from multiple threads, you have to
-  synchronize access to it yourself. If you use an archive as a source for
-  <a class="Xr" href="zip_file_add.html">zip_file_add(3)</a> or
-  <a class="Xr" href="zip_file_replace.html">zip_file_replace(3)</a>, access to
-  the target archive must be synchronized with access to the source archive as
-  well.
+<p class="Pp">In general, different zip archives opened by
+    <code class="Nm">libzip</code> are independent of each other and can be used
+    by parallel-running threads without locking. If you want to use an archive
+    from multiple threads, you have to synchronize access to it yourself. If you
+    use an archive as a source for
+    <a class="Xr" href="zip_file_add.html">zip_file_add(3)</a> or
+    <a class="Xr" href="zip_file_replace.html">zip_file_replace(3)</a>, access
+    to the target archive must be synchronized with access to the source archive
+    as well.</p>
 </section>
 <section class="Sh">
 <h1 class="Sh" id="READING_ZIP_ARCHIVES"><a class="permalink" href="#READING_ZIP_ARCHIVES">READING
@@ -126,7 +167,17 @@ In general, different zip archives opened by <code class="Nm">libzip</code> are
   Archive</a></h2>
 <ul class="Bl-bullet Bl-compact">
   <li><a class="Xr" href="zip_open.html">zip_open(3)</a></li>
+  <li><a class="Xr" href="zip_open_from_source.html">zip_open_from_source(3)</a></li>
   <li><a class="Xr" href="zip_fdopen.html">zip_fdopen(3)</a></li>
+</ul>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="Get_Archive_Attributes"><a class="permalink" href="#Get_Archive_Attributes">Get
+  Archive Attributes</a></h2>
+<ul class="Bl-bullet Bl-compact">
+  <li><a class="Xr" href="zip_get_archive_comment.html">zip_get_archive_comment(3)</a></li>
+  <li><a class="Xr" href="zip_get_archive_flag.html">zip_get_archive_flag(3)</a></li>
+  <li><a class="Xr" href="zip_get_num_entries.html">zip_get_num_entries(3)</a></li>
 </ul>
 </section>
 <section class="Ss">
@@ -160,19 +211,21 @@ In general, different zip archives opened by <code class="Nm">libzip</code> are
 </ul>
 </section>
 <section class="Ss">
-<h2 class="Ss" id="Miscellaneous"><a class="permalink" href="#Miscellaneous">Miscellaneous</a></h2>
+<h2 class="Ss" id="Get_File_Attributes"><a class="permalink" href="#Get_File_Attributes">Get
+  File Attributes</a></h2>
 <ul class="Bl-bullet Bl-compact">
   <li><a class="Xr" href="zip_stat.html">zip_stat(3)</a></li>
-  <li><a class="Xr" href="zip_compression_method_supported.html">zip_compression_method_supported(3)</a></li>
-  <li><a class="Xr" href="zip_encryption_method_supported.html">zip_encryption_method_supported(3)</a></li>
   <li><a class="Xr" href="zip_file_get_comment.html">zip_file_get_comment(3)</a></li>
   <li><a class="Xr" href="zip_file_get_external_attributes.html">zip_file_get_external_attributes(3)</a></li>
-  <li><a class="Xr" href="zip_get_archive_comment.html">zip_get_archive_comment(3)</a></li>
-  <li><a class="Xr" href="zip_get_archive_flag.html">zip_get_archive_flag(3)</a></li>
   <li><a class="Xr" href="zip_get_name.html">zip_get_name(3)</a></li>
-  <li><a class="Xr" href="zip_get_num_entries.html">zip_get_num_entries(3)</a></li>
+</ul>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="Miscellaneous"><a class="permalink" href="#Miscellaneous">Miscellaneous</a></h2>
+<ul class="Bl-bullet Bl-compact">
+  <li><a class="Xr" href="zip_compression_method_supported.html">zip_compression_method_supported(3)</a></li>
+  <li><a class="Xr" href="zip_encryption_method_supported.html">zip_encryption_method_supported(3)</a></li>
   <li><a class="Xr" href="zip_set_default_password.html">zip_set_default_password(3)</a></li>
-  <li><a class="Xr" href="zip_source_pass_to_lower_layer.html">zip_source_pass_to_lower_layer(3)</a></li>
 </ul>
 </section>
 </section>
@@ -202,9 +255,6 @@ In general, different zip archives opened by <code class="Nm">libzip</code> are
   <li><a class="Xr" href="zip_source_buffer.html">zip_source_buffer(3)</a></li>
   <li><a class="Xr" href="zip_source_file.html">zip_source_file(3)</a></li>
   <li><a class="Xr" href="zip_source_filep.html">zip_source_filep(3)</a></li>
-  <li><a class="Xr" href="zip_source_free.html">zip_source_free(3)</a></li>
-  <li><a class="Xr" href="zip_source_function.html">zip_source_function(3)</a></li>
-  <li><a class="Xr" href="zip_source_layered.html">zip_source_layered(3)</a></li>
   <li><a class="Xr" href="zip_source_zip.html">zip_source_zip(3)</a></li>
 </ul>
 </section>
@@ -262,7 +312,46 @@ In general, different zip archives opened by <code class="Nm">libzip</code> are
   <li><a class="Xr" href="zip_register_progress_callback_with_state.html">zip_register_progress_callback_with_state(3)</a></li>
   <li><a class="Xr" href="zip_set_archive_comment.html">zip_set_archive_comment(3)</a></li>
   <li><a class="Xr" href="zip_set_archive_flag.html">zip_set_archive_flag(3)</a></li>
-  <li><a class="Xr" href="zip_source.html">zip_source(3)</a></li>
+  <li><a class="Xr" href="zip_source.html">zip_source(5)</a></li>
+</ul>
+</section>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SOURCES"><a class="permalink" href="#SOURCES">SOURCES</a></h1>
+<section class="Ss">
+<h2 class="Ss" id="Create_Source"><a class="permalink" href="#Create_Source">Create
+  Source</a></h2>
+<ul class="Bl-bullet Bl-compact">
+  <li><a class="Xr" href="zip_source_buffer.html">zip_source_buffer(3)</a></li>
+  <li><a class="Xr" href="zip_source_file.html">zip_source_file(3)</a></li>
+  <li><a class="Xr" href="zip_source_filep.html">zip_source_filep(3)</a></li>
+  <li><a class="Xr" href="zip_source_function.html">zip_source_function(3)</a></li>
+  <li><a class="Xr" href="zip_source_layered.html">zip_source_layered(3)</a></li>
+  <li><a class="Xr" href="zip_source_zip.html">zip_source_zip(3)</a></li>
+</ul>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="Using_Source"><a class="permalink" href="#Using_Source">Using
+  Source</a></h2>
+<ul class="Bl-bullet Bl-compact">
+  <li><a class="Xr" href="zip_file_add.html">zip_file_add(3)</a></li>
+  <li><a class="Xr" href="zip_file_replace.html">zip_file_replace(3)</a></li>
+  <li><a class="Xr" href="zip_open_from_source.html">zip_open_from_source(3)</a></li>
+</ul>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="Implementing_Source"><a class="permalink" href="#Implementing_Source">Implementing
+  Source</a></h2>
+<ul class="Bl-bullet Bl-compact">
+  <li><a class="Xr" href="zip_source_pass_to_lower_layer.html">zip_source_pass_to_lower_layer(3)</a></li>
+</ul>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="Source_Life_Cycle"><a class="permalink" href="#Source_Life_Cycle">Source
+  Life Cycle</a></h2>
+<ul class="Bl-bullet Bl-compact">
+  <li><a class="Xr" href="zip_source_free.html">zip_source_free(3)</a></li>
+  <li><a class="Xr" href="zip_source_keep.html">zip_source_keep(3)</a></li>
 </ul>
 </section>
 </section>
@@ -284,15 +373,15 @@ In general, different zip archives opened by <code class="Nm">libzip</code> are
 </section>
 <section class="Sh">
 <h1 class="Sh" id="AUTHORS"><a class="permalink" href="#AUTHORS">AUTHORS</a></h1>
-<span class="An">Dieter Baron</span>
-  &lt;<a class="Mt" href="mailto:dillo@nih.at">dillo@nih.at</a>&gt; and
-  <span class="An">Thomas Klausner</span>
-  &lt;<a class="Mt" href="mailto:wiz@gatalith.at">wiz@gatalith.at</a>&gt;
+<p class="Pp"><span class="An">Dieter Baron</span>
+    &lt;<a class="Mt" href="mailto:dillo@nih.at">dillo@nih.at</a>&gt; and
+    <span class="An">Thomas Klausner</span>
+    &lt;<a class="Mt" href="mailto:wiz@gatalith.at">wiz@gatalith.at</a>&gt;</p>
 </section>
 </div>
 <table class="foot">
   <tr>
-    <td class="foot-date">August 21, 2024</td>
+    <td class="foot-date">May 5, 2025</td>
     <td class="foot-os">NiH</td>
   </tr>
 </table>

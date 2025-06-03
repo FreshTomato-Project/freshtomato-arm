@@ -83,32 +83,21 @@ _zip_cdir_new(zip_error_t *error) {
 
 bool
 _zip_cdir_grow(zip_cdir_t *cd, zip_uint64_t additional_entries, zip_error_t *error) {
-    zip_uint64_t i, new_alloc;
-    zip_entry_t *new_entry;
+    zip_uint64_t i;
 
     if (additional_entries == 0) {
         return true;
     }
 
-    new_alloc = cd->nentry_alloc + additional_entries;
-
-    if (new_alloc < additional_entries || new_alloc > SIZE_MAX / sizeof(*(cd->entry))) {
-        zip_error_set(error, ZIP_ER_MEMORY, 0);
+    if (!ZIP_REALLOC(cd->entry, cd->nentry_alloc, additional_entries, error)) {
         return false;
     }
 
-    if ((new_entry = (zip_entry_t *)realloc(cd->entry, sizeof(*(cd->entry)) * (size_t)new_alloc)) == NULL) {
-        zip_error_set(error, ZIP_ER_MEMORY, 0);
-        return false;
-    }
-
-    cd->entry = new_entry;
-
-    for (i = cd->nentry; i < new_alloc; i++) {
+    for (i = cd->nentry; i < cd->nentry_alloc; i++) {
         _zip_entry_init(cd->entry + i);
     }
 
-    cd->nentry = cd->nentry_alloc = new_alloc;
+    cd->nentry = cd->nentry_alloc;
 
     return true;
 }
@@ -272,6 +261,55 @@ _zip_dirent_free(zip_dirent_t *zde) {
 
     _zip_dirent_finalize(zde);
     free(zde);
+}
+
+
+bool
+_zip_dirent_merge(zip_dirent_t *de, zip_dirent_t *de_orig, bool replacing_data, zip_error_t *error) {
+    if (!de->cloned) {
+        zip_error_set(error, ZIP_ER_INTERNAL, 0);
+        return false;
+    }
+
+    if (!(de->changed & ZIP_DIRENT_ATTRIBUTES)) {
+        de->ext_attrib = de_orig->ext_attrib;
+        de->int_attrib = de_orig->int_attrib;
+    }
+    if (!(de->changed & ZIP_DIRENT_COMMENT)) {
+        de->comment = de_orig->comment;
+    }
+    if (!(de->changed & ZIP_DIRENT_COMP_METHOD)) {
+        if (replacing_data) {
+            de->comp_method = ZIP_CM_DEFAULT;
+            de->compression_level = 0;
+        }
+        else {
+            de->comp_method = de_orig->comp_method;
+            de->compression_level = de_orig->compression_level;
+        }
+    }
+    if (!(de->changed & ZIP_DIRENT_ENCRYPTION_METHOD)) {
+        if (replacing_data) {
+            de->encryption_method = ZIP_EM_NONE;
+        }
+        else {
+            de->encryption_method = de_orig->encryption_method;
+        }
+    }
+    if (!(de->changed & ZIP_DIRENT_EXTRA_FIELD)) {
+        de->extra_fields = de_orig->extra_fields;
+    }
+    if (!(de->changed & ZIP_DIRENT_FILENAME)) {
+        de->filename = de_orig->filename;
+    }
+    if (!(de->changed & ZIP_DIRENT_LAST_MOD)) {
+        de->last_mod = de_orig->last_mod;
+    }
+    if (!(de->changed & ZIP_DIRENT_PASSWORD)) {
+        de->password = de_orig->password;
+    }
+
+    return true;
 }
 
 
@@ -1190,7 +1228,8 @@ _zip_u2d_time(time_t intime, zip_dostime_t *dtime, zip_error_t *ze) {
 }
 
 
-bool _zip_dirent_apply_attributes(zip_dirent_t *de, zip_file_attributes_t *attributes, bool force_zip64, zip_uint32_t changed) {
+bool
+_zip_dirent_apply_attributes(zip_dirent_t *de, zip_file_attributes_t *attributes, bool force_zip64) {
     zip_uint16_t length;
     bool has_changed = false;
 
@@ -1210,7 +1249,7 @@ bool _zip_dirent_apply_attributes(zip_dirent_t *de, zip_file_attributes_t *attri
         }
     }
     /* manually set attributes are preferred over attributes provided by source */
-    if ((changed & ZIP_DIRENT_ATTRIBUTES) == 0 && (attributes->valid & ZIP_FILE_ATTRIBUTES_EXTERNAL_FILE_ATTRIBUTES)) {
+    if ((de->changed & ZIP_DIRENT_ATTRIBUTES) == 0 && (attributes->valid & ZIP_FILE_ATTRIBUTES_EXTERNAL_FILE_ATTRIBUTES)) {
         if (de->ext_attrib != attributes->external_file_attributes) {
             de->ext_attrib = attributes->external_file_attributes;
             has_changed = true;
@@ -1250,7 +1289,7 @@ bool _zip_dirent_apply_attributes(zip_dirent_t *de, zip_file_attributes_t *attri
     }
 
     zip_int16_t version_madeby = 63 | (de->version_madeby & 0xff00);
-    if ((changed & ZIP_DIRENT_ATTRIBUTES) == 0 && (attributes->valid & ZIP_FILE_ATTRIBUTES_HOST_SYSTEM)) {
+    if ((de->changed & ZIP_DIRENT_ATTRIBUTES) == 0 && (attributes->valid & ZIP_FILE_ATTRIBUTES_HOST_SYSTEM)) {
         version_madeby = (version_madeby & 0xff) | (zip_uint16_t)(attributes->host_system << 8);
     }
     if (de->version_madeby != version_madeby) {
@@ -1280,7 +1319,8 @@ zip_dirent_torrentzip_normalize(zip_dirent_t *de) {
     /* last_mod, extra_fields, and comment are normalized in zip_dirent_write() directly */
 }
 
-int zip_dirent_check_consistency(zip_dirent_t *dirent) {
+int
+zip_dirent_check_consistency(zip_dirent_t *dirent) {
     if (dirent->comp_method == ZIP_CM_STORE) {
         zip_uint64_t header_size = 0;
         switch (dirent->encryption_method) {

@@ -208,7 +208,7 @@ sub fixDyn
 	fixDynDep("minidlna", "libid3tag.so.0.16.3");
 	fixDynDep("minidlna", "libexif.so.12");
 	fixDynDep("minidlna", "libFLAC.so.14.0.0");
-	fixDynDep("minidlna", "libsqlite3.so.3.49.2");
+	fixDynDep("minidlna", "libsqlite3.so.3.50.0");
 	fixDynDep("mysql", "libz.so.1");
 	fixDynDep("mysqld", "libz.so.1");
 	fixDynDep("mysqldump", "libz.so.1");
@@ -275,7 +275,7 @@ sub fixDyn
 	}
 	fixDynDep("php-cgi", "libpng16.so.16.48.0");
 	fixDynDep("php-cgi", "libiconv.so.2.7.0");
-	fixDynDep("php-cgi", "libsqlite3.so.3.49.2");
+	fixDynDep("php-cgi", "libsqlite3.so.3.50.0");
 	fixDynDep("php-cgi", "libcurl.so.4.8.0");
 	fixDynDep("php-cgi", "libjpeg.so.8.3.2");
 	fixDynDep("php-cgi", "libpcre.so.1.2.13");
@@ -291,7 +291,7 @@ sub fixDyn
 	}
 	fixDynDep("php-cli", "libpng16.so.16.48.0");
 	fixDynDep("php-cli", "libiconv.so.2.7.0");
-	fixDynDep("php-cli", "libsqlite3.so.3.49.2");
+	fixDynDep("php-cli", "libsqlite3.so.3.50.0");
 	fixDynDep("php-cli", "libcurl.so.4.8.0");
 	fixDynDep("php-cli", "libjpeg.so.8.3.2");
 	fixDynDep("php-cli", "libpcre.so.1.2.13");
@@ -307,7 +307,7 @@ sub fixDyn
 	}
 	fixDynDep("php-fpm", "libpng16.so.16.48.0");
 	fixDynDep("php-fpm", "libiconv.so.2.7.0");
-	fixDynDep("php-fpm", "libsqlite3.so.3.49.2");
+	fixDynDep("php-fpm", "libsqlite3.so.3.50.0");
 	fixDynDep("php-fpm", "libcurl.so.4.8.0");
 	fixDynDep("php-fpm", "libjpeg.so.8.3.2");
 	fixDynDep("php-fpm", "libpcre2-8.so.0.14.0");

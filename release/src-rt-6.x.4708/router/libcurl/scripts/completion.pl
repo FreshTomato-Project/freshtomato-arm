@@ -52,7 +52,7 @@ if ($shell eq 'fish') {
     $opts_str .= qq{  $_ \\\n} foreach (@opts);
     chomp $opts_str;
 
-my $tmpl = <<"EOS";
+    my $tmpl = <<"EOS";
 #compdef curl
 
 # curl zsh completion
@@ -153,7 +153,7 @@ sub parse_main_opts {
         $b =~ /([^=]*)/; my $mb = $1;
 
         length($mb) <=> length($ma) || $ma cmp $mb
-    } @list if $shell eq 'zsh';
+    } @list;
 
     return @list;
 }
@@ -171,7 +171,7 @@ completion.pl - Generates tab-completion files for various shells
 
 completion.pl [options...]
 
-    --opts_dir path to cmdline-opts directory
+    --opts-dir path to cmdline-opts directory
     --shell    zsh/fish
     --help     prints this help
 

@@ -83,14 +83,14 @@
 
 #include <ctype.h>
 
-#include "curlx.h" /* from the private lib dir */
+#include <curlx.h> /* from the private lib dir */
 #include "getpart.h"
 #include "util.h"
 #include "server_sockaddr.h"
 #include "tftp.h"
 
 /* include memdebug.h last */
-#include "memdebug.h"
+#include <memdebug.h>
 
 /*****************************************************************************
 *                      STRUCT DECLARATIONS AND DEFINES                       *
@@ -185,9 +185,6 @@ static int prevchar = -1;  /* putbuf: previous char (cr check) */
 
 static tftphdr_storage_t trsbuf;
 static tftphdr_storage_t ackbuf;
-
-static srvr_sockaddr_union_t from;
-static curl_socklen_t fromlen;
 
 static curl_socket_t peer = CURL_SOCKET_BAD;
 
@@ -438,7 +435,7 @@ static ssize_t write_behind(struct testcase *test, int convert)
 
   if(!test->ofile) {
     char outfile[256];
-    msnprintf(outfile, sizeof(outfile), "%s/upload.%ld", logdir, test->testno);
+    snprintf(outfile, sizeof(outfile), "%s/upload.%ld", logdir, test->testno);
     test->ofile = open(outfile, O_CREAT|O_RDWR|CURL_O_BINARY, 0777);
     if(test->ofile == -1) {
       logmsg("Couldn't create and/or open file %s for upload!", outfile);
@@ -544,6 +541,8 @@ int main(int argc, char **argv)
   int error;
   struct testcase test;
   int result = 0;
+  srvr_sockaddr_union_t from;
+  curl_socklen_t fromlen;
 
   memset(&test, 0, sizeof(test));
 
@@ -627,8 +626,8 @@ int main(int argc, char **argv)
     }
   }
 
-  msnprintf(loglockfile, sizeof(loglockfile), "%s/%s/tftp-%s.lock",
-            logdir, SERVERLOGS_LOCKDIR, ipv_inuse);
+  snprintf(loglockfile, sizeof(loglockfile), "%s/%s/tftp-%s.lock",
+           logdir, SERVERLOGS_LOCKDIR, ipv_inuse);
 
 #ifdef _WIN32
   if(win32_init())
@@ -858,7 +857,7 @@ tftpd_cleanup:
 
   if(got_exit_signal) {
     logmsg("========> %s tftpd (port: %d pid: %ld) exits with signal (%d)",
-           ipv_inuse, (int)port, (long)curlx_getpid(), exit_signal);
+           ipv_inuse, (int)port, (long)our_getpid(), exit_signal);
     /*
      * To properly set the return status of the process we
      * must raise the same signal SIGINT or SIGTERM that we
@@ -888,7 +887,7 @@ static int do_tftp(struct testcase *test, struct tftphdr *tp, ssize_t size)
   FILE *server;
   char dumpfile[256];
 
-  msnprintf(dumpfile, sizeof(dumpfile), "%s/%s", logdir, REQUEST_DUMP);
+  snprintf(dumpfile, sizeof(dumpfile), "%s/%s", logdir, REQUEST_DUMP);
 
   /* Open request dump file. */
   server = fopen(dumpfile, "ab");
@@ -1066,8 +1065,8 @@ static int validate_access(struct testcase *test,
 
   if(!strncmp("verifiedserver", filename, 14)) {
     char weare[128];
-    size_t count = msnprintf(weare, sizeof(weare), "WE ROOLZ: %"
-                             CURL_FORMAT_CURL_OFF_T "\r\n", our_getpid());
+    size_t count = snprintf(weare, sizeof(weare), "WE ROOLZ: %ld\r\n",
+                            (long)our_getpid());
 
     logmsg("Are-we-friendly question received");
     test->buffer = strdup(weare);
@@ -1112,7 +1111,7 @@ static int validate_access(struct testcase *test,
     stream = test2fopen(testno, logdir);
 
     if(0 != partno)
-      msnprintf(partbuf, sizeof(partbuf), "data%ld", partno);
+      snprintf(partbuf, sizeof(partbuf), "data%ld", partno);
 
     if(!stream) {
       int error = errno;

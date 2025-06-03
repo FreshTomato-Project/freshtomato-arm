@@ -55,9 +55,11 @@ To insert a sequence of bytes from a hex encoded string, use this syntax:
 
     %hex[ %XX-encoded data to decode ]hex%
 
+Other bytes within the brackets that not percent encoded are inserted as-is.
+
 For example, to insert the binary octets 0, 1 and 255 into the test file:
 
-    %hex[ %00%01%FF ]hex%
+    %hex[%00%01%FF]hex%
 
 ## Repeat content
 
@@ -160,7 +162,6 @@ Available substitute variables include:
 - `%NOLISTENPORT` - Port number where no service is listening
 - `%POP36PORT` - IPv6 port number of the POP3 server
 - `%POP3PORT` - Port number of the POP3 server
-- `%POSIX_PWD` - Current directory somewhat MinGW friendly
 - `%PROXYPORT` - Port number of the HTTP proxy
 - `%PWD` - Current directory
 - `%RESOLVE` - server/resolve command
@@ -173,7 +174,8 @@ Available substitute variables include:
 - `%SOCKSPORT` - Port number of the SOCKS4/5 server
 - `%SOCKSUNIXPATH` - Path to the Unix socket of the SOCKS server
 - `%SRCDIR` - Full path to the source dir
-- `%SSH_PWD` - Current directory friendly for the SSH server
+- `%SCP_PWD` - Current directory friendly for the SSH server for the scp:// protocol
+- `%SFTP_PWD` - Current directory friendly for the SSH server for the sftp:// protocol
 - `%SSHPORT` - Port number of the SCP/SFTP server
 - `%SSHSRVMD5` - MD5 of SSH server's public key
 - `%SSHSRVSHA256` - SHA256 of SSH server's public key
@@ -225,6 +227,9 @@ The `text-ci` make target automatically skips test with the `flaky` keyword.
 Tests that have strict timing dependencies have the `timing-dependent` keyword.
 These are intended to eventually be treated specially on CI builds which are
 often run on overloaded machines with unpredictable timing.
+
+Tests using non-7-bit-ASCII characters must provide them with `%hex[]` or
+similar.
 
 ## `<reply>`
 
@@ -397,6 +402,7 @@ What server(s) this test case requires/uses. Available servers:
 - `http-proxy`
 - `https`
 - `https-proxy`
+- `https-mtls`
 - `httptls+srp`
 - `httptls+srp-ipv6`
 - `http-unix`
@@ -432,6 +438,7 @@ Features testable here are:
 
 - `--libcurl`
 - `alt-svc`
+- `aws` - built with **aws-sigv4** support
 - `AppleIDN`
 - `asyn-rr` - c-ares is used for additional records only
 - `bearssl`
@@ -475,6 +482,7 @@ Features testable here are:
 - `NTLM`
 - `NTLM_WB`
 - `OpenSSL`
+- `override-dns` - this build can use a "fake" DNS server
 - `parsedate`
 - `proxy`
 - `PSL`

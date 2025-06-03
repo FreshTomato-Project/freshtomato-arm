@@ -30,14 +30,14 @@
 
 #include <sys/stat.h>
 
-#include "curlx.h"
+#include <curlx.h>
 
 #include "tool_cfgable.h"
 #include "tool_msgs.h"
 #include "tool_cb_wrt.h"
 #include "tool_operate.h"
 
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 #ifdef _WIN32
 #define OPENMODE S_IREAD | S_IWRITE
@@ -364,7 +364,12 @@ size_t tool_write_cb(char *buffer, size_t sz, size_t nmemb, void *userdata)
 
   if(config->nobuffer) {
     /* output buffering disabled */
-    int res = fflush(outs->stream);
+    int res;
+    do {
+      res = fflush(outs->stream);
+      /* Keep retrying in the hope that it is not interrupted sometime */
+      /* !checksrc! disable ERRNOVAR 1 */
+    } while(res && errno == EINTR);
     if(res)
       return CURL_WRITEFUNC_ERROR;
   }

@@ -29,7 +29,7 @@ if(CURL_COMPLETION_FISH OR
    CURL_COMPLETION_ZSH)
   if(PERL_FOUND)
     if(CURL_COMPLETION_FISH)
-      set(_completion_fish "curl.fish")
+      set(_completion_fish "${CMAKE_CURRENT_BINARY_DIR}/curl.fish")
       add_custom_command(OUTPUT "${_completion_fish}"
         COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/completion.pl"
           --opts-dir "${PROJECT_SOURCE_DIR}/docs/cmdline-opts" --shell fish > "${_completion_fish}"
@@ -40,7 +40,7 @@ if(CURL_COMPLETION_FISH OR
     endif()
 
     if(CURL_COMPLETION_ZSH)
-      set(_completion_zsh "_curl")
+      set(_completion_zsh "${CMAKE_CURRENT_BINARY_DIR}/_curl")
       add_custom_command(OUTPUT "${_completion_zsh}"
         COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/completion.pl"
           --opts-dir "${PROJECT_SOURCE_DIR}/docs/cmdline-opts" --shell zsh > "${_completion_zsh}"
@@ -51,33 +51,25 @@ if(CURL_COMPLETION_FISH OR
     endif()
 
     if(NOT CURL_DISABLE_INSTALL)
-      if(NOT CMAKE_CROSSCOMPILING)
-        if(NOT CURL_COMPLETION_FISH_DIR)
+      if(CURL_COMPLETION_FISH)
+        if(NOT CURL_COMPLETION_FISH_DIR AND NOT CMAKE_CROSSCOMPILING AND NOT DEFINED CMAKE_INSTALL_PREFIX)
           find_package(PkgConfig QUIET)
           pkg_get_variable(CURL_COMPLETION_FISH_DIR "fish" "completionsdir")
-          if(NOT _pkg_fish_completionsdir)
-            include(GNUInstallDirs)
-            if(CMAKE_INSTALL_DATAROOTDIR)
-              set(CURL_COMPLETION_FISH_DIR "${CMAKE_INSTALL_DATAROOTDIR}/fish/vendor_completions.d")
-            endif()
-          endif()
         endif()
-        if(NOT CURL_COMPLETION_ZSH_DIR)
-          include(GNUInstallDirs)
-          if(CMAKE_INSTALL_DATAROOTDIR)
-            set(CURL_COMPLETION_ZSH_DIR "${CMAKE_INSTALL_DATAROOTDIR}/zsh/site-functions")
-          endif()
+        if(NOT CURL_COMPLETION_FISH_DIR AND CMAKE_INSTALL_DATAROOTDIR)
+          set(CURL_COMPLETION_FISH_DIR "${CMAKE_INSTALL_DATAROOTDIR}/fish/vendor_completions.d")
         endif()
         if(CURL_COMPLETION_FISH_DIR)
-          install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${_completion_fish}"
-                  DESTINATION "${CURL_COMPLETION_FISH_DIR}")
+          install(FILES "${_completion_fish}" DESTINATION "${CURL_COMPLETION_FISH_DIR}")
+        endif()
+      endif()
+      if(CURL_COMPLETION_ZSH)
+        if(NOT CURL_COMPLETION_ZSH_DIR AND CMAKE_INSTALL_DATAROOTDIR)
+          set(CURL_COMPLETION_ZSH_DIR "${CMAKE_INSTALL_DATAROOTDIR}/zsh/site-functions")
         endif()
         if(CURL_COMPLETION_ZSH_DIR)
-          install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${_completion_zsh}"
-                  DESTINATION "${CURL_COMPLETION_ZSH_DIR}")
+          install(FILES "${_completion_zsh}" DESTINATION "${CURL_COMPLETION_ZSH_DIR}")
         endif()
-      else()
-        message(STATUS "We cannot install completion scripts when cross-compiling")
       endif()
     endif()
   else()

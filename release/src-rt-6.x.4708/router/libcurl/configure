@@ -979,6 +979,8 @@ CURL_LT_SHLIB_USE_NO_UNDEFINED_FALSE
 CURL_LT_SHLIB_USE_NO_UNDEFINED_TRUE
 CURL_LT_SHLIB_USE_VERSION_INFO_FALSE
 CURL_LT_SHLIB_USE_VERSION_INFO_TRUE
+NOT_CURL_CI_FALSE
+NOT_CURL_CI_TRUE
 RC
 LT_SYS_LIBRARY_PATH
 OTOOL64
@@ -3485,6 +3487,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 ac_config_headers="$ac_config_headers lib/curl_config.h"
+
 
 
 
@@ -6892,7 +6895,7 @@ TEST_NGHTTPX=nghttpx
 if test ${with_test_nghttpx+y}
 then :
   withval=$with_test_nghttpx; TEST_NGHTTPX=$withval
-  if test X"$OPT_TEST_NGHTTPX" = "Xno"; then
+  if test X"$TEST_NGHTTPX" = "Xno"; then
     TEST_NGHTTPX=""
   fi
 
@@ -6900,13 +6903,19 @@ fi
 
 
 
-CADDY=/usr/bin/caddy
+if test -x /usr/bin/caddy; then
+  CADDY=/usr/bin/caddy
+elif test -x /usr/local/bin/caddy; then
+  CADDY=/usr/local/bin/caddy
+elif test -x "`brew --prefix 2>/dev/null`/bin/caddy"; then
+  CADDY=`brew --prefix`/bin/caddy
+fi
 
 # Check whether --with-test-caddy was given.
 if test ${with_test_caddy+y}
 then :
   withval=$with_test_caddy; CADDY=$withval
-  if test X"$OPT_CADDY" = "Xno"; then
+  if test X"$CADDY" = "Xno"; then
     CADDY=""
   fi
 
@@ -6914,13 +6923,19 @@ fi
 
 
 
-VSFTPD=/usr/sbin/vsftpd
+if test -x /usr/sbin/vsftpd; then
+  VSFTPD=/usr/sbin/vsftpd
+elif test -x /usr/local/sbin/vsftpd; then
+  VSFTPD=/usr/local/sbin/vsftpd
+elif test -x "`brew --prefix 2>/dev/null`/sbin/vsftpd"; then
+  VSFTPD=`brew --prefix`/sbin/vsftpd
+fi
 
 # Check whether --with-test-vsftpd was given.
 if test ${with_test_vsftpd+y}
 then :
   withval=$with_test_vsftpd; VSFTPD=$withval
-  if test X"$OPT_VSFTPD" = "Xno"; then
+  if test X"$VSFTPD" = "Xno"; then
     VSFTPD=""
   fi
 
@@ -17101,6 +17116,15 @@ CC=$lt_save_CC
 CFLAGS=$lt_save_CFLAGS
 
 
+ if test -z "$CURL_CI"; then
+  NOT_CURL_CI_TRUE=
+  NOT_CURL_CI_FALSE='#'
+else
+  NOT_CURL_CI_TRUE='#'
+  NOT_CURL_CI_FALSE=
+fi
+
+
 #
 # Automake conditionals based on libtool related checks
 #
@@ -19805,6 +19829,26 @@ printf "%s\n" "$as_me: WARNING: compiler options rejected: $tmp_options" >&2;}
           fi
                     if test "$compiler_num" -ge "1000"; then
             tmp_CFLAGS="$tmp_CFLAGS -Wimplicit-fallthrough"  # we have silencing markup for clang 10.0 and above only
+
+    ac_var_added_warnings=""
+  for warning in xor-used-as-pow; do
+
+  ac_var_match_word="no"
+  for word1 in $CFLAGS; do
+    for word2 in -Wno-$warning -W$warning; do
+      if test "$word1" = "$word2"; then
+        ac_var_match_word="yes"
+      fi
+    done
+  done
+
+    if test "$ac_var_match_word" = "no"; then
+      ac_var_added_warnings="$ac_var_added_warnings -W$warning"
+    fi
+  done
+    tmp_CFLAGS="$tmp_CFLAGS $ac_var_added_warnings"
+  squeeze tmp_CFLAGS
+
           fi
         fi
         ;;
@@ -20721,6 +20765,135 @@ printf "%s\n" "$as_me: WARNING: compiler options rejected: $tmp_options" >&2;}
 
           fi
           #
+                    if test "$compiler_num" -ge "1200"; then
+
+    ac_var_added_warnings=""
+  for warning in array-compare; do
+
+  ac_var_match_word="no"
+  for word1 in $CFLAGS; do
+    for word2 in -Wno-$warning -W$warning; do
+      if test "$word1" = "$word2"; then
+        ac_var_match_word="yes"
+      fi
+    done
+  done
+
+    if test "$ac_var_match_word" = "no"; then
+      ac_var_added_warnings="$ac_var_added_warnings -W$warning"
+    fi
+  done
+    tmp_CFLAGS="$tmp_CFLAGS $ac_var_added_warnings"
+  squeeze tmp_CFLAGS
+
+          fi
+          #
+                    if test "$compiler_num" -ge "1300"; then
+
+    ac_var_added_warnings=""
+  for warning in enum-int-mismatch; do
+
+  ac_var_match_word="no"
+  for word1 in $CFLAGS; do
+    for word2 in -Wno-$warning -W$warning; do
+      if test "$word1" = "$word2"; then
+        ac_var_match_word="yes"
+      fi
+    done
+  done
+
+    if test "$ac_var_match_word" = "no"; then
+      ac_var_added_warnings="$ac_var_added_warnings -W$warning"
+    fi
+  done
+    tmp_CFLAGS="$tmp_CFLAGS $ac_var_added_warnings"
+  squeeze tmp_CFLAGS
+
+
+    ac_var_added_warnings=""
+  for warning in xor-used-as-pow; do
+
+  ac_var_match_word="no"
+  for word1 in $CFLAGS; do
+    for word2 in -Wno-$warning -W$warning; do
+      if test "$word1" = "$word2"; then
+        ac_var_match_word="yes"
+      fi
+    done
+  done
+
+    if test "$ac_var_match_word" = "no"; then
+      ac_var_added_warnings="$ac_var_added_warnings -W$warning"
+    fi
+  done
+    tmp_CFLAGS="$tmp_CFLAGS $ac_var_added_warnings"
+  squeeze tmp_CFLAGS
+
+          fi
+          #
+                    if test "$compiler_num" -ge "1500"; then
+
+    ac_var_added_warnings=""
+  for warning in leading-whitespace=spaces; do
+
+  ac_var_match_word="no"
+  for word1 in $CFLAGS; do
+    for word2 in -Wno-$warning -W$warning; do
+      if test "$word1" = "$word2"; then
+        ac_var_match_word="yes"
+      fi
+    done
+  done
+
+    if test "$ac_var_match_word" = "no"; then
+      ac_var_added_warnings="$ac_var_added_warnings -W$warning"
+    fi
+  done
+    tmp_CFLAGS="$tmp_CFLAGS $ac_var_added_warnings"
+  squeeze tmp_CFLAGS
+
+
+    ac_var_added_warnings=""
+  for warning in trailing-whitespace=any; do
+
+  ac_var_match_word="no"
+  for word1 in $CFLAGS; do
+    for word2 in -Wno-$warning -W$warning; do
+      if test "$word1" = "$word2"; then
+        ac_var_match_word="yes"
+      fi
+    done
+  done
+
+    if test "$ac_var_match_word" = "no"; then
+      ac_var_added_warnings="$ac_var_added_warnings -W$warning"
+    fi
+  done
+    tmp_CFLAGS="$tmp_CFLAGS $ac_var_added_warnings"
+  squeeze tmp_CFLAGS
+
+
+    ac_var_added_warnings=""
+  for warning in unterminated-string-initialization; do
+
+  ac_var_match_word="no"
+  for word1 in $CFLAGS; do
+    for word2 in -Wno-$warning -W$warning; do
+      if test "$word1" = "$word2"; then
+        ac_var_match_word="yes"
+      fi
+    done
+  done
+
+    if test "$ac_var_match_word" = "no"; then
+      ac_var_added_warnings="$ac_var_added_warnings -W$warning"
+    fi
+  done
+    tmp_CFLAGS="$tmp_CFLAGS $ac_var_added_warnings"
+  squeeze tmp_CFLAGS
+
+          fi
+          #
         fi
         #
                 if test "$compiler_num" -ge "300"; then
@@ -21381,10 +21554,10 @@ else
 fi
 
 
-# In order to detect support of sendmmsg(), we need to escape the POSIX
+# In order to detect support of sendmmsg() and accept4(), we need to escape the POSIX
 # jail by defining _GNU_SOURCE or <sys/socket.h> will not expose it.
 case $host_os in
-  linux*)
+  linux*|cygwin*|msys*)
     CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
     ;;
 esac
@@ -22945,25 +23118,25 @@ fi
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for monotonic clock_gettime" >&5
 printf %s "checking for monotonic clock_gettime... " >&6; }
   #
-  if test "x$dontwant_rt" = "xno" ; then
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-        #ifdef HAVE_SYS_TYPES_H
-        #include <sys/types.h>
-        #endif
-        #ifdef HAVE_SYS_TIME_H
-        #include <sys/time.h>
-        #endif
-        #include <time.h>
+      #ifdef HAVE_SYS_TYPES_H
+      #include <sys/types.h>
+      #endif
+      #ifdef HAVE_SYS_TIME_H
+      #include <sys/time.h>
+      #endif
+      #include <time.h>
 
 int main(void)
 {
 
-        struct timespec ts;
-        (void)clock_gettime(CLOCK_MONOTONIC, &ts);
-        (void)ts;
+      struct timespec ts;
+      (void)clock_gettime(CLOCK_MONOTONIC, &ts);
+      (void)ts;
 
   return 0;
 }
@@ -22972,19 +23145,19 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-      curl_func_clock_gettime="yes"
+    curl_func_clock_gettime="yes"
 
 else $as_nop
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-      curl_func_clock_gettime="no"
+    curl_func_clock_gettime="no"
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  fi
+
 
 
     #
@@ -23053,14 +23226,20 @@ printf "%s\n" "no additional lib required" >&6; }
         curl_func_clock_gettime="yes"
         ;;
       *)
-        if test -z "$curl_cv_save_LIBS"; then
-          LIBS="$curl_cv_gclk_LIBS"
+        if test "x$dontwant_rt" = "xyes" ; then
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: needs -lrt but asked not to use it, HAVE_CLOCK_GETTIME_MONOTONIC will not be defined" >&5
+printf "%s\n" "$as_me: WARNING: needs -lrt but asked not to use it, HAVE_CLOCK_GETTIME_MONOTONIC will not be defined" >&2;}
+          curl_func_clock_gettime="no"
         else
-          LIBS="$curl_cv_gclk_LIBS $curl_cv_save_LIBS"
-        fi
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $curl_cv_gclk_LIBS" >&5
+          if test -z "$curl_cv_save_LIBS"; then
+            LIBS="$curl_cv_gclk_LIBS"
+          else
+            LIBS="$curl_cv_gclk_LIBS $curl_cv_save_LIBS"
+          fi
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $curl_cv_gclk_LIBS" >&5
 printf "%s\n" "$curl_cv_gclk_LIBS" >&6; }
-        curl_func_clock_gettime="yes"
+          curl_func_clock_gettime="yes"
+        fi
         ;;
     esac
     #
@@ -23213,25 +23392,24 @@ fi
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for raw monotonic clock_gettime" >&5
 printf %s "checking for raw monotonic clock_gettime... " >&6; }
   #
-  if test "x$dontwant_rt" = "xno" ; then
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-        #ifdef HAVE_SYS_TYPES_H
-        #include <sys/types.h>
-        #endif
-        #ifdef HAVE_SYS_TIME_H
-        #include <sys/time.h>
-        #endif
-        #include <time.h>
+      #ifdef HAVE_SYS_TYPES_H
+      #include <sys/types.h>
+      #endif
+      #ifdef HAVE_SYS_TIME_H
+      #include <sys/time.h>
+      #endif
+      #include <time.h>
 
 int main(void)
 {
 
-        struct timespec ts;
-        (void)clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-        (void)ts;
+      struct timespec ts;
+      (void)clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+      (void)ts;
 
   return 0;
 }
@@ -23240,7 +23418,7 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HAVE_CLOCK_GETTIME_MONOTONIC_RAW 1" >>confdefs.h
@@ -23248,12 +23426,11 @@ printf "%s\n" "#define HAVE_CLOCK_GETTIME_MONOTONIC_RAW 1" >>confdefs.h
 
 else $as_nop
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  fi
 
 
 CURL_NETWORK_AND_TIME_LIBS=$LIBS
@@ -26692,8 +26869,25 @@ done
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: OpenSSL fork speaks QUIC API" >&5
 printf "%s\n" "$as_me: OpenSSL fork speaks QUIC API" >&6;}
   else
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: OpenSSL version does not speak QUIC API" >&5
-printf "%s\n" "$as_me: OpenSSL version does not speak QUIC API" >&6;}
+
+  for ac_func in SSL_set_quic_tls_cbs
+do :
+  ac_fn_c_check_func "$LINENO" "SSL_set_quic_tls_cbs" "ac_cv_func_SSL_set_quic_tls_cbs"
+if test "x$ac_cv_func_SSL_set_quic_tls_cbs" = xyes
+then :
+  printf "%s\n" "#define HAVE_SSL_SET_QUIC_TLS_CBS 1" >>confdefs.h
+ QUIC_ENABLED=yes
+fi
+
+done
+    if test "$QUIC_ENABLED" = "yes"; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: OpenSSL with QUIC APIv2" >&5
+printf "%s\n" "$as_me: OpenSSL with QUIC APIv2" >&6;}
+      OPENSSL_QUIC_API2=1
+    else
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: OpenSSL version does not speak any known QUIC API" >&5
+printf "%s\n" "$as_me: OpenSSL version does not speak any known QUIC API" >&6;}
+    fi
   fi
 
   if test "$OPENSSL_ENABLED" = "1"; then
@@ -27648,7 +27842,6 @@ printf "%s\n" "#define USE_WOLFSSL 1" >>confdefs.h
         WOLFSSL_ENABLED=1
         USE_WOLFSSL="yes"
         ssl_msg="wolfSSL"
-        QUIC_ENABLED=yes
         test wolfssl != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
 
 else $as_nop
@@ -27727,7 +27920,19 @@ printf "%s\n" "#define SIZEOF_LONG_LONG $r" >>confdefs.h
 
       LIBS="$addlib -lm $LIBS"
 
-                        ac_fn_c_check_func "$LINENO" "wolfSSL_get_peer_certificate" "ac_cv_func_wolfSSL_get_peer_certificate"
+
+  for ac_func in wolfSSL_set_quic_use_legacy_codepoint
+do :
+  ac_fn_c_check_func "$LINENO" "wolfSSL_set_quic_use_legacy_codepoint" "ac_cv_func_wolfSSL_set_quic_use_legacy_codepoint"
+if test "x$ac_cv_func_wolfSSL_set_quic_use_legacy_codepoint" = xyes
+then :
+  printf "%s\n" "#define HAVE_WOLFSSL_SET_QUIC_USE_LEGACY_CODEPOINT 1" >>confdefs.h
+ QUIC_ENABLED=yes
+fi
+
+done
+
+                              ac_fn_c_check_func "$LINENO" "wolfSSL_get_peer_certificate" "ac_cv_func_wolfSSL_get_peer_certificate"
 if test "x$ac_cv_func_wolfSSL_get_peer_certificate" = xyes
 then :
   printf "%s\n" "#define HAVE_WOLFSSL_GET_PEER_CERTIFICATE 1" >>confdefs.h
@@ -27739,45 +27944,33 @@ then :
   printf "%s\n" "#define HAVE_WOLFSSL_USEALPN 1" >>confdefs.h
 
 fi
-
-
-                  ac_fn_c_check_func "$LINENO" "wolfSSL_DES_ecb_encrypt" "ac_cv_func_wolfSSL_DES_ecb_encrypt"
+ac_fn_c_check_func "$LINENO" "wolfSSL_DES_ecb_encrypt" "ac_cv_func_wolfSSL_DES_ecb_encrypt"
 if test "x$ac_cv_func_wolfSSL_DES_ecb_encrypt" = xyes
 then :
-
-
-printf "%s\n" "#define HAVE_WOLFSSL_DES_ECB_ENCRYPT 1" >>confdefs.h
-
-          WOLFSSL_NTLM=1
-
+  printf "%s\n" "#define HAVE_WOLFSSL_DES_ECB_ENCRYPT 1" >>confdefs.h
 
 fi
-
-
-            ac_fn_c_check_func "$LINENO" "wolfSSL_BIO_new" "ac_cv_func_wolfSSL_BIO_new"
+ac_fn_c_check_func "$LINENO" "wolfSSL_BIO_new" "ac_cv_func_wolfSSL_BIO_new"
 if test "x$ac_cv_func_wolfSSL_BIO_new" = xyes
 then :
-
-
-printf "%s\n" "#define HAVE_WOLFSSL_BIO 1" >>confdefs.h
-
-          WOLFSSL_BIO=1
-
+  printf "%s\n" "#define HAVE_WOLFSSL_BIO_NEW 1" >>confdefs.h
 
 fi
-
-            ac_fn_c_check_func "$LINENO" "wolfSSL_BIO_set_shutdown" "ac_cv_func_wolfSSL_BIO_set_shutdown"
+ac_fn_c_check_func "$LINENO" "wolfSSL_BIO_set_shutdown" "ac_cv_func_wolfSSL_BIO_set_shutdown"
 if test "x$ac_cv_func_wolfSSL_BIO_set_shutdown" = xyes
 then :
-
-
-printf "%s\n" "#define HAVE_WOLFSSL_FULL_BIO 1" >>confdefs.h
-
-          WOLFSSL_FULL_BIO=1
-
+  printf "%s\n" "#define HAVE_WOLFSSL_BIO_SET_SHUTDOWN 1" >>confdefs.h
 
 fi
 
+
+                  if test "x$ac_cv_func_wolfSSL_DES_ecb_encrypt" = 'xyes'; then
+        HAVE_WOLFSSL_DES_ECB_ENCRYPT=1
+      fi
+
+            if test "x$ac_cv_func_wolfSSL_BIO_new" = 'xyes'; then
+        HAVE_WOLFSSL_BIO_NEW=1
+      fi
 
       if test -n "$wolfssllibpath"; then
                                         if test "x$cross_compiling" != "xyes"; then
@@ -28009,61 +28202,17 @@ printf "%s\n" "$as_me: PKG_CONFIG_LIBDIR will be set to \"$RUSTLS_PCDIR\"" >&6;}
         else
           RUSTLS_LDFLAGS="-lpthread -ldl -lm"
         fi
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for rustls_connection_read in -lrustls" >&5
-printf %s "checking for rustls_connection_read in -lrustls... " >&6; }
-if test ${ac_cv_lib_rustls_rustls_connection_read+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lrustls $RUSTLS_LDFLAGS $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-#ifdef __cplusplus
-extern "C"
-#endif
-char rustls_connection_read ();
-int main(void)
-{
-return rustls_connection_read ();
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_rustls_rustls_connection_read=yes
-else $as_nop
-  ac_cv_lib_rustls_rustls_connection_read=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_rustls_rustls_connection_read" >&5
-printf "%s\n" "$ac_cv_lib_rustls_rustls_connection_read" >&6; }
-if test "x$ac_cv_lib_rustls_rustls_connection_read" = xyes
-then :
-
-
-printf "%s\n" "#define USE_RUSTLS 1" >>confdefs.h
-
-          RUSTLS_ENABLED=1
-          USE_RUSTLS="yes"
-          ssl_msg="rustls"
-          test rustls != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
-
-else $as_nop
-  as_fn_error $? "--with-rustls was specified but could not find Rustls." "$LINENO" 5
-fi
-
 
         LIB_RUSTLS="$PREFIX_RUSTLS/lib$libsuff"
         if test "$PREFIX_RUSTLS" != "/usr" ; then
           SSL_LDFLAGS="-L$LIB_RUSTLS $RUSTLS_LDFLAGS"
           SSL_CPPFLAGS="-I$PREFIX_RUSTLS/include"
         fi
+
+
+printf "%s\n" "#define USE_RUSTLS 1" >>confdefs.h
+
+        USE_RUSTLS="yes"
       fi
       ;;
   esac
@@ -28277,6 +28426,56 @@ printf "%s\n" "$as_me: Added $LIB_RUSTLS to CURL_LIBRARY_PATH" >&6;}
     if test -n "$link_pkgconfig"; then
       LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE rustls"
     fi
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for rustls_supported_hpke in -lrustls" >&5
+printf %s "checking for rustls_supported_hpke in -lrustls... " >&6; }
+if test ${ac_cv_lib_rustls_rustls_supported_hpke+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lrustls $RUSTLS_LDFLAGS $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#ifdef __cplusplus
+extern "C"
+#endif
+char rustls_supported_hpke ();
+int main(void)
+{
+return rustls_supported_hpke ();
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_rustls_rustls_supported_hpke=yes
+else $as_nop
+  ac_cv_lib_rustls_rustls_supported_hpke=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_rustls_rustls_supported_hpke" >&5
+printf "%s\n" "$ac_cv_lib_rustls_rustls_supported_hpke" >&6; }
+if test "x$ac_cv_lib_rustls_rustls_supported_hpke" = xyes
+then :
+
+
+printf "%s\n" "#define USE_RUSTLS 1" >>confdefs.h
+
+        RUSTLS_ENABLED=1
+        USE_RUSTLS="yes"
+        ssl_msg="rustls"
+        test rustls != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
+
+else $as_nop
+  as_fn_error $? "--with-rustls was specified but could not find compatible Rustls." "$LINENO" 5
+fi
+
   fi
 
   test -z "$ssl_msg" || ssl_backends="${ssl_backends:+$ssl_backends, }$ssl_msg"
@@ -31189,7 +31388,8 @@ fi
   fi
 fi
 
-if test "x$USE_NGTCP2" = "x1" -a "x$OPENSSL_ENABLED" = "x1" -a "x$OPENSSL_IS_BORINGSSL" != "x1"; then
+if test "x$USE_NGTCP2" = "x1" -a "x$OPENSSL_ENABLED" = "x1" -a \
+   "x$OPENSSL_IS_BORINGSSL" != "x1" -a "x$OPENSSL_QUIC_API2" != "x1"; then
     CLEANLDFLAGS="$LDFLAGS"
   CLEANLDFLAGSPC="$LDFLAGSPC"
   CLEANCPPFLAGS="$CPPFLAGS"
@@ -31436,6 +31636,261 @@ fi
   else
         if test X"$want_tcp2" != Xdefault; then
                   as_fn_error $? "--with-ngtcp2 was specified but could not find ngtcp2_crypto_quictls pkg-config file." "$LINENO" 5
+    fi
+  fi
+fi
+
+if test "x$USE_NGTCP2" = "x1" -a "x$OPENSSL_ENABLED" = "x1" -a \
+   "x$OPENSSL_IS_BORINGSSL" != "x1" -a "x$OPENSSL_QUIC_API2" = "x1"; then
+    CLEANLDFLAGS="$LDFLAGS"
+  CLEANLDFLAGSPC="$LDFLAGSPC"
+  CLEANCPPFLAGS="$CPPFLAGS"
+  CLEANLIBS="$LIBS"
+
+
+  if test -n "$PKG_CONFIG"; then
+    PKGCONFIG="$PKG_CONFIG"
+  else
+    if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_PKGCONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $PKGCONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKGCONFIG="$PKGCONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$PATH:/usr/bin:/usr/local/bin"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKGCONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKGCONFIG=$ac_cv_path_PKGCONFIG
+if test -n "$PKGCONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PKGCONFIG" >&5
+printf "%s\n" "$PKGCONFIG" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKGCONFIG"; then
+  ac_pt_PKGCONFIG=$PKGCONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_ac_pt_PKGCONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $ac_pt_PKGCONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKGCONFIG="$ac_pt_PKGCONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$PATH:/usr/bin:/usr/local/bin"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKGCONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKGCONFIG=$ac_cv_path_ac_pt_PKGCONFIG
+if test -n "$ac_pt_PKGCONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKGCONFIG" >&5
+printf "%s\n" "$ac_pt_PKGCONFIG" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKGCONFIG" = x; then
+    PKGCONFIG="no"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+printf "%s\n" "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKGCONFIG=$ac_pt_PKGCONFIG
+  fi
+else
+  PKGCONFIG="$ac_cv_path_PKGCONFIG"
+fi
+
+  fi
+
+  if test "x$PKGCONFIG" != "xno"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libngtcp2_crypto_ossl options with pkg-config" >&5
+printf %s "checking for libngtcp2_crypto_ossl options with pkg-config... " >&6; }
+        itexists=`
+  if test -n "$want_tcp2_path"; then
+    PKG_CONFIG_LIBDIR="$want_tcp2_path"
+    export PKG_CONFIG_LIBDIR
+  fi
+       $PKGCONFIG --exists libngtcp2_crypto_ossl >/dev/null 2>&1 && echo 1`
+
+    if test -z "$itexists"; then
+                  PKGCONFIG="no"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    else
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: found" >&5
+printf "%s\n" "found" >&6; }
+    fi
+  fi
+
+
+  if test "$PKGCONFIG" != "no"; then
+    LIB_NGTCP2_CRYPTO_QUICTLS=`
+  if test -n "$want_tcp2_path"; then
+    PKG_CONFIG_LIBDIR="$want_tcp2_path"
+    export PKG_CONFIG_LIBDIR
+  fi
+
+      $PKGCONFIG --libs-only-l libngtcp2_crypto_ossl`
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: -l is $LIB_NGTCP2_CRYPTO_QUICTLS" >&5
+printf "%s\n" "$as_me: -l is $LIB_NGTCP2_CRYPTO_QUICTLS" >&6;}
+
+    CPP_NGTCP2_CRYPTO_QUICTLS=`
+  if test -n "$want_tcp2_path"; then
+    PKG_CONFIG_LIBDIR="$want_tcp2_path"
+    export PKG_CONFIG_LIBDIR
+  fi
+       $PKGCONFIG --cflags-only-I libngtcp2_crypto_ossl`
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: -I is $CPP_NGTCP2_CRYPTO_QUICTLS" >&5
+printf "%s\n" "$as_me: -I is $CPP_NGTCP2_CRYPTO_QUICTLS" >&6;}
+
+    LD_NGTCP2_CRYPTO_QUICTLS=`
+  if test -n "$want_tcp2_path"; then
+    PKG_CONFIG_LIBDIR="$want_tcp2_path"
+    export PKG_CONFIG_LIBDIR
+  fi
+
+      $PKGCONFIG --libs-only-L libngtcp2_crypto_ossl`
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: -L is $LD_NGTCP2_CRYPTO_QUICTLS" >&5
+printf "%s\n" "$as_me: -L is $LD_NGTCP2_CRYPTO_QUICTLS" >&6;}
+
+    LDFLAGS="$LDFLAGS $LD_NGTCP2_CRYPTO_QUICTLS"
+    LDFLAGSPC="$LDFLAGSPC $LD_NGTCP2_CRYPTO_QUICTLS"
+    CPPFLAGS="$CPPFLAGS $CPP_NGTCP2_CRYPTO_QUICTLS"
+    LIBS="$LIB_NGTCP2_CRYPTO_QUICTLS $LIBS"
+
+    if test "x$cross_compiling" != "xyes"; then
+      DIR_NGTCP2_CRYPTO_QUICTLS=`echo $LD_NGTCP2_CRYPTO_QUICTLS | $SED -e 's/^-L//'`
+    fi
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ngtcp2_crypto_recv_client_initial_cb in -lngtcp2_crypto_ossl" >&5
+printf %s "checking for ngtcp2_crypto_recv_client_initial_cb in -lngtcp2_crypto_ossl... " >&6; }
+if test ${ac_cv_lib_ngtcp2_crypto_ossl_ngtcp2_crypto_recv_client_initial_cb+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lngtcp2_crypto_ossl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#ifdef __cplusplus
+extern "C"
+#endif
+char ngtcp2_crypto_recv_client_initial_cb ();
+int main(void)
+{
+return ngtcp2_crypto_recv_client_initial_cb ();
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_ngtcp2_crypto_ossl_ngtcp2_crypto_recv_client_initial_cb=yes
+else $as_nop
+  ac_cv_lib_ngtcp2_crypto_ossl_ngtcp2_crypto_recv_client_initial_cb=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ngtcp2_crypto_ossl_ngtcp2_crypto_recv_client_initial_cb" >&5
+printf "%s\n" "$ac_cv_lib_ngtcp2_crypto_ossl_ngtcp2_crypto_recv_client_initial_cb" >&6; }
+if test "x$ac_cv_lib_ngtcp2_crypto_ossl_ngtcp2_crypto_recv_client_initial_cb" = xyes
+then :
+
+               for ac_header in ngtcp2/ngtcp2_crypto.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "ngtcp2/ngtcp2_crypto.h" "ac_cv_header_ngtcp2_ngtcp2_crypto_h" "$ac_includes_default"
+if test "x$ac_cv_header_ngtcp2_ngtcp2_crypto_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_NGTCP2_NGTCP2_CRYPTO_H 1" >>confdefs.h
+ USE_NGTCP2=1
+          CURL_LIBRARY_PATH="$CURL_LIBRARY_PATH:$DIR_NGTCP2_CRYPTO_QUICTLS"
+          export CURL_LIBRARY_PATH
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Added $DIR_NGTCP2_CRYPTO_QUICTLS to CURL_LIBRARY_PATH" >&5
+printf "%s\n" "$as_me: Added $DIR_NGTCP2_CRYPTO_QUICTLS to CURL_LIBRARY_PATH" >&6;}
+          LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE libngtcp2_crypto_ossl"
+
+printf "%s\n" "#define OPENSSL_QUIC_API2 1" >>confdefs.h
+
+
+fi
+
+done
+
+else $as_nop
+          LDFLAGS=$CLEANLDFLAGS
+        LDFLAGSPC=$CLEANLDFLAGSPC
+        CPPFLAGS=$CLEANCPPFLAGS
+        LIBS=$CLEANLIBS
+
+fi
+
+
+  else
+        if test X"$want_tcp2" != Xdefault; then
+                  as_fn_error $? "--with-ngtcp2 was specified but could not find ngtcp2_crypto_ossl pkg-config file." "$LINENO" 5
     fi
   fi
 fi
@@ -36130,35 +36585,73 @@ printf "%s\n" "no" >&6; }
 
 
     #
+  tst_links_closesocket="unknown"
   tst_proto_closesocket="unknown"
   tst_compi_closesocket="unknown"
   tst_allow_closesocket="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if closesocket is prototyped" >&5
-printf %s "checking if closesocket is prototyped... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if closesocket can be linked" >&5
+printf %s "checking if closesocket can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-    $curl_includes_winsock2
+
+      $curl_includes_winsock2
+
+int main(void)
+{
+
+      if(0 != closesocket(0))
+        return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    tst_links_closesocket="yes"
+
+else $as_nop
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    tst_links_closesocket="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_closesocket" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if closesocket is prototyped" >&5
+printf %s "checking if closesocket is prototyped... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      $curl_includes_winsock2
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "closesocket" >/dev/null 2>&1
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_proto_closesocket="yes"
+      tst_proto_closesocket="yes"
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_proto_closesocket="no"
+      tst_proto_closesocket="no"
 
 fi
 rm -rf conftest*
 
+  fi
   #
   if test "$tst_proto_closesocket" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if closesocket is compilable" >&5
@@ -36212,7 +36705,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if closesocket might be used" >&5
 printf %s "checking if closesocket might be used... " >&6; }
-  if test "$tst_proto_closesocket" = "yes" &&
+  if test "$tst_links_closesocket" = "yes" &&
+     test "$tst_proto_closesocket" = "yes" &&
      test "$tst_compi_closesocket" = "yes" &&
      test "$tst_allow_closesocket" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -36255,11 +36749,12 @@ fi
 
 
       #
+  tst_links_closesocket_camel="unknown"
   tst_compi_closesocket_camel="unknown"
   tst_allow_closesocket_camel="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if CloseSocket is compilable" >&5
-printf %s "checking if CloseSocket is compilable... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if CloseSocket can be linked" >&5
+printf %s "checking if CloseSocket can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -36277,21 +36772,59 @@ int main(void)
 }
 
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_compi_closesocket_camel="yes"
+    tst_links_closesocket_camel="yes"
 
 else $as_nop
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_compi_closesocket_camel="no"
+    tst_links_closesocket_camel="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_closesocket_camel" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if CloseSocket is compilable" >&5
+printf %s "checking if CloseSocket is compilable... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+        $curl_includes_bsdsocket
+        $curl_includes_sys_socket
+
+int main(void)
+{
+
+        if(0 != CloseSocket(0))
+          return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+      tst_compi_closesocket_camel="yes"
+
+else $as_nop
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+      tst_compi_closesocket_camel="no"
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  fi
   #
   if test "$tst_compi_closesocket_camel" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if CloseSocket usage allowed" >&5
@@ -36309,7 +36842,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if CloseSocket might be used" >&5
 printf %s "checking if CloseSocket might be used... " >&6; }
-  if test "$tst_compi_closesocket_camel" = "yes" &&
+  if test "$tst_links_closesocket_camel" = "yes" &&
+     test "$tst_compi_closesocket_camel" = "yes" &&
      test "$tst_allow_closesocket_camel" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -36676,37 +37210,76 @@ fi
 
 
         #
+  tst_links_freeaddrinfo="unknown"
   tst_proto_freeaddrinfo="unknown"
   tst_compi_freeaddrinfo="unknown"
   tst_allow_freeaddrinfo="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if freeaddrinfo is prototyped" >&5
-printf %s "checking if freeaddrinfo is prototyped... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if freeaddrinfo can be linked" >&5
+printf %s "checking if freeaddrinfo can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-    $curl_includes_ws2tcpip
-    $curl_includes_sys_socket
-    $curl_includes_netdb
+
+      $curl_includes_ws2tcpip
+      $curl_includes_sys_socket
+      $curl_includes_netdb
+
+int main(void)
+{
+
+      freeaddrinfo(0);
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    tst_links_freeaddrinfo="yes"
+
+else $as_nop
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    tst_links_freeaddrinfo="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_freeaddrinfo" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if freeaddrinfo is prototyped" >&5
+printf %s "checking if freeaddrinfo is prototyped... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      $curl_includes_ws2tcpip
+      $curl_includes_sys_socket
+      $curl_includes_netdb
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "freeaddrinfo" >/dev/null 2>&1
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_proto_freeaddrinfo="yes"
+      tst_proto_freeaddrinfo="yes"
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_proto_freeaddrinfo="no"
+      tst_proto_freeaddrinfo="no"
 
 fi
 rm -rf conftest*
 
+  fi
   #
   if test "$tst_proto_freeaddrinfo" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if freeaddrinfo is compilable" >&5
@@ -36761,7 +37334,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if freeaddrinfo might be used" >&5
 printf %s "checking if freeaddrinfo might be used... " >&6; }
-  if test "$tst_proto_freeaddrinfo" = "yes" &&
+  if test "$tst_links_freeaddrinfo" = "yes" &&
+     test "$tst_proto_freeaddrinfo" = "yes" &&
      test "$tst_compi_freeaddrinfo" = "yes" &&
      test "$tst_allow_freeaddrinfo" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -37177,39 +37751,80 @@ fi
 
 
               #
+  tst_links_getaddrinfo="unknown"
   tst_proto_getaddrinfo="unknown"
   tst_compi_getaddrinfo="unknown"
   tst_works_getaddrinfo="unknown"
   tst_allow_getaddrinfo="unknown"
   tst_tsafe_getaddrinfo="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getaddrinfo is prototyped" >&5
-printf %s "checking if getaddrinfo is prototyped... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getaddrinfo can be linked" >&5
+printf %s "checking if getaddrinfo can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-    $curl_includes_ws2tcpip
-    $curl_includes_sys_socket
-    $curl_includes_netdb
+
+      $curl_includes_ws2tcpip
+      $curl_includes_sys_socket
+      $curl_includes_netdb
+
+int main(void)
+{
+
+      struct addrinfo *ai = 0;
+      if(0 != getaddrinfo(0, 0, 0, &ai))
+        return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    tst_links_getaddrinfo="yes"
+
+else $as_nop
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    tst_links_getaddrinfo="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_getaddrinfo" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getaddrinfo is prototyped" >&5
+printf %s "checking if getaddrinfo is prototyped... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      $curl_includes_ws2tcpip
+      $curl_includes_sys_socket
+      $curl_includes_netdb
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "getaddrinfo" >/dev/null 2>&1
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_proto_getaddrinfo="yes"
+      tst_proto_getaddrinfo="yes"
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_proto_getaddrinfo="no"
+      tst_proto_getaddrinfo="no"
 
 fi
 rm -rf conftest*
 
+  fi
   #
   if test "$tst_proto_getaddrinfo" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getaddrinfo is compilable" >&5
@@ -37762,37 +38377,78 @@ curl_preprocess_callconv="\
 
 
           #
+  tst_links_gethostname="unknown"
   tst_proto_gethostname="unknown"
   tst_compi_gethostname="unknown"
   tst_allow_gethostname="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if gethostname is prototyped" >&5
-printf %s "checking if gethostname is prototyped... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if gethostname can be linked" >&5
+printf %s "checking if gethostname can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-    $curl_includes_winsock2
-    $curl_includes_unistd
-    $curl_includes_bsdsocket
+
+      $curl_includes_winsock2
+      $curl_includes_unistd
+      $curl_includes_bsdsocket
+
+int main(void)
+{
+
+      char s[1];
+      if(0 != gethostname((void *)s, 0))
+        return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    tst_links_gethostname="yes"
+
+else $as_nop
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    tst_links_gethostname="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_gethostname" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if gethostname is prototyped" >&5
+printf %s "checking if gethostname is prototyped... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      $curl_includes_winsock2
+      $curl_includes_unistd
+      $curl_includes_bsdsocket
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "gethostname" >/dev/null 2>&1
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_proto_gethostname="yes"
+      tst_proto_gethostname="yes"
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_proto_gethostname="no"
+      tst_proto_gethostname="no"
 
 fi
 rm -rf conftest*
 
+  fi
   #
   if test "$tst_proto_gethostname" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if gethostname is compilable" >&5
@@ -37901,7 +38557,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if gethostname might be used" >&5
 printf %s "checking if gethostname might be used... " >&6; }
-  if test "$tst_proto_gethostname" = "yes" &&
+  if test "$tst_links_gethostname" = "yes" &&
+     test "$tst_proto_gethostname" = "yes" &&
      test "$tst_compi_gethostname" = "yes" &&
      test "$tst_allow_gethostname" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -38229,37 +38886,77 @@ printf "%s\n" "no" >&6; }
 
 
           #
+  tst_links_getpeername="unknown"
   tst_proto_getpeername="unknown"
   tst_compi_getpeername="unknown"
   tst_allow_getpeername="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getpeername is prototyped" >&5
-printf %s "checking if getpeername is prototyped... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getpeername can be linked" >&5
+printf %s "checking if getpeername can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-    $curl_includes_winsock2
-    $curl_includes_bsdsocket
-    $curl_includes_sys_socket
+
+      $curl_includes_winsock2
+      $curl_includes_bsdsocket
+      $curl_includes_sys_socket
+
+int main(void)
+{
+
+      if(0 != getpeername(0, (void *)0, (void *)0))
+        return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    tst_links_getpeername="yes"
+
+else $as_nop
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    tst_links_getpeername="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_getpeername" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getpeername is prototyped" >&5
+printf %s "checking if getpeername is prototyped... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      $curl_includes_winsock2
+      $curl_includes_bsdsocket
+      $curl_includes_sys_socket
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "getpeername" >/dev/null 2>&1
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_proto_getpeername="yes"
+      tst_proto_getpeername="yes"
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_proto_getpeername="no"
+      tst_proto_getpeername="no"
 
 fi
 rm -rf conftest*
 
+  fi
   #
   if test "$tst_proto_getpeername" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getpeername is compilable" >&5
@@ -38315,7 +39012,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getpeername might be used" >&5
 printf %s "checking if getpeername might be used... " >&6; }
-  if test "$tst_proto_getpeername" = "yes" &&
+  if test "$tst_links_getpeername" = "yes" &&
+     test "$tst_proto_getpeername" = "yes" &&
      test "$tst_compi_getpeername" = "yes" &&
      test "$tst_allow_getpeername" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -38332,37 +39030,77 @@ printf "%s\n" "no" >&6; }
 
 
           #
+  tst_links_getsockname="unknown"
   tst_proto_getsockname="unknown"
   tst_compi_getsockname="unknown"
   tst_allow_getsockname="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getsockname is prototyped" >&5
-printf %s "checking if getsockname is prototyped... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getsockname can be linked" >&5
+printf %s "checking if getsockname can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-    $curl_includes_winsock2
-    $curl_includes_bsdsocket
-    $curl_includes_sys_socket
+
+      $curl_includes_winsock2
+      $curl_includes_bsdsocket
+      $curl_includes_sys_socket
+
+int main(void)
+{
+
+      if(0 != getsockname(0, (void *)0, (void *)0))
+        return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    tst_links_getsockname="yes"
+
+else $as_nop
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    tst_links_getsockname="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_getsockname" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getsockname is prototyped" >&5
+printf %s "checking if getsockname is prototyped... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      $curl_includes_winsock2
+      $curl_includes_bsdsocket
+      $curl_includes_sys_socket
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "getsockname" >/dev/null 2>&1
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_proto_getsockname="yes"
+      tst_proto_getsockname="yes"
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_proto_getsockname="no"
+      tst_proto_getsockname="no"
 
 fi
 rm -rf conftest*
 
+  fi
   #
   if test "$tst_proto_getsockname" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getsockname is compilable" >&5
@@ -38418,7 +39156,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if getsockname might be used" >&5
 printf %s "checking if getsockname might be used... " >&6; }
-  if test "$tst_proto_getsockname" = "yes" &&
+  if test "$tst_links_getsockname" = "yes" &&
+     test "$tst_proto_getsockname" = "yes" &&
      test "$tst_compi_getsockname" = "yes" &&
      test "$tst_allow_getsockname" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -39074,35 +39813,73 @@ printf "%s\n" "no" >&6; }
 
 
     #
+  tst_links_ioctlsocket="unknown"
   tst_proto_ioctlsocket="unknown"
   tst_compi_ioctlsocket="unknown"
   tst_allow_ioctlsocket="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ioctlsocket is prototyped" >&5
-printf %s "checking if ioctlsocket is prototyped... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ioctlsocket can be linked" >&5
+printf %s "checking if ioctlsocket can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-    $curl_includes_winsock2
+
+      $curl_includes_winsock2
+
+int main(void)
+{
+
+      if(0 != ioctlsocket(0, 0, 0))
+        return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    tst_links_ioctlsocket="yes"
+
+else $as_nop
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    tst_links_ioctlsocket="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_ioctlsocket" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ioctlsocket is prototyped" >&5
+printf %s "checking if ioctlsocket is prototyped... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      $curl_includes_winsock2
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "ioctlsocket" >/dev/null 2>&1
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_proto_ioctlsocket="yes"
+      tst_proto_ioctlsocket="yes"
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_proto_ioctlsocket="no"
+      tst_proto_ioctlsocket="no"
 
 fi
 rm -rf conftest*
 
+  fi
   #
   if test "$tst_proto_ioctlsocket" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ioctlsocket is compilable" >&5
@@ -39156,7 +39933,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ioctlsocket might be used" >&5
 printf %s "checking if ioctlsocket might be used... " >&6; }
-  if test "$tst_proto_ioctlsocket" = "yes" &&
+  if test "$tst_links_ioctlsocket" = "yes" &&
+     test "$tst_proto_ioctlsocket" = "yes" &&
      test "$tst_compi_ioctlsocket" = "yes" &&
      test "$tst_allow_ioctlsocket" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -39245,11 +40023,12 @@ printf "%s\n" "no" >&6; }
 
 
     #
+  tst_links_ioctlsocket_camel="unknown"
   tst_compi_ioctlsocket_camel="unknown"
   tst_allow_ioctlsocket_camel="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if IoctlSocket is compilable" >&5
-printf %s "checking if IoctlSocket is compilable... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if IoctlSocket can be linked" >&5
+printf %s "checking if IoctlSocket can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -39266,21 +40045,58 @@ int main(void)
 }
 
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_compi_ioctlsocket_camel="yes"
+    tst_links_ioctlsocket_camel="yes"
 
 else $as_nop
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_compi_ioctlsocket_camel="no"
+    tst_links_ioctlsocket_camel="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_ioctlsocket_camel" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if IoctlSocket is compilable" >&5
+printf %s "checking if IoctlSocket is compilable... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+        $curl_includes_bsdsocket
+
+int main(void)
+{
+
+        if(0 != IoctlSocket(0, 0, 0))
+          return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+      tst_compi_ioctlsocket_camel="yes"
+
+else $as_nop
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+      tst_compi_ioctlsocket_camel="no"
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  fi
   #
   if test "$tst_compi_ioctlsocket_camel" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if IoctlSocket usage allowed" >&5
@@ -39298,7 +40114,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if IoctlSocket might be used" >&5
 printf %s "checking if IoctlSocket might be used... " >&6; }
-  if test "$tst_compi_ioctlsocket_camel" = "yes" &&
+  if test "$tst_links_ioctlsocket_camel" = "yes" &&
+     test "$tst_compi_ioctlsocket_camel" = "yes" &&
      test "$tst_allow_ioctlsocket_camel" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -40240,37 +41057,77 @@ printf "%s\n" "no" >&6; }
 
 
       #
+  tst_links_socket="unknown"
   tst_proto_socket="unknown"
   tst_compi_socket="unknown"
   tst_allow_socket="unknown"
   #
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if socket is prototyped" >&5
-printf %s "checking if socket is prototyped... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if socket can be linked" >&5
+printf %s "checking if socket can be linked... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-    $curl_includes_winsock2
-    $curl_includes_bsdsocket
-    $curl_includes_sys_socket
+
+      $curl_includes_winsock2
+      $curl_includes_bsdsocket
+      $curl_includes_sys_socket
+
+int main(void)
+{
+
+      if(0 != socket(0, 0, 0))
+        return 1;
+
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    tst_links_socket="yes"
+
+else $as_nop
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    tst_links_socket="no"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+  #
+  if test "$tst_links_socket" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if socket is prototyped" >&5
+printf %s "checking if socket is prototyped... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      $curl_includes_winsock2
+      $curl_includes_bsdsocket
+      $curl_includes_sys_socket
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "socket" >/dev/null 2>&1
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    tst_proto_socket="yes"
+      tst_proto_socket="yes"
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-    tst_proto_socket="no"
+      tst_proto_socket="no"
 
 fi
 rm -rf conftest*
 
+  fi
   #
   if test "$tst_proto_socket" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if socket is compilable" >&5
@@ -40326,7 +41183,8 @@ printf "%s\n" "no" >&6; }
   #
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if socket might be used" >&5
 printf %s "checking if socket might be used... " >&6; }
-  if test "$tst_proto_socket" = "yes" &&
+  if test "$tst_links_socket" = "yes" &&
+     test "$tst_proto_socket" = "yes" &&
      test "$tst_compi_socket" = "yes" &&
      test "$tst_allow_socket" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -41168,6 +42026,12 @@ printf "%s\n" "$as_me: skip check for pipe on msdosdjgpp" >&6;}
     ;;
 esac
 
+ac_fn_c_check_func "$LINENO" "accept4" "ac_cv_func_accept4"
+if test "x$ac_cv_func_accept4" = xyes
+then :
+  printf "%s\n" "#define HAVE_ACCEPT4 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "eventfd" "ac_cv_func_eventfd"
 if test "x$ac_cv_func_eventfd" = xyes
 then :
@@ -41232,6 +42096,12 @@ ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
 if test "x$ac_cv_func_pipe" = xyes
 then :
   printf "%s\n" "#define HAVE_PIPE 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pipe2" "ac_cv_func_pipe2"
+if test "x$ac_cv_func_pipe2" = xyes
+then :
+  printf "%s\n" "#define HAVE_PIPE2 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "poll" "ac_cv_func_poll"
@@ -43187,10 +44057,6 @@ printf "%s\n" "no" >&6; }
 
 fi
 
-if test "$want_threaded_resolver" = "yes" && test "$dontwant_rt" = "yes"; then
-  as_fn_error $? "options --enable-pthreads and --disable-rt are mutually exclusive" "$LINENO" 5
-fi
-
 if test "$want_threaded_resolver" = "yes" && test "$curl_cv_native_windows" = "yes"; then
   USE_THREADS_WIN32=1
 
@@ -44193,14 +45059,26 @@ printf "%s\n" "ECH support available via:$ECH_SUPPORT" >&6; }
   fi
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable HTTPS-RR support" >&5
+printf %s "checking whether to enable HTTPS-RR support... " >&6; }
 if test "x$want_httpsrr" != "xno"; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: HTTPSRR support is enabled" >&5
-printf "%s\n" "HTTPSRR support is enabled" >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define USE_HTTPSRR 1" >>confdefs.h
 
   experimental="$experimental HTTPSRR"
   curl_httpsrr_msg="enabled (--disable-httpsrr)"
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+  # no HTTPSRR wanted
+  if test "$want_threaded_resolver" = "yes"; then
+    # and using the threaded resolver
+    if test "x$USE_ARES" = "x1"; then
+      as_fn_error $? "without HTTPS-RR support, asking for both threaded resolver and c-ares support is ambivalent. Please drop one of them." "$LINENO" 5
+    fi
+  fi
 fi
 
 
@@ -44438,7 +45316,7 @@ if test "x$CURL_DISABLE_NTLM" != "x1"; then
       -o "x$GNUTLS_ENABLED" = "x1" \
       -o "x$SECURETRANSPORT_ENABLED" = "x1" \
       -o "x$USE_WIN32_CRYPTO" = "x1" \
-      -o "x$WOLFSSL_NTLM" = "x1"; then
+      -o "x$HAVE_WOLFSSL_DES_ECB_ENCRYPT" = "x1"; then
     use_curl_ntlm_core=yes
   fi
 
@@ -44483,7 +45361,7 @@ if test "x$CURL_DISABLE_HTTP" != "x1"; then
       SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPS-proxy"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-    elif test "x$WOLFSSL_ENABLED" = "x1" -a "x$WOLFSSL_BIO" = "x1"; then
+    elif test "x$WOLFSSL_ENABLED" = "x1" -a "x$HAVE_WOLFSSL_BIO_NEW" = "x1"; then
       SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPS-proxy"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -44873,7 +45751,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile docs/Makefile docs/examples/Makefile docs/libcurl/Makefile docs/libcurl/opts/Makefile docs/cmdline-opts/Makefile include/Makefile include/curl/Makefile src/Makefile lib/Makefile scripts/Makefile lib/libcurl.vers tests/Makefile tests/config tests/configurehelp.pm tests/certs/Makefile tests/data/Makefile tests/server/Makefile tests/libtest/Makefile tests/unit/Makefile tests/http/config.ini tests/http/Makefile tests/http/clients/Makefile packages/Makefile packages/vms/Makefile curl-config libcurl.pc"
+ac_config_files="$ac_config_files Makefile docs/Makefile docs/examples/Makefile docs/libcurl/Makefile docs/libcurl/opts/Makefile docs/cmdline-opts/Makefile include/Makefile include/curl/Makefile src/Makefile lib/Makefile scripts/Makefile lib/libcurl.vers tests/Makefile tests/config tests/configurehelp.pm tests/certs/Makefile tests/data/Makefile tests/server/Makefile tests/libtest/Makefile tests/unit/Makefile tests/tunit/Makefile tests/http/config.ini tests/http/Makefile tests/http/clients/Makefile packages/Makefile packages/vms/Makefile curl-config libcurl.pc"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -45020,6 +45898,10 @@ else
   am__EXEEXT_FALSE=
 fi
 
+if test -z "${NOT_CURL_CI_TRUE}" && test -z "${NOT_CURL_CI_FALSE}"; then
+  as_fn_error $? "conditional \"NOT_CURL_CI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${CURL_LT_SHLIB_USE_VERSION_INFO_TRUE}" && test -z "${CURL_LT_SHLIB_USE_VERSION_INFO_FALSE}"; then
   as_fn_error $? "conditional \"CURL_LT_SHLIB_USE_VERSION_INFO\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -46091,6 +46973,7 @@ do
     "tests/server/Makefile") CONFIG_FILES="$CONFIG_FILES tests/server/Makefile" ;;
     "tests/libtest/Makefile") CONFIG_FILES="$CONFIG_FILES tests/libtest/Makefile" ;;
     "tests/unit/Makefile") CONFIG_FILES="$CONFIG_FILES tests/unit/Makefile" ;;
+    "tests/tunit/Makefile") CONFIG_FILES="$CONFIG_FILES tests/tunit/Makefile" ;;
     "tests/http/config.ini") CONFIG_FILES="$CONFIG_FILES tests/http/config.ini" ;;
     "tests/http/Makefile") CONFIG_FILES="$CONFIG_FILES tests/http/Makefile" ;;
     "tests/http/clients/Makefile") CONFIG_FILES="$CONFIG_FILES tests/http/clients/Makefile" ;;

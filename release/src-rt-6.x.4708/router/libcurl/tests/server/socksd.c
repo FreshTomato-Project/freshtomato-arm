@@ -73,16 +73,14 @@
 #include <netdb.h>
 #endif
 
-#include "curlx.h" /* from the private lib dir */
+#include <curlx.h> /* from the private lib dir */
 #include "inet_pton.h"
 #include "util.h"
 #include "server_sockaddr.h"
-#include "warnless.h"
-
 #include "tool_binmode.h"
 
 /* include memdebug.h last */
-#include "memdebug.h"
+#include <memdebug.h>
 
 static const char *backendaddr = "127.0.0.1";
 static unsigned short backendport = 0; /* default is use client's */
@@ -710,14 +708,13 @@ static bool socksd_incoming(curl_socket_t listenfd)
       curl_socket_t newfd = accept(sockfd, NULL, NULL);
       if(CURL_SOCKET_BAD == newfd) {
         error = SOCKERRNO;
-        logmsg("accept(%" FMT_SOCKET_T ", NULL, NULL) "
-               "failed with error (%d) %s",
-               sockfd, error, sstrerror(error));
+        logmsg("accept() failed with error (%d) %s",
+               error, sstrerror(error));
       }
       else {
         curl_socket_t remotefd;
-        logmsg("====> Client connect, fd %" FMT_SOCKET_T ". "
-               "Read config from %s", newfd, configfile);
+        logmsg("====> Client connect, "
+               "Read config from %s", configfile);
         remotefd = sockit(newfd); /* SOCKS until done */
         if(remotefd == CURL_SOCKET_BAD) {
           logmsg("====> Client disconnect");
@@ -908,8 +905,7 @@ static curl_socket_t socksd_sockdaemon(curl_socket_t sock,
   rc = listen(sock, 5);
   if(0 != rc) {
     error = SOCKERRNO;
-    logmsg("listen(%" FMT_SOCKET_T ", 5) failed with error (%d) %s",
-           sock, error, sstrerror(error));
+    logmsg("listen() failed with error (%d) %s", error, sstrerror(error));
     sclose(sock);
     return CURL_SOCKET_BAD;
   }
@@ -1006,8 +1002,8 @@ int main(int argc, char *argv[])
         unix_socket = argv[arg];
         if(strlen(unix_socket) >= sizeof(sau.sun_path)) {
           fprintf(stderr,
-                  "socksd: socket path must be shorter than %zu chars: %s\n",
-              sizeof(sau.sun_path), unix_socket);
+                  "socksd: socket path must be shorter than %u chars: %s\n",
+                  (unsigned int)sizeof(sau.sun_path), unix_socket);
           return 0;
         }
         socket_domain = AF_UNIX;

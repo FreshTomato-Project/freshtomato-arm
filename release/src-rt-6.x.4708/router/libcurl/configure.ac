@@ -39,6 +39,7 @@ terms of the curl license; see COPYING for more details])
 
 AC_CONFIG_SRCDIR([lib/urldata.h])
 AC_CONFIG_HEADERS(lib/curl_config.h)
+AH_TOP([/* !checksrc! disable COPYRIGHT all */])
 AC_CONFIG_MACRO_DIR([m4])
 AM_MAINTAINER_MODE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -299,27 +300,39 @@ TEST_NGHTTPX=nghttpx
 AC_ARG_WITH(test-nghttpx,dnl
 AS_HELP_STRING([--with-test-nghttpx=PATH],[where to find nghttpx for testing]),
   TEST_NGHTTPX=$withval
-  if test X"$OPT_TEST_NGHTTPX" = "Xno"; then
+  if test X"$TEST_NGHTTPX" = "Xno"; then
     TEST_NGHTTPX=""
   fi
 )
 AC_SUBST(TEST_NGHTTPX)
 
-CADDY=/usr/bin/caddy
+if test -x /usr/bin/caddy; then
+  CADDY=/usr/bin/caddy
+elif test -x /usr/local/bin/caddy; then
+  CADDY=/usr/local/bin/caddy
+elif test -x "`brew --prefix 2>/dev/null`/bin/caddy"; then
+  CADDY=`brew --prefix`/bin/caddy
+fi
 AC_ARG_WITH(test-caddy,dnl
 AS_HELP_STRING([--with-test-caddy=PATH],[where to find caddy for testing]),
   CADDY=$withval
-  if test X"$OPT_CADDY" = "Xno"; then
+  if test X"$CADDY" = "Xno"; then
     CADDY=""
   fi
 )
 AC_SUBST(CADDY)
 
-VSFTPD=/usr/sbin/vsftpd
+if test -x /usr/sbin/vsftpd; then
+  VSFTPD=/usr/sbin/vsftpd
+elif test -x /usr/local/sbin/vsftpd; then
+  VSFTPD=/usr/local/sbin/vsftpd
+elif test -x "`brew --prefix 2>/dev/null`/sbin/vsftpd"; then
+  VSFTPD=`brew --prefix`/sbin/vsftpd
+fi
 AC_ARG_WITH(test-vsftpd,dnl
 AS_HELP_STRING([--with-test-vsftpd=PATH],[where to find vsftpd for testing]),
   VSFTPD=$withval
-  if test X"$OPT_VSFTPD" = "Xno"; then
+  if test X"$VSFTPD" = "Xno"; then
     VSFTPD=""
   fi
 )
@@ -440,6 +453,8 @@ AC_SYS_LARGEFILE
 XC_LIBTOOL
 
 LT_LANG([Windows Resource])
+
+AM_CONDITIONAL(NOT_CURL_CI, test -z "$CURL_CI")
 
 #
 # Automake conditionals based on libtool related checks
@@ -574,10 +589,10 @@ esac
 
 AM_CONDITIONAL(BUILD_UNITTESTS, test x$supports_unittests = xyes)
 
-# In order to detect support of sendmmsg(), we need to escape the POSIX
+# In order to detect support of sendmmsg() and accept4(), we need to escape the POSIX
 # jail by defining _GNU_SOURCE or <sys/socket.h> will not expose it.
 case $host_os in
-  linux*)
+  linux*|cygwin*|msys*)
     CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
     ;;
 esac
@@ -3155,7 +3170,8 @@ if test X"$want_tcp2" != Xno; then
   fi
 fi
 
-if test "x$USE_NGTCP2" = "x1" -a "x$OPENSSL_ENABLED" = "x1" -a "x$OPENSSL_IS_BORINGSSL" != "x1"; then
+if test "x$USE_NGTCP2" = "x1" -a "x$OPENSSL_ENABLED" = "x1" -a \
+   "x$OPENSSL_IS_BORINGSSL" != "x1" -a "x$OPENSSL_QUIC_API2" != "x1"; then
   dnl backup the pre-ngtcp2_crypto_quictls variables
   CLEANLDFLAGS="$LDFLAGS"
   CLEANLDFLAGSPC="$LDFLAGSPC"
@@ -3208,6 +3224,65 @@ if test "x$USE_NGTCP2" = "x1" -a "x$OPENSSL_ENABLED" = "x1" -a "x$OPENSSL_IS_BOR
       dnl To avoid link errors, we do not allow --with-ngtcp2 without
       dnl a pkgconfig file
       AC_MSG_ERROR([--with-ngtcp2 was specified but could not find ngtcp2_crypto_quictls pkg-config file.])
+    fi
+  fi
+fi
+
+if test "x$USE_NGTCP2" = "x1" -a "x$OPENSSL_ENABLED" = "x1" -a \
+   "x$OPENSSL_IS_BORINGSSL" != "x1" -a "x$OPENSSL_QUIC_API2" = "x1"; then
+  dnl backup the pre-ngtcp2_crypto_ossl variables
+  CLEANLDFLAGS="$LDFLAGS"
+  CLEANLDFLAGSPC="$LDFLAGSPC"
+  CLEANCPPFLAGS="$CPPFLAGS"
+  CLEANLIBS="$LIBS"
+
+  CURL_CHECK_PKGCONFIG(libngtcp2_crypto_ossl, $want_tcp2_path)
+
+  if test "$PKGCONFIG" != "no"; then
+    LIB_NGTCP2_CRYPTO_QUICTLS=`CURL_EXPORT_PCDIR([$want_tcp2_path])
+      $PKGCONFIG --libs-only-l libngtcp2_crypto_ossl`
+    AC_MSG_NOTICE([-l is $LIB_NGTCP2_CRYPTO_QUICTLS])
+
+    CPP_NGTCP2_CRYPTO_QUICTLS=`CURL_EXPORT_PCDIR([$want_tcp2_path]) dnl
+      $PKGCONFIG --cflags-only-I libngtcp2_crypto_ossl`
+    AC_MSG_NOTICE([-I is $CPP_NGTCP2_CRYPTO_QUICTLS])
+
+    LD_NGTCP2_CRYPTO_QUICTLS=`CURL_EXPORT_PCDIR([$want_tcp2_path])
+      $PKGCONFIG --libs-only-L libngtcp2_crypto_ossl`
+    AC_MSG_NOTICE([-L is $LD_NGTCP2_CRYPTO_QUICTLS])
+
+    LDFLAGS="$LDFLAGS $LD_NGTCP2_CRYPTO_QUICTLS"
+    LDFLAGSPC="$LDFLAGSPC $LD_NGTCP2_CRYPTO_QUICTLS"
+    CPPFLAGS="$CPPFLAGS $CPP_NGTCP2_CRYPTO_QUICTLS"
+    LIBS="$LIB_NGTCP2_CRYPTO_QUICTLS $LIBS"
+
+    if test "x$cross_compiling" != "xyes"; then
+      DIR_NGTCP2_CRYPTO_QUICTLS=`echo $LD_NGTCP2_CRYPTO_QUICTLS | $SED -e 's/^-L//'`
+    fi
+    AC_CHECK_LIB(ngtcp2_crypto_ossl, ngtcp2_crypto_recv_client_initial_cb,
+      [
+        AC_CHECK_HEADERS(ngtcp2/ngtcp2_crypto.h,
+          USE_NGTCP2=1
+          CURL_LIBRARY_PATH="$CURL_LIBRARY_PATH:$DIR_NGTCP2_CRYPTO_QUICTLS"
+          export CURL_LIBRARY_PATH
+          AC_MSG_NOTICE([Added $DIR_NGTCP2_CRYPTO_QUICTLS to CURL_LIBRARY_PATH])
+          LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE libngtcp2_crypto_ossl"
+          AC_DEFINE(OPENSSL_QUIC_API2, 1, [openssl with new QUIC API])
+        )
+      ],
+        dnl not found, revert back to clean variables
+        LDFLAGS=$CLEANLDFLAGS
+        LDFLAGSPC=$CLEANLDFLAGSPC
+        CPPFLAGS=$CLEANCPPFLAGS
+        LIBS=$CLEANLIBS
+    )
+
+  else
+    dnl no ngtcp2_crypto_ossl pkg-config found, deal with it
+    if test X"$want_tcp2" != Xdefault; then
+      dnl To avoid link errors, we do not allow --with-ngtcp2 without
+      dnl a pkgconfig file
+      AC_MSG_ERROR([--with-ngtcp2 was specified but could not find ngtcp2_crypto_ossl pkg-config file.])
     fi
   fi
 fi
@@ -4112,6 +4187,7 @@ case $host in
 esac
 
 AC_CHECK_FUNCS([\
+  accept4 \
   eventfd \
   fnmatch \
   geteuid \
@@ -4123,6 +4199,7 @@ AC_CHECK_FUNCS([\
   gettimeofday \
   mach_absolute_time \
   pipe \
+  pipe2 \
   poll \
   sendmmsg \
   sendmsg \
@@ -4201,11 +4278,6 @@ CURL_CHECK_OPTION_THREADED_RESOLVER
 
 if test "$ipv6" = yes -a "$curl_cv_apple" = 'yes'; then
   CURL_DARWIN_SYSTEMCONFIGURATION
-fi
-
-dnl turn off pthreads if rt is disabled
-if test "$want_threaded_resolver" = "yes" && test "$dontwant_rt" = "yes"; then
-  AC_MSG_ERROR([options --enable-pthreads and --disable-rt are mutually exclusive])
 fi
 
 dnl Windows threaded resolver check
@@ -4922,14 +4994,24 @@ if test "x$want_ech" != "xno"; then
   fi
 fi
 
+AC_MSG_CHECKING([whether to enable HTTPS-RR support])
 dnl *************************************************************
 dnl check whether HTTPSRR support if desired
 dnl
 if test "x$want_httpsrr" != "xno"; then
-  AC_MSG_RESULT([HTTPSRR support is enabled])
+  AC_MSG_RESULT([yes])
   AC_DEFINE(USE_HTTPSRR, 1, [enable HTTPS RR support])
   experimental="$experimental HTTPSRR"
   curl_httpsrr_msg="enabled (--disable-httpsrr)"
+else
+  AC_MSG_RESULT([no])
+  # no HTTPSRR wanted
+  if test "$want_threaded_resolver" = "yes"; then
+    # and using the threaded resolver
+    if test "x$USE_ARES" = "x1"; then
+      AC_MSG_ERROR([without HTTPS-RR support, asking for both threaded resolver and c-ares support is ambivalent. Please drop one of them.])
+    fi
+  fi
 fi
 
 
@@ -5136,7 +5218,7 @@ if test "x$CURL_DISABLE_NTLM" != "x1"; then
       -o "x$GNUTLS_ENABLED" = "x1" \
       -o "x$SECURETRANSPORT_ENABLED" = "x1" \
       -o "x$USE_WIN32_CRYPTO" = "x1" \
-      -o "x$WOLFSSL_NTLM" = "x1"; then
+      -o "x$HAVE_WOLFSSL_DES_ECB_ENCRYPT" = "x1"; then
     use_curl_ntlm_core=yes
   fi
 
@@ -5180,7 +5262,7 @@ if test "x$CURL_DISABLE_HTTP" != "x1"; then
         -o "x$MBEDTLS_ENABLED" = "x1"; then
       SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPS-proxy"
       AC_MSG_RESULT([yes])
-    elif test "x$WOLFSSL_ENABLED" = "x1" -a "x$WOLFSSL_BIO" = "x1"; then
+    elif test "x$WOLFSSL_ENABLED" = "x1" -a "x$HAVE_WOLFSSL_BIO_NEW" = "x1"; then
       SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPS-proxy"
       AC_MSG_RESULT([yes])
     else
@@ -5410,6 +5492,7 @@ AC_CONFIG_FILES([\
   tests/server/Makefile \
   tests/libtest/Makefile \
   tests/unit/Makefile \
+  tests/tunit/Makefile \
   tests/http/config.ini \
   tests/http/Makefile \
   tests/http/clients/Makefile \

@@ -324,7 +324,7 @@ Introduced in 7.19.1. See CURLOPT_POSTREDIR(3).
 Introduced in 7.19.1. See CURLOPT_POSTREDIR(3).
 
 ## CURL_REDIR_POST_303
-Introduced in 7.25.1. See CURLOPT_POSTREDIR(3).
+Introduced in 7.26.0. See CURLOPT_POSTREDIR(3).
 
 ## CURL_REDIR_POST_ALL
 Introduced in 7.19.1. See CURLOPT_POSTREDIR(3).
@@ -1605,7 +1605,7 @@ Introduced in 7.19.6. See CURLOPT_SSH_KEYFUNCTION(3).
 Introduced in 7.81.0. See libcurl-errors(3).
 
 ## CURLM_ADDED_ALREADY
-Introduced in 7.32.1. See libcurl-errors(3).
+Introduced in 7.33.0. See libcurl-errors(3).
 
 ## CURLM_BAD_EASY_HANDLE
 Introduced in 7.9.6. See libcurl-errors(3).
@@ -2540,6 +2540,9 @@ Introduced in 7.25.0. See CURLOPT_SSL_OPTIONS(3).
 ## CURLOPT_SSL_SESSIONID_CACHE
 Introduced in 7.16.0. See CURLOPT_SSL_SESSIONID_CACHE(3).
 
+## CURLOPT_SSL_SIGNATURE_ALGORITHMS
+Introduced in 8.14.0. See CURLOPT_SSL_SIGNATURE_ALGORITHMS(3).
+
 ## CURLOPT_SSL_VERIFYHOST
 Introduced in 7.8.1. See CURLOPT_SSL_VERIFYHOST(3).
 
@@ -3457,6 +3460,9 @@ Introduced in 7.86.0. See curl_ws_send(3).
 
 ## CURLWS_CONT
 Introduced in 7.86.0. See curl_ws_send(3).
+
+## CURLWS_NOAUTOPONG
+Introduced in 8.14.0. See curl_ws_send(3).
 
 ## CURLWS_OFFSET
 Introduced in 7.86.0. See curl_ws_send(3).

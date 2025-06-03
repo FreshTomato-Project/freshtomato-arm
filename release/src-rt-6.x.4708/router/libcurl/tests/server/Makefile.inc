@@ -22,59 +22,47 @@
 #
 ###########################################################################
 
-SERVERPROGS = resolve rtspd sockfilt sws tftpd socksd disabled mqttd
+SERVERPROGS = resolve rtspd sockfilt sws tftpd socksd mqttd dnsd
 
 MEMDEBUG = \
-  ../../lib/curl_multibyte.c \
-  ../../lib/curl_multibyte.h \
   ../../lib/memdebug.c \
   ../../lib/memdebug.h
 
 CURLX_SRCS = \
-  ../../lib/mprintf.c \
-  ../../lib/nonblock.c \
-  ../../lib/strparse.c \
-  ../../lib/strequal.c \
-  ../../lib/warnless.c \
-  ../../lib/timediff.c \
-  ../../lib/timeval.c \
-  ../../lib/dynbuf.c \
-  ../../lib/strcase.c \
-  ../../lib/strdup.c \
-  ../../lib/curl_get_line.c \
-  ../../lib/version_win32.c
+  ../../lib/curlx/base64.c \
+  ../../lib/curlx/multibyte.c \
+  ../../lib/curlx/nonblock.c \
+  ../../lib/curlx/strparse.c \
+  ../../lib/curlx/timediff.c \
+  ../../lib/curlx/timeval.c \
+  ../../lib/curlx/version_win32.c \
+  ../../lib/curlx/warnless.c \
+  ../../lib/curlx/winapi.c
 
 CURLX_HDRS = \
-  ../../lib/curlx.h \
-  ../../lib/curl_ctype.h \
-  ../../lib/nonblock.h \
-  ../../lib/strcase.h \
-  ../../lib/warnless.h \
-  ../../lib/timediff.h \
-  ../../lib/timeval.h \
-  ../../lib/dynbuf.h \
-  ../../lib/strcase.h \
-  ../../lib/strdup.h \
-  ../../lib/curl_get_line.h \
-  ../../lib/version_win32.h
+  ../../lib/curlx/base64.h \
+  ../../lib/curlx/curlx.h \
+  ../../lib/curlx/multibyte.h \
+  ../../lib/curlx/nonblock.h \
+  ../../lib/curlx/timediff.h \
+  ../../lib/curlx/timeval.h \
+  ../../lib/curlx/version_win32.h \
+  ../../lib/curlx/warnless.h \
+  ../../lib/curlx/winapi.h
 
 UTIL = \
   getpart.c \
   getpart.h \
   util.c \
   util.h \
-  server_setup.h \
-  ../../lib/base64.c \
-  ../../lib/curl_base64.h \
-  ../../lib/strerror.c \
-  ../../lib/strerror.h
+  server_setup.h
 
 FIRSTFILES = \
   first.c \
   first.h
 
 INET_PTON = \
-  ../../lib/inet_pton.c
+  ../../lib/curlx/inet_pton.c
 
 resolve_SOURCES = $(MEMDEBUG) $(CURLX_SRCS) $(CURLX_HDRS) $(UTIL) \
   resolve.c
@@ -118,4 +106,7 @@ tftpd_SOURCES = $(MEMDEBUG) $(CURLX_SRCS) $(CURLX_HDRS) $(UTIL) \
 tftpd_LDADD = @CURL_NETWORK_AND_TIME_LIBS@
 tftpd_CFLAGS = $(AM_CFLAGS)
 
-disabled_SOURCES = disabled.c
+dnsd_SOURCES = $(MEMDEBUG) $(CURLX_SRCS) $(CURLX_HDRS) $(UTIL) \
+  dnsd.c
+dnsd_LDADD = @CURL_NETWORK_AND_TIME_LIBS@
+dnsd_CFLAGS = $(AM_CFLAGS)

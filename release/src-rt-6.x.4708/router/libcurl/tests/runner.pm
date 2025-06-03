@@ -924,6 +924,12 @@ sub singletest_run {
             }
             $CMDLINE=$LIBDIR . $tool;
         }
+        elsif($tool =~ /^tool/) {
+            if($bundle) {
+                $tool = "tunits" . exe_ext('TOOL')
+            }
+            $CMDLINE=$TUNITDIR . $tool;
+        }
         elsif($tool =~ /^unit/) {
             if($bundle) {
                 $tool = "units" . exe_ext('TOOL')
@@ -1341,8 +1347,8 @@ sub controlleripccall {
     if(!$multiprocess) {
         # Call the remote function here in single process mode
         ipcrecv();
-     }
-     return 0;
+    }
+    return 0;
 }
 
 ###################################################################

@@ -22,14 +22,10 @@
 #
 ###########################################################################
 
-# Get 'LIBTESTPROGS', '*_SOURCES', 'TESTUTIL', 'TSTTRACE', 'WARNLESS', 'MULTIBYTE', 'INET_PTON', 'TIMEDIFF', 'THREADS',
+# Get 'LIBTESTPROGS', '*_SOURCES', 'TESTUTIL', 'TSTTRACE', 'WARNLESS', 'MULTIBYTE', 'INET_PTON', 'TIMEDIFF', 'THREADS', 'MEMPTR'
 # 'FIRSTFILES' variables
 curl_transform_makefile_inc("Makefile.inc" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
 include("${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
-
-if(ENABLE_CURLDEBUG)
-  set_source_files_properties("../../lib/curl_multibyte.c" PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-endif()
 
 add_custom_command(
   OUTPUT "lib1521.c"
@@ -53,7 +49,7 @@ if(CURL_TEST_BUNDLES)
   list(APPEND libtests_SOURCES ${TESTUTIL} ${TSTTRACE})
   if(LIB_SELECTED STREQUAL LIB_SHARED)
     # These are part of the libcurl static lib. Add them here when linking shared.
-    list(APPEND libtests_SOURCES ${WARNLESS} ${MULTIBYTE} ${INET_PTON} ${TIMEDIFF} ${THREADS})
+    list(APPEND libtests_SOURCES ${WARNLESS} ${MULTIBYTE} ${INET_PTON} ${TIMEDIFF} ${THREADS} ${MEMPTR})
   endif()
 endif()
 
@@ -77,8 +73,10 @@ foreach(_target IN LISTS LIBTESTPROGS)
   target_include_directories(${_target_name} PRIVATE
     "${PROJECT_BINARY_DIR}/lib"            # for "curl_config.h"
     "${PROJECT_SOURCE_DIR}/lib"            # for "curl_setup.h"
+    "${PROJECT_SOURCE_DIR}/lib/curlx"      # for curlx
     "${PROJECT_SOURCE_DIR}/src"            # for "tool_binmode.h"
     "${PROJECT_SOURCE_DIR}/tests/libtest"  # to be able to build generated tests
+    "${PROJECT_SOURCE_DIR}/tests/unit"     # for curlcheck.h
   )
   set_property(TARGET ${_target_name} APPEND PROPERTY COMPILE_DEFINITIONS "${CURL_DEBUG_MACROS}")
   if(NOT CURL_TEST_BUNDLES)

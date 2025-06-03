@@ -72,7 +72,7 @@ if($c)
 
     print <<HEAD
 #include <zlib.h>
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 static const unsigned char hugehelpgz[] = {
   /* This mumbo-jumbo is the huge help text compressed with gzip.
      Thanks to this operation, the size of this data shrank from $gzip
@@ -82,12 +82,14 @@ HEAD
 ;
 
     my $c=0;
-    print " ";
     for(split(//, $gzippedContent)) {
         my $num=ord($_);
+        if(!($c % 12)) {
+            print " ";
+        }
         printf(" 0x%02x,", 0+$num);
         if(!(++$c % 12)) {
-            print "\n ";
+            print "\n";
         }
     }
     print "\n};\n";

@@ -30,6 +30,7 @@ import logging
 import math
 import os
 import re
+import sys
 from datetime import timedelta
 import pytest
 
@@ -40,13 +41,6 @@ log = logging.getLogger(__name__)
 
 
 class TestDownload:
-
-    @pytest.fixture(autouse=True, scope='class')
-    def _class_scope(self, env, httpd, nghttpx):
-        if env.have_h3():
-            nghttpx.start_if_needed()
-        httpd.clear_extra_configs()
-        httpd.reload()
 
     @pytest.fixture(autouse=True, scope='class')
     def _class_scope(self, env, httpd):
@@ -83,6 +77,9 @@ class TestDownload:
     def test_02_03_download_sequential(self, env: Env, httpd, nghttpx, proto):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
+        if (proto == 'http/1.1' or proto == 'h2') and env.curl_uses_lib('mbedtls') and \
+           sys.platform.startswith('darwin') and env.ci_run:
+            pytest.skip('mbedtls 3.6.3 fails this test on macOS CI runners')
         count = 10
         curl = CurlClient(env=env)
         urln = f'https://{env.authority_for(env.domain1, proto)}/data.json?[0-{count-1}]'
@@ -94,6 +91,9 @@ class TestDownload:
     def test_02_04_download_parallel(self, env: Env, httpd, nghttpx, proto):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
+        if proto == 'h2' and env.curl_uses_lib('mbedtls') and \
+           sys.platform.startswith('darwin') and env.ci_run:
+            pytest.skip('mbedtls 3.6.3 fails this test on macOS CI runners')
         count = 10
         max_parallel = 5
         curl = CurlClient(env=env)
@@ -116,6 +116,9 @@ class TestDownload:
             pytest.skip("h3 not supported")
         if proto == 'h3' and env.curl_uses_lib('msh3'):
             pytest.skip("msh3 shaky here")
+        if proto == 'h2' and env.curl_uses_lib('mbedtls') and \
+           sys.platform.startswith('darwin') and env.ci_run:
+            pytest.skip('mbedtls 3.6.3 fails this test on macOS CI runners')
         count = 200
         curl = CurlClient(env=env)
         urln = f'https://{env.authority_for(env.domain1, proto)}/data.json?[0-{count-1}]'
@@ -133,6 +136,9 @@ class TestDownload:
     def test_02_06_download_many_parallel(self, env: Env, httpd, nghttpx, proto):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
+        if proto == 'h2' and env.curl_uses_lib('mbedtls') and \
+           sys.platform.startswith('darwin') and env.ci_run:
+            pytest.skip('mbedtls 3.6.3 fails this test on macOS CI runners')
         count = 200
         max_parallel = 50
         curl = CurlClient(env=env)
@@ -281,7 +287,7 @@ class TestDownload:
                       remote_ip='127.0.0.1')
 
     @pytest.mark.skipif(condition=Env().slow_network, reason="not suitable for slow network tests")
-    def test_02_20_h2_small_frames(self, env: Env, httpd):
+    def test_02_20_h2_small_frames(self, env: Env, httpd, configures_httpd):
         # Test case to reproduce content corruption as observed in
         # https://github.com/curl/curl/issues/10525
         # To reliably reproduce, we need an Apache httpd that supports
@@ -290,11 +296,7 @@ class TestDownload:
         httpd.set_extra_config(env.domain1, lines=[
             'H2MaxDataFrameLen 1024',
         ])
-        assert httpd.stop()
-        if not httpd.start():
-            # no, not supported, bail out
-            httpd.set_extra_config(env.domain1, lines=None)
-            assert httpd.start()
+        if not httpd.reload_if_config_changed():
             pytest.skip('H2MaxDataFrameLen not supported')
         # ok, make 100 downloads with 2 parallel running and they
         # are expected to stumble into the issue when using `lib/http2.c`
@@ -308,14 +310,10 @@ class TestDownload:
         r.check_response(count=count, http_status=200)
         srcfile = os.path.join(httpd.docs_dir, 'data-1m')
         self.check_downloads(curl, srcfile, count)
-        # restore httpd defaults
-        httpd.set_extra_config(env.domain1, lines=None)
-        assert httpd.stop()
-        assert httpd.start()
 
-    # download via lib client, 1 at a time, pause/resume at different offsets
+    # download serial via lib client, pause/resume at different offsets
     @pytest.mark.parametrize("pause_offset", [0, 10*1024, 100*1023, 640000])
-    @pytest.mark.parametrize("proto", ['http/1.1', 'h2', 'h3'])
+    @pytest.mark.parametrize("proto", ['http/1.1', 'h3'])
     def test_02_21_lib_serial(self, env: Env, httpd, nghttpx, proto, pause_offset):
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
@@ -323,6 +321,29 @@ class TestDownload:
         docname = 'data-10m'
         url = f'https://localhost:{env.https_port}/{docname}'
         client = LocalClient(name='hx-download', env=env)
+        if not client.exists():
+            pytest.skip(f'example client not built: {client.name}')
+        r = client.run(args=[
+             '-n', f'{count}', '-P', f'{pause_offset}', '-V', proto, url
+        ])
+        r.check_exit_code(0)
+        srcfile = os.path.join(httpd.docs_dir, docname)
+        self.check_downloads(client, srcfile, count)
+
+    # h2 download parallel via lib client, pause/resume at different offsets
+    # debug-override stream window size to reproduce #16955
+    @pytest.mark.parametrize("pause_offset", [0, 10*1024, 100*1023, 640000])
+    @pytest.mark.parametrize("swin_max", [0, 10*1024])
+    def test_02_21_h2_lib_serial(self, env: Env, httpd, pause_offset, swin_max):
+        proto = 'h2'
+        count = 2
+        docname = 'data-10m'
+        url = f'https://localhost:{env.https_port}/{docname}'
+        run_env = os.environ.copy()
+        run_env['CURL_DEBUG'] = 'multi,http/2'
+        if swin_max > 0:
+            run_env['CURL_H2_STREAM_WIN_MAX'] = f'{swin_max}'
+        client = LocalClient(name='hx-download', env=env, run_env=run_env)
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
         r = client.run(args=[
@@ -569,9 +590,10 @@ class TestDownload:
             '--parallel', '--http2'
         ])
         r.check_response(http_status=200, count=count)
-        # we see 3 connections, because Apache only every serves a single
-        # request via Upgrade: and then closed the connection.
-        assert r.total_connects == 3, r.dump_logs()
+        # we see up to 3 connections, because Apache wants to serve only a single
+        # request via Upgrade: and then closes the connection. But if a new
+        # request comes in time, it might still get served.
+        assert r.total_connects <= 3, r.dump_logs()
 
     # nghttpx is the only server we have that supports TLS early data
     @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx")
@@ -582,6 +604,8 @@ class TestDownload:
         if proto == 'h3' and \
            (not env.have_h3() or not env.curl_can_h3_early_data()):
             pytest.skip("h3 not supported")
+        if proto != 'h3' and sys.platform.startswith('darwin') and env.ci_run:
+            pytest.skip('failing on macOS CI runners')
         count = 2
         docname = 'data-10k'
         # we want this test to always connect to nghttpx, since it is
@@ -626,6 +650,8 @@ class TestDownload:
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
     @pytest.mark.parametrize("max_host_conns", [0, 1, 5])
     def test_02_33_max_host_conns(self, env: Env, httpd, nghttpx, proto, max_host_conns):
+        if not env.curl_is_debug():
+            pytest.skip('only works for curl debug builds')
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
         count = 50
@@ -662,6 +688,8 @@ class TestDownload:
     @pytest.mark.parametrize("proto", ['http/1.1', 'h2'])
     @pytest.mark.parametrize("max_total_conns", [0, 1, 5])
     def test_02_34_max_total_conns(self, env: Env, httpd, nghttpx, proto, max_total_conns):
+        if not env.curl_is_debug():
+            pytest.skip('only works for curl debug builds')
         if proto == 'h3' and not env.have_h3():
             pytest.skip("h3 not supported")
         count = 50

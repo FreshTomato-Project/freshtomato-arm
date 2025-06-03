@@ -416,12 +416,14 @@ TESTSCRIPTS = \
  test1488.pl  \
  test1544.pl  \
  test1707.pl  \
+ test745.pl  \
  test971.pl
 
 EXTRA_DIST = \
  CMakeLists.txt     \
  FILEFORMAT.md      \
  README.md          \
+ allversions.pm     \
  appveyor.pm        \
  azure.pm           \
  devtest.pl         \
@@ -466,8 +468,8 @@ EXTRA_DIST = \
 # we have two variables here to make sure DIST_SUBDIRS won't get 'unit'
 # added twice as then targets such as 'distclean' misbehave and try to
 # do things twice in that subdir at times (and thus fails).
-@BUILD_UNITTESTS_TRUE@BUILD_UNIT = unit
-@BUILD_UNITTESTS_FALSE@DIST_UNIT = unit
+@BUILD_UNITTESTS_TRUE@BUILD_UNIT = unit tunit
+@BUILD_UNITTESTS_FALSE@DIST_UNIT = unit tunit
 @BUILD_UNITTESTS_TRUE@DIST_UNIT = 
 SUBDIRS = certs data server libtest http $(BUILD_UNIT)
 DIST_SUBDIRS = $(SUBDIRS) $(DIST_UNIT)
@@ -489,7 +491,7 @@ TEST_COMMON = $(am__append_1)
 @CROSSCOMPILING_FALSE@TEST_NF = -a -p ~flaky ~timing-dependent
 
 # special CI target derived from nonflaky with CI-specific flags
-@CROSSCOMPILING_FALSE@TEST_CI = $(TEST_NF) -r -j20
+@CROSSCOMPILING_FALSE@TEST_CI = $(TEST_NF) -r --retry=5 -j20
 CD2NROFF = $(top_srcdir)/scripts/cd2nroff $< >$@
 SUFFIXES = .1 .md
 all: all-recursive
@@ -850,11 +852,12 @@ event-test: perlcheck all
 default-pytest: ci-pytest
 
 ci-pytest: all
-	srcdir=$(srcdir) $(PYTEST) -v $(srcdir)/http
+	srcdir=$(srcdir) $(PYTEST) -n auto -v $(srcdir)/http
 
 checksrc:
 	(cd libtest && $(MAKE) checksrc)
 	(cd unit && $(MAKE) checksrc)
+	(cd tunit && $(MAKE) checksrc)
 	(cd server && $(MAKE) checksrc)
 	(cd http && $(MAKE) checksrc)
 

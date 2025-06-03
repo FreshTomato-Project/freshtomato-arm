@@ -48,13 +48,13 @@
 #include <netinet/tcp.h> /* for TCP_NODELAY */
 #endif
 
-#include "curlx.h" /* from the private lib dir */
+#include <curlx.h> /* from the private lib dir */
 #include "getpart.h"
 #include "util.h"
 #include "server_sockaddr.h"
 
 /* include memdebug.h last */
-#include "memdebug.h"
+#include <memdebug.h>
 
 #undef REQBUFSIZ
 #define REQBUFSIZ 150000
@@ -191,7 +191,6 @@ static int rtspd_ProcessRequest(struct rtspd_httprequest *req)
             &prot_major,
             &prot_minor) == 5) {
     char *ptr;
-    char logbuf[256];
 
     if(!strcmp(prot_str, "HTTP")) {
       req->protocol = RPROT_HTTP;
@@ -214,12 +213,11 @@ static int rtspd_ProcessRequest(struct rtspd_httprequest *req)
     if(ptr) {
       FILE *stream;
       if((strlen(doc) + strlen(request)) < 200)
-        msnprintf(logbuf, sizeof(logbuf), "Got request: %s %s %s/%d.%d",
-                  request, doc, prot_str, prot_major, prot_minor);
+        logmsg("Got request: %s %s %s/%d.%d",
+               request, doc, prot_str, prot_major, prot_minor);
       else
-        msnprintf(logbuf, sizeof(logbuf), "Got a *HUGE* request %s/%d.%d",
-                  prot_str, prot_major, prot_minor);
-      logmsg("%s", logbuf);
+        logmsg("Got a *HUGE* request %s/%d.%d",
+               prot_str, prot_major, prot_minor);
 
       if(!strncmp("/verifiedserver", ptr, 15)) {
         logmsg("Are-we-friendly question received");
@@ -248,9 +246,7 @@ static int rtspd_ProcessRequest(struct rtspd_httprequest *req)
       else
         req->partno = 0;
 
-      msnprintf(logbuf, sizeof(logbuf), "Requested test number %ld part %ld",
-                req->testno, req->partno);
-      logmsg("%s", logbuf);
+      logmsg("Requested test number %ld part %ld", req->testno, req->partno);
 
       stream = test2fopen(req->testno, logdir);
 
@@ -374,10 +370,8 @@ static int rtspd_ProcessRequest(struct rtspd_httprequest *req)
     else {
       if(sscanf(req->reqbuf, "CONNECT %" MAXDOCNAMELEN_TXT "s HTTP/%d.%d",
                 doc, &prot_major, &prot_minor) == 3) {
-        msnprintf(logbuf, sizeof(logbuf),
-                  "Received a CONNECT %s HTTP/%d.%d request",
-                  doc, prot_major, prot_minor);
-        logmsg("%s", logbuf);
+        logmsg("Received a CONNECT %s HTTP/%d.%d request",
+               doc, prot_major, prot_minor);
 
         if(req->prot_version == 10)
           req->open = FALSE; /* HTTP 1.0 closes connection by default */
@@ -431,7 +425,7 @@ static int rtspd_ProcessRequest(struct rtspd_httprequest *req)
     if(got_exit_signal)
       return 1; /* done */
 
-    if((req->cl == 0) && strncasecompare("Content-Length:", line, 15)) {
+    if((req->cl == 0) && !CURL_STRNICMP("Content-Length:", line, 15)) {
       /* If we don't ignore content-length, we read it and we read the whole
          request including the body before we return. If we've been told to
          ignore the content-length, we will return as soon as all headers
@@ -451,8 +445,8 @@ static int rtspd_ProcessRequest(struct rtspd_httprequest *req)
         logmsg("... but will abort after %zu bytes", req->cl);
       break;
     }
-    else if(strncasecompare("Transfer-Encoding: chunked", line,
-                            strlen("Transfer-Encoding: chunked"))) {
+    else if(!CURL_STRNICMP("Transfer-Encoding: chunked", line,
+                           strlen("Transfer-Encoding: chunked"))) {
       /* chunked data coming in */
       chunked = TRUE;
     }
@@ -564,7 +558,7 @@ static void rtspd_storerequest(char *reqbuf, size_t totalsize)
   FILE *dump;
   char dumpfile[256];
 
-  msnprintf(dumpfile, sizeof(dumpfile), "%s/%s", logdir, REQUEST_DUMP);
+  snprintf(dumpfile, sizeof(dumpfile), "%s/%s", logdir, REQUEST_DUMP);
 
   if(!reqbuf)
     return;
@@ -739,8 +733,7 @@ static int rtspd_send_doc(curl_socket_t sock, struct rtspd_httprequest *req)
   static char weare[256];
   char responsedump[256];
 
-  msnprintf(responsedump, sizeof(responsedump), "%s/%s",
-            logdir, RESPONSE_DUMP);
+  snprintf(responsedump, sizeof(responsedump), "%s/%s", logdir, RESPONSE_DUMP);
 
   logmsg("Send response number %ld part %ld", req->testno, req->partno);
 
@@ -780,12 +773,12 @@ static int rtspd_send_doc(curl_socket_t sock, struct rtspd_httprequest *req)
     case DOCNUMBER_WERULEZ:
       /* we got a "friends?" question, reply back that we sure are */
       logmsg("Identifying ourselves as friends");
-      msnprintf(msgbuf, sizeof(msgbuf), "RTSP_SERVER WE ROOLZ: %"
-                CURL_FORMAT_CURL_OFF_T "\r\n", our_getpid());
+      snprintf(msgbuf, sizeof(msgbuf), "RTSP_SERVER WE ROOLZ: %ld\r\n",
+               (long)our_getpid());
       msglen = strlen(msgbuf);
-      msnprintf(weare, sizeof(weare),
-                "HTTP/1.1 200 OK\r\nContent-Length: %zu\r\n\r\n%s",
-                msglen, msgbuf);
+      snprintf(weare, sizeof(weare),
+               "HTTP/1.1 200 OK\r\nContent-Length: %u\r\n\r\n%s",
+               (unsigned int)msglen, msgbuf);
       buffer = weare;
       break;
     case DOCNUMBER_INTERNAL:
@@ -817,7 +810,7 @@ static int rtspd_send_doc(curl_socket_t sock, struct rtspd_httprequest *req)
     FILE *stream = test2fopen(req->testno, logdir);
     char partbuf[80]="data";
     if(0 != req->partno)
-      msnprintf(partbuf, sizeof(partbuf), "data%ld", req->partno);
+      snprintf(partbuf, sizeof(partbuf), "data%ld", req->partno);
     if(!stream) {
       error = errno;
       logmsg("fopen() failed with error (%d) %s", error, strerror(error));
@@ -1105,8 +1098,8 @@ int main(int argc, char *argv[])
     }
   }
 
-  msnprintf(loglockfile, sizeof(loglockfile), "%s/%s/rtsp-%s.lock",
-            logdir, SERVERLOGS_LOCKDIR, ipv_inuse);
+  snprintf(loglockfile, sizeof(loglockfile), "%s/%s/rtsp-%s.lock",
+           logdir, SERVERLOGS_LOCKDIR, ipv_inuse);
 
 #ifdef _WIN32
   if(win32_init())
@@ -1354,7 +1347,7 @@ server_cleanup:
 
   if(got_exit_signal) {
     logmsg("========> %s rtspd (port: %d pid: %ld) exits with signal (%d)",
-           ipv_inuse, (int)port, (long)curlx_getpid(), exit_signal);
+           ipv_inuse, (int)port, (long)our_getpid(), exit_signal);
     /*
      * To properly set the return status of the process we
      * must raise the same signal SIGINT or SIGTERM that we

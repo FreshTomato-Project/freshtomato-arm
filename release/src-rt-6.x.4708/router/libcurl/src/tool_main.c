@@ -37,7 +37,7 @@
 #include <fcntl.h>
 #endif
 
-#include "curlx.h"
+#include <curlx.h>
 
 #include "tool_cfgable.h"
 #include "tool_doswin.h"
@@ -53,7 +53,7 @@
  * the library level code from this client-side is ugly, but we do this
  * anyway for convenience.
  */
-#include "memdebug.h" /* keep this as LAST include */
+#include <memdebug.h> /* keep this as LAST include */
 
 #ifdef __VMS
 /*
@@ -197,13 +197,13 @@ static CURLcode main_init(struct GlobalConfig *config)
 
 static void free_globalconfig(struct GlobalConfig *config)
 {
-  curlx_safefree(config->trace_dump);
+  tool_safefree(config->trace_dump);
 
   if(config->trace_fopened && config->trace_stream)
     fclose(config->trace_stream);
   config->trace_stream = NULL;
 
-  curlx_safefree(config->libcurl);
+  tool_safefree(config->libcurl);
 }
 
 /*

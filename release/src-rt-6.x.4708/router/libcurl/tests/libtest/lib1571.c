@@ -32,13 +32,13 @@ CURLcode test(char *URL)
   int testno = atoi(libtest_arg2);
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
-    fprintf(stderr, "curl_global_init() failed\n");
+    curl_mfprintf(stderr, "curl_global_init() failed\n");
     return TEST_ERR_MAJOR_BAD;
   }
 
   curl = curl_easy_init();
   if(!curl) {
-    fprintf(stderr, "curl_easy_init() failed\n");
+    curl_mfprintf(stderr, "curl_easy_init() failed\n");
     curl_global_cleanup();
     return TEST_ERR_MAJOR_BAD;
   }
@@ -50,7 +50,7 @@ CURLcode test(char *URL)
     test_setopt(curl, CURLOPT_POSTFIELDS, "moo");
   }
   if(testno == 1581) {
-    test_setopt(curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_301);
+    test_setopt(curl, CURLOPT_POSTREDIR, (long)CURL_REDIR_POST_301);
   }
 
   test_setopt(curl, CURLOPT_CUSTOMREQUEST, "IGLOO");

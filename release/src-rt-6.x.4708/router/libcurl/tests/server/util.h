@@ -25,6 +25,28 @@
  ***************************************************************************/
 #include "server_setup.h"
 
+/* adjust for old MSVC */
+#ifdef _MSC_VER
+#  if _MSC_VER < 1900
+#   define snprintf _snprintf
+#  endif
+#endif
+
+#ifdef _WIN32
+#  define CURL_STRNICMP(p1, p2, n) _strnicmp(p1, p2, n)
+#elif defined(HAVE_STRCASECMP)
+#  ifdef HAVE_STRINGS_H
+#    include <strings.h>
+#  endif
+#  define CURL_STRNICMP(p1, p2, n) strncasecmp(p1, p2, n)
+#elif defined(HAVE_STRCMPI)
+#  define CURL_STRNICMP(p1, p2, n) strncmpi(p1, p2, n)
+#elif defined(HAVE_STRICMP)
+#  define CURL_STRNICMP(p1, p2, n) strnicmp(p1, p2, n)
+#else
+#  error "missing case insensitive comparison function"
+#endif
+
 enum {
   DOCNUMBER_NOTHING    = -7,
   DOCNUMBER_QUIT       = -6,

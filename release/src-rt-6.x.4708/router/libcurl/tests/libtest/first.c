@@ -28,13 +28,8 @@
 #  include <locale.h> /* for setlocale() */
 #endif
 
-#ifdef CURLDEBUG
-#  define MEMDEBUG_NODEFINES
-#  include "memdebug.h"
-#endif
-
-#include "timediff.h"
-
+#include "memdebug.h"
+#include "curlx/timediff.h"
 #include "tool_binmode.h"
 
 int select_wrapper(int nfds, fd_set *rd, fd_set *wr, fd_set *exc,
@@ -88,27 +83,18 @@ static void memory_tracking_init(void)
 {
   char *env;
   /* if CURL_MEMDEBUG is set, this starts memory tracking message logging */
-  env = curl_getenv("CURL_MEMDEBUG");
+  env = getenv("CURL_MEMDEBUG");
   if(env) {
     /* use the value as file name */
-    char fname[CURL_MT_LOGFNAME_BUFSIZE];
-    if(strlen(env) >= CURL_MT_LOGFNAME_BUFSIZE)
-      env[CURL_MT_LOGFNAME_BUFSIZE-1] = '\0';
-    strcpy(fname, env);
-    curl_free(env);
-    curl_dbg_memdebug(fname);
-    /* this weird stuff here is to make curl_free() get called before
-       curl_dbg_memdebug() as otherwise memory tracking will log a free()
-       without an alloc! */
+    curl_dbg_memdebug(env);
   }
   /* if CURL_MEMLIMIT is set, this enables fail-on-alloc-number-N feature */
-  env = curl_getenv("CURL_MEMLIMIT");
+  env = getenv("CURL_MEMLIMIT");
   if(env) {
     char *endptr;
     long num = strtol(env, &endptr, 10);
     if((endptr != env) && (endptr == env + strlen(env)) && (num > 0))
       curl_dbg_memlimit(num);
-    curl_free(env);
   }
 }
 #else
@@ -124,7 +110,7 @@ char *hexdump(const unsigned char *buf, size_t len)
   if(len > 200)
     return NULL;
   for(i = 0; i < len; i++, p += 3)
-    msnprintf(p, 4, "%02x ", buf[i]);
+    curl_msnprintf(p, 4, "%02x ", buf[i]);
   return dump;
 }
 
@@ -162,7 +148,7 @@ int main(int argc, char **argv)
     basearg = 2;
 
     if(argc < (basearg + 1)) {
-      fprintf(stderr, "Pass testname and URL as arguments please\n");
+      curl_mfprintf(stderr, "Pass testname and URL as arguments please\n");
       return 1;
     }
 
@@ -179,7 +165,7 @@ int main(int argc, char **argv)
     }
 
     if(!test_func) {
-      fprintf(stderr, "Test '%s' not found.\n", test_name);
+      curl_mfprintf(stderr, "Test '%s' not found.\n", test_name);
       return 1;
     }
   }
@@ -187,7 +173,7 @@ int main(int argc, char **argv)
   basearg = 1;
 
   if(argc < (basearg + 1)) {
-    fprintf(stderr, "Pass URL as argument please\n");
+    curl_mfprintf(stderr, "Pass URL as argument please\n");
     return 1;
   }
 
@@ -205,10 +191,10 @@ int main(int argc, char **argv)
 
   URL = argv[basearg]; /* provide this to the rest */
 
-  fprintf(stderr, "URL: %s\n", URL);
+  curl_mfprintf(stderr, "URL: %s\n", URL);
 
   result = test_func(URL);
-  fprintf(stderr, "Test ended with result %d\n", result);
+  curl_mfprintf(stderr, "Test ended with result %d\n", result);
 
 #ifdef _WIN32
   /* flush buffers of all streams regardless of mode */

@@ -23,17 +23,22 @@
 ###########################################################################
 find_program(TEST_NGHTTPX "nghttpx")
 if(NOT TEST_NGHTTPX)
-  set(TEST_NGHTTPX "nghttpx")
+  set(TEST_NGHTTPX "")
 endif()
 mark_as_advanced(TEST_NGHTTPX)
 # Consumed variables: TEST_NGHTTPX
 configure_file("config.in" "${CMAKE_CURRENT_BINARY_DIR}/config" @ONLY)
 
 add_custom_target(testdeps)
+if(BUILD_CURL_EXE)
+  add_dependencies(testdeps curlinfo)
+endif()
+
 add_subdirectory(http)
 add_subdirectory(http/clients)
 add_subdirectory(server)
 add_subdirectory(libtest)
+add_subdirectory(tunit)
 add_subdirectory(unit)
 add_subdirectory(certs)
 
@@ -102,9 +107,9 @@ curl_add_runtests(test-am        "-a -am")
 curl_add_runtests(test-full      "-a -p -r")
 # ~flaky means that it ignores results of tests using the flaky keyword
 curl_add_runtests(test-nonflaky  "-a -p ~flaky ~timing-dependent")
-curl_add_runtests(test-ci        "-a -p ~flaky ~timing-dependent -r -j20")
+curl_add_runtests(test-ci        "-a -p ~flaky ~timing-dependent -r --retry=5 -j20")
 curl_add_runtests(test-torture   "-a -t -j20")
 curl_add_runtests(test-event     "-a -e")
 
-curl_add_pytests(curl-pytest      "")
-curl_add_pytests(curl-pytest-ci   "-v")
+curl_add_pytests(curl-pytest      "-n auto")
+curl_add_pytests(curl-pytest-ci   "-n auto -v")

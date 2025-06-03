@@ -77,6 +77,12 @@ HTTP/2.
 
 Fake the size returned by CURLINFO_HEADER_SIZE and CURLINFO_REQUEST_SIZE.
 
+## `CURL_DNS_SERVER`
+
+When built with c-ares for name resolving, setting this environment variable
+to `[IP:port]` makes libcurl use that DNS server instead of the system
+default. This is used by the curl test suite.
+
 ## `CURL_GETHOSTNAME`
 
 Fake the local machine's unqualified hostname for NTLM and SMTP.
@@ -147,3 +153,8 @@ Make a blocking, graceful shutdown of all remaining connections when
 a multi handle is destroyed. This implicitly triggers for easy handles
 that are run via easy_perform. The value of the environment variable
 gives the shutdown timeout in milliseconds.
+
+## `CURL_H2_STREAM_WIN_MAX`
+
+Set to a positive 32-bit number to override the HTTP/2 stream window's
+default of 10MB. Used in testing to verify correct window update handling.

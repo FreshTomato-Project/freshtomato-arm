@@ -81,7 +81,9 @@
 #     define SQLITE_PTRSIZE 8
 #   endif
 # endif /* SQLITE_PTRSIZE */
-# if defined(HAVE_STDINT_H)
+# if defined(HAVE_STDINT_H) || (defined(__STDC_VERSION__) &&  \
+                                (__STDC_VERSION__ >= 199901L))
+#   include <stdint.h>
     typedef uintptr_t uptr;
 # elif SQLITE_PTRSIZE==4
     typedef unsigned int uptr;
@@ -1237,6 +1239,7 @@ static int auth_callback(
 }
 #endif /* SQLITE_OMIT_AUTHORIZATION */
 
+#if 0
 /*
 ** This routine reads a line of text from FILE in, stores
 ** the text in memory obtained from malloc() and returns a pointer
@@ -1281,6 +1284,7 @@ static char *local_getline(char *zPrompt, FILE *in){
   zLine = realloc( zLine, n+1 );
   return zLine;
 }
+#endif
 
 
 /*
@@ -2062,7 +2066,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   **   (4) Name of the database (ex: "main", "temp")
   **   (5) Name of trigger that is doing the access
   **
-  ** The callback should return on of the following strings: SQLITE_OK,
+  ** The callback should return one of the following strings: SQLITE_OK,
   ** SQLITE_IGNORE, or SQLITE_DENY.  Any other return value is an error.
   **
   ** If this method is invoked with no arguments, the current authorization
@@ -2525,9 +2529,10 @@ static int SQLITE_TCLAPI DbObjCmd(
     char *zLine;                /* A single line of input from the file */
     char **azCol;               /* zLine[] broken up into columns */
     const char *zCommit;        /* How to commit changes */
-    FILE *in;                   /* The input file */
+    Tcl_Channel in;             /* The input file */
     int lineno = 0;             /* Line number of input file */
     char zLineNum[80];          /* Line number print buffer */
+    Tcl_Obj *str;
     Tcl_Obj *pResult;           /* interp result */
 
     const char *zSep;
@@ -2606,23 +2611,27 @@ static int SQLITE_TCLAPI DbObjCmd(
       sqlite3_finalize(pStmt);
       return TCL_ERROR;
     }
-    in = fopen(zFile, "rb");
+    in = Tcl_OpenFileChannel(interp, zFile, "rb", 0666);
     if( in==0 ){
-      Tcl_AppendResult(interp, "Error: cannot open file: ", zFile, (char*)0);
       sqlite3_finalize(pStmt);
       return TCL_ERROR;
     }
+    Tcl_SetChannelOption(NULL, in, "-translation", "auto");
     azCol = malloc( sizeof(azCol[0])*(nCol+1) );
     if( azCol==0 ) {
       Tcl_AppendResult(interp, "Error: can't malloc()", (char*)0);
-      fclose(in);
+      Tcl_Close(interp, in);
       return TCL_ERROR;
     }
+    str = Tcl_NewObj();
+    Tcl_IncrRefCount(str);
     (void)sqlite3_exec(pDb->db, "BEGIN", 0, 0, 0);
     zCommit = "COMMIT";
-    while( (zLine = local_getline(0, in))!=0 ){
+    while( Tcl_GetsObj(in, str)>=0 ) {
       char *z;
+      Tcl_Size byteLen;
       lineno++;
+      zLine = (char *)Tcl_GetByteArrayFromObj(str, &byteLen);
       azCol[0] = zLine;
       for(i=0, z=zLine; *z; z++){
         if( *z==zSep[0] && strncmp(z, zSep, nSep)==0 ){
@@ -2660,15 +2669,16 @@ static int SQLITE_TCLAPI DbObjCmd(
       }
       sqlite3_step(pStmt);
       rc = sqlite3_reset(pStmt);
-      free(zLine);
+      Tcl_SetObjLength(str, 0);
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp,"Error: ", sqlite3_errmsg(pDb->db), (char*)0);
         zCommit = "ROLLBACK";
         break;
       }
     }
+    Tcl_DecrRefCount(str);
     free(azCol);
-    fclose(in);
+    Tcl_Close(interp, in);
     sqlite3_finalize(pStmt);
     (void)sqlite3_exec(pDb->db, zCommit, 0, 0, 0);
 
@@ -4039,8 +4049,8 @@ EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 #if defined(TCLSH)
 
 /* This is the main routine for an ordinary TCL shell.  If there are
-** are arguments, run the first argument as a script.  Otherwise,
-** read TCL commands from standard input
+** arguments, run the first argument as a script.  Otherwise, read TCL
+** commands from standard input
 */
 static const char *tclsh_main_loop(void){
   static const char zMainloop[] =

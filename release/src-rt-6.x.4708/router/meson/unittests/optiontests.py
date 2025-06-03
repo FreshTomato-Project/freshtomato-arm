@@ -35,6 +35,22 @@ class OptionTests(unittest.TestCase):
         optstore.initialize_from_top_level_project_call({OptionKey('someoption'): new_value}, {}, {})
         self.assertEqual(optstore.get_value_for(k), new_value)
 
+    def test_machine_vs_project(self):
+        optstore = OptionStore(False)
+        name = 'backend'
+        default_value = 'ninja'
+        proj_value = 'xcode'
+        mfile_value = 'vs2010'
+        k = OptionKey(name)
+        prefix = UserStringOption('prefix', 'This is needed by OptionStore', '/usr')
+        optstore.add_system_option('prefix', prefix)
+        vo = UserStringOption(k.name, 'You know what this is', default_value)
+        optstore.add_system_option(k.name, vo)
+        self.assertEqual(optstore.get_value_for(k), default_value)
+        optstore.initialize_from_top_level_project_call({OptionKey(name): proj_value}, {},
+                                                        {OptionKey(name): mfile_value})
+        self.assertEqual(optstore.get_value_for(k), mfile_value)
+
     def test_subproject_system_option(self):
         """Test that subproject system options get their default value from the global
            option (e.g. "sub:b_lto" can be initialized from "b_lto")."""
@@ -202,3 +218,29 @@ class OptionTests(unittest.TestCase):
         optstore = OptionStore(False)
         value = optstore.get_default_for_b_option(OptionKey('b_vscrt'))
         self.assertEqual(value, 'from_buildtype')
+
+    def test_b_nonexistent(self):
+        optstore = OptionStore(False)
+        assert optstore.accept_as_pending_option(OptionKey('b_ndebug'))
+        assert not optstore.accept_as_pending_option(OptionKey('b_whatever'))
+
+    def test_reconfigure_b_nonexistent(self):
+        optstore = OptionStore(False)
+        optstore.set_from_configure_command(['b_ndebug=true'], [])
+
+    def test_subproject_nonexistent(self):
+        optstore = OptionStore(False)
+        subprojects = {'found'}
+        assert not optstore.accept_as_pending_option(OptionKey('foo', subproject='found'), subprojects)
+        assert optstore.accept_as_pending_option(OptionKey('foo', subproject='whatisthis'), subprojects)
+
+    def test_deprecated_nonstring_value(self):
+        # TODO: add a lot more deprecated option tests
+        optstore = OptionStore(False)
+        name = 'deprecated'
+        do = UserStringOption(name, 'An option with some deprecation', '0',
+                              deprecated={'true': '1'})
+        optstore.add_system_option(name, do)
+        optstore.set_option(OptionKey(name), True)
+        value = optstore.get_value(name)
+        self.assertEqual(value, '1')

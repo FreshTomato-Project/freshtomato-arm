@@ -72,7 +72,7 @@ if T.TYPE_CHECKING:
 #
 # Pip requires that RCs are named like this: '0.1.0.rc1'
 # But the corresponding Git tag needs to be '0.1.0rc1'
-version = '1.8.0'
+version = '1.8.1'
 
 # The next stable version when we are in dev. This is used to allow projects to
 # require meson version >=1.2.0 when using 1.1.99. FeatureNew won't warn when
@@ -411,6 +411,13 @@ class CoreData:
         if override is not None:
             return option_object.validate_value(override)
         return value
+
+    def set_from_configure_command(self, options: SharedCMDOptions) -> bool:
+        unset_opts = getattr(options, 'unset_opts', [])
+        all_D = options.projectoptions[:]
+        for keystr, valstr in options.cmd_line_options.items():
+            all_D.append(f'{keystr}={valstr}')
+        return self.optstore.set_from_configure_command(all_D, unset_opts)
 
     def set_option(self, key: OptionKey, value, first_invocation: bool = False) -> bool:
         dirty = False

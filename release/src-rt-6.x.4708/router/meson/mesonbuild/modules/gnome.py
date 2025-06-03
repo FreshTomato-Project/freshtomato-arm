@@ -1168,13 +1168,13 @@ class GnomeModule(ExtensionModule):
         scan_cflags += list(self._get_scanner_cflags(self._get_external_args_for_langs(state, [lc[0] for lc in langs_compilers])))
         scan_internal_ldflags = []
         scan_external_ldflags = []
-        scan_env_ldflags = []
+        scan_env_ldflags = state.environment.coredata.get_external_link_args(MachineChoice.HOST, 'c')
         for cli_flags, env_flags in (self._get_scanner_ldflags(internal_ldflags), self._get_scanner_ldflags(dep_internal_ldflags)):
             scan_internal_ldflags += cli_flags
-            scan_env_ldflags = env_flags
+            scan_env_ldflags += env_flags
         for cli_flags, env_flags in (self._get_scanner_ldflags(external_ldflags), self._get_scanner_ldflags(dep_external_ldflags)):
             scan_external_ldflags += cli_flags
-            scan_env_ldflags = env_flags
+            scan_env_ldflags += env_flags
         girtargets_inc_dirs = self._get_gir_targets_inc_dirs(girtargets)
         inc_dirs = kwargs['include_directories']
 

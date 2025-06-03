@@ -203,10 +203,10 @@ class PlatformAgnosticTests(BasePlatformTests):
         # Reconfigure of not empty builddir should work
         self.new_builddir()
         Path(self.builddir, 'dummy').touch()
-        self.init(testdir, extra_args=['--reconfigure'])
+        self.init(testdir, extra_args=['--reconfigure', '--buildtype=custom'])
 
         # Setup a valid builddir should update options but not reconfigure
-        self.assertEqual(self.getconf('buildtype'), 'debug')
+        self.assertEqual(self.getconf('buildtype'), 'custom')
         o = self.init(testdir, extra_args=['-Dbuildtype=release'])
         self.assertIn('Directory already configured', o)
         self.assertNotIn('The Meson build system', o)
@@ -452,6 +452,16 @@ class PlatformAgnosticTests(BasePlatformTests):
         with self.assertRaises(subprocess.CalledProcessError) as e:
             self.setconf('-Dneg_int_opt=0')
         self.assertIn('Unknown options: ":neg_int_opt"', e.exception.stdout)
+
+    def test_reconfigure_option(self) -> None:
+        testdir = self.copy_srcdir(os.path.join(self.common_test_dir, '40 options'))
+        self.init(testdir)
+        self.assertEqual(self.getconf('neg_int_opt'), -3)
+        with self.assertRaises(subprocess.CalledProcessError) as e:
+            self.init(testdir, extra_args=['--reconfigure', '-Dneg_int_opt=0'])
+        self.assertEqual(self.getconf('neg_int_opt'), -3)
+        self.init(testdir, extra_args=['--reconfigure', '-Dneg_int_opt=-2'])
+        self.assertEqual(self.getconf('neg_int_opt'), -2)
 
     def test_configure_option_changed_constraints(self) -> None:
         """Changing the constraints of an option without reconfiguring should work."""

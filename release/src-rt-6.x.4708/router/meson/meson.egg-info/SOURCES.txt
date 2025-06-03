@@ -376,6 +376,7 @@ test cases/cmake/12 generator expressions/test.json
 test cases/cmake/12 generator expressions/subprojects/cmMod/CMakeLists.txt
 test cases/cmake/12 generator expressions/subprojects/cmMod/include/cmMod.hpp
 test cases/cmake/13 system includes/main.cpp
+test cases/cmake/13 system includes/main2.cpp
 test cases/cmake/13 system includes/meson.build
 test cases/cmake/13 system includes/subprojects/cmMod/CMakeLists.txt
 test cases/cmake/13 system includes/subprojects/cmMod/cmMod.cpp
@@ -1605,6 +1606,7 @@ test cases/common/281 subproj options/subprojects/sub/meson.build
 test cases/common/281 subproj options/subprojects/sub/meson_options.txt
 test cases/common/281 subproj options/subprojects/sub2/f.c
 test cases/common/281 subproj options/subprojects/sub2/meson.build
+test cases/common/281 subproj options/subprojects/sub2/meson_options.txt
 test cases/common/29 compiler id/meson.build
 test cases/common/3 static/lib3.c
 test cases/common/3 static/libfile.c
@@ -2015,6 +2017,7 @@ test cases/common/98 subproject subdir/subprojects/sub_implicit/subprojects/subs
 test cases/common/98 subproject subdir/subprojects/sub_implicit/subprojects/subsub/subprojects/packagefiles/subsubsub-1.0.zip
 test cases/common/98 subproject subdir/subprojects/sub_novar/meson.build
 test cases/common/98 subproject subdir/subprojects/sub_static/meson.build
+test cases/common/98 subproject subdir/subprojects/sub_static/meson_options.txt
 test cases/common/99 postconf/meson.build
 test cases/common/99 postconf/postconf.py
 test cases/common/99 postconf/prog.c

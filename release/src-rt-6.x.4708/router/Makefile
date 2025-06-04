@@ -1807,9 +1807,9 @@ dropbear/config.h:
 dropbear: dropbear/config.h
 	@$(SEP)
 ifneq ($(TCONFIG_ZEBRA)$(TCONFIG_BCMARM),)
-	@$(MAKE) -C $@ PROGRAMS="dropbear dbclient dropbearkey scp" MULTI=1 $(PARALLEL_BUILD)
+	$(MAKE) -C $@ PROGRAMS="dropbear dropbearkey scp dbclient" MULTI=1 $(PARALLEL_BUILD)
 else
-	@$(MAKE) -C $@ PROGRAMS="dropbear dropbearkey $(if $(TCONFIG_OPTIMIZE_SIZE),,scp)" MULTI=1 $(PARALLEL_BUILD)
+	$(MAKE) -C $@ PROGRAMS="dropbear dropbearkey $(if $(TCONFIG_OPTIMIZE_SIZE),,scp)" MULTI=1 $(PARALLEL_BUILD)
 endif
 
 dropbear-install:
@@ -1818,9 +1818,17 @@ dropbear-install:
 	cd $(INSTALLDIR)/dropbear/usr/bin && \
 	ln -sf dropbearmulti dropbear && \
 	ln -sf dropbearmulti dropbearkey && \
+	ln -sf dropbearmulti ssh
+ifneq ($(TCONFIG_ZEBRA)$(TCONFIG_BCMARM),)
+	cd $(INSTALLDIR)/dropbear/usr/bin && \
 	ln -sf dropbearmulti dbclient && \
-	ln -sf dropbearmulti ssh && \
 	ln -sf dropbearmulti scp
+else
+ ifneq ($(TCONFIG_OPTIMIZE_SIZE),y)
+	cd $(INSTALLDIR)/dropbear/usr/bin && \
+	ln -sf dropbearmulti scp
+ endif
+endif
 
 dropbear-clean:
 	-@$(MAKE) -C dropbear clean

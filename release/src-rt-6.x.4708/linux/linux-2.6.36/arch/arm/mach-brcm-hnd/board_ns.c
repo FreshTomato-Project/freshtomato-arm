@@ -515,42 +515,10 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 	}
 #endif	/* CONFIG_FAILSAFE_UPGRADE */
 
-    	/*  BOOT and NVRAM size NETGEAR*/
-	/* R6900, R7000 and R6700v1 */
-	if (nvram_match("boardnum", "32") &&
-		 nvram_match("boardtype", "0x0665") &&
-		 nvram_match("boardrev", "0x1301")) {
-	        maxsize = 0x200000; /* 2 MB */
-	        size = maxsize;
-	}
-	/* R6400, R6400v2, R6700v3 and XR300 */
-	else if (nvram_match("boardnum", "32") &&
-		 nvram_match("boardtype", "0x0646") &&
-		 nvram_match("boardrev", "0x1601")) {
-	        maxsize = 0x200000; /* 2 MB */
-	        size = maxsize;
-	}
-#ifdef CONFIG_SMP
-	/* AC1450, R6300V2 / R6250 */
-	else if (nvram_match("boardnum", "679") &&
-	     nvram_match("boardtype", "0x0646") &&
-	     nvram_match("boardrev", "0x1110")) {
-	        maxsize = 0x200000; /* 2 MB */
-	        size = maxsize;
-	}
-#else /* single core */
-	/* R6200v2 */
-	else if (nvram_match("boardnum", "679") &&
-	         nvram_match("boardtype", "0x0646") &&
-	         nvram_match("boardrev", "0x1110")) {
-			maxsize = 0x200000; /* 2 MB */
-			size = maxsize;
-	}
-#endif /* CONFIG_SMP */
 	/* Buffalo WZR-1750DHP */
-	else if (nvram_match("boardnum", "00") &&
-	     nvram_match("boardtype","0xF646") &&
-	     nvram_match("boardrev", "0x1100")) {
+	if (nvram_match("boardnum", "00") &&
+	    nvram_match("boardtype","0xF646") &&
+	    nvram_match("boardrev", "0x1100")) {
 		size = 0x100000;	/* flash0 ST Compatible Serial flash size 1024KB */
 		bootsz = 0x40000;	/* flash0.boot ST Compatible Serial flash offset 00000000 size 256KB */
 					/* flash0.nvram ST Compatible Serial flash offset 000F0000 size 64KB */
@@ -595,10 +563,9 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 			/* Reserve for PLC */
 			bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x1000, mtd->erasesize);
 #endif
-			/* Netgear EX7000 - Reserve space for board_data */
-			if (nvram_match("boardnum", "679") &&
-			    nvram_match("boardtype", "0x0646") &&
-			    nvram_match("boardrev", "0x1100")) {
+			/* Netgear EX7000 OR EX6200 - Reserve space for board_data */
+			if (nvram_match("board_id", "U12H317T00_NETGEAR") ||
+			    nvram_match("board_id", "U12H269T00_NETGEAR")) { /* EX6200 */
 				bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x10000, mtd->erasesize); /* 64K */
 			}
 #ifdef BCMCONFMTD
@@ -616,10 +583,9 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		/* Reserve for NVRAM */
 		bcm947xx_flash_parts[nparts].size -= ROUNDUP(nvram_space, mtd->erasesize);
 		
-		/* Netgear EX7000 - Reserve space for board_data */
-		if (nvram_match("boardnum", "679") &&
-		    nvram_match("boardtype", "0x0646") &&
-		    nvram_match("boardrev", "0x1100")) {
+		/* Netgear EX7000 OR EX6200 - Reserve space for board_data */
+		if (nvram_match("board_id", "U12H317T00_NETGEAR") ||
+		    nvram_match("board_id", "U12H269T00_NETGEAR")) { /* EX6200 */
 			bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x10000, mtd->erasesize); /* 64K */
 		}
 
@@ -751,15 +717,15 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		nparts++;
 	}
 
-	/* Netgear EX7000 - Setup board_data partition */
-	if (nvram_match("boardnum", "679") &&
-	    nvram_match("boardtype", "0x0646") &&
-	    nvram_match("boardrev", "0x1100")) {
+	/* Netgear EX7000 OR EX6200 - Setup board_data partition */
+	if (nvram_match("board_id", "U12H317T00_NETGEAR") ||
+	    nvram_match("board_id", "U12H269T00_NETGEAR")) { /* EX6200 */
 		bcm947xx_flash_parts[nparts].name = "board_data";
 		bcm947xx_flash_parts[nparts].size = ROUNDUP(0x10000, mtd->erasesize); /* 64K */
 		bcm947xx_flash_parts[nparts].offset = size - ROUNDUP(nvram_space, mtd->erasesize) - bcm947xx_flash_parts[nparts].size;
 		nparts++;
 		/*
+		 * EX7000:
 		 * bcmsflash: squash filesystem found at block 35
 		 * Creating 13 MTD partitions on "bcmsflash":
 		 * 0x000000000000-0x000000040000 : "boot"
@@ -775,6 +741,24 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		 * 0x000000fd0000-0x000000fe0000 : "POT"
 		 * 0x000000fe0000-0x000000ff0000 : "board_data"
 		 * 0x000000ff0000-0x000001000000 : "nvram"
+		 *
+		 * EX6200:
+		 * bcmsflash: squash filesystem found at block 27
+		 * Creating 13 MTD partitions on "bcmsflash":
+		 * 0x000000000000-0x000000040000 : "boot"
+		 * 0x000000040000-0x000000760000 : "linux"
+		 * 0x0000001b6598-0x000000760000 : "rootfs"
+		 * 0x000000760000-0x000000770000 : "ML1"
+		 * 0x000000770000-0x000000780000 : "ML2"
+		 * 0x000000780000-0x000000790000 : "ML3"
+		 * 0x000000790000-0x0000007a0000 : "ML4"
+		 * 0x0000007a0000-0x0000007b0000 : "ML5"
+		 * 0x0000007b0000-0x0000007c0000 : "ML6"
+		 * 0x0000007c0000-0x0000007d0000 : "ML7"
+		 * 0x0000007d0000-0x0000007e0000 : "POT"
+		 * 0x0000007e0000-0x0000007f0000 : "board_data"
+		 * 0x0000007f0000-0x000000800000 : "nvram"
+		 *
 		 * Note: For FT - keep board_data partition -> used for WL parameters! ML1 to ML7 and POT not needed
 		 */
 	}

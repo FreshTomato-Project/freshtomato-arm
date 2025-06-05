@@ -4,7 +4,7 @@
 **Alternative open source firmware for Broadcom ARM based routers**
   
   
-For the following **ARM** routers: **Asus** N18U, AC56S, AC56U/AC56R, N66U C1, AC66U B1, RT-AC1750 B1, AC67U, AC68U(A1,A2,B1,B2,C1,E1,V3)/R/P, AC1900P/U, AC3200, AC3100, AC88U, AC5300, DSL-AC68U(no xDSL support) **Netgear** AC1450, R6200v2, R6250, R6300v2, R6400, R6400v2, R6700v1, R6700v3, R6900, XR300, R7000, EX7000, R7900, R8000, **Linksys** EA6200, EA6350v1, EA6350v2, EA6300v1/EA6400, EA6500v2, EA6700, EA6900, **Tenda** AC15, AC18, **Huawei** WS880, **Dlink** DIR868L (rev A1/B1/C1), **Xiaomi** R1D, **Belkin** F9K1113v2, **Buffalo** WZR-1750DHP.  
+For the following **ARM** routers: **Asus** N18U, AC56S, AC56U/AC56R, N66U C1, AC66U B1, RT-AC1750 B1, AC67U, AC68U(A1,A2,B1,B2,C1,E1,V3)/R/P, AC1900P/U, AC3200, AC3100, AC88U, AC5300, DSL-AC68U(no xDSL support) **Netgear** AC1450, R6200v2, R6250, R6300v2, R6400, R6400v2, R6700v1, R6700v3, R6900, XR300, R7000, EX6200, EX7000, R7900, R8000, **Linksys** EA6200, EA6350v1, EA6350v2, EA6300v1/EA6400, EA6500v2, EA6700, EA6900, **Tenda** AC15, AC18, **Huawei** WS880, **Dlink** DIR868L (rev A1/B1/C1), **Xiaomi** R1D, **Belkin** F9K1113v2, **Buffalo** WZR-1750DHP.  
   
   
 ***Disclaimer: I am not responsible for any bricked routers, nor do I encourage other people to flash alternative firmwares on their routers. Use at your own risk!***  

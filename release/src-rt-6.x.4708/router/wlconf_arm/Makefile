@@ -17,7 +17,7 @@ CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include -I$(SRCBASE)/common/include -
 CFLAGS	+= $(WLAN_ComponentIncPath)
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s
-ifeq ($(CONFIG_TR_OPTIMIZE_SIZE),y)
+ifeq ($(TCONFIG_OPTIMIZE_SIZE),y)
 CFLAGS  += -Os
 else
 CFLAGS  += -O2

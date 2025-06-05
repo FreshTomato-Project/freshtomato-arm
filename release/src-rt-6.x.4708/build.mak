@@ -102,6 +102,11 @@ ifneq ($(ASUS_TRX),0)
 	ctools/trx_asus -i image/linux-lzma.trx -r EX7000,3.0.0.4,$(FORCE_SN),$(FORCE_EN),image/freshtomato-EX7000-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx
  endif
 
+# for EX6200
+ ifeq ($(ASUS_TRX),NETGEAR_EX62)
+	ctools/trx_asus -i image/linux-lzma.trx -r EX6200,3.0.0.4,$(FORCE_SN),$(FORCE_EN),image/freshtomato-EX6200-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx
+ endif
+
 # for WS880
  ifeq ($(ASUS_TRX),HUAWEI)
 	ctools/trx_asus -i image/linux-lzma.trx -r WS880,3.0.0.4,$(FORCE_SN),$(FORCE_EN),image/freshtomato-WS880-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx

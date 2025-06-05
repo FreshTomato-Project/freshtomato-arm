@@ -234,7 +234,7 @@ what:
 # USB ("USB"|"")
 # JFFSv1 | NO_JFFS
 # NO_CIFS NO_SSH NO_SAMBA NO_HTTPS NO_XXTP NO_LIBOPT NO_ZEBRA NOWL
-# ARM DHDAP SAMBA3 OPENVPN WIREGUARD IPV6SUPP EBTABLES NTFS UFSD MEDIASRV BBEXTRAS USBEXTRAS BCM57 SLIM NOCAT NGINX TINC CTF FANCTRL HAVEGED
+# ARM DHDAP SAMBA3 OPENVPN DO_OPTIMIZE_SIZE NO_BONDING WIREGUARD IPV6SUPP EBTABLES NTFS UFSD MEDIASRV BBEXTRAS USBEXTRAS BCM57 SLIM NOCAT NGINX TINC CTF FANCTRL HAVEGED
 # GMAC3 DNSSEC NFS BTCLIENT BTGUI TR_EXTRAS SNMP HFS UPS DNSCRYPT STUBBY PPTPD TOR IPSEC RAID MICROSD USBAP NO_USBAPP NANO MULTIWAN OPENSSL11 OPENSSL30 WOLFSSL WOLFSSLMIN PROXY
 # IPERF AC3200 BSD BCMSMP PROXYSTA DPSTA GRO BCMFA NAND BRCM_NAND_JFFS2 CONNTRACK_TOOL CRASH_LOG MDNS IRQBALANCE ROAM NO_TRXKEY AC5300 BCM714 EXTSW
 
@@ -304,6 +304,10 @@ define RouterOptions
 	if [ "$(NO_SAMBA)" = "y" ]; then \
 		sed -i "/TCONFIG_SAMBASRV/d" $(1); \
 		echo "# TCONFIG_SAMBASRV is not set" >>$(1); \
+	fi; \
+	if [ "$(NO_BONDING)" = "y" ]; then \
+		sed -i "/TCONFIG_BONDING/d" $(1); \
+		echo "# TCONFIG_BONDING is not set" >>$(1); \
 	fi; \
 	if [ "$(NO_ZEBRA)" = "y" ]; then \
 		sed -i "/TCONFIG_ZEBRA/d" $(1); \
@@ -438,6 +442,10 @@ define RouterOptions
 	if [ "$(BUILD_DESC)" = "AIO" ]; then \
 		sed -i "/TCONFIG_AIO/d" $(1); \
 		echo "TCONFIG_AIO=y" >>$(1); \
+	fi; \
+	if [ "$(DO_OPTIMIZE_SIZE)" = "y" ]; then \
+		sed -i "/# TCONFIG_OPTIMIZE_SIZE is not set/d" $(1); \
+		echo "TCONFIG_OPTIMIZE_SIZE=y" >>$(1); \
 	fi; \
 	if [ "$(USBAP)" = "y" ]; then \
 		sed -i "/TCONFIG_USBAP/d" $(1); \
@@ -891,6 +899,12 @@ define KernelConfig
 		echo "# CONFIG_DPSTA is not set" >>$(1); \
 		sed -i "/CONFIG_PLC/d" $(1); \
 		echo "# CONFIG_PLC is not set" >>$(1); \
+	fi; \
+	sed -i "/CONFIG_BONDING/d" $(1); \
+	if [ "$(NO_BONDING)" = "y" ]; then \
+		echo "# CONFIG_BONDING is not set" >>$(1); \
+	else \
+		echo "CONFIG_BONDING=m" >>$(1); \
 	fi; \
 	if [ "$(IPV6SUPP)" = "y" ]; then \
 		sed -i "s/# CONFIG_IPV6 is not set/CONFIG_IPV6=y/g" $(1); \

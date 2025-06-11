@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 OR MIT
 /*
  * Copyright (C) 2015-2020 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
@@ -27,7 +27,7 @@
 static int peer_cmp(const void *first, const void *second)
 {
 	time_t diff;
-	const struct wgpeer *a = *(const void **)first, *b = *(const void **)second;
+	const struct wgpeer *a = *(void *const *)first, *b = *(void *const *)second;
 
 	if (!a->last_handshake_time.tv_sec && !a->last_handshake_time.tv_nsec && (b->last_handshake_time.tv_sec || b->last_handshake_time.tv_nsec))
 		return 1;

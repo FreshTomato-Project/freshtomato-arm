@@ -1,7 +1,7 @@
 /*
  * uqmi -- tiny QMI support implementation
  *
- * Copyright (C) 2014-2015 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2023 Alexander Couzens <lynxis@fe80.eu>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,11 +19,14 @@
  * Boston, MA 02110-1301 USA.
  */
 
+#ifndef __UQMID_CTRL_H
+#define __UQMID_CTRL_H
 
-#ifndef __UTILS_H
-#define __UTILS_H
+struct qmi_dev;
+struct qmi_service;
 
-const char *qmi_get_error_str(int code);
-void system_fd_set_cloexec(int fd);
+int uqmi_ctrl_request_clientid(struct qmi_service *service);
+int uqmi_ctrl_release_clientid(struct qmi_service *service);
+struct qmi_service *uqmi_ctrl_generate(struct qmi_dev *qmi);
 
-#endif /* __UTILS_H */
+#endif /* __UQMID_CTRL_H */

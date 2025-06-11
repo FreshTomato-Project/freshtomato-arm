@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 PROJECT(uqmi C)
 
 OPTION(BUILD_STATIC OFF)
+OPTION(BUILD_UQMID OFF)
 
 ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations -Wno-enum-conversion -Wno-dangling-pointer)
 
@@ -37,7 +38,6 @@ SET(service_sources)
 FOREACH(service ctl dms nas pds wds wms wda uim)
 	ADD_CUSTOM_COMMAND(
 		OUTPUT  qmi-message-${service}.h
-		PRE_BUILD
 		COMMAND ${CMAKE_SOURCE_DIR}/data/gen-header.pl ${service}_ ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json > qmi-message-${service}.h
 		DEPENDS ${CMAKE_SOURCE_DIR}/data/gen-header.pl ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json ${CMAKE_SOURCE_DIR}/data/gen-common.pm
 	)
@@ -45,7 +45,6 @@ FOREACH(service ctl dms nas pds wds wms wda uim)
 	SET(service_headers ${service_headers} qmi-message-${service}.h)
 	ADD_CUSTOM_COMMAND(
 		OUTPUT  qmi-message-${service}.c
-		PRE_BUILD
 		COMMAND ${CMAKE_SOURCE_DIR}/data/gen-code.pl ${service}_ ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json > qmi-message-${service}.c
 		DEPENDS ${CMAKE_SOURCE_DIR}/data/gen-code.pl ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json ${CMAKE_SOURCE_DIR}/data/gen-common.pm qmi-message-${service}.h
 	)
@@ -56,7 +55,6 @@ ENDFOREACH()
 
 ADD_CUSTOM_COMMAND(
 	OUTPUT  ${CMAKE_SOURCE_DIR}/qmi-errors.c
-	PRE_BUILD
 	COMMAND ${CMAKE_SOURCE_DIR}/data/gen-error-list.pl ${CMAKE_SOURCE_DIR}/qmi-errors.h > qmi-errors.c
 	DEPENDS ${CMAKE_SOURCE_DIR}/data/gen-error-list.pl ${CMAKE_SOURCE_DIR}/qmi-errors.h
 )
@@ -70,3 +68,17 @@ ADD_DEPENDENCIES(qmigen gen-headers gen-errors)
 
 ADD_SUBDIRECTORY(common)
 ADD_SUBDIRECTORY(uqmi)
+
+IF(BUILD_UQMID)
+	FIND_PATH(talloc_include_dir talloc.h)
+	FIND_PATH(ubus_include_dir libubus.h)
+	IF(BUILD_STATIC)
+		FIND_LIBRARY(talloc_library NAMES libtalloc.a)
+		FIND_LIBRARY(ubus_library NAMES libubus.a)
+	ELSE(BUILD_STATIC)
+		FIND_LIBRARY(talloc_library NAMES talloc)
+		FIND_LIBRARY(ubus_library NAMES ubus)
+	ENDIF(BUILD_STATIC)
+
+	ADD_SUBDIRECTORY(uqmid)
+ENDIF(BUILD_UQMID)

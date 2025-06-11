@@ -3717,6 +3717,7 @@ uqmi/build/Makefile:
 			-DCMAKE_C_FLAGS="-Wall $(EXTRACFLAGS) -DNDEBUG -ffunction-sections -fdata-sections -I$(TOP)" \
 			-DCMAKE_EXE_LINKER_FLAGS="-Wl,--gc-sections -lm -L$(TOP)/libubox/build" \
 			-DBUILD_STATIC=TRUE \
+			-DBUILD_UQMID=FALSE \
 			-Djson_include_dir="$(TOP)/libjson-c/staged/usr/include" \
 			-Djson_library="$(TOP)/libjson-c/staged/usr/lib/libjson-c.a" \
 			-Dblobmsg_json_include_dir="$(TOP)" \

@@ -19,11 +19,13 @@
  * Boston, MA 02110-1301 USA.
  */
 
+#include <fcntl.h>
+#include <libubox/utils.h>
+
 #include "utils.h"
 #include "qmi-errors.h"
 #include <qmi-errors.c>
 
-#include <libubox/utils.h>
 
 const char *qmi_get_error_str(int code)
 {
@@ -35,4 +37,11 @@ const char *qmi_get_error_str(int code)
 	}
 
 	return "Unknown error";
+}
+
+void system_fd_set_cloexec(int fd)
+{
+#ifdef FD_CLOEXEC
+	fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC);
+#endif
 }

@@ -1,7 +1,7 @@
 /*
  * uqmi -- tiny QMI support implementation
  *
- * Copyright (C) 2014-2015 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2024 Alexander Couzens <lynxis@fe80.eu>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,11 +19,22 @@
  * Boston, MA 02110-1301 USA.
  */
 
+#ifndef __QMID_SIM_H
+#define __QMID_SIM_H
 
-#ifndef __UTILS_H
-#define __UTILS_H
+#include <stdint.h>
 
-const char *qmi_get_error_str(int code);
-void system_fd_set_cloexec(int fd);
+enum uqmi_sim_state {
+	UQMI_SIM_UNKNOWN = 0,
+	UQMI_SIM_PIN_REQUIRED, /* Pin1 required */
+	UQMI_SIM_PUK_REQUIRED, /* Puk1 required */
+	UQMI_SIM_READY, /* Ready to operate, either no pin required or already enterd */
+	UQMI_SIM_BLOCKED, /* Blocked without knowing how to unlock. */
+};
+
+enum uqmi_sim_state uim_card_application_state_to_uqmi_state(int app_state);
+enum uqmi_sim_state uim_pin_to_uqmi_state(int upin_state);
+
+int uqmi_sim_decode_imsi(uint8_t *imsi_ef, uint8_t imsi_ef_size, char *imsi_str, uint8_t imsi_str_len);
 
 #endif /* __UTILS_H */

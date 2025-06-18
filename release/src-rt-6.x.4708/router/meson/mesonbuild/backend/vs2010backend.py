@@ -147,6 +147,9 @@ class Vs2010Backend(backends.Backend):
         self.handled_target_deps = {}
         self.gen_lite = gen_lite  # Synonymous with generating the simpler makefile-style multi-config projects that invoke 'meson compile' builds, avoiding native MSBuild complications
 
+    def detect_toolset(self) -> None:
+        pass
+
     def get_target_private_dir(self, target):
         return os.path.join(self.get_target_dir(target), target.get_id())
 
@@ -227,6 +230,7 @@ class Vs2010Backend(backends.Backend):
         # Check for (currently) unexpected capture arg use cases -
         if capture:
             raise MesonBugException('We do not expect any vs backend to generate with \'capture = True\'')
+        self.detect_toolset()
         host_machine = self.environment.machines.host.cpu_family
         if host_machine in {'64', 'x86_64'}:
             # amd64 or x86_64
@@ -692,9 +696,8 @@ class Vs2010Backend(backends.Backend):
             if target_ext:
                 ET.SubElement(direlem, 'TargetExt').text = target_ext
 
-            ET.SubElement(direlem, 'EmbedManifest').text = 'false'
-            if not gen_manifest:
-                ET.SubElement(direlem, 'GenerateManifest').text = 'false'
+            ET.SubElement(direlem, 'EmbedManifest').text = 'true' if gen_manifest == 'embed' else 'false'
+            ET.SubElement(direlem, 'GenerateManifest').text = 'true' if gen_manifest else 'false'
 
         return (root, type_config)
 
@@ -1493,8 +1496,9 @@ class Vs2010Backend(backends.Backend):
             additional_links.append(self.relpath(lib, self.get_target_dir(target)))
 
         if len(extra_link_args) > 0:
-            extra_link_args.append('%(AdditionalOptions)')
-            ET.SubElement(link, "AdditionalOptions").text = ' '.join(extra_link_args)
+            args = [self.escape_additional_option(arg) for arg in extra_link_args]
+            args.append('%(AdditionalOptions)')
+            ET.SubElement(link, "AdditionalOptions").text = ' '.join(args)
         if len(additional_libpaths) > 0:
             additional_libpaths.insert(0, '%(AdditionalLibraryDirectories)')
             ET.SubElement(link, 'AdditionalLibraryDirectories').text = ';'.join(additional_libpaths)
@@ -2096,6 +2100,7 @@ class Vs2010Backend(backends.Backend):
         pass
 
     # Returns if a target generates a manifest or not.
+    # Returns 'embed' if the generated manifest is embedded.
     def get_gen_manifest(self, target):
         if not isinstance(target, build.BuildTarget):
             return True
@@ -2113,6 +2118,8 @@ class Vs2010Backend(backends.Backend):
             arg = arg.upper()
             if arg == '/MANIFEST:NO':
                 return False
+            if arg.startswith('/MANIFEST:EMBED'):
+                return 'embed'
             if arg == '/MANIFEST' or arg.startswith('/MANIFEST:'):
                 break
         return True

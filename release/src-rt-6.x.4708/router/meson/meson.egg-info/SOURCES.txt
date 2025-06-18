@@ -4405,6 +4405,11 @@ test cases/vala/29 compiler.links/meson.build
 test cases/vala/3 dep/gioprog.vala
 test cases/vala/3 dep/meson.build
 test cases/vala/30 dependencies for compiler.links/meson.build
+test cases/vala/31 generated ui file subdirectory/meson.build
+test cases/vala/31 generated ui file subdirectory/test.vala
+test cases/vala/31 generated ui file subdirectory/subdir/TestBox.ui.in
+test cases/vala/31 generated ui file subdirectory/subdir/meson.build
+test cases/vala/31 generated ui file subdirectory/subdir/test.gresource.xml
 test cases/vala/4 config/config.vapi
 test cases/vala/4 config/meson-something-else.vapi
 test cases/vala/4 config/meson.build
@@ -4574,6 +4579,9 @@ test cases/windows/23 diasdk/meson.build
 test cases/windows/24 diasdk copy dll/config.h.in
 test cases/windows/24 diasdk copy dll/dia_from_dll.cpp
 test cases/windows/24 diasdk copy dll/meson.build
+test cases/windows/25 embed manifest/DPIAware.manifest
+test cases/windows/25 embed manifest/meson.build
+test cases/windows/25 embed manifest/prog.c
 test cases/windows/3 cpp/meson.build
 test cases/windows/3 cpp/prog.cpp
 test cases/windows/4 winmaincpp/meson.build

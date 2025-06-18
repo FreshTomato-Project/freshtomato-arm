@@ -958,8 +958,6 @@ USE_UNITY_FALSE
 USE_UNITY_TRUE
 HAVE_WINDRES_FALSE
 HAVE_WINDRES_TRUE
-DOING_CYGWIN_FALSE
-DOING_CYGWIN_TRUE
 ENABLE_SERVER_DEBUG_FALSE
 ENABLE_SERVER_DEBUG_TRUE
 BUILD_UNITTESTS_FALSE
@@ -21557,7 +21555,7 @@ fi
 # In order to detect support of sendmmsg() and accept4(), we need to escape the POSIX
 # jail by defining _GNU_SOURCE or <sys/socket.h> will not expose it.
 case $host_os in
-  linux*|cygwin*|msys*)
+  *linux*|cygwin*|msys*)
     CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
     ;;
 esac
@@ -21742,14 +21740,6 @@ curl_cv_cygwin='no'
 case $host_os in
   cygwin*|msys*) curl_cv_cygwin='yes';;
 esac
- if test "x$curl_cv_cygwin" = xyes; then
-  DOING_CYGWIN_TRUE=
-  DOING_CYGWIN_FALSE='#'
-else
-  DOING_CYGWIN_TRUE='#'
-  DOING_CYGWIN_FALSE=
-fi
-
 
  if test "$curl_cv_native_windows" = "yes" && test -n "${RC}"; then
   HAVE_WINDRES_TRUE=
@@ -45932,10 +45922,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_SERVER_DEBUG_TRUE}" && test -z "${ENABLE_SERVER_DEBUG_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_SERVER_DEBUG\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${DOING_CYGWIN_TRUE}" && test -z "${DOING_CYGWIN_FALSE}"; then
-  as_fn_error $? "conditional \"DOING_CYGWIN\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_WINDRES_TRUE}" && test -z "${HAVE_WINDRES_FALSE}"; then

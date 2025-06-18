@@ -199,7 +199,7 @@ am__define_uniq_tagged_files = \
     if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
   done | $(am__uniquify_input)`
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.in \
-	$(srcdir)/configurehelp.pm.in README.md
+	$(srcdir)/configurehelp.pm.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -390,12 +390,6 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
-# if we disable man page building, ignore these
-@BUILD_DOCS_TRUE@RUNTESTS_DOCS = runtests.1
-@BUILD_DOCS_TRUE@TESTCURL_DOCS = testcurl.1
-@BUILD_DOCS_TRUE@MANFILES = $(RUNTESTS_DOCS) $(TESTCURL_DOCS)
-CURLPAGES = runtests.md testcurl.md
-
 # scripts used in test cases
 TESTSCRIPTS = \
  test1119.pl  \
@@ -421,8 +415,6 @@ TESTSCRIPTS = \
 
 EXTRA_DIST = \
  CMakeLists.txt     \
- FILEFORMAT.md      \
- README.md          \
  allversions.pm     \
  appveyor.pm        \
  azure.pm           \
@@ -460,8 +452,7 @@ EXTRA_DIST = \
  util.py            \
  valgrind.pm        \
  valgrind.supp      \
- $(TESTSCRIPTS)     \
- $(CURLPAGES)
+ $(TESTSCRIPTS)
 
 @BUILD_UNITTESTS_FALSE@BUILD_UNIT = 
 
@@ -474,7 +465,7 @@ EXTRA_DIST = \
 SUBDIRS = certs data server libtest http $(BUILD_UNIT)
 DIST_SUBDIRS = $(SUBDIRS) $(DIST_UNIT)
 PERLFLAGS = -I$(srcdir)
-CLEANFILES = .http.pid .https.pid .ftp.pid .ftps.pid $(MANDISTPAGES)
+CLEANFILES = .http.pid .https.pid .ftp.pid .ftps.pid
 TEST_COMMON = $(am__append_1)
 @CROSSCOMPILING_FALSE@TEST = srcdir=$(srcdir) $(PERL) $(PERLFLAGS) $(srcdir)/runtests.pl $(TEST_COMMON)
 @CROSSCOMPILING_TRUE@TEST = @echo "NOTICE: we can't run the tests when cross-compiling!"
@@ -492,12 +483,9 @@ TEST_COMMON = $(am__append_1)
 
 # special CI target derived from nonflaky with CI-specific flags
 @CROSSCOMPILING_FALSE@TEST_CI = $(TEST_NF) -r --retry=5 -j20
-CD2NROFF = $(top_srcdir)/scripts/cd2nroff $< >$@
-SUFFIXES = .1 .md
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .1 .md
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -814,9 +802,6 @@ uninstall-am:
 
 curl:
 	@cd $(top_builddir) && $(MAKE)
-
-.md.1:
-	$(CD2)$(CD2NROFF)
 
 # make sure that PERL is pointing to an executable
 perlcheck:

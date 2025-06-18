@@ -29,6 +29,7 @@
 package servers;
 
 use IO::Socket;
+use Time::HiRes;
 use strict;
 use warnings;
 
@@ -141,6 +142,7 @@ my $SSHSRVSHA256 = "[uninitialized]"; # SHA256 of ssh server public key
 my $USER;                  # name of the current user
 my $sshdid;                # for socks server, ssh daemon version id
 my $ftpchecktime=1;        # time it took to verify our test FTP server
+my $SERVER_TIMEOUT_SEC = 15; # time for a server to spin up
 
 # Variables shared with runtests.pl
 our $SOCKSIN="socksd-request.log"; # what curl sent to the SOCKS proxy
@@ -380,7 +382,7 @@ sub startnew {
     my $pid2 = 0;
     my $count = $timeout;
     while($count--) {
-        $pid2 = pidfromfile($pidfile);
+        $pid2 = pidfromfile($pidfile, 0);
         if(($pid2 > 0) && pidexists($pid2)) {
             # if $pid2 is valid, then make sure this pid is alive, as
             # otherwise it is just likely to be the _previous_ pidfile or
@@ -1024,6 +1026,7 @@ sub verifytelnet {
 
 my %protofunc = ('http' => \&verifyhttp,
                  'https' => \&verifyhttp,
+                 'https-mtls' => \&verifypid,
                  'rtsp' => \&verifyrtsp,
                  'ftp' => \&verifyftp,
                  'pop3' => \&verifyftp,
@@ -1133,6 +1136,8 @@ sub runhttpserver {
     $flags .= "--srcdir \"$srcdir\"";
 
     my $cmd = "$exe $flags";
+
+    unlink($portfile); # need to see a new one
     my ($httppid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
     if($httppid <= 0 || !pidexists($httppid)) {
@@ -1145,8 +1150,12 @@ sub runhttpserver {
 
     # where is it?
     my $port = 0;
-    if(!$port_or_path) {
-        $port = $port_or_path = pidfromfile($portfile);
+    $port = $port_or_path = pidfromfile($portfile, $SERVER_TIMEOUT_SEC);
+    if(!$port) {
+        logmsg "RUN: timeout for $srvrname to produce port file $portfile\n";
+        stopserver($server, "$pid2");
+        $doesntrun{$pidfile} = 1;
+        return (1, 0, 0, 0);
     }
 
     if($verb) {
@@ -1466,6 +1475,7 @@ sub runpingpongserver {
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--ipv$ipvnum --port 0 --addr \"$ip\"";
 
+    unlink($portfile); # need to see a new one
     my $cmd = "$perl " . shell_quote("$srcdir/ftpserver.pl") . " " . $flags;
     my ($ftppid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
@@ -1478,7 +1488,13 @@ sub runpingpongserver {
     }
 
     # where is it?
-    my $port = pidfromfile($portfile);
+    my $port = pidfromfile($portfile, $SERVER_TIMEOUT_SEC);
+    if(!$port) {
+        logmsg "RUN: timeout for $srvrname to produce port file $portfile\n";
+        stopserver($server, "$pid2");
+        $doesntrun{$pidfile} = 1;
+        return (1, 0, 0, 0);
+    }
 
     logmsg "PINGPONG runs on port $port ($portfile)\n" if($verb);
 
@@ -1602,6 +1618,7 @@ sub runtftpserver {
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--ipv$ipvnum --port 0 --srcdir \"$srcdir\"";
 
+    unlink($portfile); # need to see a new one
     my $cmd = "$perl " . shell_quote("$srcdir/tftpserver.pl") . " " . $flags;
     my ($tftppid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
@@ -1613,7 +1630,13 @@ sub runtftpserver {
         return (1, 0, 0, 0);
     }
 
-    my $port = pidfromfile($portfile);
+    my $port = pidfromfile($portfile, $SERVER_TIMEOUT_SEC);
+    if(!$port) {
+        logmsg "RUN: timeout for $srvrname to produce port file $portfile\n";
+        stopserver($server, "$pid2");
+        $doesntrun{$pidfile} = 1;
+        return (1, 0, 0, 0);
+    }
 
     if($verb) {
         logmsg "RUN: $srvrname server on PID $tftppid port $port\n";
@@ -1667,6 +1690,7 @@ sub rundnsserver {
     $cmd .= " --id $idnum" if($idnum > 1);
     $cmd .= " --ipv$ipvnum";
 
+    unlink($portfile); # need to see a new one
     # start DNS server on a random port
     my ($dnspid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
@@ -1678,7 +1702,13 @@ sub rundnsserver {
         return (1, 0, 0, 0);
     }
 
-    my $port = pidfromfile($portfile);
+    my $port = pidfromfile($portfile, $SERVER_TIMEOUT_SEC);
+    if(!$port) {
+        logmsg "RUN: timeout for $srvrname to produce port file $portfile\n";
+        stopserver($server, "$pid2");
+        $doesntrun{$pidfile} = 1;
+        return (1, 0, 0, 0);
+    }
 
     if($verb) {
         logmsg "RUN: $srvrname server on PID $dnspid port $port\n";
@@ -1731,6 +1761,7 @@ sub runrtspserver {
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--ipv$ipvnum --port 0 --srcdir \"$srcdir\"";
 
+    unlink($portfile); # need to see a new one
     my $cmd = "$perl " . shell_quote("$srcdir/rtspserver.pl") . " " . $flags;
     my ($rtsppid, $pid2) = startnew($cmd, $pidfile, 15, 0);
 
@@ -1742,7 +1773,13 @@ sub runrtspserver {
         return (1, 0, 0, 0);
     }
 
-    my $port = pidfromfile($portfile);
+    my $port = pidfromfile($portfile, $SERVER_TIMEOUT_SEC);
+    if(!$port) {
+        logmsg "RUN: timeout for $srvrname to produce port file $portfile\n";
+        stopserver($server, "$pid2");
+        $doesntrun{$pidfile} = 1;
+        return (1, 0, 0, 0);
+    }
 
     if($verb) {
         logmsg "RUN: $srvrname server PID $rtsppid port $port\n";
@@ -1903,6 +1940,7 @@ sub runmqttserver {
     my $srvrname = servername_str($proto, $ipvnum, $idnum);
     my $logfile = server_logfilename($LOGDIR, $proto, $ipvnum, $idnum);
 
+    unlink($portfile); # need to see a new one
     # start our MQTT server - on a random port!
     my $cmd=server_exe('mqttd').
         " --port 0".
@@ -1921,7 +1959,13 @@ sub runmqttserver {
         return (1, 0, 0);
     }
 
-    my $mqttport = pidfromfile($portfile);
+    my $mqttport = pidfromfile($portfile, $SERVER_TIMEOUT_SEC);
+    if(!$mqttport) {
+        logmsg "RUN: timeout for $srvrname to produce port file $portfile\n";
+        stopserver($server, "$pid2");
+        $doesntrun{$pidfile} = 1;
+        return (1, 0, 0, 0);
+    }
 
     if($verb) {
         logmsg "RUN: $srvrname server is now running PID $pid2 on PORT $mqttport\n";
@@ -1959,6 +2003,7 @@ sub runsocksserver {
     my $portfile = $serverportfile{$server};
     my $logfile = server_logfilename($LOGDIR, $proto, $ipvnum, $idnum);
 
+    unlink($portfile); # need to see a new one
     # start our socks server, get commands from the FTP cmd file
     my $cmd="";
     if($is_unix) {
@@ -1969,6 +2014,7 @@ sub runsocksserver {
             " --unix-socket $SOCKSUNIXPATH".
             " --backend $HOSTIP".
             " --config $LOGDIR/$SERVERCMD";
+        $portfile = "none";
     } else {
         $cmd=server_exe('socksd').
             " --port 0".
@@ -1989,7 +2035,16 @@ sub runsocksserver {
         return (1, 0, 0, 0);
     }
 
-    my $port = pidfromfile($portfile);
+    my $port = 0;
+    if($portfile ne "none") {
+        $port = pidfromfile($portfile, $SERVER_TIMEOUT_SEC);
+        if(!$port) {
+            logmsg "RUN: timeout for $srvrname to produce port file $portfile\n";
+            stopserver($server, "$pid2");
+            $doesntrun{$pidfile} = 1;
+            return (1, 0, 0, 0);
+        }
+    }
 
     if($verb) {
         logmsg "RUN: $srvrname server is now running PID $pid2\n";
@@ -2352,7 +2407,7 @@ sub startservers {
         $what =~ s/[^a-z0-9\/-]//g;
 
         my $certfile;
-        if($what =~ /^(ftp|gopher|http|imap|pop3|smtp)s((\d*)(-ipv6|-unix|))$/) {
+        if($what =~ /^(ftp|gopher|http|imap|pop3|smtp)s|https-mtls((\d*)(-ipv6|-unix|))$/) {
             $certfile = ($whatlist[1]) ? $whatlist[1] : 'certs/test-localhost.pem';
         }
 

@@ -425,11 +425,18 @@ AUTOMAKE_OPTIONS = foreign no-dependencies
 # if we disable man page building, ignore these
 @BUILD_DOCS_TRUE@MK_CA_DOCS = mk-ca-bundle.1
 @BUILD_DOCS_TRUE@CURLCONF_DOCS = curl-config.1
+@BUILD_DOCS_TRUE@TEST_DOCS = runtests.1 testcurl.1
 @BUILD_DOCS_TRUE@man_MANS = curl-config.1 wcurl.1
-CURLPAGES = curl-config.md mk-ca-bundle.md wcurl.md
+CURLPAGES = curl-config.md mk-ca-bundle.md wcurl.md runtests.md testcurl.md
 SUBDIRS = . cmdline-opts libcurl
 DIST_SUBDIRS = $(SUBDIRS) examples
-@BUILD_DOCS_TRUE@CLEANFILES = mk-ca-bundle.1 curl-config.1 wcurl.1
+@BUILD_DOCS_TRUE@CLEANFILES = $(MK_CA_DOCS) $(man_MANS) $(TEST_DOCS)
+TESTDOCS = \
+ tests/CI.md                                    \
+ tests/FILEFORMAT.md                            \
+ tests/HTTP.md                                  \
+ tests/TEST-SUITE.md
+
 INTERNALDOCS = \
  internals/BUFQ.md                              \
  internals/BUFREF.md                            \
@@ -457,6 +464,7 @@ INTERNALDOCS = \
 EXTRA_DIST = \
  $(CURLPAGES)                                   \
  $(INTERNALDOCS)                                \
+ $(TESTDOCS)                                    \
  ALTSVC.md                                      \
  BINDINGS.md                                    \
  BUG-BOUNTY.md                                  \
@@ -876,7 +884,7 @@ uninstall-man: uninstall-man1
 .PRECIOUS: Makefile
 
 
-all: $(MK_CA_DOCS) $(CURLCONF_DOCS)
+all: $(MK_CA_DOCS) $(CURLCONF_DOCS) $(TEST_DOCS)
 
 .md.1:
 	$(CD2)$(CD2NROFF)

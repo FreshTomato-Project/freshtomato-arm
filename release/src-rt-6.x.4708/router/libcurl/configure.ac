@@ -592,7 +592,7 @@ AM_CONDITIONAL(BUILD_UNITTESTS, test x$supports_unittests = xyes)
 # In order to detect support of sendmmsg() and accept4(), we need to escape the POSIX
 # jail by defining _GNU_SOURCE or <sys/socket.h> will not expose it.
 case $host_os in
-  linux*|cygwin*|msys*)
+  *linux*|cygwin*|msys*)
     CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
     ;;
 esac
@@ -637,7 +637,6 @@ curl_cv_cygwin='no'
 case $host_os in
   cygwin*|msys*) curl_cv_cygwin='yes';;
 esac
-AM_CONDITIONAL(DOING_CYGWIN, test "x$curl_cv_cygwin" = xyes)
 
 AM_CONDITIONAL([HAVE_WINDRES],
   [test "$curl_cv_native_windows" = "yes" && test -n "${RC}"])

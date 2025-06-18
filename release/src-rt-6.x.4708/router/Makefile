@@ -2217,25 +2217,36 @@ ebtables-clean:
 	rm -f ebtables/stamp-h1
 	$(call unpatch_files,ebtables)
 
-spawn-fcgi/stamp-h1:
+spawn-fcgi/build:
 	$(call patch_files,spawn-fcgi)
-	cd spawn-fcgi && autoreconf -fsi && \
-		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" \
-		$(CONFIGURE) --prefix=/usr $(if $(TCONFIG_IPV6),,--disable-ipv6)
-	@touch $@
+	cd spawn-fcgi && \
+		$(call meson_CrossOptions, meson-cross.txt) && \
+		$(TOP)/meson/meson.py setup build \
+		--cross-file meson-cross.txt \
+		--prefix=/usr \
+		-Dsysconfdir=/etc \
+		-Dlocalstatedir=/var \
+		-Dc_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73),gnu11,gnu99) \
+		-Dc_args="$(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+		-Dc_link_args="-Wl,--gc-sections" \
+		-Doptimization=s \
+		-Dbuildtype=minsize \
+		-Ddebug=false \
+		-Dwarning_level=1 \
+		-Dextra-warnings=false \
+		-Dipv6=$(if $(TCONFIG_IPV6),true,false)
 
-spawn-fcgi: spawn-fcgi/stamp-h1
+spawn-fcgi: spawn-fcgi/build
 	@$(SEP)
-	@$(MAKE) -C $@
+	$(TOP)/meson/meson.py compile -C $@/build $(PARALLEL_BUILD)
 
 spawn-fcgi-install:
-	install -D spawn-fcgi/src/spawn-fcgi $(INSTALLDIR)/spawn-fcgi/usr/bin/spawn-fcgi
+	install -D spawn-fcgi/build/src/spawn-fcgi $(INSTALLDIR)/spawn-fcgi/usr/bin/spawn-fcgi
 	$(STRIP) -s $(INSTALLDIR)/spawn-fcgi/usr/bin/spawn-fcgi
 
 spawn-fcgi-clean:
-	-@$(MAKE) -C spawn-fcgi clean
-	@rm -f spawn-fcgi/stamp-h1
+	@rm -rf spawn-fcgi/build
+	@rm -f spawn-fcgi/meson-cross.txt
 	$(call unpatch_files,spawn-fcgi)
 
 glib/stamp-h1:

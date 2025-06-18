@@ -1,5 +1,65 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+05 Jun 2025, PHP 8.3.22
+
+- Core:
+  . Fixed GH-18480 (array_splice with large values for offset/length arguments).
+    (nielsdos/David Carlier)
+  . Partially fixed GH-18572 (nested object comparisons leading to stack overflow).
+    (David Carlier)
+  . Fixed OSS-Fuzz #417078295. (nielsdos)
+  . Fixed OSS-Fuzz #418106144. (nielsdos)
+
+- Curl:
+  . Fixed GH-18460 (curl_easy_setopt with CURLOPT_USERPWD/CURLOPT_USERNAME/
+    CURLOPT_PASSWORD set the Authorization header when set to NULL).
+    (David Carlier)
+
+- Date:
+  . Fixed bug GH-18076 (Since PHP 8, the date_sun_info() function returns
+    inaccurate sunrise and sunset times, but other calculated times are
+    correct) (JiriJozif).
+  . Fixed bug GH-18481 (date_sunrise with unexpected nan value for the offset).
+    (nielsdos/David Carlier)
+
+- Intl:
+  . Fix various reference issues. (nielsdos)
+
+- LDAP:
+  . Fixed bug GH-18529 (ldap no longer respects TLS_CACERT from ldaprc in
+    ldap_start_tls()). (Remi)
+
+- Opcache:
+  . Fixed bug GH-18417 (Windows SHM reattachment fails when increasing
+    memory_consumption or jit_buffer_size). (nielsdos)
+  . Fixed bug GH-18567 (Preloading with internal class alias triggers assertion
+    failure). (nielsdos)
+  . Fix leak of accel_globals->key. (nielsdos)
+
+- OpenSSL:
+  . Fix missing checks against php_set_blocking() in xp_ssl.c. (nielsdos)
+
+- PDO_OCI:
+  . Fixed bug GH-18494 (PDO OCI segfault in statement GC). (nielsdos)
+
+- SPL:
+  . Fixed bug GH-18421 (Integer overflow with large numbers in LimitIterator).
+    (nielsdos)
+
+- Standard:
+  . Fixed bug GH-17403 (Potential deadlock when putenv fails). (nielsdos)
+  . Fixed bug GH-18509 (Dynamic calls to assert() ignore zend.assertions).
+    (timwolla)
+
+- Windows:
+  . Fix leak+crash with sapi_windows_set_ctrl_handler(). (nielsdos)
+
+- Zip:
+  . Fixed bug GH-18431 (Registering ZIP progress callback twice doesn't work).
+    (nielsdos)
+  . Fixed bug GH-18438 (Handling of empty data and errors in
+    ZipArchive::addPattern). (nielsdos)
+
 08 May 2025, PHP 8.3.21
 
 - Core:

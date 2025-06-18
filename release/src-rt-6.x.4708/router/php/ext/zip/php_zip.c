@@ -761,6 +761,10 @@ int php_zip_pcre(zend_string *regexp, char *path, int path_len, zval *return_val
 
 		re = pcre_get_compiled_regex(regexp, &capture_count);
 		if (!re) {
+			for (i = 0; i < files_cnt; i++) {
+				zend_string_release_ex(namelist[i], 0);
+			}
+			efree(namelist);
 			php_error_docref(NULL, E_WARNING, "Invalid expression");
 			return -1;
 		}
@@ -1837,6 +1841,10 @@ static void php_zip_add_from_pattern(INTERNAL_FUNCTION_PARAMETERS, int type) /* 
 #endif
 			}
 		}
+	} else if (found == 0) {
+		RETURN_EMPTY_ARRAY();
+	} else {
+		RETURN_FALSE;
 	}
 }
 /* }}} */
@@ -3048,14 +3056,11 @@ PHP_METHOD(ZipArchive, registerProgressCallback)
 
 	obj = Z_ZIP_P(self);
 
-	/* free if called twice */
-	_php_zip_progress_callback_free(obj);
-
 	/* register */
-	ZVAL_COPY(&obj->progress_callback, &fci.function_name);
 	if (zip_register_progress_callback_with_state(intern, rate, _php_zip_progress_callback, _php_zip_progress_callback_free, obj)) {
 		RETURN_FALSE;
 	}
+	ZVAL_COPY(&obj->progress_callback, &fci.function_name);
 
 	RETURN_TRUE;
 }
@@ -3093,14 +3098,11 @@ PHP_METHOD(ZipArchive, registerCancelCallback)
 
 	obj = Z_ZIP_P(self);
 
-	/* free if called twice */
-	_php_zip_cancel_callback_free(obj);
-
 	/* register */
-	ZVAL_COPY(&obj->cancel_callback, &fci.function_name);
 	if (zip_register_cancel_callback_with_state(intern, _php_zip_cancel_callback, _php_zip_cancel_callback_free, obj)) {
 		RETURN_FALSE;
 	}
+	ZVAL_COPY(&obj->cancel_callback, &fci.function_name);
 
 	RETURN_TRUE;
 }

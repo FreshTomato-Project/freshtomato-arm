@@ -1472,7 +1472,9 @@ iproute2-3.x:
 	@$(SEP)
 	$(call patch_files,iproute2-3.x)
 	@$(MAKE) -C $@ KERNEL_INCLUDE=$(LINUXDIR)/include \
-		EXTRACFLAGS="$(EXTRACFLAGS)" \
+		EXTRA_CCOPTS="$(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+		LDFLAGS="-Wl,--gc-sections" \
+		SHARED_LIBS="" \
 		PKG_CONFIG_PATH="$(TOP)/$(IPTABLES_TARGET)/iptables" \
 		IPT_LIB_DIR="/usr/lib/xtables" \
 		$(PARALLEL_BUILD)

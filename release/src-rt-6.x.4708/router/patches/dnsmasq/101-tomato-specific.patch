@@ -11,7 +11,7 @@
  HAVE_TFTP
     define this to get dnsmasq's built-in TFTP server.
  
-@@ -361,6 +365,10 @@
+@@ -370,6 +375,10 @@
  #undef HAVE_LOOP
  #endif
  
@@ -22,7 +22,7 @@
  #ifdef NO_DUMPFILE
  #undef HAVE_DUMPFILE
  #endif
-@@ -442,6 +450,9 @@
+@@ -451,6 +459,9 @@
  "no-"
  #endif
  "nftset "

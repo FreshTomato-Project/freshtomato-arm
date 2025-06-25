@@ -1124,6 +1124,10 @@ static void filter_input(void)
 	char *hit;
 	int i, n;
 	char *p, *c;
+	char lanN_ifname[] = "lanXX_ifname";
+	char lanN_ifname2[] = "lanXX_ifname";
+	char lanN_ipaddr2[] = "lanXX_ipaddr";
+	char br, br2;
 
 #ifdef TCONFIG_BCMARM
 	/* 3 for filter */
@@ -1187,9 +1191,39 @@ static void filter_input(void)
 	}
 #endif
 
-	ipt_write("-A INPUT -i lo -j ACCEPT\n"
-	          "-A INPUT -i %s -j ACCEPT\n",
-	          lanface[0]);
+	ipt_write("-A INPUT -i lo -j ACCEPT\n");
+
+	for (br = 0; br < BRIDGE_COUNT; br++) {
+		char bridge[2] = "0";
+		if (br != 0)
+			bridge[0] += br;
+		else
+			memset(bridge, 0, sizeof(bridge));
+
+		snprintf(lanN_ifname, sizeof(lanN_ifname), "lan%s_ifname", bridge);
+		if (strncmp(nvram_safe_get(lanN_ifname), "br", 2) == 0) {
+			for (br2 = 0; br2 < BRIDGE_COUNT; br2++) {
+				if (br == br2)
+					continue;
+
+				char bridge2[2] = "0";
+				if (br2 != 0)
+					bridge2[0] += br2;
+				else
+					memset(bridge2, 0, sizeof(bridge2));
+
+				snprintf(lanN_ifname2, sizeof(lanN_ifname2), "lan%s_ifname", bridge2);
+				if (strncmp(nvram_safe_get(lanN_ifname2), "br", 2) == 0) {
+
+					snprintf(lanN_ipaddr2, sizeof(lanN_ipaddr2), "lan%s_ipaddr", bridge2);
+
+					ipt_write("-A INPUT -i %s -d %s -j DROP\n", nvram_safe_get(lanN_ifname), nvram_safe_get(lanN_ipaddr2));
+				}
+			}
+		}
+	}
+
+	ipt_write("-A INPUT -i %s -j ACCEPT\n", lanface[0]);
 
 	for (i = 1 ; i < BRIDGE_COUNT; i++) {
 		if (strcmp(lanface[i], "") != 0)

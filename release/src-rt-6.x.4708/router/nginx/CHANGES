@@ -1,13 +1,30 @@
 
-Changes with nginx 1.28.0                                        23 Apr 2025
+Changes with nginx 1.29.0                                        24 Jun 2025
 
-    *) 1.28.x stable branch.
+    *) Feature: support for response code 103 from proxy and gRPC backends;
+       the "early_hints" directive.
+
+    *) Feature: loading of secret keys from hardware tokens with OpenSSL
+       provider.
+
+    *) Feature: support for the "so_keepalive" parameter of the "listen"
+       directive on macOS.
+
+    *) Change: the logging level of SSL errors in a QUIC handshake has been
+       changed from "error" to "crit" for critical errors, and to "info" for
+       the rest; the logging level of unsupported QUIC transport parameters
+       has been lowered from "info" to "debug".
+
+    *) Change: the native nginx/Windows binary release is now built using
+       Windows SDK 10.
 
     *) Bugfix: nginx could not be built by gcc 15 if ngx_http_v2_module or
        ngx_http_v3_module modules were used.
 
     *) Bugfix: nginx might not be built by gcc 14 or newer with -O3 -flto
        optimization if ngx_http_v3_module was used.
+
+    *) Bugfixes and improvements in HTTP/3.
 
 
 Changes with nginx 1.27.5                                        16 Apr 2025

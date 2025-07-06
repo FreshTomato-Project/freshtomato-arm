@@ -1,3 +1,41 @@
+2025-06-26  Niels Möller  <nisse@lysator.liu.se>
+
+ 	* Released Nettle-3.10.2.
+
+	* config.guess: Update to 2024-07-27 version.
+	* config.sub: Update to 2024-05-27 version.
+
+2025-06-25  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac: Bump package version, to 3.10.2.
+	(LIBNETTLE_MINOR): Bump minor number, to 8.11.
+	(LIBHOGWEED_MINOR): Bump minor number, to 6.11.
+
+2025-06-24  Niels Möller  <nisse@lysator.liu.se>
+
+	Minimal patch for compilers that require prototypes, e.g., gcc-15.
+	* getopt.c (getenv): Delete non-prototype declaration.
+	* getopt.h (getopt): Declare getopt with a prototype, also for
+	non-glibc systems.
+
+2025-04-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* configure.ac: For ppc64, check if __VSX__ is defined, and
+	disable use of assembly if it isn't.
+
+2025-03-02  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p8/gcm-aes-decrypt.asm: Avoid using lxvb16x
+	instruction in powerpc64/p8 files. Reported by Sean McGovern.
+	* powerpc64/p8/gcm-aes-encrypt.asm: Likewise.
+
+2025-02-09  Niels Möller  <nisse@lysator.liu.se>
+
+	* powerpc64/p8/gcm-aes-decrypt.asm: Use stxvd2x/lxvd2x rather than
+	stxv/lxv for save and restore of vector registers, since the
+	latter instructions are not available on Power8 (ISA v2.07).
+	* powerpc64/p8/gcm-aes-encrypt.asm: Likewise.
+
 2024-12-30  Niels Möller  <nisse@lysator.liu.se>
 
 	* Released Nettle-3.10.1.

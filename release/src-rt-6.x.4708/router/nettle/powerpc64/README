@@ -93,6 +93,15 @@ be used for storage (obviously "volatile": not preserved if calling
 other functions). Both ELFv1 [4] and ELFv2 [3] ABIs are the same in
 this respect.
 
+Instruction variants:
+
+Power5 supports ISA v2.02
+Power6 supports ISA v2.05
+Power7 (p7 subdirectory) supports ISA v2.06
+Power8 (v8 subdirectory) supports ISA v2.07
+Power9 (p9 subdirectory) supports ISA v3.0
+Power10 (p10 subdirectory) supports ISA v3.1
+
 [1] http://www.ibm.com/developerworks/linux/library/l-powasm1.html
 [2] https://openpowerfoundation.org/?resource_lib=64-bit-elf-v2-abi-specification-power-architecture
 [3] https://openpowerfoundation.org/specifications/64bitelfabi/

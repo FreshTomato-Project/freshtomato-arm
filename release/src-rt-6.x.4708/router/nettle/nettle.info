@@ -3572,7 +3572,7 @@ be called before using any of the other functions in this interface.
           *CTX, size_t NLENGTH, const uint8_t *NONCE, size_t ALENGTH,
           const uint8_t *ADATA, size_t TLENGTH, size_t MLENGTH, uint8_t
           *DST, const uint8_t *SRC)
- -- Function: int ccm_aes192_decrypt_message (struct ccm_aes256_ctx
+ -- Function: int ccm_aes256_decrypt_message (struct ccm_aes256_ctx
           *CTX, size_t NLENGTH, const uint8_t *NONCE, size_t ALENGTH,
           const uint8_t *ADATA, size_t TLENGTH, size_t MLENGTH, uint8_t
           *DST, const uint8_t *SRC)
@@ -6846,7 +6846,6 @@ Function and Concept Index
 * ccm_aes128_update:                     CCM.                 (line 196)
 * ccm_aes192_decrypt:                    CCM.                 (line 213)
 * ccm_aes192_decrypt_message:            CCM.                 (line 246)
-* ccm_aes192_decrypt_message <1>:        CCM.                 (line 250)
 * ccm_aes192_digest:                     CCM.                 (line 223)
 * ccm_aes192_encrypt:                    CCM.                 (line 207)
 * ccm_aes192_encrypt_message:            CCM.                 (line 234)
@@ -6854,6 +6853,7 @@ Function and Concept Index
 * ccm_aes192_set_nonce:                  CCM.                 (line 187)
 * ccm_aes192_update:                     CCM.                 (line 198)
 * ccm_aes256_decrypt:                    CCM.                 (line 215)
+* ccm_aes256_decrypt_message:            CCM.                 (line 250)
 * ccm_aes256_digest:                     CCM.                 (line 225)
 * ccm_aes256_encrypt:                    CCM.                 (line 209)
 * ccm_aes256_encrypt_message:            CCM.                 (line 238)

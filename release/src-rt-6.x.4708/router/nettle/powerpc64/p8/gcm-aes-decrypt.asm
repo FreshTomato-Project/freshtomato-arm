@@ -36,12 +36,14 @@ C Register usage:
 define(`SP', `r1')
 define(`TOCP', `r2')
 
+C Input arguments.
 define(`HT', `r3')
 define(`SRND', `r4')
 define(`SLEN', `r5')
 define(`SDST', `r6')
 define(`SSRC', `r7')
-define(`RK', `r8')
+
+define(`RK', `r8')	C Round key, also used as temporary in prologue.
 C r9-r11 used as constant indices.
 define(`LOOP', `r12')
 
@@ -102,22 +104,28 @@ PROLOGUE(_nettle_gcm_aes_decrypt)
     sldi SLEN, LOOP, 7
     beq end
 
+    li             r9,1*16
+    li             r10,2*16
+    li             r11,3*16
+
     C 288 byte "protected zone" is sufficient for storage.
-    stxv VSR(v20), -16(SP)
-    stxv VSR(v21), -32(SP)
-    stxv VSR(v22), -48(SP)
-    stxv VSR(v23), -64(SP)
-    stxv VSR(v24), -80(SP)
-    stxv VSR(v25), -96(SP)
+    subi           RK, SP, 64
+    stxvd2x VSR(v20), r11, RK
+    stxvd2x VSR(v21), r10, RK
+    stxvd2x VSR(v22), r9, RK
+    stxvd2x VSR(v23), 0, RK
+    subi           RK, SP, 96
+    stxvd2x VSR(v24), r9, RK
+    stxvd2x VSR(v25), 0, RK
 
     vxor ZERO,ZERO,ZERO
     vspltisb CNT1, 1
-    vsldoi CNT1, ZERO, CNT1, 1    C counter 1
+    vsldoi CNT1, ZERO, CNT1, 1		C counter 1
 
-    DATA_LOAD_VEC(POLY,.polynomial,r9)
+    DATA_LOAD_VEC(POLY,.polynomial,RK)
 
-    li             r9,0
-    lvsl           LE_MASK,0,r9
+    li             RK,0
+    lvsl           LE_MASK,0,RK
 IF_LE(`vspltisb    LE_TEMP,0x07')
 IF_BE(`vspltisb    LE_TEMP,0x03')
     vxor           LE_MASK,LE_MASK,LE_TEMP
@@ -125,9 +133,6 @@ IF_BE(`vspltisb    LE_TEMP,0x03')
     xxmrghd        VSR(POLY_L),VSR(ZERO),VSR(POLY)
 
     C load table elements
-    li             r9,1*16
-    li             r10,2*16
-    li             r11,3*16
     lxvd2x         VSR(H1M),0,HT
     lxvd2x         VSR(H1L),r9,HT
     lxvd2x         VSR(H2M),r10,HT
@@ -146,7 +151,8 @@ IF_LE(`
     vperm          D,D,D,LE_MASK
 ')
 
-    lxvb16x VSR(S0), 0, HT		C Load 'CTR'
+    lxvd2x VSR(S0), 0, HT		C Load 'CTR'
+IF_LE(`vperm S0, S0, S0, LE_MASK')
 
     addi LOOP, LOOP, -1
 
@@ -400,12 +406,14 @@ IF_LE(`
 ')
     stxvd2x VSR(LASTCNT), 0, HT		C store ctr
 
-    lxv VSR(v20), -16(SP)
-    lxv VSR(v21), -32(SP)
-    lxv VSR(v22), -48(SP)
-    lxv VSR(v23), -64(SP)
-    lxv VSR(v24), -80(SP)
-    lxv VSR(v25), -96(SP)
+    subi           RK, SP, 64
+    lxvd2x VSR(v20), r11, RK
+    lxvd2x VSR(v21), r10, RK
+    lxvd2x VSR(v22), r9, RK
+    lxvd2x VSR(v23), 0, RK
+    subi           RK, SP, 96
+    lxvd2x VSR(v24), r9, RK
+    lxvd2x VSR(v25), 0, RK
 
 end:
     mr r3, SLEN

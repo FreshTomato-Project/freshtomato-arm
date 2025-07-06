@@ -2,7 +2,7 @@ dnl -*- mode: shell-script; sh-indentation: 2; -*-
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([nettle], [3.10.1], [nettle-bugs@lists.lysator.liu.se])
+AC_INIT([nettle], [3.10.2], [nettle-bugs@lists.lysator.liu.se])
 AC_PREREQ([2.69])
 AC_CONFIG_SRCDIR([nettle-types.h])
 # Needed to stop autoconf from looking for files in parent directories.
@@ -11,10 +11,10 @@ AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_HEADERS([config.h])
 
 LIBNETTLE_MAJOR=8
-LIBNETTLE_MINOR=10
+LIBNETTLE_MINOR=11
 
 LIBHOGWEED_MAJOR=6
-LIBHOGWEED_MINOR=10
+LIBHOGWEED_MINOR=11
 
 dnl Note double square brackets, for extra m4 quoting.
 MAJOR_VERSION=`echo $PACKAGE_VERSION | sed 's/^\([[^.]]*\)\..*/\1/'`
@@ -367,6 +367,16 @@ case "$host_cpu" in
       ]], [[]])], [], [
 	ELFV2_ABI=yes
       ])
+      if test "$enable_assembler" = yes ; then
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__VSX__)
+#error VSX available
+#endif
+      ]], [[]])], [
+	  AC_MSG_WARN([VSX instructions (Power7 or later) not available, disabling use of assembly.])
+	  enable_assembler=no
+      ], [])
+      fi
     fi
     ;;
   aarch64*)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2025 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -594,9 +594,10 @@ static void *xor_gen_init(void *provctx, int selection,
                       | OSSL_KEYMGMT_SELECT_DOMAIN_PARAMETERS)) == 0)
         return NULL;
 
-    if ((gctx = OPENSSL_zalloc(sizeof(*gctx))) != NULL)
-        gctx->selection = selection;
+    if ((gctx = OPENSSL_zalloc(sizeof(*gctx))) == NULL)
+        return NULL;
 
+    gctx->selection = selection;
     /* Our provctx is really just an OSSL_LIB_CTX */
     gctx->libctx = (OSSL_LIB_CTX *)provctx;
 

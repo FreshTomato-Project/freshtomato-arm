@@ -11,7 +11,7 @@ File: nano.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The GNU nano text editor
 ************************
 
-This manual documents GNU ‘nano’, version 8.4.
+This manual documents GNU ‘nano’, version 8.5.
 
 * Menu:
 
@@ -284,19 +284,22 @@ File: nano.info,  Node: Anchors,  Next: Limitations,  Prev: Using the Mouse,  Up
 3.8 Anchors
 ===========
 
-With ‘M-Ins’ you can place an anchor (a kind of temporary bookmark) at
-the current line.  With ‘M-PgUp’ and ‘M-PgDn’ you can jump to an anchor
-in the backward/forward direction.  This jumping wraps around at the top
-and bottom.
+With ‘M-Ins’ you can place an anchor (a kind of bookmark) at the current
+line.  With ‘M-PgUp’ and ‘M-PgDn’ you can jump to an anchor in the
+backward/forward direction.  This jumping wraps around at the top and
+bottom.
 
-   When a line with an anchor is removed, the line where the cursor ends
-up inherits the anchor.  After performing an operation on the entire
-buffer (like formatting it, piping it through a command, or doing an
-external spell check on it), any anchors that were present are gone.
-And when you close the buffer, all its anchors simply disappear; they
-are not saved.
+   When an operation removes a line with an anchor, the new line with
+the cursor inherits the anchor.  But after performing an operation on
+the entire buffer (like formatting it, piping it through a command, or
+doing an external spell check on it), any anchors that were present are
+gone.
 
-   Anchors are visualized in the margin when line numbers are activated.
+   When ‘--positionlog’ or ‘set positionlog’ is active, anchors are
+saved when the file is closed, and restored when the file is reopened.
+
+   Anchors are visualized in the left margin if line numbers are active,
+and are always visualized (on the right-hand side) in the mini bar.
 
 
 File: nano.info,  Node: Limitations,  Prev: Anchors,  Up: Editor Basics
@@ -435,6 +438,7 @@ File: nano.info,  Node: Command-line Options,  Next: Feature Toggles,  Prev: The
 ‘--positionlog’
      For the 200 most recent files, log the last position of the cursor,
      and place it at that position again upon reopening such a file.
+     Also save and restore the positions of any anchors.
 
 ‘-Q "REGEX"’
 ‘--quotestr="REGEX"’
@@ -583,8 +587,8 @@ File: nano.info,  Node: Command-line Options,  Next: Feature Toggles,  Prev: The
 
 ‘-o DIRECTORY’
 ‘--operatingdir=DIRECTORY’
-     Set the operating directory.  This makes ‘nano’ set up something
-     similar to a chroot.
+     Change to the given DIRECTORY, and allow reading and writing files
+     only in this directory and its subdirectories.
 
 ‘-p’
 ‘--preserve’
@@ -1030,14 +1034,13 @@ The supported settings in a nanorc file are:
      for valid color names.
 
 ‘set operatingdir "DIRECTORY"’
-     ‘nano’ only reads and writes files inside "directory" and its
-     subdirectories.  Also, the current directory is changed to here, so
-     files are inserted from this directory.  By default, the operating
-     directory feature is turned off.
+     At startup, make ‘nano’ change to the given DIRECTORY, and allow
+     reading and writing files only in this directory and its
+     subdirectories.
 
 ‘set positionlog’
-     Save the cursor position of files between editing sessions.  The
-     cursor position is remembered for the 200 most-recently edited
+     Save the positions of cursor and anchors between editing sessions.
+     These positions are remembered for the 200 most-recently edited
      files.
 
 ‘set preserve’
@@ -1313,20 +1316,19 @@ following commands in a nanorc file:
 
 ‘color [bold,][italic,]FGCOLOR,BGCOLOR start="FROMRX" end="TORX"’
      Paint all pieces of text whose start matches extended regular
-     expression "fromrx" and whose end matches extended regular
-     expression "torx" with the given foreground and background colors,
-     at least one of which must be specified.  This means that, after an
-     initial instance of "fromrx", all text until the first instance of
-     "torx" is colored.  This allows syntax highlighting to span
-     multiple lines.
+     expression FROMRX and whose end matches extended regular expression
+     TORX with the given foreground and background colors, at least one
+     of which must be specified.  This means that, after an initial
+     instance of FROMRX, all text until the first instance of TORX is
+     colored.  This allows syntax highlighting to span multiple lines.
 
 ‘icolor [bold,][italic,]FGCOLOR,BGCOLOR start="FROMRX" end="TORX"’
      Same as above, except that the matching is case insensitive.
 
 ‘include "SYNTAXFILE"’
-     Read in self-contained color syntaxes from "syntaxfile".  Note that
-     "syntaxfile" may contain only the above commands, from ‘syntax’ to
-     ‘icolor’.
+     Read in self-contained color syntaxes from SYNTAXFILE.  Note that
+     such a syntax file may contain only the above commands, from
+     ‘syntax’ to ‘icolor’.
 
 ‘extendsyntax NAME COMMAND ARGUMENT ...’
      Extend the syntax previously defined as "NAME" with another
@@ -2091,21 +2093,21 @@ Node: The Mark7712
 Node: Search and Replace8680
 Node: Using the Mouse10099
 Node: Anchors10709
-Node: Limitations11514
-Node: The Help Viewer11831
-Node: The File Browser12255
-Node: Command-line Options13146
-Ref: --speller22773
-Node: Feature Toggles28309
-Node: Nanorc Files30381
-Node: Settings31934
-Ref: set keycolor36743
-Ref: set matchbrackets38908
-Ref: Whitespace47265
-Node: Syntax Highlighting48443
-Node: Rebinding Keys56191
-Node: Pico Compatibility72392
-Node: Building and its Options76935
+Node: Limitations11644
+Node: The Help Viewer11961
+Node: The File Browser12385
+Node: Command-line Options13276
+Ref: --speller22984
+Node: Feature Toggles28520
+Node: Nanorc Files30592
+Node: Settings32145
+Ref: set keycolor36954
+Ref: set matchbrackets39119
+Ref: Whitespace47382
+Node: Syntax Highlighting48560
+Node: Rebinding Keys56299
+Node: Pico Compatibility72500
+Node: Building and its Options77043
 
 End Tag Table
 

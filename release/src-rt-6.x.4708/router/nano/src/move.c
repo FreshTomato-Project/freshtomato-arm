@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -227,7 +227,9 @@ void do_cycle(void)
 /* Scroll the line with the cursor to the center of the screen. */
 void do_center(void)
 {
-	do_cycle();  /* The main loop has set 'cycling_aim' to zero. */
+	adjust_viewport(CENTERING);
+	draw_all_subwindows();
+	full_refresh();
 }
 #endif /* !NANO_TINY */
 

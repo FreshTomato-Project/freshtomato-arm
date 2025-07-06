@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -538,6 +538,8 @@ typedef struct poshiststruct {
 		/* The line where the cursor was when we closed the file. */
 	ssize_t columnnumber;
 		/* The column where the cursor was. */
+	char *anchors;
+		/* The line numbers where anchors were placed, in string form. */
 	struct poshiststruct *next;
 		/* The next item of position history. */
 } poshiststruct;

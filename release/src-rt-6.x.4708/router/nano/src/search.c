@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -1003,12 +1003,17 @@ void put_or_lift_anchor(void)
 {
 	openfile->current->has_anchor = !openfile->current->has_anchor;
 
-	update_line(openfile->current, openfile->current_x);
-
-	if (openfile->current->has_anchor)
-		statusline(REMARK, _("Placed anchor"));
+	if (openfile->current != openfile->filetop)
+		update_line(openfile->current, openfile->current_x);
 	else
-		statusline(REMARK, _("Removed anchor"));
+		refresh_needed = TRUE;
+
+	if (!ISSET(LINE_NUMBERS) && (!ISSET(MINIBAR) || ISSET(ZERO))) {
+		if (openfile->current->has_anchor)
+			statusline(REMARK, _("Placed anchor"));
+		else
+			statusline(HUSH, _("Removed anchor"));
+	}
 }
 
 /* Make the given line the current line, or report the anchoredness. */
@@ -1025,7 +1030,8 @@ void go_to_and_confirm(linestruct *line)
 			recook |= perturbed;
 #endif
 		edit_redraw(was_current, CENTERING);
-		statusbar(_("Jumped to anchor"));
+		if (!ISSET(LINE_NUMBERS))
+			statusbar(_("Jumped to anchor"));
 	} else if (openfile->current->has_anchor)
 		statusline(REMARK, _("This is the only anchor"));
 	else

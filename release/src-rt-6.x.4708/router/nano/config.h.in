@@ -1,5 +1,11 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+#if defined __GNUC__ && __GNUC__ >= 15 && !defined __clang__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wtrailing-whitespace"
+#endif
+
+
 /* Witness that <config.h> has been included.  */
 #define _GL_CONFIG_H_INCLUDED 1
 
@@ -288,6 +294,9 @@
 /* Define to 1 when the gnulib module c32tolower should be tested. */
 #undef GNULIB_TEST_C32TOLOWER
 
+/* Define to 1 when the gnulib module c32width should be tested. */
+#undef GNULIB_TEST_C32WIDTH
+
 /* Define to 1 when the gnulib module c32_apply_type_test should be tested. */
 #undef GNULIB_TEST_C32_APPLY_TYPE_TEST
 
@@ -438,6 +447,9 @@
 
 /* Define to 1 when the gnulib module mbsinit should be tested. */
 #undef GNULIB_TEST_MBSINIT
+
+/* Define to 1 when the gnulib module mbsnlen should be tested. */
+#undef GNULIB_TEST_MBSNLEN
 
 /* Define to 1 when the gnulib module mbsrtoc32s should be tested. */
 #undef GNULIB_TEST_MBSRTOC32S
@@ -1408,10 +1420,13 @@
 /* Define if the mbrtoc32 function basically works. */
 #undef HAVE_WORKING_MBRTOC32
 
-/* Define to 1 if O_NOATIME works. */
+/* Define to 1 if O_DIRECTORY works, 0 otherwise. */
+#undef HAVE_WORKING_O_DIRECTORY
+
+/* Define to 1 if O_NOATIME works, 0 otherwise. */
 #undef HAVE_WORKING_O_NOATIME
 
-/* Define to 1 if O_NOFOLLOW works. */
+/* Define to 1 if O_NOFOLLOW works, 0 otherwise. */
 #undef HAVE_WORKING_O_NOFOLLOW
 
 /* Define if utimes works properly. */
@@ -1434,7 +1449,7 @@
 #elif HAVE___BUILTIN_EXPECT == 2
 # include <builtins.h>
 #endif
-    
+
 
 /* Define to 1 if ctype.h defines __header_inline. */
 #undef HAVE___HEADER_INLINE
@@ -1659,6 +1674,10 @@
 /* Define if the vasnprintf implementation needs special code for the ' flag.
    */
 #undef NEED_PRINTF_FLAG_GROUPING
+
+/* Define if the vasnprintf implementation needs special code for the ' flag,
+   for integer directives only. */
+#undef NEED_PRINTF_FLAG_GROUPING_INT
 
 /* Define if the vasnprintf implementation needs special code for the '-'
    flag. */
@@ -2101,6 +2120,9 @@
 #  define _GL_HAS_ATTRIBUTE(attr) __has_attribute (__##attr##__)
 # else
 #  define _GL_HAS_ATTRIBUTE(attr) _GL_ATTR_##attr
+/* The following lines list the first GCC version that supports the attribute.
+   Although the lines are not used in GCC 5 and later (as GCC 5 introduced
+   __has_attribute support), list GCC versions 5+ anyway for completeness.  */
 #  define _GL_ATTR_alloc_size _GL_GNUC_PREREQ (4, 3)
 #  define _GL_ATTR_always_inline _GL_GNUC_PREREQ (3, 2)
 #  define _GL_ATTR_artificial _GL_GNUC_PREREQ (4, 3)
@@ -2121,14 +2143,15 @@
 #  endif
 #  define _GL_ATTR_noinline _GL_GNUC_PREREQ (3, 1)
 #  define _GL_ATTR_nonnull _GL_GNUC_PREREQ (3, 3)
+#  define _GL_ATTR_nonnull_if_nonzero _GL_GNUC_PREREQ (15, 1)
 #  define _GL_ATTR_nonstring _GL_GNUC_PREREQ (8, 0)
 #  define _GL_ATTR_nothrow _GL_GNUC_PREREQ (3, 3)
 #  define _GL_ATTR_packed _GL_GNUC_PREREQ (2, 7)
 #  define _GL_ATTR_pure _GL_GNUC_PREREQ (2, 96)
-#  define _GL_ATTR_reproducible 0 /* not yet supported, as of GCC 14 */
+#  define _GL_ATTR_reproducible _GL_GNUC_PREREQ (15, 1)
 #  define _GL_ATTR_returns_nonnull _GL_GNUC_PREREQ (4, 9)
 #  define _GL_ATTR_sentinel _GL_GNUC_PREREQ (4, 0)
-#  define _GL_ATTR_unsequenced 0 /* not yet supported, as of GCC 14 */
+#  define _GL_ATTR_unsequenced _GL_GNUC_PREREQ (15, 1)
 #  define _GL_ATTR_unused _GL_GNUC_PREREQ (2, 7)
 #  define _GL_ATTR_warn_unused_result _GL_GNUC_PREREQ (3, 4)
 # endif
@@ -2664,6 +2687,17 @@
 # endif
 #endif
 
+/* _GL_ATTRIBUTE_NONNULL_IF_NONZERO (NP, NI) declares that the argument NP
+   (a pointer) must not be NULL if the argument NI (an integer) is != 0.  */
+/* Applies to: functions.  */
+#ifndef _GL_ATTRIBUTE_NONNULL_IF_NONZERO
+# if _GL_HAS_ATTRIBUTE (nonnull_if_nonzero)
+#  define _GL_ATTRIBUTE_NONNULL_IF_NONZERO(np, ni) __attribute__ ((__nonnull_if_nonzero__ (np, ni)))
+# else
+#  define _GL_ATTRIBUTE_NONNULL_IF_NONZERO(np, ni)
+# endif
+#endif
+
 /* _GL_ATTRIBUTE_NONSTRING declares that the contents of a character array is
    not meant to be NUL-terminated.  */
 /* Applies to: struct/union members and variables that are arrays of element
@@ -3013,20 +3047,20 @@
 #undef uid_t
 
 
-  /* This definition is a duplicate of the one in unitypes.h.
-     It is here so that we can cope with an older version of unitypes.h
-     that does not contain this definition and that is pre-installed among
-     the public header files.  */
-  # if defined __restrict \
-       || 2 < __GNUC__ + (95 <= __GNUC_MINOR__) \
-       || __clang_major__ >= 3
-  #  define _UC_RESTRICT __restrict
-  # elif 199901L <= __STDC_VERSION__ || defined restrict
-  #  define _UC_RESTRICT restrict
-  # else
-  #  define _UC_RESTRICT
-  # endif
-  
+/* This definition is a duplicate of the one in unitypes.h.
+   It is here so that we can cope with an older version of unitypes.h
+   that does not contain this definition and that is pre-installed among
+   the public header files.  */
+# if defined __restrict \
+     || 2 < __GNUC__ + (95 <= __GNUC_MINOR__) \
+     || __clang_major__ >= 3
+#  define _UC_RESTRICT __restrict
+# elif 199901L <= __STDC_VERSION__ || defined restrict
+#  define _UC_RESTRICT restrict
+# else
+#  define _UC_RESTRICT
+# endif
+
 
 /* Define as a macro for copying va_list variables. */
 #undef va_copy
@@ -3082,3 +3116,8 @@
   #define static_assert _Static_assert
  #endif
 #endif
+
+#if defined __GNUC__ && __GNUC__ >= 15 && !defined __clang__
+# pragma GCC diagnostic pop
+#endif
+

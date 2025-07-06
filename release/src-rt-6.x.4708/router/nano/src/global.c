@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -34,6 +34,8 @@ volatile sig_atomic_t the_window_resized = FALSE;
 
 bool on_a_vt = FALSE;
 		/* Whether we're running on a Linux console (a VT). */
+bool using_utf8 = FALSE;
+		/* Whether we're in a UTF-8 locale. */
 bool shifted_metas = FALSE;
 		/* Whether any Sh-M-<letter> combo has been bound. */
 
@@ -57,6 +59,9 @@ bool ran_a_tool = FALSE;
 char *foretext = NULL;
 		/* What was typed at the Execute prompt before invoking a tool. */
 #endif
+
+int final_status = 0;
+		/* The status value that nano returns upon exit. */
 
 bool inhelp = FALSE;
 		/* Whether we are in the help viewer. */
@@ -368,8 +373,12 @@ int keycode_from_string(const char *keystring)
 		else
 			return -1;
 	} else if (keystring[0] == 'M') {
-		if (keystring[1] == '-' && keystring[3] == '\0')
-			return tolower((unsigned char)keystring[2]);
+		if (keystring[1] == '-' && keystring[3] == '\0') {
+			if ('A' <= keystring[2] && keystring[2] <= 'Z')
+				return (keystring[2] | 0x20);
+			else
+				return keystring[2];
+		}
 		if (strcasecmp(keystring, "M-Space") == 0)
 			return (int)' ';
 		else
@@ -398,7 +407,7 @@ int keycode_from_string(const char *keystring)
 /* Report the version of ncurses that nano is linked against. */
 void show_curses_version(void)
 {
-	statusline(INFO, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR,
+	statusline(NOTICE, "ncurses-%i.%i, patch %li", NCURSES_VERSION_MAJOR,
 							NCURSES_VERSION_MINOR, NCURSES_VERSION_PATCH);
 }
 #endif
@@ -1164,6 +1173,9 @@ void shortcut_init(void)
 			N_("Suspend"), WHENHELP(suspend_gist), BLANKAFTER);
 #endif /* !NANO_TINY */
 
+	add_to_funcs(discard_buffer, MWRITEFILE,
+			N_("Discard buffer"), WHENHELP(discardbuffer_gist), BLANKAFTER);
+
 #ifdef ENABLE_BROWSER
 	/* The file browser is only available when not in restricted mode. */
 	if (!ISSET(RESTRICTED))
@@ -1192,9 +1204,6 @@ void shortcut_init(void)
 			N_("Bottom Row"), WHENHELP(browserbottomrow_gist), BLANKAFTER);
 #endif
 #endif /* ENABLE_BROWSER */
-
-	add_to_funcs(discard_buffer, MWRITEFILE,
-			N_("Discard buffer"), WHENHELP(discardbuffer_gist), BLANKAFTER);
 
 #ifdef ENABLE_LINTER
 	add_to_funcs(do_page_up, MLINTER,
@@ -1347,7 +1356,7 @@ void shortcut_init(void)
 	add_to_sclist(MMOST & ~MMAIN, "^B", 0, do_left, 0);
 	add_to_sclist(MMOST & ~MMAIN, "^F", 0, do_right, 0);
 #ifdef ENABLE_UTF8
-	if (using_utf8()) {
+	if (using_utf8) {
 		add_to_sclist(MMOST|MBROWSER|MHELP, "\xE2\x97\x82", KEY_LEFT, do_left, 0);
 		add_to_sclist(MMOST|MBROWSER|MHELP, "\xE2\x96\xb8", KEY_RIGHT, do_right, 0);
 		add_to_sclist(MSOME, "^\xE2\x97\x82", CONTROL_LEFT, to_prev_word, 0);
@@ -1377,7 +1386,7 @@ void shortcut_init(void)
 	add_to_sclist(MMOST, "Home", KEY_HOME, do_home, 0);
 	add_to_sclist(MMOST, "End", KEY_END, do_end, 0);
 #ifdef ENABLE_UTF8
-	if (using_utf8()) {
+	if (using_utf8) {
 		add_to_sclist(MMAIN|MBROWSER|MHELP, "\xE2\x96\xb4", KEY_UP, do_up, 0);
 		add_to_sclist(MMAIN|MBROWSER|MHELP, "\xE2\x96\xbe", KEY_DOWN, do_down, 0);
 		add_to_sclist(MMAIN|MBROWSER|MLINTER, "^\xE2\x96\xb4", CONTROL_UP, to_prev_block, 0);
@@ -1400,7 +1409,7 @@ void shortcut_init(void)
 #endif
 #ifndef NANO_TINY
 #ifdef ENABLE_UTF8
-	if (using_utf8()) {
+	if (using_utf8) {
 		add_to_sclist(MMAIN|MHELP, "M-\xE2\x96\xb4", ALT_UP, do_scroll_up, 0);
 		add_to_sclist(MMAIN|MHELP, "M-\xE2\x96\xbe", ALT_DOWN, do_scroll_down, 0);
 	} else
@@ -1437,9 +1446,12 @@ void shortcut_init(void)
 	add_to_sclist(MEXECUTE, "^J", 0, do_full_justify, 0);
 #endif
 #ifndef NANO_TINY
-	add_to_sclist(MMAIN, "^L", 0, do_cycle, 0);
-#endif
+	add_to_sclist(MMAIN, "^L", 0, do_center, 0);
+	add_to_sclist(MMAIN, "M-%", 0, do_cycle, 0);
+	add_to_sclist((MMOST|MBROWSER|MHELP|MYESNO)&~MMAIN, "^L", 0, full_refresh, 0);
+#else
 	add_to_sclist(MMOST|MBROWSER|MHELP|MYESNO, "^L", 0, full_refresh, 0);
+#endif
 
 #ifndef NANO_TINY
 	/* Group of "Appearance" toggles. */
@@ -1482,7 +1494,7 @@ void shortcut_init(void)
 	add_to_sclist(MWHEREIS|MREPLACE|MREPLACEWITH|MWHEREISFILE|MFINDINHELP|MEXECUTE, "^P", 0, get_older_item, 0);
 	add_to_sclist(MWHEREIS|MREPLACE|MREPLACEWITH|MWHEREISFILE|MFINDINHELP|MEXECUTE, "^N", 0, get_newer_item, 0);
 #ifdef ENABLE_UTF8
-	if (using_utf8()) {
+	if (using_utf8) {
 		add_to_sclist(MWHEREIS|MREPLACE|MREPLACEWITH|MWHEREISFILE|MFINDINHELP|MEXECUTE, "\xE2\x96\xb4", KEY_UP, get_older_item, 0);
 		add_to_sclist(MWHEREIS|MREPLACE|MREPLACEWITH|MWHEREISFILE|MFINDINHELP|MEXECUTE, "\xE2\x96\xbe", KEY_DOWN, get_newer_item, 0);
 	} else
@@ -1512,7 +1524,7 @@ void shortcut_init(void)
 	add_to_sclist(MBROWSER, "M-G", 0, goto_dir, 0);
 	add_to_sclist(MBROWSER, "^_", 0, goto_dir, 0);
 #endif
-	if (ISSET(SAVE_ON_EXIT) && !ISSET(PRESERVE))
+	if (!ISSET(PRESERVE))
 		add_to_sclist(MWRITEFILE, "^Q", 0, discard_buffer, 0);
 #ifndef NANO_TINY
 	add_to_sclist(MWRITEFILE, "M-D", 0, dos_format, 0);

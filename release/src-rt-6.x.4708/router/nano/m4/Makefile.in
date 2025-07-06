@@ -146,7 +146,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/locale_h.m4 $(top_srcdir)/m4/localeconv.m4 \
 	$(top_srcdir)/m4/lock.m4 $(top_srcdir)/m4/lstat.m4 \
 	$(top_srcdir)/m4/malloc.m4 $(top_srcdir)/m4/malloca.m4 \
-	$(top_srcdir)/m4/math_h.m4 $(top_srcdir)/m4/mbrtoc32.m4 \
+	$(top_srcdir)/m4/math_h.m4 $(top_srcdir)/m4/mbchar.m4 \
+	$(top_srcdir)/m4/mbiter.m4 $(top_srcdir)/m4/mbrtoc32.m4 \
 	$(top_srcdir)/m4/mbrtowc.m4 $(top_srcdir)/m4/mbsinit.m4 \
 	$(top_srcdir)/m4/mbsrtowcs.m4 $(top_srcdir)/m4/mbstate_t.m4 \
 	$(top_srcdir)/m4/mbtowc.m4 $(top_srcdir)/m4/memchr.m4 \
@@ -178,14 +179,14 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/snprintf-posix.m4 \
 	$(top_srcdir)/m4/snprintf.m4 $(top_srcdir)/m4/ssize_t.m4 \
 	$(top_srcdir)/m4/stat-time.m4 $(top_srcdir)/m4/stat.m4 \
-	$(top_srcdir)/m4/stdarg.m4 $(top_srcdir)/m4/stddef_h.m4 \
-	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/m4/stdint_h.m4 \
-	$(top_srcdir)/m4/stdio_h.m4 $(top_srcdir)/m4/stdlib_h.m4 \
-	$(top_srcdir)/m4/strcasecmp.m4 $(top_srcdir)/m4/strcasestr.m4 \
-	$(top_srcdir)/m4/strdup.m4 $(top_srcdir)/m4/strerror.m4 \
-	$(top_srcdir)/m4/string_h.m4 $(top_srcdir)/m4/strings_h.m4 \
-	$(top_srcdir)/m4/strncasecmp.m4 $(top_srcdir)/m4/strnlen.m4 \
-	$(top_srcdir)/m4/sys_cdefs_h.m4 \
+	$(top_srcdir)/m4/stdarg.m4 $(top_srcdir)/m4/stdckdint_h.m4 \
+	$(top_srcdir)/m4/stddef_h.m4 $(top_srcdir)/m4/stdint.m4 \
+	$(top_srcdir)/m4/stdint_h.m4 $(top_srcdir)/m4/stdio_h.m4 \
+	$(top_srcdir)/m4/stdlib_h.m4 $(top_srcdir)/m4/strcasecmp.m4 \
+	$(top_srcdir)/m4/strcasestr.m4 $(top_srcdir)/m4/strdup.m4 \
+	$(top_srcdir)/m4/strerror.m4 $(top_srcdir)/m4/string_h.m4 \
+	$(top_srcdir)/m4/strings_h.m4 $(top_srcdir)/m4/strncasecmp.m4 \
+	$(top_srcdir)/m4/strnlen.m4 $(top_srcdir)/m4/sys_cdefs_h.m4 \
 	$(top_srcdir)/m4/sys_random_h.m4 \
 	$(top_srcdir)/m4/sys_socket_h.m4 \
 	$(top_srcdir)/m4/sys_stat_h.m4 $(top_srcdir)/m4/sys_time_h.m4 \
@@ -194,10 +195,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/time_h.m4 $(top_srcdir)/m4/timespec.m4 \
 	$(top_srcdir)/m4/uchar_h.m4 $(top_srcdir)/m4/unicase_h.m4 \
 	$(top_srcdir)/m4/unictype_h.m4 $(top_srcdir)/m4/uninorm_h.m4 \
-	$(top_srcdir)/m4/unistd_h.m4 $(top_srcdir)/m4/utime.m4 \
-	$(top_srcdir)/m4/utime_h.m4 $(top_srcdir)/m4/utimens.m4 \
-	$(top_srcdir)/m4/utimes.m4 $(top_srcdir)/m4/vasnprintf.m4 \
-	$(top_srcdir)/m4/visibility.m4 \
+	$(top_srcdir)/m4/unistd_h.m4 $(top_srcdir)/m4/unitypes_h.m4 \
+	$(top_srcdir)/m4/utime.m4 $(top_srcdir)/m4/utime_h.m4 \
+	$(top_srcdir)/m4/utimens.m4 $(top_srcdir)/m4/utimes.m4 \
+	$(top_srcdir)/m4/vasnprintf.m4 $(top_srcdir)/m4/visibility.m4 \
 	$(top_srcdir)/m4/vsnprintf-posix.m4 \
 	$(top_srcdir)/m4/vsnprintf.m4 $(top_srcdir)/m4/warn-on-use.m4 \
 	$(top_srcdir)/m4/wchar_h.m4 $(top_srcdir)/m4/wcrtomb.m4 \
@@ -1042,6 +1043,9 @@ HAVE_COSF = @HAVE_COSF@
 HAVE_COSHF = @HAVE_COSHF@
 HAVE_COSL = @HAVE_COSL@
 HAVE_CRTDEFS_H = @HAVE_CRTDEFS_H@
+HAVE_CXX_STDCKDINT_H = @HAVE_CXX_STDCKDINT_H@
+HAVE_C_STDCKDINT_H = @HAVE_C_STDCKDINT_H@
+HAVE_C_UNREACHABLE = @HAVE_C_UNREACHABLE@
 HAVE_DECL_ACOSL = @HAVE_DECL_ACOSL@
 HAVE_DECL_ASINL = @HAVE_DECL_ASINL@
 HAVE_DECL_ATANL = @HAVE_DECL_ATANL@
@@ -1398,6 +1402,7 @@ HAVE_SINL = @HAVE_SINL@
 HAVE_SLEEP = @HAVE_SLEEP@
 HAVE_SQRTF = @HAVE_SQRTF@
 HAVE_SQRTL = @HAVE_SQRTL@
+HAVE_STDCKDINT_H = @HAVE_STDCKDINT_H@
 HAVE_STDINT_H = @HAVE_STDINT_H@
 HAVE_STPCPY = @HAVE_STPCPY@
 HAVE_STPNCPY = @HAVE_STPNCPY@
@@ -1506,6 +1511,8 @@ HAVE_WMEMMOVE = @HAVE_WMEMMOVE@
 HAVE_WMEMPCPY = @HAVE_WMEMPCPY@
 HAVE_WMEMSET = @HAVE_WMEMSET@
 HAVE_WORKING_C32RTOMB = @HAVE_WORKING_C32RTOMB@
+HAVE_WORKING_CXX_STDCKDINT_H = @HAVE_WORKING_CXX_STDCKDINT_H@
+HAVE_WORKING_C_STDCKDINT_H = @HAVE_WORKING_C_STDCKDINT_H@
 HAVE_WORKING_MBRTOC32 = @HAVE_WORKING_MBRTOC32@
 HAVE_XLOCALE_H = @HAVE_XLOCALE_H@
 HAVE__EXIT = @HAVE__EXIT@
@@ -1592,6 +1599,7 @@ NEXT_AS_FIRST_DIRECTIVE_PTHREAD_H = @NEXT_AS_FIRST_DIRECTIVE_PTHREAD_H@
 NEXT_AS_FIRST_DIRECTIVE_SCHED_H = @NEXT_AS_FIRST_DIRECTIVE_SCHED_H@
 NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H = @NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H@
 NEXT_AS_FIRST_DIRECTIVE_STDARG_H = @NEXT_AS_FIRST_DIRECTIVE_STDARG_H@
+NEXT_AS_FIRST_DIRECTIVE_STDCKDINT_H = @NEXT_AS_FIRST_DIRECTIVE_STDCKDINT_H@
 NEXT_AS_FIRST_DIRECTIVE_STDDEF_H = @NEXT_AS_FIRST_DIRECTIVE_STDDEF_H@
 NEXT_AS_FIRST_DIRECTIVE_STDINT_H = @NEXT_AS_FIRST_DIRECTIVE_STDINT_H@
 NEXT_AS_FIRST_DIRECTIVE_STDIO_H = @NEXT_AS_FIRST_DIRECTIVE_STDIO_H@
@@ -1627,6 +1635,7 @@ NEXT_PTHREAD_H = @NEXT_PTHREAD_H@
 NEXT_SCHED_H = @NEXT_SCHED_H@
 NEXT_SIGNAL_H = @NEXT_SIGNAL_H@
 NEXT_STDARG_H = @NEXT_STDARG_H@
+NEXT_STDCKDINT_H = @NEXT_STDCKDINT_H@
 NEXT_STDDEF_H = @NEXT_STDDEF_H@
 NEXT_STDINT_H = @NEXT_STDINT_H@
 NEXT_STDIO_H = @NEXT_STDIO_H@
@@ -1761,6 +1770,7 @@ REPLACE_GETENTROPY = @REPLACE_GETENTROPY@
 REPLACE_GETGROUPS = @REPLACE_GETGROUPS@
 REPLACE_GETLINE = @REPLACE_GETLINE@
 REPLACE_GETLOADAVG = @REPLACE_GETLOADAVG@
+REPLACE_GETLOCALENAME_L = @REPLACE_GETLOCALENAME_L@
 REPLACE_GETLOGIN = @REPLACE_GETLOGIN@
 REPLACE_GETLOGIN_R = @REPLACE_GETLOGIN_R@
 REPLACE_GETPAGESIZE = @REPLACE_GETPAGESIZE@

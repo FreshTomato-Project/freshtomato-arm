@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -260,7 +260,7 @@ void finish(void)
 #endif
 
 	/* Get out. */
-	exit(0);
+	exit(final_status);
 }
 
 /* Close the current buffer, and terminate nano if it is the only buffer. */
@@ -1832,6 +1832,7 @@ int main(int argc, char **argv)
 		{"indicator", 0, NULL, 'q'},
 		{"unix", 0, NULL, 'u'},
 		{"afterends", 0, NULL, 'y'},
+		{"whitespacedisplay", 0, NULL, 0xCC},
 		{"colonparsing", 0, NULL, '@'},
 		{"stateflags", 0, NULL, '%'},
 		{"minibar", 0, NULL, '_'},
@@ -1864,7 +1865,7 @@ int main(int argc, char **argv)
 	/* If setting the locale is successful and it uses UTF-8, we will
 	 * need to use the multibyte functions for text processing. */
 	if (setlocale(LC_ALL, "") && strcmp(nl_langinfo(CODESET), "UTF-8") == 0)
-		utf8_init();
+		using_utf8 = TRUE;
 #else
 	setlocale(LC_ALL, "");
 #endif
@@ -2128,6 +2129,9 @@ int main(int argc, char **argv)
 				break;
 #endif
 #ifndef NANO_TINY
+			case 0xCC:
+				SET(WHITESPACE_DISPLAY);
+				break;
 			case '@':
 				SET(COLON_PARSING);
 				break;
@@ -2370,7 +2374,7 @@ int main(int argc, char **argv)
 	/* If the whitespace option wasn't specified, set its default value. */
 	if (whitespace == NULL) {
 #ifdef ENABLE_UTF8
-		if (using_utf8()) {
+		if (using_utf8) {
 			/* A tab is shown as a Right-Pointing Double Angle Quotation Mark
 			 * (U+00BB), and a space as a Middle Dot (U+00B7). */
 			whitespace = copy_of("\xC2\xBB\xC2\xB7");
@@ -2598,12 +2602,8 @@ int main(int argc, char **argv)
 		}
 #endif
 #ifdef ENABLE_HISTORIES
-		else if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0') {
-			ssize_t savedline, savedcol;
-			/* If edited before, restore the last cursor position. */
-			if (has_old_position(argv[optind - 1], &savedline, &savedcol))
-				goto_line_and_column(savedline, savedcol, FALSE, FALSE);
-		}
+		else if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
+			restore_cursor_position_if_any();
 #endif
 	}
 
@@ -2687,7 +2687,7 @@ int main(int argc, char **argv)
 #define byte(n)  (unsigned char)openfile->current->data[n]
 		/* Tell the user when the cursor sits on a BOM. */
 		if (openfile->current_x == 0 && byte(0) == 0xEF && byte(1) == 0xBB &&
-										byte(2) == 0xBF && using_utf8()) {
+										byte(2) == 0xBF && using_utf8) {
 			statusline(NOTICE, _("Byte Order Mark"));
 			set_blankdelay_to_one();
 		}
@@ -2713,6 +2713,7 @@ int main(int argc, char **argv)
 			wredrawln(midwin, editwinrows - 1, 1);
 #endif
 
+		final_status = 0;
 		errno = 0;
 		focusing = TRUE;
 

@@ -315,6 +315,12 @@ EXTRA_DIST += c32to-impl.h
 
 ## end   gnulib module c32tolower
 
+## begin gnulib module c32width
+
+libgnu_a_SOURCES += c32width.c
+
+## end   gnulib module c32width
+
 ## begin gnulib module canonicalize-lgpl
 
 if GL_COND_OBJ_CANONICALIZE_LGPL
@@ -1299,6 +1305,7 @@ locale.h: locale.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''REPLACE_NEWLOCALE''@|$(REPLACE_NEWLOCALE)|g' \
 	      -e 's|@''REPLACE_DUPLOCALE''@|$(REPLACE_DUPLOCALE)|g' \
 	      -e 's|@''REPLACE_FREELOCALE''@|$(REPLACE_FREELOCALE)|g' \
+	      -e 's|@''REPLACE_GETLOCALENAME_L''@|$(REPLACE_GETLOCALENAME_L)|g' \
 	      -e 's|@''REPLACE_STRUCT_LCONV''@|$(REPLACE_STRUCT_LCONV)|g' \
 	      -e 's|@''LOCALENAME_ENHANCE_LOCALE_FUNCS''@|$(LOCALENAME_ENHANCE_LOCALE_FUNCS)|g' \
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
@@ -1720,6 +1727,20 @@ EXTRA_DIST += math.in.h
 
 ## end   gnulib module math-h
 
+## begin gnulib module mbchar
+
+libgnu_a_SOURCES += mbchar.c
+
+EXTRA_DIST += mbchar.h
+
+## end   gnulib module mbchar
+
+## begin gnulib module mbiterf
+
+libgnu_a_SOURCES += mbiterf.h mbiterf.c
+
+## end   gnulib module mbiterf
+
 ## begin gnulib module mbrtoc32
 
 if GL_COND_OBJ_MBRTOC32
@@ -1751,6 +1772,12 @@ libgnu_a_SOURCES += mbsinit.c
 endif
 
 ## end   gnulib module mbsinit
+
+## begin gnulib module mbsnlen
+
+libgnu_a_SOURCES += mbsnlen.c
+
+## end   gnulib module mbsnlen
 
 ## begin gnulib module mbsrtoc32s
 
@@ -2400,6 +2427,15 @@ BUILT_SOURCES += $(STDCKDINT_H)
 if GL_GENERATE_STDCKDINT_H
 stdckdint.h: stdckdint.in.h $(top_builddir)/config.status
 	$(gl_V_at)$(SED_HEADER_STDOUT) \
+	      -e 's|@''GUARD_PREFIX''@|GL|g' \
+	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+	      -e 's|@''NEXT_STDCKDINT_H''@|$(NEXT_STDCKDINT_H)|g' \
+	      -e 's|@''HAVE_C_STDCKDINT_H''@|$(HAVE_C_STDCKDINT_H)|g' \
+	      -e 's|@''HAVE_WORKING_C_STDCKDINT_H''@|$(HAVE_WORKING_C_STDCKDINT_H)|g' \
+	      -e 's|@''HAVE_CXX_STDCKDINT_H''@|$(HAVE_CXX_STDCKDINT_H)|g' \
+	      -e 's|@''HAVE_WORKING_CXX_STDCKDINT_H''@|$(HAVE_WORKING_CXX_STDCKDINT_H)|g' \
 	  $(srcdir)/stdckdint.in.h > $@-t
 	$(AM_V_at)mv $@-t $@
 else
@@ -2430,6 +2466,7 @@ stddef.h: stddef.in.h $(top_builddir)/config.status
 	      -e 's|@''STDDEF_NOT_IDEMPOTENT''@|$(STDDEF_NOT_IDEMPOTENT)|g' \
 	      -e 's|@''REPLACE_NULL''@|$(REPLACE_NULL)|g' \
 	      -e 's|@''HAVE_MAX_ALIGN_T''@|$(HAVE_MAX_ALIGN_T)|g' \
+	      -e 's|@''HAVE_C_UNREACHABLE''@|$(HAVE_C_UNREACHABLE)|g' \
 	      $(srcdir)/stddef.in.h > $@-t
 	$(AM_V_at)mv $@-t $@
 else

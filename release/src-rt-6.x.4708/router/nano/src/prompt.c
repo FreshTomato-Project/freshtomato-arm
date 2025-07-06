@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -741,7 +741,7 @@ int ask_user(bool withall, const char *question)
 #ifdef ENABLE_UTF8
 		/* If the received code is a UTF-8 starter byte, get also the
 		 * continuation bytes and assemble them into one letter. */
-		if (using_utf8() && 0xC0 <= kbinput && kbinput <= 0xF7) {
+		if (0xC0 <= kbinput && kbinput <= 0xF7 && using_utf8) {
 			int extras = (kbinput / 16) % 4 + (kbinput <= 0xCF ? 1 : 0);
 
 			while (extras <= waiting_keycodes() && extras-- > 0)
@@ -788,10 +788,12 @@ int ask_user(bool withall, const char *question)
 #endif
 		/* Interpret ^N as "No", to allow exiting in anger, and ^Q or ^X too. */
 		else if (kbinput == '\x0E' || (kbinput == '\x11' && !ISSET(MODERN_BINDINGS)) ||
-									  (kbinput == '\x18' && ISSET(MODERN_BINDINGS)))
+									  (kbinput == '\x18' && ISSET(MODERN_BINDINGS))) {
 			choice = NO;
+			if (kbinput != '\x0E')  /* ^X^Q makes nano exit with an error. */
+				final_status = 2;
 		/* Also, interpret ^Y as "Yes, and  ^A as "All". */
-		else if (kbinput == '\x19')
+		} else if (kbinput == '\x19')
 			choice = YES;
 		else if (kbinput == '\x01' && withall)
 			choice = ALL;

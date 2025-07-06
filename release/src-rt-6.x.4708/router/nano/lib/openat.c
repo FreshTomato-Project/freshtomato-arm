@@ -35,6 +35,7 @@ orig_openat (int fd, char const *filename, int flags, mode_t mode)
 }
 #endif
 
+/* Specification.  */
 #ifdef __osf__
 /* Write "fcntl.h" here, not <fcntl.h>, otherwise OSF/1 5.1 DTK cc eliminates
    this include because of the preliminary #include <fcntl.h> above.  */
@@ -47,12 +48,16 @@ orig_openat (int fd, char const *filename, int flags, mode_t mode)
 
 #include "cloexec.h"
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <errno.h>
+
+#ifndef OPEN_TRAILING_SLASH_BUG
+# define OPEN_TRAILING_SLASH_BUG false
+#endif
 
 #if HAVE_OPENAT
 
@@ -75,7 +80,6 @@ rpl_openat (int dfd, char const *filename, int flags, ...)
       va_end (arg);
     }
 
-# if OPEN_TRAILING_SLASH_BUG
   /* Fail if one of O_CREAT, O_WRONLY, O_RDWR is specified and the filename
      ends in a slash, as POSIX says such a filename must name a directory
      <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>:
@@ -94,25 +98,53 @@ rpl_openat (int dfd, char const *filename, int flags, ...)
          directories,
        - if O_WRONLY or O_RDWR is specified, open() must fail because the
          file does not contain a '.' directory.  */
-  if ((flags & O_CREAT)
-      || (flags & O_ACCMODE) == O_RDWR
-      || (flags & O_ACCMODE) == O_WRONLY)
+  bool check_for_slash_bug;
+  if (OPEN_TRAILING_SLASH_BUG)
     {
       size_t len = strlen (filename);
-      if (len > 0 && filename[len - 1] == '/')
+      check_for_slash_bug = len && filename[len - 1] == '/';
+    }
+  else
+    check_for_slash_bug = false;
+
+  if (check_for_slash_bug
+      && (flags & O_CREAT
+          || (flags & O_ACCMODE) == O_RDWR
+          || (flags & O_ACCMODE) == O_WRONLY))
+    {
+      errno = EISDIR;
+      return -1;
+    }
+
+  /* With the trailing slash bug or without working O_DIRECTORY, check with
+     stat first lest we hang trying to open a fifo.  Although there is
+     a race between this and opening the file, we can do no better.
+     After opening the file we will check again with fstat.  */
+  bool check_directory =
+    (check_for_slash_bug
+     || (!HAVE_WORKING_O_DIRECTORY && flags & O_DIRECTORY));
+  if (check_directory)
+    {
+      struct stat statbuf;
+      int fstatat_flags = flags & O_NOFOLLOW ? AT_SYMLINK_NOFOLLOW : 0;
+      if (fstatat (dfd, filename, &statbuf, fstatat_flags) < 0)
         {
-          errno = EISDIR;
+          if (! (flags & O_CREAT && errno == ENOENT))
+            return -1;
+        }
+      else if (!S_ISDIR (statbuf.st_mode))
+        {
+          errno = ENOTDIR;
           return -1;
         }
     }
-# endif
 
   /* 0 = unknown, 1 = yes, -1 = no.  */
-#if GNULIB_defined_O_CLOEXEC
+# if GNULIB_defined_O_CLOEXEC
   int have_cloexec = -1;
-#else
+# else
   static int have_cloexec;
-#endif
+# endif
 
   int fd = orig_openat (dfd, filename,
                         flags & ~(have_cloexec < 0 ? O_CLOEXEC : 0), mode);
@@ -134,10 +166,8 @@ rpl_openat (int dfd, char const *filename, int flags, ...)
     }
 
 
-# if OPEN_TRAILING_SLASH_BUG
-  /* If the filename ends in a slash and fd does not refer to a directory,
-     then fail.
-     Rationale: POSIX says such a filename must name a directory
+  /* If checking for directories, fail if fd does not refer to a directory.
+     Rationale: A filename ending in slash cannot name a non-directory
      <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>:
        "A pathname that contains at least one non-<slash> character and that
         ends with one or more trailing <slash> characters shall not be resolved
@@ -145,23 +175,18 @@ rpl_openat (int dfd, char const *filename, int flags, ...)
         <slash> characters names an existing directory"
      If the named file without the slash is not a directory, open() must fail
      with ENOTDIR.  */
-  if (fd >= 0)
+  if (check_directory && 0 <= fd)
     {
-      /* We know len is positive, since open did not fail with ENOENT.  */
-      size_t len = strlen (filename);
-      if (filename[len - 1] == '/')
+      struct stat statbuf;
+      int r = fstat (fd, &statbuf);
+      if (r < 0 || !S_ISDIR (statbuf.st_mode))
         {
-          struct stat statbuf;
-
-          if (fstat (fd, &statbuf) >= 0 && !S_ISDIR (statbuf.st_mode))
-            {
-              close (fd);
-              errno = ENOTDIR;
-              return -1;
-            }
+          int err = r < 0 ? errno : ENOTDIR;
+          close (fd);
+          errno = err;
+          return -1;
         }
     }
-# endif
 
   return fd;
 }

@@ -69,6 +69,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module c32isupper:
   # Code from module c32isxdigit:
   # Code from module c32tolower:
+  # Code from module c32width:
   # Code from module c99:
   # Code from module canonicalize-lgpl:
   # Code from module chdir:
@@ -161,9 +162,12 @@ AC_DEFUN([gl_EARLY],
   # Code from module malloc-posix:
   # Code from module malloca:
   # Code from module math-h:
+  # Code from module mbchar:
+  # Code from module mbiterf:
   # Code from module mbrtoc32:
   # Code from module mbrtowc:
   # Code from module mbsinit:
+  # Code from module mbsnlen:
   # Code from module mbsrtoc32s:
   # Code from module mbsrtowcs:
   # Code from module mbszero:
@@ -435,6 +439,13 @@ AC_DEFUN([gl_INIT],
   AC_REQUIRE([gl_MBRTOC32_SANITYCHECK])
   AC_REQUIRE([gl_C32RTOMB_SANITYCHECK])
   gl_UCHAR_MODULE_INDICATOR([c32tolower])
+  AC_REQUIRE([gl_UCHAR_H])
+  dnl Determine REPLACE_MBSTATE_T, from which GNULIB_defined_mbstate_t is
+  dnl determined.  It describes how mbrtoc32 is implemented.
+  AC_REQUIRE([gl_MBSTATE_T_BROKEN])
+  AC_REQUIRE([gl_MBRTOC32_SANITYCHECK])
+  AC_REQUIRE([gl_C32RTOMB_SANITYCHECK])
+  gl_UCHAR_MODULE_INDICATOR([c32width])
   gl_CANONICALIZE_LGPL
   gl_CONDITIONAL([GL_COND_OBJ_CANONICALIZE_LGPL],
                  [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1])
@@ -749,6 +760,8 @@ AC_DEFUN([gl_INIT],
   gl_MATH_H
   gl_MATH_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
+  gl_MBCHAR
+  gl_MBITER
   gl_FUNC_MBRTOC32
   gl_CONDITIONAL([GL_COND_OBJ_MBRTOC32],
                  [test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1])
@@ -780,6 +793,7 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_MBSINIT
   ])
   gl_WCHAR_MODULE_INDICATOR([mbsinit])
+  gl_STRING_MODULE_INDICATOR([mbsnlen])
   AC_REQUIRE([gl_UCHAR_H])
   AC_LIBOBJ([mbsrtoc32s-state])
   gl_UCHAR_MODULE_INDICATOR([mbsrtoc32s])
@@ -963,12 +977,7 @@ AC_DEFUN([gl_INIT],
   gl_STDARG_H
   gl_CONDITIONAL_HEADER([stdarg.h])
   AC_PROG_MKDIR_P
-  AC_CHECK_HEADERS_ONCE([stdckdint.h])
-  if test $ac_cv_header_stdckdint_h = yes; then
-    GL_GENERATE_STDCKDINT_H=false
-  else
-    GL_GENERATE_STDCKDINT_H=true
-  fi
+  gl_STDCKDINT_H
   gl_CONDITIONAL_HEADER([stdckdint.h])
   AC_PROG_MKDIR_P
   gl_STDDEF_H
@@ -1135,21 +1144,7 @@ AC_DEFUN([gl_INIT],
   gl_LIBUNISTRING_MODULE([0.9], [unistr/u32-strlen])
   gl_LIBUNISTRING_LIBHEADER([0.9.11], [unitypes.h])
   AC_PROG_MKDIR_P
-  AH_VERBATIM([unitypes_restrict], [
-  /* This definition is a duplicate of the one in unitypes.h.
-     It is here so that we can cope with an older version of unitypes.h
-     that does not contain this definition and that is pre-installed among
-     the public header files.  */
-  # if defined __restrict \
-       || 2 < __GNUC__ + (95 <= __GNUC_MINOR__) \
-       || __clang_major__ >= 3
-  #  define _UC_RESTRICT __restrict
-  # elif 199901L <= __STDC_VERSION__ || defined restrict
-  #  define _UC_RESTRICT restrict
-  # else
-  #  define _UC_RESTRICT
-  # endif
-  ])
+  gl_UNITYPES_H
   gl_LIBUNISTRING_LIBHEADER([0.9.11], [uniwidth.h])
   AC_PROG_MKDIR_P
   gl_LIBUNISTRING_MODULE([1.3], [uniwidth/width])
@@ -1433,6 +1428,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/c32isxdigit.c
   lib/c32to-impl.h
   lib/c32tolower.c
+  lib/c32width.c
   lib/canonicalize-lgpl.c
   lib/cdefs.h
   lib/chdir-long.c
@@ -1555,11 +1551,16 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/malloca.h
   lib/math.c
   lib/math.in.h
+  lib/mbchar.c
+  lib/mbchar.h
+  lib/mbiterf.c
+  lib/mbiterf.h
   lib/mbrtoc32.c
   lib/mbrtowc-impl-utf8.h
   lib/mbrtowc-impl.h
   lib/mbrtowc.c
   lib/mbsinit.c
+  lib/mbsnlen.c
   lib/mbsrtoc32s-state.c
   lib/mbsrtoc32s.c
   lib/mbsrtowcs-impl.h
@@ -1845,6 +1846,8 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/malloc.m4
   m4/malloca.m4
   m4/math_h.m4
+  m4/mbchar.m4
+  m4/mbiter.m4
   m4/mbrtoc32.m4
   m4/mbrtowc.m4
   m4/mbsinit.m4
@@ -1903,6 +1906,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/stat.m4
   m4/std-gnu11.m4
   m4/stdarg.m4
+  m4/stdckdint_h.m4
   m4/stddef_h.m4
   m4/stdint.m4
   m4/stdint_h.m4
@@ -1932,6 +1936,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/unictype_h.m4
   m4/uninorm_h.m4
   m4/unistd_h.m4
+  m4/unitypes_h.m4
   m4/utime.m4
   m4/utime_h.m4
   m4/utimens.m4

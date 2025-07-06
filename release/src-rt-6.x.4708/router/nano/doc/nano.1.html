@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed Apr  2 08:56:32 2025 -->
+<!-- CreationDate: Thu Jun 12 07:28:00 2025 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -288,7 +288,8 @@ that starts with whitespace as the beginning of a paragraph
 
 <p style="margin-left:22%;">For the 200 most recent files,
 log the last position of the cursor, and place it at that
-position again upon reopening such a file.</p>
+position again upon reopening such a file. Also save and
+restore the positions of any anchors.</p>
 
 <p style="margin-left:11%;"><b>-Q
 &quot;</b><i>regex</i><b>&quot;</b>,
@@ -484,9 +485,9 @@ to disk first.</p>
 <p style="margin-left:11%;"><b>-o</b> <i>directory</i>,
 <b>--operatingdir=</b><i>directory</i></p>
 
-<p style="margin-left:22%;">Set the operating directory.
-This makes <b>nano</b> set up something similar to a
-chroot.</p>
+<p style="margin-left:22%;">Change to the given
+<i>directory</i>, and allow reading and writing files only
+in this directory and its subdirectories.</p>
 
 <p style="margin-left:11%;"><b>-p</b>,
 <b>--preserve</b></p>

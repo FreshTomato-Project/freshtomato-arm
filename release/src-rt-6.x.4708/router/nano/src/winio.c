@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -1036,7 +1036,7 @@ int parse_kbinput(WINDOW *frame)
 				return CONTROL_SHIFT_DELETE;
 #endif
 #ifdef ENABLE_UTF8
-			else if (0xC0 <= keycode && keycode <= 0xFF && using_utf8()) {
+			else if (0xC0 <= keycode && keycode <= 0xFF && using_utf8) {
 				while (waiting_codes && 0x80 <= nextcodes[0] && nextcodes[0] <= 0xBF)
 					get_input(NULL);
 				return FOREIGN_SEQUENCE;
@@ -1046,8 +1046,8 @@ int parse_kbinput(WINDOW *frame)
 				meta_key = TRUE;
 		} else if (waiting_codes == 0 || nextcodes[0] == ESC_CODE ||
 								(keycode != 'O' && keycode != '[')) {
-			if (!shifted_metas)
-				keycode = tolower(keycode);
+			if ('A' <= keycode && keycode <= 'Z' && !shifted_metas)
+				keycode |= 0x20;
 			meta_key = TRUE;
 		} else
 			keycode = parse_escape_sequence(keycode);
@@ -1085,7 +1085,7 @@ int parse_kbinput(WINDOW *frame)
 				return ERR;
 			}
 #ifdef ENABLE_UTF8
-			else if (byte > 0x7F && using_utf8()) {
+			else if (byte > 0x7F && using_utf8) {
 				/* Convert the code to the corresponding Unicode, and
 				 * put the second byte back into the keyboard buffer. */
 				if (byte < 0xC0) {
@@ -1105,8 +1105,8 @@ int parse_kbinput(WINDOW *frame)
 			/* If the first escape arrived alone but not the second, then it
 			 * is a Meta keystroke; otherwise, it is an "Esc Esc control". */
 			if (first_escape_was_alone && !last_escape_was_alone) {
-				if (!shifted_metas)
-					keycode = tolower(keycode);
+				if ('A' <= keycode && keycode <= 'Z' && !shifted_metas)
+					keycode |= 0x20;
 				meta_key = TRUE;
 			} else
 				keycode = convert_to_control(keycode);
@@ -1442,7 +1442,7 @@ int *parse_verbatim_kbinput(WINDOW *frame, size_t *count)
 
 #ifdef ENABLE_UTF8
 	/* If the key code is a hexadecimal digit, commence Unicode input. */
-	if (using_utf8() && isxdigit(keycode)) {
+	if (using_utf8 && isxdigit(keycode)) {
 		long unicode = assemble_unicode(keycode);
 		char multibyte[MB_CUR_MAX];
 
@@ -2230,16 +2230,13 @@ void minibar(void)
 
 		if (*this_position == '\0')
 			sprintf(hexadecimal, openfile->current->next ?
-#ifdef ENABLE_UTF8
-											using_utf8() ? "U+000A" :
-#endif
-											"  0x0A" : "  ----");
+								(using_utf8 ? "U+000A" : "  0x0A") : "  ----");
 		else if (*this_position == '\n')
 			sprintf(hexadecimal, "  0x00");
 #ifdef ENABLE_UTF8
-		else if ((unsigned char)*this_position < 0x80 && using_utf8())
+		else if ((unsigned char)*this_position < 0x80 && using_utf8)
 			sprintf(hexadecimal, "U+%04X", (unsigned char)*this_position);
-		else if (using_utf8() && mbtowide(&widecode, this_position) > 0)
+		else if (using_utf8 && mbtowide(&widecode, this_position) > 0)
 			sprintf(hexadecimal, "U+%04X", (int)widecode);
 #endif
 		else
@@ -2271,6 +2268,10 @@ void minibar(void)
 		wmove(footwin, 0, COLS - 11 - padding);
 		show_states_at(footwin);
 	}
+
+	/* Indicate it when the line has an anchor. */
+	if (openfile->current->has_anchor && namewidth + 7 < COLS)
+		mvwaddstr(footwin, 0, COLS - 5 - padding, using_utf8 ? "\xE2\x80\xA0" : "+");
 
 	/* Display how many percent the current line is into the file. */
 	if (namewidth + 6 < COLS) {
@@ -2556,12 +2557,7 @@ void draw_row(int row, const char *converted, linestruct *line, size_t from_col)
 		wattroff(midwin, interface_color_pair[LINE_NUMBER]);
 #ifndef NANO_TINY
 		if (line->has_anchor && (from_col == 0 || !ISSET(SOFTWRAP)))
-#ifdef ENABLE_UTF8
-			if (using_utf8())
-				wprintw(midwin, "\xE2\xAC\xA5");  /* black medium diamond */
-			else
-#endif
-				wprintw(midwin, "+");
+			wprintw(midwin, using_utf8 ? "\xE2\x80\xA0" : "+");
 		else
 #endif
 			wprintw(midwin, " ");
@@ -2757,7 +2753,7 @@ void draw_row(int row, const char *converted, linestruct *line, size_t from_col)
 		} else if (target_column + 1 == editwincols) {
 			/* Defeat a VTE bug -- see https://sv.gnu.org/bugs/?55896. */
 #ifdef ENABLE_UTF8
-			if (using_utf8()) {
+			if (using_utf8) {
 				striped_char[0] = '\xC2';
 				striped_char[1] = '\xA0';
 				charlen = 2;

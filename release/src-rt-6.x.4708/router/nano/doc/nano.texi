@@ -13,8 +13,8 @@ The complete manual for the GNU nano text editor.
 
 @smallbook
 @set EDITION 0.8
-@set VERSION 8.4
-@set UPDATED April 2025
+@set VERSION 8.5
+@set UPDATED June 2025
 
 @dircategory Editors
 @direntry
@@ -29,7 +29,7 @@ The complete manual for the GNU nano text editor.
 
 @title GNU @command{nano}
 @subtitle a small and friendly text editor
-@subtitle version 8.4
+@subtitle version 8.5
 
 @author Chris Allegretta
 
@@ -79,7 +79,7 @@ For suggesting improvements: @email{nano-devel@@gnu.org}
 @node Top
 @top
 
-This manual documents GNU @command{nano}, version 8.4.
+This manual documents GNU @command{nano}, version 8.5.
 
 @menu
 * Introduction::
@@ -350,18 +350,22 @@ is running.
 @node Anchors
 @section Anchors
 
-With @kbd{M-Ins} you can place an anchor (a kind of temporary bookmark)
-at the current line.  With @kbd{M-PgUp} and @kbd{M-PgDn} you can jump
+With @kbd{M-Ins} you can place an anchor (a kind of bookmark) at
+the current line.  With @kbd{M-PgUp} and @kbd{M-PgDn} you can jump
 to an anchor in the backward/forward direction.  This jumping wraps
 around at the top and bottom.
 
-When a line with an anchor is removed, the line where the cursor ends up
-inherits the anchor.  After performing an operation on the entire buffer
-(like formatting it, piping it through a command, or doing an external
-spell check on it), any anchors that were present are gone.  And when
-you close the buffer, all its anchors simply disappear; they are not saved.
+When an operation removes a line with an anchor, the new line with the
+cursor inherits the anchor.  But after performing an operation on the
+entire buffer (like formatting it, piping it through a command, or
+doing an external spell check on it), any anchors that were present
+are gone.
 
-Anchors are visualized in the margin when line numbers are activated.
+When @option{--positionlog} or @code{set positionlog} is active, anchors
+are saved when the file is closed, and restored when the file is reopened.
+
+Anchors are visualized in the left margin if line numbers are active,
+and are always visualized (on the right-hand side) in the mini bar.
 
 @node Limitations
 @section Limitations
@@ -494,6 +498,7 @@ beginning of a paragraph (unless auto-indenting is on).
 @itemx --positionlog
 For the 200 most recent files, log the last position of the cursor,
 and place it at that position again upon reopening such a file.
+Also save and restore the positions of any anchors.
 
 @item -Q "@var{regex}"
 @itemx --quotestr="@var{regex}"
@@ -637,8 +642,8 @@ and writes to the pipe when the user saves the "file".  This way
 
 @item -o @var{directory}
 @itemx --operatingdir=@var{directory}
-Set the operating directory.  This makes @command{nano} set up something
-similar to a chroot.
+Change to the given @var{directory}, and allow reading and writing
+files only in this directory and its subdirectories.
 
 @item -p
 @itemx --preserve
@@ -1096,14 +1101,12 @@ Use this color combination for line numbers.
 @xref{@code{set keycolor}} for valid color names.
 
 @item set operatingdir "@var{directory}"
-@command{nano} only reads and writes files inside "directory" and its
-subdirectories.  Also, the current directory is changed to here, so
-files are inserted from this directory.  By default, the operating
-directory feature is turned off.
+At startup, make @command{nano} change to the given @var{directory}, and
+allow reading and writing files only in this directory and its subdirectories.
 
 @item set positionlog
-Save the cursor position of files between editing sessions.
-The cursor position is remembered for the 200 most-recently edited files.
+Save the positions of cursor and anchors between editing sessions.
+These positions are remembered for the 200 most-recently edited files.
 
 @item set preserve
 Preserve the XOFF and XON sequences (@kbd{^S} and @kbd{^Q}) so that
@@ -1389,18 +1392,18 @@ Same as above, except that the matching is case insensitive.
 
 @item color [bold,][italic,]@var{fgcolor},@var{bgcolor} start="@var{fromrx}" end="@var{torx}"
 Paint all pieces of text whose start matches extended regular expression
-"fromrx" and whose end matches extended regular expression "torx" with
-the given foreground and background colors, at least one of
+@var{fromrx} and whose end matches extended regular expression @var{torx}
+with the given foreground and background colors, at least one of
 which must be specified.  This means that, after an initial instance of
-"fromrx", all text until the first instance of "torx" is colored.
+@var{fromrx}, all text until the first instance of @var{torx} is colored.
 This allows syntax highlighting to span multiple lines.
 
 @item icolor [bold,][italic,]@var{fgcolor},@var{bgcolor} start="@var{fromrx}" end="@var{torx}"
 Same as above, except that the matching is case insensitive.
 
 @item include "@var{syntaxfile}"
-Read in self-contained color syntaxes from "syntaxfile".  Note that
-"syntaxfile" may contain only the above commands, from @code{syntax}
+Read in self-contained color syntaxes from @var{syntaxfile}.  Note that
+such a syntax file may contain only the above commands, from @code{syntax}
 to @code{icolor}.
 
 @item extendsyntax @var{name} @var{command} @var{argument} @dots{}

@@ -16,7 +16,7 @@
 .\"   Documentation License along with this program.  If not, see
 .\"   <https://www.gnu.org/licenses/>.
 .\"
-.TH NANO 1 "version 8.4" "April 2025"
+.TH NANO 1 "version 8.5" "June 2025"
 
 .SH NAME
 nano \- Nano's ANOther text editor, inspired by Pico
@@ -180,6 +180,7 @@ beginning of a paragraph (unless auto-indenting is on).
 .BR \-P ", " \-\-positionlog
 For the 200 most recent files, log the last position of the cursor,
 and place it at that position again upon reopening such a file.
+Also save and restore the positions of any anchors.
 .TP
 .BI "\-Q """ regex\fB"\fR, " \-\-quotestr=""" regex """"
 Set the regular expression for matching the quoting part of a line.
@@ -298,8 +299,8 @@ and writes to the pipe when the user saves the "file".  This way
 \fBgpg\fR without having to write sensitive data to disk first.
 .TP
 .BI \-o " directory\fR, " \-\-operatingdir= directory
-Set the operating directory.  This makes \fBnano\fR set up something
-similar to a chroot.
+Change to the given \fIdirectory\fR, and allow reading and writing
+files only in this directory and its subdirectories.
 .TP
 .BR \-p ", " \-\-preserve
 Preserve the XOFF and XON sequences (\fB^S\fR and \fB^Q\fR) so that

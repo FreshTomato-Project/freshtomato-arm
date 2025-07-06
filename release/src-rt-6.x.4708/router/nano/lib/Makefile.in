@@ -307,7 +307,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/locale_h.m4 $(top_srcdir)/m4/localeconv.m4 \
 	$(top_srcdir)/m4/lock.m4 $(top_srcdir)/m4/lstat.m4 \
 	$(top_srcdir)/m4/malloc.m4 $(top_srcdir)/m4/malloca.m4 \
-	$(top_srcdir)/m4/math_h.m4 $(top_srcdir)/m4/mbrtoc32.m4 \
+	$(top_srcdir)/m4/math_h.m4 $(top_srcdir)/m4/mbchar.m4 \
+	$(top_srcdir)/m4/mbiter.m4 $(top_srcdir)/m4/mbrtoc32.m4 \
 	$(top_srcdir)/m4/mbrtowc.m4 $(top_srcdir)/m4/mbsinit.m4 \
 	$(top_srcdir)/m4/mbsrtowcs.m4 $(top_srcdir)/m4/mbstate_t.m4 \
 	$(top_srcdir)/m4/mbtowc.m4 $(top_srcdir)/m4/memchr.m4 \
@@ -339,14 +340,14 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/snprintf-posix.m4 \
 	$(top_srcdir)/m4/snprintf.m4 $(top_srcdir)/m4/ssize_t.m4 \
 	$(top_srcdir)/m4/stat-time.m4 $(top_srcdir)/m4/stat.m4 \
-	$(top_srcdir)/m4/stdarg.m4 $(top_srcdir)/m4/stddef_h.m4 \
-	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/m4/stdint_h.m4 \
-	$(top_srcdir)/m4/stdio_h.m4 $(top_srcdir)/m4/stdlib_h.m4 \
-	$(top_srcdir)/m4/strcasecmp.m4 $(top_srcdir)/m4/strcasestr.m4 \
-	$(top_srcdir)/m4/strdup.m4 $(top_srcdir)/m4/strerror.m4 \
-	$(top_srcdir)/m4/string_h.m4 $(top_srcdir)/m4/strings_h.m4 \
-	$(top_srcdir)/m4/strncasecmp.m4 $(top_srcdir)/m4/strnlen.m4 \
-	$(top_srcdir)/m4/sys_cdefs_h.m4 \
+	$(top_srcdir)/m4/stdarg.m4 $(top_srcdir)/m4/stdckdint_h.m4 \
+	$(top_srcdir)/m4/stddef_h.m4 $(top_srcdir)/m4/stdint.m4 \
+	$(top_srcdir)/m4/stdint_h.m4 $(top_srcdir)/m4/stdio_h.m4 \
+	$(top_srcdir)/m4/stdlib_h.m4 $(top_srcdir)/m4/strcasecmp.m4 \
+	$(top_srcdir)/m4/strcasestr.m4 $(top_srcdir)/m4/strdup.m4 \
+	$(top_srcdir)/m4/strerror.m4 $(top_srcdir)/m4/string_h.m4 \
+	$(top_srcdir)/m4/strings_h.m4 $(top_srcdir)/m4/strncasecmp.m4 \
+	$(top_srcdir)/m4/strnlen.m4 $(top_srcdir)/m4/sys_cdefs_h.m4 \
 	$(top_srcdir)/m4/sys_random_h.m4 \
 	$(top_srcdir)/m4/sys_socket_h.m4 \
 	$(top_srcdir)/m4/sys_stat_h.m4 $(top_srcdir)/m4/sys_time_h.m4 \
@@ -355,10 +356,10 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/time_h.m4 $(top_srcdir)/m4/timespec.m4 \
 	$(top_srcdir)/m4/uchar_h.m4 $(top_srcdir)/m4/unicase_h.m4 \
 	$(top_srcdir)/m4/unictype_h.m4 $(top_srcdir)/m4/uninorm_h.m4 \
-	$(top_srcdir)/m4/unistd_h.m4 $(top_srcdir)/m4/utime.m4 \
-	$(top_srcdir)/m4/utime_h.m4 $(top_srcdir)/m4/utimens.m4 \
-	$(top_srcdir)/m4/utimes.m4 $(top_srcdir)/m4/vasnprintf.m4 \
-	$(top_srcdir)/m4/visibility.m4 \
+	$(top_srcdir)/m4/unistd_h.m4 $(top_srcdir)/m4/unitypes_h.m4 \
+	$(top_srcdir)/m4/utime.m4 $(top_srcdir)/m4/utime_h.m4 \
+	$(top_srcdir)/m4/utimens.m4 $(top_srcdir)/m4/utimes.m4 \
+	$(top_srcdir)/m4/vasnprintf.m4 $(top_srcdir)/m4/visibility.m4 \
 	$(top_srcdir)/m4/vsnprintf-posix.m4 \
 	$(top_srcdir)/m4/vsnprintf.m4 $(top_srcdir)/m4/warn-on-use.m4 \
 	$(top_srcdir)/m4/wchar_h.m4 $(top_srcdir)/m4/wcrtomb.m4 \
@@ -388,13 +389,13 @@ am__libgnu_a_SOURCES_DIST = openat-priv.h openat-proc.c \
 	c32_get_type_test.c c32isalnum.c c32isalpha.c c32isblank.c \
 	c32iscntrl.c c32isdigit.c c32isgraph.c c32islower.c \
 	c32isprint.c c32ispunct.c c32isspace.c c32isupper.c \
-	c32isxdigit.c c32tolower.c canonicalize-lgpl.c chdir-long.c \
-	cloexec.c close.c closedir.c dirfd.c dirname-lgpl.c \
-	stripslash.c dup2.c error.c exitfail.c fchdir.c fcntl.c \
-	fd-hook.c filenamecat-lgpl.c float.c itold.c free.c fstat.c \
-	fstatat.c futimens.c getcwd-lgpl.c getdelim.c getdtablesize.c \
-	getline.c getlogin_r.c getopt.c getopt1.c getprogname.c \
-	getrandom.c gettext.h gettime.c gettimeofday.c \
+	c32isxdigit.c c32tolower.c c32width.c canonicalize-lgpl.c \
+	chdir-long.c cloexec.c close.c closedir.c dirfd.c \
+	dirname-lgpl.c stripslash.c dup2.c error.c exitfail.c fchdir.c \
+	fcntl.c fd-hook.c filenamecat-lgpl.c float.c itold.c free.c \
+	fstat.c fstatat.c futimens.c getcwd-lgpl.c getdelim.c \
+	getdtablesize.c getline.c getlogin_r.c getopt.c getopt1.c \
+	getprogname.c getrandom.c gettext.h gettime.c gettimeofday.c \
 	malloc/dynarray_at_failure.c malloc/dynarray_emplace_enlarge.c \
 	malloc/dynarray_finalize.c malloc/dynarray_resize.c \
 	malloc/dynarray_resize_clear.c malloc/scratch_buffer_grow.c \
@@ -403,9 +404,10 @@ am__libgnu_a_SOURCES_DIST = openat-priv.h openat-proc.c \
 	glob_pattern_p.c hard-locale.c idx.h isblank.c iswblank.c \
 	iswctype.c iswdigit.c iswpunct.c iswxdigit.c localcharset.c \
 	localeconv.c glthread/lock.h glthread/lock.c lstat.c malloca.c \
-	math.c mbrtoc32.c mbrtowc.c mbsinit.c mbsrtoc32s.c mbsrtowcs.c \
-	mbszero.c mbtowc.c memchr.c mempcpy.c memrchr.c minmax.h \
-	mkdir.c mkstemps.c msvc-inval.c msvc-nothrow.c nl_langinfo.c \
+	math.c mbchar.c mbiterf.h mbiterf.c mbrtoc32.c mbrtowc.c \
+	mbsinit.c mbsnlen.c mbsrtoc32s.c mbsrtowcs.c mbszero.c \
+	mbtowc.c memchr.c mempcpy.c memrchr.c minmax.h mkdir.c \
+	mkstemps.c msvc-inval.c msvc-nothrow.c nl_langinfo.c \
 	nl_langinfo-lock.c glthread/once.h glthread/once.c open.c \
 	openat.c openat-die.c opendir.c printf-frexp.c printf-frexpl.c \
 	pthread-once.c raise.c rawmemchr.c readdir.c readlink.c \
@@ -575,9 +577,9 @@ am_libgnu_a_OBJECTS = libgnu_a-openat-proc.$(OBJEXT) \
 	libgnu_a-c32islower.$(OBJEXT) libgnu_a-c32isprint.$(OBJEXT) \
 	libgnu_a-c32ispunct.$(OBJEXT) libgnu_a-c32isspace.$(OBJEXT) \
 	libgnu_a-c32isupper.$(OBJEXT) libgnu_a-c32isxdigit.$(OBJEXT) \
-	libgnu_a-c32tolower.$(OBJEXT) $(am__objects_2) \
-	$(am__objects_3) libgnu_a-cloexec.$(OBJEXT) $(am__objects_4) \
-	$(am__objects_5) $(am__objects_6) \
+	libgnu_a-c32tolower.$(OBJEXT) libgnu_a-c32width.$(OBJEXT) \
+	$(am__objects_2) $(am__objects_3) libgnu_a-cloexec.$(OBJEXT) \
+	$(am__objects_4) $(am__objects_5) $(am__objects_6) \
 	libgnu_a-dirname-lgpl.$(OBJEXT) libgnu_a-stripslash.$(OBJEXT) \
 	$(am__objects_7) $(am__objects_8) libgnu_a-exitfail.$(OBJEXT) \
 	$(am__objects_9) $(am__objects_10) libgnu_a-fd-hook.$(OBJEXT) \
@@ -602,12 +604,13 @@ am_libgnu_a_OBJECTS = libgnu_a-openat-proc.$(OBJEXT) \
 	libgnu_a-localcharset.$(OBJEXT) $(am__objects_34) \
 	glthread/libgnu_a-lock.$(OBJEXT) $(am__objects_35) \
 	libgnu_a-malloca.$(OBJEXT) libgnu_a-math.$(OBJEXT) \
+	libgnu_a-mbchar.$(OBJEXT) libgnu_a-mbiterf.$(OBJEXT) \
 	$(am__objects_36) $(am__objects_37) $(am__objects_38) \
-	libgnu_a-mbsrtoc32s.$(OBJEXT) $(am__objects_39) \
-	libgnu_a-mbszero.$(OBJEXT) $(am__objects_40) $(am__objects_41) \
-	$(am__objects_42) $(am__objects_43) $(am__objects_44) \
-	$(am__objects_45) $(am__objects_46) $(am__objects_47) \
-	$(am__objects_48) $(am__objects_49) \
+	libgnu_a-mbsnlen.$(OBJEXT) libgnu_a-mbsrtoc32s.$(OBJEXT) \
+	$(am__objects_39) libgnu_a-mbszero.$(OBJEXT) $(am__objects_40) \
+	$(am__objects_41) $(am__objects_42) $(am__objects_43) \
+	$(am__objects_44) $(am__objects_45) $(am__objects_46) \
+	$(am__objects_47) $(am__objects_48) $(am__objects_49) \
 	glthread/libgnu_a-once.$(OBJEXT) $(am__objects_50) \
 	$(am__objects_51) libgnu_a-openat-die.$(OBJEXT) \
 	$(am__objects_52) libgnu_a-printf-frexp.$(OBJEXT) \
@@ -674,6 +677,7 @@ am__depfiles_remade = ./$(DEPDIR)/alloca.Po \
 	./$(DEPDIR)/libgnu_a-c32isupper.Po \
 	./$(DEPDIR)/libgnu_a-c32isxdigit.Po \
 	./$(DEPDIR)/libgnu_a-c32tolower.Po \
+	./$(DEPDIR)/libgnu_a-c32width.Po \
 	./$(DEPDIR)/libgnu_a-canonicalize-lgpl.Po \
 	./$(DEPDIR)/libgnu_a-chdir-long.Po \
 	./$(DEPDIR)/libgnu_a-cloexec.Po ./$(DEPDIR)/libgnu_a-close.Po \
@@ -718,9 +722,11 @@ am__depfiles_remade = ./$(DEPDIR)/alloca.Po \
 	./$(DEPDIR)/libgnu_a-localeconv.Po \
 	./$(DEPDIR)/libgnu_a-lstat.Po ./$(DEPDIR)/libgnu_a-malloc.Po \
 	./$(DEPDIR)/libgnu_a-malloca.Po ./$(DEPDIR)/libgnu_a-math.Po \
+	./$(DEPDIR)/libgnu_a-mbchar.Po ./$(DEPDIR)/libgnu_a-mbiterf.Po \
 	./$(DEPDIR)/libgnu_a-mbrtoc32.Po \
 	./$(DEPDIR)/libgnu_a-mbrtowc.Po \
 	./$(DEPDIR)/libgnu_a-mbsinit.Po \
+	./$(DEPDIR)/libgnu_a-mbsnlen.Po \
 	./$(DEPDIR)/libgnu_a-mbsrtoc32s-state.Po \
 	./$(DEPDIR)/libgnu_a-mbsrtoc32s.Po \
 	./$(DEPDIR)/libgnu_a-mbsrtowcs-state.Po \
@@ -1746,6 +1752,9 @@ HAVE_COSF = @HAVE_COSF@
 HAVE_COSHF = @HAVE_COSHF@
 HAVE_COSL = @HAVE_COSL@
 HAVE_CRTDEFS_H = @HAVE_CRTDEFS_H@
+HAVE_CXX_STDCKDINT_H = @HAVE_CXX_STDCKDINT_H@
+HAVE_C_STDCKDINT_H = @HAVE_C_STDCKDINT_H@
+HAVE_C_UNREACHABLE = @HAVE_C_UNREACHABLE@
 HAVE_DECL_ACOSL = @HAVE_DECL_ACOSL@
 HAVE_DECL_ASINL = @HAVE_DECL_ASINL@
 HAVE_DECL_ATANL = @HAVE_DECL_ATANL@
@@ -2102,6 +2111,7 @@ HAVE_SINL = @HAVE_SINL@
 HAVE_SLEEP = @HAVE_SLEEP@
 HAVE_SQRTF = @HAVE_SQRTF@
 HAVE_SQRTL = @HAVE_SQRTL@
+HAVE_STDCKDINT_H = @HAVE_STDCKDINT_H@
 HAVE_STDINT_H = @HAVE_STDINT_H@
 HAVE_STPCPY = @HAVE_STPCPY@
 HAVE_STPNCPY = @HAVE_STPNCPY@
@@ -2210,6 +2220,8 @@ HAVE_WMEMMOVE = @HAVE_WMEMMOVE@
 HAVE_WMEMPCPY = @HAVE_WMEMPCPY@
 HAVE_WMEMSET = @HAVE_WMEMSET@
 HAVE_WORKING_C32RTOMB = @HAVE_WORKING_C32RTOMB@
+HAVE_WORKING_CXX_STDCKDINT_H = @HAVE_WORKING_CXX_STDCKDINT_H@
+HAVE_WORKING_C_STDCKDINT_H = @HAVE_WORKING_C_STDCKDINT_H@
 HAVE_WORKING_MBRTOC32 = @HAVE_WORKING_MBRTOC32@
 HAVE_XLOCALE_H = @HAVE_XLOCALE_H@
 HAVE__EXIT = @HAVE__EXIT@
@@ -2296,6 +2308,7 @@ NEXT_AS_FIRST_DIRECTIVE_PTHREAD_H = @NEXT_AS_FIRST_DIRECTIVE_PTHREAD_H@
 NEXT_AS_FIRST_DIRECTIVE_SCHED_H = @NEXT_AS_FIRST_DIRECTIVE_SCHED_H@
 NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H = @NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H@
 NEXT_AS_FIRST_DIRECTIVE_STDARG_H = @NEXT_AS_FIRST_DIRECTIVE_STDARG_H@
+NEXT_AS_FIRST_DIRECTIVE_STDCKDINT_H = @NEXT_AS_FIRST_DIRECTIVE_STDCKDINT_H@
 NEXT_AS_FIRST_DIRECTIVE_STDDEF_H = @NEXT_AS_FIRST_DIRECTIVE_STDDEF_H@
 NEXT_AS_FIRST_DIRECTIVE_STDINT_H = @NEXT_AS_FIRST_DIRECTIVE_STDINT_H@
 NEXT_AS_FIRST_DIRECTIVE_STDIO_H = @NEXT_AS_FIRST_DIRECTIVE_STDIO_H@
@@ -2331,6 +2344,7 @@ NEXT_PTHREAD_H = @NEXT_PTHREAD_H@
 NEXT_SCHED_H = @NEXT_SCHED_H@
 NEXT_SIGNAL_H = @NEXT_SIGNAL_H@
 NEXT_STDARG_H = @NEXT_STDARG_H@
+NEXT_STDCKDINT_H = @NEXT_STDCKDINT_H@
 NEXT_STDDEF_H = @NEXT_STDDEF_H@
 NEXT_STDINT_H = @NEXT_STDINT_H@
 NEXT_STDIO_H = @NEXT_STDIO_H@
@@ -2465,6 +2479,7 @@ REPLACE_GETENTROPY = @REPLACE_GETENTROPY@
 REPLACE_GETGROUPS = @REPLACE_GETGROUPS@
 REPLACE_GETLINE = @REPLACE_GETLINE@
 REPLACE_GETLOADAVG = @REPLACE_GETLOADAVG@
+REPLACE_GETLOCALENAME_L = @REPLACE_GETLOCALENAME_L@
 REPLACE_GETLOGIN = @REPLACE_GETLOGIN@
 REPLACE_GETLOGIN_R = @REPLACE_GETLOGIN_R@
 REPLACE_GETPAGESIZE = @REPLACE_GETPAGESIZE@
@@ -2879,18 +2894,18 @@ EXTRA_DIST = alloca.c alloca.in.h assert.in.h verify.h assure.h \
 	isnand.c float+.h isnan.c isnanf-nolibm.h isnanf.c float+.h \
 	isnan.c isnanl-nolibm.h isnanl.c iswctype-impl.h langinfo.in.h \
 	cdefs.h libc-config.h limits.in.h localcharset.h locale.in.h \
-	malloc.c malloc.c malloca.h math.in.h lc-charset-dispatch.c \
-	lc-charset-dispatch.h mbrtowc-impl-utf8.h mbrtowc-impl.h \
-	mbtowc-lock.c mbtowc-lock.h windows-initguard.h \
+	malloc.c malloc.c malloca.h math.in.h mbchar.h \
 	lc-charset-dispatch.c lc-charset-dispatch.h \
 	mbrtowc-impl-utf8.h mbrtowc-impl.h mbtowc-lock.c mbtowc-lock.h \
-	windows-initguard.h mbsrtoc32s-state.c mbsrtowcs-impl.h \
-	mbsrtowcs-impl.h mbsrtowcs-state.c mbtowc-impl.h \
-	memchr.valgrind msvc-inval.h msvc-nothrow.h \
-	windows-initguard.h openat.h dirent-private.h pathmax.h \
-	printf-frexp.h printf-frexp.c printf-frexpl.h pthread.in.h \
-	rawmemchr.valgrind dirent-private.h regcomp.c regex.h \
-	regex_internal.c regex_internal.h regexec.c save-cwd.h \
+	windows-initguard.h lc-charset-dispatch.c \
+	lc-charset-dispatch.h mbrtowc-impl-utf8.h mbrtowc-impl.h \
+	mbtowc-lock.c mbtowc-lock.h windows-initguard.h \
+	mbsrtoc32s-state.c mbsrtowcs-impl.h mbsrtowcs-impl.h \
+	mbsrtowcs-state.c mbtowc-impl.h memchr.valgrind msvc-inval.h \
+	msvc-nothrow.h windows-initguard.h openat.h dirent-private.h \
+	pathmax.h printf-frexp.h printf-frexp.c printf-frexpl.h \
+	pthread.in.h rawmemchr.valgrind dirent-private.h regcomp.c \
+	regex.h regex_internal.c regex_internal.h regexec.c save-cwd.h \
 	sched.in.h setlocale_null.h windows-initguard.h \
 	setlocale_null.h sig-handler.h signal.in.h float+.h \
 	_Noreturn.h arg-nonnull.h c++defs.h warn-on-use.h snprintf.c \
@@ -2974,11 +2989,11 @@ libgnu_a_SOURCES = openat-priv.h openat-proc.c basename-lgpl.c \
 	c32_get_type_test.c c32isalnum.c c32isalpha.c c32isblank.c \
 	c32iscntrl.c c32isdigit.c c32isgraph.c c32islower.c \
 	c32isprint.c c32ispunct.c c32isspace.c c32isupper.c \
-	c32isxdigit.c c32tolower.c $(am__append_2) $(am__append_3) \
-	cloexec.c $(am__append_4) $(am__append_5) $(am__append_6) \
-	dirname-lgpl.c stripslash.c $(am__append_7) $(am__append_8) \
-	exitfail.c $(am__append_9) $(am__append_10) fd-hook.c \
-	filenamecat-lgpl.c $(am__append_11) $(am__append_12) \
+	c32isxdigit.c c32tolower.c c32width.c $(am__append_2) \
+	$(am__append_3) cloexec.c $(am__append_4) $(am__append_5) \
+	$(am__append_6) dirname-lgpl.c stripslash.c $(am__append_7) \
+	$(am__append_8) exitfail.c $(am__append_9) $(am__append_10) \
+	fd-hook.c filenamecat-lgpl.c $(am__append_11) $(am__append_12) \
 	$(am__append_13) $(am__append_14) $(am__append_15) \
 	$(am__append_16) $(am__append_17) $(am__append_18) \
 	$(am__append_19) $(am__append_20) $(am__append_21) \
@@ -2993,21 +3008,21 @@ libgnu_a_SOURCES = openat-priv.h openat-proc.c basename-lgpl.c \
 	$(am__append_29) $(am__append_30) $(am__append_31) \
 	$(am__append_32) $(am__append_33) localcharset.c \
 	$(am__append_34) glthread/lock.h glthread/lock.c \
-	$(am__append_35) malloca.c math.c $(am__append_36) \
-	$(am__append_37) $(am__append_38) mbsrtoc32s.c \
-	$(am__append_39) mbszero.c $(am__append_40) $(am__append_41) \
-	$(am__append_42) $(am__append_43) minmax.h $(am__append_44) \
-	$(am__append_45) $(am__append_46) $(am__append_47) \
-	$(am__append_48) $(am__append_49) glthread/once.h \
-	glthread/once.c $(am__append_50) $(am__append_51) openat-die.c \
-	$(am__append_52) printf-frexp.c printf-frexpl.c \
-	$(am__append_53) $(am__append_54) $(am__append_55) \
-	$(am__append_56) $(am__append_57) $(am__append_58) \
-	$(am__append_59) save-cwd.c setlocale_null.c $(am__append_60) \
-	setlocale_null-unlocked.c $(am__append_61) sig-handler.c \
-	$(am__append_62) $(am__append_63) size_max.h $(am__append_64) \
-	stat-time.c $(am__append_65) $(am__append_66) stdlib.c \
-	$(am__append_67) $(am__append_68) $(am__append_69) \
+	$(am__append_35) malloca.c math.c mbchar.c mbiterf.h mbiterf.c \
+	$(am__append_36) $(am__append_37) $(am__append_38) mbsnlen.c \
+	mbsrtoc32s.c $(am__append_39) mbszero.c $(am__append_40) \
+	$(am__append_41) $(am__append_42) $(am__append_43) minmax.h \
+	$(am__append_44) $(am__append_45) $(am__append_46) \
+	$(am__append_47) $(am__append_48) $(am__append_49) \
+	glthread/once.h glthread/once.c $(am__append_50) \
+	$(am__append_51) openat-die.c $(am__append_52) printf-frexp.c \
+	printf-frexpl.c $(am__append_53) $(am__append_54) \
+	$(am__append_55) $(am__append_56) $(am__append_57) \
+	$(am__append_58) $(am__append_59) save-cwd.c setlocale_null.c \
+	$(am__append_60) setlocale_null-unlocked.c $(am__append_61) \
+	sig-handler.c $(am__append_62) $(am__append_63) size_max.h \
+	$(am__append_64) stat-time.c $(am__append_65) $(am__append_66) \
+	stdlib.c $(am__append_67) $(am__append_68) $(am__append_69) \
 	$(am__append_70) $(am__append_71) $(am__append_72) strnlen1.h \
 	strnlen1.c tempname.c glthread/threadlib.c timespec.c \
 	$(am__append_73) $(am__append_74) $(am__append_75) \
@@ -3260,6 +3275,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-c32isupper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-c32isxdigit.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-c32tolower.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-c32width.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-canonicalize-lgpl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-chdir-long.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-cloexec.Po@am__quote@ # am--include-marker
@@ -3316,9 +3332,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-malloc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-malloca.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-math.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbchar.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbiterf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbrtoc32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbrtowc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbsinit.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbsnlen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbsrtoc32s-state.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbsrtoc32s.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-mbsrtowcs-state.Po@am__quote@ # am--include-marker
@@ -3718,6 +3737,20 @@ libgnu_a-c32tolower.obj: c32tolower.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='c32tolower.c' object='libgnu_a-c32tolower.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-c32tolower.obj `if test -f 'c32tolower.c'; then $(CYGPATH_W) 'c32tolower.c'; else $(CYGPATH_W) '$(srcdir)/c32tolower.c'; fi`
+
+libgnu_a-c32width.o: c32width.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-c32width.o -MD -MP -MF $(DEPDIR)/libgnu_a-c32width.Tpo -c -o libgnu_a-c32width.o `test -f 'c32width.c' || echo '$(srcdir)/'`c32width.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-c32width.Tpo $(DEPDIR)/libgnu_a-c32width.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='c32width.c' object='libgnu_a-c32width.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-c32width.o `test -f 'c32width.c' || echo '$(srcdir)/'`c32width.c
+
+libgnu_a-c32width.obj: c32width.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-c32width.obj -MD -MP -MF $(DEPDIR)/libgnu_a-c32width.Tpo -c -o libgnu_a-c32width.obj `if test -f 'c32width.c'; then $(CYGPATH_W) 'c32width.c'; else $(CYGPATH_W) '$(srcdir)/c32width.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-c32width.Tpo $(DEPDIR)/libgnu_a-c32width.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='c32width.c' object='libgnu_a-c32width.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-c32width.obj `if test -f 'c32width.c'; then $(CYGPATH_W) 'c32width.c'; else $(CYGPATH_W) '$(srcdir)/c32width.c'; fi`
 
 libgnu_a-canonicalize-lgpl.o: canonicalize-lgpl.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-canonicalize-lgpl.o -MD -MP -MF $(DEPDIR)/libgnu_a-canonicalize-lgpl.Tpo -c -o libgnu_a-canonicalize-lgpl.o `test -f 'canonicalize-lgpl.c' || echo '$(srcdir)/'`canonicalize-lgpl.c
@@ -4503,6 +4536,34 @@ libgnu_a-math.obj: math.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-math.obj `if test -f 'math.c'; then $(CYGPATH_W) 'math.c'; else $(CYGPATH_W) '$(srcdir)/math.c'; fi`
 
+libgnu_a-mbchar.o: mbchar.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-mbchar.o -MD -MP -MF $(DEPDIR)/libgnu_a-mbchar.Tpo -c -o libgnu_a-mbchar.o `test -f 'mbchar.c' || echo '$(srcdir)/'`mbchar.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-mbchar.Tpo $(DEPDIR)/libgnu_a-mbchar.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mbchar.c' object='libgnu_a-mbchar.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-mbchar.o `test -f 'mbchar.c' || echo '$(srcdir)/'`mbchar.c
+
+libgnu_a-mbchar.obj: mbchar.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-mbchar.obj -MD -MP -MF $(DEPDIR)/libgnu_a-mbchar.Tpo -c -o libgnu_a-mbchar.obj `if test -f 'mbchar.c'; then $(CYGPATH_W) 'mbchar.c'; else $(CYGPATH_W) '$(srcdir)/mbchar.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-mbchar.Tpo $(DEPDIR)/libgnu_a-mbchar.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mbchar.c' object='libgnu_a-mbchar.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-mbchar.obj `if test -f 'mbchar.c'; then $(CYGPATH_W) 'mbchar.c'; else $(CYGPATH_W) '$(srcdir)/mbchar.c'; fi`
+
+libgnu_a-mbiterf.o: mbiterf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-mbiterf.o -MD -MP -MF $(DEPDIR)/libgnu_a-mbiterf.Tpo -c -o libgnu_a-mbiterf.o `test -f 'mbiterf.c' || echo '$(srcdir)/'`mbiterf.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-mbiterf.Tpo $(DEPDIR)/libgnu_a-mbiterf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mbiterf.c' object='libgnu_a-mbiterf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-mbiterf.o `test -f 'mbiterf.c' || echo '$(srcdir)/'`mbiterf.c
+
+libgnu_a-mbiterf.obj: mbiterf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-mbiterf.obj -MD -MP -MF $(DEPDIR)/libgnu_a-mbiterf.Tpo -c -o libgnu_a-mbiterf.obj `if test -f 'mbiterf.c'; then $(CYGPATH_W) 'mbiterf.c'; else $(CYGPATH_W) '$(srcdir)/mbiterf.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-mbiterf.Tpo $(DEPDIR)/libgnu_a-mbiterf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mbiterf.c' object='libgnu_a-mbiterf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-mbiterf.obj `if test -f 'mbiterf.c'; then $(CYGPATH_W) 'mbiterf.c'; else $(CYGPATH_W) '$(srcdir)/mbiterf.c'; fi`
+
 libgnu_a-mbrtoc32.o: mbrtoc32.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-mbrtoc32.o -MD -MP -MF $(DEPDIR)/libgnu_a-mbrtoc32.Tpo -c -o libgnu_a-mbrtoc32.o `test -f 'mbrtoc32.c' || echo '$(srcdir)/'`mbrtoc32.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-mbrtoc32.Tpo $(DEPDIR)/libgnu_a-mbrtoc32.Po
@@ -4544,6 +4605,20 @@ libgnu_a-mbsinit.obj: mbsinit.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mbsinit.c' object='libgnu_a-mbsinit.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-mbsinit.obj `if test -f 'mbsinit.c'; then $(CYGPATH_W) 'mbsinit.c'; else $(CYGPATH_W) '$(srcdir)/mbsinit.c'; fi`
+
+libgnu_a-mbsnlen.o: mbsnlen.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-mbsnlen.o -MD -MP -MF $(DEPDIR)/libgnu_a-mbsnlen.Tpo -c -o libgnu_a-mbsnlen.o `test -f 'mbsnlen.c' || echo '$(srcdir)/'`mbsnlen.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-mbsnlen.Tpo $(DEPDIR)/libgnu_a-mbsnlen.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mbsnlen.c' object='libgnu_a-mbsnlen.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-mbsnlen.o `test -f 'mbsnlen.c' || echo '$(srcdir)/'`mbsnlen.c
+
+libgnu_a-mbsnlen.obj: mbsnlen.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-mbsnlen.obj -MD -MP -MF $(DEPDIR)/libgnu_a-mbsnlen.Tpo -c -o libgnu_a-mbsnlen.obj `if test -f 'mbsnlen.c'; then $(CYGPATH_W) 'mbsnlen.c'; else $(CYGPATH_W) '$(srcdir)/mbsnlen.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-mbsnlen.Tpo $(DEPDIR)/libgnu_a-mbsnlen.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mbsnlen.c' object='libgnu_a-mbsnlen.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-mbsnlen.obj `if test -f 'mbsnlen.c'; then $(CYGPATH_W) 'mbsnlen.c'; else $(CYGPATH_W) '$(srcdir)/mbsnlen.c'; fi`
 
 libgnu_a-mbsrtoc32s.o: mbsrtoc32s.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-mbsrtoc32s.o -MD -MP -MF $(DEPDIR)/libgnu_a-mbsrtoc32s.Tpo -c -o libgnu_a-mbsrtoc32s.o `test -f 'mbsrtoc32s.c' || echo '$(srcdir)/'`mbsrtoc32s.c
@@ -6390,6 +6465,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/libgnu_a-c32isupper.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-c32isxdigit.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-c32tolower.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-c32width.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-canonicalize-lgpl.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-chdir-long.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-cloexec.Po
@@ -6446,9 +6522,12 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/libgnu_a-malloc.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-malloca.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-math.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-mbchar.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-mbiterf.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbrtoc32.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbrtowc.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbsinit.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-mbsnlen.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbsrtoc32s-state.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbsrtoc32s.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbsrtowcs-state.Po
@@ -6627,6 +6706,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/libgnu_a-c32isupper.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-c32isxdigit.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-c32tolower.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-c32width.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-canonicalize-lgpl.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-chdir-long.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-cloexec.Po
@@ -6683,9 +6763,12 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/libgnu_a-malloc.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-malloca.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-math.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-mbchar.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-mbiterf.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbrtoc32.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbrtowc.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbsinit.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-mbsnlen.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbsrtoc32s-state.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbsrtoc32s.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-mbsrtowcs-state.Po
@@ -7240,6 +7323,7 @@ locale.h: locale.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''REPLACE_NEWLOCALE''@|$(REPLACE_NEWLOCALE)|g' \
 	      -e 's|@''REPLACE_DUPLOCALE''@|$(REPLACE_DUPLOCALE)|g' \
 	      -e 's|@''REPLACE_FREELOCALE''@|$(REPLACE_FREELOCALE)|g' \
+	      -e 's|@''REPLACE_GETLOCALENAME_L''@|$(REPLACE_GETLOCALENAME_L)|g' \
 	      -e 's|@''REPLACE_STRUCT_LCONV''@|$(REPLACE_STRUCT_LCONV)|g' \
 	      -e 's|@''LOCALENAME_ENHANCE_LOCALE_FUNCS''@|$(LOCALENAME_ENHANCE_LOCALE_FUNCS)|g' \
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
@@ -7810,6 +7894,15 @@ signal.h: signal.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 # doesn't have one that works with the given compiler.
 @GL_GENERATE_STDCKDINT_H_TRUE@stdckdint.h: stdckdint.in.h $(top_builddir)/config.status
 @GL_GENERATE_STDCKDINT_H_TRUE@	$(gl_V_at)$(SED_HEADER_STDOUT) \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''GUARD_PREFIX''@|GL|g' \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''NEXT_STDCKDINT_H''@|$(NEXT_STDCKDINT_H)|g' \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''HAVE_C_STDCKDINT_H''@|$(HAVE_C_STDCKDINT_H)|g' \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''HAVE_WORKING_C_STDCKDINT_H''@|$(HAVE_WORKING_C_STDCKDINT_H)|g' \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''HAVE_CXX_STDCKDINT_H''@|$(HAVE_CXX_STDCKDINT_H)|g' \
+@GL_GENERATE_STDCKDINT_H_TRUE@	      -e 's|@''HAVE_WORKING_CXX_STDCKDINT_H''@|$(HAVE_WORKING_CXX_STDCKDINT_H)|g' \
 @GL_GENERATE_STDCKDINT_H_TRUE@	  $(srcdir)/stdckdint.in.h > $@-t
 @GL_GENERATE_STDCKDINT_H_TRUE@	$(AM_V_at)mv $@-t $@
 @GL_GENERATE_STDCKDINT_H_FALSE@stdckdint.h: $(top_builddir)/config.status
@@ -7828,6 +7921,7 @@ signal.h: signal.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 @GL_GENERATE_STDDEF_H_TRUE@	      -e 's|@''STDDEF_NOT_IDEMPOTENT''@|$(STDDEF_NOT_IDEMPOTENT)|g' \
 @GL_GENERATE_STDDEF_H_TRUE@	      -e 's|@''REPLACE_NULL''@|$(REPLACE_NULL)|g' \
 @GL_GENERATE_STDDEF_H_TRUE@	      -e 's|@''HAVE_MAX_ALIGN_T''@|$(HAVE_MAX_ALIGN_T)|g' \
+@GL_GENERATE_STDDEF_H_TRUE@	      -e 's|@''HAVE_C_UNREACHABLE''@|$(HAVE_C_UNREACHABLE)|g' \
 @GL_GENERATE_STDDEF_H_TRUE@	      $(srcdir)/stddef.in.h > $@-t
 @GL_GENERATE_STDDEF_H_TRUE@	$(AM_V_at)mv $@-t $@
 @GL_GENERATE_STDDEF_H_FALSE@stddef.h: $(top_builddir)/config.status

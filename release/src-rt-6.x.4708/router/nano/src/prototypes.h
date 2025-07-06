@@ -14,7 +14,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -27,6 +27,7 @@ extern volatile sig_atomic_t the_window_resized;
 #endif
 
 extern bool on_a_vt;
+extern bool using_utf8;
 extern bool shifted_metas;
 
 extern bool meta_key;
@@ -39,6 +40,8 @@ extern bool report_size;
 
 extern bool ran_a_tool;
 extern char *foretext;
+
+extern int final_status;
 
 extern bool inhelp;
 extern char *title;
@@ -204,10 +207,6 @@ void to_last_file(void);
 #endif
 
 /* Most functions in chars.c. */
-#ifdef ENABLE_UTF8
-void utf8_init(void);
-bool using_utf8(void);
-#endif
 bool is_alpha_char(const char *c);
 bool is_blank_char(const char *c);
 bool is_cntrl_char(const char *c);
@@ -356,7 +355,7 @@ void load_history(void);
 void save_history(void);
 void load_poshistory(void);
 void update_poshistory(void);
-bool has_old_position(const char *file, ssize_t *line, ssize_t *column);
+void restore_cursor_position_if_any(void);
 #endif
 
 /* Most functions in move.c. */

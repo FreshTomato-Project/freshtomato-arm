@@ -2,7 +2,7 @@
  *   history.c  --  This file is part of GNU nano.                        *
  *                                                                        *
  *   Copyright (C) 2003-2011, 2013-2025 Free Software Foundation, Inc.    *
- *   Copyright (C) 2016, 2017, 2019 Benno Schulenberg                     *
+ *   Copyright (C) 2016, 2017, 2019, 2025 Benno Schulenberg               *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -349,6 +349,47 @@ void save_history(void)
 	free(histname);
 }
 
+/* Return as a string... the line numbers of the lines with an anchor. */
+char *stringify_anchors(void)
+{
+	char *string = copy_of("");
+#ifndef NANO_TINY
+	char number[24];
+
+	for (linestruct *line = openfile->filetop; line != NULL; line = line->next)
+		if (line->has_anchor) {
+			sprintf(number, "%zi ", line->lineno);
+			string = nrealloc(string, strlen(string) + strlen(number) + 1);
+			strcat(string, number);
+		}
+#endif
+	return string;
+}
+
+/* Set an anchor for each line number in the given string. */
+void restore_anchors(char *string)
+{
+#ifndef NANO_TINY
+	linestruct *line = openfile->filetop;
+	ssize_t number;
+	char *space;
+
+	while (*string) {
+		if ((space = strchr(string, ' ')) == NULL)
+			return;
+		*space = '\0';
+		number = atoi(string);
+		string = space + 1;
+
+		while (line->lineno < number)
+			if ((line = line->next) == NULL)
+				return;
+
+		line->has_anchor = TRUE;
+	}
+#endif
+}
+
 /* Load the recorded cursor positions for files that were edited. */
 void load_poshistory(void)
 {
@@ -365,20 +406,23 @@ void load_poshistory(void)
 
 	poshiststruct *lastitem = NULL;
 	poshiststruct *newitem;
-	char *lineptr, *columnptr;
-	char *stanza = NULL;
+	char *stanza, *lineptr, *columnptr;
+	char *phrase = NULL;
 	struct stat fileinfo;
 	size_t dummy = 0;
-	ssize_t count = 0;
-	ssize_t read;
+	int count = 0;
+	ssize_t length;
 
 	/* Read and parse each line, and store the extracted data. */
-	while ((read = getline(&stanza, &dummy, histfile)) > 5) {
+	while (count++ < 200 && (length = getline(&phrase, &dummy, histfile)) > 1) {
+		stanza = strchr(phrase, '/');
+		length -= (stanza ? stanza - phrase : 0);
+
 		/* Decode NULs as embedded newlines. */
-		recode_NUL_to_LF(stanza, read);
+		recode_NUL_to_LF(stanza, length);
 
 		/* Find the spaces before column number and line number. */
-		columnptr = revstrstr(stanza, " ", stanza + read - 3);
+		columnptr = revstrstr(stanza, " ", stanza + length - 3);
 		if (columnptr == NULL)
 			continue;
 		lineptr = revstrstr(stanza, " ", columnptr - 2);
@@ -394,6 +438,7 @@ void load_poshistory(void)
 		newitem->filename = copy_of(stanza);
 		newitem->linenumber = atoi(lineptr);
 		newitem->columnnumber = atoi(columnptr);
+		newitem->anchors = (phrase == stanza) ? NULL : measured_copy(phrase, stanza - phrase);
 		newitem->next = NULL;
 
 		/* Add the record to the list. */
@@ -403,22 +448,12 @@ void load_poshistory(void)
 			lastitem->next = newitem;
 
 		lastitem = newitem;
-
-		/* Impose a limit, so the file will not grow indefinitely. */
-		if (++count > 200) {
-			poshiststruct *drop_record = position_history;
-
-			position_history = position_history->next;
-
-			free(drop_record->filename);
-			free(drop_record);
-		}
 	}
 
 	if (fclose(histfile) == EOF)
 		jot_error(N_("Error reading %s: %s"), poshistname, strerror(errno));
 
-	free(stanza);
+	free(phrase);
 
 	if (stat(poshistname, &fileinfo) == 0)
 		latest_timestamp = fileinfo.st_mtime;
@@ -430,6 +465,7 @@ void save_poshistory(void)
 	FILE *histfile = fopen(poshistname, "wb");
 	struct stat fileinfo;
 	poshiststruct *item;
+	int count = 0;
 
 	if (histfile == NULL) {
 		jot_error(N_("Error writing %s: %s"), poshistname, strerror(errno));
@@ -440,9 +476,13 @@ void save_poshistory(void)
 	if (chmod(poshistname, S_IRUSR | S_IWUSR) < 0)
 		jot_error(N_("Cannot limit permissions on %s: %s"), poshistname, strerror(errno));
 
-	for (item = position_history; item != NULL; item = item->next) {
+	for (item = position_history; item != NULL && count++ < 200; item = item->next) {
 		char *path_and_place;
-		size_t length;
+		size_t length = (item->anchors == NULL) ? 0 : strlen(item->anchors);
+
+		/* First write the string of line numbers with anchors, if any. */
+		if (length && fwrite(item->anchors, 1, length, histfile) < length)
+			jot_error(N_("Error writing %s: %s"), poshistname, strerror(errno));
 
 		/* Assume 20 decimal positions each for line and column number,
 		 * plus two spaces, plus the line feed, plus the null byte. */
@@ -480,6 +520,7 @@ void reload_positions_if_needed(void)
 	for (item = position_history; item != NULL; item = nextone) {
 		nextone = item->next;
 		free(item->filename);
+		free(item->anchors);
 		free(item);
 	}
 
@@ -494,7 +535,7 @@ void update_poshistory(void)
 {
 	char *fullpath = get_full_path(openfile->filename);
 	poshiststruct *previous = NULL;
-	poshiststruct *item, *theone;
+	poshiststruct *item;
 
 	if (fullpath == NULL || openfile->filename[0] == '\0') {
 		free(fullpath);
@@ -510,62 +551,40 @@ void update_poshistory(void)
 		previous = item;
 	}
 
-	/* Don't record files that have the default cursor position. */
-	if (openfile->current->lineno == 1 && openfile->current_x == 0) {
-		if (item != NULL) {
-			if (previous == NULL)
-				position_history = item->next;
-			else
-				previous->next = item->next;
-			free(item->filename);
-			free(item);
-			save_poshistory();
-		}
-		free(fullpath);
-		return;
+	/* If no match was found, make a new node; otherwise, unlink the match. */
+	if (item == NULL) {
+		item = nmalloc(sizeof(poshiststruct));
+		item->filename = copy_of(fullpath);
+		item->anchors = NULL;
+	} else if (previous)
+		previous->next = item->next;
+
+	/* Place the found or new node at the beginning, if not already there. */
+	if (item != position_history) {
+		item->next = position_history;
+		position_history = item;
 	}
 
-	theone = item;
-
-	/* If we didn't find it, make a new node; otherwise, if we're
-	 * not at the end, move the matching one to the end. */
-	if (theone == NULL) {
-		theone = nmalloc(sizeof(poshiststruct));
-		theone->filename = copy_of(fullpath);
-		if (position_history == NULL)
-			position_history = theone;
-		else
-			previous->next = theone;
-	} else if (item->next != NULL) {
-		if (previous == NULL)
-			position_history = item->next;
-		else
-			previous->next = item->next;
-		while (item->next != NULL)
-			item = item->next;
-		item->next = theone;
-	}
-
-	/* Store the last cursor position. */
-	theone->linenumber = openfile->current->lineno;
-	theone->columnnumber = xplustabs() + 1;
-	theone->next = NULL;
+	/* Record the last cursor position and any anchors. */
+	item->linenumber = openfile->current->lineno;
+	item->columnnumber = xplustabs() + 1;
+	free(item->anchors);
+	item->anchors = stringify_anchors();
 
 	free(fullpath);
 
 	save_poshistory();
 }
 
-/* Check whether the given file matches an existing entry in the recorded
- * last file positions.  If not, return FALSE.  If yes, return TRUE and
- * set line and column to the retrieved values. */
-bool has_old_position(const char *file, ssize_t *line, ssize_t *column)
+/* Check whether the current filename matches an entry in the list of
+ * recorded positions.  If yes, restore the relevant cursor position. */
+void restore_cursor_position_if_any(void)
 {
-	char *fullpath = get_full_path(file);
+	char *fullpath = get_full_path(openfile->filename);
 	poshiststruct *item;
 
 	if (fullpath == NULL)
-		return FALSE;
+		return;
 
 	reload_positions_if_needed();
 
@@ -575,11 +594,9 @@ bool has_old_position(const char *file, ssize_t *line, ssize_t *column)
 
 	free(fullpath);
 
-	if (item == NULL)
-		return FALSE;
-
-	*line = item->linenumber;
-	*column = item->columnnumber;
-	return TRUE;
+	if (item && item->anchors)
+		restore_anchors(item->anchors);
+	if (item)
+		goto_line_and_column(item->linenumber, item->columnnumber, FALSE, FALSE);
 }
 #endif /* ENABLE_HISTORIES */

@@ -29,6 +29,7 @@
                         Depends on FCHAR_T.
      DCHAR_CPY          memcpy like function for DCHAR_T[] arrays.
      DCHAR_SET          memset like function for DCHAR_T[] arrays.
+     DCHAR_STRLEN       strlen like function for DCHAR_T[] arrays.
      DCHAR_MBSNLEN      mbsnlen like function for DCHAR_T[] arrays.
      SNPRINTF           The system's snprintf (or similar) function.
                         This may be either snprintf or swprintf.
@@ -88,7 +89,7 @@
 #include <errno.h>      /* errno */
 #include <limits.h>     /* CHAR_BIT, INT_MAX, INT_WIDTH, LONG_WIDTH */
 #include <float.h>      /* DBL_MAX_EXP, LDBL_MAX_EXP, LDBL_MANT_DIG */
-#if HAVE_NL_LANGINFO
+#if HAVE_NL_LANGINFO || __GLIBC__ >= 2 || defined __CYGWIN__
 # include <langinfo.h>
 #endif
 #ifndef VASNPRINTF
@@ -183,6 +184,20 @@
 #   define TCHAR_T char
 # endif
 #endif
+#ifndef DCHAR_STRLEN
+# if WIDE_CHAR_VERSION
+#  define DCHAR_STRLEN local_wcslen
+# else
+#  define DCHAR_STRLEN strlen
+# endif
+#endif
+#ifndef DCHAR_MBSNLEN
+# if WIDE_CHAR_VERSION
+#  define DCHAR_MBSNLEN wcsnlen
+# else
+#  define DCHAR_MBSNLEN mbsnlen
+# endif
+#endif
 #if !WIDE_CHAR_VERSION || !DCHAR_IS_TCHAR
   /* TCHAR_T is char.  */
   /* Use snprintf if it exists under the name 'snprintf' or '_snprintf'.
@@ -230,6 +245,11 @@
 #else
 # define IF_LINT(Code) /* empty */
 #endif
+
+/* Here we need only the most basic fields of 'struct lconv', and can
+   therefore use the system's localeconv() function, without needing a
+   dependency on module 'localeconv'.  */
+#undef localeconv
 
 /* Avoid some warnings from "gcc -Wshadow".
    This file doesn't use the exp() and remainder() functions.  */
@@ -364,7 +384,7 @@ local_wctomb (char *s, wchar_t wc)
 # endif
 #endif
 
-#if NEED_PRINTF_DIRECTIVE_A || NEED_PRINTF_LONG_DOUBLE || NEED_PRINTF_INFINITE_LONG_DOUBLE || NEED_PRINTF_DOUBLE || NEED_PRINTF_INFINITE_DOUBLE || (NEED_WPRINTF_DIRECTIVE_LA && WIDE_CHAR_VERSION)
+#if NEED_PRINTF_DIRECTIVE_A || NEED_PRINTF_LONG_DOUBLE || NEED_PRINTF_INFINITE_LONG_DOUBLE || NEED_PRINTF_DOUBLE || NEED_PRINTF_INFINITE_DOUBLE || (NEED_WPRINTF_DIRECTIVE_LA && WIDE_CHAR_VERSION) || (NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT)
 /* Determine the decimal-point character according to the current locale.  */
 # ifndef decimal_point_char_defined
 #  define decimal_point_char_defined 1
@@ -387,6 +407,217 @@ decimal_point_char (void)
 #  endif
   /* The decimal point is always a single byte: either '.' or ','.  */
   return (point[0] != '\0' ? point[0] : '.');
+}
+# endif
+#endif
+
+#if (!WIDE_CHAR_VERSION && (NEED_PRINTF_DOUBLE || NEED_PRINTF_LONG_DOUBLE)) || ((!WIDE_CHAR_VERSION || !DCHAR_IS_TCHAR) && (NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT))
+/* Determine the thousands-separator character according to the current
+   locale.
+   It is a single multibyte character.
+   In glibc: 35x ".", 90x ",", 23x U+202F, 1x U+2019, 1x U+066C, on other
+   systems also U+00A0.  */
+# ifndef thousands_separator_char_defined
+#  define thousands_separator_char_defined 1
+static const char *
+thousands_separator_char (char stackbuf[10])
+{
+  /* Determine it in a multithread-safe way.
+     We know nl_langinfo is multithread-safe on glibc systems, on Mac OS X
+     systems, and on NetBSD, but is not required to be multithread-safe by
+     POSIX.
+     localeconv() is not guaranteed to be multithread-safe by POSIX either;
+     however, on native Windows it is (cf. test-localeconv-mt).
+     sprintf(), however, is multithread-safe.  */
+#  if HAVE_NL_LANGINFO && (__GLIBC__ || defined __UCLIBC__ || (defined __APPLE__ && defined __MACH__) || defined __NetBSD__)
+  return nl_langinfo (THOUSEP);
+#  elif defined _WIN32 && !defined __CYGWIN__
+  return localeconv () -> thousands_sep;
+#  else
+  sprintf (stackbuf, "%'.0f", 1000.0);
+  /* Now stackbuf = "1<thousep>000".  */
+  stackbuf[strlen (stackbuf) - 3] = '\0';
+#   if defined __sun
+  /* Solaris specific hack: Replace wrong result (0xC2 means U+00A0).  */
+  if (strcmp (&stackbuf[1], "\302") == 0)
+    strcpy (&stackbuf[1], MB_CUR_MAX > 1 ? "\302\240" : "\240");
+#   endif
+  return &stackbuf[1];
+#  endif
+}
+# endif
+#endif
+#if !WIDE_CHAR_VERSION && defined DCHAR_CONV_FROM_ENCODING && (NEED_PRINTF_DOUBLE || NEED_PRINTF_LONG_DOUBLE)
+/* Determine the thousands-separator character, as a DCHAR_T[] array,
+   according to the current locale.
+   It is a single Unicode character.  */
+# ifndef thousands_separator_DCHAR_defined
+#  define thousands_separator_DCHAR_defined 1
+static const DCHAR_T *
+thousands_separator_DCHAR (DCHAR_T stackbuf[10])
+{
+  /* Determine it in a multithread-safe way.  */
+  char tmpbuf[10];
+  const char *tmp = thousands_separator_char (tmpbuf);
+  if (*tmp != '\0')
+    {
+      /* Convert it from char[] to DCHAR_T[].  */
+      size_t converted_len = 10;
+      DCHAR_T *converted =
+        DCHAR_CONV_FROM_ENCODING (locale_charset (),
+                                  iconveh_question_mark,
+                                  tmp, strlen (tmp) + 1,
+                                  NULL,
+                                  stackbuf, &converted_len);
+      if (converted != NULL)
+        {
+          if (converted != stackbuf)
+            /* It should not be so long.  */
+            abort ();
+          return stackbuf;
+        }
+    }
+  stackbuf[0] = 0;
+  return stackbuf;
+}
+# endif
+#endif
+/* Maximum number of 'char' in the char[] or DCHAR_T[] representation of the
+   thousands separator.  */
+#define THOUSEP_CHAR_MAXLEN 3
+
+#if WIDE_CHAR_VERSION && ((NEED_PRINTF_DOUBLE || NEED_PRINTF_LONG_DOUBLE) || ((NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT) && DCHAR_IS_TCHAR))
+/* Determine the thousands-separator character, as a wide character, according
+   to the current locale.
+   It is a single wide character.  */
+# ifndef thousands_separator_wchar_defined
+#  define thousands_separator_wchar_defined 1
+static const wchar_t *
+thousands_separator_wchar (wchar_t stackbuf[10])
+{
+#  if __GLIBC__ >= 2 || defined __CYGWIN__
+  /* On glibc, in the unibyte locale fr_FR, the *wprintf routines use U+202F
+     as separator, which cannot be represented in the locale encoding.  */
+  stackbuf[0] =
+    (wchar_t) (unsigned long) nl_langinfo (_NL_NUMERIC_THOUSANDS_SEP_WC);
+  stackbuf[1] = L'\0';
+  return stackbuf;
+#  elif defined _WIN32 && !defined __CYGWIN__
+  const char *tmp = localeconv () -> thousands_sep;
+  if (*tmp != '\0')
+    {
+      mbstate_t state;
+      mbszero (&state);
+      if ((int) mbrtowc (&stackbuf[0], tmp, strlen (tmp), &state) > 0)
+        stackbuf[1] = L'\0';
+      else
+        stackbuf[0] = L'\0';
+    }
+  else
+    stackbuf[0] = L'\0';
+  return stackbuf;
+#  elif defined __sun
+  /* Use sprintf, because swprintf retrieves a wrong value for the
+     thousands-separator wide character (e.g. (wchar_t) 0xffffffa0).  */
+  char tmp[10];
+  sprintf (tmp, "%'.0f", 1000.0);
+  /* Now tmp = L"1<thousep>000".  */
+  tmp[strlen (tmp) - 3] = '\0';
+  /* Solaris specific hack: Replace wrong result (0xC2 means U+00A0).  */
+  if (strcmp (&tmp[1], "\302") == 0)
+    strcpy (&tmp[1], MB_CUR_MAX > 1 ? "\302\240" : "\240");
+  if (tmp[1] != '\0')
+    {
+      mbstate_t state;
+      mbszero (&state);
+      if ((int) mbrtowc (&stackbuf[0], &tmp[1], strlen (&tmp[1]), &state) > 0)
+        stackbuf[1] = L'\0';
+      else
+        stackbuf[0] = L'\0';
+    }
+  else
+    stackbuf[0] = L'\0';
+  return stackbuf;
+#  else
+  swprintf (stackbuf, 10, L"%'.0f", 1000.0);
+  /* Now stackbuf = L"1<thousep>000".  */
+  stackbuf[local_wcslen (stackbuf) - 3] = '\0';
+  return &stackbuf[1];
+#  endif
+}
+# endif
+#endif
+/* Maximum number of 'wchar_t' in the wchar_t[] representation of the thousands
+   separator.  */
+#define THOUSEP_WCHAR_MAXLEN 1
+
+#if (NEED_PRINTF_DOUBLE || NEED_PRINTF_LONG_DOUBLE) || (NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT)
+# ifndef grouping_rule_defined
+#  define grouping_rule_defined 1
+/* Determine the grouping rule.
+ * As specified in POSIX
+ * <https://pubs.opengroup.org/onlinepubs/9799919799/functions/localeconv.html>
+ * <https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap07.html#tag_07_03_04>
+ * it is a string whose elements are 'signed char' values, where
+ * "Each integer specifies the number of digits in each group, with the initial
+ *  integer defining the size of the group immediately preceding the decimal
+ *  delimiter, and the following integers defining the preceding groups.  If
+ *  the last integer is not -1, then the size of the previous group (if any)
+ *  shall be repeatedly used for the remainder of the digits.  If the last
+ *  integer is -1, then no further grouping shall be performed."
+ * Platforms that have locales with grouping:
+ *   glibc, FreeBSD, NetBSD, AIX, Solaris, Cygwin, Haiku.
+ * Platforms that don't:
+ *   musl libc, macOS, OpenBSD, Android, mingw, MSVC.
+ * Typical grouping rules on glibc:
+ *   136x 3     (fr_FR etc.)
+ *   4x 4       (cmn_TW etc.)
+ *   9x 3;2     (ta_IN etc.)
+ *   1x 2;2;2;3 (umn_US)
+ *   21x -1     (C etc.)
+ */
+static const signed char *
+grouping_rule (void)
+{
+  /* We know nl_langinfo is multithread-safe on glibc systems and on Cygwin,
+     but is not required to be multithread-safe by POSIX.
+     localeconv() is not guaranteed to be multithread-safe by POSIX either;
+     however, on all known systems it is (cf. test-localeconv-mt).  */
+#  if __GLIBC__ >= 2
+  return (const signed char *) nl_langinfo (GROUPING);
+#  elif defined __CYGWIN__
+  return (const signed char *) nl_langinfo (_NL_NUMERIC_GROUPING);
+#  else
+  return (const signed char *) localeconv () -> grouping;
+#  endif
+}
+/* Determines the number of thousands-separators to be inserted in a digit
+   sequence with ndigits digits (before the decimal point).  */
+static size_t
+num_thousands_separators (const signed char *grouping, size_t ndigits)
+{
+  const signed char *g = grouping;
+  int h = *g;
+  if (h <= 0 || ndigits == 0)
+    return 0;
+  size_t insert = 0;
+  for (;;)
+    {
+      /* Invariant: here h == *g, h > 0, ndigits > 0.  */
+      if (g[1] == 0)
+        /* h repeats endlessly.  */
+        return insert + (ndigits - 1) / h;
+      /* h does not repeat.  */
+      if (ndigits <= h)
+        return insert;
+      ndigits -= h;
+      insert++;
+      g++;
+      h = *g;
+      if (h < 0)
+        /* No further grouping.  */
+        return insert;
+    }
 }
 # endif
 #endif
@@ -1845,8 +2076,17 @@ MAX_ROOM_NEEDED (const arguments *ap, size_t arg_index, FCHAR_T conversion,
         }
       if (tmp_length < precision)
         tmp_length = precision;
-      /* Multiply by 2, as an estimate for FLAG_GROUP.  */
-      tmp_length = xsum (tmp_length, tmp_length);
+      /* Account for thousands separators.  */
+      if (flags & FLAG_GROUP)
+        {
+          /* A thousands separator needs to be inserted at most every 2 digits.
+             This is the case in the ta_IN locale.  */
+# if WIDE_CHAR_VERSION
+          tmp_length = xsum (tmp_length, tmp_length / 2 * THOUSEP_WCHAR_MAXLEN);
+# else
+          tmp_length = xsum (tmp_length, tmp_length / 2 * THOUSEP_CHAR_MAXLEN);
+# endif
+        }
       /* Add 1, to account for a leading sign.  */
       tmp_length = xsum (tmp_length, 1);
       break;
@@ -2094,12 +2334,18 @@ MAX_ROOM_NEEDED (const arguments *ap, size_t arg_index, FCHAR_T conversion,
       tmp_length = xsum (tmp_length, 2);
       break;
 
+    case 'e': case 'E':
+      tmp_length =
+        12; /* sign, decimal point, exponent etc. */
+      tmp_length = xsum (tmp_length, precision);
+      break;
+
     case 'f': case 'F':
       if (type == TYPE_LONGDOUBLE)
         tmp_length =
           (unsigned int) (LDBL_MAX_EXP
                           * 0.30103 /* binary -> decimal */
-                          * 2 /* estimate for FLAG_GROUP */
+                          * 0.5 * 3 /* estimate for FLAG_GROUP */
                          )
           + 1 /* turn floor into ceil */
           + 10; /* sign, decimal point etc. */
@@ -2107,17 +2353,20 @@ MAX_ROOM_NEEDED (const arguments *ap, size_t arg_index, FCHAR_T conversion,
         tmp_length =
           (unsigned int) (DBL_MAX_EXP
                           * 0.30103 /* binary -> decimal */
-                          * 2 /* estimate for FLAG_GROUP */
+                          * 0.5 * 3 /* estimate for FLAG_GROUP */
                          )
           + 1 /* turn floor into ceil */
           + 10; /* sign, decimal point etc. */
       tmp_length = xsum (tmp_length, precision);
       break;
 
-    case 'e': case 'E': case 'g': case 'G':
+    case 'g': case 'G':
       tmp_length =
         12; /* sign, decimal point, exponent etc. */
-      tmp_length = xsum (tmp_length, precision);
+      tmp_length = xsum (tmp_length,
+                         precision
+                         * 0.5 * 3 /* estimate for FLAG_GROUP */
+                        );
       break;
 
     case 'a': case 'A':
@@ -2268,7 +2517,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
     TCHAR_T *buf;
     TCHAR_T *buf_malloced;
     const FCHAR_T *cp;
-    size_t i;
+    size_t di;
     DIRECTIVE *dp;
     /* Output string accumulator.  */
     DCHAR_T *result;
@@ -2332,7 +2581,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
 #define ENSURE_ALLOCATION(needed) \
   ENSURE_ALLOCATION_ELSE((needed), goto out_of_memory; )
 
-    for (cp = format, i = 0, dp = &d.dir[0]; ; cp = dp->dir_end, i++, dp++)
+    for (cp = format, di = 0, dp = &d.dir[0]; ; cp = dp->dir_end, di++, dp++)
       {
         if (cp != dp->dir_start)
           {
@@ -2355,7 +2604,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                 while (--n > 0);
               }
           }
-        if (i == d.count)
+        if (di == d.count)
           break;
 
         /* Execute a single directive.  */
@@ -4887,6 +5136,17 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                         }
                     }
 # endif
+                /* Account for thousands separators.  */
+                if (flags & FLAG_GROUP)
+                  {
+                    /* A thousands separator needs to be inserted at most every 2 digits.
+                       This is the case in the ta_IN locale.  */
+# if WIDE_CHAR_VERSION
+                    tmp_length = xsum (tmp_length, tmp_length / 2 * THOUSEP_WCHAR_MAXLEN);
+# else
+                    tmp_length = xsum (tmp_length, tmp_length / 2 * THOUSEP_CHAR_MAXLEN);
+# endif
+                  }
                 /* Account for sign, decimal point etc. */
                 tmp_length = xsum (tmp_length, 12);
 
@@ -4982,12 +5242,84 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                                 ndigits = strlen (digits);
 
                                 if (ndigits > precision)
-                                  do
-                                    {
-                                      --ndigits;
-                                      *p++ = digits[ndigits];
-                                    }
-                                  while (ndigits > precision);
+                                  {
+                                    /* Number of digits before the decimal point.  */
+                                    size_t intpart_digits = ndigits - precision;
+
+                                    const DCHAR_T *thousep = NULL;
+                                    DCHAR_T thousep_buf[10];
+#   if !WIDE_CHAR_VERSION
+                                    size_t thousep_len = 0;
+#   endif
+                                    const signed char *grouping;
+                                    size_t insert = 0;
+
+                                    if ((flags & FLAG_GROUP) && (intpart_digits > 1))
+                                      {
+                                        /* Determine the thousands separator and
+                                           the grouping rule of the current locale.  */
+#   if WIDE_CHAR_VERSION
+                                        /* DCHAR_T is wchar_t.  */
+                                        thousep = thousands_separator_wchar (thousep_buf);
+#                                       define thousep_len 1
+#   elif defined DCHAR_CONV_FROM_ENCODING
+                                        /* DCHAR_T is uintN_t.  */
+                                        thousep = thousands_separator_DCHAR (thousep_buf);
+                                        thousep_len = DCHAR_STRLEN (thousep);
+#   else
+                                        /* DCHAR_T is char.  */
+                                        thousep = thousands_separator_char (thousep_buf);
+                                        thousep_len = strlen (thousep);
+#   endif
+                                        if (*thousep == 0)
+                                          thousep = NULL;
+                                        if (thousep != NULL)
+                                          {
+                                            grouping = grouping_rule ();
+                                            insert =
+                                              num_thousands_separators (grouping, intpart_digits);
+                                          }
+                                      }
+
+                                    const char *digitp = digits + precision;
+                                    DCHAR_T *p_before_intpart = p;
+                                    p += intpart_digits + insert * thousep_len;
+                                    DCHAR_T *p_after_intpart = p;
+                                    if (insert > 0) /* implies (flag & FLAG_GROUP) && (thousep != NULL) */
+                                      {
+                                        const signed char *g = grouping;
+                                        for (;;)
+                                          {
+                                            int h = *g;
+                                            if (h <= 0)
+                                              abort ();
+                                            int i = h;
+                                            do
+                                              *--p = *digitp++;
+                                            while (--i > 0);
+#   if WIDE_CHAR_VERSION
+                                            *--p = thousep[0];
+#   else
+                                            p -= thousep_len;
+                                            DCHAR_CPY (p, thousep, thousep_len);
+#   endif
+                                            insert--;
+                                            if (insert == 0)
+                                              break;
+                                            if (g[1] != 0)
+                                              g++;
+                                          }
+                                      }
+                                    for (;;)
+                                      {
+                                        *--p = *digitp++;
+                                        if (p == p_before_intpart)
+                                          break;
+                                      }
+                                    p = p_after_intpart;
+                                    ndigits = precision;
+#   undef thousep_len
+                                  }
                                 else
                                   *p++ = '0';
                                 /* Here ndigits <= precision.  */
@@ -5240,10 +5572,84 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                                            digits without trailing zeroes.  */
                                         if (exponent >= 0)
                                           {
-                                            size_t ecount = exponent + 1;
-                                            /* Note: count <= precision = ndigits.  */
-                                            for (; ecount > 0; ecount--)
-                                              *p++ = digits[--ndigits];
+                                            /* Number of digits before the decimal point.  */
+                                            size_t intpart_digits = exponent + 1;
+                                            /* Note: intpart_digits <= precision = ndigits.  */
+
+                                            const DCHAR_T *thousep = NULL;
+                                            DCHAR_T thousep_buf[10];
+#   if !WIDE_CHAR_VERSION
+                                            size_t thousep_len = 0;
+#   endif
+                                            const signed char *grouping;
+                                            size_t insert = 0;
+
+                                            if ((flags & FLAG_GROUP) && (intpart_digits > 1))
+                                              {
+                                                /* Determine the thousands separator and
+                                                   the grouping rule of the current locale.  */
+#   if WIDE_CHAR_VERSION
+                                                /* DCHAR_T is wchar_t.  */
+                                                thousep = thousands_separator_wchar (thousep_buf);
+#                                               define thousep_len 1
+#   elif defined DCHAR_CONV_FROM_ENCODING
+                                                /* DCHAR_T is uintN_t.  */
+                                                thousep = thousands_separator_DCHAR (thousep_buf);
+                                                thousep_len = DCHAR_STRLEN (thousep);
+#   else
+                                                /* DCHAR_T is char.  */
+                                                thousep = thousands_separator_char (thousep_buf);
+                                                thousep_len = strlen (thousep);
+#   endif
+                                                if (*thousep == 0)
+                                                  thousep = NULL;
+                                                if (thousep != NULL)
+                                                  {
+                                                    grouping = grouping_rule ();
+                                                    insert =
+                                                      num_thousands_separators (grouping, intpart_digits);
+                                                  }
+                                              }
+
+                                            const char *digitp = digits + ndigits - intpart_digits;
+                                            DCHAR_T *p_before_intpart = p;
+                                            p += intpart_digits + insert * thousep_len;
+                                            DCHAR_T *p_after_intpart = p;
+                                            if (insert > 0) /* implies (flag & FLAG_GROUP) && (thousep != NULL) */
+                                              {
+                                                const signed char *g = grouping;
+                                                for (;;)
+                                                  {
+                                                    int h = *g;
+                                                    if (h <= 0)
+                                                      abort ();
+                                                    int i = h;
+                                                    do
+                                                      *--p = *digitp++;
+                                                    while (--i > 0);
+#   if WIDE_CHAR_VERSION
+                                                    *--p = thousep[0];
+#   else
+                                                    p -= thousep_len;
+                                                    DCHAR_CPY (p, thousep, thousep_len);
+#   endif
+                                                    insert--;
+                                                    if (insert == 0)
+                                                      break;
+                                                    if (g[1] != 0)
+                                                      g++;
+                                                  }
+                                              }
+                                            for (;;)
+                                              {
+                                                *--p = *digitp++;
+                                                if (p == p_before_intpart)
+                                                  break;
+                                              }
+                                            p = p_after_intpart;
+                                            ndigits -= intpart_digits;
+#   undef thousep_len
+
                                             if ((flags & FLAG_ALT) || ndigits > nzeroes)
                                               {
                                                 *p++ = decimal_point_char ();
@@ -5444,12 +5850,84 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                                 ndigits = strlen (digits);
 
                                 if (ndigits > precision)
-                                  do
-                                    {
-                                      --ndigits;
-                                      *p++ = digits[ndigits];
-                                    }
-                                  while (ndigits > precision);
+                                  {
+                                    /* Number of digits before the decimal point.  */
+                                    size_t intpart_digits = ndigits - precision;
+
+                                    const DCHAR_T *thousep = NULL;
+                                    DCHAR_T thousep_buf[10];
+#   if !WIDE_CHAR_VERSION
+                                    size_t thousep_len = 0;
+#   endif
+                                    const signed char *grouping;
+                                    size_t insert = 0;
+
+                                    if ((flags & FLAG_GROUP) && (intpart_digits > 1))
+                                      {
+                                        /* Determine the thousands separator and
+                                           the grouping rule of the current locale.  */
+#   if WIDE_CHAR_VERSION
+                                        /* DCHAR_T is wchar_t.  */
+                                        thousep = thousands_separator_wchar (thousep_buf);
+#                                       define thousep_len 1
+#   elif defined DCHAR_CONV_FROM_ENCODING
+                                        /* DCHAR_T is uintN_t.  */
+                                        thousep = thousands_separator_DCHAR (thousep_buf);
+                                        thousep_len = DCHAR_STRLEN (thousep);
+#   else
+                                        /* DCHAR_T is char.  */
+                                        thousep = thousands_separator_char (thousep_buf);
+                                        thousep_len = strlen (thousep);
+#   endif
+                                        if (*thousep == 0)
+                                          thousep = NULL;
+                                        if (thousep != NULL)
+                                          {
+                                            grouping = grouping_rule ();
+                                            insert =
+                                              num_thousands_separators (grouping, intpart_digits);
+                                          }
+                                      }
+
+                                    const char *digitp = digits + precision;
+                                    DCHAR_T *p_before_intpart = p;
+                                    p += intpart_digits + insert * thousep_len;
+                                    DCHAR_T *p_after_intpart = p;
+                                    if (insert > 0) /* implies (flag & FLAG_GROUP) && (thousep != NULL) */
+                                      {
+                                        const signed char *g = grouping;
+                                        for (;;)
+                                          {
+                                            int h = *g;
+                                            if (h <= 0)
+                                              abort ();
+                                            int i = h;
+                                            do
+                                              *--p = *digitp++;
+                                            while (--i > 0);
+#   if WIDE_CHAR_VERSION
+                                            *--p = thousep[0];
+#   else
+                                            p -= thousep_len;
+                                            DCHAR_CPY (p, thousep, thousep_len);
+#   endif
+                                            insert--;
+                                            if (insert == 0)
+                                              break;
+                                            if (g[1] != 0)
+                                              g++;
+                                          }
+                                      }
+                                    for (;;)
+                                      {
+                                        *--p = *digitp++;
+                                        if (p == p_before_intpart)
+                                          break;
+                                      }
+                                    p = p_after_intpart;
+                                    ndigits = precision;
+#   undef thousep_len
+                                  }
                                 else
                                   *p++ = '0';
                                 /* Here ndigits <= precision.  */
@@ -5710,10 +6188,84 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                                            digits without trailing zeroes.  */
                                         if (exponent >= 0)
                                           {
-                                            size_t ecount = exponent + 1;
-                                            /* Note: ecount <= precision = ndigits.  */
-                                            for (; ecount > 0; ecount--)
-                                              *p++ = digits[--ndigits];
+                                            /* Number of digits before the decimal point.  */
+                                            size_t intpart_digits = exponent + 1;
+                                            /* Note: intpart_digits <= precision = ndigits.  */
+
+                                            const DCHAR_T *thousep = NULL;
+                                            DCHAR_T thousep_buf[10];
+#   if !WIDE_CHAR_VERSION
+                                            size_t thousep_len = 0;
+#   endif
+                                            const signed char *grouping;
+                                            size_t insert = 0;
+
+                                            if ((flags & FLAG_GROUP) && (intpart_digits > 1))
+                                              {
+                                                /* Determine the thousands separator and
+                                                   the grouping rule of the current locale.  */
+#   if WIDE_CHAR_VERSION
+                                                /* DCHAR_T is wchar_t.  */
+                                                thousep = thousands_separator_wchar (thousep_buf);
+#                                               define thousep_len 1
+#   elif defined DCHAR_CONV_FROM_ENCODING
+                                                /* DCHAR_T is uintN_t.  */
+                                                thousep = thousands_separator_DCHAR (thousep_buf);
+                                                thousep_len = DCHAR_STRLEN (thousep);
+#   else
+                                                /* DCHAR_T is char.  */
+                                                thousep = thousands_separator_char (thousep_buf);
+                                                thousep_len = strlen (thousep);
+#   endif
+                                                if (*thousep == 0)
+                                                  thousep = NULL;
+                                                if (thousep != NULL)
+                                                  {
+                                                    grouping = grouping_rule ();
+                                                    insert =
+                                                      num_thousands_separators (grouping, intpart_digits);
+                                                  }
+                                              }
+
+                                            const char *digitp = digits + ndigits - intpart_digits;
+                                            DCHAR_T *p_before_intpart = p;
+                                            p += intpart_digits + insert * thousep_len;
+                                            DCHAR_T *p_after_intpart = p;
+                                            if (insert > 0) /* implies (flag & FLAG_GROUP) && (thousep != NULL) */
+                                              {
+                                                const signed char *g = grouping;
+                                                for (;;)
+                                                  {
+                                                    int h = *g;
+                                                    if (h <= 0)
+                                                      abort ();
+                                                    int i = h;
+                                                    do
+                                                      *--p = *digitp++;
+                                                    while (--i > 0);
+#   if WIDE_CHAR_VERSION
+                                                    *--p = thousep[0];
+#   else
+                                                    p -= thousep_len;
+                                                    DCHAR_CPY (p, thousep, thousep_len);
+#   endif
+                                                    insert--;
+                                                    if (insert == 0)
+                                                      break;
+                                                    if (g[1] != 0)
+                                                      g++;
+                                                  }
+                                              }
+                                            for (;;)
+                                              {
+                                                *--p = *digitp++;
+                                                if (p == p_before_intpart)
+                                                  break;
+                                              }
+                                            p = p_after_intpart;
+                                            ndigits -= intpart_digits;
+#   undef thousep_len
+
                                             if ((flags & FLAG_ALT) || ndigits > nzeroes)
                                               {
                                                 *p++ = decimal_point_char ();
@@ -5921,13 +6473,13 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
               {
                 arg_type type = a.arg[dp->arg_index].type;
                 int flags = dp->flags;
-#if (WIDE_CHAR_VERSION && MUSL_LIBC) || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_LEFTADJUST || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+#if (WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                 int has_width;
 #endif
-#if !USE_SNPRINTF || WIDE_CHAR_VERSION || !HAVE_SNPRINTF_RETVAL_C99 || USE_MSVC__SNPRINTF || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_LEFTADJUST || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+#if !USE_SNPRINTF || WIDE_CHAR_VERSION || !HAVE_SNPRINTF_RETVAL_C99 || USE_MSVC__SNPRINTF || NEED_PRINTF_FLAG_LEFTADJUST || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                 size_t width;
 #endif
-#if !USE_SNPRINTF || (WIDE_CHAR_VERSION && DCHAR_IS_TCHAR) || !HAVE_SNPRINTF_RETVAL_C99 || USE_MSVC__SNPRINTF || (WIDE_CHAR_VERSION && MUSL_LIBC) || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_LEFTADJUST || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+#if !USE_SNPRINTF || (WIDE_CHAR_VERSION && DCHAR_IS_TCHAR) || !HAVE_SNPRINTF_RETVAL_C99 || USE_MSVC__SNPRINTF || (WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                 int has_precision;
                 size_t precision;
 #endif
@@ -5936,9 +6488,14 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
 #else
 #               define prec_ourselves 0
 #endif
+#if NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
+                int group_ourselves;
+#else
+#               define group_ourselves 0
+#endif
 #if (WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST
 #               define pad_ourselves 1
-#elif !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+#elif !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                 int pad_ourselves;
 #else
 #               define pad_ourselves 0
@@ -5953,10 +6510,10 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                 TCHAR_T *tmp;
 #endif
 
-#if (WIDE_CHAR_VERSION && MUSL_LIBC) || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_LEFTADJUST || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+#if (WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                 has_width = 0;
 #endif
-#if !USE_SNPRINTF || WIDE_CHAR_VERSION || !HAVE_SNPRINTF_RETVAL_C99 || USE_MSVC__SNPRINTF || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_LEFTADJUST || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+#if !USE_SNPRINTF || WIDE_CHAR_VERSION || !HAVE_SNPRINTF_RETVAL_C99 || USE_MSVC__SNPRINTF || NEED_PRINTF_FLAG_LEFTADJUST || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                 width = 0;
                 if (dp->width_start != dp->width_end)
                   {
@@ -5987,13 +6544,13 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                     if (width > (size_t) INT_MAX)
                       goto overflow;
 # define WIDTH_IS_CHECKED 1
-# if (WIDE_CHAR_VERSION && MUSL_LIBC) || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_LEFTADJUST || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+# if (WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                     has_width = 1;
 # endif
                   }
 #endif
 
-#if !USE_SNPRINTF || (WIDE_CHAR_VERSION && DCHAR_IS_TCHAR) || !HAVE_SNPRINTF_RETVAL_C99 || USE_MSVC__SNPRINTF || (WIDE_CHAR_VERSION && MUSL_LIBC) || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_LEFTADJUST || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+#if !USE_SNPRINTF || (WIDE_CHAR_VERSION && DCHAR_IS_TCHAR) || !HAVE_SNPRINTF_RETVAL_C99 || USE_MSVC__SNPRINTF || (WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                 has_precision = 0;
                 precision = 6;
                 if (dp->precision_start != dp->precision_end)
@@ -6058,8 +6615,37 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                   }
 #endif
 
+                /* Decide whether to add the thousands separators ourselves.  */
+#if NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
+                if (flags & FLAG_GROUP)
+                  {
+                    switch (dp->conversion)
+                      {
+                      case 'd': case 'i': case 'u':
+# if NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
+                        group_ourselves = 1;
+# else
+                        group_ourselves = prec_ourselves;
+# endif
+                        break;
+                      case 'f': case 'F': case 'g': case 'G':
+# if NEED_PRINTF_FLAG_GROUPING
+                        group_ourselves = 1;
+# else
+                        group_ourselves = prec_ourselves;
+# endif
+                        break;
+                      default:
+                        group_ourselves = 0;
+                        break;
+                      }
+                  }
+                else
+                  group_ourselves = 0;
+#endif
+
                 /* Decide whether to perform the padding ourselves.  */
-#if !((WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST) && (!DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION)
+#if !((WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST) && (!DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT)
                 switch (dp->conversion)
                   {
 # if !DCHAR_IS_TCHAR || ENABLE_UNISTDIO
@@ -6076,7 +6662,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                     pad_ourselves = 1;
                     break;
                   default:
-                    pad_ourselves = prec_ourselves;
+                    pad_ourselves = prec_ourselves | group_ourselves;
                     break;
                   }
 #endif
@@ -6109,14 +6695,8 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                    sprintf.  */
                 fbp = buf;
                 *fbp++ = '%';
-#if NEED_PRINTF_FLAG_GROUPING
-                /* The underlying implementation doesn't support the ' flag.
-                   Produce no grouping characters in this case; this is
-                   acceptable because the grouping is locale dependent.  */
-#else
-                if (flags & FLAG_GROUP)
+                if ((flags & FLAG_GROUP) && !group_ourselves)
                   *fbp++ = '\'';
-#endif
                 if (flags & FLAG_LEFT)
                   *fbp++ = '-';
                 if (flags & FLAG_SHOWSIGN)
@@ -6876,10 +7456,13 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                                 || *prec_ptr == ' '))
                           prefix_count = 1;
                         /* Put the additional zeroes after the 0x prefix if
-                           (flags & FLAG_ALT) || (dp->conversion == 'p').  */
+                           (flags & FLAG_ALT) || (dp->conversion == 'p'), or
+                           after the 0b prefix if (flags & FLAG_ALT).  */
                         else if (count >= 2
                                  && prec_ptr[0] == '0'
-                                 && (prec_ptr[1] == 'x' || prec_ptr[1] == 'X'))
+                                 && (prec_ptr[1] == 'x' || prec_ptr[1] == 'X'
+                                     || prec_ptr[1] == 'b'
+                                     || prec_ptr[1] == 'B'))
                           prefix_count = 2;
 
                         move = count - prefix_count;
@@ -6928,6 +7511,135 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                       }
 #endif
 
+#if NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
+                    if (group_ourselves) /* implies (flags & FLAG_GROUP) */
+                      /* Handle the grouping.  */
+                      switch (dp->conversion)
+                        {
+                        /* These are the only conversion to which grouping
+                           applies.  */
+                        case 'd': case 'i': case 'u':
+                        case 'f': case 'F': case 'g': case 'G':
+                          {
+                            /* Determine the thousands separator of the current
+                               locale.  */
+                            const TCHAR_T *thousep;
+                            TCHAR_T thousep_buf[10];
+
+# if WIDE_CHAR_VERSION && DCHAR_IS_TCHAR
+                            /* TCHAR_T is wchar_t.  */
+                            thousep = thousands_separator_wchar (thousep_buf);
+# else
+                            /* TCHAR_T is char.  */
+                            thousep = thousands_separator_char (thousep_buf);
+# endif
+
+                            /* Nothing to do in locales where thousep is the empty
+                               string.  */
+                            if (*thousep != 0)
+                              {
+                                /* Since FLAG_LOCALIZED is only supported on glibc
+                                   systems, here we can assume that all digits are
+                                   the ASCII digits '0'..'9'.  */
+                                TCHAR_T *number_ptr =
+# if USE_SNPRINTF
+                                  (TCHAR_T *) (result + length);
+# else
+                                  tmp;
+# endif
+                                TCHAR_T *end_ptr = number_ptr + count;
+
+                                /* Find where the leading digits start.  */
+                                TCHAR_T *digits_ptr = number_ptr;
+                                if (count >= 1
+                                    && (*digits_ptr == '-' || *digits_ptr == '+'
+                                        || *digits_ptr == ' '))
+                                  digits_ptr++;
+
+                                /* Find where the leading digits end.  */
+                                TCHAR_T *digits_end_ptr;
+                                switch (dp->conversion)
+                                  {
+                                  case 'd': case 'i': case 'u':
+                                    digits_end_ptr = end_ptr;
+                                    break;
+                                  case 'f': case 'F': case 'g': case 'G':
+                                    {
+                                      TCHAR_T decimal_point = decimal_point_char ();
+                                      for (digits_end_ptr = digits_ptr;
+                                           digits_end_ptr < end_ptr;
+                                           digits_end_ptr++)
+                                        if (*digits_end_ptr == decimal_point
+                                            || *digits_end_ptr == 'e')
+                                          break;
+                                    }
+                                    break;
+                                  }
+
+                                /* Determine the number of thousands separators
+                                   to insert.  */
+                                const signed char *grouping = grouping_rule ();
+                                size_t insert =
+                                  num_thousands_separators (grouping, digits_end_ptr - digits_ptr);
+                                if (insert > 0)
+                                  {
+# if WIDE_CHAR_VERSION && DCHAR_IS_TCHAR
+#                                   define thousep_len 1
+# else
+                                    size_t thousep_len = strlen (thousep);
+# endif
+# if USE_SNPRINTF
+                                    size_t digits_offset = digits_ptr - number_ptr;
+                                    size_t digits_end_offset = digits_end_ptr - number_ptr;
+                                    size_t n =
+                                      xsum (length,
+                                            (count + insert * thousep_len + TCHARS_PER_DCHAR - 1)
+                                            / TCHARS_PER_DCHAR);
+                                    length += (count + TCHARS_PER_DCHAR - 1) / TCHARS_PER_DCHAR;
+                                    ENSURE_ALLOCATION (n);
+                                    length -= (count + TCHARS_PER_DCHAR - 1) / TCHARS_PER_DCHAR;
+                                    number_ptr = (TCHAR_T *) (result + length);
+                                    end_ptr = number_ptr + count;
+                                    digits_ptr = number_ptr + digits_offset;
+                                    digits_end_ptr = number_ptr + digits_end_offset;
+# endif
+
+                                    count += insert * thousep_len;
+
+                                    const TCHAR_T *p = end_ptr;
+                                    TCHAR_T *q = end_ptr + insert * thousep_len;
+                                    while (p > digits_end_ptr)
+                                      *--q = *--p;
+                                    const signed char *g = grouping;
+                                    for (;;)
+                                      {
+                                        int h = *g;
+                                        if (h <= 0)
+                                          abort ();
+                                        int i = h;
+                                        do
+                                          *--q = *--p;
+                                        while (--i > 0);
+# if WIDE_CHAR_VERSION && DCHAR_IS_TCHAR
+                                        *--q = *thousep;
+# else
+                                        q -= thousep_len;
+                                        memcpy (q, thousep, thousep_len);
+# endif
+                                        insert--;
+                                        if (insert == 0)
+                                          break;
+                                        if (g[1] != 0)
+                                          g++;
+                                      }
+                                    /* Here q == p.  Done with the insertions.  */
+                                  }
+                              }
+                          }
+                          break;
+                        }
+#endif
+
 #if !USE_SNPRINTF
                     if (count >= tmp_length)
                       /* tmp_length was incorrectly calculated - fix the
@@ -6938,6 +7650,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
 #if !DCHAR_IS_TCHAR
                     /* Convert from TCHAR_T[] to DCHAR_T[].  */
                     if (dp->conversion == 'c' || dp->conversion == 's'
+                        || (flags & FLAG_GROUP)
 # if __GLIBC__ >= 2 && !defined __UCLIBC__
                         || (flags & FLAG_LOCALIZED)
 # endif
@@ -7079,7 +7792,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                     /* Here count <= allocated - length.  */
 
                     /* Perform padding.  */
-#if (WIDE_CHAR_VERSION && MUSL_LIBC) || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_LEFTADJUST || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION
+#if (WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST || !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT
                     if (pad_ourselves && has_width)
                       {
                         size_t w;
@@ -7088,6 +7801,23 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                            against the number of _characters_ of the converted
                            value.  */
                         w = DCHAR_MBSNLEN (result + length, count);
+# elif __GLIBC__ >= 2
+                        /* glibc prefers to compare the width against the number
+                           of characters as well, but only for numeric conversion
+                           specifiers.  See
+                           <https://sourceware.org/bugzilla/show_bug.cgi?id=28943>
+                           <https://sourceware.org/bugzilla/show_bug.cgi?id=30883>
+                           <https://sourceware.org/bugzilla/show_bug.cgi?id=31542>  */
+                        switch (dp->conversion)
+                          {
+                          case 'd': case 'i': case 'u':
+                          case 'f': case 'F': case 'g': case 'G':
+                            w = DCHAR_MBSNLEN (result + length, count);
+                            break;
+                          default:
+                            w = count;
+                            break;
+                          }
 # else
                         /* The width is compared against the number of _bytes_
                            of the converted value, says POSIX.  */

@@ -15,7 +15,7 @@
  *   See the GNU General Public License for more details.                 *
  *                                                                        *
  *   You should have received a copy of the GNU General Public License    *
- *   along with this program.  If not, see http://www.gnu.org/licenses/.  *
+ *   along with this program.  If not, see https://gnu.org/licenses/.     *
  *                                                                        *
  **************************************************************************/
 
@@ -1342,12 +1342,10 @@ void insert_a_file_or(bool execute)
 			if (ISSET(MULTIBUFFER)) {
 #ifdef ENABLE_HISTORIES
 				if (ISSET(POSITIONLOG)) {
-					ssize_t priorline, priorcol;
 #ifndef NANO_TINY
 					if (!execute)
 #endif
-					if (has_old_position(answer, &priorline, &priorcol))
-						goto_line_and_column(priorline, priorcol, FALSE, FALSE);
+						restore_cursor_position_if_any();
 				}
 #endif
 				/* Update title bar and color info for this new buffer. */
@@ -1557,10 +1555,10 @@ void init_backup_dir(void)
 }
 #endif
 
-/* Read all data from inn, and write it to out.  File inn must be open for
- * reading, and out for writing.  Return 0 on success, a negative number on
- * read error, and a positive number on write error.  File inn is always
- * closed by this function, out is closed  only if close_out is true. */
+/* Read all data from `inn`, and write it to `out`.  File `inn` must be open
+ * for reading, and `out` for writing.  Return 0 on success, a negative number
+ * on read error, and a positive number on write error.  File `inn` is always
+ * closed by this function, `out` is closed only if `close_out` is true. */
 int copy_file(FILE *inn, FILE *out, bool close_out)
 {
 	int retval = 0;
@@ -2195,6 +2193,7 @@ int write_it_out(bool exiting, bool withprompt)
 
 		/* Upon request, abandon the buffer. */
 		if (function == discard_buffer) {
+			final_status = 2;  /* ^O^Q makes nano exit with an error. */
 			free(given);
 			return 2;
 		}

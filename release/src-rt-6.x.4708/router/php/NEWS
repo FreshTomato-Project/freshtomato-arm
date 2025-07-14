@@ -1,5 +1,82 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+03 Jul 2025, PHP 8.3.23
+
+- Core:
+  . Fixed GH-18695 (zend_ast_export() - float number is not preserved).
+    (Oleg Efimov)
+  . Do not delete main chunk in zend_gc. (danog, Arnaud)
+  . Fix compile issues with zend_alloc and some non-default options. (nielsdos)
+
+- Curl:
+  . Fix memory leak when setting a list via curl_setopt fails. (nielsdos)
+  . Fix incorrect OpenSSL version detection. (Peter Kokot)
+
+- Date:
+  . Fix leaks with multiple calls to DatePeriod iterator current(). (nielsdos)
+
+- FPM:
+  . Fixed GH-18662 (fpm_get_status segfault). (txuna)
+
+- Hash:
+  . Fixed bug GH-14551 (PGO build fails with xxhash). (nielsdos)
+
+- Intl:
+  . Fix memory leak in intl_datetime_decompose() on failure. (nielsdos)
+  . Fix memory leak in locale lookup on failure. (nielsdos)
+
+- ODBC:
+  . Fix memory leak on php_odbc_fetch_hash() failure. (nielsdos)
+
+- Opcache:
+  . Fixed bug GH-18743 (Incompatibility in Inline TLS Assembly on Alpine 3.22).
+    (nielsdos, Arnaud)
+
+- OpenSSL:
+  . Fix memory leak of X509_STORE in php_openssl_setup_verify() on failure.
+    (nielsdos)
+  . Fixed bug #74796 (Requests through http proxy set peer name).
+    (Jakub Zelenka)
+
+- PGSQL:
+  . Fixed GHSA-hrwm-9436-5mv3 (pgsql extension does not check for errors during
+    escaping). (CVE-2025-1735) (Jakub Zelenka)
+
+- Phar:
+  . Add missing filter cleanups on phar failure. (nielsdos)
+  . Fixed bug GH-18642 (Signed integer overflow in ext/phar fseek). (nielsdos)
+
+- PHPDBG:
+  . Fix 'phpdbg --help' segfault on shutdown with USE_ZEND_ALLOC=0. (nielsdos)
+
+- PDO ODBC:
+  . Fix memory leak if WideCharToMultiByte() fails. (nielsdos)
+
+- PGSQL:
+  . Fix warning not being emitted when failure to cancel a query with
+    pg_cancel_query(). (Girgias)
+
+- Random:
+  . Fix reference type confusion and leak in user random engine.
+    (nielsdos, timwolla)
+
+- Readline:
+  . Fix memory leak when calloc() fails in php_readline_completion_cb().
+    (nielsdos)
+
+- SOAP:
+  . Fix memory leaks in php_http.c when call_user_function() fails. (nielsdos)
+  . Fixed GHSA-453j-q27h-5p8x (NULL Pointer Dereference in PHP SOAP Extension
+    via Large XML Namespace Prefix). (CVE-2025-6491) (Lekssays, nielsdos)
+
+- Standard:
+  . Fixed GHSA-3cr5-j632-f35r (Null byte termination in hostnames).
+    (CVE-2025-1220) (Jakub Zelenka)
+
+- Tidy:
+  . Fix memory leak in tidy output handler on error. (nielsdos)
+  . Fix tidyOptIsReadonly deprecation, using tidyOptGetCategory. (David Carlier)
+
 05 Jun 2025, PHP 8.3.22
 
 - Core:
@@ -41,6 +118,10 @@ PHP                                                                        NEWS
 
 - PDO_OCI:
   . Fixed bug GH-18494 (PDO OCI segfault in statement GC). (nielsdos)
+
+- Sockets:
+  - Fixed bug GH-18617 (socket_import_file_descriptor return value
+    unchecked). (David Carlier)
 
 - SPL:
   . Fixed bug GH-18421 (Integer overflow with large numbers in LimitIterator).

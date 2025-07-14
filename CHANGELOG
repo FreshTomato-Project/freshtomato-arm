@@ -5,6 +5,107 @@ FreshTomato-ARM Changelog
 
 
 
+2025.3          2025.07.18
+---------------------------
+
+- wireguard: add PBR (Policy Based Routing)
+- kernel: netfilter: ipset: add missing range check in bitmap_ip_uadt (CVE-2024-53141) close #112
+- kernel: netfilter: add "addrtype" address type match support (close #79)
+- SDK6: clean-up board_ns.c (no bcmsflash for Netgear R6000/R7000 Family)
+- SDK7: clean-up board_ns.c (no bcmsflash for Netgear R7900/R8000 Family)
+- SDK6/SDK7/SDK714: fix Serial Flash Memory Init for case MX25L128 (256 Blocks) & MX25L64 (128 Blocks)
+- wireguard-tools: update to 1.0.20250521
+- php: update to 8.3.23
+- e2fsprogs: update to 1.47.3
+- dnsmasq: update to v2.92test16
+- openvpn: update to 2.6.14
+- libcurl: update to 8.14.1
+- expat: update to 2.7.1
+- libxml2: update to 2.14.4
+- libusb: update to 1.0.29
+- nano: update to 8.5
+- dropbear: update to 2025.88
+- libsodium: update to latest 1.0.20-stable
+- meson: update to 1.8.2
+- nginx: update to 1.29.0
+- xl2tpd: update to 1.3.19
+- iperf: update to 3.19
+- libzip: update to 1.11.4
+- adminer: update to 5.0.0
+- uqmi: update to 71f9c94 (2025-05-31) snapshot
+- libffi: update to 3.5.1
+- libjpeg-turbo: update to 3.1.1
+- libogg: update to 1.3.6
+- libpng: update to 1.6.50
+- sqlite: update to 3.50.2
+- tor: update to 0.4.8.17
+- openssl: update to 3.0.17
+- nettle: update to 3.10.2
+- build: add Netgear EX6200 support
+- GUI: advanced-vlan.asp - Header correction
+- GUI: Advanced: VLAN: fix link in Notes (close #81)
+- GUI: basic-time.asp - NTP Client added 4th placeholder field for Custom upstream server
+- GUI: VPN: add title's icons for VPN services
+- GUI: Status-devices - SVG icons
+- GUI: Status: Logs: add dedicated svg icons for Advanced themes
+- GUI: status-overview: improve ethstate if WAN port is moved to primary LAN (add missing Netgear Router AC1450, R6200v2, R6250, R6300v2)
+- GUI: status-devices.asp: improving filtering of devices
+- adblock-v2: do not add the contents of the nvram mwan_ckdst variable to the whitelist (close #45)
+- fix an issue with CPU Usage NaN% in Status Overview page (A Walkthrough) ARM Asus RT-AC3200
+- httpd: iptraffic.c: printf for unsgined int should use %u
+- httpd: openvpn.c: fix client config generation
+- httpd: log.c: fix truncation of last char in GUI -> Status -> Web Usage
+- httpd: get rid of TCONFIG_MULTIWAN, iterate over MWAN_MAX instead
+- iproute2: add our EXTRACFLAGS to CFLAGS, this way reduce size and use proper optimization
+- iproute2: add drop-failed rule action
+- OpenVPN: integrate Tunnelblick XOR patch (allows using obfuscated servers)
+- rc: openvpn.c: tune watchdog so that it can also detect unresponsive OpenVPN client(s)
+- rc: wireguard.c: use 'ip link' instead of 'ifconfig' to bring interface up
+- rc: wireguard.c: fix adding allowed IPs when 'VPN interface IP' is missing in Peers section (e.g. External - VPN Provider)
+- rc: wireguard.c: in case of 'External - VPN Provider' use peer PersistentKeepalive value
+- rc: wireguard.c: add firewall rules for 'External - VPN Provider' mode
+- rc: wireguard.c: add working default route in 'External - VPN Provider' mode for both fixed and unfixed kernel
+- rc: wireguard.c: tune watchdog so that it can also detect unresponsive wireguard instances running in 'External' mode
+- rc: wireguard.c: add serialize to start/stop
+- rc: wireguard.c: also remove fw file on wg stop
+- rc: wireguard.c: set interface down before removing it on stop
+- rc: wireguard.c: use dedicated replace_in_file() function instead of system 'sed'
+- rc: network.c: refactor do_static_routes() function - use iteration
+- rc: firewall.c: iterate over MWAN_MAX to create MASQUERADE FW entries in nat_table()
+- rom: update CA bundle to 2025-05-20
+- rc: get rid of TCONFIG_MULTIWAN, iterate over MWAN_MAX instead
+- switch4g: qmi: increase SIM power-cycle timeouts
+- switch4g: qmi: fix network registration loop
+- tomatoanon: make 'TomatoAnon' and 'Update Notification System' independent; reorganize GUI
+- tomatoanon: use github as a source for FT versions if possible
+- udpxy: Fixed typo in last commit (fix from the upstream)
+- wireguard: add watchdog
+- wireguard: allow only one instance to run in 'External - VPN Provider' mode
+- wireguard: add the ability to enable/disable firewall in 'External - VPN Provider' mode
+- wireguard: add the ability to enable/disable NAT on the tunnel in 'External - VPN Provider' mode
+- wireguard: add the ability to enable/disable Inbound Firewall in 'External - VPN Provider' mode
+- wireguard: add 'Routing Policy' with kill switch (GUI only!)
+- www: do not use 'eval' if possible
+- www: status-devices.asp: Add option to hide WAN devices
+- www: tidy up the Start/Stop buttons and the status of services
+- www: vpn-wireguard.asp: in case of External provider, also import the port for peer endpoint
+- www: vpn-wireguard.asp: do not add IPv6 to allowed IP addresses when importing configuration, because we're not IPv6 ready (yet)
+- www: vpn-wireguard.asp: in case of 'External - VPN Provider' 'VPN Interface IP' is unnecessary so reset and disable it
+- www: vpn-wireguard.asp: add Clean button to peers section; allow only one peer in 'External - VPN Provider' mode
+- www: bwlimit.asp: iterate over MAX_BRIDGE_ID to create bridge classes
+- www: tomato.css: fix Ports State vertical alignment
+- www: add icon to status of services
+- www: vpn-wireguard.asp: fix wireguard restart after editing config while wg is running
+- www: vpn-wireguard.asp: allow QR code display when peer does not have private key (close #93)
+- vpnrouting.sh: tune how to restart dnsmasq
+- vpnrouting.sh: move the contents of initTable() to startRouting() at the very beginning, expand list of default gateways, rename ID to FWMARK
+- vpnrouting.sh: further routing improvements based on @eibgrad 's work
+- Netgear R7900 / R8000: help wireless vif mac addr issues (only 2,4 GHz radio)
+- Netgear EX7000: improve/adjust stealth mode support
+- Netgear EX6200: improve/adjust stealth mode support
+- Netgear EX7000: Enable ethernet switch (finally!)
+
+
 2025.2          2025.03.20
 ---------------------------
 

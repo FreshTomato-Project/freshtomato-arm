@@ -37,14 +37,11 @@
  *  successfully.
  */
 
-#include "test.h"
+#include "first.h"
 
-#include "testutil.h"
-#include "warnless.h"
 #include "memdebug.h"
 
-
- /* ---------------------------------------------------------------- */
+/* ---------------------------------------------------------------- */
 
 #define test_check(expected_fds) \
   if(res != CURLE_OK) { \
@@ -63,7 +60,7 @@
   test_check(expected_fds); \
 } while(0)
 
- /* ---------------------------------------------------------------- */
+/* ---------------------------------------------------------------- */
 
 enum {
   TEST_USE_HTTP1 = 0,
@@ -237,7 +234,7 @@ static CURLcode test_run(char *URL, long option, unsigned int *max_fd_count)
 
     if(fd_count_chk < fd_count) {
       curl_mfprintf(stderr,
-                    "curl_multi_waitfds() sould return the amount of fds "
+                    "curl_multi_waitfds() should return the amount of fds "
                     "needed if enough isn't passed in.\n");
       res = TEST_ERR_FAILURE;
       break;
@@ -264,7 +261,7 @@ static CURLcode test_run(char *URL, long option, unsigned int *max_fd_count)
 
     if(fd_count_chk < fd_count) {
       curl_mfprintf(stderr,
-                    "curl_multi_waitfds() sould return the amount of fds "
+                    "curl_multi_waitfds() should return the amount of fds "
                     "needed if enough isn't passed in.\n");
       res = TEST_ERR_FAILURE;
       break;
@@ -370,7 +367,7 @@ test_cleanup:
   return res;
 }
 
-CURLcode test(char *URL)
+static CURLcode test_lib2405(char *URL)
 {
   CURLcode res = CURLE_OK;
   unsigned int fd_count = 0;

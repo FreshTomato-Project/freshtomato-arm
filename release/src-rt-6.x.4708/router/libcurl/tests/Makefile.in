@@ -115,7 +115,6 @@ host_triplet = @host@
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/curl-amissl.m4 \
-	$(top_srcdir)/m4/curl-bearssl.m4 \
 	$(top_srcdir)/m4/curl-compilers.m4 \
 	$(top_srcdir)/m4/curl-confopts.m4 \
 	$(top_srcdir)/m4/curl-functions.m4 \
@@ -126,7 +125,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/curl-amissl.m4 \
 	$(top_srcdir)/m4/curl-reentrant.m4 \
 	$(top_srcdir)/m4/curl-rustls.m4 \
 	$(top_srcdir)/m4/curl-schannel.m4 \
-	$(top_srcdir)/m4/curl-sectransp.m4 \
 	$(top_srcdir)/m4/curl-sysconfig.m4 \
 	$(top_srcdir)/m4/curl-wolfssl.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -430,8 +428,6 @@ EXTRA_DIST = \
  http2-server.pl    \
  http3-server.pl    \
  memanalyze.pl      \
- mk-bundle-hints.sh \
- mk-bundle.pl       \
  negtelnetserver.py \
  nghttpx.conf       \
  pathhelp.pm        \
@@ -462,7 +458,7 @@ EXTRA_DIST = \
 @BUILD_UNITTESTS_TRUE@BUILD_UNIT = unit tunit
 @BUILD_UNITTESTS_FALSE@DIST_UNIT = unit tunit
 @BUILD_UNITTESTS_TRUE@DIST_UNIT = 
-SUBDIRS = certs data server libtest http $(BUILD_UNIT)
+SUBDIRS = certs data server libtest client http $(BUILD_UNIT)
 DIST_SUBDIRS = $(SUBDIRS) $(DIST_UNIT)
 PERLFLAGS = -I$(srcdir)
 CLEANFILES = .http.pid .https.pid .ftp.pid .ftps.pid
@@ -844,6 +840,7 @@ checksrc:
 	(cd unit && $(MAKE) checksrc)
 	(cd tunit && $(MAKE) checksrc)
 	(cd server && $(MAKE) checksrc)
+	(cd client && $(MAKE) checksrc)
 	(cd http && $(MAKE) checksrc)
 
 all-local: $(MANFILES) build-certs

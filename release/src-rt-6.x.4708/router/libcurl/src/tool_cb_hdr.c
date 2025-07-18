@@ -27,8 +27,6 @@
 #include <unistd.h>
 #endif
 
-#include <curlx.h>
-
 #include "tool_cfgable.h"
 #include "tool_doswin.h"
 #include "tool_msgs.h"
@@ -37,7 +35,7 @@
 #include "tool_operate.h"
 #include "tool_libinfo.h"
 
-#include <memdebug.h> /* keep this as LAST include */
+#include "memdebug.h" /* keep this as LAST include */
 
 static char *parse_filename(const char *ptr, size_t len);
 
@@ -101,7 +99,7 @@ size_t tool_header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 
 #ifdef DEBUGBUILD
   if(size * nmemb > (size_t)CURL_MAX_HTTP_HEADER) {
-    warnf(per->config->global, "Header data exceeds single call write limit");
+    warnf(per->config->global, "Header data exceeds write limit");
     return CURL_WRITEFUNC_ERROR;
   }
 #endif

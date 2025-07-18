@@ -383,6 +383,14 @@ issue.
 `writedelay: [secs]` delay this amount between reply packets (each packet
   being 512 bytes payload)
 
+### `<dns>`
+
+Commands for the test DNS server.
+
+- `A: [dotted ipv4 address]` - set IPv4 address to return
+- `AAAA: [numerical IPv6 address]` - set IPv6 address to return, with or
+  without `[]`
+
 ## `<client>`
 
 ### `<server>`
@@ -441,7 +449,6 @@ Features testable here are:
 - `aws` - built with **aws-sigv4** support
 - `AppleIDN`
 - `asyn-rr` - c-ares is used for additional records only
-- `bearssl`
 - `brotli`
 - `c-ares` - c-ares is used for (all) name resolves
 - `CharConv`
@@ -449,6 +456,7 @@ Features testable here are:
 - `cookies`
 - `crypto`
 - `Debug`
+- `digest`
 - `DoH`
 - `getrlimit`
 - `GnuTLS`
@@ -467,7 +475,6 @@ Features testable here are:
 - `Largefile`
 - `large-time` (time_t is larger than 32-bit)
 - `large-size` (size_t is larger than 32-bit)
-- `ld_preload`
 - `libssh2`
 - `libssh`
 - `oldlibssh` (versions before 0.9.4)
@@ -488,7 +495,6 @@ Features testable here are:
 - `PSL`
 - `rustls`
 - `Schannel`
-- `sectransp`
 - `shuffle-dns`
 - `socks`
 - `SPNEGO`
@@ -692,6 +698,14 @@ before comparing with the one actually received by the client
 test.
 
 `loadfile="filename"` makes loading the data from an external file.
+
+### `<limit>`
+
+When this test runs and curl was built with debug enabled, runtests make sure
+that the set limits are not exceeded. Supported limits:
+
+    Allocations: [number of allocation calls]
+    Maximum allocated: [maximum concurrent memory allocated]
 
 ### `<file name="%LOGDIR/filename" [mode="text"]>`
 The file's contents must be identical to this after the test is complete. Use

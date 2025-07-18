@@ -23,8 +23,6 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#include <curlx.h>
-#include "tool_binmode.h"
 #include "tool_cfgable.h"
 #include "tool_cb_prg.h"
 #include "tool_filetime.h"
@@ -40,7 +38,7 @@
 #include "tool_help.h"
 #include "var.h"
 
-#include <memdebug.h> /* keep this as LAST include */
+#include "memdebug.h" /* keep this as LAST include */
 
 #define ALLOW_BLANK TRUE
 #define DENY_BLANK FALSE
@@ -153,7 +151,7 @@ static const struct LongShort aliases[]= {
   {"ftp-alternative-to-user",    ARG_STRG, ' ', C_FTP_ALTERNATIVE_TO_USER},
   {"ftp-create-dirs",            ARG_BOOL, ' ', C_FTP_CREATE_DIRS},
   {"ftp-method",                 ARG_STRG, ' ', C_FTP_METHOD},
-  {"ftp-pasv",                   ARG_BOOL, ' ', C_FTP_PASV},
+  {"ftp-pasv",                   ARG_NONE, ' ', C_FTP_PASV},
   {"ftp-port",                   ARG_STRG, 'P', C_FTP_PORT},
   {"ftp-pret",                   ARG_BOOL, ' ', C_FTP_PRET},
   {"ftp-skip-pasv-ip",           ARG_BOOL, ' ', C_FTP_SKIP_PASV_IP},
@@ -625,7 +623,7 @@ static ParameterError data_urlencode(struct GlobalConfig *global,
     /* a '@' letter, it means that a filename or - (stdin) follows */
     if(!strcmp("-", p)) {
       file = stdin;
-      CURL_SET_BINMODE(stdin);
+      CURLX_SET_BINMODE(stdin);
     }
     else {
       file = fopen(p, "rb");
@@ -692,13 +690,12 @@ error:
   return err;
 }
 
-static void sethttpver(struct GlobalConfig *global,
-                       struct OperationConfig *config,
+static void sethttpver(struct OperationConfig *config,
                        long httpversion)
 {
   if(config->httpversion &&
      (config->httpversion != httpversion))
-    warnf(global, "Overrides previous HTTP version option");
+    warnf(config->global, "Overrides previous HTTP version option");
 
   config->httpversion = httpversion;
 }
@@ -843,7 +840,6 @@ static int find_tos(const void *a, const void *b)
 
 #define MAX_QUERY_LEN 100000 /* larger is not likely to ever work */
 static ParameterError url_query(const char *nextarg,
-                                struct GlobalConfig *global,
                                 struct OperationConfig *config)
 {
   size_t size = 0;
@@ -859,7 +855,7 @@ static ParameterError url_query(const char *nextarg,
       err = PARAM_NO_MEM;
   }
   else
-    err = data_urlencode(global, nextarg, &query, &size);
+    err = data_urlencode(config->global, nextarg, &query, &size);
 
   if(!err) {
     if(config->query) {
@@ -880,13 +876,13 @@ static ParameterError url_query(const char *nextarg,
 
 static ParameterError set_data(cmdline_t cmd,
                                const char *nextarg,
-                               struct GlobalConfig *global,
                                struct OperationConfig *config)
 {
   char *postdata = NULL;
   FILE *file;
   size_t size = 0;
   ParameterError err = PARAM_OK;
+  struct GlobalConfig *global = config->global;
 
   if(cmd == C_DATA_URLENCODE) { /* --data-urlencode */
     err = data_urlencode(global, nextarg, &postdata, &size);
@@ -901,7 +897,7 @@ static ParameterError set_data(cmdline_t cmd,
     if(!strcmp("-", nextarg)) {
       file = stdin;
       if(cmd == C_DATA_BINARY) /* forced data-binary */
-        CURL_SET_BINMODE(stdin);
+        CURLX_SET_BINMODE(stdin);
     }
     else {
       file = fopen(nextarg, "rb");
@@ -945,7 +941,7 @@ static ParameterError set_data(cmdline_t cmd,
 
   if(curlx_dyn_len(&config->postdata)) {
     /* skip separator append for --json */
-    if(!err && (cmd != C_JSON)  &&
+    if(!err && (cmd != C_JSON) &&
        curlx_dyn_addn(&config->postdata, "&", 1))
       err = PARAM_NO_MEM;
   }
@@ -1041,8 +1037,7 @@ const struct LongShort *findlongopt(const char *opt)
                  sizeof(aliases[0]), findarg);
 }
 
-static ParameterError add_url(struct GlobalConfig *global,
-                              struct OperationConfig *config,
+static ParameterError add_url(struct OperationConfig *config,
                               const char *thisurl,
                               bool remote_noglob)
 {
@@ -1078,15 +1073,14 @@ static ParameterError add_url(struct GlobalConfig *global,
       url->useremote = url->noglob = TRUE;
     if(!err && (++config->num_urls > 1) &&
        (config->etag_save_file || config->etag_compare_file)) {
-      errorf(global, "The etag options only work on a single URL");
+      errorf(config->global, "The etag options only work on a single URL");
       return PARAM_BAD_USE;
     }
   }
   return err;
 }
 
-static ParameterError parse_url(struct GlobalConfig *global,
-                                struct OperationConfig *config,
+static ParameterError parse_url(struct OperationConfig *config,
                                 const char *nextarg)
 {
   /* nextarg is never NULL here */
@@ -1106,7 +1100,7 @@ static ParameterError parse_url(struct GlobalConfig *global,
       curlx_dyn_init(&line, 8092);
       while(my_get_line(f, &line, &error)) {
         const char *ptr = curlx_dyn_ptr(&line);
-        err = add_url(global, config, ptr, TRUE);
+        err = add_url(config, ptr, TRUE);
         if(err)
           break;
       }
@@ -1119,7 +1113,7 @@ static ParameterError parse_url(struct GlobalConfig *global,
     }
     return PARAM_READ_ERROR; /* file not found */
   }
-  return add_url(global, config, nextarg, FALSE);
+  return add_url(config, nextarg, FALSE);
 }
 
 
@@ -1159,10 +1153,10 @@ static ParameterError parse_localport(struct OperationConfig *config,
   return PARAM_OK;
 }
 
-static ParameterError parse_continue_at(struct GlobalConfig *global,
-                                        struct OperationConfig *config,
+static ParameterError parse_continue_at(struct OperationConfig *config,
                                         const char *nextarg)
 {
+  struct GlobalConfig *global = config->global;
   ParameterError err = PARAM_OK;
   if(config->range) {
     errorf(global, "--continue-at is mutually exclusive with --range");
@@ -1191,8 +1185,7 @@ static ParameterError parse_continue_at(struct GlobalConfig *global,
   return err;
 }
 
-static ParameterError parse_ech(struct GlobalConfig *global,
-                                struct OperationConfig *config,
+static ParameterError parse_ech(struct OperationConfig *config,
                                 const char *nextarg)
 {
   ParameterError err = PARAM_OK;
@@ -1220,7 +1213,7 @@ static ParameterError parse_ech(struct GlobalConfig *global,
         file = fopen(nextarg, FOPEN_READTEXT);
       }
       if(!file) {
-        warnf(global,
+        warnf(config->global,
               "Couldn't read file \"%s\" "
               "specified for \"--ech ecl:\" option",
               nextarg);
@@ -1244,8 +1237,7 @@ static ParameterError parse_ech(struct GlobalConfig *global,
   return err;
 }
 
-static ParameterError parse_header(struct GlobalConfig *global,
-                                   struct OperationConfig *config,
+static ParameterError parse_header(struct OperationConfig *config,
                                    cmdline_t cmd,
                                    const char *nextarg)
 {
@@ -1257,7 +1249,7 @@ static ParameterError parse_header(struct GlobalConfig *global,
     bool use_stdin = !strcmp(&nextarg[1], "-");
     FILE *file = use_stdin ? stdin : fopen(&nextarg[1], FOPEN_READTEXT);
     if(!file) {
-      errorf(global, "Failed to open %s", &nextarg[1]);
+      errorf(config->global, "Failed to open %s", &nextarg[1]);
       err = PARAM_READ_ERROR;
     }
     else {
@@ -1386,13 +1378,13 @@ static ParameterError parse_quote(struct OperationConfig *config,
   return err;
 }
 
-static ParameterError parse_range(struct GlobalConfig *global,
-                                  struct OperationConfig *config,
+static ParameterError parse_range(struct OperationConfig *config,
                                   const char *nextarg)
 {
   ParameterError err = PARAM_OK;
   curl_off_t value;
   const char *orig = nextarg;
+  struct GlobalConfig *global = config->global;
 
   if(config->use_resume) {
     errorf(global, "--continue-at is mutually exclusive with --range");
@@ -1529,8 +1521,7 @@ static ParameterError parse_verbose(struct GlobalConfig *global,
   return err;
 }
 
-static ParameterError parse_writeout(struct GlobalConfig *global,
-                                     struct OperationConfig *config,
+static ParameterError parse_writeout(struct OperationConfig *config,
                                      const char *nextarg)
 {
   ParameterError err = PARAM_OK;
@@ -1550,7 +1541,7 @@ static ParameterError parse_writeout(struct GlobalConfig *global,
       fname = nextarg;
       file = fopen(fname, FOPEN_READTEXT);
       if(!file) {
-        errorf(global, "Failed to open %s", fname);
+        errorf(config->global, "Failed to open %s", fname);
         return PARAM_READ_ERROR;
       }
     }
@@ -1561,7 +1552,7 @@ static ParameterError parse_writeout(struct GlobalConfig *global,
     if(err)
       return err;
     if(!config->writeout)
-      warnf(global, "Failed to read %s", fname);
+      warnf(config->global, "Failed to read %s", fname);
   }
   else
     err = getstr(&config->writeout, nextarg, ALLOW_BLANK);
@@ -1569,8 +1560,7 @@ static ParameterError parse_writeout(struct GlobalConfig *global,
   return err;
 }
 
-static ParameterError parse_time_cond(struct GlobalConfig *global,
-                                      struct OperationConfig *config,
+static ParameterError parse_time_cond(struct OperationConfig *config,
                                       const char *nextarg)
 {
   ParameterError err = PARAM_OK;
@@ -1598,14 +1588,14 @@ static ParameterError parse_time_cond(struct GlobalConfig *global,
   if(-1 == config->condtime) {
     curl_off_t value;
     /* now let's see if it is a filename to get the time from instead! */
-    int rc = getfiletime(nextarg, global, &value);
+    int rc = getfiletime(nextarg, config->global, &value);
     if(!rc)
       /* pull the time out from the file */
       config->condtime = value;
     else {
       /* failed, remove time condition */
       config->timecond = CURL_TIMECOND_NONE;
-      warnf(global,
+      warnf(config->global,
             "Illegal date format for -z, --time-cond (and not "
             "a filename). Disabling time condition. "
             "See curl_getdate(3) for valid date syntax.");
@@ -1693,8 +1683,7 @@ static void opt_depr(struct GlobalConfig *global,
 }
 
 /* opt_none is the function that handles ARG_NONE options */
-static ParameterError opt_none(struct GlobalConfig *global,
-                               struct OperationConfig *config,
+static ParameterError opt_none(struct OperationConfig *config,
                                const struct LongShort *a)
 {
   switch(a->cmd) {
@@ -1703,40 +1692,43 @@ static ParameterError opt_none(struct GlobalConfig *global,
     break;
   case C_DUMP_CA_EMBED: /* --dump-ca-embed */
     return PARAM_CA_EMBED_REQUESTED;
+  case C_FTP_PASV: /* --ftp-pasv */
+    tool_safefree(config->ftpport);
+    break;
 
   case C_HTTP1_0: /* --http1.0 */
     /* HTTP version 1.0 */
-    sethttpver(global, config, CURL_HTTP_VERSION_1_0);
+    sethttpver(config, CURL_HTTP_VERSION_1_0);
     break;
   case C_HTTP1_1: /* --http1.1 */
     /* HTTP version 1.1 */
-    sethttpver(global, config, CURL_HTTP_VERSION_1_1);
+    sethttpver(config, CURL_HTTP_VERSION_1_1);
     break;
   case C_HTTP2: /* --http2 */
     /* HTTP version 2.0 */
     if(!feature_http2)
       return PARAM_LIBCURL_DOESNT_SUPPORT;
-    sethttpver(global, config, CURL_HTTP_VERSION_2_0);
+    sethttpver(config, CURL_HTTP_VERSION_2_0);
     break;
   case C_HTTP2_PRIOR_KNOWLEDGE: /* --http2-prior-knowledge */
     /* HTTP version 2.0 over clean TCP */
     if(!feature_http2)
       return PARAM_LIBCURL_DOESNT_SUPPORT;
-    sethttpver(global, config, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
+    sethttpver(config, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
     break;
   case C_HTTP3: /* --http3: */
     /* Try HTTP/3, allow fallback */
     if(!feature_http3)
       return PARAM_LIBCURL_DOESNT_SUPPORT;
     else
-      sethttpver(global, config, CURL_HTTP_VERSION_3);
+      sethttpver(config, CURL_HTTP_VERSION_3);
     break;
   case C_HTTP3_ONLY: /* --http3-only */
     /* Try HTTP/3 without fallback */
     if(!feature_http3)
       return PARAM_LIBCURL_DOESNT_SUPPORT;
     else
-      sethttpver(global, config, CURL_HTTP_VERSION_3ONLY);
+      sethttpver(config, CURL_HTTP_VERSION_3ONLY);
     break;
   case C_TLSV1: /* --tlsv1 */
     config->ssl_version = CURL_SSLVERSION_TLSv1;
@@ -1770,11 +1762,11 @@ static ParameterError opt_none(struct GlobalConfig *global,
 }
 
 /* opt_bool is the function that handles boolean options */
-static ParameterError opt_bool(struct GlobalConfig *global,
-                               struct OperationConfig *config,
+static ParameterError opt_bool(struct OperationConfig *config,
                                const struct LongShort *a,
                                bool toggle)
 {
+  struct GlobalConfig *global = config->global;
   switch(a->cmd) {
   case C_ALPN: /* --alpn */
     config->noalpn = !toggle;
@@ -1996,7 +1988,7 @@ static ParameterError opt_bool(struct GlobalConfig *global,
     config->doh_verifystatus = toggle;
     break;
   case C_FALSE_START: /* --false-start */
-    config->falsestart = toggle;
+    opt_depr(global, a);
     break;
   case C_SSL_NO_REVOKE: /* --ssl-no-revoke */
     config->ssl_no_revoke = toggle;
@@ -2160,13 +2152,13 @@ static ParameterError opt_bool(struct GlobalConfig *global,
 
 
 /* opt_filestring handles string and file options */
-static ParameterError opt_filestring(struct GlobalConfig *global,
-                                     struct OperationConfig *config,
+static ParameterError opt_filestring(struct OperationConfig *config,
                                      const struct LongShort *a,
                                      const char *nextarg)
 {
   ParameterError err = PARAM_OK;
   curl_off_t value;
+  struct GlobalConfig *global = config->global;
   static const char *redir_protos[] = {
     "http",
     "https",
@@ -2291,10 +2283,7 @@ static ParameterError opt_filestring(struct GlobalConfig *global,
       config->max_filesize = value;
     break;
   case C_URL: /* --url */
-    err = parse_url(global, config, nextarg);
-    break;
-  case C_FTP_PASV: /* --ftp-pasv */
-    tool_safefree(config->ftpport);
+    err = parse_url(config, nextarg);
     break;
   case C_SOCKS5: /* --socks5 */
     /*  socks5 proxy to use, and resolves the name locally and passes on the
@@ -2482,7 +2471,7 @@ static ParameterError opt_filestring(struct GlobalConfig *global,
     err = getstr(&config->cookiejar, nextarg, DENY_BLANK);
     break;
   case C_CONTINUE_AT: /* --continue-at */
-    err = parse_continue_at(global, config, nextarg);
+    err = parse_continue_at(config, nextarg);
     break;
   case C_DATA: /* --data */
   case C_DATA_ASCII:  /* --data-ascii */
@@ -2490,10 +2479,10 @@ static ParameterError opt_filestring(struct GlobalConfig *global,
   case C_DATA_URLENCODE:  /* --data-urlencode */
   case C_JSON:  /* --json */
   case C_DATA_RAW:  /* --data-raw */
-    err = set_data((cmdline_t)a->cmd, nextarg, global, config);
+    err = set_data((cmdline_t)a->cmd, nextarg, config);
     break;
   case C_URL_QUERY:  /* --url-query */
-    err = url_query(nextarg, global, config);
+    err = url_query(nextarg, config);
     break;
   case C_DUMP_HEADER: /* --dump-header */
     err = getstr(&config->headerfile, nextarg, DENY_BLANK);
@@ -2542,7 +2531,7 @@ static ParameterError opt_filestring(struct GlobalConfig *global,
     }
     break;
   case C_ECH: /* --ech */
-    err = parse_ech(global, config, nextarg);
+    err = parse_ech(config, nextarg);
     break;
   case C_CAPATH: /* --capath */
     err = getstr(&config->capath, nextarg, DENY_BLANK);
@@ -2692,7 +2681,7 @@ static ParameterError opt_filestring(struct GlobalConfig *global,
     break;
   case C_HEADER: /* --header */
   case C_PROXY_HEADER: /* --proxy-header */
-    err = parse_header(global, config, (cmdline_t)a->cmd, nextarg);
+    err = parse_header(config, (cmdline_t)a->cmd, nextarg);
     break;
   case C_CONFIG: /* --config */
     if(parseconfig(nextarg, global)) {
@@ -2729,7 +2718,7 @@ static ParameterError opt_filestring(struct GlobalConfig *global,
     err = parse_quote(config, nextarg);
     break;
   case C_RANGE: /* --range */
-    err = parse_range(global, config, nextarg);
+    err = parse_range(config, nextarg);
     break;
   case C_TELNET_OPTION: /* --telnet-option */
     /* Telnet options */
@@ -2747,7 +2736,7 @@ static ParameterError opt_filestring(struct GlobalConfig *global,
     err = getstr(&config->proxyuserpwd, nextarg, ALLOW_BLANK);
     break;
   case C_WRITE_OUT: /* --write-out */
-    err = parse_writeout(global, config, nextarg);
+    err = parse_writeout(config, nextarg);
     break;
   case C_PREPROXY: /* --preproxy */
     err = getstr(&config->preproxy, nextarg, DENY_BLANK);
@@ -2788,7 +2777,7 @@ static ParameterError opt_filestring(struct GlobalConfig *global,
     break;
   }
   case C_TIME_COND: /* --time-cond */
-    err = parse_time_cond(global, config, nextarg);
+    err = parse_time_cond(config, nextarg);
     break;
   case C_UPLOAD_FLAGS: /* --upload-flags */
     err = parse_upload_flags(config, nextarg);
@@ -2801,7 +2790,6 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
                             const char *nextarg,    /* NULL if unset */
                             bool *usedarg,    /* set to TRUE if the arg
                                                  has been used */
-                            struct GlobalConfig *global,
                             struct OperationConfig *config)
 {
   const char *parse = NULL;
@@ -2812,6 +2800,7 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
                          by using --OPTION or --no-OPTION */
   bool nextalloc = FALSE; /* if nextarg is allocated */
   const struct LongShort *a = NULL;
+  struct GlobalConfig *global = config->global;
   verbose_nopts = 0; /* options processed in `flag`*/
 
   *usedarg = FALSE; /* default is that we do not use the arg */
@@ -2923,7 +2912,7 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
               nextarg);
       }
       /* ARG_FILE | ARG_STRG */
-      err = opt_filestring(global, config, a, nextarg);
+      err = opt_filestring(config, a, nextarg);
       if(a->desc & ARG_CLEAR)
         cleanarg(CURL_UNCONST(nextarg));
     }
@@ -2934,9 +2923,9 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
       }
       /* ARG_NONE | ARG_BOOL */
       if(ARGTYPE(a->desc) == ARG_BOOL)
-        err = opt_bool(global, config, a, toggle);
+        err = opt_bool(config, a, toggle);
       else
-        err = opt_none(global, config, a);
+        err = opt_none(config, a);
     }
 
     ++verbose_nopts; /* processed one option from `flag` input, loop for
@@ -2980,7 +2969,7 @@ ParameterError parse_args(struct GlobalConfig *global, int argc,
           }
         }
 
-        result = getparameter(orig_opt, nextarg, &passarg, global, config);
+        result = getparameter(orig_opt, nextarg, &passarg, config);
 
         unicodefree(nextarg);
         config = global->last;
@@ -2991,14 +2980,8 @@ ParameterError parse_args(struct GlobalConfig *global, int argc,
 
           if(config->url_list && config->url_list->url) {
             /* Allocate the next config */
-            config->next = malloc(sizeof(struct OperationConfig));
+            config->next = config_alloc(global);
             if(config->next) {
-              /* Initialise the newly created config */
-              config_init(config->next);
-
-              /* Set the global config pointer */
-              config->next->global = global;
-
               /* Update the last config pointer */
               global->last = config->next;
 
@@ -3022,7 +3005,7 @@ ParameterError parse_args(struct GlobalConfig *global, int argc,
       bool used;
 
       /* Just add the URL please */
-      result = getparameter("--url", orig_opt, &used, global, config);
+      result = getparameter("--url", orig_opt, &used, config);
     }
 
     if(!result) {

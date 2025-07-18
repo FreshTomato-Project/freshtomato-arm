@@ -23,7 +23,6 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#include <curlx.h>
 #include "tool_cfgable.h"
 #include "tool_getparam.h"
 #include "tool_helpers.h"
@@ -31,7 +30,7 @@
 #include "tool_msgs.h"
 #include "tool_parsecfg.h"
 #include "tool_util.h"
-#include <memdebug.h> /* keep this as LAST include */
+#include "memdebug.h" /* keep this as LAST include */
 
 /* only acknowledge colon or equals as separators if the option was not
    specified with an initial dash! */
@@ -47,7 +46,7 @@ int parseconfig(const char *filename, struct GlobalConfig *global)
   FILE *file = NULL;
   bool usedarg = FALSE;
   int rc = 0;
-  struct OperationConfig *operation = global->last;
+  struct OperationConfig *config = global->last;
   char *pathalloc = NULL;
 
   if(!filename) {
@@ -157,9 +156,9 @@ int parseconfig(const char *filename, struct GlobalConfig *global)
           case '#': /* comment */
             break;
           default:
-            warnf(operation->global, "%s:%d: warning: '%s' uses unquoted "
+            warnf(config->global, "%s:%d: warning: '%s' uses unquoted "
                   "whitespace", filename, lineno, option);
-            warnf(operation->global, "This may cause side-effects. "
+            warnf(config->global, "This may cause side-effects. "
                   "Consider using double quotes?");
           }
         }
@@ -172,30 +171,24 @@ int parseconfig(const char *filename, struct GlobalConfig *global)
 #ifdef DEBUG_CONFIG
       fprintf(tool_stderr, "PARAM: \"%s\"\n",(param ? param : "(null)"));
 #endif
-      res = getparameter(option, param, &usedarg, global, operation);
-      operation = global->last;
+      res = getparameter(option, param, &usedarg, config);
+      config = global->last;
 
       if(!res && param && *param && !usedarg)
         /* we passed in a parameter that was not used! */
         res = PARAM_GOT_EXTRA_PARAMETER;
 
       if(res == PARAM_NEXT_OPERATION) {
-        if(operation->url_list && operation->url_list->url) {
+        if(config->url_list && config->url_list->url) {
           /* Allocate the next config */
-          operation->next = malloc(sizeof(struct OperationConfig));
-          if(operation->next) {
-            /* Initialise the newly created config */
-            config_init(operation->next);
-
-            /* Set the global config pointer */
-            operation->next->global = global;
-
+          config->next = config_alloc(global);
+          if(config->next) {
             /* Update the last operation pointer */
-            global->last = operation->next;
+            global->last = config->next;
 
             /* Move onto the new config */
-            operation->next->prev = operation;
-            operation = operation->next;
+            config->next->prev = config;
+            config = config->next;
           }
           else
             res = PARAM_NO_MEM;
@@ -213,7 +206,7 @@ int parseconfig(const char *filename, struct GlobalConfig *global)
            res != PARAM_ENGINES_REQUESTED &&
            res != PARAM_CA_EMBED_REQUESTED) {
           const char *reason = param2text(res);
-          errorf(operation->global, "%s:%d: '%s' %s",
+          errorf(config->global, "%s:%d: '%s' %s",
                  filename, lineno, option, reason);
           rc = (int)res;
         }

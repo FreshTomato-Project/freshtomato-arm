@@ -378,12 +378,12 @@ mspi_read_id(osl_t *osh, qspiregs_t *qspi)
 	unsigned char data[5];
 
 	/* Try SST flashes read product id command */
-	cmd[0] = SST_FLASH_RDID;
+	cmd[0] = SST_FLASH_RDID; /* 0x90 */
 	cmd[1] = 0;
 	cmd[2] = 0;
 	cmd[3] = 0;
 	if (mspi_writeread(osh, qspi, cmd, 4, data, 2)) {
-		if (data[0] == SSTPART || data[0] == NXPART || data[0] == GIGADEVICEPART) {
+		if ((data[0] == SSTPART) || (data[0] == NXPART)) {
 			return NTOS(data);
 		}
 	}
@@ -397,14 +397,14 @@ mspi_read_id(osl_t *osh, qspiregs_t *qspi)
 	}
 
 	/* Try SPANSION flashes read product id command */
-	cmd[0] = SPAN_FLASH_RDID;
+	cmd[0] = SPAN_FLASH_RDID; /* 0x9F */
 	if (mspi_writeread(osh, qspi, cmd, 1, data, 3)) {
 		if (data[0] == ATMELPART) {
 			return NTOS(data);
 		}
 
 		if ((data[0] == NUMONYXPART) || (data[0] == SPANPART) ||
-		    (data[0] == EONPART) || (data[0] == MACRONIXPART || data[0] == GIGADEVICEPART)) {
+		    (data[0] == EONPART) || (data[0] == MACRONIXPART) || (data[0] == GIGADEVICEPART)) {
 			data[1] = data[2];
 			return NTOS(data);
 		}

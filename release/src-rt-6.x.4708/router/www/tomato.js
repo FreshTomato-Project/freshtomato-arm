@@ -10,22 +10,6 @@
 // -----------------------------------------------------------------------------
 
 /* global variables */
-var MAX_BRIDGE_ID = 3;
-/* EXTSW-NO-BEGIN */
-var MAX_PORT_ID = 4;
-/* EXTSW-NO-END */
-/* EXTSW-BEGIN */
-var MAX_PORT_ID = 5;
-/* EXTSW-END */
-var MAX_VLAN_ID = 15;
-/* DUALWAN-BEGIN */
-var xifs = [['wan','lan','lan1','lan2','lan3','wan2'],['WAN0','LAN0','LAN1','LAN2','LAN3','WAN1']];
-var MAXWAN_NUM = 2;
-/* DUALWAN-END */
-/* MULTIWAN-BEGIN */
-var xifs = [['wan','lan','lan1','lan2','lan3','wan2','wan3','wan4'],['WAN0','LAN0','LAN1','LAN2','LAN3','WAN1','WAN2','WAN3']];
-var MAXWAN_NUM = 4;
-/* MULTIWAN-END */
 var mac_null = '00:00:00:00:00:00';
 var serviceLastUp = [];
 var countButton = 0;

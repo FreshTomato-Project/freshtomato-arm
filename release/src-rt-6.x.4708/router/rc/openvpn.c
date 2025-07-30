@@ -550,8 +550,18 @@ void start_ovpn_client(int unit)
 		            iface, (nvi ? "DROP" : "ACCEPT"),
 		            iface);
 #ifdef TCONFIG_BCMARM
-		if (!nvram_get_int("ctf_disable")) /* bypass CTF if enabled */
-			fprintf(fp, "iptables -t mangle -I PREROUTING -i %s -j MARK --set-mark 0x01/0x7\n", iface);
+		if (!nvram_get_int("ctf_disable")) { /* bypass CTF if enabled */
+			fprintf(fp, "iptables -t mangle -I PREROUTING -i %s -j MARK --set-mark 0x01/0x7\n"
+			            "iptables -t mangle -I POSTROUTING -o %s -j MARK --set-mark 0x01/0x7\n",
+			            iface, iface);
+#ifdef TCONFIG_IPV6
+			if (ipv6_enabled()) {
+				fprintf(fp, "ip6tables -t mangle -I PREROUTING -i %s -j MARK --set-mark 0x01/0x7\n"
+				            "ip6tables -t mangle -I POSTROUTING -o %s -j MARK --set-mark 0x01/0x7\n",
+				            iface, iface);
+			}
+#endif
+		}
 #endif /* TCONFIG_BCMARM */
 
 		if (route_mode == NAT)
@@ -1168,8 +1178,18 @@ void start_ovpn_server(int unit)
 			            iface, chain_in_accept,
 			            iface);
 #ifdef TCONFIG_BCMARM
-			if (!nvram_get_int("ctf_disable")) /* bypass CTF if enabled */
-				fprintf(fp, "iptables -t mangle -I PREROUTING -i %s -j MARK --set-mark 0x01/0x7\n", iface);
+			if (!nvram_get_int("ctf_disable")) { /* bypass CTF if enabled */
+				fprintf(fp, "iptables -t mangle -I PREROUTING -i %s -j MARK --set-mark 0x01/0x7\n"
+				            "iptables -t mangle -I POSTROUTING -o %s -j MARK --set-mark 0x01/0x7\n",
+				            iface, iface);
+#ifdef TCONFIG_IPV6
+				if (ipv6_enabled()) {
+					fprintf(fp, "ip6tables -t mangle -I PREROUTING -i %s -j MARK --set-mark 0x01/0x7\n"
+					            "ip6tables -t mangle -I POSTROUTING -o %s -j MARK --set-mark 0x01/0x7\n",
+					            iface, iface);
+				}
+#endif
+			}
 #endif /* TCONFIG_BCMARM */
 		}
 

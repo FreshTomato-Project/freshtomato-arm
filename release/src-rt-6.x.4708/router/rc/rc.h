@@ -287,11 +287,7 @@ extern void start_udpxy(void);
 extern void stop_udpxy(void);
 extern void start_httpd(void);
 extern void stop_httpd(void);
-extern void clear_resolv(void);
 extern void dns_to_resolv(void);
-extern void start_dnsmasq(void);
-extern void stop_dnsmasq(void);
-extern void reload_dnsmasq(void);
 #ifdef TCONFIG_STUBBY
 extern void start_stubby(void);
 extern void stop_stubby(void);
@@ -688,5 +684,14 @@ extern void start_ftpd(int force);
 extern void stop_ftpd(void);
 extern void run_ftpd_firewall_script(void);
 #endif
+
+/* dnsmasq.c */
+extern void start_dnsmasq(void);
+extern void stop_dnsmasq(void);
+extern void reload_dnsmasq(void);
+extern void clear_resolv(void);
+extern const char dmhosts[];
+extern const char dmresolv[];
+extern const char dmipset[];
 
 #endif /* __RC_H__ */

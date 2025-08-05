@@ -12,6 +12,7 @@ help_main:
 	@echo " f9ke           Belkin F9K1113v2 VPN"
 	@echo "DLINK ARM Builds"
 	@echo " dir868l        DLINK DIR868L"
+	@echo " dir868lwg      DLINK DIR868L with wireguard"
 	@echo "NETGEAR ARM Builds"
 	@echo " r7000e         R7000/R6900/R6700v1 build VPN"
 	@echo " r7000z         R7000/R6900/R6700v1 build AIO"

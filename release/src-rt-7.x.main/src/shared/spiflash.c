@@ -376,12 +376,12 @@ mspi_read_id(osl_t *osh, qspiregs_t *qspi)
 	unsigned char data[5];
 
 	/* Try SST flashes read product id command */
-	cmd[0] = SST_FLASH_RDID;
+	cmd[0] = SST_FLASH_RDID; /* 0x90 */
 	cmd[1] = 0;
 	cmd[2] = 0;
 	cmd[3] = 0;
 	if (mspi_writeread(osh, qspi, cmd, 4, data, 2)) {
-		if (data[0] == SSTPART || data[0] == NXPART) {
+		if (data[0] == SSTPART) {
 			return NTOS(data);
 		}
 	}
@@ -395,15 +395,17 @@ mspi_read_id(osl_t *osh, qspiregs_t *qspi)
 	}
 
 	/* Try SPANSION flashes read product id command */
-	cmd[0] = SPAN_FLASH_RDID;
+	/* Read JEDEC ID - manufacturer ID + memory type + memory density */
+	cmd[0] = SPAN_FLASH_RDID; /* 0x9F */
 	if (mspi_writeread(osh, qspi, cmd, 1, data, 3)) {
 		if (data[0] == ATMELPART) {
 			return NTOS(data);
 		}
 
 		if ((data[0] == NUMONYXPART) || (data[0] == SPANPART) ||
-		    (data[0] == EONPART) || (data[0] == MACRONIXPART)) {
-			data[1] = data[2];
+		    (data[0] == EONPART) || (data[0] == MACRONIXPART) ||
+		    (data[0] == NXPART)) {
+			data[1] = data[2]; /* memory density */
 			return NTOS(data);
 		}
 	}
@@ -745,11 +747,12 @@ spiflash_init(si_t *sih)
 			name = "ST compatible (Winbond/NexFlash)";
 		else
 			name = "ST compatible (Micron)";
+		printk(KERN_INFO "spiflash: name: %s\n",name);
 
 		spiflash.type = QSPIFLASH_ST;
 		spiflash.blocksize = 64 * 1024;
 
-		switch ((unsigned short)(device_id & 0x00ff)) {
+		switch ((unsigned short)(device_id & 0x00ff)) { /* memory density */
 		case 0x11:
 			/* ST M25P20 2 Mbit Serial Flash */
 			spiflash.numblocks = 4;

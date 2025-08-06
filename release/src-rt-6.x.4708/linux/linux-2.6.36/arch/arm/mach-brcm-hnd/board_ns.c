@@ -514,15 +514,6 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 
 	}
 #endif	/* CONFIG_FAILSAFE_UPGRADE */
-
-	/* Buffalo WZR-1750DHP */
-	if (nvram_match("boardnum", "00") &&
-	    nvram_match("boardtype","0xF646") &&
-	    nvram_match("boardrev", "0x1100")) {
-		size = 0x100000;	/* flash0 ST Compatible Serial flash size 1024KB */
-		bootsz = 0x40000;	/* flash0.boot ST Compatible Serial flash offset 00000000 size 256KB */
-					/* flash0.nvram ST Compatible Serial flash offset 000F0000 size 64KB */
-	}
 	
 	bootdev = soc_boot_dev((void *)sih);
 	knldev = soc_knl_dev((void *)sih);

@@ -1,6 +1,6 @@
 --- flac/configure.ac
 +++ flac/configure.ac
-@@ -399,8 +399,8 @@
+@@ -418,8 +418,8 @@
  if test x$ac_cv_c_compiler_gnu = xyes -o x$xiph_cv_c_compiler_clang = xyes ; then
  	dnl Prepend defaults to CFLAGS for GCC and Clang
  	AS_IF([test "x${ax_enable_debug}" = "xno"], [

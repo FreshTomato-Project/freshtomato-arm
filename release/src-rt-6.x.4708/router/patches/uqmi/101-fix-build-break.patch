@@ -1,8 +1,8 @@
 --- uqmi/CMakeLists.txt
 +++ uqmi/CMakeLists.txt
-@@ -4,7 +4,7 @@
- 
+@@ -5,7 +5,7 @@
  OPTION(BUILD_STATIC OFF)
+ OPTION(BUILD_UQMID OFF)
  
 -ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations -Wno-enum-conversion -Wno-dangling-pointer)
 +ADD_DEFINITIONS(-Os -Wall --std=gnu99 -Wmissing-declarations)

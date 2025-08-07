@@ -767,20 +767,20 @@ function save() {
 			users += u.substring(n + 1);
 		}
 
-		E('vpn_'+t+'_dhcp').value = E('_f_vpn_'+t+'_dhcp').checked ? 1 : 0;
-		E('vpn_'+t+'_plan').value = E('_f_vpn_'+t+'_plan').checked ? 1 : 0;
-		E('vpn_'+t+'_plan1').value = E('_f_vpn_'+t+'_plan1').checked ? 1 : 0;
-		E('vpn_'+t+'_plan2').value = E('_f_vpn_'+t+'_plan2').checked ? 1 : 0;
-		E('vpn_'+t+'_plan3').value = E('_f_vpn_'+t+'_plan3').checked ? 1 : 0;
-		E('vpn_'+t+'_ccd').value = E('_f_vpn_'+t+'_ccd').checked ? 1 : 0;
-		E('vpn_'+t+'_c2c').value = E('_f_vpn_'+t+'_c2c').checked ? 1 : 0;
-		E('vpn_'+t+'_ccd_excl').value = E('_f_vpn_'+t+'_ccd_excl').checked ? 1 : 0;
-		E('vpn_'+t+'_ccd_val').value = ccd;
-		E('vpn_'+t+'_userpass').value = E('_f_vpn_'+t+'_userpass').checked ? 1 : 0;
-		E('vpn_'+t+'_nocert').value = E('_f_vpn_'+t+'_nocert').checked ? 1 : 0;
-		E('vpn_'+t+'_users_val').value = users;
-		E('vpn_'+t+'_pdns').value = E('_f_vpn_'+t+'_pdns').checked ? 1 : 0;
-		E('vpn_'+t+'_rgw').value = E('_f_vpn_'+t+'_rgw').checked ? 1 : 0;
+		fom['vpn_'+t+'_dhcp'].value = E('_f_vpn_'+t+'_dhcp').checked ? 1 : 0;
+		fom['vpn_'+t+'_plan'].value = E('_f_vpn_'+t+'_plan').checked ? 1 : 0;
+		fom['vpn_'+t+'_plan1'].value = E('_f_vpn_'+t+'_plan1').checked ? 1 : 0;
+		fom['vpn_'+t+'_plan2'].value = E('_f_vpn_'+t+'_plan2').checked ? 1 : 0;
+		fom['vpn_'+t+'_plan3'].value = E('_f_vpn_'+t+'_plan3').checked ? 1 : 0;
+		fom['vpn_'+t+'_ccd'].value = E('_f_vpn_'+t+'_ccd').checked ? 1 : 0;
+		fom['vpn_'+t+'_c2c'].value = E('_f_vpn_'+t+'_c2c').checked ? 1 : 0;
+		fom['vpn_'+t+'_ccd_excl'].value = E('_f_vpn_'+t+'_ccd_excl').checked ? 1 : 0;
+		fom['vpn_'+t+'_ccd_val'].value = ccd;
+		fom['vpn_'+t+'_userpass'].value = E('_f_vpn_'+t+'_userpass').checked ? 1 : 0;
+		fom['vpn_'+t+'_nocert'].value = E('_f_vpn_'+t+'_nocert').checked ? 1 : 0;
+		fom['vpn_'+t+'_users_val'].value = users;
+		fom['vpn_'+t+'_pdns'].value = E('_f_vpn_'+t+'_pdns').checked ? 1 : 0;
+		fom['vpn_'+t+'_rgw'].value = E('_f_vpn_'+t+'_rgw').checked ? 1 : 0;
 /* KEYGEN-BEGIN */
 		var is_rsa = 0, is_ecdh = 0;
 		var ca_key = E('_vpn_'+t+'_ca_key').value;
@@ -798,11 +798,11 @@ function save() {
 				return;
 		}
 
-		E('vpn_'+t+'_ecdh').value = E('_f_vpn_'+t+'_ecdh').checked ? 1 : 0;
+		fom['vpn_'+t+'_ecdh'].value = E('_f_vpn_'+t+'_ecdh').checked ? 1 : 0;
 		if (E('_f_vpn_'+t+'_ecdh').checked)
 			E('_f_vpn_'+t+'_dh').value = '';
 /* KEYGEN-END */
-		E('vpn_'+t+'_dh').value = E('_f_vpn_'+t+'_dh').value;
+		fom['vpn_'+t+'_dh'].value = E('_f_vpn_'+t+'_dh').value;
 	}
 	fom._nofootermsg.value = 0;
 
@@ -892,8 +892,8 @@ function init() {
 <input type="hidden" name="_nextpage" value="vpn-server.asp">
 <input type="hidden" name="_service" value="">
 <input type="hidden" name="_nofootermsg">
-<input type="hidden" name="vpn_server_eas" id="vpn_server_eas">
-<input type="hidden" name="vpn_server_dns" id="vpn_server_dns">
+<input type="hidden" name="vpn_server_eas">
+<input type="hidden" name="vpn_server_dns">
 
 <!-- / / / -->
 
@@ -923,23 +923,23 @@ function init() {
 		for (i = 0; i < tabs.length; ++i) {
 			t = tabs[i][0];
 			W('<div id="'+t+'-tab">');
-			W('<input type="hidden" id="vpn_'+t+'_dhcp" name="vpn_'+t+'_dhcp">');
-			W('<input type="hidden" id="vpn_'+t+'_plan" name="vpn_'+t+'_plan">');
-			W('<input type="hidden" id="vpn_'+t+'_plan1" name="vpn_'+t+'_plan1">');
-			W('<input type="hidden" id="vpn_'+t+'_plan2" name="vpn_'+t+'_plan2">');
-			W('<input type="hidden" id="vpn_'+t+'_plan3" name="vpn_'+t+'_plan3">');
-			W('<input type="hidden" id="vpn_'+t+'_ccd" name="vpn_'+t+'_ccd">');
-			W('<input type="hidden" id="vpn_'+t+'_c2c" name="vpn_'+t+'_c2c">');
-			W('<input type="hidden" id="vpn_'+t+'_ccd_excl" name="vpn_'+t+'_ccd_excl">');
-			W('<input type="hidden" id="vpn_'+t+'_ccd_val" name="vpn_'+t+'_ccd_val">');
-			W('<input type="hidden" id="vpn_'+t+'_userpass" name="vpn_'+t+'_userpass">');
-			W('<input type="hidden" id="vpn_'+t+'_nocert" name="vpn_'+t+'_nocert">');
-			W('<input type="hidden" id="vpn_'+t+'_users_val" name="vpn_'+t+'_users_val">');
-			W('<input type="hidden" id="vpn_'+t+'_pdns" name="vpn_'+t+'_pdns">');
-			W('<input type="hidden" id="vpn_'+t+'_rgw" name="vpn_'+t+'_rgw">');
-			W('<input type="hidden" id="vpn_'+t+'_dh" name="vpn_'+t+'_dh">');
+			W('<input type="hidden" name="vpn_'+t+'_dhcp">');
+			W('<input type="hidden" name="vpn_'+t+'_plan">');
+			W('<input type="hidden" name="vpn_'+t+'_plan1">');
+			W('<input type="hidden" name="vpn_'+t+'_plan2">');
+			W('<input type="hidden" name="vpn_'+t+'_plan3">');
+			W('<input type="hidden" name="vpn_'+t+'_ccd">');
+			W('<input type="hidden" name="vpn_'+t+'_c2c">');
+			W('<input type="hidden" name="vpn_'+t+'_ccd_excl">');
+			W('<input type="hidden" name="vpn_'+t+'_ccd_val">');
+			W('<input type="hidden" name="vpn_'+t+'_userpass">');
+			W('<input type="hidden" name="vpn_'+t+'_nocert">');
+			W('<input type="hidden" name="vpn_'+t+'_users_val">');
+			W('<input type="hidden" name="vpn_'+t+'_pdns">');
+			W('<input type="hidden" name="vpn_'+t+'_rgw">');
+			W('<input type="hidden" name="vpn_'+t+'_dh">');
 /* KEYGEN-BEGIN */
-			W('<input type="hidden" id="vpn_'+t+'_ecdh" name="vpn_'+t+'_ecdh">');
+			W('<input type="hidden" name="vpn_'+t+'_ecdh">');
 /* KEYGEN-END */
 
 			W('<ul class="tabs">');

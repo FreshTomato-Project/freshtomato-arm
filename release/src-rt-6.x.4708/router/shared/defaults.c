@@ -1573,6 +1573,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpn_client1_routing_val",	""				, 0 },
 	{ "vpn_client1_fw",		"1"				, 0 },
 	{ "vpn_client1_tlsvername",	"0"				, 0 },
+	{ "vpn_client1_prio",		""				, 0 },
 	{ "vpn_client2_poll",		"0"				, 0 },
 	{ "vpn_client2_if",		"tun"				, 0 },
 	{ "vpn_client2_bridge",		"1"				, 0 },
@@ -1610,6 +1611,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpn_client2_routing_val",	""				, 0 },
 	{ "vpn_client2_fw",		"1"				, 0 },
 	{ "vpn_client2_tlsvername",	"0"				, 0 },
+	{ "vpn_client2_prio",		""				, 0 },
 #ifdef TCONFIG_BCMARM
 	{ "vpn_client3_poll",		"0"				, 0 },
 	{ "vpn_client3_if",		"tun"				, 0 },
@@ -1648,6 +1650,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpn_client3_routing_val",	""				, 0 },
 	{ "vpn_client3_fw",		"1"				, 0 },
 	{ "vpn_client3_tlsvername",	"0"				, 0 },
+	{ "vpn_client3_prio",		""				, 0 },
 #endif /* TCONFIG_BCMARM */
 #endif /* TCONFIG_OPENVPN */
 

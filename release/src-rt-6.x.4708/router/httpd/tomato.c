@@ -1625,6 +1625,7 @@ static const nvset_t nvset_list[] = {
 	{ "vpn_client1_br",		V_LENGTH(0, 50)			},
 	{ "vpn_client1_routing_val",	V_NONE				},
 	{ "vpn_client1_fw",		V_01				},
+	{ "vpn_client1_prio",		V_NONE				},
 	{ "vpn_client2_poll",		V_RANGE(0, 30)			},
 	{ "vpn_client2_if",		V_TEXT(3, 3)			},	/* tap, tun */
 	{ "vpn_client2_bridge",		V_01				},
@@ -1662,6 +1663,7 @@ static const nvset_t nvset_list[] = {
 	{ "vpn_client2_br",		V_LENGTH(0, 50)			},
 	{ "vpn_client2_routing_val",	V_NONE				},
 	{ "vpn_client2_fw",		V_01				},
+	{ "vpn_client2_prio",		V_NONE				},
 #ifdef TCONFIG_BCMARM
 	{ "vpn_client3_poll",		V_RANGE(0, 30)			},
 	{ "vpn_client3_if",		V_TEXT(3, 3)			},	/* tap, tun */
@@ -1700,6 +1702,7 @@ static const nvset_t nvset_list[] = {
 	{ "vpn_client3_br",		V_LENGTH(0, 50)			},
 	{ "vpn_client3_routing_val",	V_NONE				},
 	{ "vpn_client3_fw",		V_01				},
+	{ "vpn_client3_prio",		V_NONE				},
 #endif
 #endif /* TCONFIG_OPENVPN */
 

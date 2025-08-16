@@ -1,5 +1,73 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+31 Jul 2025, PHP 8.3.24
+
+- Calendar:
+  . Fixed jewishtojd overflow on year argument. (David Carlier)
+
+- Core:
+  . Fixed bug GH-18833 (Use after free with weakmaps dependent on destruction
+    order). (Daniil Gentili)
+  . Fix OSS-Fuzz #427814456. (nielsdos)
+  . Fix OSS-Fuzz #428983568 and #428760800. (nielsdos)
+  . Fixed bug GH-17204 -Wuseless-escape warnings emitted by re2c. (Peter Kokot)
+
+- Curl:
+  . Fix memory leaks when returning refcounted value from curl callback.
+    (nielsdos)
+  . Remove incorrect string release. (nielsdos)
+
+- LDAP:
+  . Fixed GH-18902 ldap_exop/ldap_exop_sync assert triggered on empty
+    request OID. (David Carlier)
+
+- MbString:
+  . Fixed bug GH-18901 (integer overflow mb_split). (nielsdos)
+
+- OCI8:
+  . Fixed bug GH-18873 (OCI_RETURN_LOBS flag causes oci8 to leak memory).
+    (Saki Takamachi)
+
+- Opcache:
+  . Fixed bug GH-18639 (Internal class aliases can break preloading + JIT).
+    (nielsdos)
+  . Fixed bug GH-14082 (Segmentation fault on unknown address 0x600000000018
+    in ext/opcache/jit/zend_jit.c). (nielsdos)
+
+- OpenSSL:
+  . Fixed bug #80770 (It is not possible to get client peer certificate with
+    stream_socket_server). (Jakub Zelenka)
+
+- PCNTL:
+  . Fixed bug GH-18958 (Fatal error during shutdown after pcntl_rfork() or
+    pcntl_forkx() with zend-max-execution-timers). (Arnaud)
+
+- Phar:
+  . Fix stream double free in phar. (nielsdos, dixyes)
+  . Fix phar crash and file corruption with SplFileObject. (nielsdos)
+
+- SOAP:
+  . Fixed bug GH-18990, bug #81029, bug #47314 (SOAP HTTP socket not closing
+    on object destruction). (nielsdos)
+  . Fix memory leak when URL parsing fails in redirect. (Girgias)
+
+- SPL:
+  . Fixed bug GH-19094 (Attaching class with no Iterator implementation to
+    MultipleIterator causes crash). (nielsdos)
+
+- Standard:
+  . Fix misleading errors in printf(). (nielsdos)
+  . Fix RCN violations in array functions. (nielsdos)
+  . Fixed GH-18976 pack() overflow with h/H format and INT_MAX repeater value.
+    (David Carlier)
+
+- Streams:
+  . Fixed GH-13264 (fgets() and stream_get_line() do not return false on filter
+    fatal error). (Jakub Zelenka)
+
+- Zip:
+  . Fix leak when path is too long in ZipArchive::extractTo(). (nielsdos)
+
 03 Jul 2025, PHP 8.3.23
 
 - Core:
@@ -38,10 +106,6 @@ PHP                                                                        NEWS
   . Fixed bug #74796 (Requests through http proxy set peer name).
     (Jakub Zelenka)
 
-- PGSQL:
-  . Fixed GHSA-hrwm-9436-5mv3 (pgsql extension does not check for errors during
-    escaping). (CVE-2025-1735) (Jakub Zelenka)
-
 - Phar:
   . Add missing filter cleanups on phar failure. (nielsdos)
   . Fixed bug GH-18642 (Signed integer overflow in ext/phar fseek). (nielsdos)
@@ -55,6 +119,8 @@ PHP                                                                        NEWS
 - PGSQL:
   . Fix warning not being emitted when failure to cancel a query with
     pg_cancel_query(). (Girgias)
+  . Fixed GHSA-hrwm-9436-5mv3 (pgsql extension does not check for errors during
+    escaping). (CVE-2025-1735) (Jakub Zelenka)
 
 - Random:
   . Fix reference type confusion and leak in user random engine.
@@ -64,9 +130,9 @@ PHP                                                                        NEWS
   . Fix memory leak when calloc() fails in php_readline_completion_cb().
     (nielsdos)
 
-- SOAP:
+- Soap:
   . Fix memory leaks in php_http.c when call_user_function() fails. (nielsdos)
-  . Fixed GHSA-453j-q27h-5p8x (NULL Pointer Dereference in PHP SOAP Extension
+  . Fixed GHSA-453j-q27h-5p8x (NULL Pointer Dereference in PHP SOAP ExtensionAdd commentMore actions
     via Large XML Namespace Prefix). (CVE-2025-6491) (Lekssays, nielsdos)
 
 - Standard:

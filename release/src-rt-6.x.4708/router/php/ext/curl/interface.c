@@ -623,7 +623,7 @@ static size_t curl_write(char *data, size_t size, size_t nmemb, void *ctx)
 				length = -1;
 			} else if (!Z_ISUNDEF(retval)) {
 				_php_curl_verify_handlers(ch, /* reporterror */ true);
-				length = zval_get_long(&retval);
+				length = php_curl_get_long(&retval);
 			}
 
 			zval_ptr_dtor(&argv[0]);
@@ -667,7 +667,7 @@ static int curl_fnmatch(void *ctx, const char *pattern, const char *string)
 		php_error_docref(NULL, E_WARNING, "Cannot call the CURLOPT_FNMATCH_FUNCTION");
 	} else if (!Z_ISUNDEF(retval)) {
 		_php_curl_verify_handlers(ch, /* reporterror */ true);
-		rval = zval_get_long(&retval);
+		rval = php_curl_get_long(&retval);
 	}
 	zval_ptr_dtor(&argv[0]);
 	zval_ptr_dtor(&argv[1]);
@@ -715,7 +715,7 @@ static size_t curl_progress(void *clientp, double dltotal, double dlnow, double 
 		php_error_docref(NULL, E_WARNING, "Cannot call the CURLOPT_PROGRESSFUNCTION");
 	} else if (!Z_ISUNDEF(retval)) {
 		_php_curl_verify_handlers(ch, /* reporterror */ true);
-		if (0 != zval_get_long(&retval)) {
+		if (0 != php_curl_get_long(&retval)) {
 			rval = 1;
 		}
 	}
@@ -764,7 +764,7 @@ static size_t curl_xferinfo(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
 		php_error_docref(NULL, E_WARNING, "Cannot call the CURLOPT_XFERINFOFUNCTION");
 	} else if (!Z_ISUNDEF(retval)) {
 		_php_curl_verify_handlers(ch, /* reporterror */ true);
-		if (0 != zval_get_long(&retval)) {
+		if (0 != php_curl_get_long(&retval)) {
 			rval = 1;
 		}
 	}
@@ -821,6 +821,7 @@ static int curl_ssh_hostkeyfunction(void *clientp, int keytype, const char *key,
 			}
 		} else {
 			zend_throw_error(NULL, "The CURLOPT_SSH_HOSTKEYFUNCTION callback must return either CURLKHMATCH_OK or CURLKHMATCH_MISMATCH");
+			zval_ptr_dtor(&retval);
 		}
 	}
 	zval_ptr_dtor(&argv[0]);
@@ -938,7 +939,7 @@ static size_t curl_write_header(char *data, size_t size, size_t nmemb, void *ctx
 				length = -1;
 			} else if (!Z_ISUNDEF(retval)) {
 				_php_curl_verify_handlers(ch, /* reporterror */ true);
-				length = zval_get_long(&retval);
+				length = php_curl_get_long(&retval);
 			}
 			zval_ptr_dtor(&argv[0]);
 			zval_ptr_dtor(&argv[1]);
@@ -1290,6 +1291,17 @@ void _php_setup_easy_copy_handlers(php_curl *ch, php_curl *source)
 	(*source->clone)++;
 }
 
+zend_long php_curl_get_long(zval *zv)
+{
+	if (EXPECTED(Z_TYPE_P(zv) == IS_LONG)) {
+		return Z_LVAL_P(zv);
+	} else {
+		zend_long ret = zval_get_long(zv);
+		zval_ptr_dtor(zv);
+		return ret;
+	}
+}
+
 #if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
 static size_t read_cb(char *buffer, size_t size, size_t nitems, void *arg) /* {{{ */
 {
@@ -1357,7 +1369,6 @@ static inline CURLcode add_simple_field(struct HttpPost **first, struct HttpPost
 	part = curl_mime_addpart(mime);
 	if (part == NULL) {
 		zend_tmp_string_release(tmp_postval);
-		zend_string_release_ex(string_key, 0);
 		return CURLE_OUT_OF_MEMORY;
 	}
 	if ((form_error = curl_mime_name(part, ZSTR_VAL(string_key))) != CURLE_OK

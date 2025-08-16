@@ -1,4 +1,26 @@
 
+Changes with nginx 1.29.1                                        13 Aug 2025
+
+    *) Change: now TLSv1.3 certificate compression is disabled by default.
+
+    *) Feature: the "ssl_certificate_compression" directive.
+
+    *) Feature: support for 0-RTT in QUIC when using OpenSSL 3.5.1 or newer.
+
+    *) Bugfix: the 103 response might be buffered when using HTTP/2 and the
+       "early_hints" directive.
+
+    *) Bugfix: in handling "Host" and ":authority" header lines with equal
+       values when using HTTP/2; the bug had appeared in 1.17.9.
+
+    *) Bugfix: in handling "Host" header lines with a port when using
+       HTTP/3.
+
+    *) Bugfix: nginx could not be built on NetBSD 10.0.
+
+    *) Bugfix: in the "none" parameter of the "smtp_auth" directive.
+
+
 Changes with nginx 1.29.0                                        24 Jun 2025
 
     *) Feature: support for response code 103 from proxy and gRPC backends;

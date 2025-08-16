@@ -96,6 +96,11 @@
 #endif
 
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+#define SSL_group_to_name(s, nid)    NULL
+#endif
+
+
 typedef struct ngx_ssl_ocsp_s   ngx_ssl_ocsp_t;
 
 
@@ -231,6 +236,8 @@ ngx_int_t ngx_ssl_certificate(ngx_conf_t *cf, ngx_ssl_t *ssl,
 ngx_int_t ngx_ssl_connection_certificate(ngx_connection_t *c, ngx_pool_t *pool,
     ngx_str_t *cert, ngx_str_t *key, ngx_ssl_cache_t *cache,
     ngx_array_t *passwords);
+ngx_int_t ngx_ssl_certificate_compression(ngx_conf_t *cf, ngx_ssl_t *ssl,
+    ngx_uint_t enable);
 
 ngx_int_t ngx_ssl_ciphers(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *ciphers,
     ngx_uint_t prefer_server_ciphers);

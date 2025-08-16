@@ -228,6 +228,7 @@ TARGET = @TARGET@
 TARGETDIR = @TARGETDIR@
 TARGET_OBJ = @TARGET_OBJ@
 VERSION = @VERSION@
+WASM64_MEMORY64 = @WASM64_MEMORY64@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@

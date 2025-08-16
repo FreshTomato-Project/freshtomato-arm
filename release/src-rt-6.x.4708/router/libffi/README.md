@@ -1,6 +1,5 @@
 
-libffi-3.5.1 was released on June 10, 2025.  Check the libffi web
-page for updates: <URL:http://sourceware.org/libffi/>.
+libffi-3.5.2 was released on August 2, 2025.
 
 
 What is libffi?
@@ -101,6 +100,7 @@ tested:
 | TILE-Gx/TILEPro | Linux            | GCC                     |
 | VAX             | OpenBSD/vax      | GCC                     |
 | WASM32          | Emscripten       | EMCC                    |
+| WASM64          | Emscripten       | EMCC                    |
 | X86             | FreeBSD          | GCC                     |
 | X86             | GNU HURD         | GCC                     |
 | X86             | Interix          | GCC                     |
@@ -112,6 +112,7 @@ tested:
 | X86             | Solaris          | Oracle Solaris Studio C |
 | X86             | Windows/Cygwin   | GCC                     |
 | X86             | Windows/MinGW    | GCC                     |
+| X86-64          | DragonFly BSD    | GCC                     |
 | X86-64          | FreeBSD          | GCC                     |
 | X86-64          | Linux            | GCC                     |
 | X86-64          | Linux/x32        | GCC                     |
@@ -200,6 +201,11 @@ History
 =======
 
 See the git log for details at http://github.com/libffi/libffi.
+
+    3.5.2 Aug-2-2025
+        Add wasm64 support.
+        Add DragonFly BSD support.
+        Ensure trampoline file descriptors are closed on exec.
 
     3.5.1 Jun-10-2025
         Fix symbol versioning error.

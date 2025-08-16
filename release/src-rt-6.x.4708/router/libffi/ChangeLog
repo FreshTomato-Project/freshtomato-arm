@@ -1,3 +1,119 @@
+commit e2eda0cf72a0598b44278cc91860ea402273fa29
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Aug 2 08:56:01 2025 +0200
+
+    feat: Update libffi version to 3.5.2 with wasm64 and DragonFly BSD support
+
+commit b53b0042c2637162ba8ea55f382264a0841359a7
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Aug 2 08:52:25 2025 +0200
+
+    Fix for systems without O_CLOEXEC
+
+commit 20eacb22e9e9cdd6402cb75278dede2b36051e53
+Author: Kohei Tokunaga <43872416+ktock@users.noreply.github.com>
+Date:   Sat Aug 2 15:28:46 2025 +0900
+
+    Emscripten: Add wasm64 target (#927)
+    
+    * src/wasm32: Allow building with Emscripten with 64bit support
+    
+    MEMORY64 enables 64bit pointers so this commit updates the accessors for the
+    libffi data structures accordingly.
+    
+    Each JS functions in ffi.c receives pointers as BigInt (i64) values and with
+    casts them to Numer (i53) using bigintToI53Checked. While memory64 supports
+    64bit addressing, the maximum memory size is currently limited to 16GiB
+    [1]. Therefore, we can assume that the passed pointers are within the
+    Number's range.
+    
+    [1] https://webassembly.github.io/memory64/js-api/#limits
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    * Add wasm64 target to the build scripts
+    
+    This commit adds support for the wasm64 target via the configure
+    script. Emscripten supports two modes of the -sMEMORY64 flag[1] so the
+    script allows users specifying the value through a configuration variable.
+    
+    Additionally, "src/wasm32" directory has been renamed to the more generic
+    "src/wasm" because it's now shared between both 32bit and 64bit builds.
+    
+    [1] https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    * GitHub Actions: Add wasm64 tests
+    
+    This commit adds a test matrix for wasm32, wasm64 and wasm64 with the
+    -sMEMORY64=2 flag, using the latest version of Emscripten. -Wno-main is
+    added to suppress the following warning in unwindtest.cc and
+    unwindtest_ffi_call.cc.
+    
+    > FAIL: libffi.closures/unwindtest_ffi_call.cc -W -Wall -O2 (test for excess errors)
+    > Excess errors:
+    > ./libffi.closures/unwindtest_ffi_call.cc:20:5: warning: 'main' should not be 'extern "C"' [-Wmain]
+    >    20 | int main (void)
+    >       |     ^
+    > 1 warning generated.
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    * testsuite: Fix types of main function
+    
+    test_libffi.py calls each test's main function without arguments, but some
+    tests define the main function with parameters. This signature mismatch
+    causes a runtime error with the recent version of Emscripten.
+    
+    This commit resolves this issue by updating the function signatures to match
+    the way they are called.
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    * README: Add document about WASM64
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+    
+    ---------
+    
+    Signed-off-by: Kohei Tokunaga <ktokunaga.mail@gmail.com>
+
+commit b7885ace59999564aec38c812156093cf0bfac02
+Author: Weitian LI <liweitianux@live.com>
+Date:   Sat Aug 2 14:27:51 2025 +0800
+
+    fix: enable FFI_MMAP_EXEC_WRIT for DragonFly BSD (#930)
+    
+    Similar to PR #265 [1], we need to enable FFI_MMAP_EXEC_WRIT to use
+    explicit write+exec mapping on DragonFly BSD.
+    
+    Without this fix, we were having segfaults with Meld [2]; it would crash
+    with SIGSEGV after 5 diff operations.  The crash was caused by it
+    attempting to execute code from non-execute memory region.  Moreover, if
+    we set the `machdep.pmap_nx_enable=2` tunable (i.e., strict NX mode),
+    Meld would crash upon the first diff operation.
+    
+    Fix the `configure.ac` script to enable `FFI_MMAP_EXEC_WRIT` for
+    DragonFly BSD.  In addition, add it to the supported platforms table.
+    
+    [1] https://github.com/libffi/libffi/pull/265
+    [2] https://meldmerge.org/
+
+commit 60671187688ae3b295ab0e1dd77a8d6dd7a805a2
+Author: Anthony Green <green@moxielogic.com>
+Date:   Fri Jul 11 03:17:18 2025 -0400
+
+    fix(tramp): ensure file descriptor is closed on exec.  Thanks to Florian Weimer.
+    
+    c# Please enter the commit message for your changes. Lines starting
+
+commit d0f831bca60ea74b55a3155b929f195a971a3cac
+Author: Anthony Green <green@moxielogic.com>
+Date:   Sat Jun 21 16:05:31 2025 -0400
+
+    feat: add QUESTION to .gail-labels
+
 commit e28a0d5b0708ade04979e2a1d5c2a2d3acc749ec
 Author: Anthony Green <green@moxielogic.com>
 Date:   Tue Jun 10 16:17:58 2025 -0400

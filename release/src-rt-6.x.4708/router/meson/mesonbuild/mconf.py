@@ -73,6 +73,7 @@ class Conf:
             self.build_dir = os.path.dirname(self.build_dir)
         self.build = None
         self.max_choices_line_length = 60
+        self.pending_section: T.Optional[str] = None
         self.name_col: T.List[LOGLINE] = []
         self.value_col: T.List[LOGLINE] = []
         self.choices_col: T.List[LOGLINE] = []
@@ -146,7 +147,7 @@ class Conf:
         Each column will have a specific width, and will be line wrapped.
         """
         total_width = shutil.get_terminal_size(fallback=(160, 0))[0]
-        _col = max(total_width // 5, 20)
+        _col = max(total_width // 5, 24)
         last_column = total_width - (3 * _col) - 3
         four_column = (_col, _col, _col, last_column if last_column > 1 else _col)
 
@@ -191,7 +192,7 @@ class Conf:
                                      ) -> T.Dict[str, options.MutableKeyedOptionDictType]:
         result: T.Dict[str, options.MutableKeyedOptionDictType] = {}
         for k, o in opts.items():
-            if k.subproject:
+            if k.subproject is not None:
                 self.all_subprojects.add(k.subproject)
             result.setdefault(k.subproject, {})[k] = o
         return result
@@ -206,12 +207,15 @@ class Conf:
         self.choices_col.append(choices)
         self.descr_col.append(descr)
 
-    def add_option(self, name: str, descr: str, value: T.Any, choices: T.Any) -> None:
+    def add_option(self, key: OptionKey, descr: str, value: T.Any, choices: T.Any) -> None:
+        self._add_section()
         value = stringify(value)
         choices = stringify(choices)
-        self._add_line(mlog.green(name), mlog.yellow(value), mlog.blue(choices), descr)
+        self._add_line(mlog.green(str(key.evolve(subproject=None))), mlog.yellow(value),
+                       mlog.blue(choices), descr)
 
     def add_title(self, title: str) -> None:
+        self._add_section()
         newtitle = mlog.cyan(title)
         descr = mlog.cyan('Description')
         value = mlog.cyan('Default Value' if self.default_values_only else 'Current Value')
@@ -220,11 +224,17 @@ class Conf:
         self._add_line(newtitle, value, choices, descr)
         self._add_line('-' * len(newtitle), '-' * len(value), '-' * len(choices), '-' * len(descr))
 
-    def add_section(self, section: str) -> None:
+    def _add_section(self) -> None:
+        if not self.pending_section:
+            return
         self.print_margin = 0
         self._add_line('', '', '', '')
-        self._add_line(mlog.normal_yellow(section + ':'), '', '', '')
+        self._add_line(mlog.normal_yellow(self.pending_section + ':'), '', '', '')
         self.print_margin = 2
+        self.pending_section = None
+
+    def add_section(self, section: str) -> None:
+        self.pending_section = section
 
     def print_options(self, title: str, opts: T.Union[options.MutableKeyedOptionDictType, options.OptionStore]) -> None:
         if not opts:
@@ -239,7 +249,7 @@ class Conf:
             #    printable_value = '<inherited from main project>'
             #if isinstance(o, options.UserFeatureOption) and o.is_auto():
             #    printable_value = auto.printable_value()
-            self.add_option(k.name, o.description, printable_value, o.printable_choices())
+            self.add_option(k, o.description, printable_value, o.printable_choices())
 
     def print_conf(self, pager: bool) -> None:
         if pager:
@@ -288,15 +298,15 @@ class Conf:
         project_options = self.split_options_per_subproject({k: v for k, v in self.coredata.optstore.items() if self.coredata.optstore.is_project_option(k)})
         show_build_options = self.default_values_only or self.build.environment.is_cross_build()
 
-        self.add_section('Main project options')
+        self.add_section('Global build options')
         self.print_options('Core options', host_core_options[None])
         if show_build_options and build_core_options:
             self.print_options('', build_core_options[None])
         self.print_options('Backend options', {k: v for k, v in self.coredata.optstore.items() if self.coredata.optstore.is_backend_option(k)})
         self.print_options('Base options', {k: v for k, v in self.coredata.optstore.items() if self.coredata.optstore.is_base_option(k)})
-        self.print_options('Compiler options', host_compiler_options.get('', {}))
+        self.print_options('Compiler options', host_compiler_options.get(None, {}))
         if show_build_options:
-            self.print_options('', build_compiler_options.get('', {}))
+            self.print_options('', build_compiler_options.get(None, {}))
         for mod, mod_options in module_options.items():
             self.print_options(f'{mod} module options', mod_options)
         self.print_options('Directories', dir_options)
@@ -304,8 +314,9 @@ class Conf:
         self.print_options('Project options', project_options.get('', {}))
         for subproject in sorted(self.all_subprojects):
             if subproject == '':
-                continue
-            self.add_section('Subproject ' + subproject)
+                self.add_section('Main project')
+            else:
+                self.add_section('Subproject ' + subproject)
             if subproject in host_core_options:
                 self.print_options('Core options', host_core_options[subproject])
             if subproject in build_core_options and show_build_options:
@@ -314,7 +325,7 @@ class Conf:
                 self.print_options('Compiler options', host_compiler_options[subproject])
             if subproject in build_compiler_options and show_build_options:
                 self.print_options('', build_compiler_options[subproject])
-            if subproject in project_options:
+            if subproject != '' and subproject in project_options:
                 self.print_options('Project options', project_options[subproject])
         self.print_aligned()
 

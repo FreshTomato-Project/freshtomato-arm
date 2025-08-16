@@ -1607,6 +1607,15 @@ test cases/common/281 subproj options/subprojects/sub/meson_options.txt
 test cases/common/281 subproj options/subprojects/sub2/f.c
 test cases/common/281 subproj options/subprojects/sub2/meson.build
 test cases/common/281 subproj options/subprojects/sub2/meson_options.txt
+test cases/common/282 test args and depends in path/meson.build
+test cases/common/282 test args and depends in path/test.c
+test cases/common/282 test args and depends in path/libs/meson.build
+test cases/common/282 test args and depends in path/libs/a/lib_a.c
+test cases/common/282 test args and depends in path/libs/a/lib_a.def
+test cases/common/282 test args and depends in path/libs/a/meson.build
+test cases/common/282 test args and depends in path/libs/b/lib_b.c
+test cases/common/282 test args and depends in path/libs/b/lib_b.def
+test cases/common/282 test args and depends in path/libs/b/meson.build
 test cases/common/29 compiler id/meson.build
 test cases/common/3 static/lib3.c
 test cases/common/3 static/libfile.c
@@ -4138,6 +4147,7 @@ test cases/unit/68 clang-tidy/dummydir.h/dummy.dat
 test cases/unit/69 cross/crossfile.in
 test cases/unit/69 cross/meson.build
 test cases/unit/69 cross/meson_options.txt
+test cases/unit/69 cross/nativefile.in
 test cases/unit/7 run installed/meson.build
 test cases/unit/7 run installed/prog.c
 test cases/unit/7 run installed/foo/foo.c
@@ -4620,7 +4630,6 @@ tools/cmake2meson.py
 tools/copy_files.py
 tools/dircondenser.py
 tools/regenerate_docs.py
-tools/run_with_cov.py
 unittests/__init__.py
 unittests/allplatformstests.py
 unittests/baseplatformtests.py

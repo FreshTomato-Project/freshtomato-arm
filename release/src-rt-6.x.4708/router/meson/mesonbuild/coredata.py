@@ -18,7 +18,6 @@ from .mesonlib import (
     MesonException, MachineChoice, PerMachine,
     PerMachineDefaultable,
     default_prefix,
-    stringlistify,
     pickle_load
 )
 
@@ -72,7 +71,7 @@ if T.TYPE_CHECKING:
 #
 # Pip requires that RCs are named like this: '0.1.0.rc1'
 # But the corresponding Git tag needs to be '0.1.0rc1'
-version = '1.8.2'
+version = '1.8.3'
 
 # The next stable version when we are in dev. This is used to allow projects to
 # require meson version >=1.2.0 when using 1.1.99. FeatureNew won't warn when
@@ -147,13 +146,13 @@ class DependencyCache:
     def __init__(self, builtins: options.OptionStore, for_machine: MachineChoice):
         self.__cache: T.MutableMapping[TV_DepID, DependencySubCache] = OrderedDict()
         self.__builtins = builtins
-        self.__pkg_conf_key = options.OptionKey('pkg_config_path')
-        self.__cmake_key = options.OptionKey('cmake_prefix_path')
+        self.__pkg_conf_key = options.OptionKey('pkg_config_path', machine=for_machine)
+        self.__cmake_key = options.OptionKey('cmake_prefix_path', machine=for_machine)
 
     def __calculate_subkey(self, type_: DependencyCacheType) -> T.Tuple[str, ...]:
         data: T.Dict[DependencyCacheType, T.List[str]] = {
-            DependencyCacheType.PKG_CONFIG: stringlistify(self.__builtins.get_value_for(self.__pkg_conf_key)),
-            DependencyCacheType.CMAKE: stringlistify(self.__builtins.get_value_for(self.__cmake_key)),
+            DependencyCacheType.PKG_CONFIG: T.cast('T.List[str]', self.__builtins.get_value_for(self.__pkg_conf_key)),
+            DependencyCacheType.CMAKE: T.cast('T.List[str]', self.__builtins.get_value_for(self.__cmake_key)),
             DependencyCacheType.OTHER: [],
         }
         assert type_ in data, 'Someone forgot to update subkey calculations for a new type'
@@ -588,11 +587,7 @@ class CoreData:
                       for_machine: MachineChoice, env: 'Environment') -> None:
         """Add global language arguments that are needed before compiler/linker detection."""
         from .compilers import compilers
-        # These options are all new at this point, because the compiler is
-        # responsible for adding its own options, thus calling
-        # `self.optstore.update()`` is perfectly safe.
-        for gopt_key, gopt_valobj in compilers.get_global_options(lang, comp, for_machine, env).items():
-            self.optstore.add_compiler_option(lang, gopt_key, gopt_valobj)
+        compilers.add_global_options(lang, comp, for_machine, env)
 
     def process_compiler_options(self, lang: str, comp: Compiler, env: Environment, subproject: str) -> None:
         self.add_compiler_options(comp.get_options(), lang, comp.for_machine, env, subproject)

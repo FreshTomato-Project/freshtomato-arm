@@ -728,13 +728,14 @@ class Environment:
 
     def mfilestr2key(self, machine_file_string: str, section: T.Optional[str], section_subproject: T.Optional[str], machine: MachineChoice) -> OptionKey:
         key = OptionKey.from_string(machine_file_string)
-        assert key.machine == MachineChoice.HOST
         if key.subproject:
             suggestion = section if section == 'project options' else 'built-in options'
             raise MesonException(f'Do not set subproject options in [{section}] section, use [subproject:{suggestion}] instead.')
         if section_subproject:
             key = key.evolve(subproject=section_subproject)
         if machine == MachineChoice.BUILD:
+            if key.machine == MachineChoice.BUILD:
+                mlog.deprecation('Setting build machine options in the native file does not need the "build." prefix', once=True)
             return key.evolve(machine=machine)
         return key
 

@@ -143,6 +143,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module isnand-nolibm:
   # Code from module isnanf-nolibm:
   # Code from module isnanl-nolibm:
+  # Code from module issymlink:
   # Code from module iswblank:
   # Code from module iswctype:
   # Code from module iswdigit:
@@ -695,6 +696,7 @@ AC_DEFUN([gl_INIT],
     AC_LIBOBJ([isnanl])
     gl_PREREQ_ISNANL
   fi
+  gl_MODULE_INDICATOR([issymlink])
   gl_FUNC_ISWBLANK
   gl_CONDITIONAL([GL_COND_OBJ_ISWBLANK],
                  [! { test $HAVE_ISWCNTRL = 0 || test $REPLACE_ISWCNTRL = 1; } && { test $HAVE_ISWBLANK = 0 || test $REPLACE_ISWBLANK = 1; }])
@@ -1518,6 +1520,8 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/isnanf.c
   lib/isnanl-nolibm.h
   lib/isnanl.c
+  lib/issymlink.c
+  lib/issymlink.h
   lib/iswblank.c
   lib/iswctype-impl.h
   lib/iswctype.c

@@ -271,7 +271,7 @@ void close_and_go(void)
 		delete_lockfile(openfile->lock_filename);
 #endif
 #ifdef ENABLE_HISTORIES
-	if (ISSET(POSITIONLOG))
+	if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
 		update_poshistory();
 #endif
 #ifdef ENABLE_MULTIBUFFER
@@ -1049,6 +1049,7 @@ void handle_sigwinch(int signal)
 {
 	/* Let the input routine know that a SIGWINCH has occurred. */
 	the_window_resized = TRUE;
+	resized_for_browser = TRUE;
 }
 
 /* Reinitialize and redraw the screen completely. */
@@ -1075,8 +1076,7 @@ void regenerate_screen(void)
 	/* If we have an open buffer, redraw the contents of the subwindows. */
 	if (openfile) {
 		ensure_firstcolumn_is_aligned();
-		if (currmenu & ~(MBROWSER|MWHEREISFILE|MGOTODIR))
-			draw_all_subwindows();
+		draw_all_subwindows();
 	}
 }
 
@@ -2580,11 +2580,21 @@ int main(int argc, char **argv)
 				continue;
 		}
 
+#ifdef ENABLE_HISTORIES
+		if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
+			restore_cursor_position_if_any();
+#endif
+
 		/* If a position was given on the command line, go there. */
-		if (givenline != 0 || givencol != 0)
-			goto_line_and_column(givenline, givencol, FALSE, FALSE);
+		if (givenline != 0 || givencol != 0) {
+			openfile->current = openfile->filetop;
+			openfile->placewewant = 0;
+			goto_line_and_column(givenline, givencol, TRUE);
+		}
 #ifndef NANO_TINY
 		else if (searchstring != NULL) {
+			openfile->current = openfile->filetop;
+			openfile->current_x = 0;
 			if (ISSET(USE_REGEXP))
 				regexp_init(searchstring);
 			if (!findnextstr(searchstring, FALSE, JUSTFIND, NULL,
@@ -2600,10 +2610,6 @@ int main(int argc, char **argv)
 			last_search = searchstring;
 			searchstring = NULL;
 		}
-#endif
-#ifdef ENABLE_HISTORIES
-		else if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
-			restore_cursor_position_if_any();
 #endif
 	}
 

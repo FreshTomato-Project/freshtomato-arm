@@ -11,7 +11,7 @@ File: nano.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The GNU nano text editor
 ************************
 
-This manual documents GNU ‘nano’, version 8.5.
+This manual documents GNU ‘nano’, version 8.6.
 
 * Menu:
 
@@ -1610,8 +1610,10 @@ that of the Backspace key.
      Goes to the last line of the file.
 
 ‘gotoline’
-     Goes to a specific line (and column if specified).  Negative
-     numbers count from the end of the file (and end of the line).
+     Goes to a specific line (and column if given).  A negative number
+     counts from the end of the buffer (and end of the line).  Putting
+     ‘++’ or ‘--’ before the first number will jump the given number of
+     lines forward or backward.
 
 ‘findbracket’
      Moves the cursor to the bracket (or brace or parenthesis, etc.)
@@ -2106,8 +2108,8 @@ Ref: set matchbrackets39119
 Ref: Whitespace47382
 Node: Syntax Highlighting48560
 Node: Rebinding Keys56299
-Node: Pico Compatibility72500
-Node: Building and its Options77043
+Node: Pico Compatibility72621
+Node: Building and its Options77164
 
 End Tag Table
 

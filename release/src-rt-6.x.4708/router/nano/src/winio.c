@@ -352,11 +352,14 @@ int get_code_from_plantation(void)
 		if (!closing)
 			return MISSING_BRACE;
 
-		if (plants_pointer[1] == '{' && plants_pointer[2] == '}') {
+		/* Handle the {{} sequence, and for symmetry accept {}} too. */
+		if (plants_pointer[1] == '{' || plants_pointer[1] == '}') {
+			if (plants_pointer[2] != '}')
+				return MISSING_BRACE;
 			plants_pointer += 3;
 			if (*plants_pointer != '\0')
 				put_back(MORE_PLANTS);
-			return '{';
+			return *(plants_pointer - 2);
 		}
 
 		free(commandname);
@@ -3469,12 +3472,18 @@ void full_refresh(void)
  * the contents of the edit window, and the bottom bars. */
 void draw_all_subwindows(void)
 {
-	titlebar(title);
+	if (currmenu & ~(MBROWSER|MGOTODIR|MWHEREISFILE))
+		titlebar(title);
 #ifdef ENABLE_HELP
 	if (inhelp) {
 		close_buffer();
 		wrap_help_text_into_buffer();
 	} else
+#endif
+#ifdef ENABLE_BROWSER
+	if (currmenu & (MBROWSER|MGOTODIR|MWHEREISFILE))
+		browser_refresh();
+	else
 #endif
 		edit_refresh();
 	bottombars(currmenu);

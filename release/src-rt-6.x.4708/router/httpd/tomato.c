@@ -32,6 +32,12 @@
 #ifdef TCONFIG_IPV6
 #define V_IPV6(required)	VT_IPV6,	{ .i = required },	{ }
 #endif
+#if MWAN_MAX < 1 || MWAN_MAX > 8
+ #error "Unsupported MWAN_MAX range"
+#endif
+#if BRIDGE_COUNT < 1 || BRIDGE_COUNT > 16
+ #error "Unsupported BRIDGE_COUNT range"
+#endif
 
 /* needed by logmsg() */
 #define LOGMSG_DISABLE	DISABLE_SYSLOG_OS
@@ -167,6 +173,134 @@ const aspapi_t aspapi[] = {
 	{ NULL,				NULL				}
 };
 
+#define WAN_BLOCK_CORE(i) \
+	/* always: */ \
+	{ "wan" #i "_proto",		V_LENGTH(1, 16)			}, /* disabled, dhcp, static, pppoe, pptp, l2tp */ \
+	{ "wan" #i "_weight",		V_RANGE(0, 256)			}, \
+	{ "wan" #i "_ipaddr",		V_IP				}, \
+	{ "wan" #i "_netmask",		V_IP				}, \
+	{ "wan" #i "_gateway",		V_IP				}, \
+	{ "wan" #i "_hwaddr",		V_TEXT(0, 17)			}, /* WAN interface MAC address */ \
+	{ "wan" #i "_iface",		V_TEXT(0, 8)			}, \
+	{ "wan" #i "_ifname",		V_TEXT(0, 8)			}, \
+	{ "wan" #i "_l2tp_server_ip",	V_LENGTH(0, 128)		}, \
+	{ "wan" #i "_pptp_server_ip",	V_LENGTH(0, 128)		}, \
+	{ "wan" #i "_pptp_dhcp",	V_01				}, \
+	{ "wan" #i "_ppp_username",	V_LENGTH(0, 60)			}, \
+	{ "wan" #i "_ppp_passwd",	V_LENGTH(0, 60)			}, \
+	{ "wan" #i "_ppp_service",	V_LENGTH(0, 50)			}, \
+	{ "wan" #i "_ppp_demand",	V_01				}, \
+	{ "wan" #i "_ppp_demand_dnsip",	V_IP				}, \
+	{ "wan" #i "_ppp_custom",	V_LENGTH(0, 256)		}, \
+	{ "wan" #i "_ppp_idletime",	V_RANGE(0, 1440)		}, \
+	{ "wan" #i "_ppp_redialperiod",	V_RANGE(1, 86400)		}, \
+	{ "wan" #i "_mtu_enable",	V_01				}, \
+	{ "wan" #i "_mtu",		V_RANGE(576, 1500)		}, \
+	{ "wan" #i "_modem_ipaddr",	V_IP				}, \
+	{ "wan" #i "_pppoe_lei",	V_RANGE(1, 60)			}, \
+	{ "wan" #i "_pppoe_lef",	V_RANGE(1, 10)			}, \
+	{ "wan" #i "_sta",		V_LENGTH(0, 10)			}, \
+	{ "wan" #i "_dns",		V_LENGTH(0, 50)			}, /* ip ip ip */ \
+	{ "wan" #i "_dns_auto",		V_01				}, \
+	{ "wan" #i "_addget",		V_01				}, \
+	{ "wan" #i "_ckmtd",		V_LENGTH(1, 2)			}, /* check method: 1 - ping, 2 - traceroute, 3 - curl */ \
+	{ "wan" #i "_ck_pause",		V_01				}, /* skip mwwatchdog check for this wan */ \
+	{ "wan" #i "_mac",		V_LENGTH(0, 17)			}, \
+	{ "wan" #i "_qos_obw",		V_RANGE(10, 99999999)		}, \
+	{ "wan" #i "_qos_ibw",		V_RANGE(10, 99999999)		}, \
+	{ "wan" #i "_qos_overhead",	V_RANGE(-127, 128)		}, \
+	{ "wan" #i "_ifnameX",		V_TEXT(0, 8)			},
+#ifdef TCONFIG_BCMARM
+ #define WAN_BLOCK_BCMARM(i) \
+	{ "wan" #i "_qos_encap",	V_NUM				},
+#else
+ #define WAN_BLOCK_BCMARM(i)
+#endif
+#ifdef TCONFIG_USB
+ #define WAN_BLOCK_USB(i) \
+	{ "wan" #i "_modem_pin",	V_LENGTH(0, 6)			}, \
+	{ "wan" #i "_modem_dev",	V_LENGTH(0, 14)			}, /* /dev/ttyUSB0, /dev/cdc-wdm1... */ \
+	{ "wan" #i "_modem_init",	V_LENGTH(0, 25)			}, \
+	{ "wan" #i "_modem_apn",	V_LENGTH(0, 25)			}, \
+	{ "wan" #i "_modem_speed",	V_LENGTH(0, 6)			}, \
+	{ "wan" #i "_modem_band",	V_LENGTH(0, 16)			}, /* all - 7FFFFFFFFFFFFFFF, 800MHz - 80000, 1800MHz - 4, 2100MHz - 1, 2600MHz - 40 */ \
+	{ "wan" #i "_modem_roam",	V_RANGE(0, 3)			}, /* 0 not supported, 1 supported, 2 no change, 3 roam only */ \
+	{ "wan" #i "_modem_if",		V_LENGTH(0, 4)			}, /* eth2, eth1... */ \
+	{ "wan" #i "_modem_type",	V_LENGTH(0, 15)			}, /* hilink, non-hilink, hw-ether, qmi_wwan */ \
+	{ "wan" #i "_hilink_ip",	V_IP				}, \
+	{ "wan" #i "_status_script",	V_01				},
+#else
+ #define WAN_BLOCK_USB(i)
+#endif
+#ifdef TCONFIG_ZEBRA
+ #define WAN_BLOCK_ZEBRA(i) \
+	/* warning! (asp) */ \
+	{ "dr_wan" #i "_tx",		V_LENGTH(0, 32)			}, \
+	{ "dr_wan" #i "_rx",		V_LENGTH(0, 32)			},
+#else
+ #define WAN_BLOCK_ZEBRA(i)
+#endif
+#ifndef TCONFIG_OPTIMIZE_SIZE_MORE
+ #define WAN_BLOCK_EXTRA(i) \
+	{ "wan" #i "_ppp_mlppp",	V_01				},
+#else
+ #define WAN_BLOCK_EXTRA(i)
+#endif
+
+#define WAN_BLOCK(i) \
+	WAN_BLOCK_CORE(i) \
+	WAN_BLOCK_BCMARM(i) \
+	WAN_BLOCK_USB(i) \
+	WAN_BLOCK_ZEBRA(i) \
+	WAN_BLOCK_EXTRA(i)
+
+#define BRIDGE_BLOCK_CORE(i) \
+	{ "lan" #i "_ifname",		V_LENGTH(0, 5)			}, \
+	{ "lan" #i "_ifnames",		V_TEXT(0, 64)			}, \
+	{ "lan" #i "_ipaddr",		V_LENGTH(0, 15)			}, \
+	{ "lan" #i "_netmask",		V_LENGTH(0, 15)			}, \
+	{ "lan" #i "_proto",		V_LENGTH(0, 6)			}, \
+	{ "lan" #i "_stp",		V_LENGTH(0, 1)			}, \
+	{ "dhcpd" #i "_startip",	V_LENGTH(0, 15) 		}, \
+	{ "dhcpd" #i "_endip",		V_LENGTH(0, 15)			}, \
+	{ "dhcpd" #i "_ostatic",	V_01				}, /* ignore DHCP requests from unknown devices on LANX */ \
+	{ "dhcp" #i "_lease",		V_LENGTH(0, 5)			}, \
+	{ "upnp_lan" #i "",		V_01				},
+#ifdef TCONFIG_OPENVPN
+ #define BRIDGE_BLOCK_OPENVPN(i) \
+	{ "vpn_server1_plan" #i,	V_01				}, \
+	{ "vpn_server2_plan" #i,	V_01				},
+#else
+ #define BRIDGE_BLOCK_OPENVPN(i)
+#endif
+#ifdef TCONFIG_PROXY
+ #define BRIDGE_BLOCK_PROXY(i) \
+	{ "multicast_lan" #i,		V_01				}, /* on LANX (brX) */ \
+	{ "udpxy_lan" #i,		V_01				}, /* listen on LANX (brX) */
+#else
+ #define BRIDGE_BLOCK_PROXY(i)
+#endif
+#ifdef TCONFIG_ZEBRA
+ #define BRIDGE_BLOCK_ZEBRA(i) \
+	{ "dr_lan" #i "_tx",		V_LENGTH(0, 32)			}, /* Dynamic-Routing LAN out */ \
+	{ "dr_lan" #i "_rx",		V_LENGTH(0, 32)			}, /* Dynamic-Routing LAN in */
+#else
+ #define BRIDGE_BLOCK_ZEBRA(i)
+#endif
+#ifdef TCONFIG_USB_EXTRAS
+ #define BRIDGE_BLOCK_USB_EXTRAS(i) \
+	{ "dnsmasq_pxelan" #i,		V_01				},
+#else
+ #define BRIDGE_BLOCK_USB_EXTRAS(i)
+#endif
+
+#define BRIDGE_BLOCK(i) \
+	BRIDGE_BLOCK_CORE(i) \
+	BRIDGE_BLOCK_OPENVPN(i) \
+	BRIDGE_BLOCK_PROXY(i) \
+	BRIDGE_BLOCK_ZEBRA(i) \
+	BRIDGE_BLOCK_USB_EXTRAS(i)
+
 static const nvset_t nvset_list[] = {
 /* basic-ident */
 	{ "router_name",		V_LENGTH(0, 32)			},
@@ -233,11 +367,7 @@ static const nvset_t nvset_list[] = {
 
 /* basic-network */
 	/* WAN */
-#ifdef TCONFIG_MULTIWAN
-	{ "mwan_num",			V_RANGE(1, 4)			},
-#else
-	{ "mwan_num",			V_RANGE(1, 2)			},
-#endif
+	{ "mwan_num",			V_RANGE(1, MWAN_MAX)		},
 	{ "mwan_init",			V_01				},
 	{ "mwan_cktime",		V_RANGE(0, 3600)		},
 	{ "mwan_ckdst",			V_LENGTH(0, 64)			},
@@ -283,123 +413,6 @@ static const nvset_t nvset_list[] = {
 #endif
 	{ "wan_ckmtd",			V_LENGTH(1, 2)			},	/* check method: 1 - ping, 2 - traceroute, 3 - curl */
 	{ "wan_ck_pause",		V_01				},	/* skip mwwatchdog check for this wan */
-
-	{ "wan2_proto",			V_LENGTH(1, 16)			},	/* disabled, dhcp, static, pppoe, pptp, l2tp */
-	{ "wan2_weight",		V_RANGE(0, 256)			},
-	{ "wan2_ipaddr",		V_IP				},
-	{ "wan2_netmask",		V_IP				},
-	{ "wan2_gateway",		V_IP				},
-	{ "wan2_hwaddr",		V_TEXT(0, 17)			},	/* WAN interface MAC address */
-	{ "wan2_iface",			V_TEXT(0, 8)			},
-	{ "wan2_ifname",		V_TEXT(0, 8)			},
-	{ "wan2_l2tp_server_ip",	V_LENGTH(0, 128)		},
-	{ "wan2_pptp_server_ip",	V_LENGTH(0, 128)		},
-	{ "wan2_pptp_dhcp",		V_01				},
-	{ "wan2_ppp_username",		V_LENGTH(0, 60)			},
-	{ "wan2_ppp_passwd",		V_LENGTH(0, 60)			},
-	{ "wan2_ppp_service",		V_LENGTH(0, 50)			},
-	{ "wan2_ppp_demand",		V_01				},
-	{ "wan2_ppp_demand_dnsip",	V_IP				},
-	{ "wan2_ppp_custom",		V_LENGTH(0, 256)		},
-	{ "wan2_ppp_idletime",		V_RANGE(0, 1440)		},
-	{ "wan2_ppp_redialperiod",	V_RANGE(1, 86400)		},
-#ifndef TCONFIG_OPTIMIZE_SIZE_MORE
-	{ "wan2_ppp_mlppp",		V_01				},
-#endif
-	{ "wan2_mtu_enable",		V_01				},
-	{ "wan2_mtu",			V_RANGE(576, 1500)		},
-	{ "wan2_modem_ipaddr",		V_IP				},
-	{ "wan2_pppoe_lei",		V_RANGE(1, 60)			},
-	{ "wan2_pppoe_lef",		V_RANGE(1, 10)			},
-	{ "wan2_sta",			V_LENGTH(0, 10)			},
-	{ "wan2_dns",			V_LENGTH(0, 50)			},	/* ip ip ip */
-	{ "wan2_dns_auto",		V_01				},
-	{ "wan2_addget",		V_01				},
-#ifdef TCONFIG_USB
-	{ "wan2_hilink_ip",		V_IP				},
-	{ "wan2_status_script",		V_01				},
-#endif
-	{ "wan2_ckmtd",			V_LENGTH(1, 2)			},	/* check method: 1 - ping, 2 - traceroute, 3 - curl */
-	{ "wan2_ck_pause",		V_01				},	/* skip mwwatchdog check for this wan */
-
-#ifdef TCONFIG_MULTIWAN
-	{ "wan3_proto",			V_LENGTH(1, 16)			},	/* disabled, dhcp, static, pppoe, pptp, l2tp */
-	{ "wan3_weight",		V_RANGE(0, 256)			},
-	{ "wan3_ipaddr",		V_IP				},
-	{ "wan3_netmask",		V_IP				},
-	{ "wan3_gateway",		V_IP				},
-	{ "wan3_hwaddr",		V_TEXT(0, 17)			},	/* WAN interface MAC address */
-	{ "wan3_iface",			V_TEXT(0, 8)			},
-	{ "wan3_ifname",		V_TEXT(0, 8)			},
-	{ "wan3_l2tp_server_ip",	V_LENGTH(0, 128)		},
-	{ "wan3_pptp_server_ip",	V_LENGTH(0, 128)		},
-	{ "wan3_pptp_dhcp",		V_01				},
-	{ "wan3_ppp_username",		V_LENGTH(0, 60)			},
-	{ "wan3_ppp_passwd",		V_LENGTH(0, 60)			},
-	{ "wan3_ppp_service",		V_LENGTH(0, 50)			},
-	{ "wan3_ppp_demand",		V_01				},
-	{ "wan3_ppp_demand_dnsip",	V_IP				},
-	{ "wan3_ppp_custom",		V_LENGTH(0, 256)		},
-	{ "wan3_ppp_idletime",		V_RANGE(0, 1440)		},
-	{ "wan3_ppp_redialperiod",	V_RANGE(1, 86400)		},
-#ifndef TCONFIG_OPTIMIZE_SIZE_MORE
-	{ "wan3_ppp_mlppp",		V_01				},
-#endif
-	{ "wan3_mtu_enable",		V_01				},
-	{ "wan3_mtu",			V_RANGE(576, 1500)		},
-	{ "wan3_modem_ipaddr",		V_IP				},
-	{ "wan3_pppoe_lei",		V_RANGE(1, 60)			},
-	{ "wan3_pppoe_lef",		V_RANGE(1, 10)			},
-	{ "wan3_sta",			V_LENGTH(0, 10)			},
-	{ "wan3_dns",			V_LENGTH(0, 50)			},	/* ip ip ip */
-	{ "wan3_dns_auto",		V_01				},
-	{ "wan3_addget",		V_01				},
-#ifdef TCONFIG_USB
-	{ "wan3_hilink_ip",		V_IP				},
-	{ "wan3_status_script",		V_01				},
-#endif
-	{ "wan3_ckmtd",			V_LENGTH(1, 2)			},	/* check method: 1 - ping, 2 - traceroute, 3 - curl */
-	{ "wan3_ck_pause",		V_01				},	/* skip mwwatchdog check for this wan */
-
-	{ "wan4_proto",			V_LENGTH(1, 16)			},	/* disabled, dhcp, static, pppoe, pptp, l2tp */
-	{ "wan4_weight",		V_RANGE(0, 256)			},
-	{ "wan4_ipaddr",		V_IP				},
-	{ "wan4_netmask",		V_IP				},
-	{ "wan4_gateway",		V_IP				},
-	{ "wan4_hwaddr",		V_TEXT(0, 17)			},	/* WAN interface MAC address */
-	{ "wan4_iface",			V_TEXT(0, 8)			},
-	{ "wan4_ifname",		V_TEXT(0, 8)			},
-	{ "wan4_l2tp_server_ip",	V_LENGTH(0, 128)		},
-	{ "wan4_pptp_server_ip",	V_LENGTH(0, 128)		},
-	{ "wan4_pptp_dhcp",		V_01				},
-	{ "wan4_ppp_username",		V_LENGTH(0, 60)			},
-	{ "wan4_ppp_passwd",		V_LENGTH(0, 60)			},
-	{ "wan4_ppp_service",		V_LENGTH(0, 50)			},
-	{ "wan4_ppp_demand",		V_01				},
-	{ "wan4_ppp_demand_dnsip",	V_IP				},
-	{ "wan4_ppp_custom",		V_LENGTH(0, 256)		},
-	{ "wan4_ppp_idletime",		V_RANGE(0, 1440)		},
-	{ "wan4_ppp_redialperiod",	V_RANGE(1, 86400)		},
-#ifndef TCONFIG_OPTIMIZE_SIZE_MORE
-	{ "wan4_ppp_mlppp",		V_01				},
-#endif
-	{ "wan4_mtu_enable",		V_01				},
-	{ "wan4_mtu",			V_RANGE(576, 1500)		},
-	{ "wan4_modem_ipaddr",		V_IP				},
-	{ "wan4_pppoe_lei",		V_RANGE(1, 60)			},
-	{ "wan4_pppoe_lef",		V_RANGE(1, 10)			},
-	{ "wan4_sta",			V_LENGTH(0, 10)			},
-	{ "wan4_dns",			V_LENGTH(0, 50)			},	/* ip ip ip */
-	{ "wan4_dns_auto",		V_01				},
-	{ "wan4_addget",		V_01				},
-#ifdef TCONFIG_USB
-	{ "wan4_hilink_ip",		V_IP				},
-	{ "wan4_status_script",		V_01				},
-#endif
-	{ "wan4_ckmtd",			V_LENGTH(1, 2)			},	/* check method: 1 - ping, 2 - traceroute, 3 - curl */
-	{ "wan4_ck_pause",		V_01				},	/* skip mwwatchdog check for this wan */
-#endif /* TCONFIG_MULTIWAN */
-
 #ifdef TCONFIG_DNSCRYPT
 	{ "dnscrypt_proxy",		V_01				},
 	{ "dnscrypt_priority",		V_RANGE(0, 2)			},	/* 0=none, 1=preferred, 2=exclusive */
@@ -456,75 +469,10 @@ static const nvset_t nvset_list[] = {
 	{ "wan_modem_roam",		V_RANGE(0, 3)			},	/* 0 - not supported, 1 - supported, 2 - no change, 3 - roam only */
 	{ "wan_modem_if",		V_LENGTH(0, 4)			},	/* eth2, eth1... */
 	{ "wan_modem_type",		V_LENGTH(0, 15)			},	/* hilink, non-hilink, hw-ether, qmi_wwan */
-
-	{ "wan2_modem_pin",		V_LENGTH(0, 6)			},
-	{ "wan2_modem_dev",		V_LENGTH(0, 14)			},	/* /dev/ttyUSB0, /dev/cdc-wdm1... */
-	{ "wan2_modem_init",		V_LENGTH(0, 25)			},
-	{ "wan2_modem_apn",		V_LENGTH(0, 25)			},
-	{ "wan2_modem_speed",		V_LENGTH(0, 6)			},
-	{ "wan2_modem_band",		V_LENGTH(0, 16)			},	/* all - 7FFFFFFFFFFFFFFF, 800MHz - 80000, 1800MHz - 4, 2100MHz - 1, 2600MHz - 40 */
-	{ "wan2_modem_roam",		V_RANGE(0, 3)			},	/* 0 - not supported, 1 - supported, 2 - no change, 3 - roam only */
-	{ "wan2_modem_if",		V_LENGTH(0, 4)			},	/* eth2, eth1... */
-	{ "wan2_modem_type",		V_LENGTH(0, 15)			},	/* hilink, non-hilink, hw-ether, qmi_wwan */
-
-#ifdef TCONFIG_MULTIWAN
-	{ "wan3_modem_pin",		V_LENGTH(0, 6)			},
-	{ "wan3_modem_dev",		V_LENGTH(0, 14)			},	/* /dev/ttyUSB0, /dev/cdc-wdm1... */
-	{ "wan3_modem_init",		V_LENGTH(0, 25)			},
-	{ "wan3_modem_apn",		V_LENGTH(0, 25)			},
-	{ "wan3_modem_speed",		V_LENGTH(0, 6)			},
-	{ "wan3_modem_band",		V_LENGTH(0, 16)			},	/* all - 7FFFFFFFFFFFFFFF, 800MHz - 80000, 1800MHz - 4, 2100MHz - 1, 2600MHz - 40 */
-	{ "wan3_modem_roam",		V_RANGE(0, 3)			},	/* 0 - not supported, 1 - supported, 2 - no change, 3 - roam only */
-	{ "wan3_modem_if",		V_LENGTH(0, 4)			},	/* eth2, eth1... */
-	{ "wan3_modem_type",		V_LENGTH(0, 15)			},	/* hilink, non-hilink, hw-ether, qmi_wwan */
-
-	{ "wan4_modem_pin",		V_LENGTH(0, 6)			},
-	{ "wan4_modem_dev",		V_LENGTH(0, 14)			},	/* /dev/ttyUSB0, /dev/cdc-wdm1... */
-	{ "wan4_modem_init",		V_LENGTH(0, 25)			},
-	{ "wan4_modem_apn",		V_LENGTH(0, 25)			},
-	{ "wan4_modem_speed",		V_LENGTH(0, 6)			},
-	{ "wan4_modem_band",		V_LENGTH(0, 16)			},	/* all - 7FFFFFFFFFFFFFFF, 800MHz - 80000, 1800MHz - 4, 2100MHz - 1, 2600MHz - 40 */
-	{ "wan4_modem_roam",		V_RANGE(0, 3)			},	/* 0 - not supported, 1 - supported, 2 - no change, 3 - roam only */
-	{ "wan4_modem_if",		V_LENGTH(0, 4)			},	/* eth2, eth1... */
-	{ "wan4_modem_type",		V_LENGTH(0, 15)			},	/* hilink, non-hilink, hw-ether, qmi_wwan */
-#endif /* TCONFIG_MULTIWAN */
 #endif /* TCONFIG_USB */
 
 	/* LAN networks */
 	{ "lan_ifname",			V_LENGTH(0, 5)			},
-
-	{ "lan1_ifname",		V_LENGTH(0, 5)			},
-	{ "lan1_ifnames",		V_TEXT(0, 64)			},
-	{ "lan1_ipaddr",		V_LENGTH(0, 15)			},
-	{ "lan1_netmask",		V_LENGTH(0, 15)			},
-	{ "lan1_proto",			V_LENGTH(0, 6)			},
-	{ "lan1_stp",			V_LENGTH(0, 1)			},
-	{ "dhcpd1_startip",		V_LENGTH(0, 15)			},
-	{ "dhcpd1_endip",		V_LENGTH(0, 15)			},
-	{ "dhcpd1_ostatic",		V_01				},	/* ignore DHCP requests from unknown devices on LAN1 */
-	{ "dhcp1_lease",		V_LENGTH(0, 5)			},
-
-	{ "lan2_ifname",		V_LENGTH(0, 5)			},
-	{ "lan2_ifnames",		V_TEXT(0, 64)			},
-	{ "lan2_ipaddr",		V_LENGTH(0, 15)			},
-	{ "lan2_netmask",		V_LENGTH(0, 15)			},
-	{ "lan2_proto",			V_LENGTH(0, 6)			},
-	{ "lan2_stp",			V_LENGTH(0, 1)			},
-	{ "dhcpd2_startip",		V_LENGTH(0, 15)			},
-	{ "dhcpd2_endip",		V_LENGTH(0, 15)			},
-	{ "dhcpd2_ostatic",		V_01				},	/* ignore DHCP requests from unknown devices on LAN2 */
-	{ "dhcp2_lease",		V_LENGTH(0, 5)			},
-
-	{ "lan3_ifname",		V_LENGTH(0, 5)			},
-	{ "lan3_ifnames",		V_TEXT(0, 64)			},
-	{ "lan3_ipaddr",		V_LENGTH(0, 15)			},
-	{ "lan3_netmask",		V_LENGTH(0, 15)			},
-	{ "lan3_proto",			V_LENGTH(0, 6)			},
-	{ "lan3_stp",			V_LENGTH(0, 1)			},
-	{ "dhcpd3_startip",		V_LENGTH(0, 15)			},
-	{ "dhcpd3_endip",		V_LENGTH(0, 15)			},
-	{ "dhcpd3_ostatic",		V_01				},	/* ignore DHCP requests from unknown devices on LAN3 */
-	{ "dhcp3_lease",		V_LENGTH(0, 5)			},
 
 	/* Wireless */
 	{ "wl_radio",			V_01				},
@@ -672,9 +620,6 @@ static const nvset_t nvset_list[] = {
 	{ "dnsmasq_tftp",		V_01				},
 	{ "dnsmasq_tftp_path",		V_TEXT(0, 128)			},
 	{ "dnsmasq_pxelan0",		V_01				},
-	{ "dnsmasq_pxelan1",		V_01				},
-	{ "dnsmasq_pxelan2",		V_01				},
-	{ "dnsmasq_pxelan3",		V_01				},
 #endif
 #ifdef TCONFIG_MDNS
 	{ "mdns_enable",		V_01				},
@@ -689,16 +634,10 @@ static const nvset_t nvset_list[] = {
 #ifdef TCONFIG_PROXY
 	{ "multicast_pass",		V_01				},
 	{ "multicast_lan",		V_01				},
-	{ "multicast_lan1",		V_01				},
-	{ "multicast_lan2",		V_01				},
-	{ "multicast_lan3",		V_01				},
 	{ "multicast_quickleave",	V_01				},
 	{ "multicast_custom",		V_TEXT(0, 2048)			},
 	{ "udpxy_enable",		V_01				},
 	{ "udpxy_lan",			V_01				},
-	{ "udpxy_lan1",			V_01				},
-	{ "udpxy_lan2",			V_01				},
-	{ "udpxy_lan3",			V_01				},
 	{ "udpxy_stats",		V_01				},
 	{ "udpxy_clients",		V_RANGE(1, 5000)		},
 	{ "udpxy_port",			V_RANGE(0, 65535)		},
@@ -782,9 +721,6 @@ static const nvset_t nvset_list[] = {
 	{ "vlan14hwname",		V_TEXT(0, 8)			},
 	{ "vlan15hwname",		V_TEXT(0, 8)			},
 	{ "wan_ifnameX",		V_TEXT(0, 8)			},
-	{ "wan2_ifnameX",		V_TEXT(0, 8)			},
-	{ "wan3_ifnameX",		V_TEXT(0, 8)			},
-	{ "wan4_ifnameX",		V_TEXT(0, 8)			},
 	{ "lan_ifnames",		V_TEXT(0, 64)			},
 	{ "manual_boot_nv",		V_01				},
 #ifndef TCONFIG_BCMARM
@@ -812,11 +748,6 @@ static const nvset_t nvset_list[] = {
 
 /* advanced-mac */
 	{ "wan_mac",			V_LENGTH(0, 17)			},
-	{ "wan2_mac",			V_LENGTH(0, 17)			},
-#ifdef TCONFIG_MULTIWAN
-	{ "wan3_mac",			V_LENGTH(0, 17)			},
-	{ "wan4_mac",			V_LENGTH(0, 17)			},
-#endif
 	{ "wl_macaddr",			V_LENGTH(0, 17)			},
 	{ "wl_hwaddr",			V_LENGTH(0, 17)			},
 #if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
@@ -833,22 +764,8 @@ static const nvset_t nvset_list[] = {
 	{ "dr_setting",			V_RANGE(0, 3)			},
 	{ "dr_lan_tx",			V_LENGTH(0, 32)			},
 	{ "dr_lan_rx",			V_LENGTH(0, 32)			},
-	{ "dr_lan1_tx",			V_LENGTH(0, 32)			},
-	{ "dr_lan1_rx",			V_LENGTH(0, 32)			},
-	{ "dr_lan2_tx",			V_LENGTH(0, 32)			},
-	{ "dr_lan2_rx",			V_LENGTH(0, 32)			},
-	{ "dr_lan3_tx",			V_LENGTH(0, 32)			},
-	{ "dr_lan3_rx",			V_LENGTH(0, 32)			},
 	{ "dr_wan_tx",			V_LENGTH(0, 32)			},
 	{ "dr_wan_rx",			V_LENGTH(0, 32)			},
-	{ "dr_wan2_tx",			V_LENGTH(0, 32)			},
-	{ "dr_wan2_rx",			V_LENGTH(0, 32)			},
-#ifdef TCONFIG_MULTIWAN
-	{ "dr_wan3_tx",			V_LENGTH(0, 32)			},
-	{ "dr_wan3_rx",			V_LENGTH(0, 32)			},
-	{ "dr_wan4_tx",			V_LENGTH(0, 32)			},
-	{ "dr_wan4_rx",			V_LENGTH(0, 32)			},
-#endif
 #endif /* TCONFIG_ZEBRA */
 
 /* advanced-access */
@@ -963,9 +880,6 @@ static const nvset_t nvset_list[] = {
 	{ "upnp_min_port_ext",		V_PORT				},
 	{ "upnp_max_port_ext",		V_PORT				},
 	{ "upnp_lan",			V_01				},
-	{ "upnp_lan1",			V_01				},
-	{ "upnp_lan2",			V_01				},
-	{ "upnp_lan3",			V_01				},
 	{ "upnp_custom",		V_TEXT(0, 2048)			},
 
 /* forward-basic */
@@ -1302,39 +1216,14 @@ static const nvset_t nvset_list[] = {
 #endif
 	{ "wan_qos_obw",		V_RANGE(10, 99999999)		},
 	{ "wan_qos_ibw",		V_RANGE(10, 99999999)		},
+	{ "wan_qos_overhead",		V_RANGE(-127, 128)		},
 #ifdef TCONFIG_BCMARM
 	{ "wan_qos_encap",		V_NUM				},
 #endif
-	{ "wan_qos_overhead",		V_RANGE(-127, 128)		},
-	{ "wan2_qos_obw",		V_RANGE(10, 99999999)		},
-	{ "wan2_qos_ibw",		V_RANGE(10, 99999999)		},
-#ifdef TCONFIG_BCMARM
-	{ "wan2_qos_encap",		V_NUM				},
-#endif
-	{ "wan2_qos_overhead",		V_RANGE(-127, 128)		},
-#ifdef TCONFIG_MULTIWAN
-	{ "wan3_qos_obw",		V_RANGE(10, 99999999)		},
-	{ "wan3_qos_ibw",		V_RANGE(10, 99999999)		},
-#ifdef TCONFIG_BCMARM
-	{ "wan3_qos_encap",		V_NUM				},
-#endif
-	{ "wan3_qos_overhead",		V_RANGE(-127, 128)		},
-	{ "wan4_qos_obw",		V_RANGE(10, 99999999)		},
-	{ "wan4_qos_ibw",		V_RANGE(10, 99999999)		},
-#ifdef TCONFIG_BCMARM
-	{ "wan4_qos_encap",		V_NUM				},
-#endif
-	{ "wan4_qos_overhead",		V_RANGE(-127, 128)		},
-#endif /* TCONFIG_MULTIWAN */
-	{ "qos_orules",			V_LENGTH(0, 4096)		},
-	{ "qos_default",		V_RANGE(0, 9)			},
-#ifdef TCONFIG_MULTIWAN
 	{ "qos_irates",			V_LENGTH(0, 256)		},
 	{ "qos_orates",			V_LENGTH(0, 256)		},
-#else
-	{ "qos_irates",			V_LENGTH(0, 128)		},
-	{ "qos_orates",			V_LENGTH(0, 128)		},
-#endif
+	{ "qos_orules",			V_LENGTH(0, 4096)		},
+	{ "qos_default",		V_RANGE(0, 9)			},
 	{ "qos_classnames",		V_LENGTH(10, 128)		},
 	{ "ne_vegas",			V_01				},
 	{ "ne_valpha",			V_NUM				},
@@ -1523,9 +1412,6 @@ static const nvset_t nvset_list[] = {
 	{ "vpn_server1_reneg",		V_RANGE(-1, 2147483647)		},
 	{ "vpn_server1_hmac",		V_RANGE(-1, 4)			},
 	{ "vpn_server1_plan",		V_01				},
-	{ "vpn_server1_plan1",		V_01				},
-	{ "vpn_server1_plan2",		V_01				},
-	{ "vpn_server1_plan3",		V_01				},
 	{ "vpn_server1_pdns",		V_01				},
 	{ "vpn_server1_rgw",		V_01				},
 	{ "vpn_server1_userpass",	V_01				},
@@ -1565,9 +1451,6 @@ static const nvset_t nvset_list[] = {
 	{ "vpn_server2_reneg",		V_RANGE(-1, 2147483647)		},
 	{ "vpn_server2_hmac",		V_RANGE(-1, 4)			},
 	{ "vpn_server2_plan",		V_01				},
-	{ "vpn_server2_plan1",		V_01				},
-	{ "vpn_server2_plan2",		V_01				},
-	{ "vpn_server2_plan3",		V_01				},
 	{ "vpn_server2_pdns",		V_01				},
 	{ "vpn_server2_rgw",		V_01				},
 	{ "vpn_server2_userpass",	V_01				},
@@ -1868,7 +1751,72 @@ static const nvset_t nvset_list[] = {
 	{ "wg2_routing_val",		V_NONE				},
 	{ "wg2_prio",			V_NONE				},
 #endif
-
+#if MWAN_MAX >= 2
+ WAN_BLOCK(2)
+#endif
+#if MWAN_MAX >= 3
+ WAN_BLOCK(3)
+#endif
+#if MWAN_MAX >= 4
+ WAN_BLOCK(4)
+#endif
+#if MWAN_MAX >= 5
+ WAN_BLOCK(5)
+#endif
+#if MWAN_MAX >= 6
+ WAN_BLOCK(6)
+#endif
+#if MWAN_MAX >= 7
+ WAN_BLOCK(7)
+#endif
+#if MWAN_MAX >= 8
+ WAN_BLOCK(8)
+#endif
+#if BRIDGE_COUNT >= 2
+ BRIDGE_BLOCK(1)
+#endif
+#if BRIDGE_COUNT >= 3
+ BRIDGE_BLOCK(2)
+#endif
+#if BRIDGE_COUNT >= 4
+ BRIDGE_BLOCK(3)
+#endif
+#if BRIDGE_COUNT >= 5
+ BRIDGE_BLOCK(4)
+#endif
+#if BRIDGE_COUNT >= 6
+ BRIDGE_BLOCK(5)
+#endif
+#if BRIDGE_COUNT >= 7
+ BRIDGE_BLOCK(6)
+#endif
+#if BRIDGE_COUNT >= 8
+ BRIDGE_BLOCK(7)
+#endif
+#if BRIDGE_COUNT >= 9
+ BRIDGE_BLOCK(8)
+#endif
+#if BRIDGE_COUNT >= 10
+ BRIDGE_BLOCK(9)
+#endif
+#if BRIDGE_COUNT >= 11
+ BRIDGE_BLOCK(10)
+#endif
+#if BRIDGE_COUNT >= 12
+ BRIDGE_BLOCK(11)
+#endif
+#if BRIDGE_COUNT >= 13
+ BRIDGE_BLOCK(12)
+#endif
+#if BRIDGE_COUNT >= 14
+ BRIDGE_BLOCK(13)
+#endif
+#if BRIDGE_COUNT >= 15
+ BRIDGE_BLOCK(14)
+#endif
+#if BRIDGE_COUNT >= 16
+ BRIDGE_BLOCK(15)
+#endif
 	{ NULL }
 };
 

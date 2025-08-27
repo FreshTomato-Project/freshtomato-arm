@@ -24,16 +24,16 @@ from .mesonlib import (
     File, MesonException, MachineChoice, PerMachine, OrderedSet, listify,
     extract_as_list, typeslistify, stringlistify, classify_unity_sources,
     get_filenames_templates_dict, substitute_values, has_path_sep,
-    is_parent_path, PerMachineDefaultable,
+    is_parent_path, relpath, PerMachineDefaultable,
     MesonBugException, EnvironmentVariables, pickle_load, lazy_property,
 )
 from .options import OptionKey
 
 from .compilers import (
     is_header, is_object, is_source, clink_langs, sort_clink, all_languages,
-    is_known_suffix, detect_static_linker
+    is_known_suffix, detect_static_linker, LANGUAGES_USING_LDFLAGS
 )
-from .interpreterbase import FeatureNew, FeatureDeprecated
+from .interpreterbase import FeatureNew, FeatureDeprecated, UnknownValue
 
 if T.TYPE_CHECKING:
     from typing_extensions import Literal, TypedDict
@@ -75,6 +75,7 @@ lang_arg_kwargs |= {
 vala_kwargs = {'vala_header', 'vala_gir', 'vala_vapi'}
 rust_kwargs = {'rust_crate_type', 'rust_dependency_map'}
 cs_kwargs = {'resources', 'cs_args'}
+swift_kwargs = {'swift_interoperability_mode', 'swift_module_name'}
 
 buildtarget_kwargs = {
     'build_by_default',
@@ -110,7 +111,8 @@ known_build_target_kwargs = (
     pch_kwargs |
     vala_kwargs |
     rust_kwargs |
-    cs_kwargs)
+    cs_kwargs |
+    swift_kwargs)
 
 known_exe_kwargs = known_build_target_kwargs | {'implib', 'export_dynamic', 'pie', 'vs_module_defs', 'android_exe_type'}
 known_shlib_kwargs = known_build_target_kwargs | {'version', 'soversion', 'vs_module_defs', 'darwin_versions', 'rust_abi'}
@@ -275,7 +277,7 @@ class Build:
         self.stdlibs = PerMachine({}, {})
         self.test_setups: T.Dict[str, TestSetup] = {}
         self.test_setup_default_name = None
-        self.find_overrides: T.Dict[str, T.Union['Executable', programs.ExternalProgram, programs.OverrideProgram]] = {}
+        self.find_overrides: T.Dict[str, T.Union['OverrideExecutable', programs.ExternalProgram, programs.OverrideProgram]] = {}
         self.searched_programs: T.Set[str] = set() # The list of all programs that have been searched for.
 
         # If we are doing a cross build we need two caches, if we're doing a
@@ -648,7 +650,7 @@ class Target(HoldableObject, metaclass=abc.ABCMeta):
     def process_kwargs_base(self, kwargs: T.Dict[str, T.Any]) -> None:
         if 'build_by_default' in kwargs:
             self.build_by_default = kwargs['build_by_default']
-            if not isinstance(self.build_by_default, bool):
+            if not isinstance(self.build_by_default, (bool, UnknownValue)):
                 raise InvalidArguments('build_by_default must be a boolean value.')
 
         if not self.build_by_default and kwargs.get('install', False):
@@ -656,28 +658,10 @@ class Target(HoldableObject, metaclass=abc.ABCMeta):
             # set, use the value of 'install' if it's enabled.
             self.build_by_default = True
 
-        self.raw_overrides = self.parse_overrides(kwargs)
+        self.raw_overrides = kwargs.get('override_options', {})
 
     def get_override(self, name: str) -> T.Optional[str]:
         return self.raw_overrides.get(name, None)
-
-    @staticmethod
-    def parse_overrides(kwargs: T.Dict[str, T.Any]) -> T.Dict[str, str]:
-        opts = kwargs.get('override_options', [])
-
-        # In this case we have an already parsed and ready to go dictionary
-        # provided by typed_kwargs
-        if isinstance(opts, dict):
-            return T.cast('T.Dict[OptionKey, str]', opts)
-
-        result: T.Dict[str, str] = {}
-        overrides = stringlistify(opts)
-        for o in overrides:
-            if '=' not in o:
-                raise InvalidArguments('Overrides must be of form "key=value"')
-            k, v = o.split('=', 1)
-            result[k] = v
-        return result
 
     def is_linkable_target(self) -> bool:
         return False
@@ -774,8 +758,8 @@ class BuildTarget(Target):
         self.link(link_targets)
         self.link_whole(link_whole_targets)
 
-        if not any([self.sources, self.generated, self.objects, self.link_whole_targets, self.structured_sources,
-                    kwargs.pop('_allow_no_sources', False)]):
+        if not any([[src for src in self.sources if not is_header(src)], self.generated, self.objects,
+                    self.link_whole_targets, self.structured_sources, kwargs.pop('_allow_no_sources', False)]):
             mlog.warning(f'Build target {name} has no sources. '
                          'This was never supposed to be allowed but did because of a bug, '
                          'support will be removed in a future release of Meson')
@@ -787,14 +771,23 @@ class BuildTarget(Target):
         ''' Initialisations and checks requiring the final list of compilers to be known
         '''
         self.validate_sources()
-        if self.structured_sources and any([self.sources, self.generated]):
-            raise MesonException('cannot mix structured sources and unstructured sources')
-        if self.structured_sources and 'rust' not in self.compilers:
-            raise MesonException('structured sources are only supported in Rust targets')
         if self.uses_rust():
+            if self.link_language and self.link_language != 'rust':
+                raise MesonException('cannot build Rust sources with a different link_language')
+            if self.structured_sources:
+                # TODO: the interpreter should be able to generate a better error message?
+                if any((s.endswith('.rs') for s in self.sources)) or \
+                       any(any((s.endswith('.rs') for s in g.get_outputs())) for g in self.generated):
+                    raise MesonException('cannot mix Rust structured sources and unstructured sources')
+
             # relocation-model=pic is rustc's default and Meson does not
             # currently have a way to disable PIC.
             self.pic = True
+            self.pie = True
+        else:
+            if self.structured_sources:
+                raise MesonException('structured sources are only supported in Rust targets')
+
         if 'vala' in self.compilers and self.is_linkable_target():
             self.outputs += [self.vala_header, self.vala_vapi]
             self.install_tag += ['devel', 'devel']
@@ -889,6 +882,11 @@ class BuildTarget(Target):
         # did user override clink_langs for this target?
         link_langs = [self.link_language] if self.link_language else clink_langs
 
+        if self.link_language:
+            if self.link_language not in self.all_compilers:
+                m = f'Target {self.name} requires {self.link_language} compiler not part of the project'
+                raise MesonException(m)
+
         # If this library is linked against another library we need to consider
         # the languages of those libraries as well.
         if self.link_targets or self.link_whole_targets:
@@ -896,6 +894,10 @@ class BuildTarget(Target):
                 if isinstance(t, (CustomTarget, CustomTargetIndex)):
                     continue # We can't know anything about these.
                 for name, compiler in t.compilers.items():
+                    if name == 'rust':
+                        # Rust is always linked through a C-ABI target, so do not add
+                        # the compiler here
+                        continue
                     if name in link_langs and name not in self.compilers:
                         self.compilers[name] = compiler
 
@@ -903,7 +905,7 @@ class BuildTarget(Target):
             # No source files or parent targets, target consists of only object
             # files of unknown origin. Just add the first clink compiler
             # that we have and hope that it can link these objects
-            for lang in link_langs:
+            for lang in reversed(link_langs):
                 if lang in self.all_compilers:
                     self.compilers[lang] = self.all_compilers[lang]
                     break
@@ -981,7 +983,7 @@ class BuildTarget(Target):
                             self.compilers[lang] = compiler
                         break
                 else:
-                    if is_known_suffix(s):
+                    if is_known_suffix(s) and not is_header(s):
                         path = pathlib.Path(str(s)).as_posix()
                         m = f'No {self.for_machine.get_lower_case_name()} machine compiler for {path!r}'
                         raise MesonException(m)
@@ -1223,7 +1225,9 @@ class BuildTarget(Target):
         self.resources = resources
         if kwargs.get('name_prefix') is not None:
             name_prefix = kwargs['name_prefix']
-            if isinstance(name_prefix, list):
+            if isinstance(name_prefix, UnknownValue):
+                pass
+            elif isinstance(name_prefix, list):
                 if name_prefix:
                     raise InvalidArguments('name_prefix array must be empty to signify default.')
             else:
@@ -1233,7 +1237,9 @@ class BuildTarget(Target):
                 self.name_prefix_set = True
         if kwargs.get('name_suffix') is not None:
             name_suffix = kwargs['name_suffix']
-            if isinstance(name_suffix, list):
+            if isinstance(name_suffix, UnknownValue):
+                pass
+            elif isinstance(name_suffix, list):
                 if name_suffix:
                     raise InvalidArguments('name_suffix array must be empty to signify default.')
             else:
@@ -1277,6 +1283,12 @@ class BuildTarget(Target):
         if any(not isinstance(v, str) for v in rust_dependency_map.values()):
             raise InvalidArguments(f'Invalid rust_dependency_map "{rust_dependency_map}": must be a dictionary with string values.')
         self.rust_dependency_map = rust_dependency_map
+
+        self.swift_interoperability_mode = kwargs.get('swift_interoperability_mode')
+
+        self.swift_module_name = kwargs.get('swift_module_name')
+        if self.swift_module_name == '':
+            self.swift_module_name = self.name
 
     def _extract_pic_pie(self, kwargs: T.Dict[str, T.Any], arg: str, option: str) -> bool:
         # Check if we have -fPIC, -fpic, -fPIE, or -fpie in cflags
@@ -1375,6 +1387,10 @@ class BuildTarget(Target):
         deps = listify(deps)
         for dep in deps:
             if dep in self.added_deps:
+                # Prefer to add dependencies to added_deps which have a name
+                if dep.is_named():
+                    self.added_deps.remove(dep)
+                    self.added_deps.add(dep)
                 continue
 
             if isinstance(dep, dependencies.InternalDependency):
@@ -1603,6 +1619,9 @@ class BuildTarget(Target):
             if isinstance(link_target, (CustomTarget, CustomTargetIndex)):
                 continue
             for language in link_target.compilers:
+                if language == 'rust' and not link_target.uses_rust_abi():
+                    # All Rust dependencies must go through a C-ABI dependency, so ignore it
+                    continue
                 if language not in langs:
                     langs.append(language)
 
@@ -1693,6 +1712,9 @@ class BuildTarget(Target):
 
     def uses_fortran(self) -> bool:
         return 'fortran' in self.compilers
+
+    def uses_swift_cpp_interop(self) -> bool:
+        return self.swift_interoperability_mode == 'cpp' and 'swift' in self.compilers
 
     def get_using_msvc(self) -> bool:
         '''
@@ -1787,6 +1809,121 @@ class BuildTarget(Target):
     def get(self, lib_type: T.Literal['static', 'shared']) -> LibTypes:
         """Base case used by BothLibraries"""
         return self
+
+    def determine_rpath_dirs(self) -> T.Tuple[str, ...]:
+        result: OrderedSet[str]
+        if self.environment.coredata.optstore.get_value_for(OptionKey('layout')) == 'mirror':
+            # Need a copy here
+            result = OrderedSet(self.get_link_dep_subdirs())
+        else:
+            result = OrderedSet()
+            result.add('meson-out')
+        result.update(self.rpaths_for_non_system_absolute_shared_libraries())
+        self.rpath_dirs_to_remove.update([d.encode('utf-8') for d in result])
+        return tuple(result)
+
+    @lru_cache(maxsize=None)
+    def rpaths_for_non_system_absolute_shared_libraries(self, exclude_system: bool = True) -> ImmutableListProtocol[str]:
+        paths: OrderedSet[str] = OrderedSet()
+        srcdir = self.environment.get_source_dir()
+
+        system_dirs = set()
+        if exclude_system:
+            for cc in self.compilers.values():
+                system_dirs.update(cc.get_library_dirs(self.environment))
+
+        external_rpaths = self.get_external_rpath_dirs()
+        build_to_src = relpath(self.environment.get_source_dir(),
+                               self.environment.get_build_dir())
+
+        for dep in self.external_deps:
+            if dep.type_name not in {'library', 'pkgconfig', 'cmake'}:
+                continue
+            for libpath in dep.link_args:
+                if libpath.startswith('-'):
+                    continue
+                # For all link args that are absolute paths to a library file, add RPATH args
+                if not os.path.isabs(libpath):
+                    continue
+                libdir, libname = os.path.split(libpath)
+                # Windows doesn't support rpaths, but we use this function to
+                # emulate rpaths by setting PATH
+                # .dll is there for mingw gcc
+                # .so's may be extended with version information, e.g. libxyz.so.1.2.3
+                if not (
+                    libname.endswith(('.dll', '.lib', '.so', '.dylib'))
+                    or '.so.' in libname
+                ):
+                    continue
+
+                # Don't remove rpaths specified in LDFLAGS.
+                if libdir in external_rpaths:
+                    continue
+                if system_dirs and os.path.normpath(libdir) in system_dirs:
+                    # No point in adding system paths.
+                    continue
+
+                if is_parent_path(srcdir, libdir):
+                    rel_to_src = libdir[len(srcdir) + 1:]
+                    assert not os.path.isabs(rel_to_src), f'rel_to_src: {rel_to_src} is absolute'
+                    paths.add(os.path.join(build_to_src, rel_to_src))
+                else:
+                    paths.add(libdir)
+            # Don't remove rpaths specified by the dependency
+            paths.difference_update(self.get_rpath_dirs_from_link_args(dep.link_args))
+        for i in itertools.chain(self.link_targets, self.link_whole_targets):
+            if isinstance(i, BuildTarget):
+                paths.update(i.rpaths_for_non_system_absolute_shared_libraries(exclude_system))
+        return list(paths)
+
+    def get_external_rpath_dirs(self) -> T.Set[str]:
+        args: T.List[str] = []
+        for lang in LANGUAGES_USING_LDFLAGS:
+            try:
+                args += self.environment.coredata.get_external_link_args(self.for_machine, lang)
+            except KeyError:
+                pass
+        return self.get_rpath_dirs_from_link_args(args)
+
+    # Match rpath formats:
+    # -Wl,-rpath=
+    # -Wl,-rpath,
+    _rpath_regex = re.compile(r'-Wl,-rpath[=,]([^,]+)')
+    # Match solaris style compat runpath formats:
+    # -Wl,-R
+    # -Wl,-R,
+    _runpath_regex = re.compile(r'-Wl,-R[,]?([^,]+)')
+    # Match symbols formats:
+    # -Wl,--just-symbols=
+    # -Wl,--just-symbols,
+    _symbols_regex = re.compile(r'-Wl,--just-symbols[=,]([^,]+)')
+
+    @classmethod
+    def get_rpath_dirs_from_link_args(cls, args: T.List[str]) -> T.Set[str]:
+        dirs: T.Set[str] = set()
+
+        for arg in args:
+            if not arg.startswith('-Wl,'):
+                continue
+
+            rpath_match = cls._rpath_regex.match(arg)
+            if rpath_match:
+                for dir in rpath_match.group(1).split(':'):
+                    dirs.add(dir)
+            runpath_match = cls._runpath_regex.match(arg)
+            if runpath_match:
+                for dir in runpath_match.group(1).split(':'):
+                    # The symbols arg is an rpath if the path is a directory
+                    if os.path.isdir(dir):
+                        dirs.add(dir)
+            symbols_match = cls._symbols_regex.match(arg)
+            if symbols_match:
+                for dir in symbols_match.group(1).split(':'):
+                    # Prevent usage of --just-symbols to specify rpath
+                    if os.path.isdir(dir):
+                        raise MesonException(f'Invalid arg for --just-symbols, {dir} is a directory.')
+        return dirs
+
 
 class FileInTargetPrivateDir:
     """Represents a file with the path '/path/to/build/target_private_dir/fname'.
@@ -3139,6 +3276,18 @@ class ConfigurationData(HoldableObject):
 
     def keys(self) -> T.Iterator[str]:
         return self.values.keys()
+
+class OverrideExecutable(Executable):
+    def __init__(self, executable: Executable, version: str):
+        self._executable = executable
+        self._version = version
+
+    def __getattr__(self, name: str) -> T.Any:
+        _executable = object.__getattribute__(self, '_executable')
+        return getattr(_executable, name)
+
+    def get_version(self, interpreter: T.Optional[Interpreter] = None) -> str:
+        return self._version
 
 # A bit poorly named, but this represents plain data files to copy
 # during install.

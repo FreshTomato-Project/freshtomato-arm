@@ -37,7 +37,7 @@ from ..programs import OverrideProgram
 from ..scripts.gettext import read_linguas
 
 if T.TYPE_CHECKING:
-    from typing_extensions import Literal, TypedDict
+    from typing_extensions import Literal, TypeAlias, TypedDict
 
     from . import ModuleState
     from ..build import BuildTarget
@@ -137,6 +137,8 @@ if T.TYPE_CHECKING:
         install_header: bool
         install_dir: T.Optional[str]
         docbook: T.Optional[str]
+        rst: T.Optional[str]
+        markdown: T.Optional[str]
         autocleanup: Literal['all', 'none', 'objects', 'default']
 
     class GenMarshal(TypedDict):
@@ -196,7 +198,7 @@ if T.TYPE_CHECKING:
         vtail: T.Optional[str]
         depends: T.List[T.Union[BuildTarget, CustomTarget, CustomTargetIndex]]
 
-    ToolType = T.Union[Executable, ExternalProgram, OverrideProgram]
+    ToolType: TypeAlias = T.Union[Executable, ExternalProgram, OverrideProgram]
 
 
 # Differs from the CustomTarget version in that it straight defaults to True
@@ -254,8 +256,8 @@ class GnomeModule(ExtensionModule):
     def __init__(self, interpreter: 'Interpreter') -> None:
         super().__init__(interpreter)
         self.gir_dep: T.Optional[Dependency] = None
-        self.giscanner: T.Optional[T.Union[ExternalProgram, Executable, OverrideProgram]] = None
-        self.gicompiler: T.Optional[T.Union[ExternalProgram, Executable, OverrideProgram]] = None
+        self.giscanner: T.Optional[ToolType] = None
+        self.gicompiler: T.Optional[ToolType] = None
         self.install_glib_compile_schemas = False
         self.install_gio_querymodules: T.List[str] = []
         self.install_gtk_update_icon_cache = False
@@ -634,7 +636,7 @@ class GnomeModule(ExtensionModule):
             # https://github.com/mesonbuild/meson/issues/1911
             # However, g-ir-scanner does not understand -Wl,-rpath
             # so we need to use -L instead
-            for d in state.backend.determine_rpath_dirs(lib):
+            for d in lib.determine_rpath_dirs():
                 d = os.path.join(state.environment.get_build_dir(), d)
                 link_command.append('-L' + d)
                 if include_rpath:
@@ -773,9 +775,7 @@ class GnomeModule(ExtensionModule):
 
         STATIC_BUILD_REQUIRED_VERSION = ">=1.58.1"
         if isinstance(girtarget, (build.StaticLibrary)) and \
-           not mesonlib.version_compare(
-               self._get_gir_dep(state)[0].get_version(),
-               STATIC_BUILD_REQUIRED_VERSION):
+           not self._giscanner_version_compare(state, STATIC_BUILD_REQUIRED_VERSION):
             raise MesonException('Static libraries can only be introspected with GObject-Introspection ' + STATIC_BUILD_REQUIRED_VERSION)
 
         return girtarget
@@ -797,10 +797,20 @@ class GnomeModule(ExtensionModule):
             self.gicompiler = self._find_tool(state, 'g-ir-compiler')
         return self.gir_dep, self.giscanner, self.gicompiler
 
+    def _giscanner_version_compare(self, state: 'ModuleState', cmp: str) -> bool:
+        # Support for --version was introduced in g-i 1.58, but Ubuntu
+        # Bionic shipped 1.56.1. As all our version checks are greater
+        # than 1.58, we can just return False if get_version fails.
+        try:
+            giscanner, _, _ = self._get_gir_dep(state)
+            return mesonlib.version_compare(giscanner.get_version(), cmp)
+        except MesonException:
+            return False
+
     @functools.lru_cache(maxsize=None)
     def _gir_has_option(self, option: str) -> bool:
         exe = self.giscanner
-        if isinstance(exe, OverrideProgram):
+        if isinstance(exe, (Executable, OverrideProgram)):
             # Handle overridden g-ir-scanner
             assert option in {'--extra-library', '--sources-top-dirs'}
             return True
@@ -865,7 +875,7 @@ class GnomeModule(ExtensionModule):
                 # https://github.com/mesonbuild/meson/issues/1911
                 # However, g-ir-scanner does not understand -Wl,-rpath
                 # so we need to use -L instead
-                for d in state.backend.determine_rpath_dirs(girtarget):
+                for d in girtarget.determine_rpath_dirs():
                     d = os.path.join(state.environment.get_build_dir(), d)
                     ret.append('-L' + d)
 
@@ -988,10 +998,8 @@ class GnomeModule(ExtensionModule):
         run_env.set('CFLAGS', [quote_arg(x) for x in env_flags], ' ')
         run_env.merge(kwargs['env'])
 
-        gir_dep, _, _ = self._get_gir_dep(state)
-
         # response file supported?
-        rspable = mesonlib.version_compare(gir_dep.get_version(), '>= 1.85.0')
+        rspable = self._giscanner_version_compare(state, '>= 1.85.0')
 
         return GirTarget(
             girfile,
@@ -1625,6 +1633,8 @@ class GnomeModule(ExtensionModule):
         ),
         KwargInfo('install_header', bool, default=False, since='0.46.0'),
         KwargInfo('docbook', (str, NoneType)),
+        KwargInfo('rst', (str, NoneType), since='1.9.0'),
+        KwargInfo('markdown', (str, NoneType), since='1.9.0'),
         KwargInfo(
             'autocleanup', str, default='default', since='0.47.0',
             validator=in_set_validator({'all', 'none', 'objects'})),
@@ -1680,6 +1690,26 @@ class GnomeModule(ExtensionModule):
                 docbook = kwargs['docbook']
 
                 cmd += ['--generate-docbook', docbook]
+
+            if kwargs['rst'] is not None:
+                if not mesonlib.version_compare(glib_version, '>= 2.71.1'):
+                    mlog.error(f'Glib version ({glib_version}) is too old to '
+                               'support the \'rst\' kwarg, need 2.71.1 or '
+                               'newer')
+
+                rst = kwargs['rst']
+
+                cmd += ['--generate-rst', rst]
+
+            if kwargs['markdown'] is not None:
+                if not mesonlib.version_compare(glib_version, '>= 2.75.2'):
+                    mlog.error(f'Glib version ({glib_version}) is too old to '
+                               'support the \'markdown\' kwarg, need 2.75.2 '
+                               'or newer')
+
+                markdown = kwargs['markdown']
+
+                cmd += ['--generate-md', markdown]
 
             # https://git.gnome.org/browse/glib/commit/?id=ee09bb704fe9ccb24d92dd86696a0e6bb8f0dc1a
             if mesonlib.version_compare(glib_version, '>= 2.51.3'):
@@ -1755,6 +1785,48 @@ class GnomeModule(ExtensionModule):
                 description='Generating gdbus docbook {}',
             )
             targets.append(docbook_custom_target)
+
+        if kwargs['rst'] is not None:
+            rst = kwargs['rst']
+            # The rst output is always ${rst}-${name_of_xml_file}
+            output = namebase + '-rst'
+            outputs = []
+            for f in xml_files:
+                outputs.append('{}-{}'.format(rst, os.path.basename(str(f))))
+
+            rst_custom_target = CustomTarget(
+                output,
+                state.subdir,
+                state.subproject,
+                state.environment,
+                cmd + ['--output-directory', '@OUTDIR@', '--generate-rst', rst, '@INPUT@'],
+                xml_files,
+                outputs,
+                build_by_default=build_by_default,
+                description='Generating gdbus reStructuredText {}',
+            )
+            targets.append(rst_custom_target)
+
+        if kwargs['markdown'] is not None:
+            markdown = kwargs['markdown']
+            # The markdown output is always ${markdown}-${name_of_xml_file}
+            output = namebase + '-markdown'
+            outputs = []
+            for f in xml_files:
+                outputs.append('{}-{}'.format(markdown, os.path.basename(str(f))))
+
+            markdown_custom_target = CustomTarget(
+                output,
+                state.subdir,
+                state.subproject,
+                state.environment,
+                cmd + ['--output-directory', '@OUTDIR@', '--generate-md', markdown, '@INPUT@'],
+                xml_files,
+                outputs,
+                build_by_default=build_by_default,
+                description='Generating gdbus markdown {}',
+            )
+            targets.append(markdown_custom_target)
 
         return ModuleReturnValue(targets, targets)
 

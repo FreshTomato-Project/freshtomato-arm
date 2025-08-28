@@ -44,10 +44,7 @@ from mesonbuild.programs import ExternalProgram
 import mesonbuild.modules.pkgconfig
 from mesonbuild import utils
 
-
-from run_tests import (
-    FakeCompilerOptions, get_fake_env, get_fake_options
-)
+from run_tests import get_fake_env, get_fake_options
 
 from .helpers import *
 
@@ -555,9 +552,9 @@ class InternalTests(unittest.TestCase):
                       'libbar.so.7.10', 'libbar.so.7.9', 'libbar.so.7.9.3']:
                 libpath = Path(tmpdir) / i
                 libpath.write_text('', encoding='utf-8')
-            found = cc._find_library_real('foo', env, [tmpdir], '', LibType.PREFER_SHARED, lib_prefix_warning=True)
+            found = cc._find_library_real('foo', env, [tmpdir], '', LibType.PREFER_SHARED, lib_prefix_warning=True, ignore_system_dirs=False)
             self.assertEqual(os.path.basename(found[0]), 'libfoo.so.54.0')
-            found = cc._find_library_real('bar', env, [tmpdir], '', LibType.PREFER_SHARED, lib_prefix_warning=True)
+            found = cc._find_library_real('bar', env, [tmpdir], '', LibType.PREFER_SHARED, lib_prefix_warning=True, ignore_system_dirs=False)
             self.assertEqual(os.path.basename(found[0]), 'libbar.so.7.10')
 
     def test_find_library_patterns(self):
@@ -629,7 +626,6 @@ class InternalTests(unittest.TestCase):
             env = get_fake_env()
             compiler = detect_c_compiler(env, MachineChoice.HOST)
             env.coredata.compilers.host = {'c': compiler}
-            env.coredata.optstore.set_value_object(OptionKey('c_link_args'), FakeCompilerOptions())
             p1 = Path(tmpdir) / '1'
             p2 = Path(tmpdir) / '2'
             p1.mkdir()

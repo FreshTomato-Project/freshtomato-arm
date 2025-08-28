@@ -537,10 +537,8 @@ void update_poshistory(void)
 	poshiststruct *previous = NULL;
 	poshiststruct *item;
 
-	if (fullpath == NULL || openfile->filename[0] == '\0') {
-		free(fullpath);
+	if (fullpath == NULL)
 		return;
-	}
 
 	reload_positions_if_needed();
 
@@ -597,6 +595,6 @@ void restore_cursor_position_if_any(void)
 	if (item && item->anchors)
 		restore_anchors(item->anchors);
 	if (item)
-		goto_line_and_column(item->linenumber, item->columnnumber, FALSE, FALSE);
+		goto_line_and_column(item->linenumber, item->columnnumber, TRUE);
 }
 #endif /* ENABLE_HISTORIES */

@@ -59,6 +59,9 @@ __all__ = [
     'TYPE_HoldableTypes',
 
     'HoldableTypes',
+
+    'UnknownValue',
+    'UndefinedVariable',
 ]
 
 from .baseobjects import (
@@ -81,6 +84,9 @@ from .baseobjects import (
     SubProject,
 
     HoldableTypes,
+
+    UnknownValue,
+    UndefinedVariable,
 )
 
 from .decorators import (

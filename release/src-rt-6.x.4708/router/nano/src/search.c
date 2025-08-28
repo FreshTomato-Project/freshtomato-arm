@@ -155,8 +155,7 @@ void search_init(bool replacing, bool retain_answer)
 			} else
 				replacing = !replacing;
 		} else if (function == flip_goto) {
-			goto_line_and_column(openfile->current->lineno,
-								openfile->placewewant + 1, TRUE, TRUE);
+			ask_for_line_and_column(answer);
 			break;
 		} else
 			break;
@@ -719,7 +718,7 @@ void ask_for_and_do_replacements(void)
 		update_history(&replace_history, answer, PRUNE_DUPLICATE);
 #endif
 
-	/* When cancelled, or when a function was run, get out. */
+	/* When cancelled, or when a function was run, we're done. */
 	if (response == -1) {
 		statusbar(_("Cancelled"));
 		return;
@@ -763,51 +762,65 @@ void goto_line_posx(ssize_t linenumber, size_t pos_x)
 }
 #endif
 
-/* Go to the specified line and column, or ask for them if interactive
- * is TRUE.  In the latter case also update the screen afterwards.
- * Note that both the line and column number should be one-based. */
-void goto_line_and_column(ssize_t line, ssize_t column, bool retain_answer,
-							bool interactive)
+/* Implement the Go To Line menu. */
+void do_gotolinecolumn(void)
 {
-	if (interactive) {
-		/* Ask for the line and column. */
-		int response = do_prompt(MGOTOLINE, retain_answer ? answer : "", NULL,
-						/* TRANSLATORS: This is a prompt. */
-						edit_refresh, _("Enter line number, column number"));
+	ask_for_line_and_column("");
+}
 
-		/* If the user cancelled or gave a blank answer, get out. */
-		if (response < 0) {
-			statusbar(_("Cancelled"));
-			return;
-		}
+/* Ask for a line and maybe column number, and then jump there. */
+void ask_for_line_and_column(char *provided)
+{
+	ssize_t line = openfile->current->lineno;
+	ssize_t column = openfile->placewewant + 1;
+	int response = do_prompt(MGOTOLINE, provided, NULL, edit_refresh,
+					/* TRANSLATORS: This is a prompt. */
+					_("Enter line number, column number"));
+	int doublesign = 0;
 
-		if (func_from_key(response) == flip_goto) {
-			UNSET(BACKWARDS_SEARCH);
-			/* Switch to searching but retain what the user typed so far. */
-			search_init(FALSE, TRUE);
-			return;
-		}
-
-		/* If a function was executed, we're done here. */
-		if (response > 0)
-			return;
-
-		/* Try to extract one or two numbers from the user's response. */
-		if (!parse_line_column(answer, &line, &column)) {
-			statusline(AHEM, _("Invalid line or column number"));
-			return;
-		}
-	} else {
-		if (line == 0)
-			line = openfile->current->lineno;
-
-		if (column == 0)
-			column = openfile->placewewant + 1;
+	if (func_from_key(response) == flip_goto) {
+		UNSET(BACKWARDS_SEARCH);
+		/* Switch to searching but retain what the user typed so far. */
+		search_init(FALSE, TRUE);
+		return;
 	}
+
+	/* When cancelled or blank, or when a function was run, we're done. */
+	if (response < 0) {
+		statusbar(_("Cancelled"));
+		return;
+	} else if (response > 0)
+		return;
+
+	/* A ++ or -- before the number signifies a relative jump. */
+	if ((answer[0] == '+' && answer[1] == '+') || (answer[0] == '-' && answer[1] == '-'))
+		doublesign = 1;
+
+	/* Try to extract one or two numbers from the user's response. */
+	if (!parse_line_column(answer + doublesign, &line, &column)) {
+		statusline(AHEM, _("Invalid line or column number"));
+		return;
+	}
+
+	if (doublesign)
+		line += openfile->current->lineno;
+
+	goto_line_and_column(line, column, FALSE);
+
+	adjust_viewport((*answer == ',') ? STATIONARY : CENTERING);
+	refresh_needed = TRUE;
+}
+
+/* Go to the specified line and column.  (Note that both are one-based.) */
+void goto_line_and_column(ssize_t line, ssize_t column, bool hugfloor)
+{
+	int rows_from_tail;
 
 	/* Take a negative line number to mean: from the end of the file. */
 	if (line < 0)
 		line = openfile->filebot->lineno + line + 1;
+	else if (line == 0)
+		line = openfile->current->lineno;
 	if (line < 1)
 		line = 1;
 
@@ -825,6 +838,8 @@ void goto_line_and_column(ssize_t line, ssize_t column, bool retain_answer,
 	/* Take a negative column number to mean: from the end of the line. */
 	if (column < 0)
 		column = breadth(openfile->current->data) + column + 2;
+	else if (column == 0)
+		column = openfile->placewewant + 1;
 	if (column < 1)
 		column = 1;
 
@@ -838,41 +853,29 @@ void goto_line_and_column(ssize_t line, ssize_t column, bool retain_answer,
 		openfile->placewewant = breadth(openfile->current->data);
 #endif
 
-	/* When a line number was manually given, center the target line. */
-	if (interactive) {
-		adjust_viewport((*answer == ',') ? STATIONARY : CENTERING);
-		refresh_needed = TRUE;
-	} else {
-		int rows_from_tail;
+	if (!hugfloor)
+		return;
 
 #ifndef NANO_TINY
-		if (ISSET(SOFTWRAP)) {
-			linestruct *currentline = openfile->current;
-			size_t leftedge = leftedge_for(xplustabs(), openfile->current);
+	if (ISSET(SOFTWRAP)) {
+		linestruct *currentline = openfile->current;
+		size_t leftedge = leftedge_for(xplustabs(), openfile->current);
 
-			rows_from_tail = (editwinrows / 2) - go_forward_chunks(
-								editwinrows / 2, &currentline, &leftedge);
-		} else
+		rows_from_tail = (editwinrows / 2) - go_forward_chunks(
+							editwinrows / 2, &currentline, &leftedge);
+	} else
 #endif
-			rows_from_tail = openfile->filebot->lineno -
-								openfile->current->lineno;
+		rows_from_tail = openfile->filebot->lineno -
+							openfile->current->lineno;
 
-		/* If the target line is close to the tail of the file, put the last
-		 * line or chunk on the bottom line of the screen; otherwise, just
-		 * center the target line. */
-		if (rows_from_tail < editwinrows / 2 && !ISSET(JUMPY_SCROLLING)) {
-			openfile->cursor_row = editwinrows - 1 - rows_from_tail;
-			adjust_viewport(STATIONARY);
-		} else
-			adjust_viewport(CENTERING);
-	}
-}
-
-/* Go to the specified line and column, asking for them beforehand. */
-void do_gotolinecolumn(void)
-{
-	goto_line_and_column(openfile->current->lineno,
-						openfile->placewewant + 1, FALSE, TRUE);
+	/* If the target line is close to the tail of the file, put the last
+	 * line or chunk on the bottom line of the screen; otherwise, just
+	 * center the target line. */
+	if (rows_from_tail < editwinrows / 2 && !ISSET(JUMPY_SCROLLING)) {
+		openfile->cursor_row = editwinrows - 1 - rows_from_tail;
+		adjust_viewport(STATIONARY);
+	} else
+		adjust_viewport(CENTERING);
 }
 
 #ifndef NANO_TINY

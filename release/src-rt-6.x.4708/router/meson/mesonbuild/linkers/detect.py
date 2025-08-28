@@ -39,7 +39,7 @@ def guess_win_linker(env: 'Environment', compiler: T.List[str], comp_class: T.Ty
                      use_linker_prefix: bool = True, invoked_directly: bool = True,
                      extra_args: T.Optional[T.List[str]] = None) -> 'DynamicLinker':
     from . import linkers
-    env.coredata.add_lang_args(comp_class.language, comp_class, for_machine, env)
+    env.add_lang_args(comp_class.language, comp_class, for_machine)
 
     if invoked_directly or comp_class.get_argument_syntax() == 'msvc':
         rsp_syntax = RSPFileSyntax.MSVC
@@ -128,7 +128,7 @@ def guess_nix_linker(env: 'Environment', compiler: T.List[str], comp_class: T.Ty
     :extra_args: Any additional arguments required (such as a source file)
     """
     from . import linkers
-    env.coredata.add_lang_args(comp_class.language, comp_class, for_machine, env)
+    env.add_lang_args(comp_class.language, comp_class, for_machine)
     extra_args = extra_args or []
 
     system = env.machines[for_machine].system
@@ -166,6 +166,9 @@ def guess_nix_linker(env: 'Environment', compiler: T.List[str], comp_class: T.Ty
 
         linker = lld_cls(
             compiler, for_machine, comp_class.LINKER_PREFIX, override, system=system, version=v)
+    elif o.startswith("eld"):
+        linker = linkers.ELDDynamicLinker(
+            compiler, for_machine, comp_class.LINKER_PREFIX, override, version=v)
     elif 'Snapdragon' in e and 'LLVM' in e:
         linker = linkers.QualcommLLVMDynamicLinker(
             compiler, for_machine, comp_class.LINKER_PREFIX, override, version=v)

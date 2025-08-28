@@ -198,6 +198,7 @@ class CudaCompiler(Compiler):
             for level, flags in host_compiler.warn_args.items()
         }
         self.host_werror_args = ['-Xcompiler=' + x for x in self.host_compiler.get_werror_args()]
+        self.debug_macros_available = version_compare(self.version, '>=12.9')
 
     @classmethod
     def _shield_nvcc_list_arg(cls, arg: str, listmode: bool = True) -> str:
@@ -577,21 +578,12 @@ class CudaCompiler(Compiler):
 
         # Run sanity check (if possible)
         if self.is_cross:
-            if not env.has_exe_wrapper():
-                return
-            else:
-                cmdlist = env.exe_wrapper.get_command() + [binary_name]
-        else:
-            cmdlist = self.exelist + ['--run', '"' + binary_name + '"']
-        mlog.debug('Sanity check run command line: ', ' '.join(cmdlist))
-        pe, stdo, stde = Popen_safe(cmdlist, cwd=work_dir)
-        mlog.debug('Sanity check run stdout: ')
-        mlog.debug(stdo)
-        mlog.debug('-----\nSanity check run stderr:')
-        mlog.debug(stde)
-        mlog.debug('-----')
-        pe.wait()
-        if pe.returncode != 0:
+            return
+
+        cmdlist = self.exelist + ['--run', f'"{binary_name}"']
+        try:
+            stdo, stde = self.run_sanity_check(env, cmdlist, work_dir)
+        except EnvironmentException:
             raise EnvironmentException(f'Executables created by {self.language} compiler {self.name_string()} are not runnable.')
 
         # Interpret the result of the sanity test.
@@ -599,8 +591,6 @@ class CudaCompiler(Compiler):
         # architecture detection test.
         if stde == '':
             self.detected_cc = stdo
-        else:
-            mlog.debug('cudaGetDeviceCount() returned ' + stde)
 
     def has_header_symbol(self, hname: str, symbol: str, prefix: str,
                           env: 'Environment', *,
@@ -741,11 +731,10 @@ class CudaCompiler(Compiler):
     def get_optimization_link_args(self, optimization_level: str) -> T.List[str]:
         return self._to_host_flags(self.host_compiler.get_optimization_link_args(optimization_level), Phase.LINKER)
 
-    def build_rpath_args(self, env: 'Environment', build_dir: str, from_dir: str,
-                         rpath_paths: T.Tuple[str, ...], build_rpath: str,
-                         install_rpath: str) -> T.Tuple[T.List[str], T.Set[bytes]]:
+    def build_rpath_args(self, env: Environment, build_dir: str, from_dir: str,
+                         target: BuildTarget, extra_paths: T.Optional[T.List[str]] = None) -> T.Tuple[T.List[str], T.Set[bytes]]:
         (rpath_args, rpath_dirs_to_remove) = self.host_compiler.build_rpath_args(
-            env, build_dir, from_dir, rpath_paths, build_rpath, install_rpath)
+            env, build_dir, from_dir, target, extra_paths)
         return (self._to_host_flags(rpath_args, Phase.LINKER), rpath_dirs_to_remove)
 
     def linker_to_compiler_args(self, args: T.List[str]) -> T.List[str]:
@@ -774,8 +763,8 @@ class CudaCompiler(Compiler):
         return self._to_host_flags(self.host_compiler.get_std_exe_link_args(), Phase.LINKER)
 
     def find_library(self, libname: str, env: 'Environment', extra_dirs: T.List[str],
-                     libtype: LibType = LibType.PREFER_SHARED, lib_prefix_warning: bool = True) -> T.Optional[T.List[str]]:
-        return self.host_compiler.find_library(libname, env, extra_dirs, libtype, lib_prefix_warning)
+                     libtype: LibType = LibType.PREFER_SHARED, lib_prefix_warning: bool = True, ignore_system_dirs: bool = False) -> T.Optional[T.List[str]]:
+        return self.host_compiler.find_library(libname, env, extra_dirs, libtype, lib_prefix_warning, ignore_system_dirs)
 
     def get_crt_compile_args(self, crt_val: str, buildtype: str) -> T.List[str]:
         return self._to_host_flags(self.host_compiler.get_crt_compile_args(crt_val, buildtype))
@@ -819,7 +808,12 @@ class CudaCompiler(Compiler):
         return ['-Xcompiler=' + x for x in self.host_compiler.get_profile_use_args()]
 
     def get_assert_args(self, disable: bool, env: 'Environment') -> T.List[str]:
-        return self.host_compiler.get_assert_args(disable, env)
+        cccl_macros = []
+        if not disable and self.debug_macros_available:
+            # https://github.com/NVIDIA/cccl/pull/2382
+            cccl_macros = ['-DCCCL_ENABLE_ASSERTIONS=1']
+
+        return self.host_compiler.get_assert_args(disable, env) + cccl_macros
 
     def has_multi_arguments(self, args: T.List[str], env: Environment) -> T.Tuple[bool, bool]:
         args = self._to_host_flags(args)

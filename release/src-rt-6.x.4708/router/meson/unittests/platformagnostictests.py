@@ -95,6 +95,23 @@ class PlatformAgnosticTests(BasePlatformTests):
         testdir = os.path.join(self.unit_test_dir, '102 python without pkgconfig')
         self.init(testdir, override_envvars={'PKG_CONFIG': 'notfound'})
 
+    def test_vala_target_with_internal_glib(self):
+        testdir = os.path.join(self.unit_test_dir, '130 vala internal glib')
+        for run in [{ 'version': '2.84.4', 'expected': '2.84'}, { 'version': '2.85.2', 'expected': '2.84' }]:
+            self.new_builddir()
+            self.init(testdir, extra_args=[f'-Dglib-version={run["version"]}'])
+            try:
+                with open(os.path.join(self.builddir, 'meson-info', 'intro-targets.json'), 'r', encoding='utf-8') as tgt_intro:
+                    intro = json.load(tgt_intro)
+                    target = list(filter(lambda tgt: tgt['name'] == 'vala-tgt', intro))
+                    self.assertLength(target, 1)
+                    sources = target[0]['target_sources']
+                    vala_sources = filter(lambda src: src.get('language') == 'vala', sources)
+                    for src in vala_sources:
+                        self.assertIn(('--target-glib', run['expected']), zip(src['parameters'], src['parameters'][1:]))
+            except FileNotFoundError:
+                self.skipTest('Current backend does not produce introspection data')
+
     def test_debug_function_outputs_to_meson_log(self):
         testdir = os.path.join(self.unit_test_dir, '104 debug function')
         log_msg = 'This is an example debug output, should only end up in debug log'
@@ -175,7 +192,7 @@ class PlatformAgnosticTests(BasePlatformTests):
         with self.subTest('Changing the backend'):
             with self.assertRaises(subprocess.CalledProcessError) as cm:
                 self.setconf('-Dbackend=none')
-            self.assertIn("ERROR: Tried to modify read only option 'backend'", cm.exception.stdout)
+            self.assertIn('ERROR: Tried to modify read only option "backend"', cm.exception.stdout)
 
         # Check that the new value was not written in the store.
         with self.subTest('option is stored correctly'):
@@ -421,12 +438,12 @@ class PlatformAgnosticTests(BasePlatformTests):
 
         with self.subTest('unknown user option'):
             out = self.init(testdir, extra_args=['-Dnot_an_option=1'], allow_fail=True)
-            self.assertIn('ERROR: Unknown options: "not_an_option"', out)
+            self.assertIn('ERROR: Unknown option: "not_an_option"', out)
 
         with self.subTest('unknown builtin option'):
             self.new_builddir()
             out = self.init(testdir, extra_args=['-Db_not_an_option=1'], allow_fail=True)
-            self.assertIn('ERROR: Unknown options: "b_not_an_option"', out)
+            self.assertIn('ERROR: Unknown option: "b_not_an_option"', out)
 
 
     def test_configure_new_option(self) -> None:
@@ -451,7 +468,7 @@ class PlatformAgnosticTests(BasePlatformTests):
                 f.write(line)
         with self.assertRaises(subprocess.CalledProcessError) as e:
             self.setconf('-Dneg_int_opt=0')
-        self.assertIn('Unknown options: ":neg_int_opt"', e.exception.stdout)
+        self.assertIn('Unknown option: "neg_int_opt"', e.exception.stdout)
 
     def test_reconfigure_option(self) -> None:
         testdir = self.copy_srcdir(os.path.join(self.common_test_dir, '40 options'))
@@ -501,7 +518,7 @@ class PlatformAgnosticTests(BasePlatformTests):
         os.unlink(os.path.join(testdir, 'meson_options.txt'))
         with self.assertRaises(subprocess.CalledProcessError) as e:
             self.setconf('-Dneg_int_opt=0')
-        self.assertIn('Unknown options: ":neg_int_opt"', e.exception.stdout)
+        self.assertIn('Unknown option: "neg_int_opt"', e.exception.stdout)
 
     def test_configure_options_file_added(self) -> None:
         """A new project option file should be detected."""

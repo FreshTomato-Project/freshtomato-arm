@@ -6648,19 +6648,21 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
 #if !((WIDE_CHAR_VERSION && MUSL_LIBC) || NEED_PRINTF_FLAG_LEFTADJUST) && (!DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO || NEED_PRINTF_FLAG_ALT_PRECISION_ZERO || NEED_PRINTF_UNBOUNDED_PRECISION || NEED_PRINTF_FLAG_GROUPING || NEED_PRINTF_FLAG_GROUPING_INT)
                 switch (dp->conversion)
                   {
-# if !DCHAR_IS_TCHAR || ENABLE_UNISTDIO
+# if !DCHAR_IS_TCHAR || ENABLE_UNISTDIO || NEED_PRINTF_FLAG_ZERO
+#  if !DCHAR_IS_TCHAR || ENABLE_UNISTDIO
                   /* If we need conversion from TCHAR_T[] to DCHAR_T[], we need
                      to perform the padding after this conversion.  Functions
                      with unistdio extensions perform the padding based on
                      character count rather than element count.  */
                   case 'c': case 's':
-# endif
-# if NEED_PRINTF_FLAG_ZERO
+#  endif
+#  if NEED_PRINTF_FLAG_ZERO
                   case 'f': case 'F': case 'e': case 'E': case 'g': case 'G':
                   case 'a': case 'A':
-# endif
+#  endif
                     pad_ourselves = 1;
                     break;
+# endif
                   default:
                     pad_ourselves = prec_ourselves | group_ourselves;
                     break;
@@ -7805,9 +7807,9 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                         /* glibc prefers to compare the width against the number
                            of characters as well, but only for numeric conversion
                            specifiers.  See
-                           <https://sourceware.org/bugzilla/show_bug.cgi?id=28943>
-                           <https://sourceware.org/bugzilla/show_bug.cgi?id=30883>
-                           <https://sourceware.org/bugzilla/show_bug.cgi?id=31542>  */
+                           <https://sourceware.org/PR28943>
+                           <https://sourceware.org/PR30883>
+                           <https://sourceware.org/PR31542>  */
                         switch (dp->conversion)
                           {
                           case 'd': case 'i': case 'u':

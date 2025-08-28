@@ -11,10 +11,10 @@ from .. import compilers
 from ..build import (CustomTarget, BuildTarget,
                      CustomTargetIndex, ExtractedObjects, GeneratedList, IncludeDirs,
                      BothLibraries, SharedLibrary, StaticLibrary, Jar, Executable, StructuredSources)
-from ..options import UserFeatureOption
+from ..options import OptionKey, UserFeatureOption
 from ..dependencies import Dependency, InternalDependency
 from ..interpreterbase.decorators import KwargInfo, ContainerTypeInfo
-from ..mesonlib import (File, FileMode, MachineChoice, listify, has_path_sep,
+from ..mesonlib import (File, FileMode, MachineChoice, has_path_sep, listify, stringlistify,
                         EnvironmentVariables)
 from ..programs import ExternalProgram
 
@@ -293,11 +293,22 @@ COMMAND_KW: KwargInfo[T.List[T.Union[str, BuildTarget, CustomTarget, CustomTarge
 )
 
 
-OVERRIDE_OPTIONS_KW: KwargInfo[T.Union[str, T.Dict[str, ElementaryOptionValues], T.List[str]]] = KwargInfo(
+def _override_options_convertor(raw: T.Union[str, T.List[str], T.Dict[str, ElementaryOptionValues]]) -> T.Dict[str, ElementaryOptionValues]:
+    if isinstance(raw, dict):
+        return raw
+    raw = stringlistify(raw)
+    output: T.Dict[str, ElementaryOptionValues] = {}
+    for each in raw:
+        k, v = split_equal_string(each)
+        output[k] = v
+    return output
+
+OVERRIDE_OPTIONS_KW: KwargInfo[T.Union[str, T.List[str], T.Dict[str, ElementaryOptionValues]]] = KwargInfo(
     'override_options',
     (str, ContainerTypeInfo(list, str), ContainerTypeInfo(dict, (str, int, bool, list))),
     default={},
     validator=_options_validator,
+    convertor=_override_options_convertor,
     since_values={dict: '1.2.0'},
 )
 
@@ -394,7 +405,13 @@ INCLUDE_DIRECTORIES: KwargInfo[T.List[T.Union[str, IncludeDirs]]] = KwargInfo(
     default=[],
 )
 
-DEFAULT_OPTIONS = OVERRIDE_OPTIONS_KW.evolve(name='default_options')
+def _default_options_convertor(raw: T.Union[str, T.List[str], T.Dict[str, ElementaryOptionValues]]) -> T.Dict[OptionKey, ElementaryOptionValues]:
+    d = _override_options_convertor(raw)
+    return {OptionKey.from_string(k): v for k, v in d.items()}
+
+DEFAULT_OPTIONS = OVERRIDE_OPTIONS_KW.evolve(
+        name='default_options',
+        convertor=_default_options_convertor)
 
 ENV_METHOD_KW = KwargInfo('method', str, default='set', since='0.62.0',
                           validator=in_set_validator({'set', 'prepend', 'append'}))
@@ -616,6 +633,8 @@ _BUILD_TARGET_KWS: T.List[KwargInfo] = [
         default={},
         since='1.2.0',
     ),
+    KwargInfo('swift_interoperability_mode', str, default='c', validator=in_set_validator({'c', 'cpp'}), since='1.9.0'),
+    KwargInfo('swift_module_name', str, default='', since='1.9.0'),
     KwargInfo('build_rpath', str, default='', since='0.42.0'),
     KwargInfo(
         'gnu_symbol_visibility',
@@ -848,3 +867,8 @@ PKGCONFIG_DEFINE_KW: KwargInfo = KwargInfo(
     default=[],
     convertor=_pkgconfig_define_convertor,
 )
+
+
+DEPENDENCY_KWS: T.List[KwargInfo] = [
+    DEFAULT_OPTIONS.evolve(since='0.38.0'),
+]

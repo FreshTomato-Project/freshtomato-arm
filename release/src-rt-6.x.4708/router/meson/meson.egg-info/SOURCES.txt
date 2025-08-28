@@ -18,6 +18,8 @@ cross/armclang.txt
 cross/c2000.txt
 cross/ccomp-armv7a.txt
 cross/ccrx.txt
+cross/cuda-cross.json
+cross/cuda-cross.txt
 cross/iphone.txt
 cross/linux-mingw-w64-32bit.json
 cross/linux-mingw-w64-32bit.txt
@@ -158,6 +160,8 @@ mesonbuild/cargo/builder.py
 mesonbuild/cargo/cfg.py
 mesonbuild/cargo/interpreter.py
 mesonbuild/cargo/manifest.py
+mesonbuild/cargo/raw.py
+mesonbuild/cargo/toml.py
 mesonbuild/cargo/version.py
 mesonbuild/cmake/__init__.py
 mesonbuild/cmake/common.py
@@ -345,7 +349,7 @@ mesonbuild/wrap/__init__.py
 mesonbuild/wrap/wrap.py
 mesonbuild/wrap/wraptool.py
 packaging/License.rtf
-packaging/builddist.sh
+packaging/builddist.py
 packaging/create_zipapp.py
 packaging/createmsi.py
 packaging/createpkg.py
@@ -829,6 +833,7 @@ test cases/common/138 C and CPP link/sub.h
 test cases/common/139 mesonintrospect from scripts/check_env.py
 test cases/common/139 mesonintrospect from scripts/check_introspection.py
 test cases/common/139 mesonintrospect from scripts/meson.build
+test cases/common/14 configure file/CMakeLists.txt
 test cases/common/14 configure file/basename.py
 test cases/common/14 configure file/check_file.py
 test cases/common/14 configure file/check_inputs.py
@@ -1616,6 +1621,18 @@ test cases/common/282 test args and depends in path/libs/a/meson.build
 test cases/common/282 test args and depends in path/libs/b/lib_b.c
 test cases/common/282 test args and depends in path/libs/b/lib_b.def
 test cases/common/282 test args and depends in path/libs/b/meson.build
+test cases/common/283 wrap override/meson.build
+test cases/common/283 wrap override/subprojects/sub/meson.build
+test cases/common/283 wrap override/subprojects/sub/subprojects/subsub.wrap
+test cases/common/283 wrap override/subprojects/subsub/meson.build
+test cases/common/284 pkgconfig subproject/meson.build
+test cases/common/284 pkgconfig subproject/simple.c
+test cases/common/284 pkgconfig subproject/simple.h
+test cases/common/284 pkgconfig subproject/test.json
+test cases/common/284 pkgconfig subproject/subprojects/simple2/exports.def
+test cases/common/284 pkgconfig subproject/subprojects/simple2/meson.build
+test cases/common/284 pkgconfig subproject/subprojects/simple2/simple2.c
+test cases/common/284 pkgconfig subproject/subprojects/simple2/simple2.h
 test cases/common/29 compiler id/meson.build
 test cases/common/3 static/lib3.c
 test cases/common/3 static/libfile.c
@@ -2391,6 +2408,9 @@ test cases/failing/133 dub missing dependency/source/app.d
 test cases/failing/134 java sources in non jar target/Test.java
 test cases/failing/134 java sources in non jar target/meson.build
 test cases/failing/134 java sources in non jar target/test.json
+test cases/failing/135 rust link_language/f.rs
+test cases/failing/135 rust link_language/meson.build
+test cases/failing/135 rust link_language/test.json
 test cases/failing/14 invalid option name/meson.build
 test cases/failing/14 invalid option name/meson_options.txt
 test cases/failing/14 invalid option name/test.json
@@ -2879,6 +2899,7 @@ test cases/frameworks/17 mpi/meson.build
 test cases/frameworks/17 mpi/meson_options.txt
 test cases/frameworks/17 mpi/test.json
 test cases/frameworks/18 vulkan/meson.build
+test cases/frameworks/18 vulkan/meson.options
 test cases/frameworks/18 vulkan/test.json
 test cases/frameworks/18 vulkan/vulkanprog.c
 test cases/frameworks/19 pcap/meson.build
@@ -3420,6 +3441,9 @@ test cases/python/1 basic/subdir/meson.build
 test cases/python/1 basic/subdir/subprog.py
 test cases/python/10 extmodule limited api disabled/meson.build
 test cases/python/10 extmodule limited api disabled/module.c
+test cases/python/11 script path/gen
+test cases/python/11 script path/meson.build
+test cases/python/11 script path/run.py
 test cases/python/2 extmodule/blaster.py.in
 test cases/python/2 extmodule/meson.build
 test cases/python/2 extmodule/meson_options.txt
@@ -3497,6 +3521,7 @@ test cases/python3/4 custom target depends extmodule/ext/lib/meson-tachyonlib.h
 test cases/python3/4 custom target depends extmodule/ext/lib/meson.build
 test cases/rewrite/1 basic/addSrc.json
 test cases/rewrite/1 basic/addTgt.json
+test cases/rewrite/1 basic/expected_dag.txt
 test cases/rewrite/1 basic/info.json
 test cases/rewrite/1 basic/meson.build
 test cases/rewrite/1 basic/rmSrc.json
@@ -3527,6 +3552,9 @@ test cases/rewrite/6 extra_files/info.json
 test cases/rewrite/6 extra_files/meson.build
 test cases/rewrite/6 extra_files/rmExtraFiles.json
 test cases/rewrite/7 prefix/meson.build
+test cases/rewrite/8 tricky dataflow/addSrc.json
+test cases/rewrite/8 tricky dataflow/info.json
+test cases/rewrite/8 tricky dataflow/meson.build
 test cases/rust/1 basic/clippy.toml
 test cases/rust/1 basic/meson.build
 test cases/rust/1 basic/prog.rs
@@ -3643,6 +3671,7 @@ test cases/rust/22 cargo subproject/subprojects/bar-0.1-rs.wrap
 test cases/rust/22 cargo subproject/subprojects/common-0-rs.wrap
 test cases/rust/22 cargo subproject/subprojects/foo-0-rs.wrap
 test cases/rust/22 cargo subproject/subprojects/libname-1-rs.wrap
+test cases/rust/22 cargo subproject/subprojects/unixdep-0.1-rs.wrap
 test cases/rust/22 cargo subproject/subprojects/bar-0.1-rs/Cargo.toml
 test cases/rust/22 cargo subproject/subprojects/bar-0.1-rs/src/lib.rs
 test cases/rust/22 cargo subproject/subprojects/common-0-rs/Cargo.toml
@@ -3656,6 +3685,8 @@ test cases/rust/22 cargo subproject/subprojects/foo-0-rs/lib.rs
 test cases/rust/22 cargo subproject/subprojects/foo-0-rs/meson/meson.build
 test cases/rust/22 cargo subproject/subprojects/libname-1-rs/Cargo.toml
 test cases/rust/22 cargo subproject/subprojects/libname-1-rs/lib.rs
+test cases/rust/22 cargo subproject/subprojects/unixdep-0.1-rs/Cargo.toml
+test cases/rust/22 cargo subproject/subprojects/unixdep-0.1-rs/lib.rs
 test cases/rust/23 crt-static/lib.c
 test cases/rust/23 crt-static/main.rs
 test cases/rust/23 crt-static/meson.build
@@ -3679,6 +3710,9 @@ test cases/rust/27 objects/lib2.c
 test cases/rust/27 objects/lib2.h
 test cases/rust/27 objects/main.rs
 test cases/rust/27 objects/meson.build
+test cases/rust/28 mixed/hello.rs
+test cases/rust/28 mixed/main.cc
+test cases/rust/28 mixed/meson.build
 test cases/rust/3 staticlib/meson.build
 test cases/rust/3 staticlib/other.rs
 test cases/rust/3 staticlib/prog.rs
@@ -3719,6 +3753,31 @@ test cases/swift/10 file name matches module name/Library.swift
 test cases/swift/10 file name matches module name/Library2.swift
 test cases/swift/10 file name matches module name/main.swift
 test cases/swift/10 file name matches module name/meson.build
+test cases/swift/11 mixed cpp/main.swift
+test cases/swift/11 mixed cpp/meson.build
+test cases/swift/11 mixed cpp/mylib.cpp
+test cases/swift/11 mixed cpp/mylib.h
+test cases/swift/12 c std passthrough/header.h
+test cases/swift/12 c std passthrough/main.swift
+test cases/swift/12 c std passthrough/meson.build
+test cases/swift/13 mixed objcpp/main.swift
+test cases/swift/13 mixed objcpp/meson.build
+test cases/swift/13 mixed objcpp/mylib.h
+test cases/swift/13 mixed objcpp/mylib.mm
+test cases/swift/14 single-file library/main.swift
+test cases/swift/14 single-file library/meson.build
+test cases/swift/14 single-file library/singlefile.swift
+test cases/swift/15 main in single-file library/main.swift
+test cases/swift/15 main in single-file library/meson.build
+test cases/swift/15 main in single-file library/module.modulemap
+test cases/swift/15 main in single-file library/program.c
+test cases/swift/15 main in single-file library/program.h
+test cases/swift/16 main in multi-file library/main.swift
+test cases/swift/16 main in multi-file library/meson.build
+test cases/swift/16 main in multi-file library/module.modulemap
+test cases/swift/16 main in multi-file library/more.swift
+test cases/swift/16 main in multi-file library/program.c
+test cases/swift/16 main in multi-file library/program.h
 test cases/swift/2 multifile/libfile.swift
 test cases/swift/2 multifile/main.swift
 test cases/swift/2 multifile/meson.build
@@ -3748,7 +3807,7 @@ test cases/swift/7 modulemap subdir/mylib/meson.build
 test cases/swift/7 modulemap subdir/mylib/module.modulemap
 test cases/swift/7 modulemap subdir/mylib/mylib.c
 test cases/swift/7 modulemap subdir/mylib/mylib.h
-test cases/swift/8 extra args/main.swift
+test cases/swift/8 extra args/lib.swift
 test cases/swift/8 extra args/meson.build
 test cases/swift/9 sdk path from dep/foo.swift
 test cases/swift/9 sdk path from dep/meson.build
@@ -3847,14 +3906,17 @@ test cases/unit/124 interactive tap/meson.build
 test cases/unit/124 interactive tap/script.py
 test cases/unit/125 declare_dep var/meson.build
 test cases/unit/125 declare_dep var/meson_options.txt
-test cases/unit/125 pkgsubproj/meson.build
-test cases/unit/125 pkgsubproj/subprojects/sub/meson.build
-test cases/unit/126 test slice/meson.build
-test cases/unit/126 test slice/test.py
-test cases/unit/127 sanitizers/meson.build
-test cases/unit/128 long opt vs D/meson.build
-test cases/unit/128 long opt vs D/meson_options.txt
+test cases/unit/126 pkgsubproj/meson.build
+test cases/unit/126 pkgsubproj/subprojects/sub/meson.build
+test cases/unit/127 test slice/meson.build
+test cases/unit/127 test slice/test.py
+test cases/unit/128 sanitizers/meson.build
+test cases/unit/129 long opt vs D/meson.build
+test cases/unit/129 long opt vs D/meson_options.txt
 test cases/unit/13 reconfigure/meson.build
+test cases/unit/130 vala internal glib/lib.vala
+test cases/unit/130 vala internal glib/meson.build
+test cases/unit/130 vala internal glib/meson.options
 test cases/unit/14 testsetup selection/main.c
 test cases/unit/14 testsetup selection/meson.build
 test cases/unit/14 testsetup selection/subprojects/bar/bar.c
@@ -4420,6 +4482,10 @@ test cases/vala/31 generated ui file subdirectory/test.vala
 test cases/vala/31 generated ui file subdirectory/subdir/TestBox.ui.in
 test cases/vala/31 generated ui file subdirectory/subdir/meson.build
 test cases/vala/31 generated ui file subdirectory/subdir/test.gresource.xml
+test cases/vala/32 valaless vapigen/clib.c
+test cases/vala/32 valaless vapigen/clib.h
+test cases/vala/32 valaless vapigen/meson.build
+test cases/vala/32 valaless vapigen/test_clib.c
 test cases/vala/4 config/config.vapi
 test cases/vala/4 config/meson-something-else.vapi
 test cases/vala/4 config/meson.build
@@ -4478,14 +4544,14 @@ test cases/warning/6 list add/meson.build
 test cases/warning/6 list add/test.json
 test cases/warning/7 module without unstable/meson.build
 test cases/warning/7 module without unstable/test.json
-test cases/warning/8 target with no sources/meson.build
-test cases/warning/8 target with no sources/test.json
-test cases/warning/9 meson.options/meson.build
-test cases/warning/9 meson.options/meson.options
-test cases/warning/9 meson.options/test.json
-test cases/warning/9 meson.options/subprojects/no-warn/meson.build
-test cases/warning/9 meson.options/subprojects/no-warn/meson.options
-test cases/warning/9 meson.options/subprojects/no-warn/meson_options.txt
+test cases/warning/8 meson.options/meson.build
+test cases/warning/8 meson.options/meson.options
+test cases/warning/8 meson.options/test.json
+test cases/warning/8 meson.options/subprojects/no-warn/meson.build
+test cases/warning/8 meson.options/subprojects/no-warn/meson.options
+test cases/warning/8 meson.options/subprojects/no-warn/meson_options.txt
+test cases/warning/9 target with no sources/meson.build
+test cases/warning/9 target with no sources/test.json
 test cases/wasm/1 basic/hello.c
 test cases/wasm/1 basic/hello.cpp
 test cases/wasm/1 basic/hello.html

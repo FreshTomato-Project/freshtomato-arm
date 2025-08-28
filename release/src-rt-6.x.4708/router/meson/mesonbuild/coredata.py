@@ -7,6 +7,7 @@ from __future__ import annotations
 import copy
 
 from . import mlog, options
+import argparse
 import pickle, os, uuid
 import sys
 from functools import lru_cache
@@ -31,13 +32,11 @@ import shlex
 import typing as T
 
 if T.TYPE_CHECKING:
-    import argparse
     from typing_extensions import Protocol
 
     from . import dependencies
     from .compilers.compilers import Compiler, CompileResult, RunResult, CompileCheckMode
     from .dependencies.detect import TV_DepID
-    from .environment import Environment
     from .mesonlib import FileOrString
     from .cmake.traceparser import CMakeCacheEntry
     from .interpreterbase import SubProject
@@ -49,13 +48,11 @@ if T.TYPE_CHECKING:
         """Representation of command line options from Meson setup, configure,
         and dist.
 
-        :param projectoptions: The raw list of command line options given
         :param cmd_line_options: command line options parsed into an OptionKey:
             str mapping
         """
 
-        cmd_line_options: T.Dict[OptionKey, str]
-        projectoptions: T.List[str]
+        cmd_line_options: T.Dict[OptionKey, T.Optional[str]]
         cross_file: T.List[str]
         native_file: T.List[str]
 
@@ -71,7 +68,7 @@ if T.TYPE_CHECKING:
 #
 # Pip requires that RCs are named like this: '0.1.0.rc1'
 # But the corresponding Git tag needs to be '0.1.0rc1'
-version = '1.8.3'
+version = '1.9.0'
 
 # The next stable version when we are in dev. This is used to allow projects to
 # require meson version >=1.2.0 when using 1.1.99. FeatureNew won't warn when
@@ -247,6 +244,7 @@ class CoreData:
             'default': '8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942',
             'c': '8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942',
             'cpp': '8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942',
+            'masm': '8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942',
             'test': '3AC096D0-A1C2-E12C-1390-A8335801FDAB',
             'directory': '2150E333-8FDC-42A3-9474-1A3956D46DE8',
         }
@@ -412,11 +410,7 @@ class CoreData:
         return value
 
     def set_from_configure_command(self, options: SharedCMDOptions) -> bool:
-        unset_opts = getattr(options, 'unset_opts', [])
-        all_D = options.projectoptions[:]
-        for keystr, valstr in options.cmd_line_options.items():
-            all_D.append(f'{keystr}={valstr}')
-        return self.optstore.set_from_configure_command(all_D, unset_opts)
+        return self.optstore.set_from_configure_command(options.cmd_line_options)
 
     def set_option(self, key: OptionKey, value, first_invocation: bool = False) -> bool:
         dirty = False
@@ -571,26 +565,19 @@ class CoreData:
 
         return dirty
 
-    def add_compiler_options(self, c_options: MutableKeyedOptionDictType, lang: str, for_machine: MachineChoice,
-                             env: Environment, subproject: str) -> None:
+    def add_compiler_options(self, c_options: MutableKeyedOptionDictType, lang: str, for_machine: MachineChoice) -> None:
         for k, o in c_options.items():
-            comp_key = OptionKey(f'{k.name}', None, for_machine)
+            assert k.subproject is None and k.machine is for_machine
             if lang == 'objc' and k.name == 'c_std':
                 # For objective C, always fall back to c_std.
-                self.optstore.add_compiler_option('c', comp_key, o)
+                self.optstore.add_compiler_option('c', k, o)
             elif lang == 'objcpp' and k.name == 'cpp_std':
-                self.optstore.add_compiler_option('cpp', comp_key, o)
+                self.optstore.add_compiler_option('cpp', k, o)
             else:
-                self.optstore.add_compiler_option(lang, comp_key, o)
+                self.optstore.add_compiler_option(lang, k, o)
 
-    def add_lang_args(self, lang: str, comp: T.Type['Compiler'],
-                      for_machine: MachineChoice, env: 'Environment') -> None:
-        """Add global language arguments that are needed before compiler/linker detection."""
-        from .compilers import compilers
-        compilers.add_global_options(lang, comp, for_machine, env)
-
-    def process_compiler_options(self, lang: str, comp: Compiler, env: Environment, subproject: str) -> None:
-        self.add_compiler_options(comp.get_options(), lang, comp.for_machine, env, subproject)
+    def process_compiler_options(self, lang: str, comp: Compiler, subproject: str) -> None:
+        self.add_compiler_options(comp.get_options(), lang, comp.for_machine)
 
         for key in comp.base_options:
             if subproject:
@@ -694,28 +681,60 @@ def save(obj: CoreData, build_dir: str) -> str:
     return filename
 
 
+class KeyNoneAction(argparse.Action):
+    """
+    Custom argparse Action that stores values in a dictionary as keys with value None.
+    """
+
+    def __init__(self, option_strings, dest, nargs=None, **kwargs: object) -> None:
+        assert nargs is None or nargs == 1
+        super().__init__(option_strings, dest, nargs=1, **kwargs)
+
+    def __call__(self, parser: argparse.ArgumentParser, namespace: argparse.Namespace,
+                 arg: T.List[str], option_string: str = None) -> None:
+        current_dict = getattr(namespace, self.dest)
+        if current_dict is None:
+            current_dict = {}
+            setattr(namespace, self.dest, current_dict)
+
+        key = OptionKey.from_string(arg[0])
+        current_dict[key] = None
+
+
+class KeyValueAction(argparse.Action):
+    """
+    Custom argparse Action that parses KEY=VAL arguments and stores them in a dictionary.
+    """
+
+    def __init__(self, option_strings, dest, nargs=None, **kwargs: object) -> None:
+        assert nargs is None or nargs == 1
+        super().__init__(option_strings, dest, nargs=1, **kwargs)
+
+    def __call__(self, parser: argparse.ArgumentParser, namespace: argparse.Namespace,
+                 arg: T.List[str], option_string: str = None) -> None:
+        current_dict = getattr(namespace, self.dest)
+        if current_dict is None:
+            current_dict = {}
+            setattr(namespace, self.dest, current_dict)
+
+        try:
+            keystr, value = arg[0].split('=', 1)
+            key = OptionKey.from_string(keystr)
+            current_dict[key] = value
+        except ValueError:
+            parser.error(f'The argument for option {option_string!r} must be in OPTION=VALUE format.')
+
+
 def register_builtin_arguments(parser: argparse.ArgumentParser) -> None:
     for n, b in options.BUILTIN_OPTIONS.items():
         options.option_to_argparse(b, n, parser, '')
     for n, b in options.BUILTIN_OPTIONS_PER_MACHINE.items():
         options.option_to_argparse(b, n, parser, ' (just for host machine)')
         options.option_to_argparse(b, n.as_build(), parser, ' (just for build machine)')
-    parser.add_argument('-D', action='append', dest='projectoptions', default=[], metavar="option",
+    parser.add_argument('-D', action=KeyValueAction, dest='cmd_line_options', default={}, metavar="option=value",
                         help='Set the value of an option, can be used several times to set multiple options.')
 
-def create_options_dict(options: T.List[str], subproject: str = '') -> T.Dict[str, str]:
-    result: T.OrderedDict[OptionKey, str] = OrderedDict()
-    for o in options:
-        try:
-            (key, value) = o.split('=', 1)
-        except ValueError:
-            raise MesonException(f'Option {o!r} must have a value separated by equals sign.')
-        result[key] = value
-    return result
-
 def parse_cmd_line_options(args: SharedCMDOptions) -> None:
-    args.cmd_line_options = create_options_dict(args.projectoptions)
-
     # Merge builtin options set with --option into the dict.
     for key in chain(
             options.BUILTIN_OPTIONS.keys(),
@@ -729,7 +748,7 @@ def parse_cmd_line_options(args: SharedCMDOptions) -> None:
                 cmdline_name = options.argparse_name_to_arg(name)
                 raise MesonException(
                     f'Got argument {name} as both -D{name} and {cmdline_name}. Pick one.')
-            args.cmd_line_options[key.name] = value
+            args.cmd_line_options[key] = value
             delattr(args, name)
 
 

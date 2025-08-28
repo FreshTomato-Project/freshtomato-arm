@@ -52,6 +52,7 @@ unixabs = '/foo'
 if is_windows
   assert(fs.is_absolute(winabs), 'is_absolute windows not detected')
   assert(not fs.is_absolute(unixabs), 'is_absolute unix false positive')
+  assert(fs.is_absolute('//foo'), 'is_absolute failed on incomplete UNC path')
 else
   assert(fs.is_absolute(unixabs), 'is_absolute unix not detected')
   assert(not fs.is_absolute(winabs), 'is_absolute windows false positive')
@@ -84,7 +85,7 @@ assert(new == 'foo',  'replace_suffix did not only delete last suffix')
 
 # `/` on windows is interpreted like `.drive` which in general may not be `c:/`
 # the files need not exist for fs.replace_suffix()
-original = is_windows ? 'j:/foo/bar.txt' : '/foo/bar.txt'
+original = is_windows ? 'j:\\foo\\bar.txt' : '/foo/bar.txt'
 new_check = is_windows ? 'j:\\foo\\bar.ini' : '/foo/bar.ini'
 
 new = fs.replace_suffix(original, '.ini')
@@ -139,11 +140,7 @@ endif
 
 # parts of path
 assert(fs.parent('foo/bar') == 'foo', 'failed to get dirname')
-if not is_windows
-assert(fs.parent(f[1]) == 'subdir/..', 'failed to get dirname')
-else
-assert(fs.parent(f[1]) == 'subdir\..', 'failed to get dirname')
-endif
+assert(fs.parent(f[1]) == 'subdir/..', 'failed to get dirname for file')
 assert(fs.parent(btgt) == '.', 'failed to get dirname for build target')
 assert(fs.parent(ctgt) == '.', 'failed to get dirname for custom target')
 assert(fs.parent(ctgt[0]) == '.', 'failed to get dirname for custom target index')
@@ -153,8 +150,10 @@ assert(fs.name(f[1]) == 'meson.build', 'failed to get basename')
 assert(fs.name('foo/bar/baz.dll.a') == 'baz.dll.a', 'failed to get basename with compound suffix')
 if host_machine.system() in ['cygwin', 'windows']
   assert(fs.name(btgt) == 'btgt.exe', 'failed to get basename of build target')
+  assert(fs.suffix(btgt) == '.exe', 'failed to get build target suffix')
 else
   assert(fs.name(btgt) == 'btgt', 'failed to get basename of build target')
+  assert(fs.suffix(btgt) == '', 'failed to get build target suffix')
 endif
 assert(fs.name(ctgt) == 'ctgt.txt', 'failed to get basename of custom target')
 assert(fs.name(ctgt[0]) == 'ctgt.txt', 'failed to get basename of custom target index')
@@ -163,6 +162,12 @@ assert(fs.stem('foo/bar/baz.dll.a') == 'baz.dll', 'failed to get stem with compo
 assert(fs.stem(btgt) == 'btgt', 'failed to get stem of build target')
 assert(fs.stem(ctgt) == 'ctgt', 'failed to get stem of custom target')
 assert(fs.stem(ctgt[0]) == 'ctgt', 'failed to get stem of custom target index')
+assert(fs.suffix('foo/bar/baz') == '', 'failed to get missing suffix')
+assert(fs.suffix('foo/bar/baz.') == '.', 'failed to get empty suffix')
+assert(fs.suffix('foo/bar/baz.dll') == '.dll', 'failed to get plain suffix')
+assert(fs.suffix('foo/bar/baz.dll.a') == '.a', 'failed to get final suffix')
+assert(fs.suffix(ctgt) == '.txt', 'failed to get suffix of custom target')
+assert(fs.suffix(ctgt[0]) == '.txt', 'failed to get suffix of custom target index')
 
 # relative_to
 if build_machine.system() == 'windows'

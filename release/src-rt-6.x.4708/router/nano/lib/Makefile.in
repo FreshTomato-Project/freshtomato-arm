@@ -401,33 +401,34 @@ am__libgnu_a_SOURCES_DIST = openat-priv.h openat-proc.c \
 	malloc/dynarray_resize_clear.c malloc/scratch_buffer_grow.c \
 	malloc/scratch_buffer_grow_preserve.c \
 	malloc/scratch_buffer_set_array_size.c glob.c globfree.c \
-	glob_pattern_p.c hard-locale.c idx.h isblank.c iswblank.c \
-	iswctype.c iswdigit.c iswpunct.c iswxdigit.c localcharset.c \
-	localeconv.c glthread/lock.h glthread/lock.c lstat.c malloca.c \
-	math.c mbchar.c mbiterf.h mbiterf.c mbrtoc32.c mbrtowc.c \
-	mbsinit.c mbsnlen.c mbsrtoc32s.c mbsrtowcs.c mbszero.c \
-	mbtowc.c memchr.c mempcpy.c memrchr.c minmax.h mkdir.c \
-	mkstemps.c msvc-inval.c msvc-nothrow.c nl_langinfo.c \
-	nl_langinfo-lock.c glthread/once.h glthread/once.c open.c \
-	openat.c openat-die.c opendir.c printf-frexp.c printf-frexpl.c \
-	pthread-once.c raise.c rawmemchr.c readdir.c readlink.c \
-	realloc.c regex.c save-cwd.c setlocale_null.c setlocale-lock.c \
-	setlocale_null-unlocked.c sigaction.c sig-handler.c signbitf.c \
-	signbitd.c signbitl.c sigprocmask.c size_max.h stat.c \
-	stat-time.c stdio-read.c stdio-write.c stdlib.c strcasecmp.c \
-	strdup.c strerror.c strerror-override.c strncasecmp.c \
-	strnlen.c strnlen1.h strnlen1.c tempname.c \
-	glthread/threadlib.c timespec.c unicase/tolower.c \
-	unictype/ctype_alnum.c unictype/ctype_alpha.c \
-	unictype/ctype_blank.c unictype/ctype_cntrl.c \
-	unictype/ctype_digit.c unictype/ctype_graph.c \
-	unictype/ctype_lower.c unictype/ctype_print.c \
-	unictype/ctype_punct.c unictype/ctype_space.c \
-	unictype/ctype_upper.c unictype/ctype_xdigit.c unistd.c \
-	unistr/u32-chr.c unistr/u32-cpy.c unistr/u32-pcpy.c \
-	unistr/u32-strcat.c unistr/u32-strlen.c uniwidth/width.c \
-	utime.c utimens.c vsnzprintf.c wcrtomb.c wctype.c wctype-h.c \
-	wcwidth.c windows-mutex.c windows-once.c windows-recmutex.c \
+	glob_pattern_p.c hard-locale.c idx.h isblank.c issymlink.c \
+	iswblank.c iswctype.c iswdigit.c iswpunct.c iswxdigit.c \
+	localcharset.c localeconv.c glthread/lock.h glthread/lock.c \
+	lstat.c malloca.c math.c mbchar.c mbiterf.h mbiterf.c \
+	mbrtoc32.c mbrtowc.c mbsinit.c mbsnlen.c mbsrtoc32s.c \
+	mbsrtowcs.c mbszero.c mbtowc.c memchr.c mempcpy.c memrchr.c \
+	minmax.h mkdir.c mkstemps.c msvc-inval.c msvc-nothrow.c \
+	nl_langinfo.c nl_langinfo-lock.c glthread/once.h \
+	glthread/once.c open.c openat.c openat-die.c opendir.c \
+	printf-frexp.c printf-frexpl.c pthread-once.c raise.c \
+	rawmemchr.c readdir.c readlink.c realloc.c regex.c save-cwd.c \
+	setlocale_null.c setlocale-lock.c setlocale_null-unlocked.c \
+	sigaction.c sig-handler.c signbitf.c signbitd.c signbitl.c \
+	sigprocmask.c size_max.h stat.c stat-time.c stdio-read.c \
+	stdio-write.c stdlib.c strcasecmp.c strdup.c strerror.c \
+	strerror-override.c strncasecmp.c strnlen.c strnlen1.h \
+	strnlen1.c tempname.c glthread/threadlib.c timespec.c \
+	unicase/tolower.c unictype/ctype_alnum.c \
+	unictype/ctype_alpha.c unictype/ctype_blank.c \
+	unictype/ctype_cntrl.c unictype/ctype_digit.c \
+	unictype/ctype_graph.c unictype/ctype_lower.c \
+	unictype/ctype_print.c unictype/ctype_punct.c \
+	unictype/ctype_space.c unictype/ctype_upper.c \
+	unictype/ctype_xdigit.c unistd.c unistr/u32-chr.c \
+	unistr/u32-cpy.c unistr/u32-pcpy.c unistr/u32-strcat.c \
+	unistr/u32-strlen.c uniwidth/width.c utime.c utimens.c \
+	vsnzprintf.c wcrtomb.c wctype.c wctype-h.c wcwidth.c \
+	windows-mutex.c windows-once.c windows-recmutex.c \
 	windows-rwlock.c wmemchr.c wmempcpy.c xsize.h xsize.c
 @GL_COND_OBJ_BTOWC_TRUE@am__objects_1 = libgnu_a-btowc.$(OBJEXT)
 @GL_COND_OBJ_CANONICALIZE_LGPL_TRUE@am__objects_2 = libgnu_a-canonicalize-lgpl.$(OBJEXT)
@@ -599,18 +600,19 @@ am_libgnu_a_OBJECTS = libgnu_a-openat-proc.$(OBJEXT) \
 	malloc/libgnu_a-scratch_buffer_set_array_size.$(OBJEXT) \
 	$(am__objects_26) $(am__objects_27) \
 	libgnu_a-hard-locale.$(OBJEXT) $(am__objects_28) \
-	$(am__objects_29) $(am__objects_30) $(am__objects_31) \
-	$(am__objects_32) $(am__objects_33) \
-	libgnu_a-localcharset.$(OBJEXT) $(am__objects_34) \
-	glthread/libgnu_a-lock.$(OBJEXT) $(am__objects_35) \
-	libgnu_a-malloca.$(OBJEXT) libgnu_a-math.$(OBJEXT) \
-	libgnu_a-mbchar.$(OBJEXT) libgnu_a-mbiterf.$(OBJEXT) \
-	$(am__objects_36) $(am__objects_37) $(am__objects_38) \
-	libgnu_a-mbsnlen.$(OBJEXT) libgnu_a-mbsrtoc32s.$(OBJEXT) \
-	$(am__objects_39) libgnu_a-mbszero.$(OBJEXT) $(am__objects_40) \
-	$(am__objects_41) $(am__objects_42) $(am__objects_43) \
-	$(am__objects_44) $(am__objects_45) $(am__objects_46) \
-	$(am__objects_47) $(am__objects_48) $(am__objects_49) \
+	libgnu_a-issymlink.$(OBJEXT) $(am__objects_29) \
+	$(am__objects_30) $(am__objects_31) $(am__objects_32) \
+	$(am__objects_33) libgnu_a-localcharset.$(OBJEXT) \
+	$(am__objects_34) glthread/libgnu_a-lock.$(OBJEXT) \
+	$(am__objects_35) libgnu_a-malloca.$(OBJEXT) \
+	libgnu_a-math.$(OBJEXT) libgnu_a-mbchar.$(OBJEXT) \
+	libgnu_a-mbiterf.$(OBJEXT) $(am__objects_36) $(am__objects_37) \
+	$(am__objects_38) libgnu_a-mbsnlen.$(OBJEXT) \
+	libgnu_a-mbsrtoc32s.$(OBJEXT) $(am__objects_39) \
+	libgnu_a-mbszero.$(OBJEXT) $(am__objects_40) $(am__objects_41) \
+	$(am__objects_42) $(am__objects_43) $(am__objects_44) \
+	$(am__objects_45) $(am__objects_46) $(am__objects_47) \
+	$(am__objects_48) $(am__objects_49) \
 	glthread/libgnu_a-once.$(OBJEXT) $(am__objects_50) \
 	$(am__objects_51) libgnu_a-openat-die.$(OBJEXT) \
 	$(am__objects_52) libgnu_a-printf-frexp.$(OBJEXT) \
@@ -711,6 +713,7 @@ am__depfiles_remade = ./$(DEPDIR)/alloca.Po \
 	./$(DEPDIR)/libgnu_a-isblank.Po ./$(DEPDIR)/libgnu_a-isnan.Po \
 	./$(DEPDIR)/libgnu_a-isnand.Po ./$(DEPDIR)/libgnu_a-isnanf.Po \
 	./$(DEPDIR)/libgnu_a-isnanl.Po \
+	./$(DEPDIR)/libgnu_a-issymlink.Po \
 	./$(DEPDIR)/libgnu_a-iswblank.Po \
 	./$(DEPDIR)/libgnu_a-iswctype.Po \
 	./$(DEPDIR)/libgnu_a-iswdigit.Po \
@@ -2871,6 +2874,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = 1.14 gnits subdir-objects
 SUBDIRS = 
+TESTS_ENVIRONMENT = 
 noinst_HEADERS = 
 noinst_LIBRARIES = libgnu.a
 noinst_LTLIBRARIES = 
@@ -2892,9 +2896,9 @@ EXTRA_DIST = alloca.c alloca.in.h assert.in.h verify.h assure.h \
 	glob-libc.h glob.in.h hard-locale.h intprops-internal.h \
 	intprops.h inttypes.in.h float+.h isnan.c isnand-nolibm.h \
 	isnand.c float+.h isnan.c isnanf-nolibm.h isnanf.c float+.h \
-	isnan.c isnanl-nolibm.h isnanl.c iswctype-impl.h langinfo.in.h \
-	cdefs.h libc-config.h limits.in.h localcharset.h locale.in.h \
-	malloc.c malloc.c malloca.h math.in.h mbchar.h \
+	isnan.c isnanl-nolibm.h isnanl.c issymlink.h iswctype-impl.h \
+	langinfo.in.h cdefs.h libc-config.h limits.in.h localcharset.h \
+	locale.in.h malloc.c malloc.c malloca.h math.in.h mbchar.h \
 	lc-charset-dispatch.c lc-charset-dispatch.h \
 	mbrtowc-impl-utf8.h mbrtowc-impl.h mbtowc-lock.c mbtowc-lock.h \
 	windows-initguard.h lc-charset-dispatch.c \
@@ -3005,7 +3009,7 @@ libgnu_a_SOURCES = openat-priv.h openat-proc.c basename-lgpl.c \
 	malloc/scratch_buffer_grow_preserve.c \
 	malloc/scratch_buffer_set_array_size.c $(am__append_26) \
 	$(am__append_27) hard-locale.c idx.h $(am__append_28) \
-	$(am__append_29) $(am__append_30) $(am__append_31) \
+	issymlink.c $(am__append_29) $(am__append_30) $(am__append_31) \
 	$(am__append_32) $(am__append_33) localcharset.c \
 	$(am__append_34) glthread/lock.h glthread/lock.c \
 	$(am__append_35) malloca.c math.c mbchar.c mbiterf.h mbiterf.c \
@@ -3319,6 +3323,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-isnand.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-isnanf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-isnanl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-issymlink.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-iswblank.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-iswctype.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgnu_a-iswdigit.Po@am__quote@ # am--include-marker
@@ -4381,6 +4386,20 @@ libgnu_a-isblank.obj: isblank.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='isblank.c' object='libgnu_a-isblank.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-isblank.obj `if test -f 'isblank.c'; then $(CYGPATH_W) 'isblank.c'; else $(CYGPATH_W) '$(srcdir)/isblank.c'; fi`
+
+libgnu_a-issymlink.o: issymlink.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-issymlink.o -MD -MP -MF $(DEPDIR)/libgnu_a-issymlink.Tpo -c -o libgnu_a-issymlink.o `test -f 'issymlink.c' || echo '$(srcdir)/'`issymlink.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-issymlink.Tpo $(DEPDIR)/libgnu_a-issymlink.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='issymlink.c' object='libgnu_a-issymlink.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-issymlink.o `test -f 'issymlink.c' || echo '$(srcdir)/'`issymlink.c
+
+libgnu_a-issymlink.obj: issymlink.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-issymlink.obj -MD -MP -MF $(DEPDIR)/libgnu_a-issymlink.Tpo -c -o libgnu_a-issymlink.obj `if test -f 'issymlink.c'; then $(CYGPATH_W) 'issymlink.c'; else $(CYGPATH_W) '$(srcdir)/issymlink.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgnu_a-issymlink.Tpo $(DEPDIR)/libgnu_a-issymlink.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='issymlink.c' object='libgnu_a-issymlink.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -c -o libgnu_a-issymlink.obj `if test -f 'issymlink.c'; then $(CYGPATH_W) 'issymlink.c'; else $(CYGPATH_W) '$(srcdir)/issymlink.c'; fi`
 
 libgnu_a-iswblank.o: iswblank.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgnu_a_CFLAGS) $(CFLAGS) -MT libgnu_a-iswblank.o -MD -MP -MF $(DEPDIR)/libgnu_a-iswblank.Tpo -c -o libgnu_a-iswblank.o `test -f 'iswblank.c' || echo '$(srcdir)/'`iswblank.c
@@ -6509,6 +6528,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/libgnu_a-isnand.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-isnanf.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-isnanl.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-issymlink.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-iswblank.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-iswctype.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-iswdigit.Po
@@ -6750,6 +6770,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/libgnu_a-isnand.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-isnanf.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-isnanl.Po
+	-rm -f ./$(DEPDIR)/libgnu_a-issymlink.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-iswblank.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-iswctype.Po
 	-rm -f ./$(DEPDIR)/libgnu_a-iswdigit.Po

@@ -59,6 +59,7 @@
 AUTOMAKE_OPTIONS = 1.14 gnits subdir-objects
 
 SUBDIRS =
+TESTS_ENVIRONMENT =
 noinst_HEADERS =
 noinst_LIBRARIES =
 noinst_LTLIBRARIES =
@@ -1154,6 +1155,14 @@ EXTRA_DIST += float+.h isnan.c isnanl-nolibm.h isnanl.c
 EXTRA_libgnu_a_SOURCES += isnan.c isnanl.c
 
 ## end   gnulib module isnanl-nolibm
+
+## begin gnulib module issymlink
+
+libgnu_a_SOURCES += issymlink.c
+
+EXTRA_DIST += issymlink.h
+
+## end   gnulib module issymlink
 
 ## begin gnulib module iswblank
 

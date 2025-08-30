@@ -91,7 +91,10 @@ dg.populate = function() {
 	wl_info = [];
 
 	for (i = 0; i < list.length; ++i) {
-		list[i].ip = '';
+
+	if (list[i].ip) {
+    var ip = list[i].ip;
+        list[i].ip = ip + <br> <a href="http://' + ip + '">http</a> | <a href="https://' + ip + '">https</a>';
 		list[i].ifname = '';
 		list[i].ifstatus = '';
 		list[i].bridge = '';
@@ -108,6 +111,7 @@ dg.populate = function() {
 		list[i].proto = '';
 		list[i].media = '';
 	}
+}
 
 	/* [ ifname, unitstr, unit, subunit, ssid, hwaddr, up, max_no_vifs, mode(ap/wet/wds), bssid ] */
 	for (i = 0; i < wl_ifaces.length; ++i) {

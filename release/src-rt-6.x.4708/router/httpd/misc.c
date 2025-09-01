@@ -1030,6 +1030,8 @@ void wo_wakeup(char *url)
 	char *mac;
 	char *p;
 	char *end;
+	char buf[16];
+	int i;
 
 	if ((mac = webcgi_get("mac")) != NULL) {
 		end = mac + strlen(mac);
@@ -1045,12 +1047,11 @@ void wo_wakeup(char *url)
 			*p = 0;
 
 			eval("ether-wake", "-b", "-i", nvram_safe_get("lan_ifname"), mac);
-			if (strcmp(nvram_safe_get("lan1_ifname"), "") != 0)
-				eval("ether-wake", "-b", "-i", nvram_safe_get("lan1_ifname"), mac);
-			if (strcmp(nvram_safe_get("lan2_ifname"), "") != 0)
-				eval("ether-wake", "-b", "-i", nvram_safe_get("lan2_ifname"), mac);
-			if (strcmp(nvram_safe_get("lan3_ifname"), "") != 0)
-				eval("ether-wake", "-b", "-i", nvram_safe_get("lan3_ifname"), mac);
+			for (i = 1; i < BRIDGE_COUNT; i++) {
+				snprintf(buf, sizeof(buf), "lan%d_ifname", i);
+				if (strcmp(nvram_safe_get(buf), "") != 0)
+				eval("ether-wake", "-b", "-i", nvram_safe_get(buf), mac);
+			}
 			mac = p + 1;
 		}
 	}

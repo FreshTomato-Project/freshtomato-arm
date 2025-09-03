@@ -26,10 +26,6 @@ config TCONFIG_HTTPS
 	bool "HTTPS"
 	default y
 
-config TCONFIG_SSH
-	bool "SSH"
-	default y
-
 config TCONFIG_CIFS
 	bool "CIFS Client"
 	default y

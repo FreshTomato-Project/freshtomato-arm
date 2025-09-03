@@ -329,10 +329,9 @@ ifeq ($(TCONFIG_OPENVPN),y)
  obj-y				+= openvpn_plugin_auth_nvram
 endif
 
-obj-y				+= $(SSL_TARGET) mssl httpd
+obj-y				+= $(SSL_TARGET) mssl httpd dropbear
 obj-y				+= $(if $(or $(TCONFIG_BCMARM),$(TCONFIG_BBT),$(TCONFIG_NGINX)),zlib libcurl,) mdu
 obj-y				+= $(if $(TCONFIG_DNSSEC),$(if $(TCONFIG_HTTPS),gmp nettle)) dnsmasq
-obj-$(TCONFIG_SSH)		+= dropbear
 obj-$(TCONFIG_DNSCRYPT)		+= zlib libsodium dnscrypt
 obj-$(TCONFIG_STUBBY)		+= $(SSL_TARGET) libyaml getdns
 obj-$(TCONFIG_FTP)		+= $(if $(TCONFIG_FTP_SSL),$(SSL_TARGET)) vsftpd

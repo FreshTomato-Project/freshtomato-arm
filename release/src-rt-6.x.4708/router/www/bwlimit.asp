@@ -22,7 +22,7 @@
 
 <script>
 
-//	<% nvram("bwl_enable,wan_qos_ibw,wan_qos_obw,bwl_rules,lan_ipaddr,lan_netmask,bwl_br0_enable,bwl_br0_dlr,bwl_br0_dlc,bwl_br0_ulr,bwl_br0_ulc,bwl_br0_udp,bwl_br0_tcp,bwl_br0_prio,bwl_br1_enable,bwl_br1_dlc,bwl_br1_dlr,bwl_br1_ulc,bwl_br1_ulr,bwl_br1_prio,bwl_br2_enable,bwl_br2_dlc,bwl_br2_dlr,bwl_br2_ulc,bwl_br2_ulr,bwl_br2_prio,bwl_br3_enable,bwl_br3_dlc,bwl_br3_dlr,bwl_br3_ulc,bwl_br3_ulr,bwl_br3_prio,ctf_disable,bcmnat_disable,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname"); %>
+//	<% nvram("bwl_enable,wan_qos_ibw,wan_qos_obw,bwl_rules,lan_ipaddr,lan_netmask,bwl_lan_enable,bwl_lan_dlr,bwl_lan_dlc,bwl_lan_ulr,bwl_lan_ulc,bwl_lan_udp,bwl_lan_tcp,bwl_lan_prio,bwl_lan1_enable,bwl_lan1_dlc,bwl_lan1_dlr,bwl_lan1_ulc,bwl_lan1_ulr,bwl_lan1_prio,bwl_lan2_enable,bwl_lan2_dlc,bwl_lan2_dlr,bwl_lan2_ulc,bwl_lan2_ulr,bwl_lan2_prio,bwl_lan3_enable,bwl_lan3_dlc,bwl_lan3_dlr,bwl_lan3_ulc,bwl_lan3_ulr,bwl_lan3_prio,ctf_disable,bcmnat_disable,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname"); %>
 
 var class_prio = [['0','Highest'],['1','High'],['2','Normal'],['3','Low'],['4','Lowest']];
 var class_tcp = [['0','nolimit']];
@@ -67,7 +67,7 @@ bwlg.setup = function() {
 bwlg.resetNewEditor = function() {
 	var f, c, n;
 
-	var f = fields.getAll(this.newEditor);
+	f = fields.getAll(this.newEditor);
 	ferror.clearAll(f);
 
 	f[0].onchange = '';
@@ -194,30 +194,32 @@ bwlg.verifyFields = function(row, quiet) {
 }
 
 function verifyFields(focused, quiet) {
-	var a = !E('_f_bwl_enable').checked;
+	var a, b, i, j;
+
+	a = !E('_f_bwl_enable').checked;
 
 	E('_wan_qos_ibw').disabled = a;
 	E('_wan_qos_obw').disabled = a;
 
-	for (var i = 0; i <= MAX_BRIDGE_ID; i++) {
-		var j = (i == 0) ? '' : i.toString();
-		E('_f_bwl_br'+i+'_enable').disabled = (a || (nvram['lan'+j+'_ifname'].length < 1));
+	for (i = 0; i <= MAX_BRIDGE_ID; i++) {
+		j = (i == 0) ? '' : i.toString();
+		E('_f_bwl_lan'+j+'_enable').disabled = (a || (nvram['lan'+j+'_ifname'].length < 1));
 
 		if (nvram['lan'+j+'_ifname'].length < 1)
-			E('_f_bwl_br'+i+'_enable').checked = 0;
+			E('_f_bwl_lan'+j+'_enable').checked = 0;
 
-		var b = !E('_f_bwl_br'+i+'_enable').checked;
-		E('_bwl_br'+i+'_dlr').disabled = b || a;
-		E('_bwl_br'+i+'_dlc').disabled = b || a;
-		E('_bwl_br'+i+'_ulr').disabled = b || a;
-		E('_bwl_br'+i+'_ulc').disabled = b || a;
-		E('_bwl_br'+i+'_prio').disabled = b || a;
-		elem.display(PR('_bwl_br'+i+'_dlr'), PR('_bwl_br'+i+'_dlc'), PR('_bwl_br'+i+'_ulr'), PR('_bwl_br'+i+'_ulc'), PR('_bwl_br'+i+'_prio'), !a && !b);
+		b = !E('_f_bwl_lan'+j+'_enable').checked;
+		E('_bwl_lan'+j+'_dlr').disabled = b || a;
+		E('_bwl_lan'+j+'_dlc').disabled = b || a;
+		E('_bwl_lan'+j+'_ulr').disabled = b || a;
+		E('_bwl_lan'+j+'_ulc').disabled = b || a;
+		E('_bwl_lan'+j+'_prio').disabled = b || a;
+		elem.display(PR('_bwl_lan'+j+'_dlr'), PR('_bwl_lan'+j+'_dlc'), PR('_bwl_lan'+j+'_ulr'), PR('_bwl_lan'+j+'_ulc'), PR('_bwl_lan'+j+'_prio'), !a && !b);
 
-		if (i == 0){
-			E('_bwl_br0_tcp').disabled = b || a;
-			E('_bwl_br0_udp').disabled = b || a;
-			elem.display(PR('_bwl_br0_tcp'), PR('_bwl_br0_udp'), !a && !b);
+		if (i == 0) {
+			E('_bwl_lan_tcp').disabled = b || a;
+			E('_bwl_lan_udp').disabled = b || a;
+			elem.display(PR('_bwl_lan_tcp'), PR('_bwl_lan_udp'), !a && !b);
 		}
 	}
 
@@ -230,7 +232,7 @@ function save() {
 
 	var data = bwlg.getAllData();
 	var bwllimitrules = '';
-	var i;
+	var i, j, fom;
 
 	if (data.length != 0)
 		bwllimitrules += data[0].join('<'); 
@@ -239,11 +241,12 @@ function save() {
 		bwllimitrules += '>'+data[i].join('<');
 	}
 
-	var fom = E('t_fom');
+	fom = E('t_fom');
 	fom.bwl_enable.value = fom._f_bwl_enable.checked ? 1 : 0;
 
-	for (var i = 0; i <= MAX_BRIDGE_ID; i++) {
-		fom['bwl_br'+i+'_enable'].value = fom['_f_bwl_br'+i+'_enable'].checked ? 1 : 0;
+	for (i = 0; i <= MAX_BRIDGE_ID; i++) {
+		j = (i == 0) ? '' : i.toString();
+		fom['bwl_lan'+j+'_enable'].value = fom['_f_bwl_lan'+j+'_enable'].checked ? 1 : 0;
 	}
 
 	fom.bwl_rules.value = bwllimitrules;
@@ -299,7 +302,8 @@ function init() {
 
 <script>
 for (var i = 0; i <= MAX_BRIDGE_ID; i++) {
-	W('<input type="hidden" name="bwl_br'+i+'_enable">');
+	var j = (i == 0) ? '' : i.toString();
+	W('<input type="hidden" name="bwl_lan'+j+'_enable">');
 }
 </script>
 
@@ -315,9 +319,9 @@ for (var i = 0; i <= MAX_BRIDGE_ID; i++) {
 <!-- BCMNAT-END -->
 	<script>
 		createFieldTable('', [
-		{ title: 'Enable Limiter', name: 'f_bwl_enable', type: 'checkbox', value: nvram.bwl_enable != '0' },
-		{ title: 'Max Available Download <br><small>(same as used in QoS)<\/small>', indent: 2, name: 'wan_qos_ibw', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram.wan_qos_ibw },
-		{ title: 'Max Available Upload <br><small>(same as used in QoS)<\/small>', indent: 2, name: 'wan_qos_obw', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram.wan_qos_obw }
+			{ title: 'Enable Limiter', name: 'f_bwl_enable', type: 'checkbox', value: nvram.bwl_enable != '0' },
+			{ title: 'Max Available Download <br><small>(same as used in QoS)<\/small>', indent: 2, name: 'wan_qos_ibw', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram.wan_qos_ibw },
+			{ title: 'Max Available Upload <br><small>(same as used in QoS)<\/small>', indent: 2, name: 'wan_qos_obw', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram.wan_qos_obw }
 		]);
 	</script>
 
@@ -337,32 +341,32 @@ for (var i = 0; i <= MAX_BRIDGE_ID; i++) {
 <!-- / / / -->
 
 <script>
-	for (var i = 0; i <= MAX_BRIDGE_ID; i++) {
-
-		if (i == 0) {
+	var i, j, f;
+	for (i = 0; i <= MAX_BRIDGE_ID; i++) {
+		if (i == 0)
 			W('<div class="section-title">Default Class for unlisted MAC / IP\'s in LAN0 (br0)<\/div>');
-		} else {
+		else
 			W('<div class="section-title">Default Class for LAN'+i+' (br'+i+')<\/div>');
-		}
 
 		W('<div class="section">');
 
-		var f = [];
+		j = (i == 0) ? '' : i.toString();
+		f = [];
 		f.push(
-			{ title: 'Enable', name: 'f_bwl_br'+i+'_enable', type: 'checkbox', value: nvram['bwl_br'+i+'_enable'] == '1'},
-			{ title: 'Download rate', indent: 2, name: 'bwl_br'+i+'_dlr', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram['bwl_br'+i+'_dlr'] },
-			{ title: 'Download ceil', indent: 2, name: 'bwl_br'+i+'_dlc', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram['bwl_br'+i+'_dlc'] },
-			{ title: 'Upload rate', indent: 2, name: 'bwl_br'+i+'_ulr', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram['bwl_br'+i+'_ulr'] },
-			{ title: 'Upload ceil', indent: 2, name: 'bwl_br'+i+'_ulc', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram['bwl_br'+i+'_ulc'] },
-			{ title: 'Priority', indent: 2, name: 'bwl_br'+i+'_prio', type: 'select', options:
-				[['0','Highest'],['1','High'],['2','Normal'],['3','Low'],['4','Lowest']], value: nvram['bwl_br'+i+'_prio'] })
+			{ title: 'Enable', name: 'f_bwl_lan'+j+'_enable', type: 'checkbox', value: nvram['bwl_lan'+j+'_enable'] == '1'},
+			{ title: 'Download rate', indent: 2, name: 'bwl_lan'+j+'_dlr', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram['bwl_lan'+j+'_dlr'] },
+			{ title: 'Download ceil', indent: 2, name: 'bwl_lan'+j+'_dlc', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram['bwl_lan'+j+'_dlc'] },
+			{ title: 'Upload rate', indent: 2, name: 'bwl_lan'+j+'_ulr', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram['bwl_lan'+j+'_ulr'] },
+			{ title: 'Upload ceil', indent: 2, name: 'bwl_lan'+j+'_ulc', type: 'text', maxlen: 8, size: 8, suffix: ' <small>kbit/s<\/small>', value: nvram['bwl_lan'+j+'_ulc'] },
+			{ title: 'Priority', indent: 2, name: 'bwl_lan'+j+'_prio', type: 'select', options:
+				[['0','Highest'],['1','High'],['2','Normal'],['3','Low'],['4','Lowest']], value: nvram['bwl_lan'+j+'_prio'] })
 
 		if (i == 0) {
 			f.push(
-				{ title: 'TCP Limit', indent: 2, name: 'bwl_br0_tcp', type: 'select', options:
-					[['0', 'no limit'],['1', '1'],['2', '2'],['5', '5'],['10', '10'],['20', '20'],['50', '50'],['100', '100'],['200', '200'],['500', '500'],['1000', '1000']], value: nvram['bwl_br0_tcp'] },
-				{ title: 'UDP limit', indent: 2, name: 'bwl_br0_udp', type: 'select', options:
-					[['0', 'no limit'],['1', '1/s'],['2', '2/s'],['5', '5/s'],['10', '10/s'],['20', '20/s'],['50', '50/s'],['100', '100/s']], value: nvram['bwl_br0_udp'] })
+				{ title: 'TCP Limit', indent: 2, name: 'bwl_lan_tcp', type: 'select', options:
+					[['0', 'no limit'],['1', '1'],['2', '2'],['5', '5'],['10', '10'],['20', '20'],['50', '50'],['100', '100'],['200', '200'],['500', '500'],['1000', '1000']], value: nvram['bwl_lan_tcp'] },
+				{ title: 'UDP limit', indent: 2, name: 'bwl_lan_udp', type: 'select', options:
+					[['0', 'no limit'],['1', '1/s'],['2', '2/s'],['5', '5/s'],['10', '10/s'],['20', '20/s'],['50', '50/s'],['100', '100/s']], value: nvram['bwl_lan_udp'] })
 		}
 
 		createFieldTable('', f);
@@ -372,9 +376,10 @@ for (var i = 0; i <= MAX_BRIDGE_ID; i++) {
 			if (i == 0) {
 				W('<li><b>Default Class<\/b> - IP / MAC\'s non included in the list will take the Default Rate/Ceiling setting<\/li>');
 				W('<li><b>The bandwidth will be shared by all unlisted hosts in br0<\/b><\/li>');
-			} else {
-				W('<li><b>The bandwidth will be shared by all hosts in br'+i+'.<\/b><\/li>');
 			}
+			else
+				W('<li><b>The bandwidth will be shared by all hosts in LAN'+i+' (br'+i+').<\/b><\/li>');
+
 			W('<\/ul>');
 		W('<\/div>');
 		W('<\/div>');

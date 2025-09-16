@@ -47,12 +47,12 @@ static const char *const switches[] = {
     "--compress",
     "--copy",
     "--debug",
-    "--debugent",
+    NULL,
     "--dropdtd",
     "--dtdattr",
     "--exc-c14n",
     "--format",
-    "--htmlout",
+    NULL,
     "--huge",
     "--insert",
     "--loaddtd",
@@ -69,7 +69,7 @@ static const char *const switches[] = {
     "--nonet",
     "--noout",
     "--nowarning",
-    "--nowrap",
+    NULL,
     "--noxincludenode",
     "--nsclean",
     "--oldxml10",
@@ -81,7 +81,7 @@ static const char *const switches[] = {
     "--recover",
     "--repeat",
     "--sax1",
-    "--testIO",
+    NULL,
     "--timing",
     "--valid",
     "--version",
@@ -192,7 +192,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
 
     ival = xmlFuzzReadInt(1);
     if (ival != 0) {
-        snprintf(prettyBuf, 20, "%d", ival - 128);
+        snprintf(prettyBuf, 20, "%d", ival % 4);
         pushArg("--pretty");
         pushArg(prettyBuf);
     }

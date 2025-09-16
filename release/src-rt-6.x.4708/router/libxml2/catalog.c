@@ -9,7 +9,7 @@
  *
  * See Copyright for the status of this software.
  *
- * Daniel.Veillard@imag.fr
+ * Author: Daniel Veillard
  */
 
 #define IN_LIBXML
@@ -57,8 +57,11 @@
 #ifndef XML_XML_DEFAULT_CATALOG
 #define XML_XML_DEFAULT_CATALOG "file://" XML_SYSCONFDIR "/xml/catalog"
 #endif
+
+#ifdef LIBXML_SGML_CATALOG_ENABLED
 #ifndef XML_SGML_DEFAULT_CATALOG
 #define XML_SGML_DEFAULT_CATALOG "file://" XML_SYSCONFDIR "/sgml/catalog"
+#endif
 #endif
 
 static xmlChar *xmlCatalogNormalizePublic(const xmlChar *pubID);
@@ -84,7 +87,9 @@ typedef enum {
     XML_CATA_DELEGATE_SYSTEM,
     XML_CATA_URI,
     XML_CATA_REWRITE_URI,
-    XML_CATA_DELEGATE_URI,
+    XML_CATA_DELEGATE_URI
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    ,
     SGML_CATA_SYSTEM,
     SGML_CATA_PUBLIC,
     SGML_CATA_ENTITY,
@@ -97,6 +102,7 @@ typedef enum {
     SGML_CATA_CATALOG,
     SGML_CATA_DOCUMENT,
     SGML_CATA_SGMLDECL
+#endif
 } xmlCatalogEntryType;
 
 typedef struct _xmlCatalogEntry xmlCatalogEntry;
@@ -116,14 +122,20 @@ struct _xmlCatalogEntry {
 };
 
 typedef enum {
-    XML_XML_CATALOG_TYPE = 1,
+    XML_XML_CATALOG_TYPE = 1
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    ,
     XML_SGML_CATALOG_TYPE
+#endif
 } xmlCatalogType;
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
 #define XML_MAX_SGML_CATA_DEPTH 10
+#endif
 struct _xmlCatalog {
     xmlCatalogType type;	/* either XML or SGML */
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
     /*
      * SGML Catalogs are stored as a simple hash table of catalog entries
      * Catalog stack to check against overflows when building the
@@ -133,6 +145,7 @@ struct _xmlCatalog {
     int          catalNr;	/* Number of current catal streams */
     int          catalMax;	/* Max number of catal streams */
     xmlHashTablePtr sgml;
+#endif
 
     /*
      * XML Catalogs are stored as a tree of Catalog entries
@@ -169,7 +182,7 @@ static xmlCatalogPtr xmlDefaultCatalog = NULL;
  * A mutex for modifying the shared global catalog(s)
  * xmlDefaultCatalog tree.
  * It also protects xmlCatalogXMLFiles
- * The core of this readers/writer scheme is in xmlFetchXMLCatalogFile()
+ * The core of this readers/writer scheme is in #xmlFetchXMLCatalogFile
  */
 static xmlRMutex xmlCatalogMutex;
 
@@ -185,9 +198,6 @@ static int xmlCatalogInitialized = 0;
  ************************************************************************/
 
 /**
- * xmlCatalogErrMemory:
- * @extra:  extra information
- *
  * Handle an out of memory condition
  */
 static void
@@ -197,13 +207,15 @@ xmlCatalogErrMemory(void)
 }
 
 /**
- * xmlCatalogErr:
- * @catal: the Catalog entry
- * @node: the context node
- * @msg:  the error message
- * @extra:  extra information
- *
  * Handle a catalog error
+ *
+ * @param catal  the Catalog entry
+ * @param node  the context node
+ * @param error  the error code
+ * @param msg  the error message
+ * @param str1  error string 1
+ * @param str2  error string 2
+ * @param str3  error string 3
  */
 static void LIBXML_ATTR_FORMAT(4,0)
 xmlCatalogErr(xmlCatalogEntryPtr catal, xmlNodePtr node, int error,
@@ -237,17 +249,16 @@ xmlCatalogPrintDebug(const char *fmt, ...) {
  ************************************************************************/
 
 /**
- * xmlNewCatalogEntry:
- * @type:  type of entry
- * @name:  name of the entry
- * @value:  value of the entry
- * @prefer:  the PUBLIC vs. SYSTEM current preference value
- * @group:  for members of a group, the group entry
- *
  * create a new Catalog entry, this type is shared both by XML and
  * SGML catalogs, but the acceptable types values differs.
  *
- * Returns the xmlCatalogEntryPtr or NULL in case of error
+ * @param type  type of entry
+ * @param name  name of the entry
+ * @param value  value of the entry
+ * @param URL  URL of the entry
+ * @param prefer  the PUBLIC vs. SYSTEM current preference value
+ * @param group  for members of a group, the group entry
+ * @returns the xmlCatalogEntry or NULL in case of error
  */
 static xmlCatalogEntryPtr
 xmlNewCatalogEntry(xmlCatalogEntryType type, const xmlChar *name,
@@ -297,10 +308,10 @@ static void
 xmlFreeCatalogEntryList(xmlCatalogEntryPtr ret);
 
 /**
- * xmlFreeCatalogEntry:
- * @payload:  a Catalog entry
- *
  * Free the memory allocated to a Catalog entry
+ *
+ * @param payload  a Catalog entry
+ * @param name  unused
  */
 static void
 xmlFreeCatalogEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
@@ -336,10 +347,9 @@ xmlFreeCatalogEntry(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
 }
 
 /**
- * xmlFreeCatalogEntryList:
- * @ret:  a Catalog entry list
- *
  * Free the memory allocated to a full chained list of Catalog entries
+ *
+ * @param ret  a Catalog entry list
  */
 static void
 xmlFreeCatalogEntryList(xmlCatalogEntryPtr ret) {
@@ -353,11 +363,11 @@ xmlFreeCatalogEntryList(xmlCatalogEntryPtr ret) {
 }
 
 /**
- * xmlFreeCatalogHashEntryList:
- * @payload:  a Catalog entry list
- *
  * Free the memory allocated to list of Catalog entries from the
  * catalog file hash.
+ *
+ * @param payload  a Catalog entry list
+ * @param name  unused
  */
 static void
 xmlFreeCatalogHashEntryList(void *payload,
@@ -381,14 +391,12 @@ xmlFreeCatalogHashEntryList(void *payload,
 }
 
 /**
- * xmlCreateNewCatalog:
- * @type:  type of catalog
- * @prefer:  the PUBLIC vs. SYSTEM current preference value
- *
  * create a new Catalog, this type is shared both by XML and
  * SGML catalogs, but the acceptable types values differs.
  *
- * Returns the xmlCatalogPtr or NULL in case of error
+ * @param type  type of catalog
+ * @param prefer  the PUBLIC vs. SYSTEM current preference value
+ * @returns the xmlCatalog or NULL in case of error
  */
 static xmlCatalogPtr
 xmlCreateNewCatalog(xmlCatalogType type, xmlCatalogPrefer prefer) {
@@ -401,28 +409,33 @@ xmlCreateNewCatalog(xmlCatalogType type, xmlCatalogPrefer prefer) {
     }
     memset(ret, 0, sizeof(xmlCatalog));
     ret->type = type;
+    ret->prefer = prefer;
+#ifdef LIBXML_SGML_CATALOG_ENABLED
     ret->catalNr = 0;
     ret->catalMax = XML_MAX_SGML_CATA_DEPTH;
-    ret->prefer = prefer;
     if (ret->type == XML_SGML_CATALOG_TYPE)
 	ret->sgml = xmlHashCreate(10);
+#endif
     return(ret);
 }
 
 /**
- * xmlFreeCatalog:
- * @catal:  a Catalog
- *
  * Free the memory allocated to a Catalog
+ *
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  a Catalog
  */
 void
-xmlFreeCatalog(xmlCatalogPtr catal) {
+xmlFreeCatalog(xmlCatalog *catal) {
     if (catal == NULL)
 	return;
     if (catal->xml != NULL)
 	xmlFreeCatalogEntryList(catal->xml);
+#ifdef LIBXML_SGML_CATALOG_ENABLED
     if (catal->sgml != NULL)
 	xmlHashFree(catal->sgml, xmlFreeCatalogEntry);
+#endif
     xmlFree(catal);
 }
 
@@ -433,12 +446,13 @@ xmlFreeCatalog(xmlCatalogPtr catal) {
  ************************************************************************/
 
 #ifdef LIBXML_OUTPUT_ENABLED
+#ifdef LIBXML_SGML_CATALOG_ENABLED
 /**
- * xmlCatalogDumpEntry:
- * @entry:  the catalog entry
- * @out:  the file.
- *
  * Serialize an SGML Catalog entry
+ *
+ * @param payload  the catalog entry
+ * @param data  the file.
+ * @param name  unused
  */
 static void
 xmlCatalogDumpEntry(void *payload, void *data,
@@ -508,17 +522,17 @@ xmlCatalogDumpEntry(void *payload, void *data,
     }
     fprintf(out, "\n");
 }
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
 
 /**
- * xmlDumpXMLCatalogNode:
- * @catal:  top catalog entry
- * @catalog: pointer to the xml tree
- * @doc: the containing document
- * @ns: the current namespace
- * @cgroup: group node for group members
- *
  * Serializes a Catalog entry, called by xmlDumpXMLCatalog and recursively
  * for group entries
+ *
+ * @param catal  top catalog entry
+ * @param catalog  pointer to the xml tree
+ * @param doc  the containing document
+ * @param ns  the current namespace
+ * @param cgroup  group node for group members
  */
 static void xmlDumpXMLCatalogNode(xmlCatalogEntryPtr catal, xmlNodePtr catalog,
 		    xmlDocPtr doc, xmlNsPtr ns, xmlCatalogEntryPtr cgroup) {
@@ -618,18 +632,7 @@ static void xmlDumpXMLCatalogNode(xmlCatalogEntryPtr catal, xmlNodePtr catalog,
 		    xmlSetProp(node, BAD_CAST "catalog", cur->value);
 		    xmlAddChild(catalog, node);
 		    break;
-		case SGML_CATA_SYSTEM:
-		case SGML_CATA_PUBLIC:
-		case SGML_CATA_ENTITY:
-		case SGML_CATA_PENTITY:
-		case SGML_CATA_DOCTYPE:
-		case SGML_CATA_LINKTYPE:
-		case SGML_CATA_NOTATION:
-		case SGML_CATA_DELEGATE:
-		case SGML_CATA_BASE:
-		case SGML_CATA_CATALOG:
-		case SGML_CATA_DOCUMENT:
-		case SGML_CATA_SGMLDECL:
+                default:
 		    break;
 	    }
         }
@@ -699,12 +702,14 @@ BAD_CAST "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd");
  *									*
  ************************************************************************/
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+
 /**
- * xmlCatalogConvertEntry:
- * @entry:  the entry
- * @catal:  pointer to the catalog being converted
- *
  * Convert one entry from the catalog
+ *
+ * @param payload  the entry
+ * @param data  pointer to the catalog being converted
+ * @param name  unused
  */
 static void
 xmlCatalogConvertEntry(void *payload, void *data,
@@ -766,15 +771,15 @@ xmlCatalogConvertEntry(void *payload, void *data,
 }
 
 /**
- * xmlConvertSGMLCatalog:
- * @catal: the catalog
- *
  * Convert all the SGML catalog entries as XML ones
  *
- * Returns the number of entries converted if successful, -1 otherwise
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  the catalog
+ * @returns the number of entries converted if successful, -1 otherwise
  */
 int
-xmlConvertSGMLCatalog(xmlCatalogPtr catal) {
+xmlConvertSGMLCatalog(xmlCatalog *catal) {
 
     if ((catal == NULL) || (catal->type != XML_SGML_CATALOG_TYPE))
 	return(-1);
@@ -787,6 +792,8 @@ xmlConvertSGMLCatalog(xmlCatalogPtr catal) {
     return(0);
 }
 
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+
 /************************************************************************
  *									*
  *			Helper function					*
@@ -794,12 +801,10 @@ xmlConvertSGMLCatalog(xmlCatalogPtr catal) {
  ************************************************************************/
 
 /**
- * xmlCatalogUnWrapURN:
- * @urn:  an "urn:publicid:" to unwrap
- *
  * Expand the URN into the equivalent Public Identifier
  *
- * Returns the new identifier or NULL, the string must be deallocated
+ * @param urn  an "urn:publicid:" to unwrap
+ * @returns the new identifier or NULL, the string must be deallocated
  *         by the caller.
  */
 static xmlChar *
@@ -859,16 +864,16 @@ xmlCatalogUnWrapURN(const xmlChar *urn) {
 }
 
 /**
- * xmlParseCatalogFile:
- * @filename:  the filename
- *
- * parse an XML file and build a tree. It's like xmlParseFile()
+ * parse an XML file and build a tree. It's like #xmlParseFile
  * except it bypass all catalog lookups.
  *
- * Returns the resulting document tree or NULL in case of error
+ * @deprecated Internal function, don't use
+ *
+ * @param filename  the filename
+ * @returns the resulting document tree or NULL in case of error
  */
 
-xmlDocPtr
+xmlDoc *
 xmlParseCatalogFile(const char *filename) {
     xmlDocPtr ret;
     xmlParserCtxtPtr ctxt;
@@ -925,12 +930,10 @@ xmlParseCatalogFile(const char *filename) {
 }
 
 /**
- * xmlLoadFileContent:
- * @filename:  a file path
- *
  * Load a file content into memory.
  *
- * Returns a pointer to the 0 terminated string or NULL in case of error
+ * @param filename  a file path
+ * @returns a pointer to the 0 terminated string or NULL in case of error
  */
 static xmlChar *
 xmlLoadFileContent(const char *filename)
@@ -972,15 +975,13 @@ xmlLoadFileContent(const char *filename)
 }
 
 /**
- * xmlCatalogNormalizePublic:
- * @pubID:  the public ID string
- *
  *  Normalizes the Public Identifier
  *
  * Implements 6.2. Public Identifier Normalization
  * from http://www.oasis-open.org/committees/entity/spec-2001-08-06.html
  *
- * Returns the new string or NULL, the string must be deallocated
+ * @param pubID  the public ID string
+ * @returns the new string or NULL, the string must be deallocated
  *         by the caller.
  */
 static xmlChar *
@@ -1045,12 +1046,10 @@ xmlCatalogListXMLResolveURI(xmlCatalogEntryPtr catal, const xmlChar *URI);
 
 
 /**
- * xmlGetXMLCatalogEntryType:
- * @name:  the name
- *
  * lookup the internal type associated to an XML catalog entry name
  *
- * Returns the type associated with that name
+ * @param name  the name
+ * @returns the type associated with that name
  */
 static xmlCatalogEntryType
 xmlGetXMLCatalogEntryType(const xmlChar *name) {
@@ -1079,19 +1078,17 @@ xmlGetXMLCatalogEntryType(const xmlChar *name) {
 }
 
 /**
- * xmlParseXMLCatalogOneNode:
- * @cur:  the XML node
- * @type:  the type of Catalog entry
- * @name:  the name of the node
- * @attrName:  the attribute holding the value
- * @uriAttrName:  the attribute holding the URI-Reference
- * @prefer:  the PUBLIC vs. SYSTEM current preference value
- * @cgroup:  the group which includes this node
- *
  * Finishes the examination of an XML tree node of a catalog and build
  * a Catalog entry from it.
  *
- * Returns the new Catalog entry node or NULL in case of error.
+ * @param cur  the XML node
+ * @param type  the type of Catalog entry
+ * @param name  the name of the node
+ * @param attrName  the attribute holding the value
+ * @param uriAttrName  the attribute holding the URI-Reference
+ * @param prefer  the PUBLIC vs. SYSTEM current preference value
+ * @param cgroup  the group which includes this node
+ * @returns the new Catalog entry node or NULL in case of error.
  */
 static xmlCatalogEntryPtr
 xmlParseXMLCatalogOneNode(xmlNodePtr cur, xmlCatalogEntryType type,
@@ -1155,15 +1152,14 @@ xmlParseXMLCatalogOneNode(xmlNodePtr cur, xmlCatalogEntryType type,
 }
 
 /**
- * xmlParseXMLCatalogNode:
- * @cur:  the XML node
- * @prefer:  the PUBLIC vs. SYSTEM current preference value
- * @parent:  the parent Catalog entry
- * @cgroup:  the group which includes this node
- *
  * Examines an XML tree node of a catalog and build
  * a Catalog entry from it adding it to its parent. The examination can
  * be recursive.
+ *
+ * @param cur  the XML node
+ * @param prefer  the PUBLIC vs. SYSTEM current preference value
+ * @param parent  the parent Catalog entry
+ * @param cgroup  the group which includes this node
  */
 static void
 xmlParseXMLCatalogNode(xmlNodePtr cur, xmlCatalogPrefer prefer,
@@ -1258,15 +1254,14 @@ xmlParseXMLCatalogNode(xmlNodePtr cur, xmlCatalogPrefer prefer,
 }
 
 /**
- * xmlParseXMLCatalogNodeList:
- * @cur:  the XML node list of siblings
- * @prefer:  the PUBLIC vs. SYSTEM current preference value
- * @parent:  the parent Catalog entry
- * @cgroup:  the group which includes this list
- *
  * Examines a list of XML sibling nodes of a catalog and build
  * a list of Catalog entry from it adding it to the parent.
  * The examination will recurse to examine node subtrees.
+ *
+ * @param cur  the XML node list of siblings
+ * @param prefer  the PUBLIC vs. SYSTEM current preference value
+ * @param parent  the parent Catalog entry
+ * @param cgroup  the group which includes this list
  */
 static void
 xmlParseXMLCatalogNodeList(xmlNodePtr cur, xmlCatalogPrefer prefer,
@@ -1282,14 +1277,12 @@ xmlParseXMLCatalogNodeList(xmlNodePtr cur, xmlCatalogPrefer prefer,
 }
 
 /**
- * xmlParseXMLCatalogFile:
- * @prefer:  the PUBLIC vs. SYSTEM current preference value
- * @filename:  the filename for the catalog
- *
  * Parses the catalog file to extract the XML tree and then analyze the
  * tree to build a list of Catalog entries corresponding to this catalog
  *
- * Returns the resulting Catalog entries list
+ * @param prefer  the PUBLIC vs. SYSTEM current preference value
+ * @param filename  the filename for the catalog
+ * @returns the resulting Catalog entries list
  */
 static xmlCatalogEntryPtr
 xmlParseXMLCatalogFile(xmlCatalogPrefer prefer, const xmlChar *filename) {
@@ -1352,12 +1345,10 @@ xmlParseXMLCatalogFile(xmlCatalogPrefer prefer, const xmlChar *filename) {
 }
 
 /**
- * xmlFetchXMLCatalogFile:
- * @catal:  an existing but incomplete catalog entry
- *
  * Fetch and parse the subcatalog referenced by an entry
  *
- * Returns 0 in case of success, -1 otherwise
+ * @param catal  an existing but incomplete catalog entry
+ * @returns 0 in case of success, -1 otherwise
  */
 static int
 xmlFetchXMLCatalogFile(xmlCatalogEntryPtr catal) {
@@ -1437,16 +1428,14 @@ xmlFetchXMLCatalogFile(xmlCatalogEntryPtr catal) {
  ************************************************************************/
 
 /**
- * xmlAddXMLCatalog:
- * @catal:  top of an XML catalog
- * @type:  the type of record to add to the catalog
- * @orig:  the system, public or prefix to match (or NULL)
- * @replace:  the replacement value for the match
- *
  * Add an entry in the XML catalog, it may overwrite existing but
  * different entries.
  *
- * Returns 0 if successful, -1 otherwise
+ * @param catal  top of an XML catalog
+ * @param type  the type of record to add to the catalog
+ * @param orig  the system, public or prefix to match (or NULL)
+ * @param replace  the replacement value for the match
+ * @returns 0 if successful, -1 otherwise
  */
 static int
 xmlAddXMLCatalog(xmlCatalogEntryPtr catal, const xmlChar *type,
@@ -1517,14 +1506,12 @@ xmlAddXMLCatalog(xmlCatalogEntryPtr catal, const xmlChar *type,
 }
 
 /**
- * xmlDelXMLCatalog:
- * @catal:  top of an XML catalog
- * @value:  the value to remove from the catalog
- *
  * Remove entries in the XML catalog where the value or the URI
- * is equal to @value
+ * is equal to `value`
  *
- * Returns the number of entries removed if successful, -1 otherwise
+ * @param catal  top of an XML catalog
+ * @param value  the value to remove from the catalog
+ * @returns the number of entries removed if successful, -1 otherwise
  */
 static int
 xmlDelXMLCatalog(xmlCatalogEntryPtr catal, const xmlChar *value) {
@@ -1564,18 +1551,16 @@ xmlDelXMLCatalog(xmlCatalogEntryPtr catal, const xmlChar *value) {
 }
 
 /**
- * xmlCatalogXMLResolve:
- * @catal:  a catalog list
- * @pubID:  the public ID string
- * @sysID:  the system ID string
- *
  * Do a complete resolution lookup of an External Identifier for a
  * list of catalog entries.
  *
  * Implements (or tries to) 7.1. External Identifier Resolution
  * from http://www.oasis-open.org/committees/entity/spec-2001-08-06.html
  *
- * Returns the URI of the resource or NULL if not found
+ * @param catal  a catalog list
+ * @param pubID  the public ID string
+ * @param sysID  the system ID string
+ * @returns the URI of the resource or NULL if not found
  */
 static xmlChar *
 xmlCatalogXMLResolve(xmlCatalogEntryPtr catal, const xmlChar *pubID,
@@ -1797,18 +1782,15 @@ xmlCatalogXMLResolve(xmlCatalogEntryPtr catal, const xmlChar *pubID,
 }
 
 /**
- * xmlCatalogXMLResolveURI:
- * @catal:  a catalog list
- * @URI:  the URI
- * @sysID:  the system ID string
- *
  * Do a complete resolution lookup of an External Identifier for a
  * list of catalog entries.
  *
  * Implements (or tries to) 7.2.2. URI Resolution
  * from http://www.oasis-open.org/committees/entity/spec-2001-08-06.html
  *
- * Returns the URI of the resource or NULL if not found
+ * @param catal  a catalog list
+ * @param URI  the URI
+ * @returns the URI of the resource or NULL if not found
  */
 static xmlChar *
 xmlCatalogXMLResolveURI(xmlCatalogEntryPtr catal, const xmlChar *URI) {
@@ -1940,18 +1922,16 @@ xmlCatalogXMLResolveURI(xmlCatalogEntryPtr catal, const xmlChar *URI) {
 }
 
 /**
- * xmlCatalogListXMLResolve:
- * @catal:  a catalog list
- * @pubID:  the public ID string
- * @sysID:  the system ID string
- *
  * Do a complete resolution lookup of an External Identifier for a
  * list of catalogs
  *
  * Implements (or tries to) 7.1. External Identifier Resolution
  * from http://www.oasis-open.org/committees/entity/spec-2001-08-06.html
  *
- * Returns the URI of the resource or NULL if not found
+ * @param catal  a catalog list
+ * @param pubID  the public ID string
+ * @param sysID  the system ID string
+ * @returns the URI of the resource or NULL if not found
  */
 static xmlChar *
 xmlCatalogListXMLResolve(xmlCatalogEntryPtr catal, const xmlChar *pubID,
@@ -2032,16 +2012,14 @@ xmlCatalogListXMLResolve(xmlCatalogEntryPtr catal, const xmlChar *pubID,
 }
 
 /**
- * xmlCatalogListXMLResolveURI:
- * @catal:  a catalog list
- * @URI:  the URI
- *
  * Do a complete resolution lookup of an URI for a list of catalogs
  *
  * Implements (or tries to) 7.2. URI Resolution
  * from http://www.oasis-open.org/committees/entity/spec-2001-08-06.html
  *
- * Returns the URI of the resource or NULL if not found
+ * @param catal  a catalog list
+ * @param URI  the URI
+ * @returns the URI of the resource or NULL if not found
  */
 static xmlChar *
 xmlCatalogListXMLResolveURI(xmlCatalogEntryPtr catal, const xmlChar *URI) {
@@ -2084,6 +2062,8 @@ xmlCatalogListXMLResolveURI(xmlCatalogEntryPtr catal, const xmlChar *URI) {
     return(ret);
 }
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+
 /************************************************************************
  *									*
  *			The SGML Catalog parser				*
@@ -2098,12 +2078,10 @@ xmlCatalogListXMLResolveURI(xmlCatalogEntryPtr catal, const xmlChar *URI) {
 #define SKIP_BLANKS while (IS_BLANK_CH(*cur)) NEXT;
 
 /**
- * xmlParseSGMLCatalogComment:
- * @cur:  the current character
- *
  * Skip a comment in an SGML catalog
  *
- * Returns new current character
+ * @param cur  the current character
+ * @returns new current character
  */
 static const xmlChar *
 xmlParseSGMLCatalogComment(const xmlChar *cur) {
@@ -2119,13 +2097,11 @@ xmlParseSGMLCatalogComment(const xmlChar *cur) {
 }
 
 /**
- * xmlParseSGMLCatalogPubid:
- * @cur:  the current character
- * @id:  the return location
- *
  * Parse an SGML catalog ID
  *
- * Returns new current character and store the value in @id
+ * @param cur  the current character
+ * @param id  the return location
+ * @returns new current character and store the value in `id`
  */
 static const xmlChar *
 xmlParseSGMLCatalogPubid(const xmlChar *cur, xmlChar **id) {
@@ -2195,13 +2171,11 @@ xmlParseSGMLCatalogPubid(const xmlChar *cur, xmlChar **id) {
 }
 
 /**
- * xmlParseSGMLCatalogName:
- * @cur:  the current character
- * @name:  the return location
- *
  * Parse an SGML catalog name
  *
- * Returns new current character and store the value in @name
+ * @param cur  the current character
+ * @param name  the return location
+ * @returns new current character and store the value in `name`
  */
 static const xmlChar *
 xmlParseSGMLCatalogName(const xmlChar *cur, xmlChar **name) {
@@ -2233,12 +2207,10 @@ xmlParseSGMLCatalogName(const xmlChar *cur, xmlChar **name) {
 }
 
 /**
- * xmlGetSGMLCatalogEntryType:
- * @name:  the entry name
- *
  * Get the Catalog entry type for a given SGML Catalog name
  *
- * Returns Catalog entry type
+ * @param name  the entry name
+ * @returns Catalog entry type
  */
 static xmlCatalogEntryType
 xmlGetSGMLCatalogEntryType(const xmlChar *name) {
@@ -2269,17 +2241,15 @@ xmlGetSGMLCatalogEntryType(const xmlChar *name) {
 }
 
 /**
- * xmlParseSGMLCatalog:
- * @catal:  the SGML Catalog
- * @value:  the content of the SGML Catalog serialization
- * @file:  the filepath for the catalog
- * @super:  should this be handled as a Super Catalog in which case
- *          parsing is not recursive
- *
- * Parse an SGML catalog content and fill up the @catal hash table with
+ * Parse an SGML catalog content and fill up the `catal` hash table with
  * the new entries found.
  *
- * Returns 0 in case of success, -1 in case of error.
+ * @param catal  the SGML Catalog
+ * @param value  the content of the SGML Catalog serialization
+ * @param file  the filepath for the catalog
+ * @param super  should this be handled as a Super Catalog in which case
+ *          parsing is not recursive
+ * @returns 0 in case of success, -1 in case of error.
  */
 static int
 xmlParseSGMLCatalog(xmlCatalogPtr catal, const xmlChar *value,
@@ -2495,13 +2465,11 @@ xmlParseSGMLCatalog(xmlCatalogPtr catal, const xmlChar *value,
  ************************************************************************/
 
 /**
- * xmlCatalogGetSGMLPublic:
- * @catal:  an SGML catalog hash
- * @pubID:  the public ID string
- *
  * Try to lookup the catalog local reference associated to a public ID
  *
- * Returns the local resource if found or NULL otherwise.
+ * @param catal  an SGML catalog hash
+ * @param pubID  the public ID string
+ * @returns the local resource if found or NULL otherwise.
  */
 static const xmlChar *
 xmlCatalogGetSGMLPublic(xmlHashTablePtr catal, const xmlChar *pubID) {
@@ -2532,13 +2500,11 @@ xmlCatalogGetSGMLPublic(xmlHashTablePtr catal, const xmlChar *pubID) {
 }
 
 /**
- * xmlCatalogGetSGMLSystem:
- * @catal:  an SGML catalog hash
- * @sysID:  the system ID string
- *
  * Try to lookup the catalog local reference for a system ID
  *
- * Returns the local resource if found or NULL otherwise.
+ * @param catal  an SGML catalog hash
+ * @param sysID  the system ID string
+ * @returns the local resource if found or NULL otherwise.
  */
 static const xmlChar *
 xmlCatalogGetSGMLSystem(xmlHashTablePtr catal, const xmlChar *sysID) {
@@ -2556,14 +2522,12 @@ xmlCatalogGetSGMLSystem(xmlHashTablePtr catal, const xmlChar *sysID) {
 }
 
 /**
- * xmlCatalogSGMLResolve:
- * @catal:  the SGML catalog
- * @pubID:  the public ID string
- * @sysID:  the system ID string
- *
  * Do a complete resolution lookup of an External Identifier
  *
- * Returns the URI of the resource or NULL if not found
+ * @param catal  the SGML catalog
+ * @param pubID  the public ID string
+ * @param sysID  the system ID string
+ * @returns the URI of the resource or NULL if not found
  */
 static const xmlChar *
 xmlCatalogSGMLResolve(xmlCatalogPtr catal, const xmlChar *pubID,
@@ -2584,23 +2548,26 @@ xmlCatalogSGMLResolve(xmlCatalogPtr catal, const xmlChar *pubID,
     return(NULL);
 }
 
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+
 /************************************************************************
  *									*
  *			Specific Public interfaces			*
  *									*
  ************************************************************************/
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
 /**
- * xmlLoadSGMLSuperCatalog:
- * @filename:  a file path
- *
  * Load an SGML super catalog. It won't expand CATALOG or DELEGATE
  * references. This is only needed for manipulating SGML Super Catalogs
  * like adding and removing CATALOG or DELEGATE entries.
  *
- * Returns the catalog parsed or NULL in case of error
+ * @deprecated Internal function, don't use
+ *
+ * @param filename  a file path
+ * @returns the catalog parsed or NULL in case of error
  */
-xmlCatalogPtr
+xmlCatalog *
 xmlLoadSGMLSuperCatalog(const char *filename)
 {
     xmlChar *content;
@@ -2625,25 +2592,25 @@ xmlLoadSGMLSuperCatalog(const char *filename)
     }
     return (catal);
 }
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
 
 /**
- * xmlLoadACatalog:
- * @filename:  a file path
- *
  * Load the catalog and build the associated data structures.
  * This can be either an XML Catalog or an SGML Catalog
  * It will recurse in SGML CATALOG entries. On the other hand XML
  * Catalogs are not handled recursively.
  *
- * Returns the catalog parsed or NULL in case of error
+ * @deprecated Internal function, don't use
+ *
+ * @param filename  a file path
+ * @returns the catalog parsed or NULL in case of error
  */
-xmlCatalogPtr
+xmlCatalog *
 xmlLoadACatalog(const char *filename)
 {
     xmlChar *content;
     xmlChar *first;
     xmlCatalogPtr catal;
-    int ret;
 
     content = xmlLoadFileContent(filename);
     if (content == NULL)
@@ -2657,7 +2624,10 @@ xmlLoadACatalog(const char *filename)
 	      ((*first >= 'a') && (*first <= 'z')))))
 	first++;
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
     if (*first != '<') {
+        int ret;
+
 	catal = xmlCreateNewCatalog(XML_SGML_CATALOG_TYPE, xmlCatalogDefaultPrefer);
 	if (catal == NULL) {
 	    xmlFree(content);
@@ -2669,7 +2639,9 @@ xmlLoadACatalog(const char *filename)
 	    xmlFree(content);
 	    return(NULL);
 	}
-    } else {
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
 	catal = xmlCreateNewCatalog(XML_XML_CATALOG_TYPE, xmlCatalogDefaultPrefer);
 	if (catal == NULL) {
 	    xmlFree(content);
@@ -2683,26 +2655,23 @@ xmlLoadACatalog(const char *filename)
 }
 
 /**
- * xmlExpandCatalog:
- * @catal:  a catalog
- * @filename:  a file path
- *
  * Load the catalog and expand the existing catal structure.
  * This can be either an XML Catalog or an SGML Catalog
  *
- * Returns 0 in case of success, -1 in case of error
+ * @param catal  a catalog
+ * @param filename  a file path
+ * @returns 0 in case of success, -1 in case of error
  */
 static int
 xmlExpandCatalog(xmlCatalogPtr catal, const char *filename)
 {
-    int ret;
-
     if ((catal == NULL) || (filename == NULL))
 	return(-1);
 
-
+#ifdef LIBXML_SGML_CATALOG_ENABLED
     if (catal->type == XML_SGML_CATALOG_TYPE) {
 	xmlChar *content;
+        int ret;
 
 	content = xmlLoadFileContent(filename);
 	if (content == NULL)
@@ -2714,7 +2683,9 @@ xmlExpandCatalog(xmlCatalogPtr catal, const char *filename)
 	    return(-1);
 	}
 	xmlFree(content);
-    } else {
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
 	xmlCatalogEntryPtr tmp, cur;
 	tmp = xmlNewCatalogEntry(XML_CATA_CATALOG, NULL,
 		       NULL, BAD_CAST filename, xmlCatalogDefaultPrefer, NULL);
@@ -2731,17 +2702,17 @@ xmlExpandCatalog(xmlCatalogPtr catal, const char *filename)
 }
 
 /**
- * xmlACatalogResolveSystem:
- * @catal:  a Catalog
- * @sysID:  the system ID string
- *
  * Try to lookup the catalog resource for a system ID
  *
- * Returns the resource if found or NULL otherwise, the value returned
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  a Catalog
+ * @param sysID  the system ID string
+ * @returns the resource if found or NULL otherwise, the value returned
  *      must be freed by the caller.
  */
 xmlChar *
-xmlACatalogResolveSystem(xmlCatalogPtr catal, const xmlChar *sysID) {
+xmlACatalogResolveSystem(xmlCatalog *catal, const xmlChar *sysID) {
     xmlChar *ret = NULL;
 
     if ((sysID == NULL) || (catal == NULL))
@@ -2751,32 +2722,35 @@ xmlACatalogResolveSystem(xmlCatalogPtr catal, const xmlChar *sysID) {
 	xmlCatalogPrintDebug(
 		"Resolve sysID %s\n", sysID);
 
-    if (catal->type == XML_XML_CATALOG_TYPE) {
-	ret = xmlCatalogListXMLResolve(catal->xml, NULL, sysID);
-	if (ret == XML_CATAL_BREAK)
-	    ret = NULL;
-    } else {
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    if (catal->type == XML_SGML_CATALOG_TYPE) {
 	const xmlChar *sgml;
 
 	sgml = xmlCatalogGetSGMLSystem(catal->sgml, sysID);
 	if (sgml != NULL)
 	    ret = xmlStrdup(sgml);
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
+	ret = xmlCatalogListXMLResolve(catal->xml, NULL, sysID);
+	if (ret == XML_CATAL_BREAK)
+	    ret = NULL;
     }
     return(ret);
 }
 
 /**
- * xmlACatalogResolvePublic:
- * @catal:  a Catalog
- * @pubID:  the public ID string
- *
  * Try to lookup the catalog local reference associated to a public ID in that catalog
  *
- * Returns the local resource if found or NULL otherwise, the value returned
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  a Catalog
+ * @param pubID  the public ID string
+ * @returns the local resource if found or NULL otherwise, the value returned
  *      must be freed by the caller.
  */
 xmlChar *
-xmlACatalogResolvePublic(xmlCatalogPtr catal, const xmlChar *pubID) {
+xmlACatalogResolvePublic(xmlCatalog *catal, const xmlChar *pubID) {
     xmlChar *ret = NULL;
 
     if ((pubID == NULL) || (catal == NULL))
@@ -2786,33 +2760,36 @@ xmlACatalogResolvePublic(xmlCatalogPtr catal, const xmlChar *pubID) {
 	xmlCatalogPrintDebug(
 		"Resolve pubID %s\n", pubID);
 
-    if (catal->type == XML_XML_CATALOG_TYPE) {
-	ret = xmlCatalogListXMLResolve(catal->xml, pubID, NULL);
-	if (ret == XML_CATAL_BREAK)
-	    ret = NULL;
-    } else {
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    if (catal->type == XML_SGML_CATALOG_TYPE) {
 	const xmlChar *sgml;
 
 	sgml = xmlCatalogGetSGMLPublic(catal->sgml, pubID);
 	if (sgml != NULL)
 	    ret = xmlStrdup(sgml);
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
+	ret = xmlCatalogListXMLResolve(catal->xml, pubID, NULL);
+	if (ret == XML_CATAL_BREAK)
+	    ret = NULL;
     }
     return(ret);
 }
 
 /**
- * xmlACatalogResolve:
- * @catal:  a Catalog
- * @pubID:  the public ID string
- * @sysID:  the system ID string
- *
  * Do a complete resolution lookup of an External Identifier
  *
- * Returns the URI of the resource or NULL if not found, it must be freed
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  a Catalog
+ * @param pubID  the public ID string
+ * @param sysID  the system ID string
+ * @returns the URI of the resource or NULL if not found, it must be freed
  *      by the caller.
  */
 xmlChar *
-xmlACatalogResolve(xmlCatalogPtr catal, const xmlChar * pubID,
+xmlACatalogResolve(xmlCatalog *catal, const xmlChar * pubID,
                    const xmlChar * sysID)
 {
     xmlChar *ret = NULL;
@@ -2833,32 +2810,35 @@ xmlACatalogResolve(xmlCatalogPtr catal, const xmlChar * pubID,
          }
     }
 
-    if (catal->type == XML_XML_CATALOG_TYPE) {
-        ret = xmlCatalogListXMLResolve(catal->xml, pubID, sysID);
-	if (ret == XML_CATAL_BREAK)
-	    ret = NULL;
-    } else {
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    if (catal->type == XML_SGML_CATALOG_TYPE) {
         const xmlChar *sgml;
 
         sgml = xmlCatalogSGMLResolve(catal, pubID, sysID);
         if (sgml != NULL)
             ret = xmlStrdup(sgml);
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
+        ret = xmlCatalogListXMLResolve(catal->xml, pubID, sysID);
+	if (ret == XML_CATAL_BREAK)
+	    ret = NULL;
     }
     return (ret);
 }
 
 /**
- * xmlACatalogResolveURI:
- * @catal:  a Catalog
- * @URI:  the URI
- *
  * Do a complete resolution lookup of an URI
  *
- * Returns the URI of the resource or NULL if not found, it must be freed
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  a Catalog
+ * @param URI  the URI
+ * @returns the URI of the resource or NULL if not found, it must be freed
  *      by the caller.
  */
 xmlChar *
-xmlACatalogResolveURI(xmlCatalogPtr catal, const xmlChar *URI) {
+xmlACatalogResolveURI(xmlCatalog *catal, const xmlChar *URI) {
     xmlChar *ret = NULL;
 
     if ((URI == NULL) || (catal == NULL))
@@ -2868,55 +2848,62 @@ xmlACatalogResolveURI(xmlCatalogPtr catal, const xmlChar *URI) {
 	xmlCatalogPrintDebug(
 		"Resolve URI %s\n", URI);
 
-    if (catal->type == XML_XML_CATALOG_TYPE) {
-	ret = xmlCatalogListXMLResolveURI(catal->xml, URI);
-	if (ret == XML_CATAL_BREAK)
-	    ret = NULL;
-    } else {
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    if (catal->type == XML_SGML_CATALOG_TYPE) {
 	const xmlChar *sgml;
 
 	sgml = xmlCatalogSGMLResolve(catal, NULL, URI);
 	if (sgml != NULL)
             ret = xmlStrdup(sgml);
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
+	ret = xmlCatalogListXMLResolveURI(catal->xml, URI);
+	if (ret == XML_CATAL_BREAK)
+	    ret = NULL;
     }
     return(ret);
 }
 
 #ifdef LIBXML_OUTPUT_ENABLED
 /**
- * xmlACatalogDump:
- * @catal:  a Catalog
- * @out:  the file.
- *
  * Dump the given catalog to the given file.
+ *
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  a Catalog
+ * @param out  the file.
  */
 void
-xmlACatalogDump(xmlCatalogPtr catal, FILE *out) {
+xmlACatalogDump(xmlCatalog *catal, FILE *out) {
     if ((out == NULL) || (catal == NULL))
 	return;
 
-    if (catal->type == XML_XML_CATALOG_TYPE) {
-	xmlDumpXMLCatalog(out, catal->xml);
-    } else {
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    if (catal->type == XML_SGML_CATALOG_TYPE) {
 	xmlHashScan(catal->sgml, xmlCatalogDumpEntry, out);
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
+	xmlDumpXMLCatalog(out, catal->xml);
     }
 }
 #endif /* LIBXML_OUTPUT_ENABLED */
 
 /**
- * xmlACatalogAdd:
- * @catal:  a Catalog
- * @type:  the type of record to add to the catalog
- * @orig:  the system, public or prefix to match
- * @replace:  the replacement value for the match
- *
  * Add an entry in the catalog, it may overwrite existing but
  * different entries.
  *
- * Returns 0 if successful, -1 otherwise
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  a Catalog
+ * @param type  the type of record to add to the catalog
+ * @param orig  the system, public or prefix to match
+ * @param replace  the replacement value for the match
+ * @returns 0 if successful, -1 otherwise
  */
 int
-xmlACatalogAdd(xmlCatalogPtr catal, const xmlChar * type,
+xmlACatalogAdd(xmlCatalog *catal, const xmlChar * type,
               const xmlChar * orig, const xmlChar * replace)
 {
     int res = -1;
@@ -2924,9 +2911,8 @@ xmlACatalogAdd(xmlCatalogPtr catal, const xmlChar * type,
     if (catal == NULL)
 	return(-1);
 
-    if (catal->type == XML_XML_CATALOG_TYPE) {
-        res = xmlAddXMLCatalog(catal->xml, type, orig, replace);
-    } else {
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    if (catal->type == XML_SGML_CATALOG_TYPE) {
         xmlCatalogEntryType cattype;
 
         cattype = xmlGetSGMLCatalogEntryType(type);
@@ -2941,82 +2927,87 @@ xmlACatalogAdd(xmlCatalogPtr catal, const xmlChar * type,
             if (res < 0)
                 xmlFreeCatalogEntry(entry, NULL);
         }
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
+        res = xmlAddXMLCatalog(catal->xml, type, orig, replace);
     }
     return (res);
 }
 
 /**
- * xmlACatalogRemove:
- * @catal:  a Catalog
- * @value:  the value to remove
- *
  * Remove an entry from the catalog
  *
- * Returns the number of entries removed if successful, -1 otherwise
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  a Catalog
+ * @param value  the value to remove
+ * @returns the number of entries removed if successful, -1 otherwise
  */
 int
-xmlACatalogRemove(xmlCatalogPtr catal, const xmlChar *value) {
+xmlACatalogRemove(xmlCatalog *catal, const xmlChar *value) {
     int res = -1;
 
     if ((catal == NULL) || (value == NULL))
 	return(-1);
 
-    if (catal->type == XML_XML_CATALOG_TYPE) {
-	res = xmlDelXMLCatalog(catal->xml, value);
-    } else {
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    if (catal->type == XML_SGML_CATALOG_TYPE) {
 	res = xmlHashRemoveEntry(catal->sgml, value, xmlFreeCatalogEntry);
 	if (res == 0)
 	    res = 1;
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
+	res = xmlDelXMLCatalog(catal->xml, value);
     }
     return(res);
 }
 
 /**
- * xmlNewCatalog:
- * @sgml:  should this create an SGML catalog
- *
  * create a new Catalog.
  *
- * Returns the xmlCatalogPtr or NULL in case of error
+ * @deprecated Internal function, don't use
+ *
+ * @param sgml  should this create an SGML catalog
+ * @returns the xmlCatalog or NULL in case of error
  */
-xmlCatalogPtr
+xmlCatalog *
 xmlNewCatalog(int sgml) {
     xmlCatalogPtr catal = NULL;
 
+    (void) sgml;
+
+#ifdef LIBXML_SGML_CATALOG_ENABLED
     if (sgml) {
 	catal = xmlCreateNewCatalog(XML_SGML_CATALOG_TYPE,
 		                    xmlCatalogDefaultPrefer);
         if ((catal != NULL) && (catal->sgml == NULL))
 	    catal->sgml = xmlHashCreate(10);
     } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
 	catal = xmlCreateNewCatalog(XML_XML_CATALOG_TYPE,
 		                    xmlCatalogDefaultPrefer);
+    }
     return(catal);
 }
 
 /**
- * xmlCatalogIsEmpty:
- * @catal:  should this create an SGML catalog
- *
  * Check is a catalog is empty
  *
- * Returns 1 if the catalog is empty, 0 if not, amd -1 in case of error.
+ * @deprecated Internal function, don't use
+ *
+ * @param catal  should this create an SGML catalog
+ * @returns 1 if the catalog is empty, 0 if not, amd -1 in case of error.
  */
 int
-xmlCatalogIsEmpty(xmlCatalogPtr catal) {
+xmlCatalogIsEmpty(xmlCatalog *catal) {
     if (catal == NULL)
 	return(-1);
 
-    if (catal->type == XML_XML_CATALOG_TYPE) {
-	if (catal->xml == NULL)
-	    return(1);
-	if ((catal->xml->type != XML_CATA_CATALOG) &&
-	    (catal->xml->type != XML_CATA_BROKEN_CATALOG))
-	    return(-1);
-	if (catal->xml->children == NULL)
-	    return(1);
-        return(0);
-    } else {
+#ifdef LIBXML_SGML_CATALOG_ENABLED
+    if (catal->type == XML_SGML_CATALOG_TYPE) {
 	int res;
 
 	if (catal->sgml == NULL)
@@ -3026,6 +3017,17 @@ xmlCatalogIsEmpty(xmlCatalogPtr catal) {
 	    return(1);
 	if (res < 0)
 	    return(-1);
+    } else
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
+    {
+	if (catal->xml == NULL)
+	    return(1);
+	if ((catal->xml->type != XML_CATA_CATALOG) &&
+	    (catal->xml->type != XML_CATA_BROKEN_CATALOG))
+	    return(-1);
+	if (catal->xml->children == NULL)
+	    return(1);
+        return(0);
     }
     return(0);
 }
@@ -3037,8 +3039,6 @@ xmlCatalogIsEmpty(xmlCatalogPtr catal) {
  ************************************************************************/
 
 /**
- * xmlInitCatalogInternal:
- *
  * Do the catalog initialization only of global data, doesn't try to load
  * any catalog actually.
  */
@@ -3050,8 +3050,6 @@ xmlInitCatalogInternal(void) {
 }
 
 /**
- * xmlInitializeCatalog:
- *
  * Load the default system catalog.
  */
 void
@@ -3109,15 +3107,13 @@ xmlInitializeCatalog(void) {
 
 
 /**
- * xmlLoadCatalog:
- * @filename:  a file path
- *
  * Load the catalog and makes its definitions effective for the default
  * external entity loader. It will recurse in SGML CATALOG entries.
  * this function is not thread safe, catalog initialization should
  * preferably be done once at startup
  *
- * Returns 0 in case of success -1 in case of error
+ * @param filename  a file path
+ * @returns 0 in case of success -1 in case of error
  */
 int
 xmlLoadCatalog(const char *filename)
@@ -3148,13 +3144,12 @@ xmlLoadCatalog(const char *filename)
 }
 
 /**
- * xmlLoadCatalogs:
- * @pathss:  a list of directories separated by a colon or a space.
- *
  * Load the catalogs and makes their definitions effective for the default
  * external entity loader.
  * this function is not thread safe, catalog initialization should
  * preferably be done once at startup
+ *
+ * @param pathss  a list of directories separated by a colon or a space.
  */
 void
 xmlLoadCatalogs(const char *pathss) {
@@ -3195,8 +3190,6 @@ xmlLoadCatalogs(const char *pathss) {
 }
 
 /**
- * xmlCatalogCleanup:
- *
  * Free up all the memory associated with catalogs
  */
 void
@@ -3217,8 +3210,6 @@ xmlCatalogCleanup(void) {
 }
 
 /**
- * xmlCleanupCatalogInternal:
- *
  * Free global data.
  */
 void
@@ -3227,12 +3218,10 @@ xmlCleanupCatalogInternal(void) {
 }
 
 /**
- * xmlCatalogResolveSystem:
- * @sysID:  the system ID string
- *
  * Try to lookup the catalog resource for a system ID
  *
- * Returns the resource if found or NULL otherwise, the value returned
+ * @param sysID  the system ID string
+ * @returns the resource if found or NULL otherwise, the value returned
  *      must be freed by the caller.
  */
 xmlChar *
@@ -3247,12 +3236,10 @@ xmlCatalogResolveSystem(const xmlChar *sysID) {
 }
 
 /**
- * xmlCatalogResolvePublic:
- * @pubID:  the public ID string
- *
  * Try to lookup the catalog reference associated to a public ID
  *
- * Returns the resource if found or NULL otherwise, the value returned
+ * @param pubID  the public ID string
+ * @returns the resource if found or NULL otherwise, the value returned
  *      must be freed by the caller.
  */
 xmlChar *
@@ -3267,13 +3254,11 @@ xmlCatalogResolvePublic(const xmlChar *pubID) {
 }
 
 /**
- * xmlCatalogResolve:
- * @pubID:  the public ID string
- * @sysID:  the system ID string
- *
  * Do a complete resolution lookup of an External Identifier
  *
- * Returns the URI of the resource or NULL if not found, it must be freed
+ * @param pubID  the public ID string
+ * @param sysID  the system ID string
+ * @returns the URI of the resource or NULL if not found, it must be freed
  *      by the caller.
  */
 xmlChar *
@@ -3288,12 +3273,10 @@ xmlCatalogResolve(const xmlChar *pubID, const xmlChar *sysID) {
 }
 
 /**
- * xmlCatalogResolveURI:
- * @URI:  the URI
- *
  * Do a complete resolution lookup of an URI
  *
- * Returns the URI of the resource or NULL if not found, it must be freed
+ * @param URI  the URI
+ * @returns the URI of the resource or NULL if not found, it must be freed
  *      by the caller.
  */
 xmlChar *
@@ -3309,10 +3292,9 @@ xmlCatalogResolveURI(const xmlChar *URI) {
 
 #ifdef LIBXML_OUTPUT_ENABLED
 /**
- * xmlCatalogDump:
- * @out:  the file.
- *
  * Dump all the global catalog content to the given file.
+ *
+ * @param out  the file.
  */
 void
 xmlCatalogDump(FILE *out) {
@@ -3327,17 +3309,15 @@ xmlCatalogDump(FILE *out) {
 #endif /* LIBXML_OUTPUT_ENABLED */
 
 /**
- * xmlCatalogAdd:
- * @type:  the type of record to add to the catalog
- * @orig:  the system, public or prefix to match
- * @replace:  the replacement value for the match
- *
  * Add an entry in the catalog, it may overwrite existing but
  * different entries.
  * If called before any other catalog routine, allows to override the
- * default shared catalog put in place by xmlInitializeCatalog();
+ * default shared catalog put in place by #xmlInitializeCatalog;
  *
- * Returns 0 if successful, -1 otherwise
+ * @param type  the type of record to add to the catalog
+ * @param orig  the system, public or prefix to match
+ * @param replace  the replacement value for the match
+ * @returns 0 if successful, -1 otherwise
  */
 int
 xmlCatalogAdd(const xmlChar *type, const xmlChar *orig, const xmlChar *replace) {
@@ -3369,12 +3349,10 @@ xmlCatalogAdd(const xmlChar *type, const xmlChar *orig, const xmlChar *replace) 
 }
 
 /**
- * xmlCatalogRemove:
- * @value:  the value to remove
- *
  * Remove an entry from the catalog
  *
- * Returns the number of entries removed if successful, -1 otherwise
+ * @param value  the value to remove
+ * @returns the number of entries removed if successful, -1 otherwise
  */
 int
 xmlCatalogRemove(const xmlChar *value) {
@@ -3389,12 +3367,11 @@ xmlCatalogRemove(const xmlChar *value) {
     return(res);
 }
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
 /**
- * xmlCatalogConvert:
- *
  * Convert all the SGML catalog entries as XML ones
  *
- * Returns the number of entries converted if successful, -1 otherwise
+ * @returns the number of entries converted if successful, -1 otherwise
  */
 int
 xmlCatalogConvert(void) {
@@ -3408,6 +3385,7 @@ xmlCatalogConvert(void) {
     xmlRMutexUnlock(&xmlCatalogMutex);
     return(res);
 }
+#endif /* LIBXML_SGML_CATALOG_ENABLED */
 
 /************************************************************************
  *									*
@@ -3416,15 +3394,13 @@ xmlCatalogConvert(void) {
  ************************************************************************/
 
 /**
- * xmlCatalogGetDefaults:
- *
- * DEPRECATED: Use XML_PARSE_NO_SYS_CATALOG and
- * XML_PARSE_CATALOG_PI.
- *
  * Used to get the user preference w.r.t. to what catalogs should
  * be accepted
  *
- * Returns the current xmlCatalogAllow value
+ * @deprecated Use XML_PARSE_NO_SYS_CATALOG and
+ * XML_PARSE_CATALOG_PI.
+ *
+ * @returns the current xmlCatalogAllow value
  */
 xmlCatalogAllow
 xmlCatalogGetDefaults(void) {
@@ -3432,14 +3408,13 @@ xmlCatalogGetDefaults(void) {
 }
 
 /**
- * xmlCatalogSetDefaults:
- * @allow:  what catalogs should be accepted
- *
- * DEPRECATED: Use XML_PARSE_NO_SYS_CATALOG and
- * XML_PARSE_CATALOG_PI.
- *
  * Used to set the user preference w.r.t. to what catalogs should
  * be accepted
+ *
+ * @deprecated Use XML_PARSE_NO_SYS_CATALOG and
+ * XML_PARSE_CATALOG_PI.
+ *
+ * @param allow  what catalogs should be accepted
  */
 void
 xmlCatalogSetDefaults(xmlCatalogAllow allow) {
@@ -3467,16 +3442,14 @@ xmlCatalogSetDefaults(xmlCatalogAllow allow) {
 }
 
 /**
- * xmlCatalogSetDefaultPrefer:
- * @prefer:  the default preference for delegation
- *
- * DEPRECATED: This setting is global and not thread-safe.
- *
  * Allows to set the preference between public and system for deletion
  * in XML Catalog resolution. C.f. section 4.1.1 of the spec
  * Values accepted are XML_CATA_PREFER_PUBLIC or XML_CATA_PREFER_SYSTEM
  *
- * Returns the previous value of the default preference for delegation
+ * @deprecated This setting is global and not thread-safe.
+ *
+ * @param prefer  the default preference for delegation
+ * @returns the previous value of the default preference for delegation
  */
 xmlCatalogPrefer
 xmlCatalogSetDefaultPrefer(xmlCatalogPrefer prefer) {
@@ -3504,13 +3477,11 @@ xmlCatalogSetDefaultPrefer(xmlCatalogPrefer prefer) {
 }
 
 /**
- * xmlCatalogSetDebug:
- * @level:  the debug level of catalogs required
- *
  * Used to set the debug level for catalog operation, 0 disable
  * debugging, 1 enable it
  *
- * Returns the previous value of the catalog debugging level
+ * @param level  the debug level of catalogs required
+ * @returns the previous value of the catalog debugging level
  */
 int
 xmlCatalogSetDebug(int level) {
@@ -3530,10 +3501,9 @@ xmlCatalogSetDebug(int level) {
  ************************************************************************/
 
 /**
- * xmlCatalogFreeLocal:
- * @catalogs:  a document's list of catalogs
- *
  * Free up the memory associated to the catalog list
+ *
+ * @param catalogs  a document's list of catalogs
  */
 void
 xmlCatalogFreeLocal(void *catalogs) {
@@ -3546,13 +3516,11 @@ xmlCatalogFreeLocal(void *catalogs) {
 
 
 /**
- * xmlCatalogAddLocal:
- * @catalogs:  a document's list of catalogs
- * @URL:  the URL to a new local catalog
- *
  * Add the new entry to the catalog list
  *
- * Returns the updated list
+ * @param catalogs  a document's list of catalogs
+ * @param URL  the URL to a new local catalog
+ * @returns the updated list
  */
 void *
 xmlCatalogAddLocal(void *catalogs, const xmlChar *URL) {
@@ -3583,15 +3551,13 @@ xmlCatalogAddLocal(void *catalogs, const xmlChar *URL) {
 }
 
 /**
- * xmlCatalogLocalResolve:
- * @catalogs:  a document's list of catalogs
- * @pubID:  the public ID string
- * @sysID:  the system ID string
- *
  * Do a complete resolution lookup of an External Identifier using a
  * document's private catalog list
  *
- * Returns the URI of the resource or NULL if not found, it must be freed
+ * @param catalogs  a document's list of catalogs
+ * @param pubID  the public ID string
+ * @param sysID  the system ID string
+ * @returns the URI of the resource or NULL if not found, it must be freed
  *      by the caller.
  */
 xmlChar *
@@ -3626,14 +3592,12 @@ xmlCatalogLocalResolve(void *catalogs, const xmlChar *pubID,
 }
 
 /**
- * xmlCatalogLocalResolveURI:
- * @catalogs:  a document's list of catalogs
- * @URI:  the URI
- *
  * Do a complete resolution lookup of an URI using a
  * document's private catalog list
  *
- * Returns the URI of the resource or NULL if not found, it must be freed
+ * @param catalogs  a document's list of catalogs
+ * @param URI  the URI
+ * @returns the URI of the resource or NULL if not found, it must be freed
  *      by the caller.
  */
 xmlChar *
@@ -3663,13 +3627,12 @@ xmlCatalogLocalResolveURI(void *catalogs, const xmlChar *URI) {
  *									*
  ************************************************************************/
 /**
- * xmlCatalogGetSystem:
- * @sysID:  the system ID string
- *
  * Try to lookup the catalog reference associated to a system ID
- * DEPRECATED, use xmlCatalogResolveSystem()
  *
- * Returns the resource if found or NULL otherwise.
+ * @deprecated use #xmlCatalogResolveSystem
+ *
+ * @param sysID  the system ID string
+ * @returns the resource if found or NULL otherwise.
  */
 const xmlChar *
 xmlCatalogGetSystem(const xmlChar *sysID) {
@@ -3701,19 +3664,20 @@ xmlCatalogGetSystem(const xmlChar *sysID) {
 	}
     }
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
     if (xmlDefaultCatalog != NULL)
 	return(xmlCatalogGetSGMLSystem(xmlDefaultCatalog->sgml, sysID));
+#endif
     return(NULL);
 }
 
 /**
- * xmlCatalogGetPublic:
- * @pubID:  the public ID string
- *
  * Try to lookup the catalog reference associated to a public ID
- * DEPRECATED, use xmlCatalogResolvePublic()
  *
- * Returns the resource if found or NULL otherwise.
+ * @deprecated use #xmlCatalogResolvePublic
+ *
+ * @param pubID  the public ID string
+ * @returns the resource if found or NULL otherwise.
  */
 const xmlChar *
 xmlCatalogGetPublic(const xmlChar *pubID) {
@@ -3745,8 +3709,10 @@ xmlCatalogGetPublic(const xmlChar *pubID) {
 	}
     }
 
+#ifdef LIBXML_SGML_CATALOG_ENABLED
     if (xmlDefaultCatalog != NULL)
 	return(xmlCatalogGetSGMLPublic(xmlDefaultCatalog->sgml, pubID));
+#endif
     return(NULL);
 }
 

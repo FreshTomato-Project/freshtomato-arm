@@ -7,32 +7,19 @@ if py.found() == true
 
     pygenerated = custom_target(
         'Python generated files',
-        input: files('generator.py'),
-        depend_files: files(
-            '..' / 'doc' / 'libxml2-api.xml',
-            'libxml2-python-api.xml',
-        ),
+        input: doxygen_docs[1],
         output: [
             'libxml2-py.h',
             'libxml2-export.c',
             'libxml2-py.c',
-            'libxml2class.py',
-            'libxml2class.txt',
+            'libxml2.py',
         ],
-        command: [py, '@INPUT@', meson.current_build_dir()],
+        command: [ py, files('generator.py'), meson.current_build_dir() ],
+        install: true,
+        install_dir: [ false, false, false, py.get_install_dir() ],
     )
     pygenerated_dep = declare_dependency(
         sources : [pygenerated[0]],
-    )
-
-    libxml2_py = custom_target(
-        'libxml2.py',
-        input: [files('libxml.py'), pygenerated[3]],
-        output: 'libxml2.py',
-        command: [find_program('cat'), '@INPUT@'],
-        capture: true,
-        install: true,
-        install_dir: py.get_install_dir(),
     )
 
     libxml2mod_src = [
@@ -59,7 +46,6 @@ if py.found() == true
     setup_py.set('LIBXML_VERSION', meson.project_version())
     setup_py.set('WITH_ICONV', want_iconv.to_int())
     setup_py.set('WITH_ICU', want_icu.to_int())
-    setup_py.set('WITH_LZMA', want_lzma.to_int())
     setup_py.set('WITH_ZLIB', want_zlib.to_int())
     setup_py.set('WITH_THREADS', want_threads.to_int())
     configure_file(
@@ -106,6 +92,7 @@ if py.found() == true
         'tstURI.py',
         'tstmem.py',
         'tstxpath.py',
+        'unicode.py',
         'validDTD.py',
         'validRNG.py',
         'validSchemas.py',

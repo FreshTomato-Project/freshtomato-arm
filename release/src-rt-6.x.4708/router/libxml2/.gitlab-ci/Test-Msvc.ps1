@@ -16,13 +16,17 @@ if (-not (Test-Path xmlconf)) {
 }
 
 cmake `
+    -G "Visual Studio 16 2019" `
     -DBUILD_SHARED_LIBS="$Env:BUILD_SHARED_LIBS" `
     -DCMAKE_INSTALL_PREFIX=libxml2-install `
+    -DLIBXML2_WITH_SCHEMATRON=ON `
     -DLIBXML2_WITH_ICONV=OFF `
-    -DLIBXML2_WITH_LZMA=OFF `
     -DLIBXML2_WITH_PYTHON=OFF `
     -DLIBXML2_WITH_ZLIB=OFF `
     -S . -B libxml2-build
+if ($LastExitCode -ne 0) {
+    throw "cmake failed"
+}
 cmake --build libxml2-build --config Debug --target install
 cmake --build libxml2-build --config Release --target install
 New-Item -ItemType Directory libxml2-install\share\libxml2

@@ -11,7 +11,11 @@ meson  setup \
        --werror \
        --buildtype=debugoptimized \
        --default-library shared \
-       -Dlegacy=enabled \
+       -Ddocs=enabled \
+       -Dhttp=enabled \
+       -Dschematron=enabled \
+       -Dzlib=enabled \
+       -Dpython=enabled \
        builddir
 
 ninja -C builddir

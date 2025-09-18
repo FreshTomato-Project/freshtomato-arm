@@ -19,7 +19,7 @@
 
 <script>
 
-//	<% nvram ("lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname,lan_access");%> 
+//	<% nvram ("lan_ifname,lan_access");%>
 
 var cprefix = 'advanced_access';
 

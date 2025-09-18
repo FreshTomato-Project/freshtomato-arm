@@ -19,7 +19,7 @@
 
 <script>
 
-//	<% nvram("upnp_enable,upnp_secure,upnp_custom,upnp_lan,upnp_lan1,upnp_lan2,upnp_lan3,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname"); %>
+//	<% nvram("upnp_enable,upnp_secure,upnp_custom,upnp_lan,lan_ifname"); %>
 
 </script>
 <script src="upnp.jsx?_http_id=<% nv(http_id); %>"></script>

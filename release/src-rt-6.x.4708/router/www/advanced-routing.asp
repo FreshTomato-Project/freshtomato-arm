@@ -18,7 +18,7 @@
 
 <script>
 
-//	<% nvram("routes_static,dhcpc_33,dhcpc_121,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname,wan_ifname,wan_iface,wan2_ifname,wan2_iface,wan3_ifname,wan3_iface,wan4_ifname,wan4_iface"); %>
+//	<% nvram("routes_static,dhcpc_33,dhcpc_121,lan_ifname,wan_ifname,wan_iface"); %>
 
 //	<% activeroutes(); %>
 

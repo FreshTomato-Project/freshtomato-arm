@@ -19,7 +19,7 @@
 
 <script>
 
-//	<% nvram("tor_enable,tor_solve_only,tor_socksport,tor_transport,tor_dnsport,tor_datadir,tor_users,tor_ports,tor_ports_custom,tor_custom,tor_iface,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname"); %>
+//	<% nvram("tor_enable,tor_solve_only,tor_socksport,tor_transport,tor_dnsport,tor_datadir,tor_users,tor_ports,tor_ports_custom,tor_custom,tor_iface,lan_ifname"); %>
 
 var changed = 0;
 var serviceType = 'tor';

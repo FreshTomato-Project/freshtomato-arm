@@ -20,7 +20,7 @@
 <script src="interfaces.js?rel=<% version(); %>"></script>
 
 <script>
-//	<% nvram("wan_ifname,wan_iface,wan2_ifname,wan2_iface,wan3_ifname,wan3_iface,wan4_ifname,wan4_iface,lan_ifname,lan1_ifname,lan2_ifname,lan3_ifname,wan_proto,wan2_proto,wan3_proto,wan4_proto,web_svg,web_css,rstats_enable,wl_nband"); %>
+//	<% nvram("wan_ifname,wan_iface,lan_ifname,wan_proto,web_svg,web_css,rstats_enable,wl_nband"); %>
 </script>
 
 <script src="bwm-common.js?rel=<% version(); %>"></script>

@@ -68,7 +68,7 @@ if T.TYPE_CHECKING:
 #
 # Pip requires that RCs are named like this: '0.1.0.rc1'
 # But the corresponding Git tag needs to be '0.1.0rc1'
-version = '1.9.0'
+version = '1.9.1'
 
 # The next stable version when we are in dev. This is used to allow projects to
 # require meson version >=1.2.0 when using 1.1.99. FeatureNew won't warn when
@@ -565,9 +565,12 @@ class CoreData:
 
         return dirty
 
-    def add_compiler_options(self, c_options: MutableKeyedOptionDictType, lang: str, for_machine: MachineChoice) -> None:
+    def add_compiler_options(self, c_options: MutableKeyedOptionDictType, lang: str, for_machine: MachineChoice,
+                             subproject: str) -> None:
         for k, o in c_options.items():
             assert k.subproject is None and k.machine is for_machine
+            if subproject:
+                k = k.evolve(subproject=subproject)
             if lang == 'objc' and k.name == 'c_std':
                 # For objective C, always fall back to c_std.
                 self.optstore.add_compiler_option('c', k, o)
@@ -577,7 +580,17 @@ class CoreData:
                 self.optstore.add_compiler_option(lang, k, o)
 
     def process_compiler_options(self, lang: str, comp: Compiler, subproject: str) -> None:
-        self.add_compiler_options(comp.get_options(), lang, comp.for_machine)
+        self.add_compiler_options(comp.get_options(), lang, comp.for_machine, subproject)
+
+        for key in [OptionKey(f'{lang}_args'), OptionKey(f'{lang}_link_args')]:
+            if self.is_cross_build():
+                key = key.evolve(machine=comp.for_machine)
+            # the global option is already there, but any augment is still
+            # sitting in pending_options has to be taken into account
+            assert key in self.optstore
+            if subproject:
+                skey = key.evolve(subproject=subproject)
+                self.optstore.add_compiler_option(lang, skey, self.optstore.get_value_object(key))
 
         for key in comp.base_options:
             if subproject:
@@ -641,7 +654,13 @@ def update_cmd_line_file(build_dir: str, options: SharedCMDOptions) -> None:
     filename = get_cmd_line_file(build_dir)
     config = CmdLineFileParser()
     config.read(filename)
-    config['options'].update({str(k): str(v) for k, v in options.cmd_line_options.items()})
+    for k, v in options.cmd_line_options.items():
+        keystr = str(k)
+        if v is not None:
+            config['options'][keystr] = str(v)
+        elif keystr in config['options']:
+            del config['options'][keystr]
+
     with open(filename, 'w', encoding='utf-8') as f:
         config.write(f)
 

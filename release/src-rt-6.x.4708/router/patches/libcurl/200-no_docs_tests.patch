@@ -1,6 +1,6 @@
 --- libcurl/Makefile.am
 +++ libcurl/Makefile.am
-@@ -88,7 +88,7 @@ CLEANFILES = $(VC14_LIBVCXPROJ) $(VC14_S
+@@ -87,7 +87,7 @@ CLEANFILES = $(VC14_LIBVCXPROJ) $(VC14_S
  bin_SCRIPTS = curl-config
  
  SUBDIRS = lib docs src scripts
@@ -9,7 +9,7 @@
  
  pkgconfigdir = $(libdir)/pkgconfig
  pkgconfig_DATA = libcurl.pc
-@@ -184,12 +184,9 @@ cygwinbin:
+@@ -183,12 +183,9 @@ cygwinbin:
  if BUILD_DOCS
  install-data-hook:
  	(cd include && $(MAKE) install)

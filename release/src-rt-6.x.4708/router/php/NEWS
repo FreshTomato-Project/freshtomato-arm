@@ -1,5 +1,76 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+25 Sep 2025, PHP 8.3.26
+
+- Core:
+  . Fixed bug GH-18850 (Repeated inclusion of file with __halt_compiler()
+    triggers "Constant already defined" warning). (ilutov)
+  . Partially fixed bug GH-19542 (Scanning of string literals >=2GB will fail
+    due to signed int overflow). (ilutov)
+  . Fixed bug GH-19544 (GC treats ZEND_WEAKREF_TAG_MAP references as WeakMap
+    references). (Arnaud, timwolla)
+  . Fixed bug GH-19613 (Stale array iterator pointer). (ilutov)
+  . Fixed bug GH-19679 (zend_ssa_range_widening may fail to converge). (Arnaud)
+  . Fixed bug GH-19681 (PHP_EXPAND_PATH broken with bash 5.3.0). (Remi)
+  . Fixed bug GH-19720 (Assertion failure when error handler throws when
+    accessing a deprecated constant). (nielsdos)
+
+- CLI:
+  . Fixed bug GH-19461 (Improve error message on listening error with IPv6
+    address). (alexandre-daubois)
+
+- Date:
+  . Fixed date_sunrise() and date_sunset() with partial-hour UTC offset.
+    (ilutov)
+
+- DOM:
+  . Fixed bug GH-19612 (Mitigate libxml2 tree dictionary bug). (nielsdos)
+
+- FPM:
+  . Fixed failed debug assertion when php_admin_value setting fails. (ilutov)
+
+- GD:
+  . Fixed bug GH-19579 (imagefilledellipse underflow on width argument).
+    (David Carlier)
+
+- Intl:
+  . Fixed bug GH-11952 (Fix locale strings canonicalization for IntlDateFormatter
+    and NumberFormatter). (alexandre-daubois)
+
+- OpenSSL:
+  . Fixed bug GH-19245 (Success error message on TLS stream accept failure).
+    (Jakub Zelenka)
+
+- PGSQL:
+  . Fixed bug GH-19485 (potential use after free when using persistent pgsql
+    connections). (Mark Karpeles)
+
+- Phar:
+  . Fixed memory leaks when verifying OpenSSL signature. (Girgias)
+  . Fix memory leak in phar tar temporary file error handling code. (nielsdos)
+  . Fix metadata leak when phar convert logic fails. (nielsdos)
+  . Fix memory leak on failure in phar_convert_to_other(). (nielsdos)
+  . Fixed bug GH-19752 (Phar decompression with invalid extension
+    can cause UAF). (nielsdos)
+
+- Standard:
+  . Fixed bug GH-16649 (UAF during array_splice). (alexandre-daubois)
+  . Fixed bug GH-19577 (Avoid integer overflow when using a small offset
+    and PHP_INT_MAX with LimitIterator). (alexandre-daubois)
+
+- Streams:
+  . Remove incorrect call to zval_ptr_dtor() in user_wrapper_metadata().
+    (nielsdos)
+  . Fix OSS-Fuzz #385993744. (nielsdos)
+
+- Tidy:
+  . Fixed GH-19021 build issue with libtidy in regard of tidyOptIsReadonly
+    deprecation and TidyInternalCategory being available later than
+    tidyOptGetCategory. (arjendekorte)
+
+- Zip:
+  . Fix memory leak in zip when encountering empty glob result. (nielsdos)
+
 28 Aug 2025, PHP 8.3.25
 
 - Core:

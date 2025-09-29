@@ -684,13 +684,13 @@ elsif ($openssldir eq "openssl-3.0") {
 #genSO("${root}/usr/lib/libwolfssl.so.42.2.0", "${router}/wolfssl/src/.libs/libwolfssl.a", "${stripshared}");
 
 if ($is_arm ne "y") { # MIPS only (ARM - bigger)
-	genSO("${root}/usr/lib/libexpat.so.1.11.1", "${router}/expat/lib/.libs/libexpat.a", "${stripshared}");
 	genSO("${root}/usr/lib/libid3tag.so.0.16.3", "${router}/libid3tag/static/libid3tag.a", "${stripshared}", "-L${router}/zlib");
 	genSO("${root}/usr/lib/libexif.so.12", "${router}/libexif/libexif/.libs/libexif.a", "${stripshared}");
 	genSO("${root}/usr/lib/libavcodec.so.54", "${router}/ffmpeg//libavcodec/libavcodec.a", "${stripshared}", "-L${router}/ffmpeg/libavutil -L${router}/zlib");
 	genSO("${root}/usr/lib/libavformat.so.54", "${router}/ffmpeg/libavformat/libavformat.a", "${stripshared}", "-L${router}/ffmpeg/libavutil -L${router}/ffmpeg/libavcodec -L${router}/zlib");
 }
 
+genSO("${root}/usr/lib/libexpat.so.1.11.1", "${router}/expat/static/libexpat.a", "${stripshared}");
 genSO("${root}/usr/lib/libavutil.so.51", "${router}/ffmpeg/libavutil/libavutil.a", "${stripshared}", "-L${router}/zlib");
 genSO("${root}/usr/lib/libzebra.so", "${router}/zebra/lib/libzebra.a", "${stripshared}");
 genSO("${root}/usr/lib/libnfnetlink.so.0.2.0", "${router}/libnfnetlink/src/.libs/libnfnetlink.a", "${stripshared}");

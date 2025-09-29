@@ -3887,19 +3887,22 @@ expat-clean:
 avahi/stamp-h1:
 	$(call patch_files,avahi)
 	cd avahi && autoreconf -fsi && \
-		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -I$(TOP)/expat/staged/usr/include" \
+		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -DNDEBUG -DDISABLE_SYSTEMD -I$(TOP)/expat/staged/usr/include" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/expat/staged/usr/lib -ldl -lpthread" \
 		LIBDAEMON_CFLAGS="-I$(TOP)/libdaemon" \
 		LIBDAEMON_LIBS="-L$(TOP)/libdaemon/libdaemon/.libs -ldaemon" \
 		$(CONFIGURE) --prefix=/usr --sysconfdir=/etc localstatedir=/var --with-distro=none \
-			--enable-introspection=no \
+			--disable-introspection \
 			--disable-nls --disable-glib --disable-libevent --disable-gobject \
 			--disable-qt3 --disable-qt4 --disable-qt5 --disable-gtk --disable-gtk3 \
 			--disable-dbus --disable-gdbm --disable-python --disable-python-dbus \
-			--disable-mono --disable-monodoc --disable-autoipd \
-			--disable-doxygen-doc --disable-manpages --disable-xmltoman \
+			--disable-dbm --disable-mono --disable-monodoc --disable-autoipd --disable-tests \
+			--disable-manpages --disable-xmltoman --disable-doxygen-doc --disable-doxygen-dot \
+			--disable-doxygen-man --disable-doxygen-rtf --disable-doxygen-xml --disable-doxygen-chm \
+			--disable-doxygen-chi --disable-doxygen-html --disable-doxygen-ps --disable-doxygen-pdf \
 			--with-xml=expat \
-			--with-avahi-user="nobody" --with-avahi-group="nobody" \
+			--with-avahi-user=nobody --with-avahi-group=nobody \
+			--with-autoipd-user=nobody --with-autoipd-group=nobody /
 			--disable-stack-protector \
 			--disable-dependency-tracking \
 			avahi_runtime_dir=/var/run servicedir=/etc/avahi/services

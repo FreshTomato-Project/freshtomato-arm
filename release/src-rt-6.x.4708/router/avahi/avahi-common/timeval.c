@@ -24,18 +24,10 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <assert.h>
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #include "timeval.h"
 
-#define USE_MONOTONIC (defined(HAVE_CLOCK_GETTIME) && defined(_POSIX_MONOTONIC_CLOCK))
-
-int avahi_timeval_compare(const struct AvahiTimeVal *a, const struct AvahiTimeVal *b) {
+int avahi_timeval_compare(const struct timeval *a, const struct timeval *b) {
     assert(a);
     assert(b);
 
@@ -54,7 +46,7 @@ int avahi_timeval_compare(const struct AvahiTimeVal *a, const struct AvahiTimeVa
     return 0;
 }
 
-AvahiUsec avahi_timeval_diff(const struct AvahiTimeVal *a, const struct AvahiTimeVal *b) {
+AvahiUsec avahi_timeval_diff(const struct timeval *a, const struct timeval *b) {
     assert(a);
     assert(b);
 
@@ -64,7 +56,7 @@ AvahiUsec avahi_timeval_diff(const struct AvahiTimeVal *a, const struct AvahiTim
     return ((AvahiUsec) a->tv_sec - b->tv_sec)*1000000 + a->tv_usec - b->tv_usec;
 }
 
-struct AvahiTimeVal* avahi_timeval_add(struct AvahiTimeVal *a, AvahiUsec usec) {
+struct timeval* avahi_timeval_add(struct timeval *a, AvahiUsec usec) {
     AvahiUsec u;
     assert(a);
 
@@ -81,44 +73,20 @@ struct AvahiTimeVal* avahi_timeval_add(struct AvahiTimeVal *a, AvahiUsec usec) {
     return a;
 }
 
-struct AvahiTimeVal* avahi_now(struct AvahiTimeVal *now) {
-    struct timeval tv;
-#if USE_MONOTONIC
-    struct timespec ts;
-#endif
-
-    assert(now);
-
-#if USE_MONOTONIC
-    /* Use a monotonic clock if possible. This prevents jumps in the system
-     * clock from messing with timers (especially jumps backward) */
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
-        now->tv_sec = ts.tv_sec;
-        now->tv_usec = ts.tv_nsec / 1000;
-    } else {
-#endif
-        gettimeofday(&tv, NULL);
-        now->tv_sec = tv.tv_sec;
-        now->tv_usec = tv.tv_usec;
-#if USE_MONOTONIC
-    }
-#endif
-
-    return now;
-}
-
-AvahiUsec avahi_age(const struct AvahiTimeVal *a) {
-    struct AvahiTimeVal now;
+AvahiUsec avahi_age(const struct timeval *a) {
+    struct timeval now;
 
     assert(a);
 
-    return avahi_timeval_diff(avahi_now(&now), a);
+    gettimeofday(&now, NULL);
+
+    return avahi_timeval_diff(&now, a);
 }
 
-struct AvahiTimeVal *avahi_elapse_time(struct AvahiTimeVal *tv, unsigned msec, unsigned jitter) {
+struct timeval *avahi_elapse_time(struct timeval *tv, unsigned msec, unsigned jitter) {
     assert(tv);
 
-    avahi_now(tv);
+    gettimeofday(tv, NULL);
 
     if (msec)
         avahi_timeval_add(tv, (AvahiUsec) msec*1000);

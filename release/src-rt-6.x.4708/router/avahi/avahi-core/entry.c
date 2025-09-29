@@ -113,8 +113,6 @@ void avahi_entry_group_free(AvahiServer *s, AvahiSEntryGroup *g) {
 void avahi_cleanup_dead_entries(AvahiServer *s) {
     assert(s);
 
-    avahi_log_debug("avahi_cleanup_dead_entries()");
-
     if (s->need_group_cleanup) {
         AvahiSEntryGroup *g, *next;
 
@@ -1036,7 +1034,7 @@ void avahi_s_entry_group_change_state(AvahiSEntryGroup *g, AvahiEntryGroupState 
         /* If the entry group is now established, remember the time
          * this happened */
 
-        avahi_now(&g->established_at);
+        gettimeofday(&g->established_at, NULL);
 
     g->state = state;
 
@@ -1075,24 +1073,16 @@ static void cleanup_time_event_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void
 
     assert(s);
 
-    avahi_log_debug("cleanup_time_event_callback()");
-
     avahi_cleanup_dead_entries(s);
 }
 
 static void schedule_cleanup(AvahiServer *s) {
-    struct AvahiTimeVal tv;
+    struct timeval tv;
 
     assert(s);
 
-    avahi_log_debug("XXX schedule_cleanup()");
-    if (!s->cleanup_time_event) {
+    if (!s->cleanup_time_event)
         s->cleanup_time_event = avahi_time_event_new(s->time_event_queue, avahi_elapse_time(&tv, 1000, 0), &cleanup_time_event_callback, s);
-    } else {
-        /* We rely on entries staying dead for 1s to prevent recently sent probes conflicting with a record that was just cleaned up. Ideally we would track the time each entry has been dead here. */
-        avahi_log_debug("XXX schedule_cleanup() already pending, deferred by 1s");
-        avahi_time_event_update(s->cleanup_time_event, avahi_elapse_time(&tv, 1000, 0));
-    }
 }
 
 void avahi_s_entry_group_free(AvahiSEntryGroup *g) {
@@ -1124,7 +1114,7 @@ void avahi_s_entry_group_free(AvahiSEntryGroup *g) {
 static void entry_group_commit_real(AvahiSEntryGroup *g) {
     assert(g);
 
-    avahi_now(&g->register_time);
+    gettimeofday(&g->register_time, NULL);
 
     avahi_s_entry_group_change_state(g, AVAHI_ENTRY_GROUP_REGISTERING);
 
@@ -1147,7 +1137,7 @@ static void entry_group_register_time_event_callback(AVAHI_GCC_UNUSED AvahiTimeE
 }
 
 int avahi_s_entry_group_commit(AvahiSEntryGroup *g) {
-    struct AvahiTimeVal now;
+    struct timeval now;
 
     assert(g);
     assert(!g->dead);
@@ -1165,7 +1155,7 @@ int avahi_s_entry_group_commit(AvahiSEntryGroup *g) {
                             AVAHI_RR_HOLDOFF_MSEC_RATE_LIMIT :
                             AVAHI_RR_HOLDOFF_MSEC));
 
-    avahi_now(&now);
+    gettimeofday(&now, NULL);
 
     if (avahi_timeval_compare(&g->register_time, &now) <= 0) {
 
@@ -1194,11 +1184,12 @@ void avahi_s_entry_group_reset(AvahiSEntryGroup *g) {
         }
     }
     g->server->need_entry_cleanup = 1;
-    schedule_cleanup(g->server);
 
     g->n_probing = 0;
 
     avahi_s_entry_group_change_state(g, AVAHI_ENTRY_GROUP_UNCOMMITED);
+
+    schedule_cleanup(g->server);
 }
 
 int avahi_entry_is_commited(AvahiEntry *e) {

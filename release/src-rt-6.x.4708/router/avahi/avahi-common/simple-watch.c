@@ -52,7 +52,7 @@ struct AvahiTimeout {
     int dead;
 
     int enabled;
-    struct AvahiTimeVal expiry;
+    struct timeval expiry;
 
     AvahiTimeoutCallback callback;
     void  *userdata;
@@ -238,10 +238,10 @@ static void cleanup_watches(AvahiSimplePoll *s, int all) {
             destroy_watch(w);
     }
 
-    s->watch_req_cleanup = 0;
+    s->timeout_req_cleanup = 0;
 }
 
-static AvahiTimeout* timeout_new(const AvahiPoll *api, const struct AvahiTimeVal *tv, AvahiTimeoutCallback callback, void *userdata) {
+static AvahiTimeout* timeout_new(const AvahiPoll *api, const struct timeval *tv, AvahiTimeoutCallback callback, void *userdata) {
     AvahiTimeout *t;
     AvahiSimplePoll *s;
 
@@ -270,7 +270,7 @@ static AvahiTimeout* timeout_new(const AvahiPoll *api, const struct AvahiTimeVal
     return t;
 }
 
-static void timeout_update(AvahiTimeout *t, const struct AvahiTimeVal *tv) {
+static void timeout_update(AvahiTimeout *t, const struct timeval *tv) {
     assert(t);
     assert(!t->dead);
 
@@ -479,19 +479,20 @@ int avahi_simple_poll_prepare(AvahiSimplePoll *s, int timeout) {
 
     /* Calculate the wakeup time */
     if ((next_timeout = find_next_timeout(s))) {
-        struct AvahiTimeVal now;
+        struct timeval now;
         int t;
         AvahiUsec usec;
 
         if (next_timeout->expiry.tv_sec == 0 &&
             next_timeout->expiry.tv_usec == 0) {
 
-            /* Just a shortcut so that we don't need to call avahi_now() */
+            /* Just a shortcut so that we don't need to call gettimeofday() */
             timeout = 0;
             goto finish;
         }
 
-        usec = avahi_timeval_diff(&next_timeout->expiry, avahi_now(&now));
+        gettimeofday(&now, NULL);
+        usec = avahi_timeval_diff(&next_timeout->expiry, &now);
 
         if (usec <= 0) {
             /* Timeout elapsed */
@@ -558,7 +559,7 @@ int avahi_simple_poll_dispatch(AvahiSimplePoll *s) {
 
         if (next_timeout->expiry.tv_sec == 0 && next_timeout->expiry.tv_usec == 0) {
 
-            /* Just a shortcut so that we don't need to call avahi_now() */
+            /* Just a shortcut so that we don't need to call gettimeofday() */
             timeout_callback(next_timeout);
             goto finish;
         }

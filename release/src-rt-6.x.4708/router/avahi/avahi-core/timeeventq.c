@@ -33,8 +33,8 @@
 struct AvahiTimeEvent {
     AvahiTimeEventQueue *queue;
     AvahiPrioQueueNode *node;
-    struct AvahiTimeVal expiry;
-    struct AvahiTimeVal last_run;
+    struct timeval expiry;
+    struct timeval last_run;
     AvahiTimeEventCallback callback;
     void* userdata;
 };
@@ -78,9 +78,9 @@ static void expiration_event(AVAHI_GCC_UNUSED AvahiTimeout *timeout, void *userd
     AvahiTimeEvent *e;
 
     if ((e = time_event_queue_root(q))) {
-        struct AvahiTimeVal now;
+        struct timeval now;
 
-        avahi_now(&now);
+        gettimeofday(&now, NULL);
 
         /* Check if expired */
         if (avahi_timeval_compare(&now, &e->expiry) >= 0) {
@@ -103,12 +103,12 @@ static void expiration_event(AVAHI_GCC_UNUSED AvahiTimeout *timeout, void *userd
 }
 
 static void fix_expiry_time(AvahiTimeEvent *e) {
-    struct AvahiTimeVal now;
+    struct timeval now;
     assert(e);
 
     return; /*** DO WE REALLY NEED THIS? ***/
 
-    avahi_now(&now);
+    gettimeofday(&now, NULL);
 
     if (avahi_timeval_compare(&now, &e->expiry) > 0)
         e->expiry = now;
@@ -160,7 +160,7 @@ void avahi_time_event_queue_free(AvahiTimeEventQueue *q) {
 
 AvahiTimeEvent* avahi_time_event_new(
     AvahiTimeEventQueue *q,
-    const struct AvahiTimeVal *timeval,
+    const struct timeval *timeval,
     AvahiTimeEventCallback callback,
     void* userdata) {
 
@@ -212,7 +212,7 @@ void avahi_time_event_free(AvahiTimeEvent *e) {
     update_timeout(q);
 }
 
-void avahi_time_event_update(AvahiTimeEvent *e, const struct AvahiTimeVal *timeval) {
+void avahi_time_event_update(AvahiTimeEvent *e, const struct timeval *timeval) {
     assert(e);
     assert(timeval);
 

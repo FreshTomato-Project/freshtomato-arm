@@ -36,7 +36,7 @@
 static AvahiTimeEventQueue *q = NULL;
 
 static void callback(AvahiTimeEvent*e, void* userdata) {
-    struct AvahiTimeVal tv = {0, 0};
+    struct timeval tv = {0, 0};
     assert(e);
     avahi_log_info("callback(%i)", POINTER_TO_INT(userdata));
     avahi_elapse_time(&tv, 1000, 100);
@@ -44,7 +44,7 @@ static void callback(AvahiTimeEvent*e, void* userdata) {
 }
 
 int main(AVAHI_GCC_UNUSED int argc, AVAHI_GCC_UNUSED char *argv[]) {
-    struct AvahiTimeVal tv;
+    struct timeval tv;
     AvahiSimplePoll *s;
 
     s = avahi_simple_poll_new();

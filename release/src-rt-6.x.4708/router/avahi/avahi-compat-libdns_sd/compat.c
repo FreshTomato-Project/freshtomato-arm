@@ -267,9 +267,7 @@ static int read_command(int fd) {
     assert(fd >= 0);
 
     if ((r = read(fd, &command, 1)) != 1) {
-#ifndef NDEBUG
         fprintf(stderr, __FILE__": read() failed: %s\n", r < 0 ? strerror(errno) : "EOF");
-#endif
         return -1;
     }
 
@@ -280,9 +278,7 @@ static int write_command(int fd, char reply) {
     assert(fd >= 0);
 
     if (write(fd, &reply, 1) != 1) {
-#ifndef NDEBUG
         fprintf(stderr, __FILE__": write() failed: %s\n", strerror(errno));
-#endif
         return -1;
     }
 
@@ -318,9 +314,6 @@ static void * thread_func(void *data) {
 
     for (;;) {
         char command;
-
-        if (sdref->thread_fd == -1)
-            break;
 
         if ((command = read_command(sdref->thread_fd)) < 0)
             break;
@@ -373,10 +366,9 @@ static DNSServiceRef sdref_new(void) {
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, fd) < 0)
         goto fail;
 
-    if (!(sdref = avahi_new0(struct _DNSServiceRef_t, 1)))
+    if (!(sdref = avahi_new(struct _DNSServiceRef_t, 1)))
         goto fail;
 
-    sdref->thread_running = 0;
     sdref->n_ref = 1;
     sdref->thread_fd = fd[0];
     sdref->main_fd = fd[1];
@@ -396,6 +388,8 @@ static DNSServiceRef sdref_new(void) {
     pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
     ASSERT_SUCCESS(pthread_mutex_init(&sdref->mutex, &mutex_attr));
 
+    sdref->thread_running = 0;
+
     if (!(sdref->simple_poll = avahi_simple_poll_new()))
         goto fail;
 
@@ -412,6 +406,8 @@ static DNSServiceRef sdref_new(void) {
     if (pthread_create(&sdref->thread, NULL, thread_func, sdref) != 0)
         goto fail;
 
+    sdref->thread_running = 1;
+
     return sdref;
 
 fail:
@@ -426,15 +422,9 @@ static void sdref_free(DNSServiceRef sdref) {
     assert(sdref);
 
     if (sdref->thread_running) {
-        assert(sdref->main_fd > 0);
-        assert(sdref->thread != NULL);
-
-        if (sdref->main_fd != -1)
-            write_command(sdref->main_fd, COMMAND_QUIT);
+        ASSERT_SUCCESS(write_command(sdref->main_fd, COMMAND_QUIT));
         avahi_simple_poll_wakeup(sdref->simple_poll);
-        pthread_join(sdref->thread, NULL);
-        sdref->thread_running = 0;
-        sdref->thread = NULL;
+        ASSERT_SUCCESS(pthread_join(sdref->thread, NULL));
     }
 
     if (sdref->client)
@@ -443,15 +433,11 @@ static void sdref_free(DNSServiceRef sdref) {
     if (sdref->simple_poll)
         avahi_simple_poll_free(sdref->simple_poll);
 
-    if (sdref->thread_fd >= 0) {
+    if (sdref->thread_fd >= 0)
         close(sdref->thread_fd);
-        sdref->thread_fd = -1;
-    }
 
-    if (sdref->main_fd >= 0) {
+    if (sdref->main_fd >= 0)
         close(sdref->main_fd);
-        sdref->main_fd = -1;
-    }
 
     ASSERT_SUCCESS(pthread_mutex_destroy(&sdref->mutex));
 

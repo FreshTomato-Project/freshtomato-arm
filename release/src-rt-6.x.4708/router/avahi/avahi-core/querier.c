@@ -41,7 +41,7 @@ struct AvahiQuerier {
 
     AvahiTimeEvent *time_event;
 
-    struct AvahiTimeVal creation_time;
+    struct timeval creation_time;
 
     unsigned post_id;
     int post_id_valid;
@@ -63,7 +63,7 @@ void avahi_querier_free(AvahiQuerier *q) {
 
 static void querier_elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void *userdata) {
     AvahiQuerier *q = userdata;
-    struct AvahiTimeVal tv;
+    struct timeval tv;
 
     assert(q);
 
@@ -95,9 +95,9 @@ static void querier_elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void *us
     avahi_time_event_update(q->time_event, &tv);
 }
 
-void avahi_querier_add(AvahiInterface *i, AvahiKey *key, struct AvahiTimeVal *ret_ctime) {
+void avahi_querier_add(AvahiInterface *i, AvahiKey *key, struct timeval *ret_ctime) {
     AvahiQuerier *q;
-    struct AvahiTimeVal tv;
+    struct timeval tv;
 
     assert(i);
     assert(key);
@@ -124,7 +124,7 @@ void avahi_querier_add(AvahiInterface *i, AvahiKey *key, struct AvahiTimeVal *re
     q->n_used = 1;
     q->sec_delay = 1;
     q->post_id_valid = 0;
-    avahi_now(&q->creation_time);
+    gettimeofday(&q->creation_time, NULL);
 
     /* Do the initial query */
     if (avahi_interface_post_query(i, key, 0, &q->post_id))
@@ -188,7 +188,7 @@ void avahi_querier_remove_for_all(AvahiServer *s, AvahiIfIndex idx, AvahiProtoco
 
 struct cbdata {
     AvahiKey *key;
-    struct AvahiTimeVal *ret_ctime;
+    struct timeval *ret_ctime;
 };
 
 static void add_querier_callback(AvahiInterfaceMonitor *m, AvahiInterface *i, void* userdata) {
@@ -199,7 +199,7 @@ static void add_querier_callback(AvahiInterfaceMonitor *m, AvahiInterface *i, vo
     assert(cbdata);
 
     if (i->announcing) {
-        struct AvahiTimeVal tv;
+        struct timeval tv;
         avahi_querier_add(i, cbdata->key, &tv);
 
         if (cbdata->ret_ctime && avahi_timeval_compare(&tv, cbdata->ret_ctime) > 0)
@@ -207,7 +207,7 @@ static void add_querier_callback(AvahiInterfaceMonitor *m, AvahiInterface *i, vo
     }
 }
 
-void avahi_querier_add_for_all(AvahiServer *s, AvahiIfIndex idx, AvahiProtocol protocol, AvahiKey *key, struct AvahiTimeVal *ret_ctime) {
+void avahi_querier_add_for_all(AvahiServer *s, AvahiIfIndex idx, AvahiProtocol protocol, AvahiKey *key, struct timeval *ret_ctime) {
     struct cbdata cbdata;
 
     assert(s);
@@ -248,7 +248,7 @@ int avahi_querier_shall_refresh_cache(AvahiInterface *i, AvahiKey *key) {
         return 0;
 
     } else {
-        struct AvahiTimeVal tv;
+        struct timeval tv;
 
         /* We can defer our query a little, since the cache will now
          * issue a refresh query anyway. */

@@ -233,7 +233,7 @@ int main(AVAHI_GCC_UNUSED int argc, AVAHI_GCC_UNUSED char*argv[]) {
     AvahiClient *client = NULL;
     int error;
     int ret = 1;
-    struct AvahiTimeVal tv;
+    struct timeval tv;
 
     /* Allocate main loop object */
     if (!(simple_poll = avahi_simple_poll_new())) {

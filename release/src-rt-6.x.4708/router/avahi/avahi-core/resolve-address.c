@@ -85,7 +85,7 @@ static void time_event_callback(AvahiTimeEvent *e, void *userdata) {
 }
 
 static void start_timeout(AvahiSAddressResolver *r) {
-    struct AvahiTimeVal tv;
+    struct timeval tv;
     assert(r);
 
     if (r->time_event)
@@ -286,9 +286,6 @@ AvahiSAddressResolver *avahi_s_address_resolver_new(
         AvahiSAddressResolver *b;
 
         b = avahi_s_address_resolver_prepare(server, interface, protocol, address, flags, callback, userdata);
-        if (!b)
-            return NULL;
-
         avahi_s_address_resolver_start(b);
 
         return b;

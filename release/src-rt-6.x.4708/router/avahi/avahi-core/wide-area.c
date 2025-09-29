@@ -48,8 +48,8 @@ struct AvahiWideAreaCacheEntry {
     AvahiWideAreaLookupEngine *engine;
 
     AvahiRecord *record;
-    struct AvahiTimeVal timestamp;
-    struct AvahiTimeVal expiry;
+    struct timeval timestamp;
+    struct timeval expiry;
 
     AvahiTimeEvent *time_event;
 
@@ -173,7 +173,7 @@ static void lookup_stop(AvahiWideAreaLookup *l) {
 
 static void sender_timeout_callback(AvahiTimeEvent *e, void *userdata) {
     AvahiWideAreaLookup *l = userdata;
-    struct AvahiTimeVal tv;
+    struct timeval tv;
 
     assert(l);
 
@@ -207,7 +207,7 @@ AvahiWideAreaLookup *avahi_wide_area_lookup_new(
     AvahiWideAreaLookupCallback callback,
     void *userdata) {
 
-    struct AvahiTimeVal tv;
+    struct timeval tv;
     AvahiWideAreaLookup *l, *t;
     uint8_t *p;
 
@@ -437,7 +437,7 @@ static void add_to_cache(AvahiWideAreaLookupEngine *e, AvahiRecord *r) {
 
     c->record = avahi_record_ref(r);
 
-    avahi_now(&c->timestamp);
+    gettimeofday(&c->timestamp, NULL);
     c->expiry = c->timestamp;
     avahi_timeval_add(&c->expiry, r->ttl * 1000000);
 

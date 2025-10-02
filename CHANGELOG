@@ -5,6 +5,118 @@ FreshTomato-ARM Changelog
 
 
 
+2025.4          2025.10.05
+---------------------------
+
+- Warning: due to changes in the naming of some nvram variables, users of BW Limiter and tftp in dnsmasq should review their settings.
+
+- SDK6/SDK7/SDK714: help wireless vif mac addr issues
+- SDK6/SDK7/SDK714: fix Serial Flash Memory Init (Part 2)
+- libcurl: update to 8.16.0
+- sqlite: update to 3.50.4
+- dnsmasq: update to v2.92test21
+- iperf: update to 3.19.1
+- php: update to 8.3.26
+- nginx: update to 1.29.1
+- meson: update to 1.9.1
+- libsodium: update to latest 1.0.20-stable
+- libffi: update to 3.5.2
+- nano: update to 8.6
+- pcre2: update to 10.46
+- adminer: update to adminneo 5.1.1
+- libjpeg-turbo: update to 3.1.2
+- libxml2: update to 2.15.0
+- expat: update to 2.7.3
+- tor: update to 0.4.8.18
+- GUI: Advanced: DHCP/DNS/TFTP: add a field to enter custom configuration for stubby (close #28)
+- GUI: Correction to menu references
+- GUI: Administration: CIFS Client: fix refreshing 'Total / Free Size' (close #122)
+- GUI: Advanced: VLAN: fix link in Notes (close #81)
+- GUI: VPN: Wireguard: delete notes - point to a link to dedicated page on our wiki as help
+- GUI: VPN: Wireguard: make it more intuitive that import depends on VPN type
+- GUI: VPN: Wireguard: make Peers Parameters (used only for config generation) as a separate tab
+- build: add DLINK DIR868L with wireguard image
+- build: remove no more needed (and icomplete implemented) TCONFIG_SSH
+- build: Makefile: convert expat recipe to cmake
+- build: Makefile: tune avahi recipe
+- avahi: backport CVE fixes from upstream and use clean sources
+- bwlimit: change the names of variables to make them more similar to existing ones and easier to manage
+- dnsmasq: change the name of dnsmasq tftp variable to make it more similar to existing ones and easier to manage
+- dnsmasq: restore use of check_services() to check if dnsmasq is up (disabled in commit bb82460)
+- httpd: ddns.c: code shrink
+- httpd: httpd.c: define MAX_CONN_ACCEPT and MAX_CONN_TIMEOUT and tune them
+- httpd: httpd.c: use global int_1 variable; use proper socklen_t data type
+- httpd: httpd.c: use SO_KEEPALIVE instead of TCP_NODELAY for setsockopt()
+- httpd: httpd.c: rewrite match() function to be fully non-recursive
+- httpd: httpd.c: add syslog logout succesful message and tune failed message
+- httpd: misc.c: iterate over BRIDGE_COUNT for ether-wake
+- httpd: tomato.c: get rid of TCONFIG_MULTIWAN, use MWAN_MAX instead. Also use BRIDGE_COUNT to enumerate lan variables
+- httpd: nvram.c: use static buffer for asp_jsdefaults()
+- httpd: iperf.c: sanitize hostname more precisely (see commit bc96c20)
+- httpd: nvram.c: iterate over MWAN_MAX and BRIDGE_COUNT to get values from other wans/lans
+- httpd: misc.c: iterate over MWAN_MAX in asp_dns()
+- httpd: misc.c: iterate over MWAN_MAX in asp_wanup()
+- httpd: misc.c: iterate over MWAN_MAX in asp_link_uptime()
+- httpd: dhcp.c: iterate over MWAN_MAX in asp_dhcpc_time()
+- httpd: misc.c: iterate over MWAN_MAX in asp_wanstatus(); some code cleaning
+- httpd: comment out asp_jiffies()
+- miniupnpd: win10 & 11 workaround (help version IGD v1 in IGD v2 mode) - show forwarded ports at Windows GUI (again)
+- ntpd: use ulimit to run ntpd with high nice and limited memory to eliminate denial of service attack (close #37)
+- OpenVPN Client: add Routing Policy Prioritization
+- OpenVPN: handle dnsmasq ipset file correctly
+- openssl: backport fix for OpenSSL 3.0.17 regression
+- rc: wireguard.c: fix script execution after using replace_in_file()
+- rc: get rid of TCONFIG_MULTIWAN, iterate over MWAN_MAX instead; part 3
+- rc: use only one anon enum policy definition for both OpenVPN and Wireguard
+- rc: openvpn.c: update CTF bypass
+- rc: firewall.c: use buffer for wanX name - reduce code size
+- rc: dhcp.c: code shrink
+- rc: network.c: fix two typos (close #121)
+- rc: move dnsmasq stuff to outer file
+- rc/shared: introduce and use gen_urandom() function
+- rc: firewall.c: iterate over BRIDGE_COUNT in filter6_input(void)
+- rc: firewall.c: move run_pptpd_firewall_script() to the front
+- rc: introduce and use restart_firewall() function. Move restart_firewall() to the end in exec_service()
+- rc: openvpn.c: iterate over BRIDGE_COUNT for br_ipaddr/br_netmask
+- rc: network.c: iterate over BRIDGE_COUNT for /etc/hosts
+- rc: network.c: iterate over BRIDGE_COUNT and MWAN_MAX in do_static_routes()
+- rc: dhcp.c: iterate over BRIDGE_COUNT in start_dhcp6c()
+- rc: dhcp.c: update start_dhcp6c() for BRIDGE_COUNT values > 4 (up to 32)
+- rc: roamast.c: add check for upper threshold (new --> 25000 Kbps) idle rate roaming assistent
+- rc: dnsmasq.c: use SIGHUP instead of mistakenly used SIGINT in reload_dnsmasq()
+- rc: openvpn.c: simplify write_ovpn_resolv() function
+- rc: pptp_client.c: simplify write_pptpc_resolv() function
+- rc: protect firewall scripts with simple_lock()/simple_unlock(), do the same for vpnrouting.sh
+- rom: update CA bundle to 2025-08-12
+- shared: strings.c: update trimstr() function
+- shared: defaults.c: get rid of TCONFIG_MULTIWAN, use MWAN_MAX instead. Also use BRIDGE_COUNT to enumerate lan variables
+- tomato.css - improved to print and printscreen in dark-mode
+- Wireguard: handle dnsmasq ipset file correctly
+- Wireguard: add Routing Policy Prioritization in PBR mode
+- wireguard/OpenVPN: do not delete PBR table when using the client in non-PRB mode - just hide it and don't add Kill Switch rules to iptables
+- wireguard: fix crash with CTF enabled
+- www: use global C variable definitions required by javascript, instead of locally defined ones
+- www: admin-tomatoanon.asp: add a note
+- Revert "www: vpn-client.asp: only add routing value in Routing Policy mode, otherwise remove all data from the routing table"
+- Revert "www: vpn-wireguard.asp: only add routing value in 'External' and Routing Policy mode, otherwise remove all data from the routing table"
+- Revert "www: vpn-wireguard.asp: clean routing policy if not in 'External' mode"
+- www: vpn-wireguard.asp: do not restart service if only the 'Enable On Start' option was changed
+- www: vpn-client.asp: do not restart client if only the 'Enable On Start' option was changed
+- www: vpn-server.asp: do not restart server if only the 'Enable On Start' option was changed
+- www: fix compilation (navi) without PPTPD
+- www: vpn-client.asp: check if we need to restart firewall in special cases even if client is down; clean-up
+- www: vpn-wireguard.asp: check if we need to restart firewall in special cases even if 'client' is down
+- www: advanced-dhcpdns.asp: Adjust String.trim() usage
+- www: ipt-[daily|monthly].asp: iterate over MAX_BRIDGE_ID in redraw()
+- www: qos-graphs.asp: iterate over MAXWAN_NUM to get irates/orates; also small changes in httpd/ctnf.c (asp_qrate) to get an array
+- www: rename isup.jsz to isup.jsx to protect its content by http_id
+- switch4g: fix kernel module load order (and don't change it in the future...)
+- switch4g: slightly improve the conditions when checking the interface/IP
+- Buffalo WZR-1750DHP: improve support (add SPI suppport, fix VLAN support, fix wl hardware order, adjust linux MTD, remove hardcoded limits for board_ns (working correct))
+- Buffalo WZR-1750DHP: bring router back to life :-) (reduce NVRAM space to 32 KByte for now!)
+- Tenda AC15: adjust command (use 0x9F only) for reading manufacturer/ memory / density for SPI flash
+
+
 2025.3          2025.07.18
 ---------------------------
 

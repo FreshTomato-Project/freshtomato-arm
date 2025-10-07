@@ -2,7 +2,8 @@
  *
  * Tomato Firmware
  *
- * Fixes/updates (C) 2018 - 2024 pedro
+ * Fixes/updates (C) 2018 - 2025 pedro
+ * https://freshtomato.org/
  *
  */
 
@@ -14,8 +15,10 @@
 #include "tomato.h"
 
 
+#if 0
 static float g_cpu_used;
 static unsigned int cpu_num;
+#endif /* 0 */
 
 struct occupy
 {
@@ -31,10 +34,12 @@ struct occupy
 #endif
 };
 
+#if 0
 static void cal_occupy(struct occupy *, struct occupy *);
 static void get_occupy(struct occupy *);
+#endif /* 0 */
 
-void trim(char *str)
+static void trim(char *str)
 {
 	char *copied, *tail = NULL;
 	if (str == NULL)
@@ -68,7 +73,7 @@ void trim(char *str)
  * cpu model               : BCM3302 V2.9
  * BogoMIPS                : 238.38
  */
-int strncmp_ex(char *str1, char *str2)
+static int strncmp_ex(char *str1, char *str2)
 {
 	return strncmp(str1, str2, strlen(str2));
 }
@@ -141,7 +146,8 @@ void get_cpuinfo(char *system_type, const size_t buf_system_type_sz, char *cpucl
 #endif
 }
 
-float get_cpupercent()
+#if 0
+float get_cpupercent(void)
 {
 	struct occupy ocpu[10];
 	struct occupy ncpu[10];
@@ -174,7 +180,7 @@ static void cal_occupy (struct occupy *o, struct occupy *n)
 
 	id = (double) (n->user - o->user);
 	sd = (double) (n->system - o->system);
-	g_cpu_used = ((sd+id) * 100.0) / (nd-od);
+	g_cpu_used = ((sd + id) * 100.0) / (nd - od);
 }
 
 static void get_occupy (struct occupy *o)
@@ -197,3 +203,4 @@ static void get_occupy (struct occupy *o)
 		fclose(fd);
 	}
 }
+#endif /* 0 */

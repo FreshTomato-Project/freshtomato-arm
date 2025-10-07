@@ -10,12 +10,17 @@
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
  * $Id: cgi.c,v 1.10 2005/03/07 08:35:32 kanki Exp $
+ *
+ * Fixes/updates (C) 2018 - 2025 pedro
+ * https://freshtomato.org/
+ *
  */
+
 
 #include "tomato.h"
 
 #ifndef __USE_GNU
-#define __USE_GNU
+ #define __USE_GNU
 #endif
 #include <search.h>
 
@@ -52,13 +57,11 @@ static void unescape(char *s)
 int str_replace(char* str, char* str_src, char* str_des)
 {
 	char *ptr = NULL;
-	char buff[10240];
-	char buff2[10240];
+	char buff[10240], buff2[10240];
 	int i = 0;
 
-	if (str != NULL) {
+	if (str != NULL)
 		strlcpy(buff2, str, sizeof(buff2));
-	}
 	else {
 		logmsg(LOG_DEBUG, "*** [cgi] %s: error - NULL string!", __FUNCTION__);
 		return -1;
@@ -104,9 +107,8 @@ void webcgi_set(char *name, char *value)
 
 	e.key = name;
 	hsearch_r(e, FIND, &ep, &htab);
-	if (ep) {
+	if (ep)
 		ep->data = value;
-	}
 	else {
 		e.data = value;
 		hsearch_r(e, ENTER, &ep, &htab);
@@ -120,6 +122,7 @@ void webcgi_init(char *query)
 
 	if (htab.table)
 		hdestroy_r(&htab);
+
 	if (query == NULL)
 		return;
 

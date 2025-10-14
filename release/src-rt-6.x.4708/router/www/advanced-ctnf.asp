@@ -191,7 +191,7 @@ function save() {
 	<script>
 		createFieldTable('', [
 			{ title: 'Maximum Connections', name: 'ct_max', type: 'text', maxlen: 6, size: 8,
-				suffix: '&nbsp; <a href="javascript:clicked()" id="count0">[ count current ]<\/a> <img src="spin.gif" alt="" id="spin">',
+				suffix: '&nbsp; <a href="javascript:clicked()" id="count0">[ count current ]<\/a> <img src="spin.svg" alt="" id="spin">',
 				value: fixInt(nvram.ct_max || 4096, 128, 300000, 4096) }
 			,{ title: 'Hash Table Size', name: 'ct_hashsize',type: 'text', maxlen: 6, size: 8, value: nvram.ct_hashsize || 1023 }
 		]);

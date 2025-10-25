@@ -129,13 +129,19 @@ static inline int is_psta(int idx, int unit, int subunit, void *param)
 #endif /* TCONFIG_BCMWL6 */
 
 /* rc.c */
+typedef void (*_tf_ipt_write)(const char *format, ... );
+typedef void (*_tf_ip6t_write)(const char *format, ... );
 extern void chains_log_detection(void);
 extern void fix_chain_in_drop(void);
 extern int env2nv(char *env, char *nv);
 extern int serialize_restart(char *service, int start);
 extern void run_del_firewall_script(const char *infile, char *outfile);
 #if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
-extern void kill_switch(void);
+#ifdef TCONFIG_IPV6
+extern void kill_switch(_tf_ipt_write ipt_write, _tf_ip6t_write ip6t_write);
+#else
+extern void kill_switch(_tf_ipt_write ipt_write);
+#endif
 extern void run_vpn_firewall_scripts(const char *kind);
 #endif
 
@@ -376,7 +382,6 @@ extern void stop_nas(void);
 extern void notify_nas(const char *ifname);
 
 /* firewall.c */
-typedef void (*_tf_ipt_write)(const char *format, ... );
 extern wanface_list_t wanfaces[MWAN_MAX];
 extern char lanaddr[BRIDGE_COUNT][32];
 extern char lanmask[BRIDGE_COUNT][32];

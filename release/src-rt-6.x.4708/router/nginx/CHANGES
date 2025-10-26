@@ -1,5 +1,36 @@
 
+Changes with nginx 1.29.2                                        07 Oct 2025
+
+    *) Feature: now nginx can be built with AWS-LC.
+       Thanks Samuel Chiang.
+
+    *) Bugfix: now the "ssl_protocols" directive works in a virtual server
+       different from the default server when using OpenSSL 1.1.1 or newer.
+
+    *) Bugfix: SSL handshake always failed when using TLSv1.3 with OpenSSL
+       and client certificates and resuming a session with a different SNI
+       value; the bug had appeared in 1.27.4.
+
+    *) Bugfix: the "ignoring stale global SSL error" alerts might appear in
+       logs when using QUIC and the "ssl_reject_handshake" directive; the
+       bug had appeared in 1.29.0.
+       Thanks to Vladimir Homutov.
+
+    *) Bugfix: in delta-seconds processing in the "Cache-Control" backend
+       response header line.
+
+    *) Bugfix: an XCLIENT command didn't use the xtext encoding.
+       Thanks to Igor Morgenstern of Aisle Research.
+
+    *) Bugfix: in SSL certificate caching during reconfiguration.
+
+
 Changes with nginx 1.29.1                                        13 Aug 2025
+
+    *) Security: processing of a specially crafted login/password when using
+       the "none" authentication method in the ngx_mail_smtp_module might
+       cause worker process memory disclosure to the authentication server
+       (CVE-2025-53859).
 
     *) Change: now TLSv1.3 certificate compression is disabled by default.
 
@@ -2571,7 +2602,7 @@ Changes with nginx 1.7.4                                         05 Aug 2014
     *) Change: URI escaping now uses uppercase hexadecimal digits.
        Thanks to Piotr Sikora.
 
-    *) Feature: now nginx can be build with BoringSSL and LibreSSL.
+    *) Feature: now nginx can be built with BoringSSL and LibreSSL.
        Thanks to Piotr Sikora.
 
     *) Bugfix: requests might hang if resolver was used and a DNS server
@@ -7847,7 +7878,7 @@ Changes with nginx 0.3.30                                        22 Feb 2006
     *) Change: the ECONNABORTED error log level was changed to "error" from
        "crit".
 
-    *) Bugfix: the ngx_http_perl_module could not be build without the
+    *) Bugfix: the ngx_http_perl_module could not be built without the
        ngx_http_ssi_filter_module.
 
     *) Bugfix: nginx could not be built on i386 platform, if the PIC was

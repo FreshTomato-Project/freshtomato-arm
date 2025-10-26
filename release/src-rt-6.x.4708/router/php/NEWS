@@ -1,5 +1,91 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+23 Oct 2025, PHP 8.3.27
+
+- Core:
+  . Fixed bug GH-19765 (object_properties_load() bypasses readonly property
+    checks). (timwolla)
+  . Fixed hard_timeout with --enable-zend-max-execution-timers. (Appla)
+  . Fixed bug GH-19792 (SCCP causes UAF for return value if both warning and
+    exception are triggered). (nielsdos)
+  . Fixed bug GH-19653 (Closure named argument unpacking between temporary
+    closures can cause a crash). (nielsdos, Arnaud, Bob)
+  . Fixed bug GH-19839 (Incorrect HASH_FLAG_HAS_EMPTY_IND flag on userland
+    array). (ilutov)
+  . Fixed bug GH-19480 (error_log php.ini cannot be unset when open_basedir is
+    configured). (nielsdos)
+  . Fixed bug GH-20002 (Broken build on *BSD with MSAN). (outtersg)
+
+- CLI:
+  . Fix useless "Failed to poll event" error logs due to EAGAIN in CLI server
+    with PHP_CLI_SERVER_WORKERS. (leotaku)
+
+- Curl:
+  . Fix cloning of CURLOPT_POSTFIELDS when using the clone operator instead
+    of the curl_copy_handle() function to clone a CurlHandle. (timwolla)
+  . Fix curl build and test failures with version 8.16.
+    (nielsdos, ilutov, Jakub Zelenka)
+
+- Date:
+  . Fixed GH-17159: "P" format for ::createFromFormat swallows string literals.
+    (nielsdos)
+
+- DBA:
+  . Fixed GH-19885 (dba_fetch() overflow on skip argument). (David Carlier)
+
+- GD:
+  . Fixed GH-19955 (imagefttext() memory leak). (David Carlier)
+
+- MySQLnd:
+  . Fixed bug #67563 (mysqli compiled with mysqlnd does not take ipv6 adress
+    as parameter). (nielsdos)
+
+- Phar:
+  . Fix memory leak and invalid continuation after tar header writing fails.
+    (nielsdos)
+  . Fix memory leaks when creating temp file fails when applying zip signature.
+    (nielsdos)
+
+- SimpleXML:
+  . Fixed bug GH-19988 (zend_string_init with NULL pointer in simplexml (UB)).
+    (nielsdos)
+
+- Soap:
+  . Fixed bug GH-19784 (SoapServer memory leak). (nielsdos)
+  . Fixed bug GH-20011 (Array of SoapVar of unknown type causes crash).
+    (nielsdos)
+
+- Standard:
+  . Fixed bug GH-12265 (Cloning an object breaks serialization recursion).
+    (nielsdos)
+  . Fixed bug GH-19701 (Serialize/deserialize loses some data). (nielsdos)
+  . Fixed bug GH-19801 (leaks in var_dump() and debug_zval_dump()).
+    (alexandre-daubois)
+  . Fixed bug GH-20043 (array_unique assertion failure with RC1 array
+    causing an exception on sort). (nielsdos)
+  . Fixed bug GH-19926 (reset internal pointer earlier while splicing array
+    while COW violation flag is still set). (alexandre-daubois)
+  . Fixed bug GH-19570 (unable to fseek in /dev/zero and /dev/null).
+    (nielsdos, divinity76)
+
+- Streams:
+  . Fixed bug GH-19248 (Use strerror_r instead of strerror in main).
+    (Jakub Zelenka)
+  . Fixed bug GH-17345 (Bug #35916 was not completely fixed). (nielsdos)
+  . Fixed bug GH-19705 (segmentation when attempting to flush on non seekable
+    stream. (bukka/David Carlier)
+
+- XMLReader:
+  . Fixed bug GH-20009 (XMLReader leak on RelaxNG schema failure). (nielsdos)
+
+- Zip:
+  . Fixed bug GH-19688 (Remove pattern overflow in zip addGlob()). (nielsdos)
+  . Fixed bug GH-19932 (Memory leak in zip setEncryptionName()/setEncryptionIndex()).
+    (David Carlier)
+
+- Zlib:
+  . Fixed bug GH-19922 (Double free on gzopen). (David Carlier)
+
 25 Sep 2025, PHP 8.3.26
 
 - Core:

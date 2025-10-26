@@ -1784,7 +1784,7 @@ static void php_zip_add_from_pattern(INTERNAL_FUNCTION_PARAMETERS, int type) /* 
 					basename = php_basename(Z_STRVAL_P(zval_file), Z_STRLEN_P(zval_file), NULL, 0);
 					file_stripped = ZSTR_VAL(basename);
 					file_stripped_len = ZSTR_LEN(basename);
-				} else if (opts.remove_path && !memcmp(Z_STRVAL_P(zval_file), opts.remove_path, opts.remove_path_len)) {
+				} else if (opts.remove_path && Z_STRLEN_P(zval_file) > opts.remove_path_len && !memcmp(Z_STRVAL_P(zval_file), opts.remove_path, opts.remove_path_len)) {
 					if (IS_SLASH(Z_STRVAL_P(zval_file)[opts.remove_path_len])) {
 						file_stripped = Z_STRVAL_P(zval_file) + opts.remove_path_len + 1;
 						file_stripped_len = Z_STRLEN_P(zval_file) - opts.remove_path_len - 1;
@@ -2380,6 +2380,11 @@ PHP_METHOD(ZipArchive, setEncryptionName)
 		RETURN_FALSE;
 	}
 
+	if (UNEXPECTED(zip_file_set_encryption(intern, idx, ZIP_EM_NONE, NULL) < 0)) {
+		php_error_docref(NULL, E_WARNING, "password reset failed");
+		RETURN_FALSE;
+	}
+
 	if (zip_file_set_encryption(intern, idx, (zip_uint16_t)method, password)) {
 		RETURN_FALSE;
 	}
@@ -2402,6 +2407,11 @@ PHP_METHOD(ZipArchive, setEncryptionIndex)
 	}
 
 	ZIP_FROM_OBJECT(intern, self);
+
+	if (UNEXPECTED(zip_file_set_encryption(intern, index, ZIP_EM_NONE, NULL) < 0)) {
+		php_error_docref(NULL, E_WARNING, "password reset failed");
+		RETURN_FALSE;
+	}
 
 	if (zip_file_set_encryption(intern, index, (zip_uint16_t)method, password)) {
 		RETURN_FALSE;

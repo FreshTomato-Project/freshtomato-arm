@@ -38,16 +38,16 @@ void start_snmp(void)
 		ro = nvram_safe_get("snmp_ro");
 
 		fprintf(fp, "agentaddress udp:%d\n"
-		            "syslocation %s\n"
-		            "syscontact %s <%s>\n"
-		            "rocommunity %s\n"
+		            "sysLocation %s\n"
+		            "sysContact %s\n"
 		            "sysName %s\n"
 		            "sysDescr %s\n"
+		            "rocommunity %s\n"
 		            "extend device /bin/echo \"%s\"\n"
 		            "extend version /bin/echo \"FreshTomato %s\"\n",
 		            nvram_get_int("snmp_port"),
 		            (location && *location ? location : "router"),
-		            (contact && *contact ? contact : "admin@freshtomato"), (contact && *contact ? contact : "admin@freshtomato"),
+		            (contact && *contact ? contact : "admin@freshtomato"),
 		            (name && *name ? name : "FreshTomato"),
 		            (descr && *descr ? descr : "router1"),
 		            (ro && *ro ? ro : "rocommunity"),

@@ -31,14 +31,9 @@ void wo_defaults(char *url)
 
 			led(LED_DIAG, 1);
 
-			parse_asp("reboot-default.asp");
+			webcgi_set("resreset", "1");
+			parse_asp("reboot.asp");
 			web_close();
-
-			if (nvram_get_int("remote_upgrade")) {
-				killall("xl2tpd", SIGTERM);
-				killall("pppd", SIGTERM);
-			}
-			sleep(2);
 
 			if (mode == 1) {
 				nvram_set("restore_defaults", "1");
@@ -50,6 +45,12 @@ void wo_defaults(char *url)
 #else
 				eval("mtd-erase", "-d", "nvram");
 #endif
+
+			if (nvram_get_int("remote_upgrade")) {
+				killall("xl2tpd", SIGTERM);
+				killall("pppd", SIGTERM);
+			}
+			sleep(2);
 
 			set_action(ACT_REBOOT);
 			sync();

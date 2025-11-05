@@ -163,6 +163,9 @@ ERROR:
 	if (error)
 		resmsg_set(error);
 
+	if (reset)
+		webcgi_set("resreset", "1");
+
 	web_eat(len);
 }
 

@@ -16,7 +16,7 @@ function tick() {
 		e.value = 'Continue';
 		return;
 	}
-	if (n == 69) {
+	if (n == 79) {
 		e.style = 'cursor:pointer';
 		e.disabled = 0;
 	}

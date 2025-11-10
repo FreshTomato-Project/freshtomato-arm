@@ -239,7 +239,7 @@ static ngx_command_t  ngx_stream_ssl_commands[] = {
       NULL },
 
     { ngx_string("ssl_ocsp"),
-      NGX_STREAM_MAIN_CONF|NGX_STREAM_SRV_CONF|NGX_CONF_FLAG,
+      NGX_STREAM_MAIN_CONF|NGX_STREAM_SRV_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_enum_slot,
       NGX_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_ssl_srv_conf_t, ocsp),
@@ -357,6 +357,9 @@ static ngx_stream_variable_t  ngx_stream_ssl_vars[] = {
     { ngx_string("ssl_curves"), NULL, ngx_stream_ssl_variable,
       (uintptr_t) ngx_ssl_get_curves, NGX_STREAM_VAR_CHANGEABLE, 0 },
 
+    { ngx_string("ssl_sigalg"), NULL, ngx_stream_ssl_variable,
+      (uintptr_t) ngx_ssl_get_sigalg, NGX_STREAM_VAR_CHANGEABLE, 0 },
+
     { ngx_string("ssl_session_id"), NULL, ngx_stream_ssl_variable,
       (uintptr_t) ngx_ssl_get_session_id, NGX_STREAM_VAR_CHANGEABLE, 0 },
 
@@ -403,6 +406,9 @@ static ngx_stream_variable_t  ngx_stream_ssl_vars[] = {
 
     { ngx_string("ssl_client_v_remain"), NULL, ngx_stream_ssl_variable,
       (uintptr_t) ngx_ssl_get_client_v_remain, NGX_STREAM_VAR_CHANGEABLE, 0 },
+
+    { ngx_string("ssl_client_sigalg"), NULL, ngx_stream_ssl_variable,
+      (uintptr_t) ngx_ssl_get_client_sigalg, NGX_STREAM_VAR_CHANGEABLE, 0 },
 
       ngx_stream_null_variable
 };
@@ -1155,13 +1161,19 @@ ngx_stream_ssl_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     if (conf->stapling) {
 
+        if (conf->certificate_compression) {
+            ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
+                          "\"ssl_stapling\" is incompatible with "
+                          "\"ssl_certificate_compression\"");
+            return NGX_CONF_ERROR;
+        }
+
         if (ngx_ssl_stapling(cf, &conf->ssl, &conf->stapling_file,
                              &conf->stapling_responder, conf->stapling_verify)
             != NGX_OK)
         {
             return NGX_CONF_ERROR;
         }
-
     }
 
     if (ngx_ssl_conf_commands(cf, &conf->ssl, conf->conf_commands) != NGX_OK) {

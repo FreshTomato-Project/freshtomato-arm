@@ -1,4 +1,20 @@
 
+Changes with nginx 1.29.3                                        28 Oct 2025
+
+    *) Feature: the "add_header_inherit" and "add_trailer_inherit"
+       directives.
+
+    *) Feature: the $request_port and $is_request_port variables.
+
+    *) Feature: the $ssl_sigalg and $ssl_client_sigalg variables.
+
+    *) Feature: the "volatile" parameter of the "geo" directive.
+
+    *) Feature: now certificate compression is available with BoringSSL.
+
+    *) Bugfix: now certificate compression is disabled with OCSP stapling.
+
+
 Changes with nginx 1.29.2                                        07 Oct 2025
 
     *) Feature: now nginx can be built with AWS-LC.

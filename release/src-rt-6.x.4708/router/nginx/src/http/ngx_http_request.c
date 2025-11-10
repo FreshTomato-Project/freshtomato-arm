@@ -1846,8 +1846,9 @@ static ngx_int_t
 ngx_http_process_host(ngx_http_request_t *r, ngx_table_elt_t *h,
     ngx_uint_t offset)
 {
-    ngx_int_t  rc;
-    ngx_str_t  host;
+    u_char     *p;
+    ngx_int_t   rc;
+    ngx_str_t   host;
 
     if (r->headers_in.host) {
         ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
@@ -1887,6 +1888,17 @@ ngx_http_process_host(ngx_http_request_t *r, ngx_table_elt_t *h,
     }
 
     r->headers_in.server = host;
+
+    p = ngx_strlchr(h->value.data + host.len,
+                    h->value.data + h->value.len, ':');
+
+    if (p) {
+        rc = ngx_atoi(p + 1, h->value.data + h->value.len - p - 1);
+
+        if (rc > 0 && rc < 65536) {
+            r->port = rc;
+        }
+    }
 
     return NGX_OK;
 }
@@ -1985,6 +1997,8 @@ ngx_http_process_user_agent(ngx_http_request_t *r, ngx_table_elt_t *h,
 static ngx_int_t
 ngx_http_process_request_header(ngx_http_request_t *r)
 {
+    ngx_http_core_srv_conf_t  *cscf;
+
     if (r->headers_in.server.len == 0
         && ngx_http_set_virtual_server(r, &r->headers_in.server)
            == NGX_ERROR)
@@ -2053,7 +2067,11 @@ ngx_http_process_request_header(ngx_http_request_t *r)
         }
     }
 
-    if (r->method == NGX_HTTP_CONNECT) {
+    cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
+
+    if (r->method == NGX_HTTP_CONNECT
+        && (r->http_version != NGX_HTTP_VERSION_11 || !cscf->allow_connect))
+    {
         ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
                       "client sent CONNECT method");
         ngx_http_finalize_request(r, NGX_HTTP_NOT_ALLOWED);

@@ -66,7 +66,7 @@
  
 --- nginx/src/event/ngx_event_openssl.c
 +++ nginx/src/event/ngx_event_openssl.c
-@@ -382,6 +382,8 @@ ngx_ssl_create(ngx_ssl_t *ssl, ngx_uint_t protocols, void *data)
+@@ -401,6 +401,8 @@ ngx_ssl_create(ngx_ssl_t *ssl, ngx_uint_t protocols, void *data)
      }
  #endif
  
@@ -75,7 +75,7 @@
  #ifdef SSL_CTX_set_min_proto_version
      SSL_CTX_set_min_proto_version(ssl->ctx, 0);
      SSL_CTX_set_max_proto_version(ssl->ctx, TLS1_2_VERSION);
-@@ -391,6 +393,7 @@ ngx_ssl_create(ngx_ssl_t *ssl, ngx_uint_t protocols, void *data)
+@@ -410,6 +412,7 @@ ngx_ssl_create(ngx_ssl_t *ssl, ngx_uint_t protocols, void *data)
      SSL_CTX_set_min_proto_version(ssl->ctx, 0);
      SSL_CTX_set_max_proto_version(ssl->ctx, TLS1_3_VERSION);
  #endif
@@ -83,7 +83,7 @@
  
  #ifdef SSL_OP_NO_COMPRESSION
      SSL_CTX_set_options(ssl->ctx, SSL_OP_NO_COMPRESSION);
-@@ -644,6 +647,12 @@ ngx_ssl_connection_certificate(ngx_connection_t *c, ngx_pool_t *pool,
+@@ -663,6 +666,12 @@ ngx_ssl_connection_certificate(ngx_connection_t *c, ngx_pool_t *pool,
  
      x509 = sk_X509_shift(chain);
  
@@ -96,7 +96,7 @@
      if (SSL_use_certificate(c->ssl->connection, x509) == 0) {
          ngx_ssl_error(NGX_LOG_ERR, c->log, 0,
                        "SSL_use_certificate(\"%s\") failed", cert->data);
-@@ -655,7 +664,9 @@ ngx_ssl_connection_certificate(ngx_connection_t *c, ngx_pool_t *pool,
+@@ -674,7 +683,9 @@ ngx_ssl_connection_certificate(ngx_connection_t *c, ngx_pool_t *pool,
      X509_free(x509);
  
  #ifdef SSL_set0_chain
@@ -107,7 +107,7 @@
      /*
       * SSL_set0_chain() is only available in OpenSSL 1.0.2+,
       * but this function is only called via certificate callback,
-@@ -668,7 +679,19 @@ ngx_ssl_connection_certificate(ngx_connection_t *c, ngx_pool_t *pool,
+@@ -687,7 +698,19 @@ ngx_ssl_connection_certificate(ngx_connection_t *c, ngx_pool_t *pool,
          sk_X509_pop_free(chain, X509_free);
          return NGX_ERROR;
      }
@@ -128,7 +128,7 @@
  #endif
  
      pkey = ngx_ssl_cache_connection_fetch(cache, pool,
-@@ -3500,6 +3523,27 @@ ngx_ssl_connection_error(ngx_connection_t *c, int sslerr, ngx_err_t err,
+@@ -3680,6 +3703,27 @@ ngx_ssl_connection_error(ngx_connection_t *c, int sslerr, ngx_err_t err,
      int         n;
      ngx_uint_t  level;
  
@@ -156,7 +156,7 @@
      level = NGX_LOG_CRIT;
  
      if (sslerr == SSL_ERROR_SYSCALL) {
-@@ -4714,7 +4758,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
+@@ -4894,7 +4938,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
              return -1;
          }
  
@@ -166,7 +166,7 @@
          if (HMAC_Init_ex(hctx, key[0].hmac_key, size, digest, NULL) != 1) {
              ngx_ssl_error(NGX_LOG_ALERT, c->log, 0, "HMAC_Init_ex() failed");
              return -1;
-@@ -4757,7 +4802,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
+@@ -4937,7 +4982,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
              size = 32;
          }
  
@@ -176,7 +176,7 @@
          if (HMAC_Init_ex(hctx, key[i].hmac_key, size, digest, NULL) != 1) {
              ngx_ssl_error(NGX_LOG_ALERT, c->log, 0, "HMAC_Init_ex() failed");
              return -1;
-@@ -5269,6 +5315,14 @@ ngx_ssl_get_curve(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
+@@ -5458,6 +5504,14 @@ ngx_ssl_get_curve(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
  
  #endif
  

@@ -134,7 +134,6 @@ function init() {
 	- PPTP Server integration and GUI<br>
 <!-- PPTPD-END -->
 	<i>Copyright (C) 2011 Augusto Bott</i><br>
-	<a href="http://code.google.com/p/tomato-sdhc-vlan/" class="new_window">Tomato-sdhc-vlan Homepage</a><br>
 	<br>
 
 	<b>"Lancethepants" features:</b><br>

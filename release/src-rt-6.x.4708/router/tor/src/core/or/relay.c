@@ -640,7 +640,7 @@ relay_send_command_from_edge_,(streamid_t stream_id, circuit_t *orig_circ,
   if (orig_circ->conflux && conflux_should_multiplex(relay_command)) {
     circ = conflux_decide_circ_for_send(orig_circ->conflux, orig_circ,
                                         relay_command);
-    if (BUG(!circ)) {
+    if (!circ) {
       log_warn(LD_BUG, "No circuit to send for conflux for relay command %d, "
                "called from %s:%d", relay_command, filename, lineno);
       conflux_log_set(LOG_WARN, orig_circ->conflux,
@@ -652,6 +652,12 @@ relay_send_command_from_edge_,(streamid_t stream_id, circuit_t *orig_circ,
        * original circuit and hop). */
       cpath_layer = conflux_get_destination_hop(circ);
     }
+  }
+
+  /* This is possible because we have protocol error paths when deciding the
+   * next circuit to send which can close the whole set. Bail out early. */
+  if (circ->marked_for_close) {
+    return -1;
   }
 
   /* XXXX NM Split this function into a separate versions per circuit type? */
@@ -2982,6 +2988,9 @@ cell_queues_check_size(void)
 int
 have_been_under_memory_pressure(void)
 {
+  if (last_time_under_memory_pressure == 0) {
+    return false;
+  }
   return last_time_under_memory_pressure + MEMORY_PRESSURE_INTERVAL
     < approx_time();
 }

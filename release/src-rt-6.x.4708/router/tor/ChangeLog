@@ -1,3 +1,29 @@
+Changes in version 0.4.8.20 - 2025-11-10
+  This release fixes several bugfixes related to Conflux edge cases as well as
+  adding a new hardening compiler flag if supported. We strongly recommend to
+  upgrade as soon as possible.
+
+  o Minor feature (compiler flag):
+    - Add -fcf-protection=full if supported by the compiler.
+      Fixes 41139.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on October 06, 2025.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2025/11/10.
+
+  o Minor bugfixes (conflux fragile asserts):
+    - Fix the root cause of some conflux fragile asserts when a control
+      port listener is attached. Fixes bug 41037; bugfix on 0.4.8.16.
+
+  o Minor bugfixes (conflux, relay):
+    - Fix a series of conflux edge cases about sequence number
+      arithmetic and OOM handler kicking in under heavy memory pressure.
+      Fixes bug 41155; bugfix on 0.4.8.4.
+
+
 Changes in version 0.4.8.19 - 2025-10-06
   This release fixes two major bugfixes for a LibreSSL issue and a flow control
   C-tor specific problem (not protocol). We strongly recommend you upgrade as

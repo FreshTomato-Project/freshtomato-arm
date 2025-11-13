@@ -3243,13 +3243,14 @@ portmap-clean:
 
 e2fsprogs/stamp-h1:
 	$(call patch_files,e2fsprogs)
-	cd e2fsprogs && \
-		CFLAGS="-Os -Wall $(EXTRACFLAGS) -fPIC -ffunction-sections -fdata-sections" \
-		LDFLAGS="-Wl,--gc-sections" \
+	cd e2fsprogs && autoreconf -fsi && \
+		CFLAGS="-Os -Wall $(EXTRACFLAGS) $(if $(TCONFIG_BCMARM),,-std=gnu89) -fPIC -ffunction-sections -fdata-sections" \
+		LDFLAGS="-Wl,--gc-sections $(if $(TCONFIG_BCMARM),,-Wl$(comma)--allow-multiple-definition)" \
 		LIBS="-lgcc_s" \
 		$(CONFIGURE) --prefix=/usr --sysconfdir=/etc --enable-elf-shlibs --with-crond-dir=no \
 			--disable-tls --disable-nls --disable-jbd-debug --disable-blkid-debug --disable-testio-debug --disable-backtrace --disable-uuidd \
 			--disable-debugfs --disable-imager --disable-resizer --disable-defrag --disable-fuse2fs --disable-e2initrd-helper --disable-rpath \
+			--disable-bmap-stats --disable-tdb $(if $(TCONFIG_BCMARM),--without-libarchive --without-libmagic,) \
 			$(if $(TCONFIG_BCMARM),ac_cv_lib_pthread_sem_init=no,) ac_cv_lib_dl_dlopen=no
 	@touch $@
 

@@ -1807,6 +1807,10 @@ div#dev-grid span[class$="svg"] {
 	background-position: center;
 }
 
+a[href*="donations.html"]:hover {
+	background-color: transparent !important;
+}
+
 div#dev-grid span.wl24svg {
 	background-image: var(--icon-24);
 }

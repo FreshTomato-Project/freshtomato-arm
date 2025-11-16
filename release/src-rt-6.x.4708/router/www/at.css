@@ -1397,6 +1397,10 @@ div#loading {
 	box-shadow: rgba(var(--tomato-shadow-color), .2) 0px 1px 1px;
 }
 
+#content > .about br {
+	display: inline-block;
+}
+
 .section > .about,
 .fields > .about {
 	text-align: center;

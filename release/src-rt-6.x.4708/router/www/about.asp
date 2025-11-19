@@ -35,14 +35,18 @@ function init() {
 	Built on <% build_time(); %> &nbsp;&nbsp;<b>|</b>&nbsp;&nbsp; Copyright &copy; 2016-2025 by Pedro<br><br><hr>
 
 	<div style="text-align:center;padding:20px 0 20px 0">
-	<b style="font-size:1.2em;padding-bottom:20px">Only your donations keep this project alive; without them, I wouldn't want to work on it!<br>
-	Remember this and donate any amount to help this project grow.<br>
-	Click below to send a "Thank you" gift. Various forms available, also recurring donations.</b><br><br>
-	<a href="https://freshtomato.org/donations.html" title="Donations" class="new_window"><img src="donate.gif" style="border:0" alt="Donate"></a>
+		<b style="font-size:1.2em;padding-bottom:20px">
+			FreshTomato is developed in my spare time and remains 100% free.<br>
+			Your donations help me keep improving it and adding new features.<br>
+			Every contribution - even a small one - makes a real difference.<br>
+			Thank you for your support! 🍅
+		</b><br>
+		<a href="https://freshtomato.org/donations.html" title="Donations" class="new_window"><img src="donate.gif" style="border:0" alt="Donate"></a>
 	</div>
 
 	<hr><br>
-	<b>Remember: before you ask a question on our forum or anywhere else, check whether the answer is already available on our wiki. A link to the relevant information is located on each GUI page in the upper right corner.</b><br><br>
+	<b>Quick tip: before posting a question on the forum, please check if the answer is already in our Wiki. A direct link to the relevant article is always in the top-right corner of every page.<br>
+	   Thank you - this helps keep the forum clean and saves everyone time! 🍅</b><br><br>
 	<b>FreshTomato project page: </b><a href="https://freshtomato.org" class="new_window"> https://freshtomato.org</a><br>
 	<b>Forums about Tomato</b> - EN: <a href="https://www.linksysinfo.org/index.php?forums/tomato-firmware.33/" class="new_window">https://linksysinfo.org</a> PL: <a href="https://openlinksys.info" class="new_window">https://openlinksys.info</a><br>
 	<b>Source code: </b><a href="https://github.com/FreshTomato-Project" class="new_window"> https://github.com</a><br><br><hr><br>
@@ -213,8 +217,7 @@ function init() {
 	<a href="mailto:michal.o@szerszen.com">michal.o@szerszen.com</a><br>
 	<br>
 
-	<b>Special thanks:</b><br>
-	I would like to express my gratitude to all the people not mentioned here who contributed with patches, addition of new models, bug solving and firmware updates of FreshTomato.
+	<b>A special thank you to everyone whose name isn't listed here — for your patches, new device support, bug reports, fixes, testing, and all the contributions that keep FreshTomato alive and improving. Your help means a lot! 🍅</b>
 </div>
 
 <!-- / / / -->

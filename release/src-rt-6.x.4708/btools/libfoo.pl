@@ -333,6 +333,7 @@ sub fixDyn
 
 # ebtables
 	fixDynDep("ebtables-legacy", "libebtc.so.0.0.0");
+	fixDynDep("ebtables-legacy-restore", "libebtc.so.0.0.0");
 
 # samba3
 	fixDynDep("samba_multicall", "libiconv.so.2.7.0");

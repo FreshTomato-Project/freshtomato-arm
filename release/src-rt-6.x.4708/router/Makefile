@@ -2207,10 +2207,12 @@ ebtables-install:
 	@sed 's/#.*//g;s/[ \t]\+/ /g;s/^[ \t]*//;s/[ \t]*$$//;/^$$/d' < $(TOP)/ebtables/ethertypes > $(TARGETDIR)/rom/etc/ethertypes
 	chmod 0644 $(TARGETDIR)/rom/etc/ethertypes
 	install -D ebtables/.libs/ebtables-legacy $(INSTALLDIR)/ebtables/usr/sbin/ebtables-legacy
+	install -D ebtables/.libs/ebtables-legacy-restore $(INSTALLDIR)/ebtables/usr/sbin/ebtables-legacy-restore
 	install -D ebtables/.libs/libebtc.so.0.0.0 $(INSTALLDIR)/ebtables/usr/lib/libebtc.so.0.0.0
 	$(STRIP) $(INSTALLDIR)/ebtables/usr/sbin/ebtables-legacy
+	$(STRIP) $(INSTALLDIR)/ebtables/usr/sbin/ebtables-legacy-restore
 	$(STRIP) $(INSTALLDIR)/ebtables/usr/lib/libebtc.so.0.0.0
-	cd $(INSTALLDIR)/ebtables/usr/sbin/ && ln -sf ebtables-legacy ebtables
+	cd $(INSTALLDIR)/ebtables/usr/sbin/ && ln -sf ebtables-legacy ebtables && ln -sf ebtables-legacy-restore ebtables-restore
 	cd $(INSTALLDIR)/ebtables/usr/lib/ && ln -sf libebtc.so.0.0.0 libebtc.so && ln -sf libebtc.so.0.0.0 libebtc.so.0
 
 ebtables-clean:

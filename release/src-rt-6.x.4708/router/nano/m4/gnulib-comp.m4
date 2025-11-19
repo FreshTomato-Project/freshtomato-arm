@@ -112,6 +112,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module free-posix:
   # Code from module frexp-nolibm:
   # Code from module frexpl-nolibm:
+  # Code from module fseterr:
   # Code from module fstat:
   # Code from module fstatat:
   # Code from module futimens:
@@ -233,6 +234,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module stdint-h:
   # Code from module stdio-h:
   gl_STDIO_H_EARLY
+  # Code from module stdio-windows:
   # Code from module stdlib-h:
   # Code from module strcase:
   # Code from module strcasecmp:
@@ -242,6 +244,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module strerror:
   # Code from module strerror-override:
   # Code from module string-h:
+  # Code from module stringeq:
   # Code from module strings-h:
   # Code from module strncasecmp:
   # Code from module strnlen:
@@ -558,6 +561,8 @@ AC_DEFUN([gl_INIT],
     AC_LIBOBJ([frexpl])
   fi
   gl_MATH_MODULE_INDICATOR([frexpl])
+  gl_FUNC_FSETERR
+  gl_CONDITIONAL([GL_COND_OBJ_FSETERR], [test $ac_cv_func___fseterr = no])
   gl_FUNC_FSTAT
   gl_CONDITIONAL([GL_COND_OBJ_FSTAT], [test $REPLACE_FSTAT = 1])
   AM_COND_IF([GL_COND_OBJ_FSTAT], [
@@ -639,8 +644,7 @@ AC_DEFUN([gl_INIT],
   gl_CONDITIONAL([GL_COND_OBJ_GETRANDOM],
                  [test $HAVE_GETRANDOM = 0 || test $REPLACE_GETRANDOM = 1])
   gl_SYS_RANDOM_MODULE_INDICATOR([getrandom])
-  AC_SUBST([LIBINTL])
-  AC_SUBST([LTLIBINTL])
+  gl_GETTEXT_H
   gl_GETTIME
   gl_FUNC_GETTIMEOFDAY
   gl_CONDITIONAL([GL_COND_OBJ_GETTIMEOFDAY],
@@ -1019,6 +1023,20 @@ AC_DEFUN([gl_INIT],
   gl_STDIO_MODULE_INDICATOR([fputs])
   gl_STDIO_MODULE_INDICATOR([puts])
   gl_STDIO_MODULE_INDICATOR([fwrite])
+  AC_REQUIRE([AC_CANONICAL_HOST])
+  USES_MSVCRT=0
+  case "$host_os" in
+    mingw* | windows*)
+      AC_EGREP_CPP([Special], [
+  #ifndef _UCRT
+   Special
+  #endif
+        ],
+        [USES_MSVCRT=1])
+      ;;
+  esac
+  gl_CONDITIONAL([GL_COND_OBJ_STDIO_CONSOLESAFE], [test $USES_MSVCRT = 1])
+  AC_CHECK_FUNCS([vasprintf])
   gl_STDLIB_H
   gl_STDLIB_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
@@ -1055,6 +1073,9 @@ AC_DEFUN([gl_INIT],
   gl_STRING_H
   gl_STRING_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
+  gl_FUNC_STREQ
+  gl_FUNC_MEMEQ
+  gl_STRING_MODULE_INDICATOR([stringeq])
   gl_STRINGS_H
   gl_STRINGS_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
@@ -1101,35 +1122,35 @@ AC_DEFUN([gl_INIT],
   gl_UNICASE_H
   gl_UNICASE_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
-  gl_LIBUNISTRING_MODULE([1.3], [unicase/tolower])
+  gl_LIBUNISTRING_MODULE([1.4], [unicase/tolower])
   gl_LIBUNISTRING_LIBHEADER([1.3], [unictype.h])
   gl_UNICTYPE_H
   gl_UNICTYPE_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([1.3], [unictype/ctype-alnum])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-alnum])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([1.3], [unictype/ctype-alpha])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-alpha])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([0.9.8], [unictype/ctype-blank])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-blank])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([0.9.8], [unictype/ctype-cntrl])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-cntrl])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([0.9.8], [unictype/ctype-digit])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-digit])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([1.3], [unictype/ctype-graph])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-graph])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([1.3], [unictype/ctype-lower])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-lower])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([1.3], [unictype/ctype-print])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-print])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([1.3], [unictype/ctype-punct])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-punct])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([0.9.8], [unictype/ctype-space])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-space])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([1.3], [unictype/ctype-upper])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-upper])
   AC_REQUIRE([AC_C_INLINE])
-  gl_LIBUNISTRING_MODULE([0.9.8], [unictype/ctype-xdigit])
+  gl_LIBUNISTRING_MODULE([1.4], [unictype/ctype-xdigit])
   gl_LIBUNISTRING_LIBHEADER([1.2], [uninorm.h])
   gl_UNINORM_H
   gl_UNINORM_H_REQUIRE_DEFAULTS
@@ -1149,7 +1170,7 @@ AC_DEFUN([gl_INIT],
   gl_UNITYPES_H
   gl_LIBUNISTRING_LIBHEADER([0.9.11], [uniwidth.h])
   AC_PROG_MKDIR_P
-  gl_LIBUNISTRING_MODULE([1.3], [uniwidth/width])
+  gl_LIBUNISTRING_MODULE([1.4], [uniwidth/width])
   gl_FUNC_UTIME
   gl_CONDITIONAL([GL_COND_OBJ_UTIME],
                  [test $HAVE_UTIME = 0 || test $REPLACE_UTIME = 1])
@@ -1472,6 +1493,8 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/free.c
   lib/frexp.c
   lib/frexpl.c
+  lib/fseterr.c
+  lib/fseterr.h
   lib/fstat.c
   lib/fstatat.c
   lib/futimens.c
@@ -1645,6 +1668,8 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/stdckdint.in.h
   lib/stddef.in.h
   lib/stdint.in.h
+  lib/stdio-consolesafe.c
+  lib/stdio-impl.h
   lib/stdio-read.c
   lib/stdio-write.c
   lib/stdio.in.h
@@ -1658,6 +1683,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/strerror-override.c
   lib/strerror-override.h
   lib/strerror.c
+  lib/string.c
   lib/string.in.h
   lib/strings.in.h
   lib/stripslash.c
@@ -1801,6 +1827,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/free.m4
   m4/frexp.m4
   m4/frexpl.m4
+  m4/fseterr.m4
   m4/fstat.m4
   m4/fstatat.m4
   m4/futimens.m4
@@ -1813,6 +1840,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/getopt.m4
   m4/getprogname.m4
   m4/getrandom.m4
+  m4/gettext_h.m4
   m4/gettime.m4
   m4/gettimeofday.m4
   m4/glob.m4
@@ -1921,6 +1949,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/strdup.m4
   m4/strerror.m4
   m4/string_h.m4
+  m4/stringeq.m4
   m4/strings_h.m4
   m4/strncasecmp.m4
   m4/strnlen.m4

@@ -130,15 +130,13 @@ FUNC (DOUBLE x)
   /* Be careful to not do any floating-point operation on x, such as x == x,
      because x may be a signaling NaN.  */
 #  if defined __SUNPRO_C || defined __ICC || defined _MSC_VER \
-      || defined __DECC || defined __TINYC__ \
-      || (defined __sgi && !defined __GNUC__)
+      || defined __DECC || defined __TINYC__
   /* The Sun C 5.0, Intel ICC 10.0, Microsoft Visual C/C++ 9.0, Compaq (ex-DEC)
      6.4, and TinyCC compilers don't recognize the initializers as constant
      expressions.  The Compaq compiler also fails when constant-folding
      0.0 / 0.0 even when constant-folding is not required.  The Microsoft
      Visual C/C++ compiler also fails when constant-folding 1.0 / 0.0 even
-     when constant-folding is not required. The SGI MIPSpro C compiler
-     complains about "floating-point operation result is out of range".  */
+     when constant-folding is not required.  */
   static DOUBLE zero = L_(0.0);
   memory_double nan;
   DOUBLE plus_inf = L_(1.0) / zero;
@@ -158,8 +156,8 @@ FUNC (DOUBLE x)
     if (((m.word[EXPBIT0_WORD] ^ nan.word[EXPBIT0_WORD])
          & (EXP_MASK << EXPBIT0_BIT))
         == 0)
-      return (memcmp (&m.value, &plus_inf, SIZE) != 0
-              && memcmp (&m.value, &minus_inf, SIZE) != 0);
+      return (!memeq (&m.value, &plus_inf, SIZE)
+              && !memeq (&m.value, &minus_inf, SIZE));
     else
       return 0;
   }
@@ -179,7 +177,7 @@ FUNC (DOUBLE x)
       memset (&m2.value, 0, SIZE);
       m1.value = x;
       m2.value = x + (x ? 0.0L : -0.0L);
-      if (memcmp (&m1.value, &m2.value, SIZE) != 0)
+      if (!memeq (&m1.value, &m2.value, SIZE))
         return 1;
 # endif
       return 0;

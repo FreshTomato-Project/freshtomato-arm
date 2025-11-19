@@ -128,7 +128,7 @@ ctype_codeset (void)
     sprintf (buf + 2, "%u", GetACP ());
   /* For a locale name such as "French_France.65001", in Windows 10,
      setlocale now returns "French_France.utf8" instead.  */
-  if (strcmp (buf + 2, "65001") == 0 || strcmp (buf + 2, "utf8") == 0)
+  if (streq (buf + 2, "65001") || streq (buf + 2, "utf8"))
     return (char *) "UTF-8";
   else
     {
@@ -154,11 +154,15 @@ ctype_codeset (void)
    "thread5 disturbed by threadN!", even when threadN invokes only
       nl_langinfo (CODESET);
       nl_langinfo (CRNCYSTR);
-   Similarly on Solaris 10.  */
+   Similarly on Solaris 10 and macOS 26.  */
 
-# if !NL_LANGINFO_MTSAFE /* Solaris */
+# if !NL_LANGINFO_MTSAFE /* macOS, Solaris */
 
-#  define ITEMS (MAXSTRMSG + 1)
+#  ifdef __sun /* Solaris */
+#   define ITEMS (MAXSTRMSG + 1)
+#  else /* macOS */
+#   define ITEMS (CRNCYSTR + 20)
+#  endif
 #  define MAX_RESULT_LEN 80
 
 static char *
@@ -295,10 +299,6 @@ rpl_nl_langinfo (nl_item item)
     case CODESET:
       return ctype_codeset ();
 # endif
-# if GNULIB_defined_T_FMT_AMPM
-    case T_FMT_AMPM:
-      return (char *) "%I:%M:%S %p";
-# endif
 # if GNULIB_defined_ALTMON
     case ALTMON_1:
     case ALTMON_2:
@@ -360,12 +360,6 @@ rpl_nl_langinfo (nl_item item)
       /* The format is not standardized.  In glibc it is a sequence of 10
          strings, appended in memory.  */
       return (char *) "\0\0\0\0\0\0\0\0\0\0";
-# endif
-# if GNULIB_defined_YESEXPR || !FUNC_NL_LANGINFO_YESEXPR_WORKS
-    case YESEXPR:
-      return (char *) "^[yY]";
-    case NOEXPR:
-      return (char *) "^[nN]";
 # endif
     default:
       break;

@@ -876,14 +876,13 @@ void do_enter(void)
 			allblanks = (indent_length(openfile->current->data) == extra);
 	}
 #endif /* NANO_TINY */
-	newnode->data = nmalloc(strlen(openfile->current->data +
-										openfile->current_x) + extra + 1);
-	strcpy(&newnode->data[extra], openfile->current->data +
-										openfile->current_x);
+
+	newnode->data = nmalloc(strlen(openfile->current->data + openfile->current_x) + extra + 1);
+	strcpy(&newnode->data[extra], openfile->current->data + openfile->current_x);
+
 #ifndef NANO_TINY
 	/* Adjust the mark if it is on the current line after the cursor. */
-	if (openfile->mark == openfile->current &&
-				openfile->mark_x > openfile->current_x) {
+	if (openfile->mark == openfile->current && openfile->mark_x > openfile->current_x) {
 		openfile->mark = newnode;
 		openfile->mark_x += extra - openfile->current_x;
 	}
@@ -894,6 +893,8 @@ void do_enter(void)
 		/* If there were only blanks before the cursor, trim them. */
 		if (allblanks)
 			openfile->current_x = 0;
+		if (allblanks && openfile->mark == openfile->current)
+			openfile->mark_x = 0;
 	}
 #endif
 
@@ -2166,6 +2167,10 @@ void treat(char *tempfile_name, char *theprogram, bool spelling)
 	if (spelling) {
 		terminal_init();
 		doupdate();
+#ifndef NANO_TINY
+		if (the_window_resized)
+			regenerate_screen();
+#endif
 	} else
 		full_refresh();
 
@@ -3100,8 +3105,10 @@ char *copy_completion(char *text)
  * and paste the next possible completion. */
 void complete_a_word(void)
 {
+#ifdef ENABLE_MULTIBUFFER
 	static openfilestruct *scouring = NULL;
 		/* The buffer that is being searched for possible completions. */
+#endif
 	static completionstruct *list_of_completions;
 		/* A linked list of the completions that have been attempted. */
 	static int pletion_x = 0;
@@ -3127,7 +3134,9 @@ void complete_a_word(void)
 		openfile->last_action = OTHER;
 
 		/* Initialize the starting point for searching. */
+#ifdef ENABLE_MULTIBUFFER
 		scouring = openfile;
+#endif
 		pletion_line = openfile->filetop;
 		pletion_x = 0;
 

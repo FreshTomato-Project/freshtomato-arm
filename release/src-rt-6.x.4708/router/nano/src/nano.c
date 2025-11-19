@@ -901,10 +901,21 @@ bool scoop_stdin(void)
 
 	return TRUE;
 }
-#endif
 
-/* Register half a dozen signal handlers. */
-void signal_init(void)
+/* Register a handler for SIGWINCH because we want to handle window resizes. */
+void set_up_sigwinch_handler(void)
+{
+#ifdef SIGWINCH
+	struct sigaction deed = {{0}};
+
+	deed.sa_handler = handle_sigwinch;
+	sigaction(SIGWINCH, &deed, NULL);
+#endif
+}
+#endif /* !NANO_TINY */
+
+/* Register five more signal handlers. */
+void set_up_signal_handlers(void)
 {
 	struct sigaction deed = {{0}};
 
@@ -922,19 +933,12 @@ void signal_init(void)
 #endif
 	sigaction(SIGTERM, &deed, NULL);
 
-#ifndef NANO_TINY
-#ifdef SIGWINCH
-	/* Trap SIGWINCH because we want to handle window resizes. */
-	deed.sa_handler = handle_sigwinch;
-	sigaction(SIGWINCH, &deed, NULL);
-#endif
-#ifdef SIGTSTP
+#if defined(SIGTSTP) && !defined(NANO_TINY)
 	/* Prevent the suspend handler from getting interrupted. */
 	sigfillset(&deed.sa_mask);
 	deed.sa_handler = suspend_nano;
 	sigaction(SIGTSTP, &deed, NULL);
 #endif
-#endif /* !NANO_TINY */
 #ifdef SIGCONT
 	sigfillset(&deed.sa_mask);
 	deed.sa_handler = continue_nano;
@@ -1035,11 +1039,6 @@ void block_sigwinch(bool blockit)
 	sigaddset(&winch, SIGWINCH);
 	sigprocmask(blockit ? SIG_BLOCK : SIG_UNBLOCK, &winch, NULL);
 #endif
-
-#ifndef NANO_TINY
-	if (the_window_resized)
-		regenerate_screen();
-#endif
 }
 #endif
 
@@ -1073,8 +1072,8 @@ void regenerate_screen(void)
 	terminal_init();
 	window_init();
 
-	/* If we have an open buffer, redraw the contents of the subwindows. */
-	if (openfile) {
+	/* Only when fully initialized, redraw the contents of the subwindows. */
+	if (we_are_running) {
 		ensure_firstcolumn_is_aligned();
 		draw_all_subwindows();
 	}
@@ -2154,6 +2153,10 @@ int main(int argc, char **argv)
 		}
 	}
 
+#ifndef NANO_TINY
+	set_up_sigwinch_handler();
+#endif
+
 	/* Curses needs TERM; if it is unset, try falling back to a VT220. */
 	if (getenv("TERM") == NULL)
 		putenv("TERM=vt220");
@@ -2435,8 +2438,7 @@ int main(int argc, char **argv)
 #endif
 	editwincols = COLS - sidebar;
 
-	/* Set up the signal handlers. */
-	signal_init();
+	set_up_signal_handlers();
 
 #ifdef ENABLE_MOUSE
 	/* Initialize mouse support. */

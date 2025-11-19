@@ -155,9 +155,6 @@
    dot component. */
 #undef FUNC_MKDIR_DOT_BUG
 
-/* Define to 1 if nl_langinfo (YESEXPR) returns a non-empty string. */
-#undef FUNC_NL_LANGINFO_YESEXPR_WORKS
-
 /* Define to 1 if realpath() can malloc memory, always gives an absolute path,
    and handles a trailing slash correctly. */
 #undef FUNC_REALPATH_NEARLY_WORKS
@@ -557,6 +554,9 @@
 /* Define to 1 when the gnulib module strerror should be tested. */
 #undef GNULIB_TEST_STRERROR
 
+/* Define to 1 when the gnulib module stringeq should be tested. */
+#undef GNULIB_TEST_STRINGEQ
+
 /* Define to 1 when the gnulib module strnlen should be tested. */
 #undef GNULIB_TEST_STRNLEN
 
@@ -762,6 +762,10 @@
    don't. */
 #undef HAVE_DECL_MBSRTOWCS
 
+/* Define to 1 if you have the declaration of `memeq', and to 0 if you don't.
+   */
+#undef HAVE_DECL_MEMEQ
+
 /* Define to 1 if you have the declaration of `memrchr', and to 0 if you
    don't. */
 #undef HAVE_DECL_MEMRCHR
@@ -785,6 +789,10 @@
 /* Define to 1 if you have the declaration of `strdup', and to 0 if you don't.
    */
 #undef HAVE_DECL_STRDUP
+
+/* Define to 1 if you have the declaration of `streq', and to 0 if you don't.
+   */
+#undef HAVE_DECL_STREQ
 
 /* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
    don't. */
@@ -1051,10 +1059,6 @@
 /* Define to 1 if malloc-like functions do not allocate objects larger than
    PTRDIFF_MAX bytes. */
 #undef HAVE_MALLOC_PTRDIFF
-
-/* Define to 1 if mmap()'s MAP_ANONYMOUS flag is available after including
-   config.h and <sys/mman.h>. */
-#undef HAVE_MAP_ANONYMOUS
 
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
@@ -1367,6 +1371,9 @@
 /* Define to 1 if you have the `vasnprintf' function. */
 #undef HAVE_VASNPRINTF
 
+/* Define to 1 if you have the `vasprintf' function. */
+#undef HAVE_VASPRINTF
+
 /* Define to 1 or 0, depending whether the compiler supports simple visibility
    declarations. */
 #undef HAVE_VISIBILITY
@@ -1455,6 +1462,9 @@
 #endif
 
 
+/* Define to 1 if you have the `__fseterr' function. */
+#undef HAVE___FSETERR
+
 /* Define to 1 if ctype.h defines __header_inline. */
 #undef HAVE___HEADER_INLINE
 
@@ -1475,9 +1485,11 @@
    functions or macros in standard C headers like <ctype.h>.  For example,
    if isdigit is mistakenly implemented via a static inline function,
    a program containing an extern inline function that calls isdigit
-   may not work since the C standard prohibits extern inline functions
-   from calling static functions (ISO C 99 section 6.7.4.(3).
-   This bug is known to occur on:
+   may not work since C99 through C23 prohibit extern inline functions
+   from calling static functions (ISO C 23 section 6.7.5.(2)).
+   Although a future C standard will likely relax this restriction
+   <https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3622.txt>,
+   respect it for now.  This bug is known to occur on:
 
      OS X 10.8 and earlier; see:
      https://lists.gnu.org/r/bug-gnulib/2012-12/msg00023.html
@@ -1611,9 +1623,6 @@
 
 /* Define if the mbrtowc function has the NULL pwc argument bug. */
 #undef MBRTOWC_NULL_ARG1_BUG
-
-/* Define if the mbrtowc function has the NULL string argument bug. */
-#undef MBRTOWC_NULL_ARG2_BUG
 
 /* Define if the mbrtowc function does not return 0 for a NUL character. */
 #undef MBRTOWC_NUL_RETVAL_BUG
@@ -3101,9 +3110,6 @@
              && __GNUG__ < 6 && __clang_major__ < 6)))
  #include <assert.h>
  #undef/**/assert
- #ifdef __sgi
-  #undef/**/__ASSERT_H__
- #endif
  /* Solaris 11.4 <assert.h> defines static_assert as a macro with 2 arguments.
     We need it also to be invocable with a single argument.
     Haiku 2022 <assert.h> does not define static_assert at all.  */
@@ -3115,5 +3121,14 @@
 
 #if defined __GNUC__ && __GNUC__ >= 15 && !defined __clang__
 # pragma GCC diagnostic pop
+#endif
+
+
+
+/* The text domainname for Gnulib messages.  Ordinarily this is "gnulib",
+   but packages that do their own translations of Gnulib can use something
+   different by defining GNULIB_TEXT_DOMAIN in their config.h file.  */
+#ifndef GNULIB_TEXT_DOMAIN
+# define GNULIB_TEXT_DOMAIN/**/"gnulib"
 #endif
 

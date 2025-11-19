@@ -180,7 +180,7 @@
 #   define SNPRINTF swprintf
 #  endif
 # else
-   /* Old platforms such as NetBSD 3.0, OpenBSD 3.8, HP-UX 11.00, IRIX 6.5.  */
+   /* Old platforms such as NetBSD 3.0, OpenBSD 3.8, HP-UX 11.00.  */
 #   define TCHAR_T char
 # endif
 #endif
@@ -439,7 +439,7 @@ thousands_separator_char (char stackbuf[10])
   stackbuf[strlen (stackbuf) - 3] = '\0';
 #   if defined __sun
   /* Solaris specific hack: Replace wrong result (0xC2 means U+00A0).  */
-  if (strcmp (&stackbuf[1], "\302") == 0)
+  if (streq (&stackbuf[1], "\302"))
     strcpy (&stackbuf[1], MB_CUR_MAX > 1 ? "\302\240" : "\240");
 #   endif
   return &stackbuf[1];
@@ -524,7 +524,7 @@ thousands_separator_wchar (wchar_t stackbuf[10])
   /* Now tmp = L"1<thousep>000".  */
   tmp[strlen (tmp) - 3] = '\0';
   /* Solaris specific hack: Replace wrong result (0xC2 means U+00A0).  */
-  if (strcmp (&tmp[1], "\302") == 0)
+  if (streq (&tmp[1], "\302"))
     strcpy (&tmp[1], MB_CUR_MAX > 1 ? "\302\240" : "\240");
   if (tmp[1] != '\0')
     {
@@ -5001,8 +5001,8 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                          || (a.arg[dp->arg_index].type == TYPE_LONGDOUBLE
                              /* Some systems produce wrong output for Inf,
                                 -Inf, and NaN.  Some systems in this category
-                                (IRIX 5.3) also do so for -0.0.  Therefore we
-                                treat this case here as well.  */
+                                also do so for -0.0.  Therefore we treat this
+                                case here as well.  */
                              && is_infinite_or_zerol (a.arg[dp->arg_index].a.a_longdouble))
 # endif
                         ))
@@ -6959,7 +6959,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                 /* The following platforms forbid %n:
                      - On glibc2 systems from 2004-10-18 or newer, the use of
                        %n in format strings in writable memory may crash the
-                       program (if compiled with _FORTIFY_SOURCE=2).
+                       program (if compiled with _FORTIFY_SOURCE >= 2).
                      - On macOS 10.13 or newer, the use of %n in format
                        strings in writable memory by default crashes the
                        program.
@@ -6992,7 +6992,7 @@ VASNPRINTF (DCHAR_T *resultbuf, size_t *lengthp,
                    on musl libc because we would run into an swprintf() bug.
                    See <https://www.openwall.com/lists/musl/2023/03/19/1>.  */
                 fbp[1] = '\0';
-# else           /* AIX <= 5.1, HP-UX, IRIX, OSF/1, Solaris <= 9, BeOS */
+# else           /* AIX <= 5.1, HP-UX, Solaris <= 9, BeOS */
                 fbp[1] = '%';
                 fbp[2] = 'n';
                 fbp[3] = '\0';

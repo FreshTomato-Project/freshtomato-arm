@@ -87,7 +87,9 @@ void wi_upgrade(char *url, int len, char *boundary)
 	/* copy to memory */
 	system("cp /www/reboot.asp /tmp");
 	system("cp /www/*.css /tmp");
-	system("cp /www/*.png /tmp");
+	system("cp /www/favicon.ico /tmp");
+	system("cp /www/asus-bg.png /tmp");
+	system("cp /www/tomatousb_bg.png /tmp");
 
 	led(LED_DIAG, 1);
 

@@ -4,7 +4,7 @@
 <meta http-equiv="content-type" content="text/html;charset=utf-8">
 <meta name="robots" content="noindex,nofollow">
 <title>[<% ident(); %>] Rebooting...</title>
-<link rel="stylesheet" type="text/css" href="tomato.css?rel=<% version(); %>">
+<link rel="stylesheet" type="text/css" href="tomato.css">
 <% css(); %>
 <script>
 var n = 90 + parseInt('0<% nv("wait_time"); %>');

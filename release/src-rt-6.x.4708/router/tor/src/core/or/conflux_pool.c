@@ -2113,7 +2113,10 @@ conflux_pool_init(void)
 void
 conflux_log_set(int loglevel, const conflux_t *cfx, bool is_client)
 {
-  tor_assert(cfx);
+  /* This could be called on a closed circuit. */
+  if (cfx == NULL) {
+    return;
+  }
 
   log_fn(loglevel,
           LD_BUG,

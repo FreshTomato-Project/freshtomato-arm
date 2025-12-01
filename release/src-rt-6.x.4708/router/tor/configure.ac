@@ -4,7 +4,7 @@ dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.4.8.20])
+AC_INIT([tor],[0.4.8.21])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -18,7 +18,7 @@ AC_DEFINE_UNQUOTED([CONFIG_FLAGS], ["$configure_flags"], [Flags passed to config
 # version number changes.  Tor uses it to make sure that it
 # only shuts down for missing "required protocols" when those protocols
 # are listed as required by a consensus after this date.
-AC_DEFINE(APPROX_RELEASE_DATE, ["2025-11-10"], # for 0.4.8.20
+AC_DEFINE(APPROX_RELEASE_DATE, ["2025-11-17"], # for 0.4.8.21
           [Approximate date when this software was released. (Updated when the version changes.)])
 
 # "foreign" means we don't follow GNU package layout standards
@@ -1498,6 +1498,8 @@ TOR_CHECK_CFLAGS(-fasynchronous-unwind-tables)
 # intended to protect against such threats as Return-oriented Programming
 # (ROP), and similarly call/jmp-oriented programming (COP/JOP).
 TOR_CHECK_CFLAGS(-fcf-protection=full)
+# The equivalent for arm64 (#41139)
+TOR_CHECK_CFLAGS(-mbranch-protection=standard)
 
 dnl ============================================================
 dnl Check for libseccomp

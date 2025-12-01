@@ -879,9 +879,11 @@ conflux_process_cell(conflux_t *cfx, circuit_t *in_circ,
      * now be checked for remaining elements */
     cfx->last_seq_delivered++;
     return true;
-  } else if (BUG(leg->last_seq_recv <= cfx->last_seq_delivered)) {
-    log_warn(LD_BUG, "Got a conflux cell with a sequence number "
-             "less than the last delivered. Closing circuit.");
+  } else if (leg->last_seq_recv <= cfx->last_seq_delivered) {
+    /* Anyone can mangle these sequence number. */
+    log_fn(LOG_PROTOCOL_WARN, LD_BUG,
+           "Got a conflux cell with a sequence number "
+           "less than the last delivered. Closing circuit.");
     circuit_mark_for_close(in_circ, END_CIRC_REASON_INTERNAL);
     return false;
   } else {
@@ -919,9 +921,38 @@ conflux_process_cell(conflux_t *cfx, circuit_t *in_circ,
  * or has a hole.
  */
 conflux_cell_t *
-conflux_dequeue_cell(conflux_t *cfx)
+conflux_dequeue_cell(circuit_t *circ)
 {
   conflux_cell_t *top = NULL;
+
+  /* Related to #41162. This is really a consequence of the C-tor maze.
+   * The function above can close a circuit without returning an error
+   * due to several return code ignored. Auditting all of the cell code
+   * path and fixing them to not ignore errors could bring many more
+   * issues as this behavior has been in tor forever. So do the bandaid
+   * fix of bailing if the circuit is closed. */
+  if (circ->marked_for_close) {
+    static ratelim_t rlim = RATELIM_INIT(60 * 60);
+    log_fn_ratelim(&rlim, (circ->conflux == NULL) ? LOG_WARN : LOG_NOTICE,
+                   LD_CIRC,
+                   "Circuit was closed at %s:%u when dequeuing from OOO",
+                   circ->marked_for_close_file, circ->marked_for_close);
+    return NULL;
+  }
+  conflux_t *cfx = circ->conflux;
+  if (cfx == NULL) {
+    static ratelim_t rlim = RATELIM_INIT(60 * 60);
+    log_fn_ratelim(&rlim, LOG_WARN, LD_CIRC,
+                   "Bug: Non marked for close circuit with NULL conflux");
+    return NULL;
+  }
+  if (cfx->ooo_q == NULL) {
+    static ratelim_t rlim = RATELIM_INIT(60 * 60);
+    log_fn_ratelim(&rlim, LOG_WARN, LD_CIRC,
+                   "Bug: Non marked for close circuit with NULL OOO queue");
+    return NULL;
+  }
+
   if (smartlist_len(cfx->ooo_q) == 0)
     return NULL;
 

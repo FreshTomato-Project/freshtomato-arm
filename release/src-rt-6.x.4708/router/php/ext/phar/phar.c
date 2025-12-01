@@ -1590,7 +1590,7 @@ int phar_open_from_filename(char *fname, size_t fname_len, char *alias, size_t a
 }
 /* }}}*/
 
-static inline char *phar_strnstr(const char *buf, int buf_len, const char *search, int search_len) /* {{{ */
+static inline char *phar_strnstr(const char *buf, size_t buf_len, const char *search, size_t search_len) /* {{{ */
 {
 	const char *c;
 	ptrdiff_t so_far = 0;
@@ -1672,17 +1672,18 @@ static int phar_open_from_fp(php_stream* fp, char *fname, size_t fname_len, char
 				if (!PHAR_G(has_zlib)) {
 					MAPPHAR_ALLOC_FAIL("unable to decompress gzipped phar archive \"%s\" to temporary file, enable zlib extension in php.ini")
 				}
+
+				/* entire file is gzip-compressed, uncompress to temporary file */
+				if (!(temp = php_stream_fopen_tmpfile())) {
+					MAPPHAR_ALLOC_FAIL("unable to create temporary file for decompression of gzipped phar archive \"%s\"")
+				}
+
 				array_init(&filterparams);
 /* this is defined in zlib's zconf.h */
 #ifndef MAX_WBITS
 #define MAX_WBITS 15
 #endif
 				add_assoc_long_ex(&filterparams, "window", sizeof("window") - 1, MAX_WBITS + 32);
-
-				/* entire file is gzip-compressed, uncompress to temporary file */
-				if (!(temp = php_stream_fopen_tmpfile())) {
-					MAPPHAR_ALLOC_FAIL("unable to create temporary file for decompression of gzipped phar archive \"%s\"")
-				}
 
 				php_stream_rewind(fp);
 				filter = php_stream_filter_create("zlib.inflate", &filterparams, php_stream_is_persistent(fp));

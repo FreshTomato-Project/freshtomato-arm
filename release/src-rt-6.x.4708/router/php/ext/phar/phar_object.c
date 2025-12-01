@@ -689,11 +689,14 @@ PHP_METHOD(Phar, webPhar)
 		rewrite_fci.retval = &retval;
 
 		if (FAILURE == zend_call_function(&rewrite_fci, &rewrite_fcc)) {
+			zval_ptr_dtor_str(&params);
 			if (!EG(exception)) {
 				zend_throw_exception_ex(phar_ce_PharException, 0, "phar error: failed to call rewrite callback");
 			}
 			goto cleanup_fail;
 		}
+
+		zval_ptr_dtor_str(&params);
 
 		if (Z_TYPE_P(rewrite_fci.retval) == IS_UNDEF || Z_TYPE(retval) == IS_UNDEF) {
 			zend_throw_exception_ex(phar_ce_PharException, 0, "phar error: rewrite callback must return a string or false");
@@ -720,7 +723,6 @@ PHP_METHOD(Phar, webPhar)
 				zend_throw_exception_ex(phar_ce_PharException, 0, "phar error: rewrite callback must return a string or false");
 
 cleanup_fail:
-				zval_ptr_dtor(&params);
 				if (free_pathinfo) {
 					efree(path_info);
 				}
@@ -1782,6 +1784,10 @@ PHP_METHOD(Phar, buildFromDirectory)
 	pass.ret = return_value;
 	pass.fp = php_stream_fopen_tmpfile();
 	if (pass.fp == NULL) {
+		zval_ptr_dtor(&iteriter);
+		if (apply_reg) {
+			zval_ptr_dtor(&regexiter);
+		}
 		zend_throw_exception_ex(phar_ce_PharException, 0, "phar \"%s\" unable to create temporary file", phar_obj->archive->fname);
 		RETURN_THROWS();
 	}
@@ -2768,6 +2774,7 @@ valid_alias:
 	phar_flush(phar_obj->archive, NULL, 0, 0, &error);
 
 	if (error) {
+		pefree(phar_obj->archive->alias, phar_obj->archive->is_persistent);
 		phar_obj->archive->alias = oldalias;
 		phar_obj->archive->alias_len = oldalias_len;
 		phar_obj->archive->is_temporary_alias = old_temp;
@@ -4486,6 +4493,9 @@ PHP_METHOD(PharFileInfo, __construct)
 	entry_obj->entry = entry_info;
 	if (!entry_info->is_persistent && !entry_info->is_temp_dir) {
 		++entry_info->fp_refcount;
+		/* The phar data must exist to keep the alias locked. */
+		ZEND_ASSERT(!phar_data->is_persistent);
+		++phar_data->refcount;
 	}
 
 	ZVAL_STRINGL(&arg1, fname, fname_len);
@@ -4516,23 +4526,26 @@ PHP_METHOD(PharFileInfo, __destruct)
 		RETURN_THROWS();
 	}
 
-	if (!entry_obj->entry) {
+	phar_entry_info *entry = entry_obj->entry;
+	if (!entry) {
 		return;
 	}
 
-	if (entry_obj->entry->is_temp_dir) {
-		if (entry_obj->entry->filename) {
-			efree(entry_obj->entry->filename);
-			entry_obj->entry->filename = NULL;
+	if (entry->is_temp_dir) {
+		if (entry->filename) {
+			efree(entry->filename);
+			entry->filename = NULL;
 		}
 
-		efree(entry_obj->entry);
-	} else if (!entry_obj->entry->is_persistent) {
-		--entry_obj->entry->fp_refcount;
-		/* It is necessarily still in the manifest, which will ultimately free this. */
+		efree(entry);
+		entry_obj->entry = NULL;
+	} else if (!entry->is_persistent) {
+		--entry->fp_refcount;
+		/* The entry itself still lives in the manifest,
+		 * which will either be freed here if the file info was the last reference; or freed later. */
+		entry_obj->entry = NULL;
+		phar_archive_delref(entry->phar);
 	}
-
-	entry_obj->entry = NULL;
 }
 /* }}} */
 

@@ -1,5 +1,107 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+20 Nov 2025, PHP 8.3.28
+
+- Core:
+  . Fixed bug GH-19934 (CGI with auto_globals_jit=0 causes uouv). (ilutov)
+  . Fixed bug GH-20073 (Assertion failure in WeakMap offset operations on
+    reference). (nielsdos)
+  . Fixed bug GH-19844 (Don't bail when closing resources on shutdown). (ilutov)
+  . Fixed bug GH-20177 (Accessing overridden private property in
+    get_object_vars() triggers assertion error). (ilutov)
+  . Fixed bug GH-20183 (Stale EG(opline_before_exception) pointer through eval).
+    (ilutov)
+
+- DOM:
+  . Partially fixed bug GH-16317 (DOM classes do not allow
+    __debugInfo() overrides to work). (nielsdos)
+
+- Exif:
+  . Fix possible memory leak when tag is empty. (nielsdos)
+
+- FPM:
+  . Fixed bug GH-19974 (fpm_status_export_to_zval segfault for parallel
+    execution). (Jakub Zelenka, txuna)
+
+- FTP:
+  . Fixed bug GH-20240 (FTP with SSL: ftp_fput(): Connection timed out on
+    successful writes). (nielsdos)
+
+- GD:
+  . Fixed bug GH-20070 (Return type violation in imagefilter when an invalid
+    filter is provided). (Girgias)
+
+- Intl:
+  . Fix memory leak on error in locale_filter_matches(). (nielsdos)
+
+- LibXML:
+  . Fix not thread safe schema/relaxng calls. (SpencerMalone, nielsdos)
+
+- MySQLnd:
+  . Fixed bug GH-8978 (SSL certificate verification fails (port doubled)).
+    (nielsdos)
+  . Fixed bug GH-20122 (getColumnMeta() for JSON-column in MySQL). (nielsdos)
+
+- Opcache:
+  . Fixed bug GH-20081 (access to uninitialized vars in preload_load()).
+    (Arnaud)
+  . Fixed bug GH-20121 (JIT broken in ZTS builds on MacOS 15).
+    (Arnaud, Shivam Mathur)
+
+- PgSql:
+  . Fix memory leak when first string conversion fails. (nielsdos)
+  . Fix segfaults when attempting to fetch row into a non-instantiable class
+    name. (Girgias, nielsdos)
+
+- Phar:
+  . Fix memory leak of argument in webPhar. (nielsdos)
+  . Fix memory leak when setAlias() fails. (nielsdos)
+  . Fix a bunch of memory leaks in phar_parse_zipfile() error handling.
+    (nielsdos)
+  . Fix file descriptor/memory leak when opening central fp fails. (nielsdos)
+  . Fix memleak+UAF when opening temp stream in buildFromDirectory() fails.
+    (nielsdos)
+  . Fix potential buffer length truncation due to usage of type int instead
+    of type size_t. (Girgias)
+  . Fix memory leak when openssl polyfill returns garbage. (nielsdos)
+  . Fix file descriptor leak in phar_zip_flush() on failure. (nielsdos)
+  . Fix memory leak when opening temp file fails while trying to open
+    gzip-compressed archive. (nielsdos)
+  . Fixed bug GH-20302 (Freeing a phar alias may invalidate
+    PharFileInfo objects). (nielsdos)
+
+- Random:
+  . Fix Randomizer::__serialize() w.r.t. INDIRECTs. (nielsdos)
+
+- SimpleXML:
+  . Partially fixed bug GH-16317 (SimpleXML does not allow __debugInfo() overrides
+    to work). (nielsdos)
+
+- Standard:
+  . Fix shm corruption with coercion in options of unserialize(). (nielsdos)
+
+- Streams:
+  . Fixed bug GH-19798: XP_SOCKET XP_SSL (Socket stream modules): Incorrect
+    condition for Win32/Win64. (Jakub Zelenka)
+
+- Tidy:
+  . Fixed GH-19021 (improved tidyOptGetCategory detection).
+    (arjendekorte, David Carlier, Peter Kokot)
+  . Fix UAF in tidy when tidySetErrorBuffer() fails. (nielsdos)
+
+- XMLReader:
+  . Fix arginfo/zpp violations when LIBXML_SCHEMAS_ENABLED is not available.
+    (nielsdos)
+
+- Windows:
+  . Fix GH-19722 (_get_osfhandle asserts in debug mode when given a socket).
+    (dktapps)
+
+- Zip:
+  . Fix memory leak when passing enc_method/enc_password is passed as option
+    for ZipArchive::addGlob()/addPattern() and with consecutive calls.
+    (David Carlier)
+
 23 Oct 2025, PHP 8.3.27
 
 - Core:

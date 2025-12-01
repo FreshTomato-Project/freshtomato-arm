@@ -2530,9 +2530,9 @@ libpng: libpng/build/Makefile
 	@$(MAKE) -C libpng/build DESTDIR=$(TOP)/libpng/staged install
 
 libpng-install:
-	install -D libpng/build/libpng16.so.16.50.0 $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.50.0
-	$(STRIP) $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.50.0
-	cd $(INSTALLDIR)/libpng/usr/lib && ln -sf libpng16.so.16.50.0 libpng16.so && ln -sf libpng16.so.16.50.0 libpng16.so.16
+	install -D libpng/build/libpng16.so.16.51.0 $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.51.0
+	$(STRIP) $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.51.0
+	cd $(INSTALLDIR)/libpng/usr/lib && ln -sf libpng16.so.16.51.0 libpng16.so && ln -sf libpng16.so.16.51.0 libpng16.so.16
 
 libpng-clean:
 	@rm -rf libpng/build

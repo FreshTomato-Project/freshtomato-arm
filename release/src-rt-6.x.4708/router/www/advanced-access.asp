@@ -28,9 +28,9 @@ la.setup = function() {
 	this.init('la-grid', 'sort', 50, [
 	{ type: 'checkbox', prefix: '<div class="centered">', suffix: '<\/div>' },
 	{ type: 'select', options: [[0,'LAN0 (br0)'],[1,'LAN1 (br1)'],[2,'LAN2 (br2)'],[3,'LAN3 (br3)']], prefix: '<div class="centered">', suffix: '<\/div>' },
-	{ type: 'text', maxlen: 32 },
+	{ type: 'text', maxlen: 80 },
 	{ type: 'select', options: [[0,'LAN0 (br0)'],[1,'LAN1 (br1)'],[2,'LAN2 (br2)'],[3,'LAN3 (br3)']], prefix: '<div class="centered">', suffix: '<\/div>' },
-	{ type: 'text', maxlen: 32 },
+	{ type: 'text', maxlen: 80 },
 	{ type: 'text', maxlen: 32 }]);
 	this.headerSet(['On','Src','Src Address','Dst','Dst Address','Description']);
 
@@ -96,6 +96,15 @@ la.resetNewEditor = function() {
 	ferror.clearAll(fields.getAll(this.newEditor));
 }
 
+/* returns: 1=IPv4, 2=IPv6, 3=both (empty or domain) */
+function getAddrFamily(addr) {
+	if (!addr || addr.trim().length == 0) return 3;
+	addr = addr.trim();
+	if (addr.indexOf(':') !== -1) return 2;
+	if (/^[\d.\/-]+$/.test(addr)) return 1;
+	return 3;
+}
+
 la.verifyFields = function(row, quiet) {
 	var f = fields.getAll(row);
 
@@ -119,8 +128,17 @@ la.verifyFields = function(row, quiet) {
 	f[2].value = f[2].value.trim();
 	f[4].value = f[4].value.trim();
 
-	if ((f[2].value.length) && (!v_iptaddr(f[2], quiet))) return 0;
-	if ((f[4].value.length) && (!v_iptaddr(f[4], quiet))) return 0;
+	if ((f[2].value.length) && (!_v_iptaddr(f[2], quiet, 0, 1, 1))) return 0;
+	if ((f[4].value.length) && (!_v_iptaddr(f[4], quiet, 0, 1, 1))) return 0;
+
+	var srcFamily = getAddrFamily(f[2].value);
+	var dstFamily = getAddrFamily(f[4].value);
+	if ((srcFamily == 1 && dstFamily == 2) || (srcFamily == 2 && dstFamily == 1)) {
+		var m = 'Source and Destination addresses must be the same IP version (both IPv4 or both IPv6)';
+		ferror.set(f[2], m, quiet);
+		ferror.set(f[4], m, quiet);
+		return 0;
+	}
 
 	ferror.clear(f[2]);
 	ferror.clear(f[4]);

@@ -22,7 +22,7 @@
 
 <script>
 
-//	<% nvram("block_wan,block_wan_limit,block_wan_limit_icmp,nf_loopback,ne_syncookies,DSCP_fix_enable,multicast_pass,multicast_lan,multicast_quickleave,multicast_custom,lan_ifname,udpxy_enable,udpxy_lan,udpxy_stats,udpxy_clients,udpxy_port,udpxy_wanface,ne_snat,emf_enable,force_igmpv2,wan_dhcp_pass,fw_blackhole"); %>
+//	<% nvram("block_wan,block_wan_limit,block_wan_limit_icmp,nf_loopback,fw_strict_input,ne_syncookies,DSCP_fix_enable,multicast_pass,multicast_lan,multicast_quickleave,multicast_custom,lan_ifname,udpxy_enable,udpxy_lan,udpxy_stats,udpxy_clients,udpxy_port,udpxy_wanface,ne_snat,emf_enable,force_igmpv2,wan_dhcp_pass,fw_blackhole"); %>
 
 var cprefix = 'advanced_firewall';
 
@@ -222,7 +222,9 @@ function init() {
 			{ title: 'Enable DSCP Fix', name: 'f_DSCP_fix_enable', type: 'checkbox', value: nvram.DSCP_fix_enable != '0', suffix: ' &nbsp;<small>fixes Comcast incorrect DSCP<\/small>' },
 			null,
 			{ title: 'Allow DHCP spoofing', name: 'f_wan_dhcp_pass', type: 'checkbox', value: nvram.wan_dhcp_pass == 1 },
-			{ title: 'Smart MTU black hole detection', name: 'f_fw_blackhole', type: 'checkbox', value: nvram.fw_blackhole == 1 }
+			{ title: 'Smart MTU black hole detection', name: 'f_fw_blackhole', type: 'checkbox', value: nvram.fw_blackhole == 1 },
+			null,
+			{ title: 'Bridge Gateway Isolation', name: 'fw_strict_input', type: 'select', options: [[0,'Disabled'],[1,'Enabled']], value: nvram.fw_strict_input, suffix: ' &nbsp;<small>Blocks devices from accessing gateway IPs on other bridges<\/small>' }
 		]);
 	</script>
 </div>

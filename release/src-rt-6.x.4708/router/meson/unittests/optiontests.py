@@ -474,3 +474,34 @@ class OptionTests(unittest.TestCase):
         optstore.set_option(OptionKey(name), True)
         value = optstore.get_value(name)
         self.assertEqual(value, '1')
+
+    def test_pending_augment_validation(self):
+        name = 'b_lto'
+        subproject = 'mysubproject'
+
+        optstore = OptionStore(False)
+        prefix = UserStringOption('prefix', 'This is needed by OptionStore', '/usr')
+        optstore.add_system_option('prefix', prefix)
+
+        optstore.initialize_from_top_level_project_call({}, {}, {})
+        optstore.initialize_from_subproject_call(subproject, {}, {OptionKey(name): 'true'}, {}, {})
+
+        bo = UserBooleanOption(name, 'LTO', False)
+        key = OptionKey(name, subproject=subproject)
+        optstore.add_system_option(key, bo)
+        stored_value = optstore.get_value_for(key)
+        self.assertIsInstance(stored_value, bool)
+        self.assertTrue(stored_value)
+
+    def test_yielding_boolean_option_with_falsy_parent(self):
+        """Test that yielding is correctly initialized when parent option value is False."""
+        optstore = OptionStore(False)
+        name = 'someoption'
+        subproject_name = 'sub'
+        parent_option = UserBooleanOption(name, 'A parent boolean option', False, yielding=True)
+        optstore.add_project_option(OptionKey(name, ''), parent_option)
+
+        child_option = UserBooleanOption(name, 'A child boolean option', True, yielding=True)
+        child_key = OptionKey(name, subproject_name)
+        optstore.add_project_option(child_key, child_option)
+        self.assertTrue(optstore.options[child_key].yielding)

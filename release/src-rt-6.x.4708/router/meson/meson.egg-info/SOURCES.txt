@@ -1,65 +1,16 @@
-.editorconfig
-.flake8
-.mailmap
-.mypy.ini
-.pylintrc
-CODEOWNERS
 COPYING
 MANIFEST.in
 README.md
-azure-pipelines.yml
 contributing.md
 meson.py
 pyproject.toml
 run_cross_test.py
-run_format_tests.py
 run_meson_command_tests.py
-run_mypy.py
 run_project_tests.py
-run_shell_checks.py
-run_single_test.py
 run_tests.py
 run_unittests.py
 setup.cfg
 setup.py
-skip_ci.py
-.github/FUNDING.yml
-.github/ISSUE_TEMPLATE/bug_report.md
-.github/workflows/cygwin.yml
-.github/workflows/file_format.yml
-.github/workflows/images.yml
-.github/workflows/lint.yml
-.github/workflows/macos.yml
-.github/workflows/msys2.yml
-.github/workflows/nightly.yml
-.github/workflows/nonnative.yml
-.github/workflows/os_comp.yml
-.github/workflows/stable_builddir.yml
-.github/workflows/unusedargs_missingreturn.yml
-.github/workflows/website.yml
-ci/run.ps1
-ci/ciimage/build.py
-ci/ciimage/common.sh
-ci/ciimage/arch/image.json
-ci/ciimage/arch/install.sh
-ci/ciimage/bionic/image.json
-ci/ciimage/bionic/install.sh
-ci/ciimage/cuda/image.json
-ci/ciimage/cuda/install.sh
-ci/ciimage/cuda-cross/image.json
-ci/ciimage/cuda-cross/install.sh
-ci/ciimage/fedora/image.json
-ci/ciimage/fedora/install.sh
-ci/ciimage/gentoo/image.json
-ci/ciimage/gentoo/install.sh
-ci/ciimage/opensuse/image.json
-ci/ciimage/opensuse/install.sh
-ci/ciimage/ubuntu-rolling/image.json
-ci/ciimage/ubuntu-rolling/install.sh
-ci/ciimage/ubuntu-rolling/test.sh
-ci/intel-scripts/activate_windows.bat
-ci/intel-scripts/cache_exclude_windows.sh
-ci/intel-scripts/install_windows.bat
 cross/arm64cl.txt
 cross/armcc.txt
 cross/armclang-linux.txt
@@ -99,350 +50,6 @@ data/syntax-highlighting/vim/ftdetect/meson.vim
 data/syntax-highlighting/vim/ftplugin/meson.vim
 data/syntax-highlighting/vim/indent/meson.vim
 data/syntax-highlighting/vim/syntax/meson.vim
-docs/.editorconfig
-docs/README.md
-docs/genrefman.py
-docs/genrelnotes.py
-docs/jsonvalidator.py
-docs/meson.build
-docs/meson_options.txt
-docs/sitemap.txt
-docs/validatelinks.py
-docs/extensions/refman_links.py
-docs/markdown/ARM-performance-test.md
-docs/markdown/Adding-arguments.md
-docs/markdown/Adding-new-projects-to-wrapdb.md
-docs/markdown/Additional.md
-docs/markdown/Build-options.md
-docs/markdown/Build-system-converters.md
-docs/markdown/Build-targets.md
-docs/markdown/Builtin-options.md
-docs/markdown/CMake-module.md
-docs/markdown/Code-formatting.md
-docs/markdown/Commands.md
-docs/markdown/Comparisons.md
-docs/markdown/Compiler-properties.md
-docs/markdown/Conference-presentations.md
-docs/markdown/Configuration.md
-docs/markdown/Configuring-a-build-directory.md
-docs/markdown/Contact-information.md
-docs/markdown/Continuous-Integration.md
-docs/markdown/Contributing.md
-docs/markdown/Creating-Linux-binaries.md
-docs/markdown/Creating-OSX-packages.md
-docs/markdown/Creating-releases.md
-docs/markdown/Cross-compilation.md
-docs/markdown/Cuda-module.md
-docs/markdown/Custom-build-targets.md
-docs/markdown/Cython.md
-docs/markdown/D.md
-docs/markdown/Dependencies.md
-docs/markdown/Design-rationale.md
-docs/markdown/Disabler.md
-docs/markdown/Dlang-module.md
-docs/markdown/Donating.md
-docs/markdown/External-Project-module.md
-docs/markdown/External-commands.md
-docs/markdown/FAQ.md
-docs/markdown/Feature-autodetection.md
-docs/markdown/Fs-module.md
-docs/markdown/Generating-sources.md
-docs/markdown/Getting-meson.md
-docs/markdown/Getting-meson_ptbr.md
-docs/markdown/Getting-meson_zh.md
-docs/markdown/Gnome-module.md
-docs/markdown/GuiTutorial.md
-docs/markdown/Hotdoc-module.md
-docs/markdown/IDE-integration.md
-docs/markdown/Icestorm-module.md
-docs/markdown/In-the-press.md
-docs/markdown/Include-directories.md
-docs/markdown/IndepthTutorial.md
-docs/markdown/Installing.md
-docs/markdown/Java-module.md
-docs/markdown/Java.md
-docs/markdown/Keyval-module.md
-docs/markdown/Localisation.md
-docs/markdown/Machine-files.md
-docs/markdown/Manual.md
-docs/markdown/Meson-sample.md
-docs/markdown/MesonCI.md
-docs/markdown/Mixing-build-systems.md
-docs/markdown/Modules.md
-docs/markdown/Native-environments.md
-docs/markdown/Overview.md
-docs/markdown/Performance-comparison.md
-docs/markdown/Pkg-config-files.md
-docs/markdown/Pkgconfig-module.md
-docs/markdown/Playground.md
-docs/markdown/Porting-from-autotools.md
-docs/markdown/Precompiled-headers.md
-docs/markdown/Project-templates.md
-docs/markdown/Python-3-module.md
-docs/markdown/Python-module.md
-docs/markdown/Qt4-module.md
-docs/markdown/Qt5-module.md
-docs/markdown/Qt6-module.md
-docs/markdown/Quick-guide.md
-docs/markdown/Reference-tables.md
-docs/markdown/Release-notes-for-0.37.0.md
-docs/markdown/Release-notes-for-0.38.0.md
-docs/markdown/Release-notes-for-0.39.0.md
-docs/markdown/Release-notes-for-0.40.0.md
-docs/markdown/Release-notes-for-0.41.0.md
-docs/markdown/Release-notes-for-0.42.0.md
-docs/markdown/Release-notes-for-0.43.0.md
-docs/markdown/Release-notes-for-0.44.0.md
-docs/markdown/Release-notes-for-0.45.0.md
-docs/markdown/Release-notes-for-0.46.0.md
-docs/markdown/Release-notes-for-0.47.0.md
-docs/markdown/Release-notes-for-0.48.0.md
-docs/markdown/Release-notes-for-0.49.0.md
-docs/markdown/Release-notes-for-0.50.0.md
-docs/markdown/Release-notes-for-0.51.0.md
-docs/markdown/Release-notes-for-0.52.0.md
-docs/markdown/Release-notes-for-0.53.0.md
-docs/markdown/Release-notes-for-0.54.0.md
-docs/markdown/Release-notes-for-0.55.0.md
-docs/markdown/Release-notes-for-0.56.0.md
-docs/markdown/Release-notes-for-0.57.0.md
-docs/markdown/Release-notes-for-0.58.0.md
-docs/markdown/Release-notes-for-0.59.0.md
-docs/markdown/Release-notes-for-0.60.0.md
-docs/markdown/Release-notes-for-0.61.0.md
-docs/markdown/Release-notes-for-0.62.0.md
-docs/markdown/Release-notes-for-0.63.0.md
-docs/markdown/Release-notes-for-0.64.0.md
-docs/markdown/Release-notes-for-1.0.0.md
-docs/markdown/Release-notes-for-1.1.0.md
-docs/markdown/Release-notes-for-1.2.0.md
-docs/markdown/Release-notes-for-1.3.0.md
-docs/markdown/Release-notes-for-1.4.0.md
-docs/markdown/Release-notes-for-1.5.0.md
-docs/markdown/Release-notes-for-1.6.0.md
-docs/markdown/Release-notes-for-1.7.0.md
-docs/markdown/Release-notes-for-1.8.0.md
-docs/markdown/Release-notes.md
-docs/markdown/Release-procedure.md
-docs/markdown/Releasing.md
-docs/markdown/Reproducible-builds.md
-docs/markdown/Rewriter.md
-docs/markdown/Run-targets.md
-docs/markdown/Running-Meson.md
-docs/markdown/Rust-module.md
-docs/markdown/Rust.md
-docs/markdown/Shipping-prebuilt-binaries-as-wraps.md
-docs/markdown/Simd-module.md
-docs/markdown/Simple-comparison.md
-docs/markdown/SimpleStart.md
-docs/markdown/SourceSet-module.md
-docs/markdown/Style-guide.md
-docs/markdown/Subprojects.md
-docs/markdown/Syntax.md
-docs/markdown/Threads.md
-docs/markdown/Tutorial.md
-docs/markdown/Unit-tests.md
-docs/markdown/Unity-builds.md
-docs/markdown/Use-of-Python.md
-docs/markdown/Users.md
-docs/markdown/Using-multiple-build-directories.md
-docs/markdown/Using-the-WrapDB.md
-docs/markdown/Using-with-Visual-Studio.md
-docs/markdown/Using-wraptool.md
-docs/markdown/Vala.md
-docs/markdown/Videos.md
-docs/markdown/Vs-External.md
-docs/markdown/Wayland-module.md
-docs/markdown/Windows-module.md
-docs/markdown/Wrap-best-practices-and-tips.md
-docs/markdown/Wrap-dependency-system-manual.md
-docs/markdown/Wrapdb-projects.md
-docs/markdown/Yaml-RefMan.md
-docs/markdown/_Sidebar.md
-docs/markdown/_include_qt_base.md
-docs/markdown/howtox.md
-docs/markdown/i18n-module.md
-docs/markdown/index.md
-docs/markdown/legal.md
-docs/markdown/images/buildtime.png
-docs/markdown/images/conftime.png
-docs/markdown/images/emptytime.png
-docs/markdown/images/glib_build.png
-docs/markdown/images/glib_conf.png
-docs/markdown/images/glib_empty.png
-docs/markdown/images/glib_link.png
-docs/markdown/images/gtksample.png
-docs/markdown/images/linux_alldone.png
-docs/markdown/images/meson_mac1.png
-docs/markdown/images/meson_mac2.png
-docs/markdown/images/meson_mac3.png
-docs/markdown/images/meson_mac4.png
-docs/markdown/images/meson_mac5.png
-docs/markdown/images/osx_xcode.png
-docs/markdown/images/py3-install-1.png
-docs/markdown/images/py3-install-2.png
-docs/markdown/images/py3-install-3.png
-docs/markdown/images/sdltutorial_01.png
-docs/markdown/images/sdltutorial_02.png
-docs/markdown/images/sdltutorial_03.png
-docs/markdown/images/sdltutorial_04.png
-docs/markdown/images/sdltutorial_05.png
-docs/markdown/images/sdltutorial_06.png
-docs/markdown/images/sdltutorial_07.png
-docs/markdown/images/win_dlvs.png
-docs/markdown/images/win_downloadmeson.png
-docs/markdown/images/win_installvs.png
-docs/markdown/images/win_vstoolsprompt.png
-docs/markdown/images/win_working.png
-docs/markdown/snippets/add_release_note_snippets_here
-docs/markdown/snippets/array-flatten.md
-docs/markdown/snippets/clang-tidy-improvement.md
-docs/markdown/snippets/eld-support.md
-docs/markdown/snippets/fs_suffix.md
-docs/markdown/snippets/gnome-rsp-files-support.md
-docs/markdown/snippets/meson-format-stdin-editorconfig.md
-docs/markdown/snippets/pkgconfig-gen-license.md
-docs/markdown/snippets/rust-dynamic-std.md
-docs/markdown/snippets/rust-mixed.md
-docs/markdown/snippets/swift-module-name.md
-docs/markdown/snippets/swift-parse-as-library.md
-docs/markdown/snippets/swift-pass-c-compiler-options.md
-docs/markdown/snippets/swift_cxx_interoperability.md
-docs/markdown/snippets/vs2010-masm-support.md
-docs/markdown/snippets/wrapdbv1.md
-docs/refman/__init__.py
-docs/refman/generatorbase.py
-docs/refman/generatorjson.py
-docs/refman/generatorman.py
-docs/refman/generatormd.py
-docs/refman/generatorpickle.py
-docs/refman/generatorprint.py
-docs/refman/generatorvim.py
-docs/refman/jsonschema.py
-docs/refman/loaderbase.py
-docs/refman/loaderpickle.py
-docs/refman/loaderyaml.py
-docs/refman/main.py
-docs/refman/model.py
-docs/refman/templates/args.mustache
-docs/refman/templates/dummy.mustache
-docs/refman/templates/func.mustache
-docs/refman/templates/meson.vim.mustache
-docs/refman/templates/notes.mustache
-docs/refman/templates/object.mustache
-docs/refman/templates/root.functions.mustache
-docs/refman/templates/root.mustache
-docs/refman/templates/root_link.mustache
-docs/refman/templates/taggs.mustache
-docs/theme/extra/css/notes.css
-docs/theme/extra/images/favicon.png
-docs/theme/extra/images/meson_logo.png
-docs/theme/extra/prism_components/prism-meson.js
-docs/theme/extra/prism_components/prism-meson.min.js
-docs/theme/extra/templates/brand-logo.html
-docs/theme/extra/templates/extra_head.html
-docs/theme/extra/templates/license.html
-docs/theme/extra/templates/navbar_center.html
-docs/theme/extra/templates/navbar_links.html
-docs/yaml/builtins/build_machine.yaml
-docs/yaml/builtins/host_machine.yaml
-docs/yaml/builtins/meson.yaml
-docs/yaml/builtins/target_machine.yaml
-docs/yaml/elementary/any.yaml
-docs/yaml/elementary/array.yml
-docs/yaml/elementary/bool.yml
-docs/yaml/elementary/dict.yml
-docs/yaml/elementary/int.yml
-docs/yaml/elementary/str.yml
-docs/yaml/elementary/void.yml
-docs/yaml/functions/_build_target_base.yaml
-docs/yaml/functions/add_global_arguments.yaml
-docs/yaml/functions/add_global_link_arguments.yaml
-docs/yaml/functions/add_languages.yaml
-docs/yaml/functions/add_project_arguments.yaml
-docs/yaml/functions/add_project_dependencies.yaml
-docs/yaml/functions/add_project_link_arguments.yaml
-docs/yaml/functions/add_test_setup.yaml
-docs/yaml/functions/alias_target.yaml
-docs/yaml/functions/assert.yaml
-docs/yaml/functions/benchmark.yaml
-docs/yaml/functions/both_libraries.yaml
-docs/yaml/functions/build_target.yaml
-docs/yaml/functions/configuration_data.yaml
-docs/yaml/functions/configure_file.yaml
-docs/yaml/functions/custom_target.yaml
-docs/yaml/functions/debug.yaml
-docs/yaml/functions/declare_dependency.yaml
-docs/yaml/functions/dependency.yaml
-docs/yaml/functions/disabler.yaml
-docs/yaml/functions/environment.yaml
-docs/yaml/functions/error.yaml
-docs/yaml/functions/executable.yaml
-docs/yaml/functions/files.yaml
-docs/yaml/functions/find_program.yaml
-docs/yaml/functions/generator.yaml
-docs/yaml/functions/get_option.yaml
-docs/yaml/functions/get_variable.yaml
-docs/yaml/functions/import.yaml
-docs/yaml/functions/include_directories.yaml
-docs/yaml/functions/install_data.yaml
-docs/yaml/functions/install_emptydir.yaml
-docs/yaml/functions/install_headers.yaml
-docs/yaml/functions/install_man.yaml
-docs/yaml/functions/install_subdir.yaml
-docs/yaml/functions/install_symlink.yaml
-docs/yaml/functions/is_disabler.yaml
-docs/yaml/functions/is_variable.yaml
-docs/yaml/functions/jar.yaml
-docs/yaml/functions/join_paths.yaml
-docs/yaml/functions/library.yaml
-docs/yaml/functions/message.yaml
-docs/yaml/functions/project.yaml
-docs/yaml/functions/range.yaml
-docs/yaml/functions/run_command.yaml
-docs/yaml/functions/run_target.yaml
-docs/yaml/functions/set_variable.yaml
-docs/yaml/functions/shared_library.yaml
-docs/yaml/functions/shared_module.yaml
-docs/yaml/functions/static_library.yaml
-docs/yaml/functions/structured_sources.yaml
-docs/yaml/functions/subdir.yaml
-docs/yaml/functions/subdir_done.yaml
-docs/yaml/functions/subproject.yaml
-docs/yaml/functions/summary.yaml
-docs/yaml/functions/test.yaml
-docs/yaml/functions/unset_variable.yaml
-docs/yaml/functions/vcs_tag.yaml
-docs/yaml/functions/warning.yaml
-docs/yaml/modules/cmake/module.yaml
-docs/yaml/modules/cmake/options.yaml
-docs/yaml/objects/alias_tgt.yaml
-docs/yaml/objects/both_libs.yaml
-docs/yaml/objects/build_tgt.yaml
-docs/yaml/objects/cfg_data.yaml
-docs/yaml/objects/compiler.yaml
-docs/yaml/objects/custom_idx.yaml
-docs/yaml/objects/custom_tgt.yaml
-docs/yaml/objects/dep.yaml
-docs/yaml/objects/disabler.yaml
-docs/yaml/objects/env.yaml
-docs/yaml/objects/exe.yaml
-docs/yaml/objects/external_program.yaml
-docs/yaml/objects/extracted_obj.yaml
-docs/yaml/objects/feature.yaml
-docs/yaml/objects/file.yaml
-docs/yaml/objects/generated_list.yaml
-docs/yaml/objects/generator.yaml
-docs/yaml/objects/inc.yaml
-docs/yaml/objects/jar.yaml
-docs/yaml/objects/lib.yaml
-docs/yaml/objects/module.yaml
-docs/yaml/objects/range.yaml
-docs/yaml/objects/run_tgt.yaml
-docs/yaml/objects/runresult.yaml
-docs/yaml/objects/structured_src.yaml
-docs/yaml/objects/subproject.yaml
-docs/yaml/objects/tgt.yaml
 graphics/meson_logo.svg
 graphics/meson_logo_big.png
 graphics/wrap_logo.svg
@@ -1518,6 +1125,7 @@ test cases/common/181 same target name flat layout/main.c
 test cases/common/181 same target name flat layout/meson.build
 test cases/common/181 same target name flat layout/subdir/foo.c
 test cases/common/181 same target name flat layout/subdir/meson.build
+test cases/common/182 find override/broken.py
 test cases/common/182 find override/meson.build
 test cases/common/182 find override/prog-version.py
 test cases/common/182 find override/otherdir/main.c
@@ -3922,6 +3530,8 @@ test cases/rewrite/1 basic/info.json
 test cases/rewrite/1 basic/meson.build
 test cases/rewrite/1 basic/rmSrc.json
 test cases/rewrite/1 basic/rmTgt.json
+test cases/rewrite/10 duplicate globals/info.json
+test cases/rewrite/10 duplicate globals/meson.build
 test cases/rewrite/2 subdirs/addSrc.json
 test cases/rewrite/2 subdirs/addTgt.json
 test cases/rewrite/2 subdirs/info.json
@@ -3989,6 +3599,7 @@ test cases/rust/12 bindgen/src/main3.rs
 test cases/rust/12 bindgen/src/source.c
 test cases/rust/12 bindgen/sub/meson.build
 test cases/rust/13 external c dependencies/c_accessing_zlib.c
+test cases/rust/13 external c dependencies/foo.h
 test cases/rust/13 external c dependencies/meson.build
 test cases/rust/13 external c dependencies/meson_options.txt
 test cases/rust/13 external c dependencies/prog.rs
@@ -4022,6 +3633,7 @@ test cases/rust/18 proc-macro/proc.rs
 test cases/rust/18 proc-macro/transitive-proc-macro.rs
 test cases/rust/18 proc-macro/use.rs
 test cases/rust/18 proc-macro/subdir/meson.build
+test cases/rust/19 structured sources/empty.file
 test cases/rust/19 structured sources/gen.py
 test cases/rust/19 structured sources/main-gen-copy.rs
 test cases/rust/19 structured sources/meson.build
@@ -4110,10 +3722,21 @@ test cases/rust/27 objects/meson.build
 test cases/rust/28 mixed/hello.rs
 test cases/rust/28 mixed/main.cc
 test cases/rust/28 mixed/meson.build
+test cases/rust/28 self-contained/lib.rs
+test cases/rust/28 self-contained/main.c
+test cases/rust/28 self-contained/meson.build
+test cases/rust/28 self-contained/test.json
+test cases/rust/29 rlib link subdir/f-sys.rs
+test cases/rust/29 rlib link subdir/main.rs
+test cases/rust/29 rlib link subdir/meson.build
+test cases/rust/29 rlib link subdir/cdep/f.c
+test cases/rust/29 rlib link subdir/cdep/meson.build
 test cases/rust/3 staticlib/meson.build
 test cases/rust/3 staticlib/other.rs
 test cases/rust/3 staticlib/prog.rs
+test cases/rust/3 staticlib/prog2.rs
 test cases/rust/3 staticlib/stuff.rs
+test cases/rust/3 staticlib/stuff2.rs
 test cases/rust/3 staticlib/test.json
 test cases/rust/3 staticlib/value.c
 test cases/rust/4 polyglot/meson.build
@@ -4314,6 +3937,7 @@ test cases/unit/13 reconfigure/meson.build
 test cases/unit/130 vala internal glib/lib.vala
 test cases/unit/130 vala internal glib/meson.build
 test cases/unit/130 vala internal glib/meson.options
+test cases/unit/131 custom target index test/meson.build
 test cases/unit/14 testsetup selection/main.c
 test cases/unit/14 testsetup selection/meson.build
 test cases/unit/14 testsetup selection/subprojects/bar/bar.c

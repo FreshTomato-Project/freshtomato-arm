@@ -910,11 +910,11 @@ class AllPlatformTests(BasePlatformTests):
 
         self.assertFailedTestCount(1, self.mtest_command + ['--suite', 'mainprj'])
         self.assertFailedTestCount(0, self.mtest_command + ['--suite', 'subprjsucc'])
-        self.assertFailedTestCount(1, self.mtest_command + ['--suite', 'subprjfail'])
+        self.assertFailedTestCount(2, self.mtest_command + ['--suite', 'subprjfail'])
         self.assertFailedTestCount(1, self.mtest_command + ['--suite', 'subprjmix'])
         self.assertFailedTestCount(3, self.mtest_command + ['--no-suite', 'mainprj'])
         self.assertFailedTestCount(4, self.mtest_command + ['--no-suite', 'subprjsucc'])
-        self.assertFailedTestCount(3, self.mtest_command + ['--no-suite', 'subprjfail'])
+        self.assertFailedTestCount(2, self.mtest_command + ['--no-suite', 'subprjfail'])
         self.assertFailedTestCount(3, self.mtest_command + ['--no-suite', 'subprjmix'])
 
         self.assertFailedTestCount(1, self.mtest_command + ['--suite', 'mainprj:fail'])
@@ -937,9 +937,9 @@ class AllPlatformTests(BasePlatformTests):
         self.assertFailedTestCount(3, self.mtest_command + ['--no-suite', 'subprjmix:fail'])
         self.assertFailedTestCount(4, self.mtest_command + ['--no-suite', 'subprjmix:success'])
 
-        self.assertFailedTestCount(2, self.mtest_command + ['--suite', 'subprjfail', '--suite', 'subprjmix:fail'])
-        self.assertFailedTestCount(3, self.mtest_command + ['--suite', 'subprjfail', '--suite', 'subprjmix', '--suite', 'mainprj'])
-        self.assertFailedTestCount(2, self.mtest_command + ['--suite', 'subprjfail', '--suite', 'subprjmix', '--suite', 'mainprj', '--no-suite', 'subprjmix:fail'])
+        self.assertFailedTestCount(3, self.mtest_command + ['--suite', 'subprjfail', '--suite', 'subprjmix:fail'])
+        self.assertFailedTestCount(4, self.mtest_command + ['--suite', 'subprjfail', '--suite', 'subprjmix', '--suite', 'mainprj'])
+        self.assertFailedTestCount(3, self.mtest_command + ['--suite', 'subprjfail', '--suite', 'subprjmix', '--suite', 'mainprj', '--no-suite', 'subprjmix:fail'])
         self.assertFailedTestCount(1, self.mtest_command + ['--suite', 'subprjfail', '--suite', 'subprjmix', '--suite', 'mainprj', '--no-suite', 'subprjmix:fail', 'mainprj-failing_test'])
 
         self.assertFailedTestCount(2, self.mtest_command + ['--no-suite', 'subprjfail:fail', '--no-suite', 'subprjmix:fail'])
@@ -953,7 +953,7 @@ class AllPlatformTests(BasePlatformTests):
         self.utime(os.path.join(testdir, 'meson.build'))
         o = self._run(self.mtest_command + ['--list'])
         self.assertIn('Regenerating build files', o)
-        self.assertIn('test_features / xfail', o)
+        self.assertIn('test_features:xfail', o)
         o = self._run(self.mtest_command + ['--list'])
         self.assertNotIn('Regenerating build files', o)
         # no real targets should have been built
@@ -2518,7 +2518,7 @@ class AllPlatformTests(BasePlatformTests):
 
         for lang in langs:
             for target_type in ('executable', 'library'):
-                with self.subTest(f'Language: {lang}; type: {target_type}'):
+                with self.subTest(f'Language: {lang}; type: {target_type}; fresh: yes'):
                     if is_windows() and lang == 'fortran' and target_type == 'library':
                         # non-Gfortran Windows Fortran compilers do not do shared libraries in a Fortran standard way
                         # see "test cases/fortran/6 dynamic"
@@ -2533,17 +2533,44 @@ class AllPlatformTests(BasePlatformTests):
                                   workdir=tmpdir)
                         self._run(ninja,
                                   workdir=os.path.join(tmpdir, 'builddir'))
-                # test directory with existing code file
-                if lang in {'c', 'cpp', 'd'}:
-                    with tempfile.TemporaryDirectory() as tmpdir:
-                        with open(os.path.join(tmpdir, 'foo.' + lang), 'w', encoding='utf-8') as f:
-                            f.write('int main(void) {}')
-                        self._run(self.meson_command + ['init', '-b'], workdir=tmpdir)
-                elif lang in {'java'}:
-                    with tempfile.TemporaryDirectory() as tmpdir:
-                        with open(os.path.join(tmpdir, 'Foo.' + lang), 'w', encoding='utf-8') as f:
-                            f.write('public class Foo { public static void main() {} }')
-                        self._run(self.meson_command + ['init', '-b'], workdir=tmpdir)
+
+                with self.subTest(f'Language: {lang}; type: {target_type}; fresh: no'):
+                    # test directory with existing code file
+                    if lang in {'c', 'cpp', 'd'}:
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            with open(os.path.join(tmpdir, 'foo.' + lang), 'w', encoding='utf-8') as f:
+                                f.write('int main(void) {}')
+                            self._run(self.meson_command + ['init', '-b'], workdir=tmpdir)
+
+                        # Check for whether we're doing source collection by repeating
+                        # with a bogus file we should pick up (and then fail to compile).
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            with open(os.path.join(tmpdir, 'bar.' + lang), 'w', encoding='utf-8') as f:
+                                f.write('#error bar')
+                            self._run(self.meson_command + ['init'], workdir=tmpdir)
+                            self._run(self.setup_command + ['--backend=ninja', 'builddir'],
+                                    workdir=tmpdir)
+                            with self.assertRaises(subprocess.CalledProcessError):
+                                self._run(ninja,
+                                        workdir=os.path.join(tmpdir, 'builddir'))
+
+                    elif lang in {'java'}:
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            with open(os.path.join(tmpdir, 'Foo.' + lang), 'w', encoding='utf-8') as f:
+                                f.write('public class Foo { public static void main() {} }')
+                            self._run(self.meson_command + ['init', '-b'], workdir=tmpdir)
+
+                        # Check for whether we're doing source collection by repeating
+                        # with a bogus file we should pick up (and then fail to compile).
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            with open(os.path.join(tmpdir, 'Bar.' + lang), 'w', encoding='utf-8') as f:
+                                f.write('public class Bar { public private static void main() {} }')
+                            self._run(self.meson_command + ['init'], workdir=tmpdir)
+                            self._run(self.setup_command + ['--backend=ninja', 'builddir'],
+                                    workdir=tmpdir)
+                            with self.assertRaises(subprocess.CalledProcessError):
+                                self._run(ninja,
+                                        workdir=os.path.join(tmpdir, 'builddir'))
 
     def test_compiler_run_command(self):
         '''
@@ -4355,6 +4382,14 @@ class AllPlatformTests(BasePlatformTests):
         self.build()
         self.run_tests()
 
+    def test_custom_target_index_as_test_prereq(self):
+        if self.backend is not Backend.ninja:
+            raise SkipTest('ninja backend needed for "meson test" to build test dependencies')
+
+        testdir = os.path.join(self.unit_test_dir, '131 custom target index test')
+        self.init(testdir)
+        self.run_tests()
+
     @skipUnless(is_linux() and (re.search('^i.86$|^x86$|^x64$|^x86_64$|^amd64$', platform.processor()) is not None),
         'Requires ASM compiler for x86 or x86_64 platform currently only available on Linux CI runners')
     def test_nostdlib(self):
@@ -5321,7 +5356,9 @@ class AllPlatformTests(BasePlatformTests):
                                  '10/10': [10],
                                  }.items():
             output = self._run(self.mtest_command + ['--slice=' + arg])
-            tests = sorted([ int(x) for x in re.findall(r'\n[ 0-9]+/[0-9]+ test-([0-9]*)', output) ])
+            tests = sorted([
+                int(x) for x in re.findall(r'^[ 0-9]+/[0-9]+ test_slice:test-([0-9]*)', output, flags=re.MULTILINE)
+            ])
             self.assertEqual(tests, expectation)
 
         for arg, expectation in {'': 'error: argument --slice: value does not conform to format \'SLICE/NUM_SLICES\'',

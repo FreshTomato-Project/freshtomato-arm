@@ -273,7 +273,7 @@ sub fixDyn
 	else {
 		fixDynDep("php-cgi", "libxml2.so.16.1.1");
 	}
-	fixDynDep("php-cgi", "libpng16.so.16.51.0");
+	fixDynDep("php-cgi", "libpng16.so.16.53.0");
 	fixDynDep("php-cgi", "libiconv.so.2.7.0");
 	fixDynDep("php-cgi", "libsqlite3.so.3.51.1");
 	fixDynDep("php-cgi", "libcurl.so.4.8.0");
@@ -289,7 +289,7 @@ sub fixDyn
 	else {
 		fixDynDep("php-cli", "libxml2.so.16.1.1");
 	}
-	fixDynDep("php-cli", "libpng16.so.16.51.0");
+	fixDynDep("php-cli", "libpng16.so.16.53.0");
 	fixDynDep("php-cli", "libiconv.so.2.7.0");
 	fixDynDep("php-cli", "libsqlite3.so.3.51.1");
 	fixDynDep("php-cli", "libcurl.so.4.8.0");
@@ -305,7 +305,7 @@ sub fixDyn
 	else {
 		fixDynDep("php-fpm", "libxml2.so.16.1.1");
 	}
-	fixDynDep("php-fpm", "libpng16.so.16.51.0");
+	fixDynDep("php-fpm", "libpng16.so.16.53.0");
 	fixDynDep("php-fpm", "libiconv.so.2.7.0");
 	fixDynDep("php-fpm", "libsqlite3.so.3.51.1");
 	fixDynDep("php-fpm", "libcurl.so.4.8.0");
@@ -707,7 +707,7 @@ genSO("${root}/usr/lib/liblz4.so.1.10.0", "${router}/lz4/lib/liblz4.a", "${strip
 genSO("${root}/usr/lib/libcurl.so.4.8.0", "${router}/libcurl/lib/.libs/libcurl.a", "${stripshared}", "-L${router}/zlib -L${router}/${openssldir} -L${router}/wolfssl/staged/usr/lib");
 genSO("${root}/usr/lib/libevent-2.1.so.7", "${router}/libevent/.libs/libevent.a", "${stripshared}");
 genSO("${root}/usr/lib/libiconv.so.2.7.0", "${router}/libiconv/lib/.libs/libiconv.a", "${stripshared}");
-genSO("${root}/usr/lib/libpng16.so.16.51.0", "${router}/libpng/staged/usr/lib/libpng16.a", "${stripshared}", "-L${router}/zlib");
+genSO("${root}/usr/lib/libpng16.so.16.53.0", "${router}/libpng/staged/usr/lib/libpng16.a", "${stripshared}", "-L${router}/zlib");
 if ($is_arm ne "y") { # MIPS
 	genSO("${root}/usr/lib/libxml2.so.2.13.7", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
 }

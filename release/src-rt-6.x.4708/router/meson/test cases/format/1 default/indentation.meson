@@ -93,6 +93,14 @@ if meson.project_version().version_compare('>1.2')
     endif
 endif
 
+# Test for trailing comma:
+m = [1, 2, 3]
+n = [
+    1,
+    2,
+    3,
+]
+
 # Overindent regressions (issue #14935)
 if (host_cpu_family == 'x86' and host_system in [
     'cygwin',
@@ -112,11 +120,3 @@ sources = files(
     # more foo
     'foo.c',
 )
-
-# Test for trailing comma:
-m = [1, 2, 3]
-n = [
-    1,
-    2,
-    3,
-]

@@ -25,12 +25,14 @@ if T.TYPE_CHECKING:
     from ..environment import Environment
     from ..utils.core import EnvironOrDict
     from ..interpreter.type_checking import PkgConfigDefineType
+    from .base import DependencyObjectKWs
 
 class PkgConfigInterface:
     '''Base class wrapping a pkg-config implementation'''
 
-    class_impl: PerMachine[T.Union[Literal[False], T.Optional[PkgConfigInterface]]] = PerMachine(False, False)
-    class_cli_impl: PerMachine[T.Union[Literal[False], T.Optional[PkgConfigCLI]]] = PerMachine(False, False)
+    # keyed on machine and extra_paths
+    class_impl: PerMachine[T.Dict[T.Optional[T.Tuple[str, ...]], T.Union[Literal[False], T.Optional[PkgConfigInterface]]]] = PerMachine({}, {})
+    class_cli_impl: PerMachine[T.Dict[T.Optional[T.Tuple[str, ...]], T.Union[Literal[False], T.Optional[PkgConfigCLI]]]] = PerMachine({}, {})
     pkg_bin_per_machine: PerMachine[T.Optional[ExternalProgram]] = PerMachine(None, None)
 
     @staticmethod
@@ -41,21 +43,25 @@ class PkgConfigInterface:
         PkgConfigInterface.pkg_bin_per_machine[for_machine] = pkg_bin
 
     @staticmethod
-    def instance(env: Environment, for_machine: MachineChoice, silent: bool) -> T.Optional[PkgConfigInterface]:
+    def instance(env: Environment, for_machine: MachineChoice, silent: bool,
+                 extra_paths: T.Optional[T.List[str]] = None) -> T.Optional[PkgConfigInterface]:
         '''Return a pkg-config implementation singleton'''
         for_machine = for_machine if env.is_cross_build() else MachineChoice.HOST
-        impl = PkgConfigInterface.class_impl[for_machine]
+        extra_paths_key = tuple(extra_paths) if extra_paths is not None else None
+        impl = PkgConfigInterface.class_impl[for_machine].get(extra_paths_key, False)
         if impl is False:
-            impl = PkgConfigCLI(env, for_machine, silent, PkgConfigInterface.pkg_bin_per_machine[for_machine])
+            impl = PkgConfigCLI(env, for_machine, silent, PkgConfigInterface.pkg_bin_per_machine[for_machine], extra_paths)
             if not impl.found():
                 impl = None
             if not impl and not silent:
                 mlog.log('Found pkg-config:', mlog.red('NO'))
-            PkgConfigInterface.class_impl[for_machine] = impl
+            PkgConfigInterface.class_impl[for_machine][extra_paths_key] = impl
         return impl
 
     @staticmethod
-    def _cli(env: Environment, for_machine: MachineChoice, silent: bool = False) -> T.Optional[PkgConfigCLI]:
+    def _cli(env: Environment, for_machine: MachineChoice,
+             extra_paths: T.Optional[T.List[str]] = None,
+             silent: bool = False) -> T.Optional[PkgConfigCLI]:
         '''Return the CLI pkg-config implementation singleton
         Even when we use another implementation internally, external tools might
         still need the CLI implementation.
@@ -64,17 +70,19 @@ class PkgConfigInterface:
         impl: T.Union[Literal[False], T.Optional[PkgConfigInterface]] # Help confused mypy
         impl = PkgConfigInterface.instance(env, for_machine, silent)
         if impl and not isinstance(impl, PkgConfigCLI):
-            impl = PkgConfigInterface.class_cli_impl[for_machine]
+            extra_paths_key = tuple(extra_paths) if extra_paths is not None else None
+            impl = PkgConfigInterface.class_cli_impl[for_machine].get(extra_paths_key, False)
             if impl is False:
-                impl = PkgConfigCLI(env, for_machine, silent, PkgConfigInterface.pkg_bin_per_machine[for_machine])
+                impl = PkgConfigCLI(env, for_machine, silent, PkgConfigInterface.pkg_bin_per_machine[for_machine], extra_paths)
                 if not impl.found():
                     impl = None
-                PkgConfigInterface.class_cli_impl[for_machine] = impl
+                PkgConfigInterface.class_cli_impl[for_machine][extra_paths_key] = impl
         return T.cast('T.Optional[PkgConfigCLI]', impl) # Trust me, mypy
 
     @staticmethod
-    def get_env(env: Environment, for_machine: MachineChoice, uninstalled: bool = False) -> EnvironmentVariables:
-        cli = PkgConfigInterface._cli(env, for_machine)
+    def get_env(env: Environment, for_machine: MachineChoice, uninstalled: bool = False,
+                extra_paths: T.Optional[T.List[str]] = None) -> EnvironmentVariables:
+        cli = PkgConfigInterface._cli(env, for_machine, extra_paths)
         return cli._get_env(uninstalled) if cli else EnvironmentVariables()
 
     @staticmethod
@@ -123,11 +131,13 @@ class PkgConfigCLI(PkgConfigInterface):
     '''pkg-config CLI implementation'''
 
     def __init__(self, env: Environment, for_machine: MachineChoice, silent: bool,
-                 pkgbin: T.Optional[ExternalProgram] = None) -> None:
+                 pkgbin: T.Optional[ExternalProgram] = None,
+                 extra_paths: T.Optional[T.List[str]] = None) -> None:
         super().__init__(env, for_machine)
         self._detect_pkgbin(pkgbin)
         if self.pkgbin and not silent:
             mlog.log('Found pkg-config:', mlog.green('YES'), mlog.bold(f'({self.pkgbin.get_path()})'), mlog.blue(self.pkgbin_version))
+        self.extra_paths = extra_paths or []
 
     def found(self) -> bool:
         return bool(self.pkgbin)
@@ -258,7 +268,7 @@ class PkgConfigCLI(PkgConfigInterface):
         key = OptionKey('pkg_config_path', machine=self.for_machine)
         pathlist = self.env.coredata.optstore.get_value_for(key)
         assert isinstance(pathlist, list)
-        extra_paths: T.List[str] = pathlist[:]
+        extra_paths: T.List[str] = pathlist + self.extra_paths
         if uninstalled:
             bpath = self.env.get_build_dir()
             if bpath is not None:
@@ -296,12 +306,14 @@ class PkgConfigCLI(PkgConfigInterface):
 
 class PkgConfigDependency(ExternalDependency):
 
-    def __init__(self, name: str, environment: Environment, kwargs: T.Dict[str, T.Any],
-                 language: T.Optional[str] = None) -> None:
+    def __init__(self, name: str, environment: Environment, kwargs: DependencyObjectKWs,
+                 language: T.Optional[str] = None,
+                 extra_paths: T.Optional[T.List[str]] = None) -> None:
         super().__init__(DependencyTypeName('pkgconfig'), environment, kwargs, language=language)
         self.name = name
         self.is_libtool = False
-        pkgconfig = PkgConfigInterface.instance(self.env, self.for_machine, self.silent)
+        self.extra_paths = extra_paths or []
+        pkgconfig = PkgConfigInterface.instance(self.env, self.for_machine, self.silent, self.extra_paths)
         if not pkgconfig:
             msg = f'Pkg-config for machine {self.for_machine} not found. Giving up.'
             if self.required:
@@ -421,7 +433,7 @@ class PkgConfigDependency(ExternalDependency):
         #
         # Only prefix_libpaths are reordered here because there should not be
         # too many system_libpaths to cause library version issues.
-        pkg_config_path: T.List[str] = self.env.coredata.optstore.get_value(OptionKey('pkg_config_path', machine=self.for_machine)) # type: ignore[assignment]
+        pkg_config_path: T.List[str] = self.env.coredata.optstore.get_value_for(OptionKey('pkg_config_path', machine=self.for_machine)) # type: ignore[assignment]
         pkg_config_path = self._convert_mingw_paths(pkg_config_path)
         prefix_libpaths = OrderedSet(sort_libpaths(list(prefix_libpaths), pkg_config_path))
         system_libpaths: OrderedSet[str] = OrderedSet()
@@ -476,9 +488,8 @@ class PkgConfigDependency(ExternalDependency):
                 if lib in libs_found:
                     continue
                 if self.clib_compiler:
-                    args = self.clib_compiler.find_library(lib[2:], self.env,
-                                                           libpaths, self.libtype,
-                                                           lib_prefix_warning=False)
+                    args = self.clib_compiler.find_library(
+                        lib[2:], libpaths, self.libtype, lib_prefix_warning=False)
                 # If the project only uses a non-clib language such as D, Rust,
                 # C#, Python, etc, all we can do is limp along by adding the
                 # arguments as-is and then adding the libpaths at the end.

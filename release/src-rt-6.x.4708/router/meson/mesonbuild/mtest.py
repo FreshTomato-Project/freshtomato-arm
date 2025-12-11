@@ -29,7 +29,7 @@ import unicodedata
 import xml.etree.ElementTree as et
 
 from . import build
-from . import environment
+from . import tooldetect
 from . import mlog
 from .coredata import MesonVersionMismatchException, major_versions_differ
 from .coredata import version as coredata_version
@@ -221,11 +221,14 @@ def returncode_to_status(retcode: int) -> str:
         return f'exit status {retcode}'
 
     signum = retcode - 128
-    try:
-        signame = signal.Signals(signum).name
-    except ValueError:
-        signame = 'SIGinvalid'
-    return f'(exit status {retcode} or signal {signum} {signame})'
+    if signum < 32:
+        try:
+            signame = signal.Signals(signum).name
+        except ValueError:
+            signame = 'SIGinvalid'
+        return f'(exit status {retcode} or signal {signum} {signame})'
+
+    return f'(exit status {retcode} or {hex(retcode)})'
 
 # TODO for Windows
 sh_quote: T.Callable[[str], str] = lambda x: x
@@ -790,6 +793,7 @@ class JsonLogfileBuilder(TestFileLogger):
             'name': result.name,
             'stdout': result.stdo,
             'result': result.res.value,
+            'is_fail': result.res.is_bad(),
             'starttime': result.starttime,
             'duration': result.duration,
             'returncode': result.returncode,
@@ -1699,7 +1703,7 @@ class TestHarness:
         if self.options.no_rebuild:
             return
 
-        self.ninja = environment.detect_ninja()
+        self.ninja = tooldetect.detect_ninja()
         if not self.ninja:
             print("Can't find ninja, can't rebuild test.")
             # If ninja can't be found return exit code 127, indicating command
@@ -1923,7 +1927,7 @@ class TestHarness:
             self.run_tests(runners)
         finally:
             os.chdir(startdir)
-        return self.total_failure_count()
+        return 1 if self.total_failure_count() > 0 else 0
 
     @staticmethod
     def split_suite_string(suite: str) -> T.Tuple[str, str]:

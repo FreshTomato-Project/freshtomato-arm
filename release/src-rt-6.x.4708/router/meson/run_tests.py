@@ -32,7 +32,9 @@ from mesonbuild import mesonlib
 from mesonbuild import mesonmain
 from mesonbuild import mtest
 from mesonbuild import mlog
-from mesonbuild.environment import Environment, detect_ninja, detect_machine_info
+from mesonbuild.environment import Environment
+from mesonbuild.envconfig import detect_machine_info
+from mesonbuild.tooldetect import detect_ninja
 from mesonbuild.coredata import version as meson_version
 from mesonbuild.options import backendlist
 from mesonbuild.mesonlib import setup_vsenv
@@ -289,7 +291,7 @@ def run_mtest_inprocess(commandlist: T.List[str]) -> T.Tuple[int, str]:
 def clear_meson_configure_class_caches() -> None:
     CCompiler.find_library_cache.clear()
     CCompiler.find_framework_cache.clear()
-    PkgConfigInterface.class_impl.assign(False, False)
+    PkgConfigInterface.class_impl.assign({}, {})
     mesonlib.project_meson_versions.clear()
 
 def run_configure_inprocess(commandlist: T.List[str], env: T.Optional[T.Dict[str, str]] = None, catch_exception: bool = False) -> T.Tuple[int, str, str]:

@@ -169,7 +169,7 @@ class ExternalProject(NewExtensionModule):
     def _quote_and_join(self, array: T.List[str]) -> str:
         return ' '.join([shlex.quote(i) for i in array])
 
-    def _validate_configure_options(self, variables: T.List[T.Tuple[str, str, str]], state: 'ModuleState') -> None:
+    def _validate_configure_options(self, variables: T.Sequence[T.Tuple[str, T.Optional[str], str]], state: 'ModuleState') -> None:
         # Ensure the user at least try to pass basic info to the build system,
         # like the prefix, libdir, etc.
         for key, default, val in variables:
@@ -183,7 +183,7 @@ class ExternalProject(NewExtensionModule):
                 FeatureNew('Default configure_option', '0.57.0').use(self.subproject, state.current_node)
                 self.configure_options.append(default)
 
-    def _format_options(self, options: T.List[str], variables: T.List[T.Tuple[str, str, str]]) -> T.List[str]:
+    def _format_options(self, options: T.List[str], variables: T.Sequence[T.Tuple[str, T.Optional[str], str]]) -> T.List[str]:
         out: T.List[str] = []
         missing = set()
         regex = get_variable_regex('meson')
@@ -201,10 +201,10 @@ class ExternalProject(NewExtensionModule):
     def _run(self, step: str, command: T.List[str], workdir: Path) -> None:
         mlog.log(f'External project {self.name}:', mlog.bold(step))
         m = 'Running command ' + str(command) + ' in directory ' + str(workdir) + '\n'
-        log_filename = Path(mlog.get_log_dir(), f'{self.name}-{step}.log')
+        logfile = Path(mlog.get_log_dir(), f'{self.name}-{step}.log')
         output = None
         if not self.verbose:
-            output = open(log_filename, 'w', encoding='utf-8')
+            output = open(logfile, 'w', encoding='utf-8')
             output.write(m + '\n')
             output.flush()
         else:
@@ -215,7 +215,10 @@ class ExternalProject(NewExtensionModule):
         if p.returncode != 0:
             m = f'{step} step returned error code {p.returncode}.'
             if not self.verbose:
-                m += '\nSee logs: ' + str(log_filename)
+                m += '\nSee logs: ' + str(logfile)
+            contents = mlog.ci_fold_file(logfile, f'CI platform detected, click here for {os.path.basename(logfile)} contents.')
+            if contents:
+                print(contents)
             raise MesonException(m)
 
     def _create_targets(self, extra_depends: T.List[T.Union['BuildTarget', 'CustomTarget']]) -> T.List['TYPE_var']:

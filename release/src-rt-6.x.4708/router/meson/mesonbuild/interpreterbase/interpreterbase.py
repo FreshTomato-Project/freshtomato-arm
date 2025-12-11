@@ -555,12 +555,6 @@ class InterpreterBase:
             return Disabler()
         if not isinstance(obj, InterpreterObject):
             raise InvalidArguments(f'{object_display_name} is not callable.')
-        # TODO: InterpreterBase **really** shouldn't be in charge of checking this
-        if method_name == 'extract_objects':
-            if isinstance(obj, ObjectHolder):
-                self.validate_extraction(obj.held_object)
-            elif not isinstance(obj, Disabler):
-                raise InvalidArguments(f'Invalid operation "extract_objects" on {object_display_name} of type {type(obj).__name__}')
         obj.current_node = self.current_node = node
         res = obj.method_call(method_name, args, kwargs)
         return self._holderify(res) if res is not None else None
@@ -675,9 +669,6 @@ class InterpreterBase:
             return self.variables[varname]
         raise InvalidCode(f'Unknown variable "{varname}".')
 
-    def validate_extraction(self, buildtarget: mesonlib.HoldableObject) -> None:
-        raise InterpreterException('validate_extraction is not implemented in this context (please file a bug)')
-
     def _load_option_file(self) -> None:
         from .. import optinterpreter  # prevent circular import
 
@@ -733,6 +724,11 @@ class InterpreterBase:
         except mesonlib.MesonException as me:
             me.file = absname
             raise me
+        self._evaluate_codeblock(codeblock, subdir, visitors)
+        return True
+
+    def _evaluate_codeblock(self, codeblock: mparser.CodeBlockNode, subdir: str,
+                            visitors: T.Optional[T.Iterable[AstVisitor]] = None) -> None:
         try:
             prev_subdir = self.subdir
             self.subdir = subdir
@@ -744,4 +740,3 @@ class InterpreterBase:
             pass
         finally:
             self.subdir = prev_subdir
-        return True

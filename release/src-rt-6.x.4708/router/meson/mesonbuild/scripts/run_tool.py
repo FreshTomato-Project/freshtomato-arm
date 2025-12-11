@@ -19,14 +19,14 @@ import typing as T
 
 Info = T.TypeVar("Info")
 
-async def run_with_buffered_output(cmdlist: T.List[str]) -> int:
+async def run_with_buffered_output(cmdlist: T.List[str], env: T.Optional[T.Dict[str, str]] = None) -> int:
     """Run the command in cmdlist, buffering the output so that it is
        not mixed for multiple child processes.  Kill the child on
        cancellation."""
     quoted_cmdline = join_args(cmdlist)
     p: T.Optional[asyncio.subprocess.Process] = None
     try:
-        p = await asyncio.create_subprocess_exec(*cmdlist,
+        p = await asyncio.create_subprocess_exec(*cmdlist, env=env,
                                                  stdin=asyncio.subprocess.DEVNULL,
                                                  stdout=asyncio.subprocess.PIPE,
                                                  stderr=asyncio.subprocess.STDOUT)
@@ -98,7 +98,7 @@ def parse_pattern_file(fname: Path) -> T.List[str]:
 
 def all_clike_files(name: str, srcdir: Path, builddir: Path) -> T.Iterable[Path]:
     patterns = parse_pattern_file(srcdir / f'.{name}-include')
-    globs: T.Union[T.List[T.List[Path]], T.List[T.Generator[Path, None, None]]]
+    globs: T.Sequence[T.Union[T.List[Path], T.Iterator[Path], T.Generator[Path, None, None]]]
     if patterns:
         globs = [srcdir.glob(p) for p in patterns]
     else:

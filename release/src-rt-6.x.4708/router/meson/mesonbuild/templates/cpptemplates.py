@@ -40,7 +40,7 @@ sources = [{source_files}
 
 exe = executable(
   '{exe_name}',
-  [sources],
+  sources,
   install : true,
   dependencies : dependencies,
 )
@@ -54,6 +54,12 @@ lib_hpp_template = '''#pragma once
     #define {utoken}_PUBLIC __declspec(dllexport)
   #else
     #define {utoken}_PUBLIC __declspec(dllimport)
+  #endif
+#elif defined __OS2__
+  #ifdef BUILDING_{utoken}
+    #define {utoken}_PUBLIC __declspec(dllexport)
+  #else
+    #define {utoken}_PUBLIC
   #endif
 #else
   #ifdef BUILDING_{utoken}
@@ -125,12 +131,11 @@ dependencies = [{dependencies}
 lib_args = ['-DBUILDING_{utoken}']
 
 sources = [{source_files}
-
 ]
 
 lib = library(
   '{lib_name}',
-  [sources],
+  sources,
   install : true,
   cpp_shared_args : lib_args,
   gnu_symbol_visibility : 'hidden',

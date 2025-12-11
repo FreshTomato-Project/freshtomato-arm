@@ -38,6 +38,7 @@ cross/ubuntu-armhf.txt
 cross/ubuntu-faketarget.txt
 cross/wasm.txt
 cross/xc16.txt
+cross/xc32.txt
 data/.coveragerc.in
 data/com.mesonbuild.install.policy
 data/macros.meson
@@ -111,6 +112,7 @@ mesonbuild/_pathlib.py
 mesonbuild/_typing.py
 mesonbuild/arglist.py
 mesonbuild/build.py
+mesonbuild/cmdline.py
 mesonbuild/coredata.py
 mesonbuild/depfile.py
 mesonbuild/envconfig.py
@@ -137,6 +139,7 @@ mesonbuild/optinterpreter.py
 mesonbuild/options.py
 mesonbuild/programs.py
 mesonbuild/rewriter.py
+mesonbuild/tooldetect.py
 mesonbuild/ast/__init__.py
 mesonbuild/ast/interpreter.py
 mesonbuild/ast/introspection.py
@@ -154,6 +157,7 @@ mesonbuild/backend/vs2015backend.py
 mesonbuild/backend/vs2017backend.py
 mesonbuild/backend/vs2019backend.py
 mesonbuild/backend/vs2022backend.py
+mesonbuild/backend/vs2026backend.py
 mesonbuild/backend/xcodebackend.py
 mesonbuild/cargo/__init__.py
 mesonbuild/cargo/builder.py
@@ -205,11 +209,11 @@ mesonbuild/compilers/mixins/gnu.py
 mesonbuild/compilers/mixins/intel.py
 mesonbuild/compilers/mixins/islinker.py
 mesonbuild/compilers/mixins/metrowerks.py
+mesonbuild/compilers/mixins/microchip.py
 mesonbuild/compilers/mixins/pgi.py
 mesonbuild/compilers/mixins/tasking.py
 mesonbuild/compilers/mixins/ti.py
 mesonbuild/compilers/mixins/visualstudio.py
-mesonbuild/compilers/mixins/xc16.py
 mesonbuild/dependencies/__init__.py
 mesonbuild/dependencies/base.py
 mesonbuild/dependencies/boost.py
@@ -266,6 +270,7 @@ mesonbuild/linkers/linkers.py
 mesonbuild/modules/__init__.py
 mesonbuild/modules/_qt.py
 mesonbuild/modules/cmake.py
+mesonbuild/modules/codegen.py
 mesonbuild/modules/cuda.py
 mesonbuild/modules/dlang.py
 mesonbuild/modules/external_project.py
@@ -285,6 +290,7 @@ mesonbuild/modules/qt5.py
 mesonbuild/modules/qt6.py
 mesonbuild/modules/rust.py
 mesonbuild/modules/simd.py
+mesonbuild/modules/snippets.py
 mesonbuild/modules/sourceset.py
 mesonbuild/modules/wayland.py
 mesonbuild/modules/windows.py
@@ -310,6 +316,7 @@ mesonbuild/scripts/hotdochelper.py
 mesonbuild/scripts/itstool.py
 mesonbuild/scripts/meson_exe.py
 mesonbuild/scripts/msgfmthelper.py
+mesonbuild/scripts/pickle_env.py
 mesonbuild/scripts/pycompile.py
 mesonbuild/scripts/python_info.py
 mesonbuild/scripts/regen_checker.py
@@ -341,10 +348,8 @@ mesonbuild/templates/valatemplates.py
 mesonbuild/utils/__init__.py
 mesonbuild/utils/core.py
 mesonbuild/utils/platform.py
-mesonbuild/utils/posix.py
 mesonbuild/utils/universal.py
 mesonbuild/utils/vsenv.py
-mesonbuild/utils/win32.py
 mesonbuild/wrap/__init__.py
 mesonbuild/wrap/wrap.py
 mesonbuild/wrap/wraptool.py
@@ -1337,6 +1342,8 @@ test cases/common/22 object extraction/lib2.c
 test cases/common/22 object extraction/main.c
 test cases/common/22 object extraction/meson.build
 test cases/common/22 object extraction/src/lib.c
+test cases/common/22 object extraction/subprojects/sub/meson.build
+test cases/common/22 object extraction/subprojects/sub/source.c
 test cases/common/220 fs module/btgt.c
 test cases/common/220 fs module/ctgt.txt
 test cases/common/220 fs module/meson.build
@@ -1634,6 +1641,10 @@ test cases/common/284 pkgconfig subproject/subprojects/simple2/exports.def
 test cases/common/284 pkgconfig subproject/subprojects/simple2/meson.build
 test cases/common/284 pkgconfig subproject/subprojects/simple2/simple2.c
 test cases/common/284 pkgconfig subproject/subprojects/simple2/simple2.h
+test cases/common/285 atomic/a.c
+test cases/common/285 atomic/meson.build
+test cases/common/286 importstd/meson.build
+test cases/common/286 importstd/useistd.cpp
 test cases/common/29 compiler id/meson.build
 test cases/common/3 static/lib3.c
 test cases/common/3 static/libfile.c
@@ -2289,413 +2300,411 @@ test cases/failing/1 project not first/prog.c
 test cases/failing/1 project not first/test.json
 test cases/failing/10 out of bounds/meson.build
 test cases/failing/10 out of bounds/test.json
-test cases/failing/100 compiler no lang/meson.build
-test cases/failing/100 compiler no lang/test.json
-test cases/failing/101 no fallback/meson.build
-test cases/failing/101 no fallback/test.json
-test cases/failing/101 no fallback/subprojects/foob/meson.build
-test cases/failing/102 feature require/meson.build
-test cases/failing/102 feature require/meson_options.txt
-test cases/failing/102 feature require/test.json
-test cases/failing/103 feature require.bis/meson.build
-test cases/failing/103 feature require.bis/meson_options.txt
-test cases/failing/103 feature require.bis/test.json
-test cases/failing/104 no build get_external_property/meson.build
-test cases/failing/104 no build get_external_property/test.json
-test cases/failing/105 enter subdir twice/meson.build
-test cases/failing/105 enter subdir twice/test.json
-test cases/failing/105 enter subdir twice/sub/meson.build
-test cases/failing/106 invalid fstring/meson.build
-test cases/failing/106 invalid fstring/test.json
-test cases/failing/106 invalid fstring/109 invalid fstring/meson.build
-test cases/failing/106 invalid fstring/109 invalid fstring/test.json
-test cases/failing/107 compiler argument checking/meson.build
-test cases/failing/107 compiler argument checking/test.json
-test cases/failing/108 empty fallback/meson.build
-test cases/failing/108 empty fallback/test.json
-test cases/failing/108 empty fallback/subprojects/foo/meson.build
-test cases/failing/109 cmake executable dependency/meson.build
-test cases/failing/109 cmake executable dependency/test.json
-test cases/failing/109 cmake executable dependency/subprojects/cmlib/CMakeLists.txt
-test cases/failing/109 cmake executable dependency/subprojects/cmlib/main.c
+test cases/failing/100 no fallback/meson.build
+test cases/failing/100 no fallback/test.json
+test cases/failing/100 no fallback/subprojects/foob/meson.build
+test cases/failing/101 feature require/meson.build
+test cases/failing/101 feature require/meson_options.txt
+test cases/failing/101 feature require/test.json
+test cases/failing/102 feature require.bis/meson.build
+test cases/failing/102 feature require.bis/meson_options.txt
+test cases/failing/102 feature require.bis/test.json
+test cases/failing/103 no build get_external_property/meson.build
+test cases/failing/103 no build get_external_property/test.json
+test cases/failing/104 enter subdir twice/meson.build
+test cases/failing/104 enter subdir twice/test.json
+test cases/failing/104 enter subdir twice/sub/meson.build
+test cases/failing/105 invalid fstring/meson.build
+test cases/failing/105 invalid fstring/test.json
+test cases/failing/105 invalid fstring/109 invalid fstring/meson.build
+test cases/failing/105 invalid fstring/109 invalid fstring/test.json
+test cases/failing/106 compiler argument checking/meson.build
+test cases/failing/106 compiler argument checking/test.json
+test cases/failing/107 empty fallback/meson.build
+test cases/failing/107 empty fallback/test.json
+test cases/failing/107 empty fallback/subprojects/foo/meson.build
+test cases/failing/108 cmake executable dependency/meson.build
+test cases/failing/108 cmake executable dependency/test.json
+test cases/failing/108 cmake executable dependency/subprojects/cmlib/CMakeLists.txt
+test cases/failing/108 cmake executable dependency/subprojects/cmlib/main.c
+test cases/failing/109 allow_fallback with fallback/meson.build
+test cases/failing/109 allow_fallback with fallback/test.json
 test cases/failing/11 object arithmetic/meson.build
 test cases/failing/11 object arithmetic/test.json
-test cases/failing/110 allow_fallback with fallback/meson.build
-test cases/failing/110 allow_fallback with fallback/test.json
-test cases/failing/111 nonsensical bindgen/meson.build
-test cases/failing/111 nonsensical bindgen/test.json
-test cases/failing/111 nonsensical bindgen/src/header.h
-test cases/failing/111 nonsensical bindgen/src/source.c
-test cases/failing/112 run_target in test/meson.build
-test cases/failing/112 run_target in test/test.json
-test cases/failing/112 run_target in test/trivial.c
-test cases/failing/113 run_target in add_install_script/meson.build
-test cases/failing/113 run_target in add_install_script/test.json
-test cases/failing/113 run_target in add_install_script/trivial.c
-test cases/failing/114 pathsep in install_symlink/meson.build
-test cases/failing/114 pathsep in install_symlink/test.json
-test cases/failing/115 subproject version conflict/meson.build
-test cases/failing/115 subproject version conflict/test.json
-test cases/failing/115 subproject version conflict/subprojects/A/meson.build
-test cases/failing/115 subproject version conflict/subprojects/B/meson.build
-test cases/failing/116 structured source empty string/main.rs
-test cases/failing/116 structured source empty string/meson.build
-test cases/failing/116 structured source empty string/test.json
-test cases/failing/117 structured_sources conflicts/main.rs
-test cases/failing/117 structured_sources conflicts/meson.build
-test cases/failing/117 structured_sources conflicts/test.json
-test cases/failing/118 missing compiler/meson.build
-test cases/failing/118 missing compiler/test.json
-test cases/failing/118 missing compiler/subprojects/sub/main.c
-test cases/failing/118 missing compiler/subprojects/sub/meson.build
-test cases/failing/119 cmake subproject error/meson.build
-test cases/failing/119 cmake subproject error/test.json
-test cases/failing/119 cmake subproject error/subprojects/cmlib/CMakeLists.txt
+test cases/failing/110 nonsensical bindgen/meson.build
+test cases/failing/110 nonsensical bindgen/test.json
+test cases/failing/110 nonsensical bindgen/src/header.h
+test cases/failing/110 nonsensical bindgen/src/source.c
+test cases/failing/111 run_target in test/meson.build
+test cases/failing/111 run_target in test/test.json
+test cases/failing/111 run_target in test/trivial.c
+test cases/failing/112 run_target in add_install_script/meson.build
+test cases/failing/112 run_target in add_install_script/test.json
+test cases/failing/112 run_target in add_install_script/trivial.c
+test cases/failing/113 pathsep in install_symlink/meson.build
+test cases/failing/113 pathsep in install_symlink/test.json
+test cases/failing/114 subproject version conflict/meson.build
+test cases/failing/114 subproject version conflict/test.json
+test cases/failing/114 subproject version conflict/subprojects/A/meson.build
+test cases/failing/114 subproject version conflict/subprojects/B/meson.build
+test cases/failing/115 structured source empty string/main.rs
+test cases/failing/115 structured source empty string/meson.build
+test cases/failing/115 structured source empty string/test.json
+test cases/failing/116 structured_sources conflicts/main.rs
+test cases/failing/116 structured_sources conflicts/meson.build
+test cases/failing/116 structured_sources conflicts/test.json
+test cases/failing/117 missing compiler/meson.build
+test cases/failing/117 missing compiler/test.json
+test cases/failing/117 missing compiler/subprojects/sub/main.c
+test cases/failing/117 missing compiler/subprojects/sub/meson.build
+test cases/failing/118 cmake subproject error/meson.build
+test cases/failing/118 cmake subproject error/test.json
+test cases/failing/118 cmake subproject error/subprojects/cmlib/CMakeLists.txt
+test cases/failing/119 pkgconfig not relocatable outside prefix/meson.build
+test cases/failing/119 pkgconfig not relocatable outside prefix/test.json
 test cases/failing/12 string arithmetic/meson.build
 test cases/failing/12 string arithmetic/test.json
-test cases/failing/120 pkgconfig not relocatable outside prefix/meson.build
-test cases/failing/120 pkgconfig not relocatable outside prefix/test.json
-test cases/failing/121 subproject sandbox violation/meson.build
-test cases/failing/121 subproject sandbox violation/meson_options.txt
-test cases/failing/121 subproject sandbox violation/test.json
-test cases/failing/121 subproject sandbox violation/subprojects/subproj1/file.txt
-test cases/failing/121 subproject sandbox violation/subprojects/subproj1/meson.build
-test cases/failing/121 subproject sandbox violation/subprojects/subproj1/nested/meson.build
-test cases/failing/121 subproject sandbox violation/subprojects/subproj2/file.txt
-test cases/failing/121 subproject sandbox violation/subprojects/subproj2/meson.build
-test cases/failing/121 subproject sandbox violation/subprojects/subproj2/nested/meson.build
-test cases/failing/121 subproject sandbox violation/subprojects/subproj3/file.txt
-test cases/failing/121 subproject sandbox violation/subprojects/subproj3/meson.build
-test cases/failing/122 override and add_project_dependency/lib.c
-test cases/failing/122 override and add_project_dependency/meson.build
-test cases/failing/122 override and add_project_dependency/test.json
-test cases/failing/122 override and add_project_dependency/inc/lib.h
-test cases/failing/122 override and add_project_dependency/subprojects/a/meson.build
-test cases/failing/122 override and add_project_dependency/subprojects/a/prog.c
-test cases/failing/123 targets before add_project_dependency/lib.c
-test cases/failing/123 targets before add_project_dependency/meson.build
-test cases/failing/123 targets before add_project_dependency/test.json
-test cases/failing/123 targets before add_project_dependency/inc/lib.h
-test cases/failing/124 extract from unity/meson.build
-test cases/failing/124 extract from unity/src1.c
-test cases/failing/124 extract from unity/src2.c
-test cases/failing/124 extract from unity/test.json
-test cases/failing/125 subproject object as a dependency/main.c
-test cases/failing/125 subproject object as a dependency/meson.build
-test cases/failing/125 subproject object as a dependency/test.json
-test cases/failing/125 subproject object as a dependency/subprojects/sub/meson.build
-test cases/failing/126 generator host binary/exe.c
-test cases/failing/126 generator host binary/lib.in
-test cases/failing/126 generator host binary/meson.build
-test cases/failing/126 generator host binary/test.json
-test cases/failing/127 invalid ast/meson.build
-test cases/failing/127 invalid ast/test.json
-test cases/failing/128 invalid project function/meson.build
-test cases/failing/128 invalid project function/test.json
-test cases/failing/129 utf8 with bom/meson.build
-test cases/failing/129 utf8 with bom/test.json
+test cases/failing/120 subproject sandbox violation/meson.build
+test cases/failing/120 subproject sandbox violation/meson_options.txt
+test cases/failing/120 subproject sandbox violation/test.json
+test cases/failing/120 subproject sandbox violation/subprojects/subproj1/file.txt
+test cases/failing/120 subproject sandbox violation/subprojects/subproj1/meson.build
+test cases/failing/120 subproject sandbox violation/subprojects/subproj1/nested/meson.build
+test cases/failing/120 subproject sandbox violation/subprojects/subproj2/file.txt
+test cases/failing/120 subproject sandbox violation/subprojects/subproj2/meson.build
+test cases/failing/120 subproject sandbox violation/subprojects/subproj2/nested/meson.build
+test cases/failing/120 subproject sandbox violation/subprojects/subproj3/file.txt
+test cases/failing/120 subproject sandbox violation/subprojects/subproj3/meson.build
+test cases/failing/121 override and add_project_dependency/lib.c
+test cases/failing/121 override and add_project_dependency/meson.build
+test cases/failing/121 override and add_project_dependency/test.json
+test cases/failing/121 override and add_project_dependency/inc/lib.h
+test cases/failing/121 override and add_project_dependency/subprojects/a/meson.build
+test cases/failing/121 override and add_project_dependency/subprojects/a/prog.c
+test cases/failing/122 targets before add_project_dependency/lib.c
+test cases/failing/122 targets before add_project_dependency/meson.build
+test cases/failing/122 targets before add_project_dependency/test.json
+test cases/failing/122 targets before add_project_dependency/inc/lib.h
+test cases/failing/123 extract from unity/meson.build
+test cases/failing/123 extract from unity/src1.c
+test cases/failing/123 extract from unity/src2.c
+test cases/failing/123 extract from unity/test.json
+test cases/failing/124 subproject object as a dependency/main.c
+test cases/failing/124 subproject object as a dependency/meson.build
+test cases/failing/124 subproject object as a dependency/test.json
+test cases/failing/124 subproject object as a dependency/subprojects/sub/meson.build
+test cases/failing/125 generator host binary/exe.c
+test cases/failing/125 generator host binary/lib.in
+test cases/failing/125 generator host binary/meson.build
+test cases/failing/125 generator host binary/test.json
+test cases/failing/126 invalid ast/meson.build
+test cases/failing/126 invalid ast/test.json
+test cases/failing/127 invalid project function/meson.build
+test cases/failing/127 invalid project function/test.json
+test cases/failing/128 utf8 with bom/meson.build
+test cases/failing/128 utf8 with bom/test.json
+test cases/failing/129 utf8 with bom subdir/meson.build
+test cases/failing/129 utf8 with bom subdir/test.json
+test cases/failing/129 utf8 with bom subdir/subdir/meson.build
 test cases/failing/13 array arithmetic/meson.build
 test cases/failing/13 array arithmetic/test.json
-test cases/failing/130 utf8 with bom subdir/meson.build
-test cases/failing/130 utf8 with bom subdir/test.json
-test cases/failing/130 utf8 with bom subdir/subdir/meson.build
-test cases/failing/131 utf8 with bom options/meson.build
-test cases/failing/131 utf8 with bom options/meson.options
-test cases/failing/131 utf8 with bom options/test.json
-test cases/failing/132 module use inside project decl/meson.build
-test cases/failing/132 module use inside project decl/test.json
-test cases/failing/133 dub missing dependency/dub.json
-test cases/failing/133 dub missing dependency/dub.selections.json
-test cases/failing/133 dub missing dependency/meson.build
-test cases/failing/133 dub missing dependency/test.json
-test cases/failing/133 dub missing dependency/source/app.d
-test cases/failing/134 java sources in non jar target/Test.java
-test cases/failing/134 java sources in non jar target/meson.build
-test cases/failing/134 java sources in non jar target/test.json
-test cases/failing/135 rust link_language/f.rs
-test cases/failing/135 rust link_language/meson.build
-test cases/failing/135 rust link_language/test.json
+test cases/failing/130 utf8 with bom options/meson.build
+test cases/failing/130 utf8 with bom options/meson.options
+test cases/failing/130 utf8 with bom options/test.json
+test cases/failing/131 module use inside project decl/meson.build
+test cases/failing/131 module use inside project decl/test.json
+test cases/failing/132 dub missing dependency/dub.json
+test cases/failing/132 dub missing dependency/dub.selections.json
+test cases/failing/132 dub missing dependency/meson.build
+test cases/failing/132 dub missing dependency/test.json
+test cases/failing/132 dub missing dependency/source/app.d
+test cases/failing/133 java sources in non jar target/Test.java
+test cases/failing/133 java sources in non jar target/meson.build
+test cases/failing/133 java sources in non jar target/test.json
+test cases/failing/134 rust link_language/f.rs
+test cases/failing/134 rust link_language/meson.build
+test cases/failing/134 rust link_language/test.json
+test cases/failing/135 invalid build_subdir/meson.build
+test cases/failing/135 invalid build_subdir/test.json
+test cases/failing/135 invalid build_subdir/existing-dir/config.h.in
 test cases/failing/14 invalid option name/meson.build
 test cases/failing/14 invalid option name/meson_options.txt
 test cases/failing/14 invalid option name/test.json
 test cases/failing/15 kwarg before arg/meson.build
 test cases/failing/15 kwarg before arg/prog.c
 test cases/failing/15 kwarg before arg/test.json
-test cases/failing/16 extract from subproject/main.c
-test cases/failing/16 extract from subproject/meson.build
-test cases/failing/16 extract from subproject/test.json
-test cases/failing/16 extract from subproject/subprojects/sub_project/meson.build
-test cases/failing/16 extract from subproject/subprojects/sub_project/sub_lib.c
-test cases/failing/17 same target/file.c
-test cases/failing/17 same target/meson.build
-test cases/failing/17 same target/test.json
-test cases/failing/18 wrong plusassign/meson.build
-test cases/failing/18 wrong plusassign/test.json
-test cases/failing/19 target clash/clash.c
-test cases/failing/19 target clash/meson.build
-test cases/failing/19 target clash/test.json
+test cases/failing/16 same target/file.c
+test cases/failing/16 same target/meson.build
+test cases/failing/16 same target/test.json
+test cases/failing/17 wrong plusassign/meson.build
+test cases/failing/17 wrong plusassign/test.json
+test cases/failing/18 target clash/clash.c
+test cases/failing/18 target clash/meson.build
+test cases/failing/18 target clash/test.json
+test cases/failing/19 version/meson.build
+test cases/failing/19 version/test.json
 test cases/failing/2 missing file/meson.build
 test cases/failing/2 missing file/test.json
-test cases/failing/20 version/meson.build
-test cases/failing/20 version/test.json
-test cases/failing/21 subver/meson.build
-test cases/failing/21 subver/test.json
-test cases/failing/21 subver/subprojects/foo/meson.build
-test cases/failing/22 assert/meson.build
-test cases/failing/22 assert/test.json
-test cases/failing/23 rel testdir/meson.build
-test cases/failing/23 rel testdir/simple.c
-test cases/failing/23 rel testdir/test.json
-test cases/failing/24 int conversion/meson.build
-test cases/failing/24 int conversion/test.json
-test cases/failing/25 badlang/meson.build
-test cases/failing/25 badlang/test.json
-test cases/failing/26 output subdir/foo.in
-test cases/failing/26 output subdir/meson.build
-test cases/failing/26 output subdir/test.json
-test cases/failing/26 output subdir/subdir/dummy.txt
-test cases/failing/27 noprog use/meson.build
-test cases/failing/27 noprog use/test.json
-test cases/failing/28 no crossprop/meson.build
-test cases/failing/28 no crossprop/test.json
-test cases/failing/29 nested ternary/meson.build
-test cases/failing/29 nested ternary/test.json
+test cases/failing/20 subver/meson.build
+test cases/failing/20 subver/test.json
+test cases/failing/20 subver/subprojects/foo/meson.build
+test cases/failing/21 assert/meson.build
+test cases/failing/21 assert/test.json
+test cases/failing/22 rel testdir/meson.build
+test cases/failing/22 rel testdir/simple.c
+test cases/failing/22 rel testdir/test.json
+test cases/failing/23 int conversion/meson.build
+test cases/failing/23 int conversion/test.json
+test cases/failing/24 badlang/meson.build
+test cases/failing/24 badlang/test.json
+test cases/failing/25 output subdir/foo.in
+test cases/failing/25 output subdir/meson.build
+test cases/failing/25 output subdir/test.json
+test cases/failing/25 output subdir/subdir/dummy.txt
+test cases/failing/26 noprog use/meson.build
+test cases/failing/26 noprog use/test.json
+test cases/failing/27 no crossprop/meson.build
+test cases/failing/27 no crossprop/test.json
+test cases/failing/28 nested ternary/meson.build
+test cases/failing/28 nested ternary/test.json
+test cases/failing/29 invalid man extension/foo.a1
+test cases/failing/29 invalid man extension/meson.build
+test cases/failing/29 invalid man extension/test.json
 test cases/failing/3 missing subdir/meson.build
 test cases/failing/3 missing subdir/test.json
-test cases/failing/30 invalid man extension/foo.a1
-test cases/failing/30 invalid man extension/meson.build
-test cases/failing/30 invalid man extension/test.json
-test cases/failing/31 no man extension/foo
-test cases/failing/31 no man extension/meson.build
-test cases/failing/31 no man extension/test.json
-test cases/failing/32 exe static shared/meson.build
-test cases/failing/32 exe static shared/prog.c
-test cases/failing/32 exe static shared/shlib2.c
-test cases/failing/32 exe static shared/stat.c
-test cases/failing/32 exe static shared/test.json
-test cases/failing/33 non-root subproject/meson.build
-test cases/failing/33 non-root subproject/test.json
-test cases/failing/33 non-root subproject/some/meson.build
-test cases/failing/34 dependency not-required then required/meson.build
-test cases/failing/34 dependency not-required then required/test.json
-test cases/failing/35 project argument after target/exe.c
-test cases/failing/35 project argument after target/meson.build
-test cases/failing/35 project argument after target/test.json
-test cases/failing/36 pkgconfig dependency impossible conditions/meson.build
-test cases/failing/36 pkgconfig dependency impossible conditions/test.json
-test cases/failing/37 has function external dependency/meson.build
-test cases/failing/37 has function external dependency/mylib.c
-test cases/failing/37 has function external dependency/test.json
-test cases/failing/38 prefix absolute/meson.build
-test cases/failing/38 prefix absolute/test.json
-test cases/failing/39 kwarg assign/dummy.c
-test cases/failing/39 kwarg assign/meson.build
-test cases/failing/39 kwarg assign/prog.c
-test cases/failing/39 kwarg assign/test.json
+test cases/failing/30 no man extension/foo
+test cases/failing/30 no man extension/meson.build
+test cases/failing/30 no man extension/test.json
+test cases/failing/31 exe static shared/meson.build
+test cases/failing/31 exe static shared/prog.c
+test cases/failing/31 exe static shared/shlib2.c
+test cases/failing/31 exe static shared/stat.c
+test cases/failing/31 exe static shared/test.json
+test cases/failing/32 non-root subproject/meson.build
+test cases/failing/32 non-root subproject/test.json
+test cases/failing/32 non-root subproject/some/meson.build
+test cases/failing/33 dependency not-required then required/meson.build
+test cases/failing/33 dependency not-required then required/test.json
+test cases/failing/34 project argument after target/exe.c
+test cases/failing/34 project argument after target/meson.build
+test cases/failing/34 project argument after target/test.json
+test cases/failing/35 pkgconfig dependency impossible conditions/meson.build
+test cases/failing/35 pkgconfig dependency impossible conditions/test.json
+test cases/failing/36 has function external dependency/meson.build
+test cases/failing/36 has function external dependency/mylib.c
+test cases/failing/36 has function external dependency/test.json
+test cases/failing/37 prefix absolute/meson.build
+test cases/failing/37 prefix absolute/test.json
+test cases/failing/38 kwarg assign/dummy.c
+test cases/failing/38 kwarg assign/meson.build
+test cases/failing/38 kwarg assign/prog.c
+test cases/failing/38 kwarg assign/test.json
+test cases/failing/39 custom target plainname many inputs/1.txt
+test cases/failing/39 custom target plainname many inputs/2.txt
+test cases/failing/39 custom target plainname many inputs/catfiles.py
+test cases/failing/39 custom target plainname many inputs/meson.build
+test cases/failing/39 custom target plainname many inputs/test.json
 test cases/failing/4 missing meson.build/meson.build
 test cases/failing/4 missing meson.build/test.json
 test cases/failing/4 missing meson.build/subdir/dummy.txt
-test cases/failing/40 custom target plainname many inputs/1.txt
-test cases/failing/40 custom target plainname many inputs/2.txt
-test cases/failing/40 custom target plainname many inputs/catfiles.py
-test cases/failing/40 custom target plainname many inputs/meson.build
-test cases/failing/40 custom target plainname many inputs/test.json
-test cases/failing/41 custom target outputs not matching install_dirs/generator.py
-test cases/failing/41 custom target outputs not matching install_dirs/meson.build
-test cases/failing/41 custom target outputs not matching install_dirs/test.json
-test cases/failing/42 project name colon/meson.build
-test cases/failing/42 project name colon/test.json
-test cases/failing/43 abs subdir/meson.build
-test cases/failing/43 abs subdir/test.json
-test cases/failing/43 abs subdir/bob/meson.build
-test cases/failing/44 abspath to srcdir/meson.build
-test cases/failing/44 abspath to srcdir/test.json
-test cases/failing/45 pkgconfig variables reserved/meson.build
-test cases/failing/45 pkgconfig variables reserved/simple.c
-test cases/failing/45 pkgconfig variables reserved/simple.h
-test cases/failing/45 pkgconfig variables reserved/test.json
-test cases/failing/46 pkgconfig variables zero length/meson.build
-test cases/failing/46 pkgconfig variables zero length/simple.c
-test cases/failing/46 pkgconfig variables zero length/simple.h
-test cases/failing/46 pkgconfig variables zero length/test.json
-test cases/failing/47 pkgconfig variables not key value/meson.build
-test cases/failing/47 pkgconfig variables not key value/simple.c
-test cases/failing/47 pkgconfig variables not key value/simple.h
-test cases/failing/47 pkgconfig variables not key value/test.json
-test cases/failing/48 executable comparison/meson.build
-test cases/failing/48 executable comparison/prog.c
-test cases/failing/48 executable comparison/test.json
-test cases/failing/49 inconsistent comparison/meson.build
-test cases/failing/49 inconsistent comparison/test.json
+test cases/failing/40 custom target outputs not matching install_dirs/generator.py
+test cases/failing/40 custom target outputs not matching install_dirs/meson.build
+test cases/failing/40 custom target outputs not matching install_dirs/test.json
+test cases/failing/41 project name colon/meson.build
+test cases/failing/41 project name colon/test.json
+test cases/failing/42 abs subdir/meson.build
+test cases/failing/42 abs subdir/test.json
+test cases/failing/42 abs subdir/bob/meson.build
+test cases/failing/43 abspath to srcdir/meson.build
+test cases/failing/43 abspath to srcdir/test.json
+test cases/failing/44 pkgconfig variables reserved/meson.build
+test cases/failing/44 pkgconfig variables reserved/simple.c
+test cases/failing/44 pkgconfig variables reserved/simple.h
+test cases/failing/44 pkgconfig variables reserved/test.json
+test cases/failing/45 pkgconfig variables zero length/meson.build
+test cases/failing/45 pkgconfig variables zero length/simple.c
+test cases/failing/45 pkgconfig variables zero length/simple.h
+test cases/failing/45 pkgconfig variables zero length/test.json
+test cases/failing/46 pkgconfig variables not key value/meson.build
+test cases/failing/46 pkgconfig variables not key value/simple.c
+test cases/failing/46 pkgconfig variables not key value/simple.h
+test cases/failing/46 pkgconfig variables not key value/test.json
+test cases/failing/47 executable comparison/meson.build
+test cases/failing/47 executable comparison/prog.c
+test cases/failing/47 executable comparison/test.json
+test cases/failing/48 inconsistent comparison/meson.build
+test cases/failing/48 inconsistent comparison/test.json
+test cases/failing/49 slashname/meson.build
+test cases/failing/49 slashname/test.json
+test cases/failing/49 slashname/sub/meson.build
+test cases/failing/49 slashname/sub/prog.c
 test cases/failing/5 misplaced option/meson.build
 test cases/failing/5 misplaced option/test.json
-test cases/failing/50 slashname/meson.build
-test cases/failing/50 slashname/test.json
-test cases/failing/50 slashname/sub/meson.build
-test cases/failing/50 slashname/sub/prog.c
-test cases/failing/51 reserved meson prefix/meson.build
-test cases/failing/51 reserved meson prefix/test.json
-test cases/failing/51 reserved meson prefix/meson-foo/meson.build
-test cases/failing/52 or on new line/meson.build
-test cases/failing/52 or on new line/meson_options.txt
-test cases/failing/52 or on new line/test.json
-test cases/failing/53 link with executable/meson.build
-test cases/failing/53 link with executable/module.c
-test cases/failing/53 link with executable/prog.c
-test cases/failing/53 link with executable/test.json
-test cases/failing/54 assign custom target index/meson.build
-test cases/failing/54 assign custom target index/test.json
-test cases/failing/55 getoption prefix/meson.build
-test cases/failing/55 getoption prefix/test.json
-test cases/failing/55 getoption prefix/subprojects/abc/meson.build
-test cases/failing/55 getoption prefix/subprojects/abc/meson_options.txt
-test cases/failing/56 bad option argument/meson.build
-test cases/failing/56 bad option argument/meson_options.txt
-test cases/failing/56 bad option argument/test.json
-test cases/failing/57 subproj filegrab/meson.build
-test cases/failing/57 subproj filegrab/prog.c
-test cases/failing/57 subproj filegrab/test.json
-test cases/failing/57 subproj filegrab/subprojects/a/meson.build
-test cases/failing/58 grab subproj/meson.build
-test cases/failing/58 grab subproj/test.json
-test cases/failing/58 grab subproj/subprojects/foo/meson.build
-test cases/failing/58 grab subproj/subprojects/foo/sub.c
-test cases/failing/59 grab sibling/meson.build
-test cases/failing/59 grab sibling/test.json
-test cases/failing/59 grab sibling/subprojects/a/meson.build
-test cases/failing/59 grab sibling/subprojects/b/meson.build
-test cases/failing/59 grab sibling/subprojects/b/sneaky.c
+test cases/failing/50 reserved meson prefix/meson.build
+test cases/failing/50 reserved meson prefix/test.json
+test cases/failing/50 reserved meson prefix/meson-foo/meson.build
+test cases/failing/51 or on new line/meson.build
+test cases/failing/51 or on new line/meson_options.txt
+test cases/failing/51 or on new line/test.json
+test cases/failing/52 link with executable/meson.build
+test cases/failing/52 link with executable/module.c
+test cases/failing/52 link with executable/prog.c
+test cases/failing/52 link with executable/test.json
+test cases/failing/53 assign custom target index/meson.build
+test cases/failing/53 assign custom target index/test.json
+test cases/failing/54 getoption prefix/meson.build
+test cases/failing/54 getoption prefix/test.json
+test cases/failing/54 getoption prefix/subprojects/abc/meson.build
+test cases/failing/54 getoption prefix/subprojects/abc/meson_options.txt
+test cases/failing/55 bad option argument/meson.build
+test cases/failing/55 bad option argument/meson_options.txt
+test cases/failing/55 bad option argument/test.json
+test cases/failing/56 subproj filegrab/meson.build
+test cases/failing/56 subproj filegrab/prog.c
+test cases/failing/56 subproj filegrab/test.json
+test cases/failing/56 subproj filegrab/subprojects/a/meson.build
+test cases/failing/57 grab subproj/meson.build
+test cases/failing/57 grab subproj/test.json
+test cases/failing/57 grab subproj/subprojects/foo/meson.build
+test cases/failing/57 grab subproj/subprojects/foo/sub.c
+test cases/failing/58 grab sibling/meson.build
+test cases/failing/58 grab sibling/test.json
+test cases/failing/58 grab sibling/subprojects/a/meson.build
+test cases/failing/58 grab sibling/subprojects/b/meson.build
+test cases/failing/58 grab sibling/subprojects/b/sneaky.c
+test cases/failing/59 string as link target/meson.build
+test cases/failing/59 string as link target/prog.c
+test cases/failing/59 string as link target/test.json
 test cases/failing/6 missing incdir/meson.build
 test cases/failing/6 missing incdir/test.json
-test cases/failing/60 string as link target/meson.build
-test cases/failing/60 string as link target/prog.c
-test cases/failing/60 string as link target/test.json
-test cases/failing/61 dependency not-found and required/meson.build
-test cases/failing/61 dependency not-found and required/test.json
-test cases/failing/62 subproj different versions/main.c
-test cases/failing/62 subproj different versions/meson.build
-test cases/failing/62 subproj different versions/test.json
-test cases/failing/62 subproj different versions/subprojects/a/a.c
-test cases/failing/62 subproj different versions/subprojects/a/a.h
-test cases/failing/62 subproj different versions/subprojects/a/meson.build
-test cases/failing/62 subproj different versions/subprojects/b/b.c
-test cases/failing/62 subproj different versions/subprojects/b/b.h
-test cases/failing/62 subproj different versions/subprojects/b/meson.build
-test cases/failing/62 subproj different versions/subprojects/c/c.h
-test cases/failing/62 subproj different versions/subprojects/c/meson.build
-test cases/failing/63 wrong boost module/meson.build
-test cases/failing/63 wrong boost module/test.json
-test cases/failing/64 install_data rename bad size/file1.txt
-test cases/failing/64 install_data rename bad size/file2.txt
-test cases/failing/64 install_data rename bad size/meson.build
-test cases/failing/64 install_data rename bad size/test.json
-test cases/failing/65 skip only subdir/meson.build
-test cases/failing/65 skip only subdir/test.json
-test cases/failing/65 skip only subdir/subdir/meson.build
-test cases/failing/66 dual override/meson.build
-test cases/failing/66 dual override/overrides.py
-test cases/failing/66 dual override/test.json
-test cases/failing/67 override used/meson.build
-test cases/failing/67 override used/other.py
-test cases/failing/67 override used/something.py
-test cases/failing/67 override used/test.json
-test cases/failing/68 run_command unclean exit/meson.build
-test cases/failing/68 run_command unclean exit/returncode.py
-test cases/failing/68 run_command unclean exit/test.json
-test cases/failing/69 int literal leading zero/meson.build
-test cases/failing/69 int literal leading zero/test.json
+test cases/failing/60 dependency not-found and required/meson.build
+test cases/failing/60 dependency not-found and required/test.json
+test cases/failing/61 subproj different versions/main.c
+test cases/failing/61 subproj different versions/meson.build
+test cases/failing/61 subproj different versions/test.json
+test cases/failing/61 subproj different versions/subprojects/a/a.c
+test cases/failing/61 subproj different versions/subprojects/a/a.h
+test cases/failing/61 subproj different versions/subprojects/a/meson.build
+test cases/failing/61 subproj different versions/subprojects/b/b.c
+test cases/failing/61 subproj different versions/subprojects/b/b.h
+test cases/failing/61 subproj different versions/subprojects/b/meson.build
+test cases/failing/61 subproj different versions/subprojects/c/c.h
+test cases/failing/61 subproj different versions/subprojects/c/meson.build
+test cases/failing/62 wrong boost module/meson.build
+test cases/failing/62 wrong boost module/test.json
+test cases/failing/63 install_data rename bad size/file1.txt
+test cases/failing/63 install_data rename bad size/file2.txt
+test cases/failing/63 install_data rename bad size/meson.build
+test cases/failing/63 install_data rename bad size/test.json
+test cases/failing/64 skip only subdir/meson.build
+test cases/failing/64 skip only subdir/test.json
+test cases/failing/64 skip only subdir/subdir/meson.build
+test cases/failing/65 dual override/meson.build
+test cases/failing/65 dual override/overrides.py
+test cases/failing/65 dual override/test.json
+test cases/failing/66 override used/meson.build
+test cases/failing/66 override used/other.py
+test cases/failing/66 override used/something.py
+test cases/failing/66 override used/test.json
+test cases/failing/67 run_command unclean exit/meson.build
+test cases/failing/67 run_command unclean exit/returncode.py
+test cases/failing/67 run_command unclean exit/test.json
+test cases/failing/68 int literal leading zero/meson.build
+test cases/failing/68 int literal leading zero/test.json
+test cases/failing/69 configuration immutable/input
+test cases/failing/69 configuration immutable/meson.build
+test cases/failing/69 configuration immutable/test.json
 test cases/failing/7 go to subproject/meson.build
 test cases/failing/7 go to subproject/test.json
 test cases/failing/7 go to subproject/subprojects/meson.build
-test cases/failing/70 configuration immutable/input
-test cases/failing/70 configuration immutable/meson.build
-test cases/failing/70 configuration immutable/test.json
-test cases/failing/71 link with shared module on osx/meson.build
-test cases/failing/71 link with shared module on osx/module.c
-test cases/failing/71 link with shared module on osx/prog.c
-test cases/failing/71 link with shared module on osx/test.json
-test cases/failing/72 non-ascii in ascii encoded configure file/config9.h.in
-test cases/failing/72 non-ascii in ascii encoded configure file/meson.build
-test cases/failing/72 non-ascii in ascii encoded configure file/test.json
-test cases/failing/73 subproj dependency not-found and required/meson.build
-test cases/failing/73 subproj dependency not-found and required/test.json
-test cases/failing/74 unfound run/meson.build
-test cases/failing/74 unfound run/test.json
-test cases/failing/75 framework dependency with version/meson.build
-test cases/failing/75 framework dependency with version/test.json
-test cases/failing/76 override exe config/foo.c
-test cases/failing/76 override exe config/meson.build
-test cases/failing/76 override exe config/test.json
-test cases/failing/77 gl dependency with version/meson.build
-test cases/failing/77 gl dependency with version/test.json
-test cases/failing/78 threads dependency with version/meson.build
-test cases/failing/78 threads dependency with version/test.json
-test cases/failing/79 gtest dependency with version/meson.build
-test cases/failing/79 gtest dependency with version/test.json
+test cases/failing/70 link with shared module on osx/meson.build
+test cases/failing/70 link with shared module on osx/module.c
+test cases/failing/70 link with shared module on osx/prog.c
+test cases/failing/70 link with shared module on osx/test.json
+test cases/failing/71 non-ascii in ascii encoded configure file/config9.h.in
+test cases/failing/71 non-ascii in ascii encoded configure file/meson.build
+test cases/failing/71 non-ascii in ascii encoded configure file/test.json
+test cases/failing/72 subproj dependency not-found and required/meson.build
+test cases/failing/72 subproj dependency not-found and required/test.json
+test cases/failing/73 unfound run/meson.build
+test cases/failing/73 unfound run/test.json
+test cases/failing/74 framework dependency with version/meson.build
+test cases/failing/74 framework dependency with version/test.json
+test cases/failing/75 override exe config/foo.c
+test cases/failing/75 override exe config/meson.build
+test cases/failing/75 override exe config/test.json
+test cases/failing/76 gl dependency with version/meson.build
+test cases/failing/76 gl dependency with version/test.json
+test cases/failing/77 threads dependency with version/meson.build
+test cases/failing/77 threads dependency with version/test.json
+test cases/failing/78 gtest dependency with version/meson.build
+test cases/failing/78 gtest dependency with version/test.json
+test cases/failing/79 dub library/meson.build
+test cases/failing/79 dub library/test.json
 test cases/failing/8 recursive/meson.build
 test cases/failing/8 recursive/test.json
 test cases/failing/8 recursive/subprojects/a/meson.build
 test cases/failing/8 recursive/subprojects/b/meson.build
-test cases/failing/80 dub library/meson.build
-test cases/failing/80 dub library/test.json
-test cases/failing/81 dub executable/meson.build
-test cases/failing/81 dub executable/test.json
-test cases/failing/82 dub compiler/meson.build
-test cases/failing/82 dub compiler/test.json
-test cases/failing/83 subproj not-found dep/meson.build
-test cases/failing/83 subproj not-found dep/test.json
-test cases/failing/83 subproj not-found dep/subprojects/somesubproj/meson.build
-test cases/failing/84 invalid configure file/input
-test cases/failing/84 invalid configure file/meson.build
-test cases/failing/84 invalid configure file/test.json
-test cases/failing/85 kwarg dupe/meson.build
-test cases/failing/85 kwarg dupe/prog.c
-test cases/failing/85 kwarg dupe/test.json
-test cases/failing/86 missing pch file/meson.build
-test cases/failing/86 missing pch file/prog.c
-test cases/failing/86 missing pch file/test.json
-test cases/failing/87 pch source different folder/meson.build
-test cases/failing/87 pch source different folder/prog.c
-test cases/failing/87 pch source different folder/test.json
-test cases/failing/87 pch source different folder/include/pch.h
-test cases/failing/87 pch source different folder/src/pch.c
-test cases/failing/88 unknown config tool/meson.build
-test cases/failing/88 unknown config tool/test.json
-test cases/failing/89 custom target install data/Info.plist.cpp
-test cases/failing/89 custom target install data/meson.build
-test cases/failing/89 custom target install data/preproc.py
-test cases/failing/89 custom target install data/test.json
+test cases/failing/80 dub executable/meson.build
+test cases/failing/80 dub executable/test.json
+test cases/failing/81 dub compiler/meson.build
+test cases/failing/81 dub compiler/test.json
+test cases/failing/82 subproj not-found dep/meson.build
+test cases/failing/82 subproj not-found dep/test.json
+test cases/failing/82 subproj not-found dep/subprojects/somesubproj/meson.build
+test cases/failing/83 invalid configure file/input
+test cases/failing/83 invalid configure file/meson.build
+test cases/failing/83 invalid configure file/test.json
+test cases/failing/84 kwarg dupe/meson.build
+test cases/failing/84 kwarg dupe/prog.c
+test cases/failing/84 kwarg dupe/test.json
+test cases/failing/85 missing pch file/meson.build
+test cases/failing/85 missing pch file/prog.c
+test cases/failing/85 missing pch file/test.json
+test cases/failing/86 pch source different folder/meson.build
+test cases/failing/86 pch source different folder/prog.c
+test cases/failing/86 pch source different folder/test.json
+test cases/failing/86 pch source different folder/include/pch.h
+test cases/failing/86 pch source different folder/src/pch.c
+test cases/failing/87 unknown config tool/meson.build
+test cases/failing/87 unknown config tool/test.json
+test cases/failing/88 custom target install data/Info.plist.cpp
+test cases/failing/88 custom target install data/meson.build
+test cases/failing/88 custom target install data/preproc.py
+test cases/failing/88 custom target install data/test.json
+test cases/failing/89 add dict non string key/meson.build
+test cases/failing/89 add dict non string key/test.json
 test cases/failing/9 missing extra file/meson.build
 test cases/failing/9 missing extra file/prog.c
 test cases/failing/9 missing extra file/test.json
-test cases/failing/90 add dict non string key/meson.build
-test cases/failing/90 add dict non string key/test.json
-test cases/failing/91 add dict duplicate keys/meson.build
-test cases/failing/91 add dict duplicate keys/test.json
-test cases/failing/92 no host get_external_property/meson.build
-test cases/failing/92 no host get_external_property/test.json
-test cases/failing/93 no native compiler/main.c
-test cases/failing/93 no native compiler/meson.build
-test cases/failing/93 no native compiler/test.json
-test cases/failing/94 subdir parse error/meson.build
-test cases/failing/94 subdir parse error/test.json
-test cases/failing/94 subdir parse error/subdir/meson.build
-test cases/failing/95 invalid option file/meson.build
-test cases/failing/95 invalid option file/meson_options.txt
-test cases/failing/95 invalid option file/test.json
-test cases/failing/96 no lang/main.c
-test cases/failing/96 no lang/meson.build
-test cases/failing/96 no lang/test.json
-test cases/failing/97 no glib-compile-resources/meson.build
-test cases/failing/97 no glib-compile-resources/test.json
-test cases/failing/97 no glib-compile-resources/trivial.gresource.xml
-test cases/failing/98 number in combo/meson.build
-test cases/failing/98 number in combo/nativefile.ini
-test cases/failing/98 number in combo/test.json
-test cases/failing/99 bool in combo/meson.build
-test cases/failing/99 bool in combo/meson_options.txt
-test cases/failing/99 bool in combo/nativefile.ini
-test cases/failing/99 bool in combo/test.json
+test cases/failing/90 add dict duplicate keys/meson.build
+test cases/failing/90 add dict duplicate keys/test.json
+test cases/failing/91 no host get_external_property/meson.build
+test cases/failing/91 no host get_external_property/test.json
+test cases/failing/92 no native compiler/main.c
+test cases/failing/92 no native compiler/meson.build
+test cases/failing/92 no native compiler/test.json
+test cases/failing/93 subdir parse error/meson.build
+test cases/failing/93 subdir parse error/test.json
+test cases/failing/93 subdir parse error/subdir/meson.build
+test cases/failing/94 invalid option file/meson.build
+test cases/failing/94 invalid option file/meson_options.txt
+test cases/failing/94 invalid option file/test.json
+test cases/failing/95 no lang/main.c
+test cases/failing/95 no lang/meson.build
+test cases/failing/95 no lang/test.json
+test cases/failing/96 no glib-compile-resources/meson.build
+test cases/failing/96 no glib-compile-resources/test.json
+test cases/failing/96 no glib-compile-resources/trivial.gresource.xml
+test cases/failing/97 number in combo/meson.build
+test cases/failing/97 number in combo/nativefile.ini
+test cases/failing/97 number in combo/test.json
+test cases/failing/98 bool in combo/meson.build
+test cases/failing/98 bool in combo/meson_options.txt
+test cases/failing/98 bool in combo/nativefile.ini
+test cases/failing/98 bool in combo/test.json
+test cases/failing/99 compiler no lang/meson.build
+test cases/failing/99 compiler no lang/test.json
 test cases/format/1 default/crazy_comments.meson
 test cases/format/1 default/gh13242.meson
 test cases/format/1 default/indentation.meson
@@ -3028,6 +3037,8 @@ test cases/frameworks/38 gettext extractor/src/lib1/meson.build
 test cases/frameworks/38 gettext extractor/src/lib2/lib2.c
 test cases/frameworks/38 gettext extractor/src/lib2/lib2.h
 test cases/frameworks/38 gettext extractor/src/lib2/meson.build
+test cases/frameworks/38 gettext extractor/src/lib3/foo.c
+test cases/frameworks/38 gettext extractor/src/lib3/meson.build
 test cases/frameworks/39 gir both_libraries/bar.c
 test cases/frameworks/39 gir both_libraries/bar.h
 test cases/frameworks/39 gir both_libraries/foo.c
@@ -3558,9 +3569,11 @@ test cases/rewrite/6 extra_files/info.json
 test cases/rewrite/6 extra_files/meson.build
 test cases/rewrite/6 extra_files/rmExtraFiles.json
 test cases/rewrite/7 prefix/meson.build
-test cases/rewrite/8 tricky dataflow/addSrc.json
-test cases/rewrite/8 tricky dataflow/info.json
-test cases/rewrite/8 tricky dataflow/meson.build
+test cases/rewrite/8 kwargs dict/info.json
+test cases/rewrite/8 kwargs dict/meson.build
+test cases/rewrite/9 tricky dataflow/addSrc.json
+test cases/rewrite/9 tricky dataflow/info.json
+test cases/rewrite/9 tricky dataflow/meson.build
 test cases/rust/1 basic/clippy.toml
 test cases/rust/1 basic/meson.build
 test cases/rust/1 basic/prog.rs
@@ -3685,7 +3698,6 @@ test cases/rust/22 cargo subproject/subprojects/bar-0.1-rs/Cargo.toml
 test cases/rust/22 cargo subproject/subprojects/bar-0.1-rs/src/lib.rs
 test cases/rust/22 cargo subproject/subprojects/common-0-rs/Cargo.toml
 test cases/rust/22 cargo subproject/subprojects/common-0-rs/lib.rs
-test cases/rust/22 cargo subproject/subprojects/extra-dep-1-rs/Cargo.toml
 test cases/rust/22 cargo subproject/subprojects/extra-dep-1-rs/lib.c
 test cases/rust/22 cargo subproject/subprojects/extra-dep-1-rs/meson.build
 test cases/rust/22 cargo subproject/subprojects/extra-dep-1-rs/meson_options.txt
@@ -3722,15 +3734,10 @@ test cases/rust/27 objects/meson.build
 test cases/rust/28 mixed/hello.rs
 test cases/rust/28 mixed/main.cc
 test cases/rust/28 mixed/meson.build
-test cases/rust/28 self-contained/lib.rs
-test cases/rust/28 self-contained/main.c
-test cases/rust/28 self-contained/meson.build
-test cases/rust/28 self-contained/test.json
-test cases/rust/29 rlib link subdir/f-sys.rs
-test cases/rust/29 rlib link subdir/main.rs
-test cases/rust/29 rlib link subdir/meson.build
-test cases/rust/29 rlib link subdir/cdep/f.c
-test cases/rust/29 rlib link subdir/cdep/meson.build
+test cases/rust/29 self-contained/lib.rs
+test cases/rust/29 self-contained/main.c
+test cases/rust/29 self-contained/meson.build
+test cases/rust/29 self-contained/test.json
 test cases/rust/3 staticlib/meson.build
 test cases/rust/3 staticlib/other.rs
 test cases/rust/3 staticlib/prog.rs
@@ -3739,6 +3746,38 @@ test cases/rust/3 staticlib/stuff.rs
 test cases/rust/3 staticlib/stuff2.rs
 test cases/rust/3 staticlib/test.json
 test cases/rust/3 staticlib/value.c
+test cases/rust/30 rlib link subdir/f-sys.rs
+test cases/rust/30 rlib link subdir/main.rs
+test cases/rust/30 rlib link subdir/meson.build
+test cases/rust/30 rlib link subdir/cdep/f.c
+test cases/rust/30 rlib link subdir/cdep/meson.build
+test cases/rust/31 both machines/lib.rs
+test cases/rust/31 both machines/meson.build
+test cases/rust/31 both machines/test.rs
+test cases/rust/32 cargo workspace/meson.build
+test cases/rust/32 cargo workspace/test_foo_1.c
+test cases/rust/32 cargo workspace/test_foo_1.rs
+test cases/rust/32 cargo workspace/subprojects/foo.wrap
+test cases/rust/32 cargo workspace/subprojects/member2.wrap
+test cases/rust/32 cargo workspace/subprojects/foo/Cargo.toml
+test cases/rust/32 cargo workspace/subprojects/foo/src/lib.rs
+test cases/rust/32 cargo workspace/subprojects/foo/src/foo/Cargo.toml
+test cases/rust/32 cargo workspace/subprojects/foo/src/foo/src/lib.rs
+test cases/rust/32 cargo workspace/subprojects/foo/src/member1/Cargo.toml
+test cases/rust/32 cargo workspace/subprojects/foo/src/member1/src/lib.rs
+test cases/rust/32 cargo workspace/subprojects/foo/subprojects/member2-1-rs.wrap
+test cases/rust/32 cargo workspace/subprojects/foo/subprojects/member2-1.0/Cargo.toml
+test cases/rust/32 cargo workspace/subprojects/foo/subprojects/member2-1.0/src/lib.rs
+test cases/rust/33 cargo multiple versions/meson.build
+test cases/rust/33 cargo multiple versions/subprojects/foo-1-rs.wrap
+test cases/rust/33 cargo multiple versions/subprojects/foo-2-rs.wrap
+test cases/rust/33 cargo multiple versions/subprojects/main.wrap
+test cases/rust/33 cargo multiple versions/subprojects/foo-1-rs/Cargo.toml
+test cases/rust/33 cargo multiple versions/subprojects/foo-1-rs/lib.rs
+test cases/rust/33 cargo multiple versions/subprojects/foo-2-rs/Cargo.toml
+test cases/rust/33 cargo multiple versions/subprojects/foo-2-rs/lib.rs
+test cases/rust/33 cargo multiple versions/subprojects/main/Cargo.toml
+test cases/rust/33 cargo multiple versions/subprojects/main/lib.rs
 test cases/rust/4 polyglot/meson.build
 test cases/rust/4 polyglot/proc.rs
 test cases/rust/4 polyglot/prog.c
@@ -3767,6 +3806,16 @@ test cases/rust/9 unit tests/meson.build
 test cases/rust/9 unit tests/test.rs
 test cases/rust/9 unit tests/test2.rs
 test cases/rust/9 unit tests/test3.rs
+test cases/snippets/1 symbol visibility header/main-static-only.c
+test cases/snippets/1 symbol visibility header/main.c
+test cases/snippets/1 symbol visibility header/meson.build
+test cases/snippets/1 symbol visibility header/test.json
+test cases/snippets/1 symbol visibility header/subprojects/sub/meson.build
+test cases/snippets/1 symbol visibility header/subprojects/sub/mylib/lib-static-only.c
+test cases/snippets/1 symbol visibility header/subprojects/sub/mylib/lib-static-only.h
+test cases/snippets/1 symbol visibility header/subprojects/sub/mylib/lib.c
+test cases/snippets/1 symbol visibility header/subprojects/sub/mylib/lib.h
+test cases/snippets/1 symbol visibility header/subprojects/sub/mylib/meson.build
 test cases/swift/1 exe/main.swift
 test cases/swift/1 exe/meson.build
 test cases/swift/10 file name matches module name/Library.swift
@@ -3926,18 +3975,20 @@ test cases/unit/124 interactive tap/meson.build
 test cases/unit/124 interactive tap/script.py
 test cases/unit/125 declare_dep var/meson.build
 test cases/unit/125 declare_dep var/meson_options.txt
-test cases/unit/126 pkgsubproj/meson.build
-test cases/unit/126 pkgsubproj/subprojects/sub/meson.build
-test cases/unit/127 test slice/meson.build
-test cases/unit/127 test slice/test.py
-test cases/unit/128 sanitizers/meson.build
-test cases/unit/129 long opt vs D/meson.build
-test cases/unit/129 long opt vs D/meson_options.txt
+test cases/unit/126 python extension/foo.c
+test cases/unit/126 python extension/meson.build
+test cases/unit/127 pkgsubproj/meson.build
+test cases/unit/127 pkgsubproj/subprojects/sub/meson.build
+test cases/unit/128 test slice/meson.build
+test cases/unit/128 test slice/test.py
+test cases/unit/129 sanitizers/meson.build
 test cases/unit/13 reconfigure/meson.build
-test cases/unit/130 vala internal glib/lib.vala
-test cases/unit/130 vala internal glib/meson.build
-test cases/unit/130 vala internal glib/meson.options
-test cases/unit/131 custom target index test/meson.build
+test cases/unit/130 long opt vs D/meson.build
+test cases/unit/130 long opt vs D/meson_options.txt
+test cases/unit/131 vala internal glib/lib.vala
+test cases/unit/131 vala internal glib/meson.build
+test cases/unit/131 vala internal glib/meson.options
+test cases/unit/132 custom target index test/meson.build
 test cases/unit/14 testsetup selection/main.c
 test cases/unit/14 testsetup selection/meson.build
 test cases/unit/14 testsetup selection/subprojects/bar/bar.c

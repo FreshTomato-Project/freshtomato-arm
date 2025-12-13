@@ -33,14 +33,14 @@ var lastjiffiestotal = 0, lastjiffiesidle = 0, lastjiffiesusage = 100;
 //	<% jsdefaults(); %>
 var wmo = {'ap':'Access Point','sta':'Wireless Client','wet':'Wireless Ethernet Bridge','wds':'WDS'
 /* BCMWL6-BEGIN */
-	   ,'psta':'Media Bridge'
+		,'psta':'Media Bridge'
 /* BCMWL6-END */
-	   };
+		};
 var auth = {'disabled':'-','wep':'WEP','wpa_personal':'WPA Personal (PSK)','wpa_enterprise':'WPA Enterprise','wpa2_personal':'WPA2 Personal (PSK)','wpa2_enterprise':'WPA2 Enterprise','wpaX_personal':'WPA / WPA2 Personal','wpaX_enterprise':'WPA / WPA2 Enterprise','radius':'Radius'};
 var enc = {'tkip':'TKIP','aes':'AES','tkip+aes':'TKIP / AES'};
 var bgmo = {'disabled':'-','mixed':'Auto','b-only':'B Only','g-only':'G Only','bg-mixed':'B/G Mixed','lrs':'LRS','n-only':'N Only'
 /* BCMWL6-BEGIN */
-	    ,'nac-mixed':'N/AC Mixed','ac-only':'AC Only'
+		,'nac-mixed':'N/AC Mixed','ac-only':'AC Only'
 /* BCMWL6-END */
 };
 
@@ -100,14 +100,14 @@ function visibility() {
 
 		show_dhcpc[uidx - 1] = ((proto == 'dhcp')
 /* USB-BEGIN */
-		                        || (proto == 'lte')
+								|| (proto == 'lte')
 /* USB-END */
-		                        || (((proto == 'l2tp') || (proto == 'pptp')) && (nvram.pptp_dhcp == '1')));
+								|| (((proto == 'l2tp') || (proto == 'pptp')) && (nvram.pptp_dhcp == '1')));
 		show_codi[uidx - 1] = ((proto == 'pppoe') || (proto == 'l2tp') || (proto == 'pptp')
 /* USB-BEGIN */
-		                        || (proto == 'lte') || (proto == 'ppp3g')
+								|| (proto == 'lte') || (proto == 'ppp3g')
 /* USB-END */
-		                      );
+								);
 	}
 
 	show_radio = [];
@@ -227,36 +227,59 @@ function ethstates() {
 
 	var state = [];
 	var u, uidx, code = '', v = 0;
-	var code ='<div class="section-title">Ethernet Ports State<\/div><div class="section"><table class="fields"><tr>';
+	var portsDiv = E('ports');
 
-	/* WANs */
-	for (uidx = 1; uidx <= nvram.mwan_num; ++uidx) {
-		u = (uidx > 1) ? uidx : '';
+	if (!portsDiv._ether_ports_built) {
+		code ='<div class="section-title">Ethernet Ports State<\/div><div class="section"><table class="fields"><tr>';
 
-		if ((nvram['wan'+u+'_sta'] == '')
+		/* WANs */
+		for (uidx = 1; uidx <= nvram.mwan_num; ++uidx) {
+			u = (uidx > 1) ? uidx : '';
+
+			if ((nvram['wan'+u+'_sta'] == '')
 /* USB-BEGIN */
-		    && (nvram['wan'+u+'_proto'] != 'lte') && (nvram['wan'+u+'_proto'] != 'ppp3g')
+			&& (nvram['wan'+u+'_proto'] != 'lte') && (nvram['wan'+u+'_proto'] != 'ppp3g')
 /* USB-END */
-		) {
-			code += '<td class="title indent2"><b>WAN'+(uidx - 1)+'<\/b><\/td>';
-			++v;
+			) {
+				code += '<td class="title indent2"><b>WAN'+(uidx - 1)+'<\/b><\/td>';
+				++v;
+			}
 		}
-	}
-	/* LANs - both cases: 4 Ports OR 8 Ports for RT-AC88U with RTL8365MB switch (EXTSW=y) */
-	for (uidx = v; uidx <= MAX_PORT_ID; ++uidx)
-		code += '<td class="title indent2"><b>LAN'+(v > 0 ? ((uidx < 5) ? (uidx - 1) : '4-7' ) : ((uidx < 5) ? (uidx) : '5-8' ))+'<\/b><\/td>';
+		/* LANs - both cases: 4 Ports OR 8 Ports for RT-AC88U with RTL8365MB switch (EXTSW=y) */
+		for (uidx = v; uidx <= MAX_PORT_ID; ++uidx)
+			code += '<td class="title indent2"><b>LAN'+(v > 0 ? ((uidx < 5) ? (uidx - 1) : '4-7' ) : ((uidx < 5) ? (uidx) : '5-8' ))+'<\/b><\/td>';
 
-	code += '<td class="content"><\/td><\/tr><tr>';
+		code += '<td class="content"><\/td><\/tr><tr>';
+		for (uidx = 0; uidx <= MAX_PORT_ID; ++uidx) {
+			code += '<td class="title indent2"><object id="ethsvg_'+uidx+'" type="image/svg+xml" data="ethernet.svg?speed=0&duplex=HD" width="46" height="35"><\/object><br><span id="ethcap_'+uidx+'"><\/span><\/td>';
+		}
+
+		code += '<td class="content"><\/td><\/tr><tr><td class="title indent1" colspan="6" style="text-align:right">&raquo; <a href="basic-network.asp">Configure ⚙️<\/a><\/td><\/tr><\/table><\/div>';
+		portsDiv.innerHTML = code;
+		portsDiv._ether_ports_built = 1;
+	}
+
 	for (uidx = 0; uidx <= MAX_PORT_ID; ++uidx) {
 		port = etherstates['port'+uidx];
-
 		state = _ethstates(port);
+		var p = (state[0] || '').split('_');
+		var sp = p[1] || '';
+		var du = p[2] || '';
+		var spn = parseInt(sp, 10);
+		if (!isFinite(spn) || (spn <= 0)) spn = 0;
+		sp = '' + spn;
+		du = (du || '').toUpperCase();
+		if ((du !== 'FD') && (du !== 'HD')) du = 'HD';
+		var data = 'ethernet.svg?speed=' + sp + '&duplex=' + du;
 
-		code += '<td class="title indent2"><img id="'+state[0]+'_'+uidx+'" src="'+state[0]+'.gif" alt=""><br>'+(stats.lan_desc == '1' ? state[1] : '')+'<\/td>';
+		var o = E('ethsvg_' + uidx);
+		if (o && o.getAttribute('data') != data)
+			o.setAttribute('data', data);
+
+		var cap = E('ethcap_' + uidx);
+		if (cap)
+			cap.innerHTML = (stats.lan_desc == '1') ? state[1] : '';
 	}
-
-	code += '<td class="content"><\/td><\/tr><tr><td class="title indent1" colspan="6" style="text-align:right">&raquo; <a href="basic-network.asp">Configure ⚙️<\/a><\/td><\/tr><\/table><\/div>';
-	E('ports').innerHTML = code;
 }
 
 function anon_enable() {
@@ -517,7 +540,7 @@ function init() {
 			{ title: 'MAC Address', text: nvram['wan'+u+'_hwaddr'] },
 			{ title: 'Connection Type', text: { 'dhcp':'DHCP','static':'Static IP','pppoe':'PPPoE','pptp':'PPTP','l2tp':'L2TP'
 /* USB-BEGIN */
-			                                    ,'ppp3g':'3G Modem','lte':'4G/LTE'
+												,'ppp3g':'3G Modem','lte':'4G/LTE'
 /* USB-END */
 			} [nvram['wan'+u+'_proto']] || '-' },
 			{ title: 'IP Address', rid: 'wan'+u+'ip', text: stats.wanip[uidx - 1] },

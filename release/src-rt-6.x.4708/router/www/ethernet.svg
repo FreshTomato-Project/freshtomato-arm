@@ -1,0 +1,131 @@
+<svg width="46px" height="35px" viewBox="0 0 46 35" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" data-duplex="HD" data-speed="0">
+    <defs>
+        <linearGradient id="housing-grad" x1="30%" y1="0%" x2="50%" y2="100%">
+            <stop stop-color="#ECEFF1" offset="0%"/>
+            <stop stop-color="#c1d0d8ff" offset="100%"/>
+        </linearGradient>
+        <linearGradient id="inner-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop stop-color="var(--duplex-start, #1b1d1fff)" offset="0%"/>
+            <stop stop-color="var(--duplex-end, #6a6d70ff)" offset="100%"/>
+        </linearGradient>
+        <linearGradient id="led-base" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop stop-color="var(--led-primary)" offset="0%"/>
+            <stop stop-color="var(--led-secondary)" offset="100%"/>
+        </linearGradient>
+        <linearGradient id="led-on" xlink:href="#led-base"/>
+        <linearGradient id="led-dim" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop stop-color="var(--led-dim-start)" offset="0%"/>
+            <stop stop-color="var(--led-dim-end)" offset="100%"/>
+        </linearGradient>
+        <linearGradient id="led-shade" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="transparent"/>
+            <stop offset="65%" stop-color="transparent"/>
+            <stop offset="100%" stop-color="var(--led-shade)" stop-opacity="0.75"/>
+        </linearGradient>
+
+        <style type="text/css"><![CDATA[
+            svg[data-duplex="FD"]{--duplex-start: #1b1d1fff;--duplex-end: #6a6d70ff;--pins-fill:#656565ff;--caption-fill:#ffffff}
+            svg[data-duplex="HD"]{--duplex-start: #bebebeff;--duplex-end: #7a7e7fff;--pins-fill:#919191ff;--caption-fill:#000000}
+            svg[data-speed="0"]{--led-primary: #b2b1b1ff;--led-secondary:#929191ff;--led-dim-start:#3e3e3eff;--led-dim-end:#333333ff;--led-shade:#3e3e3eff;--led-duration:0s}
+            svg[data-speed="10"]{--led-primary: #fec417fe;--led-secondary:#d1a00efe;--led-dim-start:#594406ff;--led-dim-end:#493805ff;--led-shade:#594406ff;--led-duration:3s}
+            svg[data-speed="100"]{--led-primary: #2aa018ff;--led-secondary:#238c14ff;--led-dim-start:#0f3c08ff;--led-dim-end:#0c3107ff;--led-shade:#0f3c08ff;--led-duration:2.5s}
+            svg[data-speed="1000"]{--led-primary: #288ae4ff;--led-secondary:#2c6ca8ff;--led-dim-start:#132e48ff;--led-dim-end:#10263bff;--led-shade:#132e48ff;--led-duration:2s}
+            svg[data-speed="2500"]{--led-primary: #cd3939ff;--led-secondary:#8d2020ff;--led-dim-start:#3c0e0eff;--led-dim-end:#310b0bff;--led-shade:#3c0e0eff;--led-duration:1.2s}
+            svg[data-speed="5000"]{--led-primary: #db98d2ff;--led-secondary:#106c5eff;--led-dim-start:#072e28ff;--led-dim-end:#052621ff;--led-shade:#072e28ff;--led-duration:0.9s}
+            svg[data-speed="10000"]{--led-primary: #ffffffff;--led-secondary:#d1d1d1ff;--led-dim-start:#595959ff;--led-dim-end:#494949ff;--led-shade:#595959ff;--led-duration:0.6s}
+
+            @-webkit-keyframes blink-activity{
+                0%,100%{opacity:0}6%{opacity:1}9%{opacity:0}
+                17%{opacity:1}28%{opacity:1}35%{opacity:0}
+                52%{opacity:1}66%{opacity:0}72%{opacity:1}
+                83%{opacity:0}91%{opacity:1}
+            }
+            @keyframes blink-activity{
+                0%,100%{opacity:0}6%{opacity:1}9%{opacity:0}
+                17%{opacity:1}28%{opacity:1}35%{opacity:0}
+                52%{opacity:1}66%{opacity:0}72%{opacity:1}
+                83%{opacity:0}91%{opacity:1}
+            }
+
+            .act-led-blink .led-dim{
+                opacity:0;
+                -webkit-animation-name:blink-activity;
+                animation-name:blink-activity;
+                -webkit-animation-duration:var(--led-duration, 3s);
+                animation-duration:var(--led-duration, 3s);
+                -webkit-animation-iteration-count:infinite;
+                animation-iteration-count:infinite;
+                -webkit-animation-timing-function:step-end;
+                animation-timing-function:step-end;
+            }
+            svg[data-speed="0"] .act-led-blink .led-dim{
+                -webkit-animation:none;
+                animation:none;
+            }
+        ]]></style>
+
+        <!-- outer-translucent mask removed so corners remain fully transparent -->
+    </defs>
+
+    <clipPath id="outer-clip">
+        <rect width="46" height="35" rx="4" ry="4"/>
+    </clipPath>
+
+    <!-- removed semi-transparent outer overlay so SVG corners are fully transparent -->
+    <g clip-path="url(#outer-clip)" transform="translate(0,35) scale(1,-1)">
+        <rect x="0.75" y="0.75" width="44.5" height="33.5" rx="3.25" ry="3.25" fill="url(#housing-grad)" stroke="#3e4548ff" stroke-width="1"/>
+        <path d="M6 6 Q6 5 7 5 L39 5 Q40 5 40 6 L40 22 Q40 23 39 23 L32 23 L32 24 Q32 25 31 25 L29 25 L29 27 Q29 28 28 28 L18 28 Q17 28 17 27 L17 25 L15 25 Q14 25 14 24 L14 23 L7 23 Q6 23 6 22 Z"
+            fill="url(#inner-dark)" stroke="#393c3eff" stroke-width="0.5"/>
+        <g fill="var(--pins-fill,#656565ff)">
+            <rect x="12" y="5.2" width="2.8" height="7.5"/>
+            <rect x="18.6" y="5.2" width="2.8" height="7.5"/>
+            <rect x="25.2" y="5.2" width="2.8" height="7.5"/>
+            <rect x="31.8" y="5.2" width="2.8" height="7.5"/>
+        </g>
+        <rect x="3" y="25.5" width="9" height="6" rx="1.5" ry="1.5" fill="url(#led-on)" stroke="#1e2021ff" stroke-width="0.45"/>
+        <rect x="3.5" y="25.5" width="9" height="6" rx="1.5" ry="1.5" fill="url(#led-shade)" pointer-events="none" opacity="0.25"/>
+        <g class="act-led-blink">
+            <rect class="led-on" x="33.5" y="25.5" width="9" height="6" rx="1.5" ry="1.5" fill="url(#led-on)" stroke="#1e2021ff" stroke-width="0.45"/>
+            <rect class="led-dim" x="33.5" y="25.5" width="9" height="6" rx="1.5" ry="1.5" fill="url(#led-dim)"/>
+        </g>
+        <rect x="33.5" y="25.5" width="9" height="6" rx="1.5" ry="1.5" fill="url(#led-shade)" pointer-events="none" opacity="0.25"/>
+    </g>
+
+    <text id="port-caption" x="23" y="20" text-anchor="middle" dominant-baseline="central"
+        style="font:bold 12px Calibri,Candara,Arial Narrow,Segoe UI,sans-serif;letter-spacing:-1px;fill:var(--caption-fill,#000);pointer-events:none"></text>
+
+    <script type="application/ecmascript"><![CDATA[
+        (function(){
+            try{
+                var root=document.documentElement;
+                var search=(typeof location!=='undefined'&&location.search)?location.search:'';
+                if(!search&&document.baseURI){var qi=document.baseURI.indexOf('?');if(qi!==-1)search=document.baseURI.substring(qi);}
+                var params=new URLSearchParams(search);
+                var du=params.get('duplex')||root.getAttribute('data-duplex')||'HD';
+                var sp=params.get('speed')||root.getAttribute('data-speed')||'0';
+                var caption=params.get('caption')||root.getAttribute('data-caption')||'';
+                root.setAttribute('data-duplex',du);
+                root.setAttribute('data-speed',sp);
+                if(caption)root.setAttribute('data-caption',caption);
+                var txt=root.querySelector('#port-caption');
+                if(txt)txt.textContent=caption;
+                var explicit=params.get('led');
+                if(explicit){
+                    root.style.setProperty('--led-primary',explicit);
+                    root.style.setProperty('--led-secondary',explicit);
+                    root.style.setProperty('--led-dim-start','#000000');
+                    root.style.setProperty('--led-dim-end','#000000');
+                    root.style.setProperty('--led-shade','#000000');
+                }
+                var flash=params.get('flash');
+                if(flash!==null){
+                    if(flash==='none')root.style.setProperty('--led-duration','0s');
+                    else{
+                        if(/^[0-9.]+$/.test(flash))flash+='s';
+					root.style.setProperty('--led-duration', flash);
+                    }
+                }
+            }catch(e){}
+        })();
+    ]]></script>
+</svg>

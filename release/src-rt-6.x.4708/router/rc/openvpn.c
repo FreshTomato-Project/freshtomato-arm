@@ -1379,7 +1379,8 @@ void stop_ovpn_server(int unit)
 void start_ovpn_eas()
 {
 	char buffer[BUF_SIZE_16], *cur;
-	int nums[OVPN_CLIENT_MAX], i;
+	int nums[OVPN_CLIENT_MAX + 1], i;
+	/* OVPN_CLIENT_MAX is always bigger than OVPN_SERVER_MAX */
 
 	if ((strlen(nvram_safe_get("vpn_server_eas")) == 0) && (strlen(nvram_safe_get("vpn_client_eas")) == 0))
 		return;
@@ -1388,7 +1389,7 @@ void start_ovpn_eas()
 	strlcpy(buffer, nvram_safe_get("vpn_server_eas"), BUF_SIZE_16);
 
 	i = 0;
-	for (cur = strtok(buffer, ","); (cur != NULL) && (i <= OVPN_SERVER_MAX); cur = strtok(NULL, ","))
+	for (cur = strtok(buffer, ","); (cur != NULL) && (i < OVPN_SERVER_MAX); cur = strtok(NULL, ","))
 		nums[i++] = atoi(cur);
 
 	nums[i] = 0;
@@ -1406,7 +1407,7 @@ void start_ovpn_eas()
 	strlcpy(buffer, nvram_safe_get("vpn_client_eas"), BUF_SIZE_16);
 
 	i = 0;
-	for (cur = strtok(buffer, ","); (cur != NULL) && (i <= OVPN_CLIENT_MAX); cur = strtok(NULL, ","))
+	for (cur = strtok(buffer, ","); (cur != NULL) && (i < OVPN_CLIENT_MAX); cur = strtok(NULL, ","))
 		nums[i++] = atoi(cur);
 
 	nums[i] = 0;
@@ -1424,13 +1425,14 @@ void start_ovpn_eas()
 void stop_ovpn_eas()
 {
 	char buffer[BUF_SIZE_16], *cur;
-	int nums[OVPN_CLIENT_MAX], i;
+	int nums[OVPN_CLIENT_MAX + 1], i;
+	// OVPN_CLIENT_MAX is always bigger than OVPN_SERVER_MAX
 
 	// Parse and stop servers
 	strlcpy(buffer, nvram_safe_get("vpn_server_eas"), BUF_SIZE_16);
 
 	i = 0;
-	for (cur = strtok(buffer, ","); (cur != NULL) && (i <= OVPN_SERVER_MAX); cur = strtok(NULL, ","))
+	for (cur = strtok(buffer, ","); (cur != NULL) && (i < OVPN_SERVER_MAX); cur = strtok(NULL, ","))
 		nums[i++] = atoi(cur);
 
 	nums[i] = 0;
@@ -1446,7 +1448,7 @@ void stop_ovpn_eas()
 	strlcpy(buffer, nvram_safe_get("vpn_client_eas"), BUF_SIZE_16);
 
 	i = 0;
-	for (cur = strtok(buffer, ","); (cur != NULL) && (i <= OVPN_CLIENT_MAX); cur = strtok(NULL, ","))
+	for (cur = strtok(buffer, ","); (cur != NULL) && (i < OVPN_CLIENT_MAX); cur = strtok(NULL, ","))
 		nums[i++] = atoi(cur);
 
 	nums[i] = 0;

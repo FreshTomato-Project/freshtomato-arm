@@ -67,6 +67,7 @@ function earlyInit() {
 		E('afu-input').style.display = 'none';
 	}
 /* JFFS2-END */
+	insOvl();
 }
 </script>
 </head>

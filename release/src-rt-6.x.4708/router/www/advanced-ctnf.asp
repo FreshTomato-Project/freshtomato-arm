@@ -302,6 +302,6 @@ function save() {
 </td></tr>
 </table>
 </form>
-<script>verifyFields(null, true);</script>
+<script>insOvl();verifyFields(null, true);</script>
 </body>
 </html>

@@ -228,5 +228,6 @@ function init() {
 
 </td></tr>
 </table>
+<script>insOvl()</script>
 </body>
 </html>

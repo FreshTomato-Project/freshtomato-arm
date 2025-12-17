@@ -1845,6 +1845,7 @@ function earlyInit() {
 /* MULTIWAN-END */
 
 	verifyFields(null, 1);
+	insOvl();
 }
 
 function init() {

@@ -370,6 +370,7 @@ function earlyInit() {
 		E('qos-cl-grid').style.display = 'block';
 
 	qosg.setup();
+	insOvl();
 }
 
 function init() {

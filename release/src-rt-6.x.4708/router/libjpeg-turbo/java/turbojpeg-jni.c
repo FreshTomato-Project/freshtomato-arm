@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2011-2024 D. R. Commander.  All Rights Reserved.
+ * Copyright (C)2011-2025 D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,8 +27,8 @@
  */
 
 #include <limits.h>
-#include "turbojpeg.h"
-#include "jinclude.h"
+#include "../src/turbojpeg.h"
+#include "../src/jinclude.h"
 #include <jni.h>
 #include "org_libjpegturbo_turbojpeg_TJCompressor.h"
 #include "org_libjpegturbo_turbojpeg_TJDecompressor.h"
@@ -261,6 +261,9 @@ static jint TJCompressor_compress
     THROW_ARG("Mismatch between Java and C API");
 
   actualPitch = (pitch == 0) ? width * tjPixelSize[pf] : pitch;
+  if (((unsigned long long)y + height - 1ULL) * actualPitch + (x + width) *
+      tjPixelSize[pf] > (unsigned long long)((unsigned int)-1))
+    THROW_ARG("Image is too large");
   arraySize = (y + height - 1) * actualPitch + (x + width) * tjPixelSize[pf];
   if ((*env)->GetArrayLength(env, src) * srcElementSize < arraySize)
     THROW_ARG("Source buffer is not large enough");
@@ -474,6 +477,9 @@ static void TJCompressor_encodeYUV8
     THROW_ARG("Strides array is too small for the subsampling type");
 
   actualPitch = (pitch == 0) ? width * tjPixelSize[pf] : pitch;
+  if (((unsigned long long)y + height - 1ULL) * actualPitch + (x + width) *
+      tjPixelSize[pf] > (unsigned long long)((unsigned int)-1))
+    THROW_ARG("Image is too large");
   arraySize = (y + height - 1) * actualPitch + (x + width) * tjPixelSize[pf];
   if ((*env)->GetArrayLength(env, src) * srcElementSize < arraySize)
     THROW_ARG("Source buffer is not large enough");
@@ -813,6 +819,10 @@ static void TJDecompressor_decompress
   }
 
   actualPitch = (pitch == 0) ? scaledWidth * tjPixelSize[pf] : pitch;
+  if (((unsigned long long)y + scaledHeight - 1ULL) * actualPitch +
+      (x + scaledWidth) * tjPixelSize[pf] >
+      (unsigned long long)((unsigned int)-1))
+    THROW_ARG("Image is too large");
   arraySize = (y + scaledHeight - 1) * actualPitch +
               (x + scaledWidth) * tjPixelSize[pf];
   if ((*env)->GetArrayLength(env, dst) * dstElementSize < arraySize)
@@ -1031,6 +1041,9 @@ static void TJDecompressor_decodeYUV8
     THROW_ARG("Strides array is too small for the subsampling type");
 
   actualPitch = (pitch == 0) ? width * tjPixelSize[pf] : pitch;
+  if (((unsigned long long)y + height - 1ULL) * actualPitch + (x + width) *
+      tjPixelSize[pf] > (unsigned long long)((unsigned int)-1))
+    THROW_ARG("Image is too large");
   arraySize = (y + height - 1) * actualPitch + (x + width) * tjPixelSize[pf];
   if ((*env)->GetArrayLength(env, dst) * dstElementSize < arraySize)
     THROW_ARG("Destination buffer is not large enough");

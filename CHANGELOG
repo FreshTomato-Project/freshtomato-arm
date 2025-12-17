@@ -15,7 +15,7 @@ FreshTomato-ARM Changelog
 - tor: update to 0.4.8.21
 - php: update to 8.3.28
 - pcre2: update to 10.47
-- nginx: update to 1.29.3
+- nginx: update to 1.29.4
 - libxml2: update to 2.15.1
 - sqlite: update to 3.51.1
 - adminer: update to adminneo-5.2.1
@@ -26,6 +26,7 @@ FreshTomato-ARM Changelog
 - libpng: update to 1.6.53
 - tinc: update to 1.1pre18-242-g940d15c4
 - meson: update to 1.10.0
+- libjpeg-turbo: update to 3.1.3
 - dropbear: update to 2025.89
 - GUI: Port Forwarding: Basic: fix sort by Int Address
 - GUI: Admin: SNMP: add 'Name' and 'Description' fields
@@ -75,7 +76,7 @@ FreshTomato-ARM Changelog
 - rc: wireguard.c: add error handling for fappend() in write_wg_dnsmasq_config(); add more logging
 - rc: wireguard.c: use strdup() safely; cosmetic
 - rom: update mullvad.net DOH servers
-- rom: update CA bundle to 2025-11-04
+- rom: update CA bundle to 2025-12-02
 - rom: add new dnsmasq anchor
 - shared: misc.c: iterate over MWAN_MAX to get WAN string/number
 - shared: misc.c: get rid of TCONFIG_MULTIWAN and iterate over MWAN_MAX/BRIDGE_COUNT

@@ -1,4 +1,28 @@
 
+Changes with nginx 1.29.4                                        09 Dec 2025
+
+    *) Feature: the ngx_http_proxy_module supports HTTP/2.
+
+    *) Feature: Encrypted ClientHello TLS extension support when using
+       OpenSSL ECH feature branch; the "ssl_ech_file" directive.
+       Thanks to Stephen Farrell.
+
+    *) Change: validation of host and port in the request line, "Host"
+       header field, and ":authority" pseudo-header field has been changed
+       to follow RFC 3986.
+
+    *) Change: now a single LF used as a line terminator in a chunked
+       request or response body is considered an error.
+
+    *) Bugfix: when using HTTP/3 with OpenSSL 3.5.1 or newer a segmentation
+       fault might occur in a worker process; the bug had appeared in
+       1.29.1.
+       Thanks to Jan Svojanovsky.
+
+    *) Bugfix: a segmentation fault might occur in a worker process if the
+       "try_files" directive and "proxy_pass" with a URI were used.
+
+
 Changes with nginx 1.29.3                                        28 Oct 2025
 
     *) Feature: the "add_header_inherit" and "add_trailer_inherit"

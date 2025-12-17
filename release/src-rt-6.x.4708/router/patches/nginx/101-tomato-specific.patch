@@ -29,7 +29,7 @@
      ngx_feature_path=
 --- nginx/auto/cc/gcc
 +++ nginx/auto/cc/gcc
-@@ -166,7 +166,7 @@
+@@ -158,7 +158,7 @@
  
  
  # stop on warning

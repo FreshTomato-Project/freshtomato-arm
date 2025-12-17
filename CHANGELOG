@@ -5,6 +5,98 @@ FreshTomato-ARM Changelog
 
 
 
+2025.5          2025.12.21
+---------------------------
+
+- Warning: due to changes in the naming of some nvram variables, users of PPTP Client should review their settings.
+
+- openssl: update to 3.0.18
+- openvpn: update to 2.6.17
+- tor: update to 0.4.8.21
+- php: update to 8.3.28
+- pcre2: update to 10.47
+- nginx: update to 1.29.3
+- libxml2: update to 2.15.1
+- sqlite: update to 3.51.1
+- adminer: update to adminneo-5.2.1
+- libcurl: update to 8.17.0
+- nano: update to 8.7
+- iperf: update to 3.20
+- dnsmasq: update to v2.92rc3
+- libpng: update to 1.6.53
+- tinc: update to 1.1pre18-242-g940d15c4
+- meson: update to 1.10.0
+- dropbear: update to 2025.89
+- GUI: Port Forwarding: Basic: fix sort by Int Address
+- GUI: Admin: SNMP: add 'Name' and 'Description' fields
+- GUI: status-overview.asp - Only displaying unsecured WiFi warning in AP mode
+- Add Bridge Gateway Isolation + UI (IPv4 only atm), IPv6 bridge isolation, and IPv6-aware advanced-access.asp
+- Improved IPv6 support
+- build: e2fsprogs: tune recipe, add patch to make libmagic optional
+- build: also install ebtables-restore
+- build: add update overlay
+- adblock: delay start by 10 seconds on router restart/reboot
+- mymotd: add date of build and by who
+- Kill-Switch: introduce and use a helper script to add FQDNs to the firewall if they're not added immediately on FW restart
+- openssl-1.1: add fix for CVE-2025-9230
+- openvpn: vpnrouting.sh: do not restart routing here, it will be reloaded anyway when restarting the firewall
+- OpenVPN/kill-switch/adblock-v2/mwwatchdog: add to nvram and use default IP (Cloudflare) for connection checking
+- httpd: upgrade.c: only copy needed images on upgrade
+- others: switch4g: refactoring, simplifying and shortening taking into account the specifics of sh in busybox
+- others: switch3g: refactoring, simplifying and shortening taking into account the specifics of sh in busybox
+- others: mwwatchdog: refactoring, simplifying and shortening taking into account the specifics of sh in busybox
+- others: mwwatchdog: fix operator precedence bug that could add cron job when mwan_cktime=0
+- rc: fix modprobe ip_set order
+- rc: move BUF_SIZE definition to shared.h
+- rc: dnsmasq.c: fix DNSSEC regression (in 2025.4): "Revert use SIGHUP instead of mistakenly used SIGINT in reload_dnsmasq()"
+- rc: firewall.c: increase hitcount limit for remote GUI access
+- rc: network.c: do_static_routes(): fix typo in 9de506a (close #156)
+- rc: openvpn.c: fix buffer size in ovpn_setup_watchdog() (close #150)
+- rc: openvpn.c: add error handling for fopen(), fappend(), opendir() and chdir(); more logging
+- rc: openvpn.c: do not remove OVPN_DNS_DIR directory when client stops
+- rc: openvpn.c: add error message when tunnel interface cannot be created
+- rc: openvpn.c: fix interface name in ovpn_setup_watchdog()
+- rc: openvpn.c: fix off-by-one error in start_ovpn_eas()
+- rc: rc.c: add more logging
+- rc: rc.c: kill_switch(): do not add rules if given WAN is disabled
+- rc: rc.c: kill_switch(): make the function independent of run_vpn_firewall_scripts()
+- rc: rc.c: kill_switch(): validate IPv4 or IPv4 range before adding it; also (finally) fix adding IPv4 range as "From Source IP" type
+- rc: rc.c: kill_switch(): integrate with firewall to eliminate leaks
+- rc: rc.c: fix to ipv6_enabled()
+- rc: wan.c: move start_adblock() down
+- rc: wireguard.c: fix a small leak on fopen error in wg_build_routing
+- rc: wireguard.c: add error handling for fappend() in wg_quick_iface()
+- rc: wireguard.c: add error handling for fopen() in wg_set_iface_privkey() and wg_set_peer_psk()
+- rc: wireguard.c: fix several memory leaks
+- rc: wireguard.c: use proper buffer as fwmark in wg_set_iface_fwmark()
+- rc: wireguard.c: fix args order in wg_remove_peer(); cosmetic
+- rc: wireguard.c: reset file pointer to beginning before adding domains not found in file
+- rc: wireguard.c: fix bad logic and memory leak in wg_route_peer_allowed_ips()
+- rc: wireguard.c: add error handling for fappend() in write_wg_dnsmasq_config(); add more logging
+- rc: wireguard.c: use strdup() safely; cosmetic
+- rom: update mullvad.net DOH servers
+- rom: update CA bundle to 2025-11-04
+- rom: add new dnsmasq anchor
+- shared: misc.c: iterate over MWAN_MAX to get WAN string/number
+- shared: misc.c: get rid of TCONFIG_MULTIWAN and iterate over MWAN_MAX/BRIDGE_COUNT
+- shared: misc.c: increase ifnames buffer size depending on bridge count
+- www: add to the header of each page information about a new firmware version ready for download
+- www: convert spin icon from gif to svg
+- www: use only one asp script to manage upgrade/reboot/restoring defaults
+- www: admin-snmp.asp: remove whitespaces from 'Allowed Remote IP Address'
+- www: admin-snmp.asp: better handle 'Allowed Remote IP Address'
+- www: basic-ipv6.asp: adjust/extend Commit b49bf16 (Improved IPv6 support) and remove IAID configuration option again
+- www: saved.asp: get rid of unnecessary waiting when saving configuration on Admin -> Access when the httpd daemon starts up faster than the countdown indicates
+- www: about.asp: reorganize page
+- www: tomato.js: fix adding range of IPs
+- www: tomato.js: searchOUI: use '--no-check-certificate' in wget if the image is built without stubby
+- www: advanced-mac.asp fixed typo LLA vs. LAA button and notes
+- www: vpn-wireguard.asp: fix error display on "Routing Policy" tab; cosmetic
+- www: vpn-wireguard.asp: copy values from the fields on save
+- www: vpn-wireguard.asp: never hide Routing Policy table
+- www: vpn-client.asp: never hide Routing Policy table
+
+
 2025.4          2025.10.05
 ---------------------------
 

@@ -33,6 +33,7 @@ FreshTomato-ARM Changelog
 - GUI: status-overview.asp - Only displaying unsecured WiFi warning in AP mode
 - Add Bridge Gateway Isolation + UI (IPv4 only atm), IPv6 bridge isolation, and IPv6-aware advanced-access.asp
 - Improved IPv6 support
+- IPv6 (DHCPv6 with PD): add option to adjust Identity Association for Non-temporary Addresses ID and Identity Association for Prefix Delegation ID
 - build: e2fsprogs: tune recipe, add patch to make libmagic optional
 - build: also install ebtables-restore
 - build: add update overlay

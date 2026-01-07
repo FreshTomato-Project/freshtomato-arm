@@ -513,10 +513,12 @@ struct nvram_tuple router_defaults[] = {
 	{ "ipv6_vlan",			"0"				, 0 },	/* Enable IPv6 on LAN1 (bit 0) and/or LAN2 (bit 1) and/or LAN3 (bit 2) */
 	{ "ipv6_isp_opt",		"0"				, 0 },	/* see router/rc/wan.c --> add default route ::/0 */
 	{ "ipv6_pdonly",		"0"				, 0 },	/* Request DHCPv6 Prefix Delegation Only */
+	{ "ipv6_rapid_commit",		"0"				, 0 },	/* DHCP6 client - shorten the address assignment process from a 4-message to a 2-message exchange; default: off --> can cause problems and must be support by the server */
 	{ "ipv6_pd_norelease",		"0"				, 0 },	/* DHCP6 client - no prefix/address release on exit */
 	{ "ipv6_wan_addr",		""				, 0 },	/* Static IPv6 WAN Address */
 	{ "ipv6_prefix_len_wan",	"64"				, 0 },	/* Static IPv6 WAN Prefix Length */
 	{ "ipv6_isp_gw",		""				, 0 },	/* Static IPv6 ISP Gateway */
+	{ "ipv6_llremote_custom",	""				, 0 },	/* DHCPv6 PD user defined Gateway - used for default route, usually fe80:: (until provided via IPv6 RAs) */
 #endif /* TCONFIG_IPV6 */
 
 #ifdef TCONFIG_FANCTRL

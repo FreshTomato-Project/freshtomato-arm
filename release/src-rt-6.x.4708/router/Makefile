@@ -3906,7 +3906,7 @@ avahi/stamp-h1:
 			--disable-doxygen-chi --disable-doxygen-html --disable-doxygen-ps --disable-doxygen-pdf \
 			--with-xml=expat \
 			--with-avahi-user=nobody --with-avahi-group=nobody \
-			--with-autoipd-user=nobody --with-autoipd-group=nobody /
+			--with-autoipd-user=nobody --with-autoipd-group=nobody \
 			--disable-stack-protector \
 			--disable-dependency-tracking \
 			avahi_runtime_dir=/var/run servicedir=/etc/avahi/services

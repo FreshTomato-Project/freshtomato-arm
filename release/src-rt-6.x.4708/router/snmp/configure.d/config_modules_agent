@@ -27,7 +27,7 @@ done
 #
 AC_MSG_CHECKING([for and configuring mib modules to use])
 
-AH_TOP([#define NETSNMP_REQUIRE_SEMICOLON extern void netsnmp_unused_function(void)])
+AH_TOP([#define NETSNMP_REQUIRE_SEMICOLON struct netsnmp_unused_struct])
 
 # set up the CPP command
 MODULECPP="$CPP $PARTIALTARGETFLAGS $CPPFLAGS -DNETSNMP_FEATURE_CHECKING -I${srcdir}/include -I${srcdir}/agent/mibgroup"
@@ -738,7 +738,7 @@ changequote([, ])
 
 if test $module_debug -eq 1; then
    echo -e "\nFinal module list: $module_list_code"
-   exit
+   exit 1
 fi
 if test "x$with_mib_cfg_checks" = "xyes"; then
   AC_MSG_CACHE_ADD([Agent Module list: $module_list_code])

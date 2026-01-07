@@ -2,6 +2,3322 @@
 
 ----------------------------------------------------------------------
 
+Changes: V5.9.5.1 -> V5.9.5.2
+
+commit ca81dd88ec95021ab466ef7ab877314473b7b086
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 08:49:00 2025 -0800
+
+    autoconf 2.72
+
+commit 13f217faec21afa741054ff631197490b8a38927
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 08:48:54 2025 -0800
+
+    update autoconf version to 2.72
+
+commit 0ea9eb90b2e3eb4ca43018b75ef5b780b3dd136c
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 07:47:30 2025 -0800
+
+    autoconf
+
+commit 4d6831c19f73470b7e271133c53316bc45d046e5
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 07:45:51 2025 -0800
+
+    Version number update: 5.9.5.2
+
+commit cd87c89a87b5900a2c32f480eb3b9dca4803403c
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 07:42:14 2025 -0800
+
+    system -> informational
+
+commit a25c3828dbfa50c631811427fa3af318d72a4ecb
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 07:37:26 2025 -0800
+
+    don't force firefox use
+
+commit adf2b5298833f6438fafb88e5318236d0dea4ce1
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 07:36:25 2025 -0800
+
+    include limits.h for LONG_MAX
+
+----------------------------------------------------------------------
+
+Changes: V5.9.5 -> V5.9.5.1
+
+commit 83d4a87b693697fd67d39f885d4c254525645858
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 06:34:37 2025 -0800
+
+    fix broken version mismatch from older 5.9.4 to newer 5.9.5.1
+
+commit 1a45f84238207ee52bec7c8cab083da33d5e2541
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Tue Dec 23 06:32:10 2025 -0800
+
+    Version number update: 5.9.5.1
+
+commit 9940489b8653061474551c9d6acce2f80ef21704
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Mon Dec 22 15:29:28 2025 -0800
+
+    trimming and modifying
+
+commit 6e9c67ef7e1cca1216a54139c2781ef736a2fbaf
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Mon Dec 22 15:25:36 2025 -0800
+
+    news for 5.9.5
+
+----------------------------------------------------------------------
+
+Changes: V5.9.4 -> V5.9.5
+
+commit 917f17c0b363273c048b97279093b4470dac39a1
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Sat Dec 20 06:37:43 2025 -0800
+
+    Version number update: 5.9.5
+
+commit 43da3ad35ace5d28e71212dd31c18ef9b6ba4726
+Author: Andreas Hasenkopf <andreas.hasenkopf@checkmk.com>
+Date:   Fri Nov 7 11:19:38 2025 +0100
+
+    Fix segfaults when `varbind` cannot be constructed
+    
+    For multiple reasons, `varbind` can be a null pointer, which causes segmentation faults.
+    
+    With this change, the value is checked and the segmentation fault avoided.
+    
+    Co-authored-by: kain88-de <max.linke@checkmk.com>
+    Co-authored-by: spt29 <sven.panne@checkmk.com>
+
+commit 67d0989141ff4697a57afe16aa99afee0588ebed
+Author: Kuzin Andrey <kuzinandrey@yandex.ru>
+Date:   Tue Nov 11 16:26:24 2025 +0300
+
+    Fix: Unused variable warning in cpu_linux.c
+    
+    mibgroup/hardware/cpu/cpu_linux.c: In function 'init_cpu_linux':
+    mibgroup/hardware/cpu/cpu_linux.c:40:22: warning: unused variable 'cp' [-Wunused-variable]
+       40 |     char buf[1024], *cp;
+          |                      ^~
+    
+    Move it to local scope.
+
+commit 49210f5e2df6b11865b3cc5e52329b93f6df4901
+Author: Kuzin Andrey <kuzinandrey@yandex.ru>
+Date:   Tue Nov 11 16:23:42 2025 +0300
+
+    Fix: Possible unix socket path overflow with strncpy()
+    
+    Compilation warning:
+    
+    sd-daemon.c: In function 'netsnmp_sd_notify':
+    sd-daemon.c:316:9: warning: '__builtin_strncpy' specified bound 108 equals destination size [-Wstringop-truncation]
+      316 |         strncpy(sockaddr.un.sun_path, e, sizeof(sockaddr.un.sun_path));
+          |         ^
+
+commit 8a0608a37aaacfeb22faf5097d3bf227831990ec
+Author: Kuzin Andrey <kuzinandrey@yandex.ru>
+Date:   Tue Nov 11 16:22:56 2025 +0300
+
+    Fix: Add wrapers on const values to use in hosts_ctl()
+    
+    To prevent compilation warnings in snmp_agent.c and snmptrapd.c about discard 'const' qualifier:
+    
+    snmp_agent.c:1082:29: warning: passing argument 2 of 'hosts_ctl' discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
+     1082 |         if (hosts_ctl(name, STRING_UNKNOWN, sbuf, STRING_UNKNOWN)) {
+          |                             ^~~~~~~~~~~~~~
+    In file included from snmp_agent.c:94:
+    /usr/include/tcpd.h:131:42: note: expected 'char *' but argument is of type 'const char *'
+      131 | extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,
+          |                                    ~~~~~~^~~~~~~~~~~
+    snmp_agent.c:1082:51: warning: passing argument 4 of 'hosts_ctl' discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
+     1082 |         if (hosts_ctl(name, STRING_UNKNOWN, sbuf, STRING_UNKNOWN)) {
+          |                                                   ^~~~~~~~~~~~~~
+    /usr/include/tcpd.h:132:23: note: expected 'char *' but argument is of type 'const char *'
+      132 |                 char *client_user);
+          |                 ~~~~~~^~~~~~~~~~~
+
+commit 311171416e4da6a1561bbab6e8cbe5291ad1b7ea
+Author: Anton Moryakov <ant.v.moryakov@gmail.com>
+Date:   Tue Nov 4 21:38:52 2025 +0300
+
+    fix prevent buffer overflow in ASN_OCTET_STR index allocation
+    
+    In register_index(), when generating sequential string indices from
+    'prev_idx_ptr', the code used a flawed algorithm that could lead to
+    buffer overflow by writing beyond the end of new_index->varbind->buf.
+    
+    The loop condition relied on buf[i] without proper bounds checking,
+    and the fallback logic for growing the string wrote to buf[i+1]
+    without validating available space.
+    
+    Rewrite the octet string increment logic to:
+    - Properly check array bounds using i >= 0
+    - Use memmove to shift string left when growing
+    - Validate buffer capacity before extending
+    - Update val_len correctly
+    
+    Now returns NULL if buffer is full, preventing memor
+    
+    Signed-off-by: Anton Moryakov <ant.v.moryakov@gmail.com>
+
+commit 201f8198c60b716c7c9dee6fe63cbbbc3838295b
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Nov 9 06:18:18 2025 -0800
+
+    snmptrapd: Fix an integer overflow
+    
+    Do not add one to the trap type if doing this would cause an integer overflow.
+    
+    Fixes: https://issues.oss-fuzz.com/issues/459029273
+
+commit b4e6f826d9ddcc2d72eac432746807e1234266db
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Nov 2 14:48:55 2025 -0800
+
+    snmptrapd: Fix out-of-bounds trapOid[] accesses
+    
+    Fixes: https://issues.oss-fuzz.com/issues/457106694
+    Fixes: https://issues.oss-fuzz.com/issues/458668421
+    Fixes: https://issues.oss-fuzz.com/issues/458876071
+
+commit d49392bb982954aa3d31516f04b2d9784b5f204a
+Author: Anton Moryakov <ant.v.moryakov@gmail.com>
+Date:   Tue Nov 4 14:40:09 2025 +0300
+
+    libsnmp: Reject invalid input in asn_realloc_rbuild_string()
+    
+    Return error if str == NULL && strlength != 0 in asn_realloc_rbuild_string
+    to prevent potential NULL dereference and enforce valid input.
+    
+    Signed-off-by: Anton Moryakov <ant.v.moryakov@gmail.com>
+    [ bvanassche: modified patch description ]
+
+commit fc35391bb9d774d2ffa221df934a8ffdac91994b
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Nov 2 15:17:48 2025 -0800
+
+    snmplib/snmpksm: Free memory when exiting
+
+commit 35d216b57ea2e9abf1cc42077bcf60a4bae0b29e
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Nov 1 13:47:37 2025 -0700
+
+    snmptrapd: Do not write outside the bounds of trapOid[]
+
+commit b1f75132b1ed51743c862564065792fe20819b84
+Author: wangxiaomeng <wangxiaomeng@kylinos.cn>
+Date:   Fri Oct 31 11:18:53 2025 +0800
+
+    libsnmp: Need check env_var before read mib
+
+commit 1ef83cd90c65fae94debaed124d431d090813a1c
+Author: wangxiaomeng <wangxiaomeng@kylinos.cn>
+Date:   Thu Oct 30 14:27:52 2025 +0800
+
+    snmp_agent.c: Fix crash caused by buf being a null pointer
+
+commit 8683cca83726ca0159ff9450f4673e0e0fc4d2d2
+Author: Wes Hardaker <opensource@hardakers.net>
+Date:   Fri Dec 19 05:56:16 2025 -0800
+
+    check trap variable type to ensure it's an OID
+
+commit e3c550b890b249c3512063ee471b8a3067ec3d24
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Oct 14 20:28:16 2025 -0700
+
+    ci, Windows: Bump the OpenSSL version number
+
+commit 6592b9b64950ef2d38af0d7de4cff81d571b0b18
+Author: Ryan Steinmetz <zi@FreeBSD.org>
+Date:   Sat Sep 27 09:42:09 2025 +0200
+
+    Fix build for FreeBSD 15.
+    Patch taken from FreeBSD ports collection.
+
+commit c8332ca8cce7e49189981066010b9e80e215aa0e
+Author: GenericRikka <rikka.goering@outlook.de>
+Date:   Thu Sep 11 02:50:40 2025 +0200
+
+    Added include/net-snmp/system/freebsd16.h
+    
+    (cherry picked from commit 106cac2f04fc40c7f7a0f813b4bee88693dd9402)
+
+commit f3a3e9fb98e428c2d974cf4b6ad7ec15bc188340
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Thu Jul 24 13:27:50 2025 -0400
+
+    tunnel.c: Avoid leaking tunnel->ifname
+    
+    Fixes coverity 454603
+    (cherry picked from commit afd81d3965b9feb8f24e1e02c4e8e3b334693c58)
+
+commit 79c453845aabb99bf2278db9c95633e35a6cc6d9
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Jun 22 16:10:58 2025 -0700
+
+    Perl: add the compiler flag -Wno-old-style-definition
+    
+    (cherry picked from commit 02bee0fe32a4136ade3de137eef6c5acdfeed508)
+
+commit e5e1f96ded3d4f30d1ca223a80b9b0df6dc27115
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Jun 22 16:00:51 2025 -0700
+
+    snmpd, testing: Fix a few MinGW compiler warnings
+    
+    (cherry picked from commit dcabf00b29245249b717309957c0db6e232f1a0c)
+
+commit ad4537a2af54d85772496c3f542f60c1a8eb7e69
+Author: AntonMoryakov <ant.v.moryakov@gmail.com>
+Date:   Tue Jun 10 13:54:26 2025 +0300
+
+    loadave.c: fix out-of-bounds access in loadave_parse_config
+    
+    Static analysis reported a potential buffer overflow when accessing maxload[i - 1] for i = 0.
+    
+    The issue was fixed by:
+    - Adding a check to ensure i > 0 before accessing maxload[i - 1]
+    - Using NETSNMP_DEFMAXLOADAVE as a default value for the first element (i == 0)
+    - Ensuring that the code does not attempt to access memory outside of the maxload array
+    
+    This change makes the code more robust and avoids undefined behavior.
+    
+    Signed-off-by: Anton Moryakov <ant.v.moryakov@gmail.com>
+    (cherry picked from commit be3f27119346acbcc2e200bb6e33e98677a47b2d)
+
+commit 604ebdc0b3f841f613572dc4e9cc161b2d3d587c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jun 5 09:00:45 2025 +0800
+
+    testing: Add a registration handler test with context name
+    
+    (cherry picked from commit 7a55b3332037302c4fd7d5378d435318704834a4)
+
+commit bd5539a5757f172adcb5b504ec069b8f5ad396ee
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Jun 9 16:07:51 2025 -0700
+
+    snmpd: Fix a use-after-free in unregister_mib_context()
+    
+    See also https://github.com/net-snmp/net-snmp/issues/983.
+    
+    (cherry picked from commit b64bde54177ff2ed3110febcef189b5fdccb47ff)
+
+commit fbc1b7f94ea4fa8d1853df9ab08f4a21fa125f2b
+Author: Demon <hyh19962008@gmail.com>
+Date:   Tue Jun 3 21:26:43 2025 +0800
+
+    win32: add build support for Windows on ARM
+    
+    (cherry picked from commit 23cfd15bf05aad242af958831b2b472e24e0ce04)
+
+commit 1a6aab4c913a505905ba8de1f2f4943e2f561d84
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Sep 13 15:29:08 2025 -0700
+
+    ci: Switch to the latest version of the Android SDK
+
+commit bcc2cccf6ecf0ebf2ec684c3854da9cfb6f8fc3b
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jun 20 10:59:29 2025 -0700
+
+    MinGW64: ci/build.sh: Switch from pkg-config to pkgconf
+    
+    pkgconf is the preferred and modern choice for MinGW64.
+
+commit e71597f537eeefe9c585be40262759e61cb9b4ce
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Jun 2 15:48:35 2025 +0800
+
+    Revert "snmpd: Exclude certain MIBs if the Netlink library is not available"
+    
+    This reverts commit a6042e0f08e3b70cc0e3d810ba120d86758f27d8.
+    
+    On the V5-9-patches branch, fewer MIBs depend on libnl than on the master
+    branch. Hence this revert.
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/980
+
+commit b88a7334a1468daebff0d1d763a0a7d26e7e701d
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat May 31 12:18:48 2025 -0700
+
+    snmpd, Perl: Fix most compiler warnings for MODE=read-only
+    
+    This patch includes only one functional change, namely in the Perl function
+    snmp_set(). This patch prevents that in read-only mode snmp_set() passes an
+    uninitialized pointer to Safefree().
+
+commit 0687955e879d916f8edd567763e088d2e7c37603
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed May 28 08:36:12 2025 -0700
+
+    ci/build.sh: Dump config.log if configure fails
+
+commit d4af272b3f3d7119c7ffa305fc2de6e8b7333c9b
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Wed May 28 16:48:10 2025 +0200
+
+    Fix warning when compiling with --disable-ipv6
+
+commit 573e3215057cfbc7bff22a13c72a0b8979434830
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun May 25 14:52:56 2025 -0700
+
+    ci: Add MODE=without-nl
+
+commit a6042e0f08e3b70cc0e3d810ba120d86758f27d8
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri May 23 15:08:12 2025 -0700
+
+    snmpd: Exclude certain MIBs if the Netlink library is not available
+    
+    On Linux a significant number of MIB implementations depends on the Netlink
+    library. Exclude these MIBs if the Netlink library is not available.
+
+commit e185504a84fff20fbc31ebbc24f8fbc15ae44eb1
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat May 24 15:46:00 2025 -0700
+
+    configure: Test earlier for the Netlink library
+    
+    Prepare for making the MIB choice dependent on the presence of the Netlink
+    library.
+
+commit 29faa0ccb8d93f561af878da3e7baf0979fcf3b1
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri May 23 14:11:45 2025 -0700
+
+    configure: Exit with exit code 1 if MIB module debugging is enabled
+    
+    No Makefile is generated if MIB module debugging is enabled. Hence exit with
+    exit code 1.
+
+commit 7182fb805a38910a85b0810e569ae19bf3786fbf
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun May 25 14:27:24 2025 -0700
+
+    ci/build.sh: Query the branch name instead of hard-coding it
+
+commit 628ccedea713287484dbed91fe698e313ec6d812
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat May 17 14:45:18 2025 +0000
+
+    apps, snmpd: Move declarations in front of statements
+    
+    (cherry picked from commit 4473ead5cdecaa6df23a10062a701acaef61c299)
+
+commit 2588df7628d423558afec54296b3d419e48dfac5
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu May 22 08:58:56 2025 -0700
+
+    configure: Fix the -Wdeclaration-after-statement test
+
+commit af34dcbe34fc5a825787a2157aed47d8e2e8bd8c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed May 21 16:18:40 2025 -0700
+
+    ci: Add MODE=disable-ipv6
+
+commit 0c0e19346e57287367e5baa3c60f1617c91a9819
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed May 21 16:42:12 2025 -0700
+
+    testing: Skip IPv6 tests if IPv6 support is disabled
+
+commit a1ec55476213f92915d8186e6cb793d562e9a733
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed May 21 16:27:18 2025 -0700
+
+    libsnmp: Fix --disable-ipv6 support
+
+commit 7536a8d6d363898e0f511aa81cf2dc000c452b89
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu May 15 13:25:09 2025 -0700
+
+    configure: Enable -Wdeclaration-after-statement
+
+commit d9aad5695ed8964c142867a6d7888c9dd90c7361
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu May 15 15:03:04 2025 -0700
+
+    libsnmp, perl, apps: Fix -Wdeclaration-after-statement warnings
+
+commit 5e2e029b262a3cba48ae801c259b85c5c749b013
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu May 15 08:47:53 2025 -0700
+
+    ci/build.sh: Only build fuzz-tests on the master branch
+
+commit d896cdd5d554ba06e09ae5a8777b917be9fd113e
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu May 15 08:38:30 2025 -0700
+
+    ci/net-snmp-configure: Add missing package names
+
+commit 414394bddea52eafcae65e7bd7b0563c295b614d
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Mar 8 13:48:16 2025 -0800
+
+    ci/build.sh: Fix the CI build
+    
+    Only build the fuzz tests in regular mode. Fix the name of the Makefile target.
+    
+    Fixes: 8c9ec0108c24 ("move fuzz-test target to just inside testing")
+
+commit c0cb4ef50ef2eff6006de47218f1d0db345e808e
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Thu May 15 16:09:54 2025 +0200
+
+    testing: Fix OpenBSD warnings about strcpy(), sprintf() when running tests
+    
+    [ bvanassche: modified patch description / added parentheses around sizeof arguments ]
+
+commit ed24f12728587737f5f8c08da1f171901cf9709b
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Thu May 15 16:07:39 2025 +0200
+
+    libsnmp: Use libssh2_session_handshake() when available
+    
+    libssh2 v1.2.8 deprecated libssh2_session_startup,
+    use libssh2_session_handshake when available.
+    
+    [ bvanassche: modified patch description ]
+
+commit 741eb2dcfecf560a39454c7b93d56dff9a89a7c4
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Apr 3 19:57:37 2025 -0700
+
+    libsnmp: Do not truncate AGENT-CAPABILITIES descriptions
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/957
+    (cherry picked from commit 36e0bdd1a0e6c9073c2da6c837ecfc38c4854586)
+
+commit c6ad7dffd7d81e5d603722a5053a3aed51cf5512
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Apr 1 09:48:26 2025 -0700
+
+    Perl: Revert "fix resource leaks in the SNMP::Session destructor and SNMP::NODE::FETCH"
+    
+    Revert commit 581698a162b47b08f8571c7e1b8991df0764e5d3 because it introduced
+    the following crash:
+    
+    __snmp_xs_cb (SNMP.so + 0xab9c)
+    snmp_sess_close (libnetsnmp.so.40 + 0x39419)
+    XS_SnmpSessionPtr_DESTROY (SNMP.so + 0x16dc0)
+    Perl_pp_entersub (libperl.so.5.32 + 0x108437)
+    Perl_call_sv (libperl.so.5.32 + 0x7b18a)
+    S_curse.lto_priv.0 (libperl.so.5.32 + 0x110920)
+    Perl_sv_clear (libperl.so.5.32 + 0x111068)
+    Perl_sv_free2 (libperl.so.5.32 + 0x10ff52)
+    Perl_free_tmps (libperl.so.5.32 + 0x13a66f)
+    XS_SNMP__main_loop (SNMP.so + 0x17e97)
+    Perl_pp_entersub (libperl.so.5.32 + 0x108437)
+    Perl_runops_standard (libperl.so.5.32 + 0x1001a0)
+    perl_run (libperl.so.5.32 + 0x7e90c)
+    main (perl + 0x134a)
+    __libc_start_call_main (libc.so.6 + 0x295d0)
+    __libc_start_main@@GLIBC_2.34 (libc.so.6 + 0x29680)
+    _start (perl + 0x1385)
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/955
+    (cherry picked from commit 823b8d2eca1916ae80295959d2704b546d6a0006)
+
+commit 656e39a2fe7125bf8c37a24e78427d5a373a8f7d
+Author: Klaus Holst Jacobsen <klaus.jacobsen.ext@siemensgamesa.com>
+Date:   Fri Mar 28 10:01:07 2025 +0100
+
+    Better testing for syslog.h presence
+    
+    (cherry picked from commit 695ac0e1f8964e441d17282d9c475cc548f56f5d)
+
+commit 9870561812c4f15e7ca63ea1b5e5db7d25b66708
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Mar 31 09:58:35 2025 -0700
+
+    Perl: Suppress a warning message
+    
+    Suppress the following warning message:
+    
+    Attempt to call undefined import method with arguments ("AF_INET6" ...)
+    via package "Socket6" (Perhaps you forgot to load the package?) at (eval 5)
+    line 1.
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/954
+
+commit 19f0bb03152c2449b59663376958496edffe1531
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Mar 17 16:36:04 2025 +0100
+
+    Add error checking to schedConf.c.
+    
+    This fixes issue #864 (Out-of-bounds access in _sched_convert_bits
+    function due to invalid cron_spec input)
+
+commit 49ee547aad51dc716aca6b2390f8fe430a0a7723
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Mar 8 13:49:16 2025 -0800
+
+    libsnmp: Fix a memory leak in an error path of parse_enumlist()
+    
+    Fixes: https://issues.oss-fuzz.com/issues/401658592
+    (cherry picked from commit 4618b65571b44591418d2080b2b4aa6ba43e2291)
+
+commit 48aaf0905d7fcafbc6ccc7f227958e08260e2ce3
+Author: Anton Moryakov <ant.v.moryakov@gmail.com>
+Date:   Tue Feb 4 00:04:16 2025 +0300
+
+    agent: mibgroup: mibII: fix prevent use-after-free in write_vacmAccessStatus
+    
+    (cherry picked from commit 96faf0eb33e647916b6c3817ddda6dd02c7c4f25)
+
+commit 595f9af35731461c276b716d21414fad50370056
+Author: Maxim Korotkov <korotkov.maxim.s@gmail.com>
+Date:   Wed Mar 5 12:36:15 2025 +0300
+
+    snmplib: add deallocation of container name
+    The function netsnmp_binary_array_release() does not deallocate dynamic char array.
+    
+    (cherry picked from commit dc2842c37a2ffbd26433c55c0de103251564944b)
+
+commit b2802e60ee381a774ff85ea59000f432b9621353
+Author: Stuart Henderson <stu@spacehopper.org>
+Date:   Sat Mar 8 13:10:11 2025 +0000
+
+    support openbsd8
+    
+    (cherry picked from commit 7ffa1ced101b45fd2d45ea7ffb6a6353b9ab5186)
+
+commit 98c1925cb1221f25c5fc53960fa122c5ed314239
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Mar 5 19:33:33 2025 -0800
+
+    Perl: Disable -Wmaybe-uninitialized for .xs files
+    
+    (cherry picked from commit d5254345f45f0c15e961e37b5f6a8194b004183d)
+
+commit 9ae0e684c050c06fe0426bf821677a11d234dd05
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Mar 4 06:18:57 2025 -0800
+
+    libsnmp: Fix a memory leak in the MIB parser
+    
+    Fixes: https://issues.oss-fuzz.com/issues/383154227
+    (cherry picked from commit 2ee581b2ece557069e0f5a2e5cd65e3e6bf415c1)
+
+commit 0532cb5af7f2460fd14d697ccd3ddf987aaa63ab
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Mar 3 12:18:50 2025 -0800
+
+    testing/fulltests/unit-tests/T004snmp_enum_clib: Add more checks
+    
+    (cherry picked from commit 2e98a911a994e7ce18c9a0f0051549a9dbd64842)
+
+commit 237a8377c8ee8af3e59b3cef96cfeb68f08dba4f
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Mar 3 12:18:34 2025 -0800
+
+    libsnmp: Make clear_snmp_enum() free all lists
+    
+    Fixes: 2da22610f90b ("libsnmp: Make init_snmp_enum() faster")
+    (cherry picked from commit 1d0895eaf1b919ea63da2e6d51e9fd138b38b8dc)
+
+commit 22c70efcc08f0da2525bc5d8f922ff99dfa4777b
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Mar 3 09:42:50 2025 -0800
+
+    libsnmp: Rework se_add_pair_to_slist()
+    
+    Call se_add_pair_to_list() after having inserted 'sptr' into 'sliststorage'
+    instead of before.
+    
+    (cherry picked from commit 080bcc445b67cd9dfc5c9f579182529aedbdf968)
+
+commit 31546ccaad857e28dcc7f214f363a2a3efaba145
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Mar 3 09:24:02 2025 -0800
+
+    libsnmp: Fix a memory leak in se_add_pair_to_list()
+    
+    Fixes: https://issues.oss-fuzz.com/issues/398401924
+    (cherry picked from commit 2ed9186eb0473c6d4b72503d764f7b13ab1573ff)
+
+commit 8a5d51e627173dfde092f2a32aca6fe2ebf602f6
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Mar 2 15:36:04 2025 -0800
+
+    libsnmp: Fix a NULL pointer dereference in snmp_config_when()
+    
+    (cherry picked from commit 87bd1ec3620c37ff4e7602c13966d65371378244)
+
+commit 9f6de1c98e04ddb4f254fc25f3cd7779d001a274
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Mar 2 15:23:07 2025 -0800
+
+    libsnmp: Fix a buffer overflow
+    
+    Fixes: https://issues.oss-fuzz.com/issues/399458050
+    (cherry picked from commit 4082593d733e2e03aaac74c62801f76449402651)
+
+commit 69b6025ab60ea67e0cfc7f37938d343149dedd63
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Mar 2 15:12:24 2025 -0800
+
+    libsnmp: Use netsnmp_memdup() instead of open-coding it
+    
+    (cherry picked from commit e49ee4990168e9aa02a2aeb02857385f868ff948)
+
+commit b7d5bbbb84239f0c22b5c227344b0a6a535cfd69
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Feb 25 13:04:11 2025 -0800
+
+    libsnmp: Make init_snmp_enum() faster
+    
+    Call calloc() once instead of 5 * 32 + 1 = 161 times.
+    
+    (cherry picked from commit 2da22610f90b8a64c930af02d88f07f3a596905f)
+
+commit 781e1bc319d23c61a00e62297b8926a866aaa6fd
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Feb 25 09:20:34 2025 -0800
+
+    libsnmp: Fix a buffer overflow in setup_engineID()
+    
+    The following code triggers a buffer overflow if an oldEngineID has been
+    specified that is shorter than 4 bytes:
+    
+      if (localEngineIDType == ENGINEID_TYPE_NETSNMP_RND)
+        memcpy(bufp, &netsnmpoid, sizeof(netsnmpoid));   /* XXX Must be 4 bytes! */
+      else
+        memcpy(bufp, &enterpriseid, sizeof(enterpriseid)); /* XXX Must be 4 bytes! */
+    
+    Fix this by rejecting oldEngineID's shorter than four bytes.
+    
+    (cherry picked from commit 0b49a5de9ad4c3875e42ea223ff61de7d3e26963)
+
+commit 2985da1608f6731906944c4018fefe73b91997b7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Feb 24 12:12:08 2025 -0800
+
+    libsnmp: Fix a heap buffer overflow in se_find_list()
+    
+    Fixes: https://issues.oss-fuzz.com/issues/398356443
+    Fixes: d7e6be1d59f7 ("generic snmp enum list support")
+    (cherry picked from commit a147b834d49e656f6216701b8769b4b6261e72d5)
+
+commit 0b37269ca32393aeb314b2b726a345960701b464
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Feb 24 12:11:22 2025 -0800
+
+    libsnmp: Declare local variables 'static'
+    
+    (cherry picked from commit 8305b51e4d80158052b9cc279b798c227d81b9af)
+
+commit d845bdd100f454caf0bfd8ef28cf421d8fb26c16
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Feb 24 11:03:13 2025 -0800
+
+    libsnmp: Simplify se_add_pair()
+    
+    Introduce se_find_list_ptr(). Simplify se_add_pair(). Remove se_store_in_list()
+    because this patch removes the last user of that function. No functionality has
+    been changed.
+    
+    (cherry picked from commit 5f79b7f37febd7fafbddcc0f2aff3e81a3a439a2)
+
+commit 6a955cac13afa9ed9cdc778c7961756108259490
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Feb 23 10:10:15 2025 -0800
+
+    libsnmp: Simplify se_add_pair_to_list()
+    
+    Move the memory allocation code in front of an if-statement instead of
+    duplicating it in each branch of that if-statement.
+    
+    (cherry picked from commit f23617df54f4d09d346bbc3452528abe3cc7947e)
+
+commit 61325b5cae0e5b2243fc078c6da71924dad0fa11
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Feb 23 10:01:12 2025 -0800
+
+    libsnmp: Make 'optind' handling more robust
+    
+    Fixes: https://issues.oss-fuzz.com/issues/398067543
+    (cherry picked from commit 2b3e0837830e14c7747ac1e175017c733d9d62b3)
+
+commit 90d06e589b77c3875595716700d69f6b6c4136f1
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Feb 21 15:04:30 2025 -0800
+
+    libsnmp: Fix another stack buffer overflow in se_read_conf()
+    
+    Additionally, make some recently modified code easier to read.
+    
+    Fixes: https://oss-fuzz.com/issue/6271135411142656
+    (cherry picked from commit b4d94476f02769a92be7d2122bc8926f39aa6980)
+
+commit 6af1dd2e6ab3820d949e24bc640bdcd75a05e48f
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Feb 18 06:31:10 2025 -0800
+
+    libsnmp: Fix the code for resetting getopt()
+    
+    Although the getopt() man page mentions that 'optind' should be set to
+    1 to reset getopt(), the glibc implementation only resets the getopt()
+    state if 'optind' is set to zero.
+    
+    Fixes: https://issues.oss-fuzz.com/issues/396777457
+    (cherry picked from commit cbedf0cba170b967ab312ebc794eabdd6f67c6d5)
+
+commit d1372b63fdf0d7fceb67c9527cf31d1219f84da0
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Feb 16 13:31:48 2025 -0800
+
+    Perl: SNMP: Suppress a compiler warning
+    
+    Suppress the following Clang compiler warning:
+    
+    SNMP.xs: In function ‘__snprint_value.isra’:
+    SNMP.xs:449:21: warning: argument 1 is null but the corresponding size argument 3 value is [4095, 4096] [-Wnonnull]
+      449 |                     strlcpy(buf, ep->label, buf_len);
+          |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    In file included from /usr/lib/x86_64-linux-gnu/perl/5.38/CORE/perl.h:1715,
+                     from SNMP.xs:12:
+    /usr/include/string.h:506:15: note: in a call to function ‘strlcpy’ declared with attribute ‘access (write_only, 1, 3)’
+      506 | extern size_t strlcpy (char *__restrict __dest,
+          |               ^~~~~~~
+    
+    (cherry picked from commit 562a8bba9ebbc8621b8c299db6264c2d5685a721)
+
+commit c1ae498b04cdc43ebb6e5348dcf51fe061c1dec4
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Feb 16 08:45:02 2025 -0800
+
+    libsnmp: Fix a stack buffer overflow in se_read_conf()
+    
+    Fixes: https://issues.oss-fuzz.com/issues/396958482
+    (cherry picked from commit 2342de96b4968969e2f01f3970905963053b0504)
+
+commit 858157c225f8db6e41683a154b30f557a1501e5c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Feb 16 07:56:17 2025 -0800
+
+    libsnmp: Fix a NULL pointer dereference in netsnmp_ds_handle_config()
+    
+    This has been detected by fuzzing netsnmp_parse_args().
+    
+    (cherry picked from commit 0a08ddf75e2234ea93aed1b2bccd9e387444e69b)
+
+commit e2712fe7e0d3dabb340c3770c27f233361fae6a1
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Feb 16 07:51:11 2025 -0800
+
+    libsnmp: Fix missing argument handling in netsnmp_parse_args()
+    
+    This may fix https://oss-fuzz.com/issue/4664325096931328 (not sure).
+    
+    (cherry picked from commit 578b1f50062677d6db1dc0e134226457b627ea11)
+
+commit 44c2edb218c303d0fc5f8e83483887246dfac749
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Feb 15 19:02:12 2025 -0800
+
+    libsnmp: Fix an out-of-bounds access in netsnmp_hex_to_binary()
+    
+    isxdigit() accepts arguments in the range -1..255. Make sure that the value
+    passed to isxdigit() is in that range. This has been found by reading the
+    source code.
+    
+    (cherry picked from commit ed6247a54085c13b1c327e46afe73d248e6afef0)
+
+commit 007b9c7e8a77c0b8b7e761895517923b00923304
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Feb 14 08:01:36 2025 -0800
+
+    libsnmp: Fix a memory leak in netsnmp_transport_filter_add()
+    
+    Fixes: https://issues.oss-fuzz.com/issues/396459485
+    (cherry picked from commit db989be9abc201d60691a0926e5a76f66f843fc3)
+
+commit 5c27b38d84cd480a0dc1dc09e93ce78e4663b99c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Feb 12 15:49:24 2025 -0800
+
+    libsnmp: Fix a NULL pointer dereference in netsnmp_ds_parse_boolean()
+    
+    Fixes: https://issues.oss-fuzz.com/issues/395969086
+    (cherry picked from commit 930f44e2ef4972047f3394c28c655fd15e04c706)
+
+commit e02bab233ca1ccff6b90eda7b644967c7b6917de
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Feb 12 15:45:58 2025 -0800
+
+    libsnmp: Fix an out-of-bounds access in snmp_log_options()
+    
+    Fixes: https://issues.oss-fuzz.com/issues/395921931
+    (cherry picked from commit c90280f310aa8f9fd0442128244a8672bdfdb80e)
+
+commit 0b3d8eeba0df795676754ae7207726d3efb38a2e
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Feb 12 15:41:35 2025 -0800
+
+    libsnmp: Fix a memory leak in netsnmp_parse_args()
+    
+    Fixes: https://issues.oss-fuzz.com/issues/395969087
+    (cherry picked from commit 0ab82d4c6cae3dd9f901ae292c2f60bbea32515a)
+
+commit 9c2aeb5cb12a75f366303623c522f6ed72afd944
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Feb 12 07:35:48 2025 -0800
+
+    libsnmp: Fix a heap buffer overflow
+    
+    Fixes: https://issues.oss-fuzz.com/issues/396102403
+    (cherry picked from commit 50d5c3d007cf9b4f56a29b79a8a2e736115eb6cb)
+
+commit c58525e2cfc4c18c8ccf51345f9b523b9507ad8a
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Feb 12 07:30:44 2025 -0800
+
+    libsnmp: Declare local functions 'static'
+    
+    (cherry picked from commit 8cf375fb612dcaa635a063d92b962be260a6a0ea)
+
+commit 6644fd92260abedf52921101419bc3f341fddeb8
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Feb 12 09:13:27 2025 -0800
+
+    ci, Windows: Bump the OpenSSL version number
+
+commit bdb611307f1fa9336b9455409e748bf709f31677
+Author: Egil Kvaleberg <egil@jualako.com>
+Date:   Fri Jan 31 21:26:37 2025 +0100
+
+    Document that we are now using configure.ac
+    
+    (cherry picked from commit 1109b6fd408e1c8b03e6ccfdcbe70c2ad0412c13)
+
+commit 8d4f4d623f5f90ad7ca7227a1cacce23a0e52802
+Author: Egil Kvaleberg <egil@jualako.com>
+Date:   Fri Jan 31 21:24:20 2025 +0100
+
+    Avoid latest Rpi compiler complaining about possibly uninitialized variable.
+    The code seems ok.
+    
+    (cherry picked from commit 5db02cfd10b4a198cfcd23658f17f0d8f737a8ab)
+
+commit 3d41fcf7eb0d4590a6583fa024d27cd7fc75f6fa
+Author: Yuan <zodf0055980@gmail.com>
+Date:   Wed Jan 22 16:31:47 2025 +0800
+
+    Fix include stdint.h missing to get SIZE_MAX
+    
+    This fixes commit d33578d for ubuntu building.
+    
+    Signed-off-by: zodf0055980 <zodf0055980@gmail.com>
+    (cherry picked from commit ba627e15aafd49341d94d35989b1b9703918dfa9)
+
+commit a043a06540dc595dc17a56504de969d3700264f6
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Jan 20 19:23:56 2025 -0800
+
+    libsnmp: Fix an integer overflow in asn_parse_signed_int64()
+    
+    This was detected by Coverity (ID 454617).
+    
+    (cherry picked from commit 33b25d6e181ba949791885109a5dadeaa9046865)
+
+commit eed6600c62ac18599cdf562db4cb0de1974b1f41
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Jan 19 19:06:38 2025 -0800
+
+    libsnmp: Simplify include/net-snmp/types.h
+    
+    (cherry picked from commit 6a95ad887b04758e5b76e5d3d0c8546257e5efd5)
+
+commit eb9a6282d8ef14902c8f7ed1c9c9da43d0640fdb
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Jan 19 19:15:26 2025 -0800
+
+    libsnmp: Fix the netsnmp_gethomedir() declaration
+    
+    Fixes: 1c6e66b3122b ("libsnmp: Fix homedir lookup also for configuration")
+    (cherry picked from commit 0e27a7d8c2f9c84fc641cc61cf24791da8a8198f)
+
+commit 8067e9ff12fbf706323f3faef5b9146e57158b58
+Author: Klaus Holst Jacobsen <klaus.jacobsen.ext@siemensgamesa.com>
+Date:   Fri Jan 17 10:12:23 2025 +0100
+
+    Added qnx support
+    
+    (cherry picked from commit 2145ebd07f5b6ec6c4eee505ffa2431f3c361087)
+
+commit a1d35a12cdb62aa7c71866715843a38f64e0eefc
+Author: Denis Kamenskii <dekamenskii@mail.ru>
+Date:   Fri Oct 4 11:45:35 2024 +0300
+
+    notificationFilter: Fix mask data copying
+    
+    This change is fixing incorrect filterMask copying when adding a new snmpNotifyFilter
+    
+    (cherry picked from commit 571696608c260d81d1d686234fea02a132bbe65a)
+
+commit 0b940b98005498419d24d14fbdfb2137946d321c
+Author: Jon DeVree <nuxi@vault24.org>
+Date:   Sat Jan 18 10:04:03 2025 -0500
+
+    Add missing 'diskio_exclude_md' to manpage
+    
+    Fixes: 2fc3de6b5 ("Added option to exclude *md* devices in diskio.")
+    (cherry picked from commit bb21b69d75df050754efb5476e74eb4f630e5d11)
+
+commit e29c40dbddb827e4b9324c0105cfc9a35e7557ac
+Author: Jon DeVree <nuxi@vault24.org>
+Date:   Sat Jan 18 10:03:18 2025 -0500
+
+    Fix typo in manpage: LInux => Linux
+    
+    Additionally, ending a line with a period seems to insert an extra space
+    into the resulting text. Re-wrap the line to avoid having a period as
+    the last character.
+    
+    (cherry picked from commit dc7f4d53afd687b3a70ec0d16b80b8ced0afbac7)
+
+commit e0fb35640459f62a7773cee09c34949b19d82a88
+Author: Orgad Shaneh <orgad.shaneh@audiocodes.com>
+Date:   Wed Dec 18 07:40:40 2024 +0200
+
+    libsnmp: Fix homedir lookup also for configuration
+    
+    (cherry picked from commit 1c6e66b3122b7fd878d17f40664adf831d1a2c7a)
+
+commit ef137dbd3c183db0acce4fcb60ab67245b092b26
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Fri Jan 24 16:14:20 2025 +0100
+
+    Normalized line endings
+
+commit a17027209a0101b66dc7ab50670d0146677e2545
+Author: Orgad Shaneh <orgad.shaneh@audiocodes.com>
+Date:   Tue Dec 17 12:03:57 2024 +0200
+
+    Add gitattributes file to use eol=lf for almost all files
+    
+    This fixes autoreconf on MSYS2 and possibly other issues.
+    
+    (cherry picked from commit d17282ed842364d83be83d1a45ad95dd986cdb0a)
+
+commit 572661f8265516c397b7691aa4ae1b8cfa05a34b
+Author: Orgad Shaneh <orgad.shaneh@audiocodes.com>
+Date:   Tue Dec 17 20:59:59 2024 +0200
+
+    libsnmp: Support $HOME in MIBDIRS also on Windows
+    
+    (cherry picked from commit 75829eb857f2468001050fda26af843bcb9475db)
+
+commit 5a94f2831e8b22ffd962af9db6f7d0959c0dde51
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Dec 11 07:56:25 2024 -0800
+
+    libsnmp: Use asprintf() in parse_trapDefinition()
+    
+    No functionality has been changed.
+    
+    (cherry picked from commit 46980afe4a4b5ce9820bd4419064d18e28fe215b)
+
+commit b7119b2d578e782300d372a2e5e1c6327977e2eb
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Dec 11 07:21:17 2024 -0800
+
+    snmplib/parse.c: Make error handling more systematic
+    
+    No functionality has been changed.
+    
+    (cherry picked from commit b057efbf770fbd964a8f6fd1e27912f584a6a8ee)
+
+commit 078e165b17376e95c705341affad628e86d865ac
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Dec 7 15:13:29 2024 -0800
+
+    libsnmp: Fix a memory leak in free_objgroup()
+    
+    Fixes: 84aba8f8f878 ("libsnmp: Fix a memory leak in the MIB parser")
+    Fixes: https://issues.oss-fuzz.com/issues/380322456
+    (cherry picked from commit 9425b05b663c55e12bc4fccec45a520c333ee343)
+
+commit d6e918eadc41eb3a364ce946495e92151221b63c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Dec 7 15:09:09 2024 -0800
+
+    libsnmp: Clean up compliance_lookup()
+    
+    Convert an if-else statement into an early return. Remove a superfluous
+    cast.
+    
+    (cherry picked from commit d1bf740f9d328c2264f7a0abfb1970f41ccf9c4e)
+
+commit 11169c7d027b61150cda413a48bae62a36364723
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Dec 3 09:26:40 2024 +0800
+
+    MIB-II: Suppress a Coverity warning about an uninitialized variable
+    
+    (cherry picked from commit e780c985bf74ab7cda1fc6f4cb57435e980ee255)
+
+commit db42a6041317853be0d91b525ba9b2efccf7dc4c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Dec 3 09:24:49 2024 +0800
+
+    snmptrapd: Suppress a Coverity warning about an uninitialized variable
+    
+    (cherry picked from commit 9100bf8550c7c0baebdb1fd31e89d5fcee628fc4)
+
+commit 4feaa89057bb0b17e05832f655d4b12281a8b761
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Dec 3 09:22:26 2024 +0800
+
+    libsnmp: Suppress Coverity warnings about time_t truncation
+    
+    (cherry picked from commit e81a0edac75e568cddf7a1f595c4d7108c0a0bca)
+
+commit 0f81e94dffe932c545d36dff6ddf9d14cb6297d7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Nov 30 13:31:15 2024 -0800
+
+    snmpd: Fix a potential integer overflow
+    
+    Make sure that avgvarbind > 0. This was detected by Coverity.
+    
+    (cherry picked from commit 2c24c784e08d194f62d08beea77fd2bef275577f)
+
+commit 92aa03f0381bac095fce1698a72e174b845d590c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Nov 30 13:28:37 2024 -0800
+
+    IP-MIB: Suppress a Coverity complaint
+    
+    Suppress a Coverity complaint about assigning -1 to entry->index.
+    
+    (cherry picked from commit 9e92b038386a63c5731a4717248ab65fedc6ad9b)
+
+commit 185611aebabc9362a55cc55e05bbc16e32b87e1f
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Nov 26 15:16:17 2024 -0800
+
+    libsnmp: Rework an integer overflow check
+    
+    Rework an integer overflow check such that it no longer triggers a Coverity
+    complaint.
+    
+    Fixes: 993728c977d4 ("libsnmp: Handle integer overflows in asn_predict_length()")
+    (cherry picked from commit d33578d0bd1675a6f3d2a9d6788994e8bb1e7cef)
+
+commit 11c79b623f49b88f9006a3f3630a18aa5fd85c87
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Nov 19 14:47:27 2024 -0800
+
+    libsnmp: Split read_module_internal() to make it easier to read
+    
+    (cherry picked from commit 65375083382a4cd8a3913628f32596139f8f9eb8)
+
+commit f2ff0be44cc2c646f852d5c669a20d44e048e473
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Nov 19 14:58:52 2024 -0800
+
+    libsnmp: Use asprintf() in netsnmp_init_mib() instead of open-coding it
+    
+    Additionally, combine two SNMP_FREE(env_var) statements into a single
+    statement.
+    
+    (cherry picked from commit e0be85dca5e8ab3a16702b6c48d6a401052e3ec9)
+
+commit 2058b0ccf6f111d90c4434c3db337961285196e3
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Nov 19 14:34:22 2024 -0800
+
+    libsnmp: Declare variables with file scope 'static'
+    
+    Additionally, zero-initialize variables with file scope implicitly instead
+    of explicitly.
+    
+    (cherry picked from commit e1897a0baaa36ef5ad73c5653960c2ab239a64dc)
+
+commit 402f4a00e68222b9558fb3d5fac1ac782e5b2ba3
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Nov 6 12:22:18 2024 -0800
+
+    DISMAN-MIB: Suppress a Coverity complaint about integer truncation
+    
+    (cherry picked from commit f91020b7b7ccef4746e61a62c1acd5e7f2ee73bf)
+
+commit 1d67d78bfe7bcb02ca195ca9abf2bbd733939875
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Nov 6 12:20:28 2024 -0800
+
+    DISMAN-MIB: Suppress a Coverity complaint about integer truncation
+    
+    (cherry picked from commit 4e327e5838b2f8a07023c591c773602e4d299e44)
+
+commit 1f22bab84f6104859488488b878097248d3c598d
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Nov 6 12:16:30 2024 -0800
+
+    libsnmp: Rework an integer overflow check
+    
+    Rework an integer overflow check such that it no longer triggers a Coverity
+    complaint.
+    
+    Fixes: 993728c977d4 ("libsnmp: Handle integer overflows in asn_predict_length()")
+    (cherry picked from commit e500d823c1242d3859f671ec5dd51c9fc6b9eeb5)
+
+commit 8473bf2a7f3938c7089e53f17e04edf3f2fab418
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Nov 5 06:55:06 2024 -0800
+
+    snmplib: Make get_module_node() check the strdup() return value
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/887
+    (cherry picked from commit 801955c017327d711bce51ac4535557b11a98e39)
+
+commit b78ba9198686a9ac7b0f2aa5c87c6904752350f0
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Nov 5 06:34:34 2024 -0800
+
+    snmplib/transports/snmpUnixDomain: Fix a socket leak in an error path
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/888
+    (cherry picked from commit 973a14ae0101d2b5fde67732208a3949f9ae9667)
+
+commit b9eb7d242552319e0fc5495cf7d5ef89698ca412
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Sep 26 09:24:38 2024 -0700
+
+    libsnmp: Remove an incorrect assert statement
+    
+    See also https://github.com/net-snmp/net-snmp/issues/856.
+    
+    (cherry picked from commit d8c83ff96144f0bb0945a3640ce7ac5995b91c74)
+
+commit 56ce8ccab4b27c0799a88a580fde1ef788869c88
+Author: Nathan Monfils <nathan.monfils@destiny.eu>
+Date:   Fri Aug 9 17:00:55 2024 +0200
+
+    Update snmp-create-v3-user man date
+    
+    What a jump!
+    
+    (cherry picked from commit ec00e19d475a2aa49c73651e93bb524d0a55fe9f)
+
+commit 638501c2781e9ace83f27e790d7b4592adf6d57e
+Author: Nathan Monfils <nathan.monfils@destiny.eu>
+Date:   Fri Aug 9 16:50:29 2024 +0200
+
+    Update man page for net-snmp-create-v3-user
+    
+    Missing option for authentication algorithm and missing parameters for encryption algorithms have been documented.
+    
+    Although case does not matter for `-A` and `-X` (which seems to be its own can of worms that needs to be kept for compatibility), I've switched them around to match the usage string of `net-snmp-create-v3-user --help`.
+    
+    (cherry picked from commit 7d0da6c40db63611648115ad8dc4e5f00485ba1d)
+
+commit 27912791e1128dc9cfed9e8e9209c46d4cc2cbc7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Jul 5 12:53:25 2020 -0700
+
+    FreeBSD: Fix the sysctl() configure test
+    
+    This patch fixes the following compiler warnings:
+    
+    conftest.c:406:1: warning: type specifier missing, defaults to 'int' [-Wimplicit-int]
+    main() {
+    ^
+    conftest.c:415:41: warning: incompatible pointer to integer conversion passing 'void *' to parameter of type 'size_t' (aka 'unsigned long') [-Wint-conversion]
+      sysctl(mib, 2, &boottime, &len, NULL, NULL);
+                                            ^~~~
+    /usr/include/sys/_null.h:34:14: note: expanded from macro 'NULL'
+                    ^~~~~~~~~~~
+    /usr/include/sys/sysctl.h:1062:70: note: passing argument to parameter here
+    int     sysctl(const int *, u_int, void *, size_t *, const void *, size_t);
+                                                                             ^
+    conftest.c:417:5: warning: implicitly declaring library function 'exit' with type 'void (int) __attribute__((noreturn))' [-Wimplicit-function-declaration]
+        exit(0);
+        ^
+    conftest.c:417:5: note: include the header <stdlib.h> or explicitly provide a declaration for 'exit'
+    3 warnings generated.
+    
+    (cherry picked from commit 09e42bbc4efcffb44bf50f150447bd25077d133b)
+
+commit 5ae20aad09846149fb2a7affbb9b9af32f08752b
+Author: Ivan Antonyuck <ivan.antonyuck@gmail.com>
+Date:   Tue Jul 30 15:42:00 2024 +0300
+
+    Update net-snmp-create-v3-user.in
+    
+    net-snmp-create-v3-user has an ability to use AES128, but does not advertise it
+    (cherry picked from commit 3fab3b3b9031e97b85954d9dd6b60c546ca7cb9c)
+
+commit 501cc8bd0e7143c8e1aeee5142f4fd865c759da5
+Author: Maxim Korotkov <korotkov.maxim.s@gmail.com>
+Date:   Tue Dec 19 17:05:55 2023 +0300
+
+    agent: mibgroup: avoid potential NULL dereference
+    
+    The "while" loop shifts the pointer,
+    which can cause it to be NULL.
+    Fixes: 8baf64d4ae616(Re-worked Schedule MIB implementation.)
+    Found by RASU JSC
+    
+    Signed-off-by: Maxim Korotkov <maskorotkov@rasu.ru>
+    (cherry picked from commit 8ab403e1595d3eca3d922daeb69d2dc454c8f9ef)
+
+commit eac92fb1e34fb9413d4cadc45444a2a43290909b
+Author: Simon Aldrich <simon@aldrich.cc>
+Date:   Mon Jul 8 22:49:36 2024 +0100
+
+    Correct uS to μs for microseconds
+    
+    (cherry picked from commit 90a70ebd82ae1b545e7a58c1b3eb10981cb85adc)
+
+commit 5977b47543202ff68977aae806ceca6cf42144c0
+Author: Simon Aldrich <simon@aldrich.cc>
+Date:   Mon Jul 8 22:31:49 2024 +0100
+
+    Correct misleading header comment about retry timeouts
+    
+    (cherry picked from commit d305715470ea8d0e6b1ae899a03f58939629d23e)
+
+commit 07a197022d0b1b597ff135352cd677eb25ea4c04
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Jun 29 15:05:03 2024 -0700
+
+    snmpd, snmptrapd: Fix Coverity complaints about integer overflows
+    
+    (cherry picked from commit c1a34f3cbc1bf33fb65b125852541b8336e977cf)
+
+commit 012cb784b1fa6cfa807c272c774d9357fc5bfa8e
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Jun 29 15:01:26 2024 -0700
+
+    libsnmp: Handle integer overflows in asn_predict_length()
+    
+    (cherry picked from commit 993728c977d416b15ea74ae8b0b03ebdf1c07ec8)
+
+commit 2625be874235a1f8a2bc1bf070a23092ed903a6d
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Jun 29 14:48:49 2024 -0700
+
+    UCD-SNMP-MIB: Fix a potential integer overflow
+    
+    This was detected by Coverity.
+    
+    (cherry picked from commit f4005f4b8da27dc88e2001fbc2a884c16cf5fc11)
+
+commit 08db791adcac3bb3fa7f5fa95ccdfcbc5b21cac7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Jun 29 14:45:23 2024 -0700
+
+    snmptrapd: Fix an integer underflow
+    
+    This was detected by Coverity.
+    
+    (cherry picked from commit 449c27cf9f36306b906e1e282a832f6545c4f532)
+
+commit f2ce30e252b3f63fc28097da99c9f92823329cd2
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Jun 29 14:43:43 2024 -0700
+
+    snmpd, apps: Handle mktime() failures
+    
+    This was detected by Coverity.
+    
+    (cherry picked from commit 3a4c6307086207eb5a69f88823063c934c02a692)
+
+commit dfab20a13e27eed063226c038008342855344640
+Author: Maxim Korotkov <korotkov.maxim.s@gmail.com>
+Date:   Tue Dec 19 17:44:45 2023 +0300
+
+    agent: helpers: added allocation fail check
+    
+    Fixes: e2ea345fa783(Agent helper module for support of scalar objects.)
+    
+    Found by RASU JSC
+    
+    Signed-off-by: Maxim Korotkov <maskorotkov@rasu.ru>
+    (cherry picked from commit 600b37a14105f73c2414b83b66297933cebbdec7)
+
+commit c9ac9f1c92600c1a568493f4a69c462e7fb115a7
+Author: Wei Xing <2112860871@qq.com>
+Date:   Fri May 24 01:53:59 2024 +0800
+
+    dump space around the "="
+    
+    (cherry picked from commit 0aac3305b43f5eed38bd9aa53e44fdfc828d7cb3)
+
+commit 753bd7b6182aaa2326f3bad7d7aa8227bfe51b77
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Sat Nov 30 20:29:14 2024 +0100
+
+    Update LM-SENSORS-MIB to support negative temperatures
+    
+    This fixes #752
+
+commit 7949884b3fcab6da8c70b5e7c056da184c701195
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Nov 26 15:34:05 2024 -0800
+
+    CHANGES: Remove -Wredundant-decls from the developer options
+    
+    Revert commit ad80e335b8af because this option causes a lot of noise for the
+    Perl header files.
+
+commit e39d80bc5b2ef01afc8b6872546cba61ce6a8538
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Nov 23 17:06:00 2024 -0800
+
+    libsnmp: Clean up parse_enumlist()
+    
+    Fix code formatting and indentation. Remove a superfluous cast. No functionality
+    has been changed.
+
+commit b8ec69597c9031d75f5b1602be350833fda882de
+Author: Maxim Korotkov <korotkov.maxim.s@gmail.com>
+Date:   Wed Dec 14 12:46:49 2022 +0300
+
+    snmplib: Fix memory leaks in the parse_enumlist() error path
+    
+    Found by RASU JSC with ISP RAS Svace
+    
+    Signed-off-by: Maxim Korotkov <maskorotkov@rasu.ru>
+    [ bvanassche: renamed error label, fixed indentation and a potential null pointer
+      dereference ]
+
+commit 8f54853716dcb9447387931870341cf01d6b1bb8
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Nov 12 09:35:44 2024 -0800
+
+    libsnmp: Fix netsnmp_add_loghandler()
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/696
+    Fixes: 00ef569e00d1 ("Fix 5.5.x branch structure (part 2)")
+
+commit cfc58d3e9cae01013a3baa70913681c31876c6e6
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Nov 11 17:13:18 2024 -0800
+
+    libsnmp: Declare local variables 'static'
+    
+    Additionally, switch from explicit to implicit zero-initializing of
+    variables with file scope.
+
+commit fbdf2ed2e0bb06050d314e008a34d9ecdb84be17
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Oct 28 09:21:45 2024 -0700
+
+    libsnmp: Fix a buffer overflow in setup_engineID()
+    
+    See also https://github.com/net-snmp/net-snmp/issues/732.
+
+commit 88199e67c5f9ac2f5e72fc3f28b6b19d3321eb60
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Oct 24 09:40:27 2024 -0700
+
+    apps: Restore support for systems where tv_sec does not have the time_t type
+
+commit 0fcc15cca99a400b9beac47ee32d49e90ceca517
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Oct 23 11:18:05 2024 -0700
+
+    apps, libsnmp, snmpd: Check the localtime() return value
+    
+    See also https://github.com/net-snmp/net-snmp/issues/867.
+
+commit dc3884fd3a4cb2f915df73dbcfc25267f69a790b
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Oct 23 10:07:28 2024 -0700
+
+    apps/snmpdelta: Prevent that a localtime() triggers a crash
+    
+    See also https://github.com/net-snmp/net-snmp/issues/867.
+
+commit fc847a802d7600adfc9ad2ebb29fe485a19c920b
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Oct 23 10:00:19 2024 -0700
+
+    ci, Windows: Bump the OpenSSL version number
+
+commit 512ed48b8c35191b97e3bdcd7f3dab21200a0ba9
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Oct 7 09:30:47 2024 +0200
+
+    Port sshtosnmp to FreeBSD.
+    
+    Completes 3346619 (libsnmp: Port the SSH domain transport to FreeBSD)
+
+commit f2b6880b1bb30332aec48986799f659e6e6690ed
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Thu Aug 22 08:23:54 2024 +0200
+
+    Fix ipv6.c for DragonflyBSD (#841)
+    
+    Fixes: ebb758e3 (x Fix var_udp6 and var_tcp6 on FreeBSD)
+
+commit 34ec1fafd562292d8f511901c38009c8a3031625
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jul 11 13:05:52 2024 -0700
+
+    DISMAN-EXPRESSION-MIB, DISMAN-EVENT-MIB: Simplify the security name duplication code
+    
+    Use netsnnmp_memdup() instead of calloc() + memcpy().
+
+commit d1e107882230cbf53b19e6af1dc2d1878017e6e4
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Jul 10 13:31:09 2024 -0700
+
+    snmpd: Terminate security names with NUL
+    
+    Some code, e.g. netsnmp_iquery_session(), assumes that security names are
+    NUL-terminated. Guarantee that this is the case. This patch fixes an address
+    sanitizer error.
+
+commit bd6b09460ec268115cdd6f269f1cab8c69759c33
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Jun 18 13:12:38 2024 -0700
+
+    ci/install.sh: Install libmariadb-dev-compat for mysql_config
+
+commit 7c94ff08aacddae8dd5c068652b70288e84a152d
+Author: Mark Johnston <markj@freebsd.org>
+Date:   Tue Jun 11 10:04:06 2024 -0400
+
+    snmpd: Always open libkvm in "safe mode" on FreeBSD
+    
+    By specifying /dev/null as the path to kvm_openfiles(), we can get a
+    libkvm descriptor which does not hold /dev/kmem open.  None of the code
+    shipped with net-snmp needs a /dev/kmem handle.
+    
+    Make this change for both the NETSNMP_NO_KMEM_USAGE and
+    !NETSNMP_NO_KMEM_USAGE cases, per a suggestion from
+    Bart Van Assche <bvanassche@acm.org>.
+
+commit 21bd3a00cf3efc1ef5b72d1e60d631ecfce3608f
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jun 14 14:52:47 2024 -0700
+
+    ci/perl.bat: Bump the Perl version
+
+commit 7ab06fdcb5d6066d0243af6203c54c24d5dcd795
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Tue Jun 11 10:08:08 2024 +0200
+
+    Better test and info for libnl-3 presence
+
+commit 10e4846eebb20f4d58dca3d8e6c80e5c19bd2b83
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Jun 10 17:29:44 2024 -0700
+
+    ci, Windows: Bump the OpenSSL version number
+
+commit 98b8a5698594c0389dd66170aeb09425ae720852
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Jun 10 15:43:39 2024 -0700
+
+    Darwin: MIB-II: Fix the build for OS/X versions prior to 10.6.0
+    
+    Fix compilation of Net-SNMP 5.9.4 on older versions of Mac OS X (prior to
+    10.6.0). This patch fixes the following build errors:
+    
+    mibgroup/mibII/kernel_sysctl.c: In function ‘sysctl_read_icmp6_stat’:
+    mibgroup/mibII/kernel_sysctl.c:108: error: ‘MLD_LISTENER_QUERY’ undeclared (first use in this function)
+    mibgroup/mibII/kernel_sysctl.c:108: error: (Each undeclared identifier is reported only once
+    mibgroup/mibII/kernel_sysctl.c:108: error: for each function it appears in.)
+    mibgroup/mibII/kernel_sysctl.c:109: error: ‘MLD_LISTENER_REPORT’ undeclared (first use in this function)
+    mibgroup/mibII/kernel_sysctl.c:131: error: ‘MLD_LISTENER_DONE’ undeclared (first use in this function)
+    make[1]: *** [mibgroup/mibII/kernel_sysctl.lo] Error 1
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/822
+
+commit e11dadfb5fa3798cad4de3222ba04378728beefd
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue May 21 16:11:31 2024 -0700
+
+    libsnmp: Reduce code duplication
+    
+    Merge netsnmp_tcpbase_session_init() and netsnmp_udpbase_session_init() into
+    a single function.
+
+commit ed917bfdb0e07f41c817b3f5efc255a6ce538df2
+Author: Teus Benschop <teusjannette@gmail.com>
+Date:   Tue May 21 16:04:10 2024 -0700
+
+    libsnmp: Copy the listening port number into snmp_session.local_port
+    
+    [ bvanassche: removed trailing whitespace ]
+
+commit d30d63523bfd9ccc85175e484fea821815273237
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed May 15 10:08:04 2024 -0600
+
+    snmptrapd: Fix compilation against recent versions of the MySQL library
+    
+    Fix the following build error:
+    
+    snmptrapd_sql.c:541:50: error: assignment to ‘_Bool *’ from incompatible pointer type ‘char *’ [-Wincompatible-pointer-types]
+    541 | _tbind[TBIND_v3_SECURITY_ENGINE].is_null = &_no_v3;
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/815
+
+commit e73c892e51dbbf3b75a9a19a2e7bbc269eeb05be
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed May 15 14:54:52 2024 -0600
+
+    CHANGES: Win32: winExtDLL: Fix the build
+    
+    Fix the following build error:
+    
+    mibgroup/winExtDLL.c:360:14: error: implicit declaration of function 'should_init' [-Wimplicit-function-declaration]
+      360 |         if (!should_init(dll_basename)) {
+          |              ^~~~~~~~~~~
+
+commit 3d6b7457ee34be30fe51b5e303521ece5d28feda
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed May 15 10:20:09 2024 -0600
+
+    ci/install.sh: Add the libmariadb-dev package
+    
+    In recent Debian distributions the MariaDB client library has been moved
+    from libmariadbclient-dev to libmariadb-dev.
+
+commit 8f3cedfa723cfe1df5264cf174e9a3c279d9266e
+Author: Teus Benschop <teusjannette@gmail.com>
+Date:   Wed May 8 10:21:10 2024 -0700
+
+    libsnmp: Copy the listening port number into snmp_session.local_port
+    
+    This is useful if the MIB behavior should depend on the listening port.
+    Listening port information can be retrieved as follows in a MIB
+    implementation: reqinfo->asp->session->local_port.
+    
+    [ bvanassche: added IPv6 support and added a patch description ]
+
+commit 771966122e2fa7beca54febdd223464676c72fd3
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue May 7 11:30:47 2024 -0700
+
+    EtherLike-MIB: Fail compilation on Linux if libnl-3 has not been found
+    
+    Commit 5b89350912eb ("EtherLike-MIB: Optimize the Linux implementation")
+    made libnl-3 a dependency of the EtherLike-MIB implementation on Linux.
+    Hence fail the build on Linux if libnl-3 has not been found.
+
+commit 9a8583119350b5db74163621acf11650e1187d79
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue May 7 11:03:59 2024 -0700
+
+    configure: Fix a source code comment
+
+commit ebb758e337a52c75a06b2448ebb44a6c78a8600e
+Author: Mark Johnston <markj@freebsd.org>
+Date:   Tue Apr 30 13:53:57 2024 -0400
+
+    Fix var_udp6 and var_tcp6 on FreeBSD
+
+commit 3fa4c3157bb866c97876cc6ae236a5e122f228ef
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Apr 25 07:00:48 2024 +0200
+
+    ci/install.sh: Minor improvements
+
+commit db30d3a47bc11429fbff5374af6da3601a493f4d
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Apr 8 21:32:26 2024 +0200
+
+    Fix apparently transposed arguments to calloc.
+    Detected by gcc 14 on Fedora 40 (BETA)
+
+commit 84f819c815d6644a5e916a3b8f56cd4d0b6f151d
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Apr 8 21:09:55 2024 +0200
+
+    snmp_openssl.c: reorder some declaration to avoid warnings about
+    redundant declarations.
+
+commit 1a10dbc83c0a2e5622943d65d46ef0a0c7048831
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Apr 8 20:57:59 2024 +0200
+
+    For the ARM architecture, char is unsigned. Repair the detected bad
+    comparisons between char and -1.
+
+commit 148dd13682e8e0218c39778d433a8ff073fc78a3
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Apr 8 20:53:12 2024 +0200
+
+    Remove some duplicated declarations.
+
+commit c728c3cd64ad10c2b73dc3e284b0b2f6dfdd2502
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Apr 8 20:50:43 2024 +0200
+
+    EtherLike-MIB: remove a now unused variable.
+
+commit be35c9dd9af9582a1c40dff9c6994dc2743a2ff2
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Apr 8 20:47:43 2024 +0200
+
+    Fix commit 5b89350 (EtherLike-MIB: Optimize the Linux implementation)
+    for *BSD by adding an "#if defined(linux)" that was lost during backport.
+
+commit 5cabd6f570aa6b0d741250b157c5a5d886c8b3b5
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Feb 2 07:26:59 2024 -0800
+
+    EtherLike-MIB: Declare local variables and functions static
+
+commit 05f56d3ec9e6c07dab12241ce3aa048d3dccd839
+Author: Martin Rys <martin@rys.pw>
+Date:   Sun Mar 3 01:19:51 2024 +0100
+
+    snmpd/snmptrapd.service: Remove dead syslog.target
+    
+    (cherry picked from commit 99237462ace151c3d706aa31f6060b491dacd2fa)
+
+commit 1268bc0dbcfa598fe67c3781f6c854b54d828490
+Author: Thomas Egerer <hakke_007@gmx.de>
+Date:   Thu Feb 29 21:18:32 2024 +0100
+
+    libsnmp: Reassign timeout value for select(2)
+    
+    As select may update the timeout value, the code may not sleep for
+    100 ms. If timeout is updated, the code will only sleep for 1 ms once
+    and the immediately return from select(2).
+    Reassign the timeout value in the loop shouldn't be harmful even on
+    systems that don't update the timeout value.
+    
+    Signed-off-by: Thomas Egerer <hakke_007@gmx.de>
+    (cherry picked from commit 741f066026e8bb97bac6bd3f43ed2cc1cdfd14b6)
+
+commit 468c5b2b40b0fbb9a47b21ec82eae51eee9dae27
+Author: ashamedbit <muralianiruddhan@gmail.com>
+Date:   Tue Feb 27 00:33:00 2024 -0500
+
+    Fix leak in snmpusm.c
+    
+    (cherry picked from commit c691ab06862bc2d83bba851c65321f60aad5f0b3)
+
+commit 08d557ff094d01b511ec67efa2d5fc3d51a5a566
+Author: ashamedbit <muralianiruddhan@gmail.com>
+Date:   Mon Feb 26 02:34:58 2024 -0500
+
+    Fix leaks in snmpv3.c
+    
+    (cherry picked from commit 70c4d95873b161768d08c0fd4d42f3a47ef1d002)
+
+commit 5b89350912ebd52e978d65c7a697d2183f509d51
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Feb 4 16:58:24 2024 -0800
+
+    EtherLike-MIB: Optimize the Linux implementation
+    
+    Query netlink statistics once instead of one time per network interface.
+    This should fix https://github.com/net-snmp/net-snmp/issues/780.
+    
+    (cherry picked from commit ac6cd58ff9e0bf2ec5f336e50f79338455e21b91)
+
+commit 4609cd24c5d65ed41f14bee1d95d5381c02bbfda
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 1 20:34:02 2021 -0700
+
+    configure: Detect libnl-route-3
+
+commit f1b9e4b0849e0c0a81232459a24137adbc946054
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Feb 4 16:22:13 2024 -0800
+
+    ci: Only replace /etc/hosts on Darwin
+
+commit 26f52c35c1c29acbc0a60a0b6ba5783b6f719985
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Feb 3 14:26:29 2024 -0800
+
+    ci, Windows: Bump the OpenSSL version number
+
+commit 7fc7edf676c527a0cfb661f9000a3d22738cf8e6
+Author: Philippe Troin <phil+github-commits@fifi.org>
+Date:   Sat Feb 3 10:30:30 2024 -0800
+
+    Add Linux 6.7 compatibility parsing /proc/net/snmp
+    
+    Linux 6.7 adds a new OutTransmits field to Ip in /proc/net/snmp.
+    This breaks the hard-coded assumptions about the Ip line length.
+    Add compatibility to parse Linux 6.7 Ip header while keep support
+    for previous versions.
+
+commit 934a7649eddfed2905f2fd43d2acd0a57365bde2
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Jan 30 09:54:32 2024 -0800
+
+    EtherLike-MIB: Optimize interface_dot3stats_get_errorcounters()
+    
+    This patch may fix an infinite loop. See also
+    https://github.com/net-snmp/net-snmp/issues/780.
+
+commit f6500b2ed87236b7a2a4c10a891aae2ae4317b0b
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Jan 29 15:33:58 2024 -0800
+
+    EtherLike-MIB: Simplify dot3stats_interface_name_list_free()
+    
+    Change the return type from 'int' into 'void'.
+
+commit ad80e335b8afab15e5aa2bb1fbf8af8c539138fd
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Jan 29 14:32:41 2024 -0800
+
+    CHANGES: Add -Wredundant-decls to the developer options
+
+commit da5728052f7f1a4ca6764fdf1f740f222175d60a
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Jan 29 14:57:24 2024 -0800
+
+    CHANGES: Remove more redundant redeclarations
+    
+    Prepare for enabling -Wredundant-decls.
+
+commit 4963dd110f7cf41d28a66624b7ac84c8c90296ed
+Author: Jaap Keuter <jaap.keuter@xs4all.nl>
+Date:   Sun Jan 28 22:03:02 2024 +0100
+
+    CHANGES: Remove redundant declarations
+    
+    These changes aim to remove redundant declarations from the Net-SNMP
+    source code. They are most easily exposed with adding -Wredundant-decls
+    to CPPFLAGS for the gcc compiler.
+    Redundant declarations in other used modules and mib2c generated code are
+    left in place.
+    
+    The changes consist of:
+    - Removal of duplicate declarations in header files, other or the same.
+    - Removal of duplicate declarations in source files, where the prototype
+    already exists in the appropriate header file.
+    - Fixing declaration of register log handler functions.
+    - Use of forward declared struct, rather than extern function or char.
+    
+    [ bvanassche: added "CHANGES: " prefix to subject and ran autoreconf ]
+
+commit 7f90a81c778c5a50f72b0f4d7e9551cd4a04fedf
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Jan 10 11:01:10 2024 -0800
+
+    libsnmp: Fix authorization protocol parsing
+    
+    Fixes: 09ac3f2f68b2 ("more sha2 support changes")
+    Fixes: https://github.com/net-snmp/net-snmp/issues/771
+
+commit abb479727a0911f00080680a62521396275a1a06
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Jan 10 07:29:49 2024 -0800
+
+    Revert "SIGHUP for handling agent port change"
+    
+    Reverts commit da96150d1eb85e6a4a995dab04eaaabd15c7d8c9 because of the
+    issues mentioned in the description of this commit.
+    
+    See also https://github.com/net-snmp/net-snmp/pull/769.
+
+commit da96150d1eb85e6a4a995dab04eaaabd15c7d8c9
+Author: Vivekaditya98 <49593894+Vivekaditya98@users.noreply.github.com>
+Date:   Tue Jan 9 08:03:29 2024 +0000
+
+    SIGHUP for handling agent port change
+    
+    Fix - When the reconfig flag is set, we "shudown master agent" which closes
+    the socket listening on 161 and "init_master_agent" would establish the
+    socket on new port without changing the PID of "snmpd".
+    
+    Use-case where its failing - Though this change works for most of the
+    cases, its failing in a peculiar case where when we send SIGHUP while
+    parallely the snmpwalk is in progress. When we send SIGHUP in this usecase,
+    the socket is closed by "shutdown_master_agent" but a new socket is never
+    re-established by "init_master_agent" no matter how many sighups we sent,
+    the snmp-server is down permanently.
+    Going to the root of the problem, I see that the bind is successful as kernel
+    returns 0 but netstat(-nlpu) never reports that socket.
+
+commit dfde22f5d955eb4b96ccce5c70dc838fe3406322
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Tue Jan 9 20:22:53 2024 +0100
+
+    Fix complaints about using unsafe functions (OpenBSD, NetBSD)
+    sprintf => snprintf, strcpy => strlcpy, strcat => strlcat
+
+commit 18134035cc099774d6a811da64265b18f2159575
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Tue Jan 9 20:13:05 2024 +0100
+
+    Check for netgroup.h, required for OpenBSD.
+
+commit dce25f15577a96301481ad6df8855c7d871571a8
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Tue Jan 9 20:09:53 2024 +0100
+
+    Protect variable declaration same as the use of it.
+
+commit 2258b6b49cac729063045f585cbebdd5214fc117
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jan 5 12:51:28 2024 -0800
+
+    ci: Upgrade Github checkout action
+
+commit 0077eaadfe6cc4d3f93ce03c93db452b1a32988c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jan 5 09:12:21 2024 -0800
+
+    ci: Add an Android build target
+
+commit c50900fc1076d691453cca648169c176b14761a7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jan 5 10:55:33 2024 -0800
+
+    ci: Fix shellcheck warnings
+
+commit afae87ba742831c9348177b83cf7728c6871afdc
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jan 5 10:44:58 2024 -0800
+
+    snmplib/openssl: Fix compiler warnings about function pointer casts
+
+commit 99d8377ff34963540659a4f43c7522f3607d8d42
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jan 5 10:43:52 2024 -0800
+
+    apps/snmpusm: Fix a compiler warning
+    
+    Do not define usmDHParameters nor usmDHParameters_len if these symbols won't
+    be used.
+
+commit 8df53c47975f262e0bfc378c70f058fc73d9d926
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jan 4 13:19:33 2024 -0800
+
+    ci: Disable the Python modules if MODE=wolfssl
+
+commit 7edcdd265cb99a4e77200afe4ce2edff4905eef7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jan 4 11:38:16 2024 -0800
+
+    ci/net-snmp-configure: Restrict the TLSTM-MIB to OpenSSL
+
+commit cadcb0ca78cf0ea9db3a3c6d69ed0ad11b9d4751
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Jul 31 16:33:57 2022 -0700
+
+    libsnmp: Fix the wolfSSL build
+    
+    Use the ASN_* definitions from the wolfSSL headers when building with wolfSSL.
+    Remove #ifdefs that refer to OpenSSL header file guard macros. Add missing
+    include directives. Add support for EVP_MD_CTX_init() returning void. Enable
+    logging of wolfSSL error messages. Disable OpenSSL code that has no wolfSSL
+    equivalent.
+
+commit 28c00ab9454b499f6e66863c7db7efb6662af3b9
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jan 4 10:54:56 2024 -0800
+
+    ci: Improve the test for DTLS support
+
+commit 7c2ac00e03bfaae6047712bb840d8bdb7eb9ffb2
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jan 4 10:44:29 2024 -0800
+
+    Windows: Suppress a compiler warning related to ERR_get_error_all()
+    
+    This patch fixes the following warning when building with MSVC:
+    
+    ..\..\snmplib\transports\snmpTLSBaseDomain.c(70): warning C4996: 'ERR_get_error_line_data': Since OpenSSL 3.0
+
+commit 39e7514ad7b3ccd4f2dcd1e1302ed72eeaf962e7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jan 4 10:38:04 2024 -0800
+
+    libsnmp: Improve the ERR_get_error_all() backport
+
+commit 392a06265a7bf6ee45f5a65faf0feebfea502828
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jan 4 09:50:49 2024 -0800
+
+    configure: Check explicitly for the presence of openssl/{err,ssl}.h
+    
+    Additionally, remove the check for the <security/cryptoki.h> header file.
+
+commit 3592dbf1dea3866b651c7e5097bdc81abc0bd0e7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Jan 4 06:59:59 2024 -0800
+
+    ci/net-snmp-configure: Remove support for branches that are no longer supported
+
+commit cf5c36c4f57fe299eb378ffe32edbe67b5c43b7d
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jul 29 19:43:55 2022 -0700
+
+    NEWS: configure: Add --with-wolfssl
+    
+    Add support for building and linking with the wolfSSL library instead of
+    OpenSSL. Other changes that have been included in this patch are:
+    - Only enable AES support if EVP_aes_128_cfb() is available.
+    - Add support for detecting SSL functions if these have been defined as
+      macros.
+
+commit 2f0cb7a8895d206d73cbf2b96d20e4ca98e151a5
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Jul 31 07:18:04 2022 -0700
+
+    CHANGES: configure: Change the default OpenSSL path into /usr
+    
+    Change the default OpenSSL path from /usr/local/ssl into /usr since that is
+    the default location for all current Linux distributions.
+
+commit bac9c094578840ad3d6bd22369697ece2875bdd7
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Jul 29 19:43:52 2022 -0700
+
+    configure: Simplify the OpenSSL detection code
+    
+    Use a single variable to represent that EVP_md5 has been found in a library
+    instead of two.
+
+commit f7fbfdbc8078d64d772e9e09684a75cab197e86e
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Aug 1 21:14:58 2022 -0700
+
+    configure: Do not echo the security module list
+
+commit 57cc8100a534323b17679d3992090ca3beed62b3
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Dec 29 17:25:14 2023 -0800
+
+    win32/dist/build-binary.pl: Fix OpenSSL library paths
+
+commit 5fd4e1caffaca55d58fa1104168c3ab3c8637abf
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Dec 29 15:59:47 2023 -0800
+
+    HOST-RESOURCES-MIB: Remove dead code
+    
+    This patch fixes the following Coverity warning:
+    
+    CID 379751 (#1 of 1): Logically dead code (DEADCODE)dead_error_begin: Execution cannot reach this statement: config_perror("Missing moun....
+
+commit 1dfc114f6b5b01c7616becb4be623f8799064905
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Dec 29 15:57:35 2023 -0800
+
+    Python: Remove dead code
+    
+    This patch fixes the following Coverity warning:
+    
+    CID 379753 (#1 of 1): Logically dead code (DEADCODE)dead_error_line: Execution cannot reach the expression NULL inside this statement: (vars = (response ? respons....
+
+commit 99332c80b68248cb60023d12297135dc9c6c8abf
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Dec 27 14:58:15 2023 -0800
+
+    Windows: Update the OpenSSL library paths
+    
+    Apparently the paths in which OpenSSL binaries are installed have changed.
+    Hence, also change these paths in Net-SNMP.
+
+commit 83fa8f661a050aff37fdcbf09f918360929ee8de
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Dec 27 16:45:09 2023 -0800
+
+    ci: Remove MinGW32
+    
+    Downloading the MinGW32 installer fails. Additionally, the most recent
+    upload to https://sourceforge.net/projects/mingw/files/ happened in 2017,
+    six years ago. Hence remove MinGW32 from .appveyor.yml.
+
+commit 9f6e94928458d93e12d0c69fdde0ec2606e75c72
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Dec 27 16:04:18 2023 -0800
+
+    ci/perl.bat: Bump the Perl version
+
+commit ecf028eb6d2b706607dd26a39beb27c17f475fc8
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Dec 17 16:11:06 2023 -0800
+
+    UCD-SNMP-MIB: Fix a memory leak in an error path of _expand_disk_array()
+
+commit 70601631a4eaa504b34e1d071138e626fe068e36
+Author: Christophe Leroy <christophe.leroy@csgroup.eu>
+Date:   Sat Dec 23 19:36:27 2023 +0100
+
+    Add 'ubifs' to other_fs
+    
+    ubifs used to be automatically taken into account in
+    UCD-SNMP-MIB::dskTable but commit e3fc76e0ae ("CHANGES: snmpd:
+    Make UCD-SNMP::dskTable dynamic if includeAllDisks is set.") added
+    a verification that drops all filesystems not present in other_fs[]
+    table.
+    
+    So add 'ubifs' in other_fs[] to fix it.
+
+commit 47a550defd0209d57d34e50290942fb6b1c286f5
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Dec 21 18:52:35 2023 -0800
+
+    DISMAN-EVENT-MIB: Unbreak the MSVC build
+    
+    Fixes: e5d60f0c46c5 ("DISMAN-EVENT-MIB: Initialize 'name' and 'name_buf'")
+
+commit 9226f4f2aded71c64f4d9e3416b783457ee95695
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Dec 21 17:23:39 2023 -0800
+
+    ci, Windows: Bump the OpenSSL version
+
+commit b4598662a39ff6974119c900ea56a4d020eac366
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Dec 20 13:08:06 2023 -0800
+
+    Android: Fix the build
+    
+    Include <sys/select.h> for the fd_set type. In the configure script,
+    check whether 'unsigned long' is the underlying type of fd_set. Use
+    u_long instead of ulong.
+
+commit 7f5fb8083d31834fec8bc89603f3d02115516fed
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Wed Dec 13 21:04:39 2023 +0100
+
+    Update the parser to warn about duplicate OBJECTs, TEXTUAL-CONVENTIONs and values in enums
+    
+    Duplicate enum label 'byte' at line 550 in ...lwapp/CISCO-LWAPP-SI-MIB.my. First at line 549
+    Duplicate TEXTUAL-CONVENTION 'CucsStorageControllerId' at line 48175 in .../CISCO-UNIFIED-COMPUTING-TC-MIB.my. First at line 48117
+
+commit 43f0e3fdc8de03a5e7a0f864694744558ca5da03
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Wed Dec 13 21:00:48 2023 +0100
+
+    snmptest: plug a possible memory leak.
+
+commit bfc27f6182f41173834c97baacead26f116d6b79
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Wed Dec 13 20:59:05 2023 +0100
+
+    Update SNMP-TLS-TM-MIB.txt to RFC 9456 version.
+
+commit 8570eb2b40dd342fb4e2e2f0a34fe0eef400079a
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Fri Nov 24 13:22:19 2023 +0100
+
+    Allow TLS protocols higher than TLS10.
+    Modern TLS versions will not connect using these old versions.
+
+commit 694b3869e6a2514a7b1073e4b5f7a15ce0c8e668
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Fri Nov 24 13:15:52 2023 +0100
+
+    Fix matching of certs by using SHA1 fingerprints.
+    PR#278 changed default for certs to SHA512, but now matching certs fails. Change the fingerprint reuqests to use SHA1 explicit.
+
+commit e5d60f0c46c58b99130e8ae8098dc5b192091ef6
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Nov 23 14:12:28 2023 -0800
+
+    DISMAN-EVENT-MIB: Initialize 'name' and 'name_buf'
+    
+    This patch suppresses the following two Coverity reports:
+    
+    CID 407579:  Uninitialized variables  (UNINIT)
+    Using uninitialized value "*name_buf" when calling "memcpy". [Note: The source code implementation of the function has been overridden by a builtin model.]
+    
+    CID 407578:  Uninitialized variables  (UNINIT)
+    Using uninitialized value "name_buf_len".
+
+commit eacb48436f24daa2e33d91c36c17ff71e442557e
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Nov 11 09:54:03 2023 -0800
+
+    configure: Run autoreconf
+    
+    Fixes: 7779e40f6e1d ("snmpd: Unbreak the build")
+
+commit 1755a85c648e497099d3278986dee37065d35e04
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Nov 11 09:51:30 2023 -0800
+
+    libsnmp: Optimize read_config_save_objid()
+    
+    Make this function slightly faster by eliminating a strlen() call.
+    Declare the 'oid' input parameter const. Remove a superfluous cast.
+
+commit ea6c54f508ca8897961f4faa8d7b04793151db78
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Nov 4 16:32:22 2023 -0700
+
+    IF-MIB: Fix the test for skipping PCI bus scanning
+    
+    Reported-by: https://github.com/abutcher-gh
+    Fixes: 8c301c1e0600 ("IF-MIB: Do not scan for PCI devices if no PCI bus is available")
+
+commit a59d03aa1ecec19eaf9515896f6095bfbe77fb7c
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Oct 16 22:04:22 2023 -0400
+
+    snmpusm.c: Improve error handling
+    
+    Check that line is not NULL before passing it to `atoi`.
+    Fixes #734
+
+commit ba844b797ce90cd00a8e28844f1090c5c37ac103
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Tue Oct 17 13:17:04 2023 -0400
+
+    snmp_transport.c: Remove redundant if statement
+    
+    Found with cppcheck
+
+commit 98d2c46a1087c6cec627b243f189b0f305c9cec2
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Tue Oct 17 11:55:18 2023 -0400
+
+    agent_global_vars.h: Remove redundant forward declaration
+    
+    Detected with SonarCloud
+
+commit 24e233bbb2fd9b7debf8cfcf775ccd9f63f3b845
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sat Oct 14 22:55:13 2023 -0400
+
+    lookupCtlTable.c: Check mallocs
+
+commit a51a0f1685e7d3159736fa44aa470c821db076b5
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Thu Oct 12 14:44:41 2023 -0400
+
+    snmpusm.c: Fix segfault when parsing config file createUser line
+    
+    snmpusm.c: Fix segfault when parsing config file createUser line
+    If no authentication profile is specified, use the default.
+    
+    Fixes #416
+
+commit 73695f05d58f8c50c93e2eca62268087f743a261
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Thu Oct 12 10:17:17 2023 -0400
+
+    ucdDemoPublic.c: Fix memory leak (Coverity 85639)
+    
+    ucdDemoPublic.c: Fix memory leak (Coverity 85639)
+    Avoid leaking engineID
+
+commit 11c075958db84e9382df0d24eabe63a6f4211fa8
+Author: Tomas Klacko <tklacko@purestorage.com>
+Date:   Tue Oct 3 13:02:59 2023 -0700
+
+    libsnmp: Add support for IPV6_RECVPKTINFO
+    
+    Fixes: https://github.com/net-snmp/net-snmp/pull/718
+    
+    [ bvanassche: combined three patches into one, inserted a blank line and
+      removed superfluous parentheses ]
+
+commit 237370c9193700f0a60736c175a3c66d072058f9
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Oct 9 00:05:38 2023 -0400
+
+    T011snmp_old_api_registration_cagentlib.c: Avoid leaking session object
+    
+    Avoid leaking session object, so another test passes with leak sanitizer enabled
+
+commit f263a62936f488c088bb5240fe634c9b671c4b41
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Oct 9 00:45:03 2023 -0400
+
+    T102pdu_build_clib.c: Fix memory leaks
+    
+    T102pdu_build_clib.c: Fix memory leaks
+
+commit abc227f9867fba913822ffb3d399a8f7b9bfdf81
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Sep 18 21:25:50 2023 -0400
+
+    snmpv3.c: Avoid leaking memory if -E or -e is repeated
+    
+    snmpv3.c: Avoid leaking memory if -E or -e is repeated
+    
+    Fixes #703
+
+commit 8d7f09fff3057b8073f7fcda26565c0eb8b0c607
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Sep 18 13:44:42 2023 -0400
+
+    snmpv3.c: Avoid leaking memory if -X or -A is repeated
+    
+    snmpv3.c: Avoid leaking memory if -X or -A is repeated
+
+commit 938ad6d934b99c2bcc49ddd72ac84894bebcb6a3
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 18 12:14:09 2023 -0700
+
+    libsnmp: Fix a crash in netsnmp_parse_args()
+    
+    Prevent that the following command triggers a segmentation fault:
+    
+    apps/snmpget -LF0
+    
+    See also https://github.com/net-snmp/net-snmp/issues/695.
+
+commit 929736d251213c3af1fd0806e3f872876d4c0dec
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 18 12:25:36 2023 -0700
+
+    libsnmp: Fix recently introduced compiler warnings
+    
+    Fixes: 8e8d56b7b947 ("libsnmp: Fix a crash in netsnmp_parse_args()")
+
+commit 9fed14fb19548160ed08573f68bb9d503b338362
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Sep 18 12:21:15 2023 -0400
+
+    snmpv3.c: Avoid leaking memory if command-line arg is repeated
+    
+    snmpv3.c: Avoid leaking memory if command-line args are repeated
+    
+    Specifically, -n, -u, -K, and -k
+
+commit b9ca6975456fc3a7674fca47b24f9ad4cd99be61
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Wed Oct 25 07:49:15 2023 +0200
+
+    Fix a backporting glitch
+
+commit e9c4e72b32951e30c303fb081703e18ac8d477ec
+Author: Michael Veksler <Mihails.Vekslers@zabbix.com>
+Date:   Mon Jun 12 09:14:21 2023 +0300
+
+    libsnmp: Fix SNMPv3 multithreading support for snmp_sess_open()
+    
+    Fixes: https://github.com/net-snmp/net-snmp/pull/586
+    
+    [ bvanassche: Reduced the number of arguments of usm_build_probe_pdu() to two ]
+
+commit b5b2483fdd83c578c8cb0d9a72899c3b8bd5d70a
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Oct 7 14:56:15 2023 -0700
+
+    apps: Remove the code again that clears netsnmp_session objects
+    
+    Removing this code is safe now that _sess_copy() duplicates all memory that
+    is freed by netsnmp_cleanup_session().
+
+commit 668baac9f54727bca9e1983cd328a4d4d2430c90
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Oct 8 07:34:06 2023 -0700
+
+    libsnmp: Make _sess_copy() duplicate all security related information
+
+commit 56795de0a9cd1987007ac9b90868c7972c77f57f
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Oct 8 06:50:25 2023 -0700
+
+    MinGW: Unbreak the Perl module build
+
+commit 8aac5c1be01d4f91ce3c0da3afb5cebfbdc73538
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Oct 7 19:43:45 2023 -0700
+
+    configure: Enable -Wcast-function-type
+
+commit 2d396db5aac06cb870922b6ccf26d5d5e7e0b614
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Oct 7 15:00:57 2023 -0700
+
+    libsnmp, MIBs, snmpd: Remove function casts
+    
+    This patch resolves a number of undefined behavior complaints reported
+    by the clang UndefinedBehaviorSanitizer.
+
+commit af1b7f77975bbb2fcbdb3f005f8cb010d1d33cd3
+Author: Adam Gajda <adgajda@users.noreply.github.com>
+Date:   Mon Oct 2 16:40:31 2023 +0200
+
+    Fix configuration of NETSNMP_FD_MASK_TYPE
+
+commit 21b612e1cb02350448568240dfce7d213820e081
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Sep 28 10:47:45 2023 -0700
+
+    UCD-SNMP proxy: Fix an uninitialized variable dereference
+    
+    Fixes: f975916a847d ("apps: Use netsnmp_cleanup_session()")
+
+commit 1c6105cb46e13d2218e701b13ca1bb1c0c73d102
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Tue Sep 26 19:49:00 2023 -0400
+
+    netsnmp_config_api.3.def: Spelling and grammar
+    
+    netsnmp_config_api.3.def: Spelling and grammar
+
+commit 07cccb8d940daf5b41f5783b9c460248ac5c21e7
+Author: Moshe Kaplan <me@moshekaplan.com>
+Date:   Tue Sep 26 17:14:05 2023 -0400
+
+    More spelling and grammar fixes
+
+commit 8e3d6ba0c7449b579abf0f3867a72990f07c1fda
+Author: Moshe Kaplan <me@moshekaplan.com>
+Date:   Tue Sep 26 13:48:35 2023 -0400
+
+    Fix many typos
+
+commit 69ebaf36c9b5ab1938a4137c4c5ae85af706f85f
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Tue Sep 26 21:27:06 2023 -0700
+
+    DISMAN-MIB: Use u_char for bitmasks
+    
+    Additionally, change schedWeekDay into a one element array to suppress a
+    Coverity complaint.
+
+commit b0a32da4b2ba7295ded1d7a6514e2d0a250787c1
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Tue Sep 26 13:23:07 2023 -0400
+
+    snmpusm.c: fix text phrasing
+    
+    "active" to "activate"
+
+commit 81bf153c9c84c79e87485772fd89891c4f445d4c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Sep 24 15:16:11 2023 -0700
+
+    apps: Use netsnmp_cleanup_session()
+    
+    The changes compared to an earlier attempt (commit 21b16eba6024 ("apps: Use
+    netsnmp_cleanup_session()")) are as follows:
+    - netsnmp_cleanup_session() is now called for all session objects allocated
+      on the stack instead of only for a subset of these objects.
+    - A copy of strings is assigned to netsnmp_session members.
+    - If an snmp_close() call is followed by a netsnmp_cleanup_session() call,
+      the netsnmp_session object is cleared to prevent a double free.
+    
+    This patch should not reintroduce
+    https://github.com/net-snmp/net-snmp/issues/707.
+
+commit 84aba8f8f878b977e98c46af0584723885660a3e
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Sep 17 16:06:57 2023 -0700
+
+    libsnmp: Fix a memory leak in the MIB parser
+    
+    Fixes: https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=62448
+
+commit 62401c9c77d99ff2da2871e5a49e68b3cd21b87e
+Author: Emil Bartczak <emil.bartczak@ts.fujitsu.com>
+Date:   Tue Dec 15 21:37:25 2020 +0100
+
+    Fix the crash of snmpd when snmptrapd terminates the TCP connection.
+    
+    See also: https://github.com/net-snmp/net-snmp/issues/187
+    
+    Re-opening of TCP connection with snmptrapd is still not supported.
+
+commit b1a4288289ba2bc38b074a0c922178e5bf488411
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Dec 4 15:53:54 2022 -0800
+
+    testing/fulltests/unit-tests/T105trap_parse_clib: Fix a memory leak
+
+commit 65a9d0f29be11f3e6ca75eb228ab116d71f92aca
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Sep 28 12:33:52 2023 -0700
+
+    ci, Windows: Bump the OpenSSL version number
+
+commit 803569fbfa22108eb4a1ab8314e39e642d97e28c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 25 13:47:01 2023 -0700
+
+    libsnmp: Micro-optimize netsnmp_cleanup_session()
+    
+    Clear the entire netsnmp_session object at once instead of clearing
+    this struct pointer by pointer.
+
+commit edce16ae77498a43b1937bb895ca79c761a6f616
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 25 13:43:36 2023 -0700
+
+    libsnmp: Reduce the indentation level in snmp_free_session()
+
+commit 7779e40f6e1d31fa184a1e7423302408706f7bb3
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Sep 10 06:54:42 2023 -0700
+
+    snmpd: Unbreak the build
+    
+    malloc_trim() is defined by glibc but is not available on BSD systems.
+    
+    Fixes: 585d35cc51e3 ("agent: release memory back to the system after freeing cache data")
+    
+    Conflicts:
+            configure.d/config_os_functions
+
+commit b5566290c92d8f83fde14b3f4bbfb18b025fc0c8
+Author: Nicolae Busuioc <nicolae.busuioc@siemens.com>
+Date:   Tue Sep 19 12:31:48 2023 +0200
+
+    Adding by default server cipher order
+
+commit a56518ab60b2b86a2084374d9c3439b9a7e832e1
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 18 08:21:50 2023 -0700
+
+    libsnmp: Fix a crash in netsnmp_parse_args()
+    
+    Prevent that netsnmp_parse_args() crashes if one of the following
+    argument lists is passed: -IS or -Is.
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/692
+
+commit 0e82772dc55a26200d0d6c09c53d884d082596b8
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Sep 13 06:57:01 2023 -0700
+
+    libsnmp: Fix a memory leak in the MIB parser
+    
+    This patch should fix https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=62295 .
+
+commit 33466199a979765e8396245ed14a3a748eb3cd8c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 11 23:00:14 2023 +0000
+
+    libsnmp: Port the SSH domain transport to FreeBSD
+
+commit 27cd9e0d0c2683059ebcc3b9e233b02531b77c72
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 11 16:06:07 2023 -0700
+
+    configure: Fix the IFNET_NEEDS_KERNEL_STRUCTURES test
+
+commit e5b2bfe282b28c6a572251040ec509ffcbb5ff45
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 11 16:03:54 2023 -0700
+
+    MIB-II: Declare functions that are used in multiple source files
+
+commit c567f34b566d5e5d2eb039a0731f80829550ba60
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 11 16:03:18 2023 -0700
+
+    FreeBSD: Add a missing include directive
+
+commit 33be698855b6671e29a84fad22cdd9ee18baf003
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Sep 11 16:02:09 2023 -0700
+
+    snmpd: Suppress a compiler warning
+    
+    Prevent that the compiler complains about casting a pointer to an integer of
+    a different size.
+
+commit 050782fc7fa8dc12185f898b9fde58958dba3dbc
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Sep 10 16:39:10 2023 -0700
+
+    libsnmp: Fix memory leaks in MIB parsing code
+    
+    See also https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=60833 .
+
+commit 7d1733f9535f89183a31120ef5b4123ee3faa4b3
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Sep 10 16:33:49 2023 -0700
+
+    libsnmp: Simplify the code for parsing a MIB
+    
+    parse() only has one caller and that caller passes NULL as second argument.
+    Hence, remove the second argument of parse() and remove the code that depends
+    on the second argument being not NULL. Reduce the scope of the 'nnp' variable.
+
+commit 9e608f44ed645baa8f0721a08951dccfac6ac3a0
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sat Sep 9 23:44:33 2023 -0400
+
+    snmpget.c: Avoid leak if parsing OID fails
+    
+    snmpget.c: Avoid leak if parsing OID fails. This leak would not normally cause any problems, but might make investigating other leaks more difficult
+
+commit 47ffd72dc8c5b0e8ba0aafa51c467f3bb62607bc
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sun Sep 10 01:08:26 2023 -0400
+
+    encode_keychange.1.def: Fix typo
+
+commit 4e7ce92fbdf1886cb09c9eea3edcb2f43cc91bb3
+Author: Ilyes Ben Hamouda <ilyes.ben_hamouda@6wind.com>
+Date:   Wed Jul 5 16:26:30 2023 +0200
+
+    agent: release memory back to the system after freeing cache data
+    
+    The heap memory increases, when retrieving IP-FORWARD MIB objects, in
+    proportion to the number of entries in the routing table.
+    It is not given back to the system when freed due to a glibc limitation
+    (See the link below).
+    
+    The IP-FORWARD MIB implementation as well as other MIB implementations
+    use data caching.
+    Cache management depends on cache flags. For instance, based on
+    NETSNMP_CACHE_AUTO_RELOAD flag, some caches are reloaded automatically,
+    while others are reloaded on request.
+    Each cache has also a timeout. The timeout is checked on cache access.
+    If expired, the cache is reloaded.
+    A garbage collector also checks the timeout expiry every minute to
+    release cache resources.
+    
+    Call malloc_trim() to return freed memory to the system after the
+    garbage collector has freed cache data only if the cache will not be
+    automatically reloaded.
+    
+    In the best-case scenario, malloc_trim will only be called once after
+    cache accesses have been completed.
+    
+    Worst-case, the GC detects the timeout expiry just before a request.
+    Hence, there will be a wasteful trim, as the cache will be immediately
+    loaded later. There is a way to avoid this behavior by introducing
+    NETSNMP_CACHE_RESET_TIMER_ON_USE flag which will reset cache timeout
+    on each cache access but this may lead to a stale cache if the polling
+    happens too fast.
+    
+    Avoid introducing this flag since it depends on polling period.
+    
+    Note: malloc_trim has a linear complexity, it seems to be safe but it may
+    softly degrade performance when frequently called.
+    
+    Link: https://sourceware.org/bugzilla/show_bug.cgi?id=15321
+    
+    Signed-off-by: Ilyes Ben Hamouda <ilyes.ben_hamouda@6wind.com>
+
+commit 4f6e1a352a690c0a46012b39234c1479cbe81bfd
+Author: Ilyes Ben Hamouda <ilyes.ben_hamouda@6wind.com>
+Date:   Mon Jul 3 17:09:13 2023 +0200
+
+    agent: keep cache flags unchanged
+    
+    Cache flags are managed by the MIB implementation.
+    
+    Do not clear/set NETSNMP_CACHE_AUTO_RELOAD flag to ensure
+    scheduling auto-reload only once. This is already managed
+    by netsnmp_cache_timer_start() via cache timer_id check.
+    
+    Instead, check the timer_id validity in the cache handler
+    before calling netsnmp_cache_timer_start() to avoid warnings
+    if auto-reload is already scheduled.
+    
+    Fixes: e6e11ebcc493 ("Only schedule automatic loading once for any given cache.")
+    
+    Signed-off-by: Ilyes Ben Hamouda <ilyes.ben_hamouda@6wind.com>
+
+commit e6a092041424b5f5fd5345602ce6f489a0409ace
+Author: Ilyes Ben Hamouda <ilyes.ben_hamouda@6wind.com>
+Date:   Mon Jul 3 16:54:32 2023 +0200
+
+    agent: clear the timer_id on cache timer stop
+    
+    The timer_id is set when the cache timer is started.
+    However, it is not cleared when the cache timer is stopped,
+    preventing it from being restarted later.
+    
+    Clear the cache timer_id after unregistering the alarm
+    in netsnmp_cache_timer_stop().
+    
+    Fixes #588
+    
+    Fixes: 543d4b22666c ("- always consider cache w/timeout of -1 as expired (load cache every request)")
+    
+    Signed-off-by: Ilyes Ben Hamouda <ilyes.ben_hamouda@6wind.com>
+
+commit adf8b254d08b330f89988a791e3b8f007f34c570
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 22:54:49 2023 -0400
+
+    pingCtlTable.c: Validate create_pingCtlTable_data() allocations
+    
+    Ensure all memory allocations within create_pingCtlTable_data() were successful
+
+commit b050271f6b0a78558627d7f17737248072ec85f8
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Apr 22 17:54:35 2023 -0700
+
+    libsnmp: Do not pass NULL to memcmp()
+
+commit f701087096dc337a9ff36a747f3a53e1aacef2f6
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Sep 21 07:43:31 2023 -0700
+
+    Revert "apps: Use netsnmp_cleanup_session()"
+    
+    This reverts commit 21b16eba60245bc84149d338a9700e5915bda292.
+    
+    Fixes: https://github.com/net-snmp/net-snmp/issues/707
+
+commit 85c6aba35d96802a580ec88fe57b2813cc766e84
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Thu Sep 21 07:43:26 2023 -0700
+
+    Revert "apps/snmpusm: fix a memory leak"
+    
+    Prepare for reverting patch "apps: Use netsnmp_cleanup_session()".
+    
+    This reverts commit d6a1af15777981a20778260c25245f36bf7c25a6.
+
+commit 2230933c7fab36875af219f2bddc31544efabda4
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Sep 11 19:26:43 2023 +0200
+
+    Prepare for FreeBSD 15
+
+commit 57b0a196af58222b1877421a234a7638206a84c5
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Mon Sep 11 19:24:33 2023 +0200
+
+    Restore the NEWS/CHANGES for 5.9.2 as released with 5.9.3
+    
+    skipped due to a last minute library versioning found bug -- use 5.9.3 instead
+
+commit db0f7f83b820b6be91b25417d1e21fa32895f937
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Sep 9 15:00:43 2023 -0700
+
+    snmpd: Fix nsLogMaxLevel handling
+    
+    From the nsLogMaxLevel description in mibs/NET-SNMP-AGENT-MIB.txt: "The
+    maximum priority level for which this logging entry should be applied."
+    Make the implementation match the description.
+    
+    See also https://github.com/net-snmp/net-snmp/issues/681 .
+
+commit 8c18c7442b68cae57812b4e340bee257d664c841
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Fri Sep 1 09:52:23 2023 -0700
+
+    configure: Fix the version number
+    
+    Fixes: 7d38b8299e26 ("version update for 5.9.4")
+
+commit 4034ce072d0398a204c3552525424bc4a2bdebcf
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Thu Aug 31 19:06:58 2023 +0200
+
+    Fix bad protypes in sctpScalars_freebsd.c
+
+commit f12d5668122c7ea59fce9f5818bd8787f9b9af39
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Thu Aug 31 19:03:44 2023 +0200
+
+    Another stab at fixing -Op (issue #554)
+
+commit 889daaffcea38eeb0dc8c6d2a944a1a61fd2838e
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Thu Aug 31 18:55:35 2023 +0200
+
+    Fix T032snmpv3engineidchange_simple for non Linux-systems.
+    FreeBSD (and other BSDs) need a value after "sed -i".
+    BSDs getopt does not allow mixing options and other arguments.
+
+commit e59866aeba64463e71933f92d066f38145d4f2b6
+Author: Niels Baggesen <nba@users.sourceforge.net>
+Date:   Thu Aug 31 18:54:42 2023 +0200
+
+    FreeBSD 14 needs another header to compile ipv6.c
+
+commit 619aeb7ea461d69578121e50b8e481bbca35307a
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Aug 16 17:07:39 2023 -0700
+
+    configure: Remove the rpmdbOpen() check
+    
+    Commit 8e08fc520246 ("Tweak RPM handling to work with library version 4.9")
+    removed all rpmdbOpen() calls. Hence remove the rpmdbOpen() configure test.
+    
+    Conflicts:
+            configure
+
+commit 8c4db403d24c979c03fd40133e150c7c4af7738a
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Wed Aug 16 17:05:15 2023 -0700
+
+    HOST-RESOURCES-MIB: Declare the pkg_directory[] arrays static
+
+commit d8c5227fb75c9bf5ec159a1f226daa8ed64b7f52
+Author: Josef Řídký <jridky@redhat.com>
+Date:   Wed Aug 9 16:51:28 2023 +0200
+
+    Add support for RPM SQLite DB background.
+    
+    From RPM 4.16 the SQLite support is available for RPM DB.
+    After https://fedoraproject.org/wiki/Changes/Sqlite_Rpmdb, rpm changed
+    it's background DB from Berkeley to SQLite in Fedora.
+    Net-SNMP is using hard coded paths to determine where RPM DB files are.
+    
+    This update is adding check for rpmdb.sqlite file in order to be able
+    invalidate internal cache after system package change.
+    
+    Closes #596
+    
+    Conflicts:
+            agent/mibgroup/host/data_access/swinst_rpm.c
+
+commit fdf72da85b11f5cc7de5e237dd4ac79d8d0685dc
+Author: Josef Řídký <jridky@redhat.com>
+Date:   Wed Aug 30 20:33:42 2023 +0200
+
+    Fix regression of memory leak when using RPMDB macros.
+    
+    This change is fixing memory leak when using RPMDB macros. The fix was
+    introduced in PR #49 but was overwritten over time. Fix is needed in
+    agent/mibgroup/host/hr_swinst.c only as the regression in the
+    agent/mibgroup/host/data_access/swinst_rpm.c was fixed few weeks ago.
+
+commit 44fc3ca6695b079aac12953d9a3112dfd46d241a
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 16:16:46 2023 -0400
+
+    master_admin.c: Validate that init_agent_snmp_session() was successful
+    
+    master_admin.c: Validate that init_agent_snmp_session() was successful
+
+commit 010c79470d9f7cb569bff34d35235a4b721a3e59
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 16:41:06 2023 -0400
+
+    snmp_agent.c: Ensure init_agent_snmp_session() was successful
+
+commit d8fea848f2b076e4d3cb6f5e071a1c83a896bb5b
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 21:25:49 2023 -0400
+
+    mib2c-update.1.def: Typos
+
+commit e74da2c26ae7f726b460604460b82f683d2e16e9
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 21:22:33 2023 -0400
+
+    agentxtrap.1.def: Typos and grammar
+
+commit d3e146daa7cd8d1de45f192686fcda481f3466e7
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 21:20:25 2023 -0400
+
+    snmpd.conf.5.def: Fix misspellings and grammar typos
+    Conflicts:
+            man/snmpd.conf.5.def
+
+commit cce21c09044d6166a8c96f197c2b039424e32ad2
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 17:43:57 2023 -0400
+
+    tools.c: Ensure memory allocations were successful
+    Conflicts:
+            snmplib/tools.c
+
+commit a29971a426c8c3b42f7f48217f100379d5855bed
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 17:30:34 2023 -0400
+
+    snmp_transport.c: Validate memory allocations
+    
+    Ensure malloc() and strdup() were successful
+
+commit 7d509eeb4f13130f70b056b0e7a5fdd31e0cc284
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 17:24:20 2023 -0400
+
+    snmp_service.c: Validate that malloc() was successful
+
+commit f62068c24cddd15eed8c382fd01723decf30b0b3
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 17:09:03 2023 -0400
+
+    snmp_enum.c: Validate that strdup() was successful
+
+commit c074fcc2f694a1e69eae72fa04c09a2eda4d3416
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 17:02:54 2023 -0400
+
+    read_config.c: Validate that strdup() was successful
+
+commit df73ab4c9288e9e55985c9ad833337488ac421b9
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 16:52:48 2023 -0400
+
+    parse.c: Validate that strdup() was successful
+
+commit bc08d8f81af4a5316642dbfc36fd325052372ed7
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 16:46:20 2023 -0400
+
+    container_binary_array.c: Validate that netsnmp_binary_array_initialize() was successful
+
+commit 668c63277c9a63cc56aaeaff71bef5fe0e153e03
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 21:27:10 2023 -0400
+
+    mib2c.1.def: Hyphens, missing word
+
+commit b861ae4f2af5f97a6ebdedca70fd778d76f6c28f
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 21:28:36 2023 -0400
+
+    mib2c.conf.5.in: Grammar
+
+commit 6edfda9d063b7d5680f7e8bb31d84c0d71f2c0ca
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 21:30:06 2023 -0400
+
+    net-snmp-create-v3-user.1.def: Grammary
+
+commit 1c0450789808d08ada9af37d690053fa3fd96941
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 21:32:01 2023 -0400
+
+    netsnmp_agent_api.3.def: Spelling and grammar
+
+commit 3e2fefdd59ecb7b39105470ec82a338577bd8532
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 21:34:23 2023 -0400
+
+    netsnmp_mib_api.3.def: Spelling and grammar
+
+commit 64c30c268997b28c64e717d673e74ac336c8d08d
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 15:41:41 2023 -0400
+
+    agent_registry.c: Avoid memory leak if strdup fails
+
+commit 76e05bb509e03cf61a4c57d82ec16d171835a7e3
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Wed Aug 30 16:10:46 2023 -0400
+
+    old_api.c: Check result of netsnmp_duplicate_variable()
+
+commit 105f0b6f9fa93ad678e0bf2fd6dc207fd2cf8e70
+Author: Loïc Sang <loic.sang@6wind.com>
+Date:   Wed Aug 30 11:32:52 2023 +0200
+
+    snmplib: do not filter internal request
+    
+    sourceFilterType and sourceFilterAddress options in snmpd.conf. However,
+    once activated, internal requests are also blocked. The filtering is
+    based on IP in the string returned by the function "fmtaddr". Internal
+    requests do not have a source IP, instead of an IP address, the function
+    returns a string that starts with "callback" following a file descriptor
+    numero. These internal requests are generated by alarms to define event
+    triggers. If they are blocked, no traps will be sent.
+    
+    Therefore, do not filter internal requests by checking if the string
+    returned by "fmtaddr" starts with "callback".
+    
+    Fixes: 9d28612ac03b ("add packet filtering by source ip")
+    Signed-off-by: Loïc Sang <loic.sang@6wind.com>
+
+commit 5205b5c485b1e1e7266e6281c03aef10a9239cfe
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sun Aug 27 23:40:59 2023 -0400
+
+    snmpTlstmCertToTSNTable.c: Fix memory leak (Coverity 85750)
+    
+    snmpTlstmCertToTSNTable.c: Fix memory leak (Coverity 85750)
+    
+    Avoid leaking memory referenced in watcher if netsnmp_create_handler_registration fails.
+
+commit d22037ee0289d8c86ccdf29c7c15df89842446e8
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sun Aug 27 21:26:14 2023 -0400
+
+    read_config.c: Remove dead store
+    
+    Remove dead store detected by clang.
+    
+    read_config.c:1454:26: warning: Value stored to 'ctmp' during its initialization is never read [deadcode.DeadStores]
+        struct config_files *ctmp = config_files;
+
+commit 02572006fce8650f2ddfb0feec24a12fd9ee6b69
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sun Aug 27 21:54:16 2023 -0400
+
+    snmpNotifyTable_data.c: Fix memory leak (Coverity 266308)
+    
+    snmpNotifyTable_data.c: Fix memory leak (Coverity 266308)
+    
+    Avoid leaking memory referenced in nptr if netsnmp_memdup_nt fails.
+
+commit e2bc7ce863a49150843d7eb5371fbfde5a75df68
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sun Aug 27 00:49:29 2023 -0400
+
+    lookupCtlTable.c: Fix memory leak (Coverity 85698-2)
+    
+    lookupCtlTable.c: Fix memory leak (Coverity 85698-2)
+    Avoid leaking memory referenced in address if IPv4 DNS lookup fails.
+
+commit 935828c35b55ca563e8446c4463e910200410413
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sun Aug 27 00:52:41 2023 -0400
+
+    lookupCtlTable.c: Fix memory leak (Coverity 85698-3)
+    
+    lookupCtlTable.c: Fix memory leak (Coverity 85698-3)
+    Avoid leaking memory referenced in address if IPv6 DNS lookup fails.
+
+commit 2eb675f46d15f24bc9c244a038d98ec741008571
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sun Aug 27 00:59:56 2023 -0400
+
+    lookupCtlTable.c: Fix memory leak (Coverity 85732)
+    
+    Avoid leaking memory referenced in StorageTmp if invalid data is passed in.
+
+commit 647c0c022f5917abbf2161a7fe8a727eb24413a7
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Sun Aug 27 10:16:10 2023 -0400
+
+    subagent.c: Fix memory leak (Coverity 357928)
+    
+    Avoid leaking memory referenced in smagic if snmp_clone_pdu fails.
+
+commit 18ceaa4610a71af1b4ece5b3a3f29f03b9e46d89
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Fri Aug 18 11:20:46 2023 -0400
+
+    mteTrigger.c: Fix copy-paste bug (Coverity 85524)
+    
+    mteTrigger.c: Fix copy-paste bug (Coverity 85524)
+    
+    Examine the proper variable when determining whether or not fire a fall event.
+
+commit 9fec75b95648d10435bc74c236850902f7bc8829
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Fri Aug 18 11:25:47 2023 -0400
+
+    mteTrigger.c: Fix copy-paste bug (Coverity 85536)
+    
+    mteTrigger.c: Fix copy-paste bug (Coverity 85524)
+    
+    Examine the proper variable when determining whether or not fire a fall event.
+
+commit 6257bf2ee570480c364d2af33bc014f56594c0f7
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 10:58:23 2023 -0400
+
+    expValue.c: Fix memory leak (Coverity 85691)
+    
+    expValue.c: Fix memory leak (Coverity 85691)
+    
+    Avoid leaking memory referenced in var if invalid parameters are passed in by only allocating memory if parameters are valid.
+
+commit bab2a8685d337a328f01d98e44ac204f3e8edb0b
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 10:50:45 2023 -0400
+
+    nsDebug.c: Fix memory leak (Coverity 85684)
+    
+    nsDebug.c: Fix memory leak (Coverity 85684)
+    
+    Free memory allocation referenced in table_info that is not free()'d in the event of a failure
+
+commit 49edf5d413b6423b6080354e92a55d60264f1237
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Thu Aug 24 21:08:45 2023 -0400
+
+    snmpv3.c: Confirm snmpv3_generate_engineID() was successful before using data from it
+    
+    If snmpv3_generate_engineID() fails, it returns NULL, possibly without modifying the passed-in engineIDLen parameter. This change examines the return value from snmpv3_generate_engineID() before examining the possibly-uninitialized engineIDLen.
+
+commit cce53ea81b018959543ce997cc5f888285fea7c9
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Thu Aug 24 20:28:08 2023 -0400
+
+    snmpUnixDomain.c: Free memory if recvfrom fails
+    
+    Free memory if recvfrom() fails.
+
+commit 0a9e32e8a09b9ca9293d5e5306e3838371c6b058
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Thu Aug 24 16:53:44 2023 -0400
+
+    icmp.c: Avoid uninitialized variable error
+    
+    Set the variable msg_stats_table_info to a default value of NULL, to avoid potentially accessing the pointer when it's uninitialized
+
+commit afd94ebfbcaf94e752bc756cf7a525edd36fd1b8
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Mon Aug 21 17:17:04 2023 -0700
+
+    apps/snmptrapd_handlers: Remove a superfluous pointer check
+    
+    Because the third argument passed to command_handler() is never NULL, remove
+    a NULL check for that argument. This patch addresses the following Coverity
+    report:
+    
+    CID 399166 (#1 of 1): Dereference before null check (REVERSE_INULL)
+    check_after_deref: Null-checking handler suggests that it may be null, but it
+    has already been dereferenced on all paths leading to the check.
+
+commit 3be30527999a6a0be08f618b3d055a6738dd6e49
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 12:12:17 2023 -0400
+
+    netSnmpHostsTable.c: Fix memory leak (Coverity 344583)
+    
+    netSnmpHostsTable.c: Fix memory leak (Coverity 344583)
+    
+    Free memory allocation referenced in my_handler that is not free()'d in the event of a failure.
+
+commit b9ef1a8cf115deb79cb1cb05e6604dd1c7e35361
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 12:07:12 2023 -0400
+
+    route_linux.c: Fix memory leak (Coverity 344582)
+    
+    route_linux.c: Fix memory leak (Coverity 344582)
+    
+    Avoid leaking memory referenced in entry if the IPv6 data is formatted incorrectly.
+
+commit 68b5cff8703bd575c39071e0486c1614ce494d98
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 12:01:36 2023 -0400
+
+    deliverByNotify.c: Fix memory leak (Coverity 144379)
+    
+    Avoid leaking memory referenced in vars if it fails to issue the query.
+
+commit 4554b2a8cbd8ed6229a90c885f650929aa3063cf
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 11:45:51 2023 -0400
+
+    table_dataset.c: Fix memory leak (Coverity 144371)
+    
+    Free memory allocation referenced in table_info that is not free()'d in the event of a failure
+
+commit 7184031472d10d64e182ab136fa0c73b4253f0f6
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 11:27:58 2023 -0400
+
+    lookupCtlTable.c: Fix memory leak (Coverity 85698-4)
+    
+    Avoid leaking memory referenced in address if an invalid argument is passed in.
+
+commit 47e1d54e24b250aa7e8dac2de051a4dbcead81de
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 09:43:15 2023 -0400
+
+    snmpNotifyFilterProfileTable_data.c: Fix memory leaks (Coverity 85636)
+    
+    snmpNotifyFilterProfileTable_data.c: Fix memory leaks (Coverity 85636)
+    
+    Free memory allocation referenced in StorageTmp that is not free()'d in the event of a failure
+
+commit 9566c0c3f15a04672dc4fd64e8e6a6f24520584c
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Mon Aug 21 10:38:29 2023 -0400
+
+    icmp.c: Fix memory leaks (Coverity 85667)
+    
+    icmp.c: Fix memory leaks (Coverity 85667)
+    
+    Free memory allocation referenced in msg_stats_table_info that is not free()'d in the event of a failure
+
+commit 8acc1cfb80ff5a806ee8fa11c1e133fa1574bbdf
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 16:46:15 2023 -0700
+
+    SNMP-TLS-TM-MIB: Remove two superfluous assignments
+    
+    This patch addresses the following Coverity complaint:
+    
+    CID 399070 (#1 of 1): Unused value (UNUSED_VALUE)assigned_pointer: Assigning value NULL to table_row here, but that stored value is overwritten before it can be used.
+
+commit d9fa80fb9ec9678cc7e155d6b913382fc0b52c78
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 16:43:12 2023 -0700
+
+    SNMP-TLS-TM-MIB: Remove a superfluous assignment
+    
+    This patch addresses the following Coverity complaint:
+    
+    CID 399071 (#1 of 1): Unused value (UNUSED_VALUE)assigned_pointer: Assigning value NULL to table_row here, but that stored value is overwritten before it can be used.
+
+commit d10463d533506bd8f2f7567c06976dc125f99f5a
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 16:37:08 2023 -0700
+
+    SNMP-TLS-TM-MIB: Remove a superfluous assignment
+    
+    This patch addresses the following Coverity complaint:
+    
+    CID 399073 (#1 of 1): Unused value (UNUSED_VALUE)assigned_pointer: Assigning value NULL to row here, but that stored value is overwritten before it can be used.
+
+commit 1d4de81b9b9540888ee76ad80da6fc5a5fc5ccc2
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 16:28:37 2023 -0700
+
+    DISMAN-MIB: traceRouteCtlTable: Remove a superfluous assignment
+    
+    This patch addresses an issue detected by Coverity.
+
+commit fe152211938a37bc30276f70cad0fec1f57f9792
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 16:52:50 2023 -0700
+
+    deliverByNotify: Use 64 bits for time variables
+    
+    This patch addresses the following Coverity report:
+    
+    CID 380298 (#1 of 1): Use of 32-bit time_t (Y2K38_SAFETY)1. store_truncates_time_t: A time_t value is stored in an integer with too few bits to accommodate it. The expression time(NULL) is cast to int.
+
+commit 94cf9460142dbf6ec4db2cf4ce4c2a3963d7c5e1
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 16:39:01 2023 -0700
+
+    apps: snmptable: Remove a superfluous assignment
+    
+    This patch addresses the following Coverity complaint:
+    
+    CID 399072 (#1 of 1): Unused value (UNUSED_VALUE)assigned_pointer: Assigning value NULL to vars here, but that stored value is overwritten before it can be used.
+
+commit 876c71e81bd71387356b291d11c5780d08c2c71f
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 16:34:30 2023 -0700
+
+    snmpd: Remove a superfluous assignment
+    
+    This patch addresses the following Coverity complaint:
+    
+    CID 399074 (#1 of 1): Unused value (UNUSED_VALUE)assigned_pointer: Assigning value NULL to last_loop_context here, but that stored value is overwritten before it can be used.
+
+commit b99ddb332fa941bf3fa3f60fb20aafd98dd6d75c
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 16:31:41 2023 -0700
+
+    snmpd: Remove a superfluous assignment
+    
+    This patch addresses the following Coverity complaint:
+    
+    CID 399075 (#1 of 1): Unused value (UNUSED_VALUE)assigned_pointer: Assigning value NULL to row here, but that stored value is overwritten before it can be used.
+
+commit d4529cd3f4de93ae137ee13fc90a14e29af6d415
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 20 17:05:54 2023 -0700
+
+    libsnmp: TLS transport: Fix memory leaks in error paths
+    
+    This patch addresses the following Coverity complaint about 'the_ctx':
+    
+    CID 373922 (#2 of 2): Resource leak (RESOURCE_LEAK)6. leaked_storage: Variable the_ctx going out of scope leaks the storage it points to.
+
+commit eee541aa54bb35b2f18a7acd7f589fbae6c31bd0
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Fri Aug 18 13:43:27 2023 -0400
+
+    lookupResultsTable.c: Fix memory leaks
+    
+    lookupResultsTable.c: Fix memory leaks (coverity 85588)
+    
+    Free memory allocation referenced in StorageTmp that is not free()'d in the event of a failure
+
+commit efbd198d80193c6a1ca010d94394c785710abdc8
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Fri Aug 18 13:54:04 2023 -0400
+
+    pingCtlTable.c: Fix memory leaks (Coverity 85603)
+    
+    pingCtlTable.c: Fix memory leaks (Coverity 85603)
+    
+    Free allocated memory if an error occurs.
+    
+    Revert "pingCtlTable.c: Fix memory leaks (Coverity 85603)"
+    
+    This reverts commit 0d3cb33ca5841e620c99f33b6e7b2b1b5c0fff60.
+    
+    re-add
+
+commit e5712d3bb7db696493bc29cb7d292797659aa9f4
+Author: Moshe Kaplan <mosheekaplan@gmail.com>
+Date:   Fri Aug 18 14:06:31 2023 -0400
+
+    pingResultsTable.c: Fix memory leaks (coverity 85662)
+
+commit 8f8d71e46e28410696263d50aaccabaf39de09a4
+Author: minfrin <minfrin@users.noreply.github.com>
+Date:   Thu Oct 13 22:29:37 2022 +0100
+
+    apps/sshtosnmp: Avoid EINVAL when passing credentials over SSH unix domain socket
+    
+    Attempts to connect on RHEL9 machines would fail on sendmsg().
+    
+    Align the socket path with the SSH transport.
+    
+    [ bvanassche: edited patch description ]
+
+commit f8a5cfb4ecf8a52ee14f92d5a3fb9e966dde07bc
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 6 17:49:12 2023 -0700
+
+    libsnmp: Filter out non-ASCII characters from the output
+    
+    Fixes: https://github.com/net-snmp/net-snmp/pull/580
+
+commit 397de4a963dc94d318bf3229d16725455d490947
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Jul 22 17:34:31 2023 -0700
+
+    libsnmp: Fix a memory leak in read_mib()
+    
+    Fixes: https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=39320
+
+commit 28929671ed268b22f1c4b41dc597c1522a2a2f71
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sat Jul 22 17:28:59 2023 -0700
+
+    testing/T027read_mib_clib: Add a test case
+
+commit 47ca9e62d91249ee5f423b8477ee806b411f59e6
+Author: Feroz Ahmed <feroz.afshan@gmail.com>
+Date:   Wed Aug 16 12:08:24 2023 +0000
+
+    Added tests to validate SIGHUP for exactEngineID change
+    
+    This test validates commit 45a6422
+
+commit 999d9aa75bf830eaa28654a7cbf627c9497aae51
+Author: Feroz Ahmed <feroz.afshan@gmail.com>
+Date:   Sat Aug 12 07:09:37 2023 +0000
+
+    Handle SIGHUP for engine-id change
+    
+    SNMP operations continue to work with old engine-id with SIGHUP.
+
+commit 726c8aeff776c4cd494815c8a16b50dc8ef2cf2a
+Author: Bart Van Assche <bvanassche@acm.org>
+Date:   Sun Aug 6 18:36:41 2023 -0700
+
+    ci, Windows: Bump the OpenSSL version number
+
+
+----------------------------------------------------------------------
+
 Changes: V5.9.4.rc1 -> V5.9.4
 
 commit 5289dca2699acb24e4ba92bc20fd1079484eb0fb
@@ -21955,7 +25271,7 @@ Date:   Thu Aug 1 22:55:45 2013 +0200
 
     Sanitize.
     
-    Change to use SNMPv3 since that is writeable in V5-6-patches.
+    Change to use SNMPv3 since that is writable in V5-6-patches.
     Change to check values on index 'A'
     Remove the check for embedded NUL in indices.
 
@@ -84767,7 +88083,7 @@ Changes: V5.5.pre2 -> V5.5.pre3
 
    * perl/agent/agent.xs:
 
-   fix the ASN_OPAQUE patch that was commited without proper diff
+   fix the ASN_OPAQUE patch that was committed without proper diff
    context
 
 2009-04-24 07:31  tanders
@@ -88627,7 +91943,7 @@ Changes: V5.4 -> V5.5.pre1
 
    * agent/agent_read_config.c, agent/agent_trap.c:
 
-   reverting accidentaly commited files
+   reverting accidentally committed files
 
 2008-05-06 08:34  jsafranek
 
@@ -126079,7 +129395,7 @@ Changes: V5.0.9 -> V5.1
 
    * include/net-snmp/system/hpux.h:
 
-   restore accidentaly deleted hpux define; add comment
+   restore accidentally deleted hpux define; add comment
    
 2003-11-02 04:55  nba
 
@@ -158636,7 +161952,7 @@ Changes: V5.0.9 -> V5.1
    * apps/snmpwalk.c:
 
    - (snmpwalk.c):
-     - New ability to peform a get on the requested OID when either no
+     - New ability to perform a get on the requested OID when either no
        results are returned or when the user requests an inclusive option.
      - New ability to print number of variables found at the end.
    
@@ -207427,7 +210743,7 @@ hardaker  7 Dec 99 09:32:02
 
 hardaker  7 Dec 99 13:45:59
     - (snmpwalk.c):
-      - New ability to peform a get on the requested OID when either no
+      - New ability to perform a get on the requested OID when either no
         results are returned or when the user requests an inclusive option.
       - New ability to print number of variables found at the end.
 

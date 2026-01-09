@@ -18,7 +18,7 @@
 
 <script>
 
-//	<% nvram("jffs2_on,jffs2_auto_unmount,remote_upgrade,fname"); %>
+//	<% nvram("jffs2_on,jffs2_auto_unmount,remote_upgrade"); %>
 
 //	<% sysinfo(); %>
 
@@ -61,7 +61,6 @@ function upgrade() {
 function earlyInit() {
 	E('upgradenotice').style.display = (nvram.remote_upgrade == 1 ? 'none' : 'block');
 	E('afu-size').innerHTML = '&nbsp; '+scaleSize(sysinfo.totalfreeram)+'&nbsp; <small>(approx. size that can be buffered completely in RAM)<\/small>';
-	E('afu-fname').innerHTML = '&nbsp; '+nvram.fname;
 /* JFFS2-BEGIN */
 	if (nvram.jffs2_on != 0 && nvram.jffs2_auto_unmount == 0) {
 		E('afu-warn').style.display = 'block';
@@ -109,10 +108,6 @@ function earlyInit() {
 			<table class="afu-info-table"><tr>
 				<td>Current Version:</td>
 				<td>&nbsp; <% version(1); %></td>
-			</tr>
-			<tr>
-				<td>Current Filename:</td>
-				<td id="afu-fname"></td>
 			</tr>
 			<tr>
 				<td>Free Memory:</td>

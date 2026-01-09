@@ -19,7 +19,7 @@ else
 endif
 PROGSRC = $(sort $(wildcard src/*.c))
 
-PARSEROBJS = src/poparser.o src/StringEscape.o
+PARSEROBJS = src/poparser.o src/poparser_sysdep.o src/StringEscape.o
 PROGOBJS = $(PROGSRC:.c=.o)
 LIBOBJS = $(LIBSRC:.c=.o)
 OBJS = $(PROGOBJS) $(LIBOBJS)

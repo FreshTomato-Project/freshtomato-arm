@@ -82,27 +82,43 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
 	ret = fprintf(file, "%s", buf);
 	errsave = errno;
-	fflush(file);
-	if (fclose(file)) {
+	if (ret >= 0 && fflush(file)) {
+		ret = -1;
 		errsave = errno;
-		goto error;
+	}
+	if (fclose(file)) {
+		ret = -1;
+		errsave = errno;
 	}
 	if (ret < 0)
 		goto error;
 	info->moved = 0; /*migration is done*/
 	return;
 error:
+	/* Use EPERM as the explaination for EIO */
+	errsave = (errsave == EIO) ? EPERM : errsave;
 	log(TO_ALL, LOG_WARNING,
 		"Cannot change IRQ %i affinity: %s\n",
 		info->irq, strerror(errsave));
 	switch (errsave) {
-	case ENOSPC: /* Specified CPU APIC is full. */
 	case EAGAIN: /* Interrupted by signal. */
 	case EBUSY: /* Affinity change already in progress. */
 	case EINVAL: /* IRQ would be bound to no CPU. */
 	case ERANGE: /* CPU in mask is offline. */
 	case ENOMEM: /* Kernel cannot allocate CPU mask. */
 		/* Do not blacklist the IRQ on transient errors. */
+		break;
+	case ENOSPC: /* Specified CPU APIC is full. */
+		if (info->assigned_obj->obj_type != OBJ_TYPE_CPU)
+			break;
+
+		if (info->assigned_obj->slots_left > 0)
+			info->assigned_obj->slots_left = -1;
+		else
+			/* Negative slots to count how many we need to free */
+			info->assigned_obj->slots_left--;
+
+		force_rebalance_irq(info, NULL);
 		break;
 	default:
 		/* Any other error is considered permanent. */

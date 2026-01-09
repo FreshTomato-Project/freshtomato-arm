@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,7 +77,7 @@ int main(int argc_, char *argv_[])
 		line++;
 		if (*cmdline == '#' || *cmdline == '\n')
 			continue;
-		*strchr(cmdline, '\n') = '\0';
+		*strchrnul(cmdline, '\n') = '\0';
 		if (*cmdline == '*') {
 			if (table_nr != -1) {
 				ebt_deliver_table(&replace[table_nr]);

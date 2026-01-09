@@ -251,10 +251,37 @@ static int _php_tidy_set_tidy_opt(TidyDoc doc, char *optname, zval *value)
 			zend_tmp_string_release(tmp_str);
 			break;
 
-		case TidyInteger:
-			lval = zval_get_long(value);
-			if (tidyOptSetInt(doc, tidyOptGetId(opt), lval)) {
-				return SUCCESS;
+		case TidyInteger: /* integer or enum */
+			ZVAL_DEREF(value);
+			/* Enum will correspond to a non-numeric string or object */
+			if (Z_TYPE_P(value) == IS_STRING || Z_TYPE_P(value) == IS_OBJECT) {
+				double dval;
+				str = zval_try_get_tmp_string(value, &tmp_str);
+				if (UNEXPECTED(!str)) {
+					return FAILURE;
+				}
+				uint8_t type = is_numeric_string(ZSTR_VAL(str), ZSTR_LEN(str), &lval, &dval, true);
+				if (type == IS_DOUBLE) {
+					lval = zend_dval_to_lval_cap(dval);
+					type = IS_LONG;
+				}
+				if (type == IS_LONG) {
+					if (tidyOptSetInt(doc, tidyOptGetId(opt), lval)) {
+						zend_tmp_string_release(tmp_str);
+						return SUCCESS;
+					}
+				} else {
+					if (tidyOptSetValue(doc, tidyOptGetId(opt), ZSTR_VAL(str))) {
+						zend_tmp_string_release(tmp_str);
+						return SUCCESS;
+					}
+				}
+				zend_tmp_string_release(tmp_str);
+			} else {
+				lval = zval_get_long(value);
+				if (tidyOptSetInt(doc, tidyOptGetId(opt), lval)) {
+					return SUCCESS;
+				}
 			}
 			break;
 
@@ -526,8 +553,7 @@ static zend_result tidy_node_cast_handler(zend_object *in, zval *out, int type)
 		case IS_STRING:
 			obj = php_tidy_fetch_object(in);
 			tidyBufInit(&buf);
-			if (obj->ptdoc) {
-				tidyNodeGetText(obj->ptdoc->doc, obj->node, &buf);
+			if (obj->ptdoc && tidyNodeGetText(obj->ptdoc->doc, obj->node, &buf)) {
 				ZVAL_STRINGL(out, (char *) buf.bp, buf.size-1);
 			} else {
 				ZVAL_EMPTY_STRING(out);
@@ -584,7 +610,7 @@ static void tidy_add_node_default_properties(PHPTidyObj *obj)
 	char *name;
 
 	tidyBufInit(&buf);
-	tidyNodeGetText(obj->ptdoc->doc, obj->node, &buf);
+	(void) tidyNodeGetText(obj->ptdoc->doc, obj->node, &buf);
 
 	zend_update_property_stringl(
 		tidy_ce_node,

@@ -1,5 +1,104 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+18 Dec 2025, PHP 8.3.29
+
+- Core:
+  . Sync all boost.context files with release 1.86.0. (mvorisek)
+  . Fixed bug GH-20435 (SensitiveParameter doesn't work for named argument
+    passing to variadic parameter). (ndossche)
+  . Fixed bug GH-20286 (use-after-destroy during userland stream_close()).
+    (ndossche, David Carlier)
+
+- Bz2:
+  . Fix assertion failures resulting in crashes with stream filter
+    object parameters. (ndossche)
+
+- Date:
+  . Fix crashes when trying to instantiate uninstantiable classes via date
+    static constructors. (ndossche)
+
+- DOM:
+  . Fix missing NUL byte check on C14NFile(). (ndossche)
+
+- Fibers:
+  . Fixed bug GH-20483 (ASAN stack overflow with fiber.stack_size INI
+    small value). (David Carlier)
+
+- FTP:
+  . Fixed bug GH-20601 (ftp_connect overflow on timeout). (David Carlier)
+
+- GD:
+  . Fixed bug GH-20511 (imagegammacorrect out of range input/output values).
+    (David Carlier)
+  . Fixed bug GH-20602 (imagescale overflow with large height values).
+    (David Carlier)
+
+- Intl:
+  . Fixed bug GH-20426 (Spoofchecker::setRestrictionLevel() error message
+    suggests missing constants). (DanielEScherzer)
+
+- LibXML:
+  . Fix some deprecations on newer libxml versions regarding input
+    buffer/parser handling. (ndossche)
+
+- MbString:
+  . Fixed bug GH-20491 (SLES15 compile error with mbstring oniguruma).
+    (ndossche)
+  . Fixed bug GH-20492 (mbstring compile warning due to non-strings).
+    (ndossche)
+
+- MySQLnd:
+  . Fixed bug GH-20528 (Regression breaks mysql connexion using an IPv6 address
+    enclosed in square brackets). (Remi)
+
+- Opcache:
+  . Fixed bug GH-20329 (opcache.file_cache broken with full interned string
+    buffer). (Arnaud)
+
+- PDO:
+  . Fixed GHSA-8xr5-qppj-gvwj (PDO quoting result null deref). (CVE-2025-14180)
+    (Jakub Zelenka)
+
+- Phar:
+  . Fixed bug GH-20442 (Phar does not respect case-insensitiveness of
+    __halt_compiler() when reading stub). (ndossche, TimWolla)
+  . Fix broken return value of fflush() for phar file entries. (ndossche)
+  . Fix assertion failure when fseeking a phar file out of bounds. (ndossche)
+
+- PHPDBG:
+  . Fixed ZPP type violation in phpdbg_get_executable() and phpdbg_end_oplog().
+    (Girgias)
+
+- SPL:
+  . Fixed bug GH-20614 (SplFixedArray incorrectly handles references
+    in deserialization). (ndossche)
+
+- Standard:
+  . Fix memory leak in array_diff() with custom type checks. (ndossche)
+  . Fixed bug GH-20583 (Stack overflow in http_build_query
+    via deep structures). (ndossche)
+  . Fixed GHSA-www2-q4fc-65wf (Null byte termination in dns_get_record()).
+    (ndossche)
+  . Fixed GHSA-h96m-rvf9-jgm2 (Heap buffer overflow in array_merge()).
+    (CVE-2025-14178) (ndossche)
+  . Fixed GHSA-3237-qqm7-mfv7 (Information Leak of Memory in getimagesize).
+    (CVE-2025-14177) (ndossche)
+
+- Tidy:
+  . Fixed bug GH-20374 (PHP with tidy and custom-tags). (ndossche)
+
+- XML:
+  . Fixed bug GH-20439 (xml_set_default_handler() does not properly handle
+    special characters in attributes when passing data to callback). (ndossche)
+
+- Zip:
+  . Fix crash in property existence test. (ndossche)
+  . Don't truncate return value of zip_fread() with user sizes. (ndossche)
+
+- Zlib:
+  . Fix assertion failures resulting in crashes with stream filter
+    object parameters. (ndossche)
+
 20 Nov 2025, PHP 8.3.28
 
 - Core:

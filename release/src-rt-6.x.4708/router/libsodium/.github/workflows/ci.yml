@@ -12,7 +12,7 @@ jobs:
   tcc:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Update packages list
         run: sudo apt-get update
@@ -35,7 +35,7 @@ jobs:
   zig:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Update packages list
         run: sudo apt-get update
@@ -43,7 +43,7 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.15.1
+          version: 0.15.2
 
       - name: Autogen
         run: ./autogen.sh -s
@@ -58,6 +58,8 @@ jobs:
           zig build -Dtarget=aarch64-windows
           zig build -Dtarget=x86_64-macos
           zig build -Dtarget=aarch64-macos
+          zig build -Dtarget=x86_64-freebsd
+          zig build -Dtarget=aarch64-freebsd
           zig build -Dtarget=wasm32-wasi
           zig build -Doptimize=ReleaseFast
           rm -fr zig-cache zig-out
@@ -65,7 +67,7 @@ jobs:
   regular:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Update packages list
         run: sudo apt-get update
@@ -94,7 +96,7 @@ jobs:
   check-globals:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Update packages list
         run: sudo apt-get update
@@ -112,7 +114,7 @@ jobs:
   other-comp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Update packages list
         run: sudo apt-get update
@@ -138,7 +140,7 @@ jobs:
   other-arch:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Update packages list
         run: sudo apt-get update
@@ -155,10 +157,40 @@ jobs:
           make -j $(nproc)
           make clean > /dev/null
 
+  wasi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: master
+
+      - name: Install Wasmer
+        uses: wasmerio/setup-wasmer@v3.1
+
+      - name: Build for wasi-core
+        run: zig build -Dtarget=wasm32-wasi -Doptimize=ReleaseSafe
+
+      - name: Run tests with Wasmer
+        run: |
+          cd zig-out/bin
+          failed=0
+          for wasm in *.wasm; do
+            name="${wasm%.wasm}"
+            echo "[$name]"
+            if ! wasmer run "$wasm" --mapdir=./:.  2>&1; then
+              echo "*** [$name] FAILED" >&2
+              failed=1
+            fi
+          done
+          exit $failed
+
   android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Update packages list
         run: sudo apt-get update
@@ -172,7 +204,7 @@ jobs:
       - name: Install Android NDK
         run: |
           mkdir /tmp/android && cd /tmp/android
-          curl -o ndk.zip -L https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
+          curl -o ndk.zip -L https://dl.google.com/android/repository/android-ndk-r29-linux.zip
           unzip ndk.zip && rm -f *.zip && mv android-ndk* ndk
 
       - name: Android compilation

@@ -1881,11 +1881,11 @@ sqlite: sqlite/Makefile
 
 sqlite-install:
 ifeq ($(or $(TCONFIG_NGINX),$(TCONFIG_MEDIA_SERVER)),y)
-	install -D sqlite/staged/usr/lib/libsqlite3.so.3.51.1 $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.51.1
-	$(STRIP) $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.51.1
+	install -D sqlite/staged/usr/lib/libsqlite3.so.3.51.2 $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.51.2
+	$(STRIP) $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.51.2
 	cd $(INSTALLDIR)/sqlite/usr/lib/ && \
-		ln -sf libsqlite3.so.3.51.1 libsqlite3.so.0 && \
-		ln -sf libsqlite3.so.3.51.1 libsqlite3.so
+		ln -sf libsqlite3.so.3.51.2 libsqlite3.so.0 && \
+		ln -sf libsqlite3.so.3.51.2 libsqlite3.so
 endif
 	@true
 

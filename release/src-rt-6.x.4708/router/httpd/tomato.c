@@ -3,7 +3,7 @@
  * Tomato Firmware
  * Copyright (C) 2006-2009 Jonathan Zarate
  *
- * Fixes/updates (C) 2018 - 2025 pedro
+ * Fixes/updates (C) 2018 - 2026 pedro
  * https://freshtomato.org/
  *
  */
@@ -1467,6 +1467,7 @@ static const nvset_t nvset_list[] = {
 	{ "vpn_server2_ecdh",		V_01				},	/* when using ECDH */
 	{ "vpn_client_eas",		V_NONE				},
 	{ "vpn_client1_poll",		V_RANGE(0, 30)			},
+	{ "vpn_client1_tchk",		V_01				},	/* check if tunnel is up */
 	{ "vpn_client1_if",		V_TEXT(3, 3)			},	/* tap, tun */
 	{ "vpn_client1_bridge",		V_01				},
 	{ "vpn_client1_nat",		V_01				},
@@ -1505,6 +1506,7 @@ static const nvset_t nvset_list[] = {
 	{ "vpn_client1_fw",		V_01				},
 	{ "vpn_client1_prio",		V_NONE				},
 	{ "vpn_client2_poll",		V_RANGE(0, 30)			},
+	{ "vpn_client2_tchk",		V_01				},	/* check if tunnel is up */
 	{ "vpn_client2_if",		V_TEXT(3, 3)			},	/* tap, tun */
 	{ "vpn_client2_bridge",		V_01				},
 	{ "vpn_client2_nat",		V_01				},
@@ -1544,6 +1546,7 @@ static const nvset_t nvset_list[] = {
 	{ "vpn_client2_prio",		V_NONE				},
 #ifdef TCONFIG_BCMARM
 	{ "vpn_client3_poll",		V_RANGE(0, 30)			},
+	{ "vpn_client3_tchk",		V_01				},	/* check if tunnel is up */
 	{ "vpn_client3_if",		V_TEXT(3, 3)			},	/* tap, tun */
 	{ "vpn_client3_bridge",		V_01				},
 	{ "vpn_client3_nat",		V_01				},

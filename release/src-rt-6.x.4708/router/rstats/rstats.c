@@ -196,8 +196,8 @@ static void save(int quick)
 
 				free(bo);
 			}
+			free(bi);
 		}
-		free(bi);
 	}
 	else if (save_path[0] != 0) {
 		strcpy(tmp, save_path);

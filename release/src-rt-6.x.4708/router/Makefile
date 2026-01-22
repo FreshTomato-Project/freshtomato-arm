@@ -287,7 +287,7 @@ else
 endif
 
 obj-$(TCONFIG_BCMARM)		+= taskset
-obj-y				+= rc wanuptime rom others www bridge etc pppd rp-pppoe utils$(BCMEX) cstats rstats hotplug2 udevtrigger libusb10 usbmodeswitch
+obj-y				+= rc wanuptime rom others www bridge etc pppd rp-pppoe utils$(BCMEX) $(if $(INSTALL_ZLIB),zlib) cstats rstats hotplug2 udevtrigger libusb10 usbmodeswitch
 obj-y				+= $(if $(TCONFIG_BCMARM),libmnl) $(IPSET_TARGET)
 obj-$(TCONFIG_PPTPD)		+= pptpd
 obj-$(TCONFIG_PROXY)		+= igmpproxy udpxy

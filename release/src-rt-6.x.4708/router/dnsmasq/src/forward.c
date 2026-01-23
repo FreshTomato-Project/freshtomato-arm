@@ -960,7 +960,7 @@ static void dnssec_validate(struct frec *forward, struct dns_header *header,
 	    status = dnssec_validate_ds(now, header, plen, daemon->namebuff, daemon->keyname, forward->class, &orig->validate_counter);
 	  else
 	    status = dnssec_validate_reply(now, header, plen, daemon->namebuff, daemon->keyname, &forward->class, 
-					   !option_bool(OPT_DNSSEC_IGN_NS), NULL, NULL, NULL, &orig->validate_counter);
+					   !option_bool(OPT_DNSSEC_IGN_NS), NULL, NULL, NULL, NULL, &orig->validate_counter);
 	  
 	  if (STAT_ISEQUAL(status, STAT_ABANDONED))
 	    log_resource = 1;
@@ -1399,6 +1399,9 @@ void return_reply(time_t now, struct frec *forward, struct dns_header *header, s
       
 	  a.log.ede = ede;
 	  log_query(F_SECSTAT, domain, &a, result, 0);
+
+	  if (ede == EDE_US_SERVFAIL)
+	    ede = EDE_DNSSEC_BOGUS;
 	}
     }
   
@@ -2223,7 +2226,7 @@ int tcp_from_udp(time_t now, int status, struct dns_header *header, ssize_t *ple
 	      
 	      if (n >= daemon->edns_pktsz)
 		{
-		  /* still too bIg, strip optional sections and try again. */
+		  /* still too big, strip optional sections and try again. */
 		  new_header->nscount = htons(0);
 		  new_header->arcount = htons(0);
 		  n = resize_packet(new_header, n, NULL, 0);
@@ -2237,6 +2240,10 @@ int tcp_from_udp(time_t now, int status, struct dns_header *header, ssize_t *ple
 		    }
 		}
 	      
+	      /* we have succeeded and are no longer blocked talking
+		 on a TCP connection, so if the watchdog alarm goes off,
+		 ignore it. */
+	      daemon->forward_to_tcp = NULL;
 	      /* return the stripped or truncated reply. */
 	      memcpy(header, new_header, n);
 	      *plenp = n;
@@ -2270,7 +2277,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 	new_status = dnssec_validate_ds(now, header, n, name, keyname, class, validatecount);
       else
 	new_status = dnssec_validate_reply(now, header, n, name, keyname, &class,
-					   !option_bool(OPT_DNSSEC_IGN_NS), NULL, NULL, NULL, validatecount);
+					   !option_bool(OPT_DNSSEC_IGN_NS), NULL, NULL, NULL, NULL, validatecount);
       
       if (!STAT_ISEQUAL(new_status, STAT_NEED_DS) && !STAT_ISEQUAL(new_status, STAT_NEED_KEY) && !STAT_ISEQUAL(new_status, STAT_ABANDONED))
 	break;
@@ -2661,6 +2668,8 @@ unsigned char *tcp_request(int confd, time_t now,
 			      
 			      a.log.ede = ede;
 			      log_query(F_SECSTAT, domain, &a, result, 0);
+			      if (ede == EDE_US_SERVFAIL)
+				ede = EDE_DNSSEC_BOGUS;
 			      
 			      if ((daemon->limit[LIMIT_CRYPTO] - validatecount) > (int)daemon->metrics[METRIC_CRYPTO_HWM])
 				daemon->metrics[METRIC_CRYPTO_HWM] = daemon->limit[LIMIT_CRYPTO] - validatecount;

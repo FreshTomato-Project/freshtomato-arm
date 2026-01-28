@@ -23,6 +23,12 @@
 
 CONFIG_CLEAN_FILES = *.loT *.rej *.orig
 AUTOMAKE_OPTIONS = no-dependencies
+if BUILD_CAP_AUDIT
+SUBDIRS = cap-audit
+else
+SUBDIRS =
+endif
+DIST_SUBDIRS = cap-audit
 EXTRA_DIST = $(man_MANS)
 AM_CPPFLAGS = -I${top_srcdir} -I${top_srcdir}/src
 LDADD = ${top_builddir}/src/libcap-ng.la

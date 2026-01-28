@@ -2,7 +2,7 @@
 dnl
 define([AC_INIT_NOTICE],
 [### Generated automatically using autoconf version] AC_ACVERSION [
-### Copyright 2009-2023 Steve Grubb <sgrubb@redhat.com>
+### Copyright 2009-2026 Steve Grubb <sgrubb@redhat.com>
 ###
 ### Permission is hereby granted, free of charge, to any person obtaining a
 ### copy of this software and associated documentation files (the "Software"),
@@ -30,7 +30,7 @@ define([AC_INIT_NOTICE],
 ])
 
 AC_REVISION($Revision: 1.3 $)dnl
-AC_INIT([libcap-ng],[0.8.5])
+AC_INIT([libcap-ng],[0.9])
 AC_PREREQ([2.50])dnl
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -42,12 +42,96 @@ AM_INIT_AUTOMAKE
 LT_INIT
 AC_SUBST(LIBTOOL_DEPS)
 
+PKG_PROG_PKG_CONFIG
+
 echo .
 echo Checking for programs
 
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_AWK
+
+LIBBPF_CFLAGS=""
+LIBBPF_LIBS=""
+LIBAUDIT_CFLAGS=""
+LIBAUDIT_LIBS=""
+CLANG=""
+BPFTOOL=""
+BPF_ARCH=""
+
+AC_CANONICAL_HOST
+AC_ARG_WITH([bpf-arch],
+AS_HELP_STRING([--with-bpf-arch=ARCH],
+[override detected BPF target arch (x86, arm64, arm, powerpc, s390, riscv, mips, loongarch)]),
+[BPF_ARCH="$withval"])
+
+AC_ARG_ENABLE([cap-audit],
+AS_HELP_STRING([--enable-cap-audit],[build cap-audit [[default=no]]]),
+[enable_cap_audit=$enableval],
+[enable_cap_audit=no])
+
+if test "x$enable_cap_audit" = "xyes"; then
+missing_cap_audit_deps=no
+AC_CHECK_PROG([CLANG],[clang],[clang],[no])
+AC_CHECK_PROG([BPFTOOL],[bpftool],[bpftool],[no])
+PKG_CHECK_MODULES([LIBBPF],[libbpf],
+[have_libbpf=yes],[have_libbpf=no])
+PKG_CHECK_MODULES([LIBAUDIT],[audit],
+[have_libaudit=yes],[have_libaudit=no])
+AC_CHECK_HEADERS([bpf/libbpf.h bpf/bpf.h linux/bpf.h libaudit.h], [],
+[missing_cap_audit_deps=yes])
+if test "$CLANG" = "no" -o "$BPFTOOL" = "no" -o \
+"x$have_libbpf" != "xyes" -o "x$have_libaudit" != "xyes" -o \
+"x$missing_cap_audit_deps" = "xyes"; then
+AC_MSG_ERROR([cap-audit requires clang, bpftool, libbpf, and libaudit])
+fi
+fi
+
+if test "x$BPF_ARCH" = "x"; then
+case "$host_cpu" in
+x86_64|i?86)
+BPF_ARCH=x86
+;;
+aarch64|arm64)
+BPF_ARCH=arm64
+;;
+arm*)
+BPF_ARCH=arm
+;;
+ppc64le|ppc64|powerpc*)
+BPF_ARCH=powerpc
+;;
+s390x|s390)
+BPF_ARCH=s390
+;;
+riscv64|riscv32|riscv*)
+BPF_ARCH=riscv
+;;
+mips64|mips64el|mips|mipsel)
+BPF_ARCH=mips
+;;
+loongarch64)
+BPF_ARCH=loongarch
+;;
+*)
+BPF_ARCH=x86
+;;
+esac
+fi
+
+if test "x$BPF_ARCH" = "x"; then
+AC_MSG_ERROR([failed to determine BPF target arch; use --with-bpf-arch])
+fi
+
+AC_SUBST(BPF_ARCH)
+AC_SUBST(CLANG)
+AC_SUBST(BPFTOOL)
+AC_SUBST(LIBBPF_CFLAGS)
+AC_SUBST(LIBBPF_LIBS)
+AC_SUBST(LIBAUDIT_CFLAGS)
+AC_SUBST(LIBAUDIT_LIBS)
+
+AM_CONDITIONAL([BUILD_CAP_AUDIT], [test "x$enable_cap_audit" = "xyes"])
 
 echo .
 echo Checking for header files
@@ -68,36 +152,6 @@ AC_ARG_WITH([capability_header],
         [CAPABILITY_HEADER=$withval],
         [CAPABILITY_HEADER=/usr/include/linux/capability.h])
 AC_SUBST(CAPABILITY_HEADER)
-
-ALLWARNS=""
-ALLDEBUG="-g"
-OPT="-O"
-if test x"$GCC" = x"yes"; then
-  OPT="-O2 -pipe"
-  case "$target" in
-    *linux*)
-             ALLWARNS="-W -Wall -Wundef -Wpointer-arith -Wcast-align \
--Wwrite-strings -Waggregate-return -Wstrict-prototypes \
--Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
--Wnested-externs -Winline -Wfloat-equal -Wchar-subscripts"
-             ;;
-    esac
-fi
-
-ALLDEBUG="-g"
-AC_ARG_WITH(debug,
-[  --with-debug            turn on debugging [[default=no]]],
-[
-if test "x${withval}" = xyes; then
-        DEBUG="$ALLDEBUG"
-        OPT="-O"
-        AM_CONDITIONAL(DEBUG, true)
-else
-        DEBUG="-DNDEBUG"
-        AM_CONDITIONAL(DEBUG, false)
-fi
-],
-[ DEBUG="-DNDEBUG"; AM_CONDITIONAL(DEBUG, false) ])
 
 AC_MSG_CHECKING(__attr_dealloc_free support)
 AC_COMPILE_IFELSE(
@@ -192,11 +246,11 @@ else
 fi
 AM_CONDITIONAL(USE_PYTHON3, test ${use_python3} = "yes")
 
-AC_CONFIG_FILES([Makefile src/Makefile src/libcap-ng.pc src/test/Makefile 
-	bindings/Makefile
-	bindings/python3/Makefile bindings/src/Makefile 
-	bindings/python3/test/Makefile utils/Makefile
-	m4/Makefile docs/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/libcap-ng.pc src/test/Makefile
+bindings/Makefile
+bindings/python3/Makefile bindings/src/Makefile
+bindings/python3/test/Makefile bindings/test/Makefile utils/Makefile
+utils/cap-audit/Makefile m4/Makefile docs/Makefile])
 AC_OUTPUT
 
 echo .
@@ -205,9 +259,8 @@ echo "
   libcap-ng Version:      $VERSION
   Target:                 $target
   Installation prefix:    $prefix
-  PYTHON_PREFIX:          $PYTHON_PREFIX
   Compiler:               $CC
   Compiler flags:
 `echo $CFLAGS | fmt -w 50 | sed 's,^,                          ,'`
   __attr_dealloc_free support:  $DEALLOC
-"
+  "

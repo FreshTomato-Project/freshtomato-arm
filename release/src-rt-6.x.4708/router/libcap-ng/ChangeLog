@@ -1,3 +1,9 @@
+0.8.6
+- Fix python path when invoking py-compile (Jan Palus)
+- Drop python2 bindings (Rudi Heitbaum)
+- Optimize capability name translation lookups
+- Add cap-audit utility
+
 0.8.5
 - Remove python global exception handler since it's deprecated
 - Make the utilities link against just built libraries

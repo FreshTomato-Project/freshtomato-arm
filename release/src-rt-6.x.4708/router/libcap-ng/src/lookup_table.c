@@ -1,5 +1,5 @@
 /* lookup_table.c --
- * Copyright 2009, 2013 Red Hat Inc.
+ * Copyright 2009, 2013, 2025 Red Hat Inc.
  * All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -26,9 +26,9 @@
 #include <linux/capability.h>
 #include <strings.h>
 #include <stdio.h>
-#include <stdlib.h>  // free
 
 
+#pragma GCC optimize("O3")
 #define hidden __attribute__ ((visibility ("hidden")))
 extern unsigned int last_cap hidden;
 
@@ -37,8 +37,8 @@ extern unsigned int last_cap hidden;
 
 
 struct transtab {
-    int   value;
-    int   offset;
+    unsigned int value;
+    unsigned int offset;
 };
 
 #define MSGSTRFIELD(line) MSGSTRFIELD1(line)
@@ -76,38 +76,38 @@ static const struct transtab captab[] = {
 
 
 
-static int capng_lookup_name(const struct transtab *table,
-		const char *tabstr, size_t length, const char *name)
+static inline int capng_lookup_name(const char *name)
 {
-	size_t i;
-    
-	for (i = 0; i < length; i++) {
-		if (!strcasecmp(tabstr + table[i].offset, name))
-			return table[i].value;
+	// brute force search
+	for (size_t i = 0; i < CAP_NG_CAPABILITY_NAMES; i++) {
+		if (!strcasecmp(captab_msgstr.str + captab[i].offset, name))
+			return captab[i].value;
 	}
 	return -1;
 }
 
-static const char *capng_lookup_number(const struct transtab *table,
-                                       const char *tabstr, size_t length,
-                                       int number)
+static inline const char *capng_lookup_number(unsigned int number)
 {
-	size_t i;
-    
-	for (i = 0; i < length; i++) {
-		if (table[i].value == number)
-			return tabstr + table[i].offset;
+	if (number >= CAP_NG_CAPABILITY_NAMES)
+		return NULL;
+
+	if (captab[number].value == number)
+		return captab_msgstr.str + captab[number].offset;
+
+	// Fallback to old search in case a capability is retired
+	for (size_t i = 0; i < CAP_NG_CAPABILITY_NAMES; i++) {
+		if (captab[i].value == number)
+			return captab_msgstr.str + captab[i].offset;
 	}
 	return NULL;
 }
 
 int capng_name_to_capability(const char *name)
 {
-	return capng_lookup_name(captab, captab_msgstr.str,
-                                 CAP_NG_CAPABILITY_NAMES, name);
+	return capng_lookup_name(name);
 }
 
-static char *ptr2 = NULL;
+static char ptr2[32];
 const char *capng_capability_to_name(unsigned int capability)
 {
 	const char *ptr;
@@ -115,14 +115,10 @@ const char *capng_capability_to_name(unsigned int capability)
 	if (!cap_valid(capability))
 		return NULL;
 
-	ptr = capng_lookup_number(captab, captab_msgstr.str,
-                                   CAP_NG_CAPABILITY_NAMES, capability);
-	if (ptr == NULL) { // This leaks memory, but should almost never be used
-		free(ptr2);
-		if (asprintf(&ptr2, "cap_%u", capability) < 0)
-			ptr = NULL;
-		else
-			ptr = ptr2;
+	ptr = capng_lookup_number(capability);
+	if (ptr == NULL) {
+		snprintf(ptr2, sizeof(ptr2), "cap_%u", capability);
+		ptr = ptr2;
 	}
 	return ptr;
 }

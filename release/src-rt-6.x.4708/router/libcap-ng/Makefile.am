@@ -28,7 +28,7 @@ endif
 EXTRA_DIST = ChangeLog AUTHORS README.md INSTALL COPYING COPYING.LIB \
 	libcap-ng.spec autogen.sh 
 
-CONFIG_CLEAN_FILES = debug*.list config/*
+CONFIG_CLEAN_FILES = debug*.list
 clean-generic:
 	rm -rf autom4te*.cache 
 	rm -f *.rej *.orig *.lang

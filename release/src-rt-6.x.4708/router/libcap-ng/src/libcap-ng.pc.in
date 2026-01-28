@@ -8,4 +8,5 @@ Description: An alternate POSIX capabilities library.
 Version: @VERSION@
 Libs: -L${libdir} -lcap-ng
 Cflags: -I${includedir}
+License: LGPL-2.1-or-later
 

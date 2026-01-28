@@ -22,9 +22,9 @@
 #
 
 CONFIG_CLEAN_FILES = *.loT *.rej *.orig
-SUBDIRS = src 
+SUBDIRS = src
 
 if USE_PYTHON3
-SUBDIRS += python3
+SUBDIRS += python3 test
 endif
 

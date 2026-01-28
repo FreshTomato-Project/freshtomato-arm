@@ -290,7 +290,8 @@ struct event_desc {
 #define OPT_AUTH_LOG       76
 #define OPT_LEASEQUERY     77
 #define OPT_LOG_ONLY_FAILED  78
-#define OPT_LAST           79
+#define OPT_LOG_MALLOC     79
+#define OPT_LAST           80
 
 #define OPTION_BITS (sizeof(unsigned int)*8)
 #define OPTION_SIZE ( (OPT_LAST/OPTION_BITS)+((OPT_LAST%OPTION_BITS)!=0) )
@@ -1207,6 +1208,7 @@ extern struct daemon {
   int log_fac; /* log facility */
   char *log_file; /* optional log file */
   int max_logs;  /* queue limit */
+  int log_malloc; /* log malloc/realloc/free */
   int randport_limit; /* Maximum number of source ports for query. */
   int cachesize, ftabsize;
   int port, query_port, min_port, max_port;
@@ -1495,8 +1497,12 @@ unsigned char *do_rfc1035_name(unsigned char *p, char *sval, char *limit);
 void *safe_malloc(size_t size);
 void safe_strncpy(char *dest, const char *src, size_t size);
 void safe_pipe(int *fd, int read_noblock);
-void *whine_malloc(size_t size);
-void *whine_realloc(void *ptr, size_t size);
+#define whine_malloc(x) whine_malloc_real(__func__, __LINE__, (x))
+#define whine_realloc(x, y) whine_realloc_real(__func__, __LINE__, (x), (y))
+#define free(x) free_real(__func__, __LINE__, (x))
+void free_real(const char *func, unsigned int line, void *ptr);
+void *whine_malloc_real(const char *func, unsigned int line, size_t size);
+void *whine_realloc_real(const char *func, unsigned int line, void *ptr, size_t size);
 int sa_len(union mysockaddr *addr);
 int sockaddr_isequal(const union mysockaddr *s1, const union mysockaddr *s2);
 int sockaddr_isnull(const union mysockaddr *s);
@@ -1521,6 +1527,7 @@ int memcmp_masked(unsigned char *a, unsigned char *b, int len,
 int expand_buf(struct iovec *iov, size_t size);
 char *print_mac(char *buff, unsigned char *mac, int len);
 int read_write(int fd, unsigned char *packet, int size, int rw);
+int read_writev(int fd, struct iovec *iov, int iovcnt, int rw);
 void close_fds(long max_fd, int spare1, int spare2, int spare3);
 int wildcard_match(const char* wildcard, const char* match);
 int wildcard_matchn(const char* wildcard, const char* match, int num);
@@ -1563,8 +1570,8 @@ int tcp_from_udp(time_t now, int status, struct dns_header *header, ssize_t *n,
 		 int class, char *name, struct server *server, 
 		 int *keycount, int *validatecount);
 #endif
-unsigned char *tcp_request(int confd, time_t now,
-			   union mysockaddr *local_addr, struct in_addr netmask, int auth_dns);
+void tcp_request(int confd, time_t now, struct iovec *bigbuff,
+		 union mysockaddr *local_addr, struct in_addr netmask, int auth_dns);
 void server_gone(struct server *server);
 int send_from(int fd, int nowild, char *packet, size_t len, 
 	       union mysockaddr *to, union all_addr *source,

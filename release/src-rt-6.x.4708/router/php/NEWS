@@ -1,5 +1,62 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+15 Jan 2026, PHP 8.3.30
+
+- Core:
+  . Fix OSS-Fuzz #465488618 (Wrong assumptions when dumping function signature
+    with dynamic class const lookup default argument). (ilutov)
+  . Fixed bug GH-20695 (Assertion failure in normalize_value() when parsing
+    malformed INI input via parse_ini_string()). (ndossche)
+  . Fixed bug GH-20714 (Uncatchable exception thrown in generator). (ilutov)
+  . Fixed bug GH-20352 (UAF in php_output_handler_free via re-entrant
+    ob_start() during error deactivation). (ndossche)
+
+- Bz2:
+  . Fixed bug GH-20620 (bzcompress overflow on large source size).
+    (David Carlier)
+
+- DOM:
+  . Fixed bug GH-20722 (Null pointer dereference in DOM namespace node cloning
+    via clone on malformed objects). (ndossche)
+
+- GD:
+  . Fixed bug GH-20622 (imagestring/imagestringup overflow). (David Carlier)
+
+- Intl:
+  . Fix leak in umsg_format_helper(). (ndossche)
+
+- LDAP:
+  . Fix memory leak in ldap_set_options(). (ndossche)
+
+- Mbstring:
+  . Fixed bug GH-20674 (mb_decode_mimeheader does not handle separator).
+    (Yuya Hamada)
+
+- Phar:
+  . Fixed bug GH-20732 (Phar::LoadPhar undefined behavior when reading fails).
+    (ndossche)
+  . Fix SplFileInfo::openFile() in write mode. (ndossche)
+  . Fix build on legacy OpenSSL 1.1.0 systems. (Giovanni Giacobbi)
+
+- POSIX:
+  . Fixed crash on posix groups to php array creation on macos.
+    (David Carlier)
+
+- SPL:
+  . Fixed bug GH-20678 (resource created by GlobIterator crashes with fclose()).
+    (David Carlier)
+
+- Sqlite3:
+  . Fixed bug GH-20699 (SQLite3Result fetchArray return array|false,
+    null returned). (ndossche, plusminmax)
+
+- Standard:
+  . Fix error check for proc_open() command. (ndossche)
+  . Fixed bug GH-20582 (Heap Buffer Overflow in iptcembed). (ndossche)
+
+- Zlib:
+  . Fix OOB gzseek() causing assertion failure. (ndossche)
+
 18 Dec 2025, PHP 8.3.29
 
 - Core:
@@ -46,6 +103,9 @@ PHP                                                                        NEWS
     (ndossche)
   . Fixed bug GH-20492 (mbstring compile warning due to non-strings).
     (ndossche)
+
+- mysqli:
+  . Make mysqli_begin_transaction() report errors properly. (Kamil Tekiela)
 
 - MySQLnd:
   . Fixed bug GH-20528 (Regression breaks mysql connexion using an IPv6 address
@@ -182,6 +242,8 @@ PHP                                                                        NEWS
 - Streams:
   . Fixed bug GH-19798: XP_SOCKET XP_SSL (Socket stream modules): Incorrect
     condition for Win32/Win64. (Jakub Zelenka)
+  . Fixed bug GH-20370 (User stream filters could violate typed property
+    constraints). (alexandre-daubois)
 
 - Tidy:
   . Fixed GH-19021 (improved tidyOptGetCategory detection).

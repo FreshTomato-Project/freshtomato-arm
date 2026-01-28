@@ -1,7 +1,2 @@
-# Novatel Wireless MiFi USB730L
-DefaultVendor=0x1410
-DefaultProduct=0x9030
-TargetVendor=0x1410
-TargetProduct=0x9032
-NeedResponse=0
-Configuration=0x03
+# Novatel USB730L
+Configuration=3

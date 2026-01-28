@@ -10,11 +10,11 @@
 # a model name or other concise device specifications
 #
 # Note that you need this script only in case of wanting to add
-# your own new device IDs
+# your own new device IDs - add your config file and run it
 
 
 # Default version string
-set version "20191128"
+set version "20251207"
 
 # Devices excluded from Huawei catch-all rule
 set x_huaweiList {12d1:1573 12d1:15c1}

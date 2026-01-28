@@ -1,3 +1,6 @@
+20251207:
+    Added device: [0bda:a192] MERCURY MW310UH (Wifi, based on RTL8192FU),
+    thanks to Zenm Chen for the report
 20191128:
     Slight change of the 'skipping' rules to avoid unnecessary checks
     (thanks to Florian Zumbiehl);

@@ -1,4 +1,4 @@
-# Part of usb-modeswitch-data, version 20191128
+# Part of usb-modeswitch-data, version 20251207
 #
 # Works with usb_modeswitch versions >= 2.4.0. Slash before %k parameter
 # is for compatibility only. Versions >= 2.5.0 don't need it.
@@ -415,6 +415,9 @@ ATTR{idVendor}=="0b3c", ATTR{idProduct}=="f017", RUN+="usb_modeswitch '/%k'"
 
 # D-Link DWA-171 Wifi Dongle
 ATTR{idVendor}=="0bda", ATTR{idProduct}=="1a2b", RUN+="usb_modeswitch '/%k'"
+
+# Mercury MW310UH Wifi Dongle (based on RTL8192FU)
+ATTR{idVendor}=="0bda", ATTR{idProduct}=="a192", RUN+="usb_modeswitch '/%k'"
 
 # Ericsson F5521gw
 ATTR{idVendor}=="0bdb", ATTR{idProduct}=="190d", RUN+="usb_modeswitch '/%k'"

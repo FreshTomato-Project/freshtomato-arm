@@ -195,6 +195,7 @@ cmd_uim_channel_id_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct 
 {
 	char *err;
 	int value = strtoul(arg, &err, 10);
+
 	if ((err && *err) || value < 1 || value > 4) {
 		uqmi_add_error("Invalid Channel-ID value. Allowed: [1,2,3,4]");
 		return QMI_CMD_EXIT;
@@ -226,7 +227,7 @@ cmd_uim_open_logical_channel_prepare(struct qmi_dev *qmi, struct qmi_request *re
 		QMI_INIT(slot, uim_slot),
 		QMI_INIT_ARRAY(aid, aid, (strlen(arg) / 2)),
 	};
-	
+
 
 	if (!uim_slot) {
 		uqmi_add_error("UIM-Slot not set");
@@ -255,7 +256,7 @@ cmd_uim_close_logical_channel_prepare(struct qmi_dev *qmi, struct qmi_request *r
 	struct qmi_uim_logical_channel_request data = {
 		QMI_INIT(slot, uim_slot),
 		QMI_INIT(channel_id, channel_id),
-	};	
+	};
 
 	if (!uim_slot) {
 		uqmi_add_error("UIM-Slot not set. Use --uim-slot <slot> to set it.");
@@ -300,7 +301,6 @@ cmd_uim_send_apdu_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct q
 		QMI_INIT(channel_id, channel_id),
 		QMI_INIT_ARRAY(apdu, apdu, (strlen(arg) / 2)),
 	};
-	
 
 	if (!uim_slot) {
 		uqmi_add_error("UIM-Slot not set. Use --uim-slot <slot> to set it.");

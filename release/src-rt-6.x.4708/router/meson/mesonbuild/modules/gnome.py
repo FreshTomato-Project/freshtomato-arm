@@ -322,7 +322,7 @@ class GnomeModule(ExtensionModule):
         }
         depname = tool_map[tool]
         varname = tool.replace('-', '_')
-        return state.find_tool(tool, depname, varname)
+        return state.find_tool(tool, depname, varname, native=depname != "gobject-introspection-1.0")
 
     @typed_kwargs(
         'gnome.post_install',
@@ -829,8 +829,8 @@ class GnomeModule(ExtensionModule):
             if isinstance(inc, str):
                 ret += [f'--include={inc}']
             elif isinstance(inc, GirTarget):
-                gir_inc_dirs .append(os.path.join(state.environment.get_build_dir(), inc.get_subdir()))
-                ret.append(f"--include-uninstalled={os.path.join(inc.get_subdir(), inc.get_basename())}")
+                gir_inc_dirs .append(os.path.join(state.environment.get_build_dir(), inc.get_builddir()))
+                ret.append(f"--include-uninstalled={os.path.join(inc.get_builddir(), inc.get_basename())}")
                 depends.append(inc)
 
         return ret, gir_inc_dirs, depends

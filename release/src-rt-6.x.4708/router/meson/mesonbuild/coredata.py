@@ -44,7 +44,7 @@ if T.TYPE_CHECKING:
 #
 # Pip requires that RCs are named like this: '0.1.0.rc1'
 # But the corresponding Git tag needs to be '0.1.0rc1'
-version = '1.10.0'
+version = '1.10.1'
 
 # The next stable version when we are in dev. This is used to allow projects to
 # require meson version >=1.2.0 when using 1.1.99. FeatureNew won't warn when
@@ -351,6 +351,8 @@ class CoreData:
             # key and target have the same subproject for consistency.
             # Now just do this to get things going.
             newkey = newkey.evolve(subproject=target.subproject)
+        if self.is_cross_build():
+            newkey = newkey.evolve(machine=target.for_machine)
         option_object, value = self.optstore.get_option_and_value_for(newkey)
         override = target.get_override(newkey.name)
         if override is not None:

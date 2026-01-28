@@ -8,7 +8,7 @@ from ..mesonlib import (
     search_version, is_windows, Popen_safe, Popen_safe_logged, version_compare, windows_proof_rm,
 )
 from ..programs import ExternalProgram
-from ..envconfig import BinaryTable, detect_cpu_family, detect_machine_info
+from ..envconfig import BinaryTable, detect_cpu_family
 from .. import mlog
 
 from ..linkers import guess_win_linker, guess_nix_linker
@@ -701,7 +701,7 @@ def detect_cuda_compiler(env: 'Environment', for_machine: MachineChoice) -> Comp
         cls = CudaCompiler
         env.add_lang_args(cls.language, cls, for_machine)
         key = OptionKey('cuda_link_args', machine=for_machine)
-        if env.is_cross_build(for_machine):
+        if not env.is_cross_build(for_machine):
             key = key.as_host()
         if key in env.options:
             # To fix LDFLAGS issue
@@ -1148,7 +1148,7 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
                         exelist=cc.linker.exelist, version=cc.linker.version,
                         **extra_args)  # type: ignore
                 else:
-                    linker = type(cc.linker)(compiler, env, for_machine, cc.LINKER_PREFIX,
+                    linker = type(cc.linker)(cc.linker.exelist, env, for_machine, cc.LINKER_PREFIX,
                                              always_args=always_args, system=cc.linker.system,
                                              version=cc.linker.version, **extra_args)
             elif 'link' in override[0]:
@@ -1329,6 +1329,8 @@ def detect_nasm_compiler(env: 'Environment', for_machine: MachineChoice) -> Comp
 
     # We need a C compiler to properly detect the machine info and linker
     cc = detect_c_compiler(env, for_machine)
+    if not env.is_cross_build(for_machine):
+        env.update_build_machine({'c': cc})
 
     popen_exceptions: T.Dict[str, Exception] = {}
     for comp in compilers:
@@ -1369,9 +1371,9 @@ def detect_masm_compiler(env: 'Environment', for_machine: MachineChoice) -> Comp
     # We need a C compiler to properly detect the machine info and linker
     cc = detect_c_compiler(env, for_machine)
     if not env.is_cross_build(for_machine):
-        info = detect_machine_info({'c': cc})
-    else:
-        info = env.machines[for_machine]
+        env.update_build_machine({'c': cc})
+
+    info = env.machines[for_machine]
 
     from .asm import MasmCompiler, MasmARMCompiler
     comp_class: T.Type[ASMCompiler]
@@ -1411,6 +1413,8 @@ def detect_linearasm_compiler(env: Environment, for_machine: MachineChoice) -> C
     comp_class: T.Type[ASMCompiler] = TILinearAsmCompiler
     arg = '-h'
     cc = detect_c_compiler(env, for_machine)
+    if not env.is_cross_build(for_machine):
+        env.update_build_machine({'c': cc})
 
     popen_exceptions: T.Dict[str, Exception] = {}
     try:

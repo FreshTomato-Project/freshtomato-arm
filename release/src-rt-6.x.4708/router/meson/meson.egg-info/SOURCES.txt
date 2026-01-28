@@ -1645,6 +1645,11 @@ test cases/common/285 atomic/a.c
 test cases/common/285 atomic/meson.build
 test cases/common/286 importstd/meson.build
 test cases/common/286 importstd/useistd.cpp
+test cases/common/288 multiple provides/meson.build
+test cases/common/288 multiple provides/subprojects/test.wrap
+test cases/common/288 multiple provides/subprojects/libfoobar/meson.build
+test cases/common/288 multiple provides/subprojects/subproject/meson.build
+test cases/common/288 multiple provides/subprojects/subproject/subprojects/test-subproject.wrap
 test cases/common/29 compiler id/meson.build
 test cases/common/3 static/lib3.c
 test cases/common/3 static/libfile.c
@@ -3989,6 +3994,7 @@ test cases/unit/131 vala internal glib/lib.vala
 test cases/unit/131 vala internal glib/meson.build
 test cases/unit/131 vala internal glib/meson.options
 test cases/unit/132 custom target index test/meson.build
+test cases/unit/133 nasm language only/meson.build
 test cases/unit/14 testsetup selection/main.c
 test cases/unit/14 testsetup selection/meson.build
 test cases/unit/14 testsetup selection/subprojects/bar/bar.c

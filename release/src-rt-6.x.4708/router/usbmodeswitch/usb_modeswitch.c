@@ -1,8 +1,8 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.6.0, 2019/11/28
+  Version 2.6.2, 2025/02/19
 
-  Copyright (C) 2007 - 2019 Josua Dietze (mail to "usb_admin" at the domain
+  Copyright (C) 2007 - 2025 Josua Dietze (mail to "usb" at the domain
   of the home page; or write a personal message through the forum to "Josh".
   NO SUPPORT VIA E-MAIL - please use the forum for that)
 
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "2.6.0"
+#define VERSION "2.6.2"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -570,7 +570,7 @@ int main(int argc, char **argv)
 	/* Get current configuration of default device, note value if Configuration
 	 * parameter is set. Also sets active_config
 	 */
-	currentConfigVal = get_current_config_value(dev);
+	currentConfigVal = get_current_config_value();
 	if (Configuration > -1) {
 		SHOW_PROGRESS(output,"Current configuration number is %d\n", currentConfigVal);
 	} else
@@ -772,7 +772,7 @@ int main(int argc, char **argv)
 	if (Configuration > 0) {
 		if (currentConfigVal != Configuration) {
 			if (switchConfiguration()) {
-				currentConfigVal = get_current_config_value(dev);
+				currentConfigVal = get_current_config_value();
 				if (currentConfigVal == Configuration) {
 					SHOW_PROGRESS(output,"The configuration was set successfully\n");
 				} else {
@@ -1474,19 +1474,31 @@ int detachDrivers()
 	if (ret == LIBUSB_ERROR_NOT_SUPPORTED) {
 		fprintf(output," Can't do driver detection on this platform.\n");
 		return 2;
+	} else if (ret < 0) {
+		fprintf(output," Can't determine active driver (error %d)\n", ret);
+		return 2;
 	}
 
 	struct libusb_config_descriptor *config;
-	libusb_get_active_config_descriptor(dev, &config);
+	ret = libusb_get_active_config_descriptor(dev, &config);
+	if (ret < 0) {
+		if (ret == LIBUSB_ERROR_NOT_FOUND)
+			fprintf(output," Device is gone or wasn't configured properly.\n");
+		else 
+			fprintf(output," Can't determine active configuration. Something is wrong with the device (error %d)\n", ret);
+		return 2;
+	}
 
 	for (i=0; i<config->bNumInterfaces; i++) {
-		ret = libusb_kernel_driver_active(devh, i);
+		// There are devices without an interface number 0 !! So get the proper iface number ...
+		int ifIdx = config->interface[i].altsetting[0].bInterfaceNumber;
+		ret = libusb_kernel_driver_active(devh, ifIdx);
 		if (ret < 0) {
-			SHOW_PROGRESS(output," Failed to check driver status for interface %d (error %d)\n Try to continue\n",i,ret);
+			SHOW_PROGRESS(output," Failed to check driver status for interface %d (error %d)\n Try to continue\n",ifIdx,ret);
 			continue;
 		}
 		if (ret) {
-			ret = libusb_detach_kernel_driver(devh, i);
+			ret = libusb_detach_kernel_driver(devh, ifIdx);
 			if (ret == LIBUSB_ERROR_NOT_SUPPORTED) {
 				fprintf(output," Can't do driver detaching on this platform.\n");
 				return 2;
@@ -1494,7 +1506,7 @@ int detachDrivers()
 			if (ret == 0) {
 				SHOW_PROGRESS(output," OK, driver detached\n");
 			} else {
-				SHOW_PROGRESS(output," Driver detach failed for interface %d (error %d).\n Try to continue\n",i,ret);
+				SHOW_PROGRESS(output," Driver detach failed for interface %d (error %d).\n Try to continue\n",ifIdx,ret);
 				continue;
 			}
 		}
@@ -1531,7 +1543,7 @@ int sendMessage(char* message, int count)
 
 int checkSuccess()
 {
-	int ret, i;
+	int ret, i=0;
 	int newTargetCount, success=0;
 
 	SHOW_PROGRESS(output,"\nCheck for mode switch (max. %d times, once per second) ...\n", CheckSuccess);
@@ -1584,8 +1596,10 @@ int checkSuccess()
 		/* Recount target devices (compare with previous count) if target data is given.
 		 * Target device on the same bus with higher device number is returned,
 		 * description is read for syslog message
+		 *
+		 * Note: Wait counter i (seconds) passed on from previous loop; adds up to max
+		 * CheckSuccess (parameter) for BOTH loops together
 		 */
-		// Wait counter passed on from previous loop
 		for (i=i; i < CheckSuccess; i++) {
 			SHOW_PROGRESS(output," Search for target devices ...\n");
 			dev = search_devices(&newTargetCount, TargetVendor, TargetProductList,
@@ -1691,7 +1705,7 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 {
 	char *listcopy=NULL, *token;
 	unsigned char buffer[2];
-	int devClass, product;
+	int devClass, product, ret;
 	struct libusb_device* right_dev = NULL;
 	struct libusb_device **devs;
 	int i=0;
@@ -1760,10 +1774,14 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 				if (targetClass != 0) {
 					/* TargetClass is set, check class of first interface */
 					struct libusb_device_descriptor descriptor;
-					libusb_get_device_descriptor(dev, &descriptor);
+					ret = libusb_get_device_descriptor(dev, &descriptor);
+					if (ret < 0)
+						{fprintf(stderr,"Error when retrieving device descriptor: %d\n", ret); return NULL;}
 					devClass = descriptor.bDeviceClass;
 					struct libusb_config_descriptor *config;
 					libusb_get_config_descriptor(dev, 0, &config);
+					if (ret < 0)
+						{fprintf(stderr,"Error when retrieving first config descriptor: %d\n", ret); return NULL;}
 					int ifaceClass = config->interface[0].altsetting[0].bInterfaceClass;
 					libusb_free_config_descriptor(config);
 					if (devClass == 0)
@@ -1864,7 +1882,7 @@ int get_interface_class()
 }
 
 
-/* Parameter parsing */
+/* Config file parameter parsing */
 
 char* ReadParseParam(const char* FileName, char *VariableName)
 {
@@ -1985,11 +2003,11 @@ char* ReadParseParam(const char* FileName, char *VariableName)
 int hex2num(char c)
 {
 	if (c >= '0' && c <= '9')
-	return c - '0';
+		return c - '0';
 	if (c >= 'a' && c <= 'f')
-	return c - 'a' + 10;
+		return c - 'a' + 10;
 	if (c >= 'A' && c <= 'F')
-	return c - 'A' + 10;
+		return c - 'A' + 10;
 	return -1;
 }
 

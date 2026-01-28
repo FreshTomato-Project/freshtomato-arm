@@ -2,8 +2,8 @@
   This file is part of usb_modeswitch, a mode switching tool for controlling
   the mode of 'multi-state' USB devices
 
-  Version 2.6.0, 2019/11/28
-  Copyright (C) 2007 - 2019  Josua Dietze
+  Version 2.6.2, 2025/02/19
+  Copyright (C) 2007-2025  Josua Dietze
 
   Config file parsing stuff borrowed from Guillaume Dargaud
   (http://www.gdargaud.net/Hack/SourceCode.html)

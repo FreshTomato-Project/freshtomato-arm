@@ -2,6 +2,13 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.6.2, 2025/02/19
+    Bug in C code (with gcc 1.5) fixed
+Version 2.6.1, 2020/07/10
+    Wrapper now handles devices with non-continuous interface numbering:
+    www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?f=2&t=2915&p=19605
+    (thanks to Jakub Vaněk); catch error with retrieving the active confi-
+    guration, exit gracefully: https://bugs.launchpad.net/bugs/1880191
 Version 2.6.0, 2019/11/28
     Removed included libjim source alltogether; rewrote parts of the
     dispatcher script to make location of global config file into a

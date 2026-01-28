@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Josua Dietze, usb_modeswitch version 2.6.0
+ * Copyright (c) 2011-2020 Josua Dietze, usb_modeswitch version 2.6.1
  * Contains code under
  * Copyright (c) 2010 Wojciech A. Koszek <wkoszek@FreeBSD.org>
  * All rights reserved.

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# (c) Josua Dietze 2019
+# (c) Josua Dietze 2019-2020
 #
 # Usage: make_string.sh source.tcl > [condensed tcl]
 

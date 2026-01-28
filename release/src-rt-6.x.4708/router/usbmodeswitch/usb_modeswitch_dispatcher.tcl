@@ -9,8 +9,20 @@
 # the mode switching program with the matching parameter
 # file from /usr/share/usb_modeswitch
 #
-# Part of usb-modeswitch-2.6.0 package
-# (C) Josua Dietze 2009-2019
+# Part of usb-modeswitch-2.6.2 package, 2025/02/19
+# (C) Josua Dietze 2009 - 2025
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details:
+#
+# http://www.gnu.org/licenses/gpl.txt
 
 set arg0 [lindex $argv 0]
 if [regexp {\.tcl$} $arg0] {
@@ -138,10 +150,10 @@ set iface 0
 Log "Check class of first interface ..."
 set config(class) [IfClass 0 $devdir]
 if {$config(class) < 0} {
-	Log " No access to interface 0. Exit"
+	Log " No access to first interface. Exit"
 	SafeExit
 }
-Log " Interface 0 class is $config(class)."
+Log " Interface class is $config(class)."
 
 set ifdir [file tail [IfDir $iface $devdir]]
 regexp {:([0-9]+\.[0-9]+)$} $ifdir d iface
@@ -881,19 +893,21 @@ if {$i > 20} {return 0} else {return 1}
 
 proc {IfDir} {iface devdir} {
 
-set allfiles [glob -nocomplain $devdir/*]
-set files [glob -nocomplain $devdir/*.$iface]
-if {[llength $files] == 0} {
+set files [glob -nocomplain $devdir/*]
+set iffiles [lsort [lsearch -all -inline -regexp $files {^.*/[^/]*[0-9]+\.[0-9]$}]]
+set sorted [concat $iffiles [lsort [lsearch -all -inline -regexp $files {^.*/[^/]*[0-9]+\.[0-9][0-9]$}]]]
+if {[llength $sorted] == 0} {
 	return ""
 }
-set ifdir [lindex $files 0]
-if {![file isdirectory $ifdir]} {
+set ifdir [lindex $sorted $iface]
+if {![string length $ifdir] || ![file isdirectory $ifdir]} {
 	return ""
 }
 return $ifdir
 
 }
 # end of proc {IfDir}
+
 
 proc {IfClass} {iface devdir} {
 
@@ -940,6 +954,7 @@ catch {exec $flags(logger) -p syslog.notice "$msg" 2>/dev/null}
 }
 # end of proc {SysLog}
 
+
 proc {SetStorageDelay} {secs} {
 
 Log "Adjust delay for USB storage devices ..."
@@ -964,6 +979,7 @@ close $ch
 }
 # end of proc {SetStorageDelay}
 
+
 proc {CheckMBIM} {} {
 
 set kversion [exec uname -r]
@@ -972,6 +988,8 @@ if [file exists /sys/bus/usb/drivers/cdc_mbim] {return 1}
 return 0
 
 }
+# end of proc {CheckMBIM}
+
 
 proc {CheckQMI} {} {
 
@@ -981,6 +999,8 @@ if [file exists /sys/bus/usb/drivers/cdc_mbim] {return 1}
 return 0
 
 }
+# end of proc {CheckQMI}
+
 
 proc {PantechAutoSwitch} {} {
 
@@ -1001,6 +1021,8 @@ if {$config(PantechMode) == 1} {
 } else {return 0}
 
 }
+# end of proc {PantechAutoSwitch}
+
 
 proc {LogAttributes} {} {
 
@@ -1013,6 +1035,8 @@ if $flags(logging) {
 }
 
 }
+# end of proc {LogAttributes}
+
 
 proc {HasFF} {devdir} {
 
@@ -1025,6 +1049,7 @@ while {[set dir [IfDir $i $devdir]] != ""} {
 return 0
 
 }
+# end of proc {HasFF}
 
 
 # The actual entry point

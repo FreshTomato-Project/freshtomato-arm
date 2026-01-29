@@ -18,17 +18,15 @@ ifneq ($(ASUS_TRX),0)
 	$(MAKE) -C ctools
 	ctools/objcopy -O binary -R .note -R .note.gnu.build-id -R .comment -S $(LINUXDIR)/vmlinux ctools/piggy
 	ctools/lzma_4k e ctools/piggy  ctools/vmlinuz-lzma
-	ctools/mksquashfs router/arm-uclibc/target ctools/target.squashfs -noappend -all-root
-	ctools/trx -o image/linux-lzma.trx ctools/vmlinuz-lzma ctools/target.squashfs
 
 # for Tri-Band SDK7.14 (currently only Asus RT-AC5300)/for Dual-Band SDK7.14 (currently Asus RT-AC3100 and RT-AC88U)
  ifeq ($(AC5300),y)
-	ctools/trx_asus -i image/linux-lzma.trx -r RT-AC5300,3.0.0.4,$(FORCE_SN),$(FORCE_EN),image/freshtomato-RT-AC5300-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx
+	$(call CREATE_INJECT_MODEL,freshtomato-RT-AC5300-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx,RT-AC5300,3.0.0.4,$(FORCE_SN),$(FORCE_EN))
  else # AC5300
   ifneq ($(EXTSW),y)
-	ctools/trx_asus -i image/linux-lzma.trx -r RT-AC3100,3.0.0.4,$(FORCE_SN),$(FORCE_EN),image/freshtomato-RT-AC3100-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx
+	$(call CREATE_INJECT_MODEL,freshtomato-RT-AC3100-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx,RT-AC3100,3.0.0.4,$(FORCE_SN),$(FORCE_EN))
   else # EXTSW (so far only RT-AC88U)
-	ctools/trx_asus -i image/linux-lzma.trx -r RT-AC88U,3.0.0.4,$(FORCE_SN),$(FORCE_EN),image/freshtomato-RT-AC88U-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx
+	$(call CREATE_INJECT_MODEL,freshtomato-RT-AC88U-$(branch_rev)-$(current_TOMATO_VER)$(beta)$(current_V2)-$(current_BUILD_DESC).trx,RT-AC88U,3.0.0.4,$(FORCE_SN),$(FORCE_EN))
   endif # EXTSW
  endif
 

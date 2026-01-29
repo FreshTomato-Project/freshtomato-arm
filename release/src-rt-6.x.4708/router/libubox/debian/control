@@ -1,0 +1,52 @@
+Source: libubox
+Maintainer: Felix Fietkau <nbd@nbd.name>
+Section: libs
+Priority: optional
+Standards-Version: 4.5.0
+Rules-Requires-Root: no
+Build-Depends: debhelper-compat (= 12), cmake, pkgconf, libjson-c-dev
+Homepage: https://git.openwrt.org/project/libubox.git
+Vcs-Browser: https://git.openwrt.org/project/libubox.git
+Vcs-Git: https://git.openwrt.org/project/libubox.git
+
+Package: libubox
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Section: libs
+Description: OpenWrt utility library
+ Libubox is a utility library used by OpenWrt. It provides various data
+ structures (AVL tree, linked lists, blob format, key-value lists) and
+ utilities (event loop, socket helpers, base64 encoding, MD5 hashing,
+ logging) commonly used in OpenWrt.
+ .
+ This package contains the shared libraries: libubox, libblobmsg_json,
+ and libjson_script.
+
+Package: libubox-dev
+Architecture: any
+Multi-Arch: same
+Depends: libubox (= ${binary:Version}), libc6-dev|libc-dev, libjson-c-dev, ${misc:Depends}
+Section: libdevel
+Description: Development files for libubox
+ Libubox is a utility library used by OpenWrt. It provides various data
+ structures (AVL tree, linked lists, blob format, key-value lists) and
+ utilities (event loop, socket helpers, base64 encoding, MD5 hashing,
+ logging) commonly used in OpenWrt.
+ .
+ This package contains the development files (headers, static libraries,
+ and symlinks) for libubox.
+
+Package: libubox-utils
+Architecture: any
+Multi-Arch: foreign
+Depends: libubox (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Utility programs for libubox
+ Libubox is a utility library used by OpenWrt. It provides various data
+ structures (AVL tree, linked lists, blob format, key-value lists) and
+ utilities (event loop, socket helpers, base64 encoding, MD5 hashing,
+ logging) commonly used in OpenWrt.
+ .
+ This package contains the jshn utility for JSON shell integration and
+ helper shell scripts.

@@ -305,32 +305,52 @@ static inline uint64_t blobmsg_get_u64(struct blob_attr *attr)
 
 static inline uint64_t blobmsg_cast_u64(struct blob_attr *attr)
 {
-	uint64_t tmp = 0;
+	const int type = blobmsg_type(attr);
+	uint64_t tmp;
 
-	if (blobmsg_type(attr) == BLOBMSG_TYPE_INT64)
+	switch (type) {
+	case BLOBMSG_TYPE_INT64:
 		tmp = blobmsg_get_u64(attr);
-	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT32)
+		break;
+	case BLOBMSG_TYPE_INT32:
 		tmp = blobmsg_get_u32(attr);
-	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT16)
+		break;
+	case BLOBMSG_TYPE_INT16:
 		tmp = blobmsg_get_u16(attr);
-	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT8)
+		break;
+	case BLOBMSG_TYPE_INT8:
 		tmp = blobmsg_get_u8(attr);
+		break;
+	default:
+		tmp = 0;
+		break;
+	}
 
 	return tmp;
 }
 
 static inline int64_t blobmsg_cast_s64(struct blob_attr *attr)
 {
-	int64_t tmp = 0;
+	const int type = blobmsg_type(attr);
+	int64_t tmp;
 
-	if (blobmsg_type(attr) == BLOBMSG_TYPE_INT64)
+	switch (type) {
+	case BLOBMSG_TYPE_INT64:
 		tmp = blobmsg_get_u64(attr);
-	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT32)
-		tmp = (int32_t)blobmsg_get_u32(attr);
-	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT16)
-		tmp = (int16_t)blobmsg_get_u16(attr);
-	else if (blobmsg_type(attr) == BLOBMSG_TYPE_INT8)
-		tmp = (int8_t)blobmsg_get_u8(attr);
+		break;
+	case BLOBMSG_TYPE_INT32:
+		tmp = (int32_t) blobmsg_get_u32(attr);
+		break;
+	case BLOBMSG_TYPE_INT16:
+		tmp = (int16_t) blobmsg_get_u16(attr);
+		break;
+	case BLOBMSG_TYPE_INT8:
+		tmp = (int8_t) blobmsg_get_u8(attr);
+		break;
+	default:
+		tmp = 0;
+		break;
+	}
 
 	return tmp;
 }

@@ -1,0 +1,306 @@
+name: libubox
+
+on:
+  push:
+  pull_request:
+
+env:
+  archs: "aarch64 arm mips mips64 powerpc powerpc64 riscv64 x86_64"
+  variants: "basic full"
+  LUA_VERSION: 5.1.5
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: aarch64
+            gcc: /usr/bin/aarch64-linux-gnu-gcc
+            packages: gcc-aarch64-linux-gnu
+          - arch: arm
+            gcc: /usr/bin/arm-linux-gnueabi-gcc
+            packages: gcc-arm-linux-gnueabi
+          - arch: mips
+            gcc: /usr/bin/mips-linux-gnu-gcc
+            packages: gcc-mips-linux-gnu
+          - arch: mips64
+            gcc: /usr/bin/mips64-linux-gnuabi64-gcc
+            packages: gcc-mips64-linux-gnuabi64
+          - arch: powerpc
+            gcc: /usr/bin/powerpc-linux-gnu-gcc
+            packages: gcc-powerpc-linux-gnu
+          - arch: powerpc64
+            gcc: /usr/bin/powerpc64-linux-gnu-gcc
+            packages: gcc-powerpc64-linux-gnu
+          - arch: riscv64
+            gcc: /usr/bin/riscv64-linux-gnu-gcc
+            packages: gcc-riscv64-linux-gnu
+          - arch: x86_64
+            gcc: /usr/bin/x86_64-linux-gnu-gcc
+            packages: gcc-x86-64-linux-gnu
+    outputs:
+      size-aarch64-basic-a: ${{ steps.basic.outputs.size_aarch64_a }}
+      size-aarch64-basic-so: ${{ steps.basic.outputs.size_aarch64_so }}
+      size-aarch64-full-a: ${{ steps.full.outputs.size_aarch64_a }}
+      size-aarch64-full-so: ${{ steps.full.outputs.size_aarch64_so }}
+      size-arm-basic-a: ${{ steps.basic.outputs.size_arm_a }}
+      size-arm-basic-so: ${{ steps.basic.outputs.size_arm_so }}
+      size-arm-full-a: ${{ steps.full.outputs.size_arm_a }}
+      size-arm-full-so: ${{ steps.full.outputs.size_arm_so }}
+      size-mips-basic-a: ${{ steps.basic.outputs.size_mips_a }}
+      size-mips-basic-so: ${{ steps.basic.outputs.size_mips_so }}
+      size-mips-full-a: ${{ steps.full.outputs.size_mips_a }}
+      size-mips-full-so: ${{ steps.full.outputs.size_mips_so }}
+      size-mips64-basic-a: ${{ steps.basic.outputs.size_mips64_a }}
+      size-mips64-basic-so: ${{ steps.basic.outputs.size_mips64_so }}
+      size-mips64-full-a: ${{ steps.full.outputs.size_mips64_a }}
+      size-mips64-full-so: ${{ steps.full.outputs.size_mips64_so }}
+      size-powerpc-basic-a: ${{ steps.basic.outputs.size_powerpc_a }}
+      size-powerpc-basic-so: ${{ steps.basic.outputs.size_powerpc_so }}
+      size-powerpc-full-a: ${{ steps.full.outputs.size_powerpc_a }}
+      size-powerpc-full-so: ${{ steps.full.outputs.size_powerpc_so }}
+      size-powerpc64-basic-a: ${{ steps.basic.outputs.size_powerpc64_a }}
+      size-powerpc64-basic-so: ${{ steps.basic.outputs.size_powerpc64_so }}
+      size-powerpc64-full-a: ${{ steps.full.outputs.size_powerpc64_a }}
+      size-powerpc64-full-so: ${{ steps.full.outputs.size_powerpc64_so }}
+      size-riscv64-basic-a: ${{ steps.basic.outputs.size_riscv64_a }}
+      size-riscv64-basic-so: ${{ steps.basic.outputs.size_riscv64_so }}
+      size-riscv64-full-a: ${{ steps.full.outputs.size_riscv64_a }}
+      size-riscv64-full-so: ${{ steps.full.outputs.size_riscv64_so }}
+      size-x86_64-basic-a: ${{ steps.basic.outputs.size_x86_64_a }}
+      size-x86_64-basic-so: ${{ steps.basic.outputs.size_x86_64_so }}
+      size-x86_64-full-a: ${{ steps.full.outputs.size_x86_64_a }}
+      size-x86_64-full-so: ${{ steps.full.outputs.size_x86_64_so }}
+    steps:
+      - name: Checkout libubox
+        uses: actions/checkout@v5
+
+      - name: Checkout json-c
+        uses: actions/checkout@v5
+        with:
+          repository: json-c/json-c
+          path: depends/json-c
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install ${{ matrix.packages }}
+
+      - name: Prepare build
+        run: |
+          mkdir -p ${GITHUB_WORKSPACE}/build
+          mkdir -p ${GITHUB_WORKSPACE}/depends/lua
+
+      - name: Build json-c
+        working-directory: depends/json-c
+        run: |
+          cmake \
+            -DCMAKE_C_COMPILER=${{ matrix.gcc }} \
+            -DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/build \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DDISABLE_EXTRA_LIBS=ON \
+            -DBUILD_TESTING=OFF \
+            --install-prefix ${GITHUB_WORKSPACE}/build \
+            -B . -S .
+          make
+          make install
+
+      - name: Build lua
+        working-directory: depends/lua
+        run: |
+          wget -qO- https://www.lua.org/ftp/lua-${{ env.LUA_VERSION }}.tar.gz | \
+            tar zxvf - --strip-components=1
+          sed -i '/#define LUA_USE_READLINE/d' src/luaconf.h
+          sed -i 's/ -lreadline -lhistory -lncurses//g' src/Makefile
+          make linux install \
+            CC=${{ matrix.gcc }} \
+            INSTALL_TOP=${GITHUB_WORKSPACE}/build
+
+      - id: basic
+        name: Build libubox (basic)
+        env:
+          BUILD_DIR: build/libubox-basic
+        run: |
+          cmake \
+            -DCMAKE_C_COMPILER=${{ matrix.gcc }} \
+            -DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/build \
+            -DBUILD_LUA=OFF \
+            -DBUILD_EXAMPLES=OFF \
+            -B $BUILD_DIR -S .
+          make -C $BUILD_DIR
+          echo "size_${{ matrix.arch }}_a=$( find $BUILD_DIR -type f -name libubox.a -printf '%s' )" >> $GITHUB_OUTPUT
+          echo "size_${{ matrix.arch }}_so=$( find $BUILD_DIR -type f -name libubox.so -printf '%s' )" >> $GITHUB_OUTPUT
+
+      - id: full
+        name: Build libubox (full)
+        env:
+          BUILD_DIR: build/libubox-full
+        run: |
+          cmake \
+            -DCMAKE_C_COMPILER=${{ matrix.gcc }} \
+            -DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/build \
+            -DBUILD_LUA=ON \
+            -DBUILD_EXAMPLES=ON \
+            -DLUAPATH=${GITHUB_WORKSPACE}/build/lib/lua \
+            -B $BUILD_DIR -S .
+          make -C $BUILD_DIR
+          echo "size_${{ matrix.arch }}_a=$( find $BUILD_DIR -type f -name libubox.a -printf '%s' )" >> $GITHUB_OUTPUT
+          echo "size_${{ matrix.arch }}_so=$( find $BUILD_DIR -type f -name libubox.so -printf '%s' )" >> $GITHUB_OUTPUT
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: libubox-${{ matrix.arch }}-binaries
+          path: |
+            build/libubox-*/libubox.a
+            build/libubox-*/libubox.so
+          if-no-files-found: error
+
+  summary:
+    name: Sizes
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sizes summary
+        env:
+          size_aarch64_basic_a: ${{needs.build.outputs.size-aarch64-basic-a}}
+          size_aarch64_basic_so: ${{needs.build.outputs.size-aarch64-basic-so}}
+          size_aarch64_full_a: ${{needs.build.outputs.size-aarch64-full-a}}
+          size_aarch64_full_so: ${{needs.build.outputs.size-aarch64-full-so}}
+          size_arm_basic_a: ${{needs.build.outputs.size-arm-basic-a}}
+          size_arm_basic_so: ${{needs.build.outputs.size-arm-basic-so}}
+          size_arm_full_a: ${{needs.build.outputs.size-arm-full-a}}
+          size_arm_full_so: ${{needs.build.outputs.size-arm-full-so}}
+          size_mips_basic_a: ${{needs.build.outputs.size-mips-basic-a}}
+          size_mips_basic_so: ${{needs.build.outputs.size-mips-basic-so}}
+          size_mips_full_a: ${{needs.build.outputs.size-mips-full-a}}
+          size_mips_full_so: ${{needs.build.outputs.size-mips-full-so}}
+          size_mips64_basic_a: ${{needs.build.outputs.size-mips64-basic-a}}
+          size_mips64_basic_so: ${{needs.build.outputs.size-mips64-basic-so}}
+          size_mips64_full_a: ${{needs.build.outputs.size-mips64-full-a}}
+          size_mips64_full_so: ${{needs.build.outputs.size-mips64-full-so}}
+          size_powerpc_basic_a: ${{needs.build.outputs.size-powerpc-basic-a}}
+          size_powerpc_basic_so: ${{needs.build.outputs.size-powerpc-basic-so}}
+          size_powerpc_full_a: ${{needs.build.outputs.size-powerpc-full-a}}
+          size_powerpc_full_so: ${{needs.build.outputs.size-powerpc-full-so}}
+          size_powerpc64_basic_a: ${{needs.build.outputs.size-powerpc64-basic-a}}
+          size_powerpc64_basic_so: ${{needs.build.outputs.size-powerpc64-basic-so}}
+          size_powerpc64_full_a: ${{needs.build.outputs.size-powerpc64-full-a}}
+          size_powerpc64_full_so: ${{needs.build.outputs.size-powerpc64-full-so}}
+          size_riscv64_basic_a: ${{needs.build.outputs.size-riscv64-basic-a}}
+          size_riscv64_basic_so: ${{needs.build.outputs.size-riscv64-basic-so}}
+          size_riscv64_full_a: ${{needs.build.outputs.size-riscv64-full-a}}
+          size_riscv64_full_so: ${{needs.build.outputs.size-riscv64-full-so}}
+          size_x86_64_basic_a: ${{needs.build.outputs.size-x86_64-basic-a}}
+          size_x86_64_basic_so: ${{needs.build.outputs.size-x86_64-basic-so}}
+          size_x86_64_full_a: ${{needs.build.outputs.size-x86_64-full-a}}
+          size_x86_64_full_so: ${{needs.build.outputs.size-x86_64-full-so}}
+        run: |
+          echo "### ${GITHUB_WORKFLOW} sizes :floppy_disk:" >> $GITHUB_STEP_SUMMARY
+
+          header="| libubox.a |"
+          table="| :---: |"
+          for variant in ${{ env.variants }}; do
+            header="$header $variant |"
+            table="$table :---: |"
+          done
+          echo $header >> $GITHUB_STEP_SUMMARY
+          echo $table >> $GITHUB_STEP_SUMMARY
+
+          for arch in ${{ env.archs }}; do
+            row="| $arch | "
+            for variant in $variants; do
+              value=size_${arch}_$(echo "$variant" | tr "[:upper:]" "[:lower:]")_a
+              row="$row ${!value} |"
+            done
+            echo $row >> $GITHUB_STEP_SUMMARY
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          header="| libubox.so |"
+          table="| :---: |"
+          for variant in ${{ env.variants }}; do
+            header="$header $variant |"
+            table="$table :---: |"
+          done
+          echo $header >> $GITHUB_STEP_SUMMARY
+          echo $table >> $GITHUB_STEP_SUMMARY
+
+          for arch in ${{ env.archs }}; do
+            row="| $arch | "
+            for variant in $variants; do
+              value=size_${arch}_$(echo "$variant" | tr "[:upper:]" "[:lower:]")_so
+              row="$row ${!value} |"
+            done
+            echo $row >> $GITHUB_STEP_SUMMARY
+          done
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout libubox
+        uses: actions/checkout@v5
+
+      - name: Checkout json-c
+        uses: actions/checkout@v5
+        with:
+          repository: json-c/json-c
+          path: depends/json-c
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install valgrind
+
+      - name: Prepare build
+        run: |
+          mkdir -p ${GITHUB_WORKSPACE}/build
+          mkdir -p ${GITHUB_WORKSPACE}/depends/lua
+          echo "${GITHUB_WORKSPACE}/build/bin" >> $GITHUB_PATH
+          echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/build/lib:${{ env.LD_LIBRARY_PATH }}" >> $GITHUB_ENV
+
+      - name: Build json-c
+        working-directory: depends/json-c
+        run: |
+          cmake \
+            -DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/build \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_STATIC_LIBS=OFF \
+            -DDISABLE_EXTRA_LIBS=ON \
+            -DBUILD_TESTING=OFF \
+            --install-prefix ${GITHUB_WORKSPACE}/build \
+            -B . -S .
+          make
+          make install
+
+      - name: Build lua
+        working-directory: depends/lua
+        run: |
+          wget -qO- https://www.lua.org/ftp/lua-${{ env.LUA_VERSION }}.tar.gz | \
+            tar zxvf - --strip-components=1
+          sed -i '/#define LUA_USE_READLINE/d' src/luaconf.h
+          sed -i 's/ -lreadline -lhistory -lncurses//g' src/Makefile
+          make linux install \
+            INSTALL_TOP=${GITHUB_WORKSPACE}/build
+
+      - name: Build libubox
+        run: |
+          cmake \
+            -DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/build \
+            -DBUILD_LUA=ON \
+            -DBUILD_EXAMPLES=ON \
+            -DUNIT_TESTING=ON \
+            -DLUAPATH=${GITHUB_WORKSPACE}/build/lib/lua \
+            --install-prefix ${GITHUB_WORKSPACE}/build \
+            -B . -S .
+          make
+          make install
+
+      - name: Test libubox
+        run: |
+          make test CTEST_OUTPUT_ON_FAILURE=1

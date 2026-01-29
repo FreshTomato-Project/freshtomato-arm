@@ -23,7 +23,7 @@ __jshn_raw_append() {
 _jshn_append() {
 	# var=$1
 	local _a_value="$2"
-	eval "${JSON_PREFIX}$1=\"\${${JSON_PREFIX}$1} \$_a_value\""
+	eval "${JSON_PREFIX}$1=\"\${${JSON_PREFIX}$1}\${${JSON_PREFIX}$1:+ }\$_a_value\""
 }
 
 _get_var() {
@@ -195,6 +195,20 @@ json_add_fields() {
 			;;
 		esac
 	done
+}
+
+json_get_index() {
+	local __dest="$1"
+	local __cur __parent __seq
+	_json_get_var __cur JSON_CUR
+	_json_get_var __parent "U_$__cur"
+	if [ "${__parent%%[0-9]*}" != "J_A" ]; then
+		[ -n "$_json_no_warning" ] || \
+			echo "WARNING: Not inside an array" >&2
+		return 1
+	fi
+	__seq="S_$__parent"
+	eval "export -- \"$__dest=\${$__seq}\"; [ -n \"\${$__seq+x}\" ]"
 }
 
 # functions read access to json variables

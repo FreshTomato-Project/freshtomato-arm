@@ -323,7 +323,7 @@ blob_attr_equal(const struct blob_attr *a1, const struct blob_attr *a2)
 }
 
 struct blob_attr *
-blob_memdup(struct blob_attr *attr)
+blob_memdup(const struct blob_attr *attr)
 {
 	struct blob_attr *ret;
 	int size = blob_pad_len(attr);

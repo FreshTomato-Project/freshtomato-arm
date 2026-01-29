@@ -15,11 +15,8 @@ OPTION(BUILD_LUA "build Lua plugin" ON)
 OPTION(BUILD_EXAMPLES "build examples" ON)
 
 INCLUDE(FindPkgConfig)
-PKG_SEARCH_MODULE(JSONC json-c)
-IF(JSONC_FOUND)
-  ADD_DEFINITIONS(-DJSONC)
-  INCLUDE_DIRECTORIES(${JSONC_INCLUDE_DIRS})
-ENDIF()
+PKG_SEARCH_MODULE(JSONC json-c REQUIRED)
+INCLUDE_DIRECTORIES(${JSONC_INCLUDE_DIRS})
 
 SET(SOURCES avl.c avl-cmp.c blob.c blobmsg.c uloop.c usock.c ustream.c ustream-fd.c vlist.c utils.c safe_list.c runqueue.c md5.c kvlist.c ulog.c base64.c udebug.c udebug-remote.c)
 
@@ -101,3 +98,11 @@ IF(ABIVERSION)
 	SET_TARGET_PROPERTIES(json_script PROPERTIES VERSION ${ABIVERSION})
 	SET_TARGET_PROPERTIES(blobmsg_json PROPERTIES VERSION ${ABIVERSION})
 ENDIF()
+
+ADD_CUSTOM_TARGET(debian
+	COMMAND ${CMAKE_COMMAND} -E echo "Generating debian/changelog from git..."
+	COMMAND ${CMAKE_SOURCE_DIR}/debian/generate-changelog.sh
+	COMMAND dpkg-buildpackage -b -uc -us
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	COMMENT "Building Debian package"
+)

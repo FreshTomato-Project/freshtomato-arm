@@ -1,8 +1,8 @@
 --- libubox/CMakeLists.txt
 +++ libubox/CMakeLists.txt
-@@ -21,7 +21,7 @@
-   INCLUDE_DIRECTORIES(${JSONC_INCLUDE_DIRS})
- ENDIF()
+@@ -18,7 +18,7 @@
+ PKG_SEARCH_MODULE(JSONC json-c REQUIRED)
+ INCLUDE_DIRECTORIES(${JSONC_INCLUDE_DIRS})
  
 -SET(SOURCES avl.c avl-cmp.c blob.c blobmsg.c uloop.c usock.c ustream.c ustream-fd.c vlist.c utils.c safe_list.c runqueue.c md5.c kvlist.c ulog.c base64.c udebug.c udebug-remote.c)
 +SET(SOURCES avl.c avl-cmp.c blob.c blobmsg.c uloop.c usock.c ustream.c ustream-fd.c vlist.c utils.c safe_list.c runqueue.c md5.c kvlist.c ulog.c base64.c)

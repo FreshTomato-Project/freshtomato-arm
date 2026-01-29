@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
-
 PROJECT(uloop C)
 
 SET(CMAKE_INSTALL_PREFIX /)

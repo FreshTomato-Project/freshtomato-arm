@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
-
 IF (BUILD_EXAMPLES)
     PROJECT(ubox-examples C)
     ADD_DEFINITIONS(-O1 -Wall -Werror --std=gnu99 -g3)

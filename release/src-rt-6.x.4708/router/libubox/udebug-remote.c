@@ -62,7 +62,6 @@ int udebug_remote_buf_map(struct udebug *ctx, struct udebug_remote_buf *rb, uint
 		return -1;
 
 	if (udebug_buf_open(&rb->buf, fd, msg->ring_size, msg->data_size)) {
-		fprintf(stderr, "failed to open fd %d, ring_size=%d, data_size=%d\n", fd, msg->ring_size, msg->data_size);
 		close(fd);
 		return -1;
 	}
@@ -134,6 +133,9 @@ rbuf_advance_read_head(struct udebug_remote_buf *rb, uint32_t head,
 			*data_start = u32_get(&ptr->start);
 			__sync_synchronize();
 		}
+
+		if (rb->head == head)
+			break;
 
 		if (ptr->timestamp > last_ptr->timestamp)
 			continue;

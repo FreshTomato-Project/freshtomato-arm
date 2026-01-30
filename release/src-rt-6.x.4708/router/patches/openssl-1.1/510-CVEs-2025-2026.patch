@@ -1,0 +1,192 @@
+--- openssl-1.1/apps/s_client.c
++++ openssl-1.1/apps/s_client.c
+@@ -2700,8 +2700,9 @@ int s_client_main(int argc, char **argv)
+                 goto end;
+             }
+             atyp = ASN1_generate_nconf(genstr, cnf);
+-            if (atyp == NULL) {
++            if (atyp == NULL || atyp->type != V_ASN1_SEQUENCE) {
+                 NCONF_free(cnf);
++                ASN1_TYPE_free(atyp);
+                 BIO_printf(bio_err, "ASN1_generate_nconf failed\n");
+                 goto end;
+             }
+--- openssl-1.1/crypto/asn1/a_strex.c
++++ openssl-1.1/crypto/asn1/a_strex.c
+@@ -203,8 +203,10 @@ static int do_buf(unsigned char *buf, int buflen,
+             orflags = CHARTYPE_LAST_ESC_2253;
+         if (type & BUF_TYPE_CONVUTF8) {
+             unsigned char utfbuf[6];
+-            int utflen;
+-            utflen = UTF8_putc(utfbuf, sizeof(utfbuf), c);
++            int utflen = UTF8_putc(utfbuf, sizeof(utfbuf), c);
++
++            if (utflen < 0)
++                return -1; /* error happened with UTF8 */
+             for (i = 0; i < utflen; i++) {
+                 /*
+                  * We don't need to worry about setting orflags correctly
+--- openssl-1.1/crypto/bio/bf_lbuf.c
++++ openssl-1.1/crypto/bio/bf_lbuf.c
+@@ -191,14 +191,34 @@ static int linebuffer_write(BIO *b, const char *in, int inl)
+     while (foundnl && inl > 0);
+     /*
+      * We've written as much as we can.  The rest of the input buffer, if
+-     * any, is text that doesn't and with a NL and therefore needs to be
+-     * saved for the next trip.
++     * any, is text that doesn't end with a NL and therefore we need to try
++     * free up some space in our obuf so we can make forward progress.
+      */
+-    if (inl > 0) {
+-        memcpy(&(ctx->obuf[ctx->obuf_len]), in, inl);
+-        ctx->obuf_len += inl;
+-        num += inl;
++    while (inl > 0) {
++        size_t avail = (size_t)ctx->obuf_size - (size_t)ctx->obuf_len;
++        size_t to_copy;
++
++        if (avail == 0) {
++            /* Flush buffered data to make room */
++            i = BIO_write(b->next_bio, ctx->obuf, ctx->obuf_len);
++            if (i <= 0) {
++                BIO_copy_next_retry(b);
++                return num > 0 ? num : i;
++            }
++            if (i < ctx->obuf_len)
++                memmove(ctx->obuf, ctx->obuf + i, ctx->obuf_len - i);
++            ctx->obuf_len -= i;
++            continue;
++        }
++
++        to_copy = inl > (int)avail ? avail : (size_t)inl;
++        memcpy(&(ctx->obuf[ctx->obuf_len]), in, to_copy);
++        ctx->obuf_len += (int)to_copy;
++        in += to_copy;
++        inl -= (int)to_copy;
++        num += (int)to_copy;
+     }
++
+     return num;
+ }
+ 
+--- openssl-1.1/crypto/modes/ocb128.c
++++ openssl-1.1/crypto/modes/ocb128.c
+@@ -342,7 +342,7 @@ int CRYPTO_ocb128_encrypt(OCB128_CONTEXT *ctx,
+ 
+     if (num_blocks && all_num_blocks == (size_t)all_num_blocks
+         && ctx->stream != NULL) {
+-        size_t max_idx = 0, top = (size_t)all_num_blocks;
++        size_t max_idx = 0, top = (size_t)all_num_blocks, processed_bytes = 0;
+ 
+         /*
+          * See how many L_{i} entries we need to process data at hand
+@@ -356,6 +356,9 @@ int CRYPTO_ocb128_encrypt(OCB128_CONTEXT *ctx,
+         ctx->stream(in, out, num_blocks, ctx->keyenc,
+                     (size_t)ctx->sess.blocks_processed + 1, ctx->sess.offset.c,
+                     (const unsigned char (*)[16])ctx->l, ctx->sess.checksum.c);
++        processed_bytes = num_blocks * 16;
++        in += processed_bytes;
++        out += processed_bytes;
+     } else {
+         /* Loop through all full blocks to be encrypted */
+         for (i = ctx->sess.blocks_processed + 1; i <= all_num_blocks; i++) {
+@@ -434,7 +437,7 @@ int CRYPTO_ocb128_decrypt(OCB128_CONTEXT *ctx,
+ 
+     if (num_blocks && all_num_blocks == (size_t)all_num_blocks
+         && ctx->stream != NULL) {
+-        size_t max_idx = 0, top = (size_t)all_num_blocks;
++        size_t max_idx = 0, top = (size_t)all_num_blocks, processed_bytes = 0;
+ 
+         /*
+          * See how many L_{i} entries we need to process data at hand
+@@ -448,6 +451,9 @@ int CRYPTO_ocb128_decrypt(OCB128_CONTEXT *ctx,
+         ctx->stream(in, out, num_blocks, ctx->keydec,
+                     (size_t)ctx->sess.blocks_processed + 1, ctx->sess.offset.c,
+                     (const unsigned char (*)[16])ctx->l, ctx->sess.checksum.c);
++        processed_bytes = num_blocks * 16;
++        in += processed_bytes;
++        out += processed_bytes;
+     } else {
+         OCB_BLOCK tmp;
+ 
+--- openssl-1.1/crypto/pkcs12/p12_decr.c
++++ openssl-1.1/crypto/pkcs12/p12_decr.c
+@@ -88,6 +88,11 @@ void *PKCS12_item_decrypt_d2i(const X509_ALGOR *algor, const ASN1_ITEM *it,
+     void *ret;
+     int outlen;
+ 
++    if (oct == NULL) {
++        PKCS12err(PKCS12_F_PKCS12_ITEM_DECRYPT_D2I, ERR_R_PASSED_NULL_PARAMETER);
++        return NULL;
++    }
++
+     if (!PKCS12_pbe_crypt(algor, pass, passlen, oct->data, oct->length,
+                           &out, &outlen, 0)) {
+         PKCS12err(PKCS12_F_PKCS12_ITEM_DECRYPT_D2I,
+--- openssl-1.1/crypto/pkcs12/p12_kiss.c
++++ openssl-1.1/crypto/pkcs12/p12_kiss.c
+@@ -183,11 +183,17 @@ static int parse_bag(PKCS12_SAFEBAG *bag, const char *pass, int passlen,
+     ASN1_BMPSTRING *fname = NULL;
+     ASN1_OCTET_STRING *lkid = NULL;
+ 
+-    if ((attrib = PKCS12_SAFEBAG_get0_attr(bag, NID_friendlyName)))
++    if ((attrib = PKCS12_SAFEBAG_get0_attr(bag, NID_friendlyName))) {
++        if (attrib->type != V_ASN1_BMPSTRING)
++            return 0;
+         fname = attrib->value.bmpstring;
++    }
+ 
+-    if ((attrib = PKCS12_SAFEBAG_get0_attr(bag, NID_localKeyID)))
++    if ((attrib = PKCS12_SAFEBAG_get0_attr(bag, NID_localKeyID))) {
++        if (attrib->type != V_ASN1_OCTET_STRING)
++            return 0;
+         lkid = attrib->value.octet_string;
++    }
+ 
+     switch (PKCS12_SAFEBAG_get_nid(bag)) {
+     case NID_keyBag:
+--- openssl-1.1/crypto/pkcs12/p12_utl.c
++++ openssl-1.1/crypto/pkcs12/p12_utl.c
+@@ -207,6 +207,11 @@ char *OPENSSL_uni2utf8(const unsigned char *uni, int unilen)
+     /* re-run the loop emitting UTF-8 string */
+     for (asclen = 0, i = 0; i < unilen; ) {
+         j = bmp_to_utf8(asctmp+asclen, uni+i, unilen-i);
++        /* when UTF8_putc fails */
++        if (j < 0) {
++            OPENSSL_free(asctmp);
++            return NULL;
++        }
+         if (j == 4) i += 4;
+         else        i += 2;
+         asclen += j;
+--- openssl-1.1/crypto/pkcs7/pk7_doit.c
++++ openssl-1.1/crypto/pkcs7/pk7_doit.c
+@@ -1099,6 +1099,8 @@ ASN1_OCTET_STRING *PKCS7_digest_from_attributes(STACK_OF(X509_ATTRIBUTE) *sk)
+     ASN1_TYPE *astype;
+     if ((astype = get_attribute(sk, NID_pkcs9_messageDigest)) == NULL)
+         return NULL;
++    if (astype->type != V_ASN1_OCTET_STRING)
++        return NULL;
+     return astype->value.octet_string;
+ }
+ 
+--- openssl-1.1/crypto/ts/ts_rsp_verify.c
++++ openssl-1.1/crypto/ts/ts_rsp_verify.c
+@@ -262,7 +262,7 @@ static ESS_SIGNING_CERT *ess_get_signing_cert(PKCS7_SIGNER_INFO *si)
+     ASN1_TYPE *attr;
+     const unsigned char *p;
+     attr = PKCS7_get_signed_attribute(si, NID_id_smime_aa_signingCertificate);
+-    if (!attr)
++    if (attr == NULL || attr->type != V_ASN1_SEQUENCE)
+         return NULL;
+     p = attr->value.sequence->data;
+     return d2i_ESS_SIGNING_CERT(NULL, &p, attr->value.sequence->length);
+@@ -274,7 +274,7 @@ static ESS_SIGNING_CERT_V2 *ess_get_signing_cert_v2(PKCS7_SIGNER_INFO *si)
+     const unsigned char *p;
+ 
+     attr = PKCS7_get_signed_attribute(si, NID_id_smime_aa_signingCertificateV2);
+-    if (attr == NULL)
++    if (attr == NULL || attr->type != V_ASN1_SEQUENCE)
+         return NULL;
+     p = attr->value.sequence->data;
+     return d2i_ESS_SIGNING_CERT_V2(NULL, &p, attr->value.sequence->length);

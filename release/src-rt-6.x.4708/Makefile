@@ -153,15 +153,15 @@ endif
 # Macro to inject firmware name and package the firmware (Default: Asus Header)
 define CREATE_INJECT_MODEL
 	# 1. Prepare environment: Create target directory and remove old artifacts
-	mkdir -p router/arm-uclibc/target
-	rm -f router/arm-uclibc/target/*.trx router/arm-uclibc/target/*.chk
+	mkdir -p router/arm-uclibc/target/rom/filename
+	rm -rf router/arm-uclibc/target/rom/filename/*
 	rm -f image/linux-lzma.trx
 
 	# 2. Sanitize the model name: Remove quotes and store in a variable
 	$(eval SAN_IMAGE := $(shell echo $(1) | tr -d '"' | tr -d "'"))
 
 	# 3. Create a placeholder file with the sanitized name inside the target folder
-	printf "" > router/arm-uclibc/target/$(SAN_IMAGE)
+	printf "" > router/arm-uclibc/target/rom/filename/$(SAN_IMAGE)
 
 	# 4. Generate the SquashFS filesystem from the target directory
 	ctools/mksquashfs router/arm-uclibc/target ctools/target.squashfs -noappend -all-root
@@ -175,15 +175,15 @@ endef
 
 define CREATE_INJECT_MODEL_STD
 	# 1. Prepare environment: Create target directory and remove old artifacts
-	mkdir -p router/arm-uclibc/target
-	rm -f router/arm-uclibc/target/*.trx router/arm-uclibc/target/*.chk
+	mkdir -p router/arm-uclibc/target/rom/filename
+	rm -rf router/arm-uclibc/target/rom/filename/*
 	rm -f image/linux-lzma.trx
 
 	# 2. Sanitize the model name: Remove quotes and store in a variable
 	$(eval SAN_IMAGE := $(shell echo $(1) | tr -d '"' | tr -d "'"))
 
 	# 3. Create a placeholder file with the sanitized name inside the target folder
-	printf "" > router/arm-uclibc/target/$(SAN_IMAGE)
+	printf "" > router/arm-uclibc/target/rom/filename/$(SAN_IMAGE)
 
 	# 4. Generate the SquashFS filesystem from the target directory
 	ctools/mksquashfs router/arm-uclibc/target ctools/target.squashfs -noappend -all-root

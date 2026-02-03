@@ -53,9 +53,12 @@ static atomic_counter_t total_compress_allocation;
  * MAX_UNCOMPRESSION_FACTOR. Within those parameters, there's a reasonably
  * large range of possible values. IMO, anything over 8 is probably safe; IMO
  * anything under 50 is probably sufficient.
+ *
+ * 2025-10-01: (ahf) Bumped to 5 MB to avoid the situation described in
+ * tor#40739.
  */
 #define MAX_UNCOMPRESSION_FACTOR 25
-#define CHECK_FOR_COMPRESSION_BOMB_AFTER (1024*64)
+#define CHECK_FOR_COMPRESSION_BOMB_AFTER (5 * 1024 * 1024)
 /** @} */
 
 /** Return true if uncompressing an input of size <b>in_size</b> to an input of

@@ -1450,8 +1450,6 @@ void send_event(int fd, int event, int data, char *msg)
     while (writev(fd, iov, msg ? 2 : 1) == -1 && errno == EINTR);
 }
 
-/* NOTE: the memory used to return msg is leaked: use msgs in events only
-   to describe fatal errors. */
 static int read_event(int fd, struct event_desc *evp, char **msg)
 {
   char *buf;
@@ -1461,12 +1459,22 @@ static int read_event(int fd, struct event_desc *evp, char **msg)
   
   *msg = NULL;
   
-  if (evp->msg_sz != 0 && 
-      (buf = malloc(evp->msg_sz + 1)) &&
-      read_write(fd, (unsigned char *)buf, evp->msg_sz, RW_READ))
+  if (evp->msg_sz != 0)
     {
-      buf[evp->msg_sz] = 0;
-      *msg = buf;
+      if (!(buf = whine_malloc(evp->msg_sz + 1)))
+	{
+	  int i;
+	  unsigned char a;
+	  
+	  /* Keep the stream synchronised if malloc fails. */
+	  for (i = 0; i < evp->msg_sz; i++)
+	    read_write(fd, &a, 1, RW_READ);
+	}
+      else if (read_write(fd, (unsigned char *)buf, evp->msg_sz, RW_READ))
+	{
+	  buf[evp->msg_sz] = 0;
+	  *msg = buf;
+	}
     }
 
   return 1;
@@ -1528,9 +1536,6 @@ static void async_event(int pipe, time_t now)
   struct event_desc ev;
   int wstatus, i, check = 0;
   char *msg;
-  
-  /* NOTE: the memory used to return msg is leaked: use msgs in events only
-     to describe fatal errors. */
   
   if (read_event(pipe, &ev, &msg))
     switch (ev.event)
@@ -1637,7 +1642,6 @@ static void async_event(int pipe, time_t now)
       case EVENT_SCRIPT_LOG:
 	my_syslog(MS_SCRIPT | LOG_DEBUG, "%s", msg ? msg : "");
         free(msg);
-	msg = NULL;
 	break;
 
 	/* necessary for fatal errors in helper */

@@ -680,16 +680,10 @@ int expand_buf(struct iovec *iov, size_t size)
   if (size <= (size_t)iov->iov_len)
     return 1;
 
-  if (!(new = whine_malloc(size)))
+  if (!(new = whine_realloc(iov->iov_base, size)))
     {
       errno = ENOMEM;
       return 0;
-    }
-
-  if (iov->iov_base)
-    {
-      memcpy(new, iov->iov_base, iov->iov_len);
-      free(iov->iov_base);
     }
 
   iov->iov_base = new;
@@ -790,7 +784,7 @@ int read_writev(int fd, struct iovec *iov, int iovcnt, int rw)
 	return 0;
       
       done += n;
-      while ((size_t)done >= iov[cur].iov_len)
+      while (cur < iovcnt && (size_t)done >= iov[cur].iov_len)
 	done -= iov[cur++].iov_len;
     }
           

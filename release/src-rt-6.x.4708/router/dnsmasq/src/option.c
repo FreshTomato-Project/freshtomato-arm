@@ -5734,7 +5734,7 @@ struct hostsfile *expand_filelist(struct hostsfile *list)
   struct dirent **namelist;
 
   /* find largest used index */
-  for (i = SRC_AH, ah = list; ah; ah = ah->next)
+  for (last = NULL, i = SRC_AH, ah = list; ah; ah = ah->next)
     {
       last = ah;
       

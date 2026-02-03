@@ -1423,7 +1423,10 @@ static int base32_decode(char *in, unsigned char *out)
 	    oc |= 1;
 	  mask = mask >> 1;
 	  if (((++on) & 7) == 0)
-	    *p++ = oc;
+	    {
+	      *p++ = oc;
+	      oc = 0;
+	    }
 	  oc = oc << 1;
 	}
     }
@@ -1553,7 +1556,7 @@ static int prove_non_existence_nsec3(struct dns_header *header, size_t plen, uns
 {
   unsigned char *salt, *p, *digest;
   int digest_len, i, iterations, salt_len, base32_len, algo = 0;
-  struct nettle_hash const *hash;
+  struct nettle_hash const *hash = NULL;
   char *closest_encloser, *next_closest, *wildcard;
   
   if (nons)

@@ -103,7 +103,7 @@ unsigned char *find_pseudoheader(struct dns_header *header, size_t plen, size_t 
 size_t add_pseudoheader(struct dns_header *header, size_t plen, unsigned char *limit, 
 			int optno, unsigned char *opt, size_t optlen, int set_do, int replace)
 { 
-  unsigned char *lenp, *datap, *p, *udp_len, *buff = NULL;
+  unsigned char *lenp = NULL, *datap = NULL, *p, *udp_len, *buff = NULL;
   int rdlen = 0, is_sign, is_last;
   unsigned short flags = set_do ? 0x8000 : 0, rcode = 0;
 

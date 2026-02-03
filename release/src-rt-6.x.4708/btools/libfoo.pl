@@ -366,7 +366,7 @@ sub fixDyn
 # avahi
 	fixDynDep("avahi-daemon", "libavahi-core.so.7.1.0");
 	fixDynDep("avahi-daemon", "libavahi-common.so.3.5.4");
-	fixDynDep("avahi-daemon", "libexpat.so.1.11.1");
+	fixDynDep("avahi-daemon", "libexpat.so.1.11.2");
 	fixDynDep("avahi-daemon", "libdaemon.so.0.5.0");
 
 	fixDynDep("xtables-legacy-multi", "libxtables.so");
@@ -691,7 +691,7 @@ if ($is_arm ne "y") { # MIPS only (ARM - bigger)
 	genSO("${root}/usr/lib/libavformat.so.54", "${router}/ffmpeg/libavformat/libavformat.a", "${stripshared}", "-L${router}/ffmpeg/libavutil -L${router}/ffmpeg/libavcodec -L${router}/zlib");
 }
 
-genSO("${root}/usr/lib/libexpat.so.1.11.1", "${router}/expat/static/libexpat.a", "${stripshared}");
+genSO("${root}/usr/lib/libexpat.so.1.11.2", "${router}/expat/static/libexpat.a", "${stripshared}");
 genSO("${root}/usr/lib/libavutil.so.51", "${router}/ffmpeg/libavutil/libavutil.a", "${stripshared}", "-L${router}/zlib");
 genSO("${root}/usr/lib/libzebra.so", "${router}/zebra/lib/libzebra.a", "${stripshared}");
 genSO("${root}/usr/lib/libnfnetlink.so.0.2.0", "${router}/libnfnetlink/src/.libs/libnfnetlink.a", "${stripshared}");

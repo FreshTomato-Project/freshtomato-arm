@@ -3880,8 +3880,8 @@ expat: expat/static/Makefile expat/build/Makefile
 	@$(MAKE) -C expat/build DESTDIR=$(TOP)/expat/staged install
 
 expat-install:
-	install -D expat/build/libexpat.so.1.11.1 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.11.1
-	cd $(INSTALLDIR)/expat/usr/lib && $(STRIP) libexpat.so.1.11.1 && ln -sf libexpat.so.1.11.1 libexpat.so.1
+	install -D expat/build/libexpat.so.1.11.2 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.11.2
+	cd $(INSTALLDIR)/expat/usr/lib && $(STRIP) libexpat.so.1.11.2 && ln -sf libexpat.so.1.11.2 libexpat.so.1
 
 expat-clean:
 	@rm -rf expat/static

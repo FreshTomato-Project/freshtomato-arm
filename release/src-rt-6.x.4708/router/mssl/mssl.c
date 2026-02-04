@@ -3,9 +3,11 @@
  * Minimal CyaSSL/OpenSSL/WolfSSL Helper
  * Copyright (C) 2006-2009 Jonathan Zarate
  * Copyright (C) 2010 Fedor Kozhevnikov
- * Fixes/updates (C) 2018 - 2024 pedro
  *
  * Licensed under GNU GPL v2 or later
+ *
+ * Fixes/updates (C) 2018 - 2026 pedro
+ * https://freshtomato.org/
  *
  */
 

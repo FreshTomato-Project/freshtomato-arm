@@ -687,7 +687,6 @@ endif
 		[ -f $(INSTALLDIR)/www/$$F ] && $(TOP)/www/remcoms2.sh $(INSTALLDIR)/www/$$F c; \
 	done
 
-ifneq ($(TCONFIG_BCMARM),y)
 # use HTML compressor to compress HTML as much as possible
 #	cd $(INSTALLDIR)/www && \
 #	for F in $(wildcard *.asp); do \
@@ -705,6 +704,5 @@ ifneq ($(TCONFIG_BCMARM),y)
 	for F in $(wildcard *.css); do \
 		[ -s $(INSTALLDIR)/www/$$F ] && { echo $$F; $(TOP)/www/tools/bin/uglifycss $$F --output $$F; } || true; \
 	done
-endif
 
 	chmod 0644 $(INSTALLDIR)/www/*

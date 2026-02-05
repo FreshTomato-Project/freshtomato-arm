@@ -1,0 +1,11 @@
+# Web GUI - Tools
+These tools do various optimizations to the tomato web interface. NodeJS is required for these tools to work!
+
+### HTML Minify
+NPM Package: https://www.npmjs.com/package/html-minifier
+
+### uglifyjs
+NPM Package: https://www.npmjs.com/package/uglifyjs
+
+### uglifycss
+NPM Package: https://www.npmjs.com/package/uglifycss

@@ -1,0 +1,24 @@
+{
+    "author": "Franck Marcia <franck.marcia@gmail.com> (https://github.com/fmarcia)",
+    "name": "uglifycss",
+    "description": "Port of YUI CSS Compressor to NodeJS",
+    "version": "0.0.29",
+    "keywords": [
+        "css",
+        "stylesheet",
+        "uglify",
+        "minify"
+    ],
+    "engines": { "node": ">=6.4.0" },
+    "license": "MIT",
+    "homepage": "https://github.com/fmarcia/uglifycss",
+    "bugs": "https://github.com/fmarcia/uglifycss/issues",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/fmarcia/uglifycss.git"
+    },
+    "main": "./index.js",
+    "bin": {
+        "uglifycss" : "./uglifycss"
+    }
+}

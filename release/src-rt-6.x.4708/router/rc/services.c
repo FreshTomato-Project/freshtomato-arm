@@ -105,6 +105,7 @@ static pid_t pid_phy_tempsense = -1;
  * - Settings in nvram: porthealth_cfg
  *   Format: enable=1,mode=monitor,max=50,hold=180,cache=60,if=l
  */
+#ifdef TCONFIG_BCMARM
 static void stop_porthealth(void)
 {
 	/* remove cron job if present */
@@ -194,6 +195,7 @@ static void start_porthealth(void)
 	snprintf(sched, sizeof(sched), "* * * * * /usr/sbin/porthealth.sh %s max=%d hold=%d cache=%d if=%s", mode, max_i, hold_i, cache_i, ift);
 	eval("cru", "a", "porthealth", sched);
 }
+#endif
 
 void add_rstats_defaults(void)
 {
@@ -2415,7 +2417,9 @@ void start_services(void)
 	start_mysql(0);
 #endif
 	start_cron();
+#ifdef TCONFIG_BCMARM
 	start_porthealth(); /* cron-based */
+#endif
 #ifdef TCONFIG_PPTPD
 	start_pptpd(0);
 #endif
@@ -2503,7 +2507,9 @@ void stop_services(void)
 	stop_pptpd();
 #endif
 	stop_sched();
+#ifdef TCONFIG_BCMARM
 	stop_porthealth();
+#endif
 	stop_cron();
 #ifdef TCONFIG_NGINX
 	stop_mysql();
@@ -3187,11 +3193,13 @@ TOP:
 		goto CLEAR;
 	}
 
+#ifdef TCONFIG_BCMARM
 	if (strcmp(service, "porthealth") == 0) {
 		if (act_stop) stop_porthealth();
 		if (act_start) start_porthealth();
 		goto CLEAR;
 	}
+#endif
 
 #ifdef TCONFIG_USB
 	if (strcmp(service, "usb") == 0) {

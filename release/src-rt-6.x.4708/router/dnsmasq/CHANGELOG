@@ -24,6 +24,10 @@ version 2.93
 	accepts a signed CNAME reply to a DS query as proof that no DS
 	exists at the domain. This fixes the DS/zone break detection logic.
 
+	Fix regression in 2.92 release which broke DHCPv6 when a DHCP
+	relay is in use. Many thanks to Jørgen Søvik for help
+	finding this bug.
+	
 	
 version 2.92
         Redesign the interaction between DNSSEC validation and per-domain

@@ -23,6 +23,9 @@ static volatile int mem_recover = 0;
 static jmp_buf mem_jmp;
 static int one_file(char *file, int hard_opt);
 
+static void *opt_malloc_real(const char *func, unsigned int line, size_t size);
+#define opt_malloc(x) opt_malloc_real(__func__, __LINE__, (x))
+
 /* Solaris headers don't have facility names. */
 #ifdef HAVE_SOLARIS_NETWORK
 static const struct {
@@ -655,13 +658,13 @@ static void unhide_metas(char *cp)
       *cp = unhide_meta(*cp);
 }
 
-static void *opt_malloc(size_t size)
+static void *opt_malloc_real(const char *func, unsigned int line, size_t size)
 {
   void *ret;
 
   if (mem_recover)
     {
-      ret = whine_malloc(size);
+      ret = whine_malloc_real(func, line, size);
       if (!ret)
 	longjmp(mem_jmp, 1);
     }

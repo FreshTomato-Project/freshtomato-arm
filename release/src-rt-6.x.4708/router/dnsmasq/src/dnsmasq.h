@@ -1498,11 +1498,15 @@ void *safe_malloc(size_t size);
 void safe_strncpy(char *dest, const char *src, size_t size);
 void safe_pipe(int *fd, int read_noblock);
 #define whine_malloc(x) whine_malloc_real(__func__, __LINE__, (x))
-#define whine_realloc(x, y) whine_realloc_real(__func__, __LINE__, (x), (y))
+#define whine_realloc(x, y) whine_realloc_real(NULL, __func__, __LINE__, (x), (y))
+#define expand_buf(x, y) expand_buf_real(__func__, __LINE__, (x), (y))
+#define expand_workspace(x, y, z) expand_workspace_real(__func__, __LINE__, (x), (y), (z))
 #define free(x) free_real(__func__, __LINE__, (x))
 void free_real(const char *func, unsigned int line, void *ptr);
 void *whine_malloc_real(const char *func, unsigned int line, size_t size);
-void *whine_realloc_real(const char *func, unsigned int line, void *ptr, size_t size);
+void *whine_realloc_real(const char *wrapper, const char *func, unsigned int line, void *ptr, size_t size);
+int expand_buf_real(const char *func, unsigned int line, struct iovec *iov, size_t size);
+int expand_workspace_real(const char *func, unsigned int line, unsigned char ***wkspc, int *szp, int new);
 int sa_len(union mysockaddr *addr);
 int sockaddr_isequal(const union mysockaddr *s1, const union mysockaddr *s2);
 int sockaddr_isnull(const union mysockaddr *s);
@@ -1524,7 +1528,6 @@ int parse_hex(char *in, unsigned char *out, int maxlen,
 	      unsigned int *wildcard_mask, int *mac_type);
 int memcmp_masked(unsigned char *a, unsigned char *b, int len, 
 		  unsigned int mask);
-int expand_buf(struct iovec *iov, size_t size);
 char *print_mac(char *buff, unsigned char *mac, int len);
 int read_write(int fd, unsigned char *packet, int size, int rw);
 int read_writev(int fd, struct iovec *iov, int iovcnt, int rw);
@@ -1916,7 +1919,6 @@ int do_poll(int timeout);
 /* rrfilter.c */
 size_t rrfilter(struct dns_header *header, size_t *plen, int mode);
 short *rrfilter_desc(int type);
-int expand_workspace(unsigned char ***wkspc, int *szp, int new);
 int to_wire(char *name);
 void from_wire(char *name);
 /* modes. */

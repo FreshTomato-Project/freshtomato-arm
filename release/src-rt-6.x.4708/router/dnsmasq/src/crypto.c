@@ -126,20 +126,18 @@ int hash_init(const struct nettle_hash *hash, void **ctxp, unsigned char **diges
 
   if (ctx_sz < hash->context_size)
     {
-      if (!(new = whine_malloc(hash->context_size)))
+      if (!(new = whine_realloc(ctx, hash->context_size)))
 	return 0;
-      if (ctx)
-	free(ctx);
+      
       ctx = new;
       ctx_sz = hash->context_size;
     }
   
   if (digest_sz < hash->digest_size)
     {
-      if (!(new = whine_malloc(hash->digest_size)))
+      if (!(new = whine_realloc(digest, hash->digest_size)))
 	return 0;
-      if (digest)
-	free(digest);
+
       digest = new;
       digest_sz = hash->digest_size;
     }

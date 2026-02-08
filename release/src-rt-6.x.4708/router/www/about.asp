@@ -32,7 +32,7 @@ function init() {
 <div class="about">
 	FreshTomato Firmware <% version(1); %><br>
 	Linux kernel <% version(2); %> and Broadcom Wireless Driver <% version(3); %><br><br>
-	Built on <% build_time(); %> &nbsp;&nbsp;<b>|</b>&nbsp;&nbsp; Copyright &copy; 2016-2025 by Pedro<br><br><hr>
+	Built on <% build_time(); %> &nbsp;&nbsp;<b>|</b>&nbsp;&nbsp; Copyright &copy; 2016-2026 by Pedro<br><br><hr>
 
 	<div style="text-align:center;padding:20px 0 20px 0">
 		<b style="font-size:1.2em;padding-bottom:20px">

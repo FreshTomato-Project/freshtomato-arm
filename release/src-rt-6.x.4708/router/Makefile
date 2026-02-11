@@ -895,11 +895,9 @@ endif
 
 ifneq ($(TCONFIG_BCMARM),y)
 	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs-lzma
-	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(TARGETDIR) $(PLATFORMDIR)/target.image -all-root -noappend -no-duplicates | tee target.info
 else
 image:
 	$(MAKE) -C squashfs-4.2 mksquashfs
-	squashfs-4.2/mksquashfs $(TARGETDIR) $(PLATFORMDIR)/$(ROOT_IMG) -noappend -all-root
 endif
 
 #	Package kernel and filesystem

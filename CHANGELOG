@@ -5,6 +5,111 @@ FreshTomato-ARM Changelog
 
 
 
+2026.1          2026.02.15
+---------------------------
+
+- Note: Many CVE fixes and improvements, updating is strongly recommended!
+- Warning: due to changes in the naming of some nvram variables, users of OpenVPN should: 
+  1. clear nvram during the update or
+  2. use this script: https://gist.github.com/pedro0311/674f2e19691106417a989a43bf27b0a4 - read the inside HOWTO first!
+
+- snmp: update to 5.9.5.2
+- ebtables: updates from upstream
+- libcurl: update to 8.18.0
+- gettext-tiny: update to 0.3.3
+- php: update to 8.3.30
+- libsodium: update to 1.0.21
+- irqbalance: update to 1.9.5
+- libsodium: update to latest 1.0.21-stable
+- sqlite: update to 3.51.2
+- dnsmasq: update to v2.93test4
+- openssl: update to 3.0.19
+- meson: update to 1.10.1
+- libcap-ng: update to 0.9
+- libpng: update to 1.6.54
+- busybox: updates from upstream
+- usb-modeswitch: update to 2.6.2
+- usb-modeswitch: update data package to 20251207
+- uqmi: update to 7914da43 (2025-07-29) snapshot
+- libubox: update to 7928f17 (2025-12-08) snapshot
+- tor: update to 0.4.8.22
+- expat: update to 2.7.4
+- GUI: basic-ipv6.asp - Add option to enable/disable rapid-commit (Case: DHCPv6 PD)
+- GUI: Status: Device List: fix sort by Lease Time (close #165)
+- GUI: Bandwidth: Real-Time: prevent bandwidth spikes on interface counter resets
+- GUI: IP Traffic: Real-Time: prevent bandwidth spikes on interface counter resets
+- GUI: Administration: Upgrade: display current filename used to flash the router
+- GUI: USB and NAS: File Sharing: use drop-down list for 'Samba protocol version' instead of check boxes
+- build: embed firmware filename into image
+- build: OpenVPN: rename nvram variables to free up some space there - the reduction in nvram usage is 1140 bytes (for ARM)
+- avahi/mDNS: fix start of avahi-daemon because of stupid typo in Makefile (close #187)
+- avahi/mDNS: fix problems with avahi-daemon once more (on ARM only)
+- apcupsd: only install apcupsd with other files if TCONFIG_UPS is selected (close #202)
+- stubby: fix DNSSEC trust anchor bootstrapping by using static root trust anchors instead of Zero-config DNSSEC
+- snmpd: save pid to file
+- snmp: also stop snmpd during upgrade
+- wireguard: fix regression in 2025.5 when using "External - VPN Provider" type of VPN you couldn't set "Redirect Internet Traffic" to "All" if you wanted all traffic to be routed through wg, but instead had to use "Routing Policy" and "To Destination IP" set to "0.0.0.0/0"
+- wireguard: add delay on startup with user-defined value (close #204)
+- ntpd: increase limits (Max Memory & Max Processes)
+- DDNS: mdu.c: get_address(): add IPv6 support, refactor (close #215)
+- DDNS: mdu.c: enhance _http_req() with full IPv6 support and safety fixes
+- DDNS: mdu.c: update_cloudflare(): fix memory leak and improve Cloudflare DNS record handling
+- Bandwidth/IP Traffic: fix calculation on real-time chart (close #27)
+- Bandwidth/IP Traffic: add interactive range selection to bandwidth charts (close #17)
+- Update defaults.c disable telnet enable at startup
+- mwwatchdog: improve script robustness
+- mwwatchdog: cktracert(): fix rx_bytes overflow in traffic detection (busybox int32 limit) (close #181)
+- WireGuard: separate the VPN tunnel check from the normal watchdog, as the former does not work with all configurations
+- OpenVPN Client: separate the VPN tunnel check from the normal watchdog, as the former does not work with all configurations
+- openssl-1.1: add fix for: CVE-2025-68160, CVE-2025-69418, CVE-2025-69419, CVE-2025-69420, CVE-2025-69421, CVE-2026-22795 and CVE-2026-22796
+- IPv6 (DHCPv6 with PD): add option to adjust Identity Association for Non-temporary Addresses ID and Identity Association for Prefix Delegation ID
+- IPv6 (DHCPv6-PD): add default route ::/ with gateway if provided by the user (Metric 8192)
+- Use snprintf for buffer safety in connect_pppol2tp
+- httpd: bwm.c: use uint64_t for tx/rx in asp_iptmon(); cosmetic
+- httpd: usb.c: fix critical bugs in asp_usbdevices()
+- porthealth: add port health service
+- nginx: delay on startup with user-defined delay
+- cstats: refactor: replace string literals with path constants
+- cstats: improve buffer validation (snprintf)
+- cstats: use safe/proper daemonization
+- cstats: use direct compression to .gz file
+- cstats: introduce MAX_NODES for memory protection and add free_all_nodes() to clean up tree memory on --new and shutdown
+- cstats: improve buffer handling (strlcpy/strlcat)
+- cstats: use zlib if available
+- rstats: fix memory management issue - free only on successful allocation
+- rstats: refactor: replace string literals with path constants
+- rstats: improve buffer validation (snprintf); cosmetic
+- rstats: use memcpy instead of for loop
+- rstats: use memmove instead of memcpy
+- rstats: use zlib if available
+- rstats: prepare for 64 bit counters
+- rstats: user safe/proper daemonization
+- rstats: improve buffer handling (strlcpy/strlcat)
+- rstats: add 24-hour history persistence to custom paths
+- rc: ddns.c: fix typo in update() function
+- rc: ppp.c: function ipup_main() - use safe_getenv()
+- rc: dhcp.c: function dhcpc_event_main() - check ifname before using it (NULL)
+- rc: dhcp.c: function dhcpc_event_main() and bound() - speed up (again) if the correct prefix (ifname) is found
+- rc: interface.c: function route_manip() - check pointer before using it (NULL)
+- rc: snmp.c: use serialize_restart() to start/stop daemon, always remove pid file on stop
+- rc: nginx.c: always remove child pid on nginx stop; cosmetic
+- rc: wireguard.c: fix concurrency issues
+- rc: mysql.c: use _exit() instead of exit() to terminate the child
+- rc: nginx.c: use _exit() instead of exit() to terminate the child
+- rc: transmission.c: use _exit() instead of exit() to terminate the child
+- shared: misc.c: refactor connect_timeout()
+- shared: files.c: increase file path buffer size in f_write_procsysnet()
+- www: vpn-[client|wireguard].asp: fix note about Kill Switch
+- www: status-devices.asp: fix javascript error when image is built without Network Discovery
+- www: tomato.js: anon_update(): use target="_blank" instead of class="new_window" because on some pages eventHandler() is not added in init()
+- www: admin-[bwm|iptraffic].asp: avoid reloading the page while saving
+- www: nas-usb.asp: avoid reloading the page while saving; cosmetic
+- www: tomato.js: wikiLink(): add title to links
+- www: advanced-adblock-v2.asp: initialize variables before use, reset them when they are no longer needed, do not allow re-query when the previous one is still active
+- www: add grid backup and restore functionality to selected pages
+- www: tomato.js - allows for placeholder to work on password fields
+
+
 2025.5          2025.12.21
 ---------------------------
 

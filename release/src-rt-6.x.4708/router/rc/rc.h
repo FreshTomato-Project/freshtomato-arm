@@ -616,6 +616,9 @@ extern void write_ovpn_dnsmasq_config(FILE*);
 extern int write_ovpn_resolv(FILE*);
 #endif
 
+/* format.c */
+extern void nvram_format_compat(void);
+
 /* wireguard.c */
 #ifdef TCONFIG_WIREGUARD
 #define WG_KEY_LEN 32

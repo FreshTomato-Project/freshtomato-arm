@@ -1,4 +1,4 @@
-.\" Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.
+.\" Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.
 .\"
 .\" This document is dual-licensed.  You may distribute and/or modify it
 .\" under the terms of either of the following licenses:
@@ -16,7 +16,7 @@
 .\"   Documentation License along with this program.  If not, see
 .\"   <https://www.gnu.org/licenses/>.
 .\"
-.TH NANO 1 "version 8.7" "November 2025"
+.TH NANO 1 "version 8.7.1" "February 2026"
 
 .SH NAME
 nano \- Nano's ANOther text editor, inspired by Pico
@@ -240,7 +240,10 @@ When doing soft line wrapping, wrap lines at whitespace
 instead of always at the edge of the screen.
 .TP
 .BR \-b ", " \-\-breaklonglines
-Automatically hard-wrap the current line when it becomes overlong.
+Automatically hard-wrap the current line when it becomes overlong,
+that is: when it becomes wider than the value given with \fB\-r\fR
+(\fB\-\-fill\fR).  The default value for \fB-r\fR is the terminal's
+width minus eight.
 (This option is the opposite of \fB\-w\fR (\fB\-\-nowrap\fR) \(em
 the last one given takes effect.)
 .TP
@@ -435,13 +438,26 @@ for more information on the possible contents of those files.
 See \fI/usr/share/nano/\fR and \fI/usr/share/nano/extra/\fR
 for available syntax-coloring definitions.
 
+.SH EXIT STATUS
+.TP
+.B 0
+The editor finished normally.
+.TP
+.B 1
+An invalid option or option argument was given.
+.TP
+.B 2
+The last open buffer was discarded (with \fB^O^Q\fR or \fB^X^Q\fR).
+
 .SH NOTES
 Suspension is enabled by default, reachable via \fB^T^Z\fR.
 (If you want a plain \fB^Z\fR to suspend nano, add
 \fBbind ^Z suspend main\fR to your nanorc.)
 .sp
 At a Yes-No prompt, \fB^Y\fR can be used for "Yes", \fB^N\fR for "No",
-and \fB^A\fR for "All".  These unlisted bindings work in any locale.
+and \fB^A\fR for "All".
+(And when exiting, \fB^Q\fR can be used for "Quit with error".)
+These unlisted bindings work in any locale.
 .sp
 When you want to copy marked text from \fBnano\fR to the system's clipboard,
 see one of the examples in the \fBnanorc\fR(5) man page.

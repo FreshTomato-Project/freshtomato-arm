@@ -1,5 +1,5 @@
 /* Work around platform bugs in utime.
-   Copyright (C) 2017-2025 Free Software Foundation, Inc.
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -52,10 +52,8 @@ _gl_utimens_windows (const char *name, struct timespec ts[2])
 
   /* Remove trailing slashes (except the very first one, at position
      drive_prefix_len), but remember their presence.  */
-  size_t rlen;
+  size_t rlen = len;
   bool check_dir = false;
-
-  rlen = len;
   while (rlen > drive_prefix_len && ISSLASH (name[rlen-1]))
     {
       check_dir = true;

@@ -1,7 +1,7 @@
 /**************************************************************************
  *   prototypes.h  --  This file is part of GNU nano.                     *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
+ *   Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.    *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -230,7 +230,7 @@ char *mbstrcasestr(const char *haystack, const char *needle);
 char *revstrstr(const char *haystack, const char *needle, const char *pointer);
 char *mbrevstrcasestr(const char *haystack, const char *needle, const char *pointer);
 #if !defined(NANO_TINY) || defined(ENABLE_JUSTIFY)
-char *mbstrchr(const char *string, const char *chr);
+const char *mbstrchr(const char *string, const char *chr);
 #endif
 #ifndef NANO_TINY
 char *mbstrpbrk(const char *string, const char *accept);

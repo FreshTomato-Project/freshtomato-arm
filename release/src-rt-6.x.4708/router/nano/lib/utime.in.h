@@ -1,5 +1,5 @@
 /* Substitute for and wrapper around <utime.h>.
-   Copyright (C) 2017-2025 Free Software Foundation, Inc.
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -91,7 +91,6 @@ _GL_CXXALIAS_SYS (utime, int, (const char *filename, const struct utimbuf *ts));
 _GL_CXXALIASWARN (utime);
 # endif
 #elif defined GNULIB_POSIXCHECK
-# undef utime
 # if HAVE_RAW_DECL_UTIME
 _GL_WARN_ON_USE (utime,
                  "utime is unportable - "

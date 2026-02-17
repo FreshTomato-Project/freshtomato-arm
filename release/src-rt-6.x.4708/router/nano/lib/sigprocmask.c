@@ -1,5 +1,5 @@
 /* POSIX compatible signal blocking.
-   Copyright (C) 2006-2025 Free Software Foundation, Inc.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This file is free software: you can redistribute it and/or modify
@@ -211,11 +211,10 @@ int
 sigpending (sigset_t *set)
 {
   sigset_t pending = 0;
-  int sig;
-
-  for (sig = 0; sig < NSIG; sig++)
+  for (int sig = 0; sig < NSIG; sig++)
     if (pending_array[sig])
       pending |= 1U << sig;
+
   *set = pending;
   return 0;
 }
@@ -235,9 +234,6 @@ sigprocmask (int operation, const sigset_t *set, sigset_t *old_set)
   if (set != NULL)
     {
       sigset_t new_blocked_set;
-      sigset_t to_unblock;
-      sigset_t to_block;
-
       switch (operation)
         {
         case SIG_BLOCK:
@@ -254,28 +250,24 @@ sigprocmask (int operation, const sigset_t *set, sigset_t *old_set)
           errno = EINVAL;
           return -1;
         }
-      to_unblock = blocked_set & ~new_blocked_set;
-      to_block = new_blocked_set & ~blocked_set;
+
+      sigset_t to_unblock = blocked_set & ~new_blocked_set;
+      sigset_t to_block = new_blocked_set & ~blocked_set;
 
       if (to_block != 0)
-        {
-          int sig;
-
-          for (sig = 0; sig < NSIG; sig++)
-            if ((to_block >> sig) & 1)
-              {
-                pending_array[sig] = 0;
-                if ((old_handlers[sig] = signal (sig, blocked_handler)) != SIG_ERR)
-                  blocked_set |= 1U << sig;
-              }
-        }
+        for (int sig = 0; sig < NSIG; sig++)
+          if ((to_block >> sig) & 1)
+            {
+              pending_array[sig] = 0;
+              if ((old_handlers[sig] = signal (sig, blocked_handler)) != SIG_ERR)
+                blocked_set |= 1U << sig;
+            }
 
       if (to_unblock != 0)
         {
           sig_atomic_t received[NSIG];
-          int sig;
 
-          for (sig = 0; sig < NSIG; sig++)
+          for (int sig = 0; sig < NSIG; sig++)
             if ((to_unblock >> sig) & 1)
               {
                 if (signal (sig, old_handlers[sig]) != blocked_handler)
@@ -290,7 +282,7 @@ sigprocmask (int operation, const sigset_t *set, sigset_t *old_set)
             else
               received[sig] = 0;
 
-          for (sig = 0; sig < NSIG; sig++)
+          for (int sig = 0; sig < NSIG; sig++)
             if (received[sig])
               raise (sig);
         }

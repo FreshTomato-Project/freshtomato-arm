@@ -1,5 +1,5 @@
 # DO NOT EDIT! GENERATED AUTOMATICALLY!
-# Copyright (C) 2002-2025 Free Software Foundation, Inc.
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -211,7 +211,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module setlocale-null-unlocked:
   # Code from module sigaction:
   # Code from module signal-h:
-  # Code from module signbit:
+  # Code from module signbit-no-c++:
   # Code from module sigprocmask:
   # Code from module size_max:
   # Code from module snippet/_Noreturn:
@@ -247,6 +247,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module stringeq:
   # Code from module strings-h:
   # Code from module strncasecmp:
+  # Code from module strncpy:
   # Code from module strnlen:
   # Code from module strnlen1:
   # Code from module sys_random-h:
@@ -953,7 +954,7 @@ AC_DEFUN([gl_INIT],
   AC_PROG_MKDIR_P
   gl_SIGNBIT
   gl_CONDITIONAL([GL_COND_OBJ_SIGNBIT3], [test $REPLACE_SIGNBIT = 1])
-  gl_MATH_MODULE_INDICATOR([signbit])
+  gl_MATH_MODULE_INDICATOR([signbit-no-cxx])
   gl_SIGNALBLOCKING
   gl_CONDITIONAL([GL_COND_OBJ_SIGPROCMASK], [test $HAVE_POSIX_SIGNALBLOCKING = 0])
   AM_COND_IF([GL_COND_OBJ_SIGPROCMASK], [
@@ -1086,6 +1087,12 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_STRNCASECMP
   ])
   gl_STRINGS_MODULE_INDICATOR([strncasecmp])
+  gl_FUNC_STRNCPY
+  gl_CONDITIONAL([GL_COND_OBJ_STRNCPY], [test $REPLACE_STRNCPY = 1])
+  AM_COND_IF([GL_COND_OBJ_STRNCPY], [
+    gl_PREREQ_STRNCPY
+  ])
+  gl_STRING_MODULE_INDICATOR([strncpy])
   gl_FUNC_STRNLEN
   gl_CONDITIONAL([GL_COND_OBJ_STRNLEN],
                  [test $HAVE_DECL_STRNLEN = 0 || test $REPLACE_STRNLEN = 1])
@@ -1688,6 +1695,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/strings.in.h
   lib/stripslash.c
   lib/strncasecmp.c
+  lib/strncpy.c
   lib/strnlen.c
   lib/strnlen1.c
   lib/strnlen1.h
@@ -1952,6 +1960,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/stringeq.m4
   m4/strings_h.m4
   m4/strncasecmp.m4
+  m4/strncpy.m4
   m4/strnlen.m4
   m4/sys_cdefs_h.m4
   m4/sys_random_h.m4

@@ -13,8 +13,8 @@ The complete manual for the GNU nano text editor.
 
 @smallbook
 @set EDITION 0.8
-@set VERSION 8.7
-@set UPDATED November 2025
+@set VERSION 8.7.1
+@set UPDATED February 2026
 
 @dircategory Editors
 @direntry
@@ -29,7 +29,7 @@ The complete manual for the GNU nano text editor.
 
 @title GNU @command{nano}
 @subtitle a small and friendly text editor
-@subtitle version 8.7
+@subtitle version 8.7.1
 
 @author Chris Allegretta
 
@@ -40,7 +40,7 @@ This manual documents the GNU @command{nano} text editor.
 The contents of this manual are part of the GNU @command{nano} distribution.
 
 @sp 5
-Copyright @copyright{} 1999-2009, 2014-2025 Free Software Foundation, Inc.
+Copyright @copyright{} 1999-2009, 2014-2026 Free Software Foundation, Inc.
 @sp 1
 This document is dual-licensed.  You may distribute and/or modify it
 under the terms of either of the following licenses:
@@ -79,7 +79,7 @@ For suggesting improvements: @email{nano-devel@@gnu.org}
 @node Top
 @top
 
-This manual documents GNU @command{nano}, version 8.7.
+This manual documents GNU @command{nano}, version 8.7.1.
 
 @menu
 * Introduction::
@@ -194,6 +194,7 @@ a command straight into a buffer, and then edit it.
 * Search and Replace::
 * Using the Mouse::
 * Anchors::
+* Exit status::
 * Limitations::
 @end menu
 
@@ -366,6 +367,14 @@ are saved when the file is closed, and restored when the file is reopened.
 
 Anchors are visualized in the left margin if line numbers are active,
 and are always visualized (on the right-hand side) in the mini bar.
+
+@node Exit status
+@section Exit status
+
+The exit status is @code{0} when @command{nano} finished normally,
+@code{1} when an invalid option or option argument was given,
+and @code{2} when the last open buffer was discarded
+(with @kbd{^O^Q} or @kbd{^X^Q}).
 
 @node Limitations
 @section Limitations
@@ -569,7 +578,10 @@ instead of always at the edge of the screen.
 
 @item -b
 @itemx --breaklonglines
-Automatically hard-wrap the current line when it becomes overlong.
+Automatically hard-wrap the current line when it becomes overlong,
+that is: when the line becomes wider than the value given with @option{-r}
+(@option{--fill}).  The default value for @option{-r} is the terminal's
+width minus eight.
 (This option is the opposite of @option{-w} (@option{--nowrap}) ---
 the last one given takes effect.)
 
@@ -940,7 +952,9 @@ closing brackets, can end sentences.  The default value is
 "@t{"')>]@}}".
 
 @item set breaklonglines
-Automatically hard-wrap the current line when it becomes overlong.
+Automatically hard-wrap the current line when it becomes overlong --- that
+is: when the line becomes wider than the value given with @code{set fill}
+(which defaults to the width of the terminal minus eight).
 
 @item set casesensitive
 Do case-sensitive searches by default.
@@ -1813,9 +1827,8 @@ When writing a file, 'prepends' (writes at the beginning) instead of overwriting
 When writing a file, creates a backup of the current file.
 
 @item discardbuffer
-When about to write a file, discard the current buffer without saving.
-(This function is bound by default only when option @option{--saveonexit}
-is in effect.)
+Discards the current buffer without saving (when in the Write Out menu).
+When it was the last buffer, then @command{nano} exits with error status 2.
 
 @item browser
 Starts the file browser (in the Read File and Write Out menus),

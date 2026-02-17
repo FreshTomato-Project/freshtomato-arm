@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed Nov 12 09:41:41 2025 -->
+<!-- CreationDate: Wed Feb  4 08:01:22 2026 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -28,6 +28,7 @@
 <a href="#OPTIONS">OPTIONS</a><br>
 <a href="#TOGGLES">TOGGLES</a><br>
 <a href="#FILES">FILES</a><br>
+<a href="#EXIT STATUS">EXIT STATUS</a><br>
 <a href="#NOTES">NOTES</a><br>
 <a href="#BUGS">BUGS</a><br>
 <a href="#HOMEPAGE">HOMEPAGE</a><br>
@@ -387,7 +388,10 @@ the screen.</p>
 <b>--breaklonglines</b></p>
 
 <p style="margin-left:22%;">Automatically hard-wrap the
-current line when it becomes overlong. (This option is the
+current line when it becomes overlong, that is: when it
+becomes wider than the value given with <b>-r</b>
+(<b>--fill</b>). The default value for <b>-r</b> is the
+terminal&rsquo;s width minus eight. (This option is the
 opposite of <b>-w</b> (<b>--nowrap</b>) &mdash; the last one
 given takes effect.)</p>
 
@@ -691,6 +695,50 @@ possible contents of those files.</p>
 <i>/usr/share/nano/</i> and <i>/usr/share/nano/extra/</i>
 for available syntax-coloring definitions.</p>
 
+<h2>EXIT STATUS
+<a name="EXIT STATUS"></a>
+</h2>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em"><b>0</b></p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">The editor finished
+normally.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p><b>1</b></p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>An invalid option or option argument was given.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p><b>2</b></p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>The last open buffer was discarded (with <b>^O^Q</b> or
+<b>^X^Q</b>).</p> </td></tr>
+</table>
+
 <h2>NOTES
 <a name="NOTES"></a>
 </h2>
@@ -703,8 +751,10 @@ main</b> to your nanorc.)</p>
 
 <p style="margin-left:11%; margin-top: 1em">At a Yes-No
 prompt, <b>^Y</b> can be used for &quot;Yes&quot;, <b>^N</b>
-for &quot;No&quot;, and <b>^A</b> for &quot;All&quot;. These
-unlisted bindings work in any locale.</p>
+for &quot;No&quot;, and <b>^A</b> for &quot;All&quot;. (And
+when exiting, <b>^Q</b> can be used for &quot;Quit with
+error&quot;.) These unlisted bindings work in any
+locale.</p>
 
 <p style="margin-left:11%; margin-top: 1em">When you want
 to copy marked text from <b>nano</b> to the system&rsquo;s

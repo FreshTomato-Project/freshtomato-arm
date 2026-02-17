@@ -1,4 +1,4 @@
-.\" Copyright (C) 2003-2011, 2013-2025 Free Software Foundation, Inc.
+.\" Copyright (C) 2003-2011, 2013-2026 Free Software Foundation, Inc.
 .\"
 .\" This document is dual-licensed.  You may distribute and/or modify it
 .\" under the terms of either of the following licenses:
@@ -16,7 +16,7 @@
 .\"   Documentation License along with this program.  If not, see
 .\"   <https://www.gnu.org/licenses/>.
 .\"
-.TH NANORC 5 "version 8.7" "November 2025"
+.TH NANORC 5 "version 8.7.1" "February 2026"
 
 .SH NAME
 nanorc \- GNU nano's configuration file
@@ -117,7 +117,9 @@ punctuation (see \fBset punct\fR), optionally followed by the specified
 closing brackets, can end sentences.  The default value is "\fB\(dq')>]}\fR".
 .TP
 .B set breaklonglines
-Automatically hard-wrap the current line when it becomes overlong.
+Automatically hard-wrap the current line when it becomes overlong \(em
+that is: when it becomes wider than the value given with \fBset fill\fR
+(which defaults to the width of the terminal minus eight).
 .TP
 .B set casesensitive
 Do case-sensitive searches by default.
@@ -956,9 +958,8 @@ When writing a file, "prepends" (writes at the beginning) instead of overwriting
 When writing a file, creates a backup of the current file.
 .TP
 .B discardbuffer
-When about to write a file, discard the current buffer without saving.
-(This function is bound by default only when option \fB\-\-saveonexit\fR
-is in effect.)
+Discards the current buffer without saving (when in the Write Out menu).
+When it was the last buffer, then \fBnano\fR exits with error status 2.
 .TP
 .B browser
 Starts the file browser (in the Read File and Write Out menus),

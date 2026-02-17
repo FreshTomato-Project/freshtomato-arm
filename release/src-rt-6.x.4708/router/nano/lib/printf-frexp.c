@@ -1,5 +1,5 @@
 /* Split a double into fraction and mantissa, for hexadecimal printf.
-   Copyright (C) 2007, 2009-2025 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -66,10 +66,11 @@
 DOUBLE
 FUNC (DOUBLE x, int *expptr)
 {
-  int exponent;
   DECL_ROUNDING
 
   BEGIN_ROUNDING ();
+
+  int exponent;
 
 #ifdef USE_FREXP_LDEXP
   /* frexp and ldexp are usually faster than the loop below.  */

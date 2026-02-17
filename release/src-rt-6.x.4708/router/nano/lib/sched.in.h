@@ -1,5 +1,5 @@
 /* A GNU-like <sched.h>.
-   Copyright (C) 2008-2025 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -100,7 +100,6 @@ _GL_CXXALIAS_SYS (sched_yield, int, (void));
 _GL_CXXALIASWARN (sched_yield);
 # endif
 #elif defined GNULIB_POSIXCHECK
-# undef sched_yield
 # if HAVE_RAW_DECL_SCHED_YIELD
 _GL_WARN_ON_USE (sched_yield, "sched_yield is not portable - "
                  "use gnulib module sched_yield for portability");

@@ -1,6 +1,6 @@
 # Configuration for GNU nano - a small and user-friendly text editor
 #
-# Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.
+# Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.
 # Copyright (C) 2014, 2017 Mike Frysinger
 #
 # GNU nano is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
-AC_INIT([GNU nano], [8.7], [nano-devel@gnu.org], [nano])
+AC_INIT([GNU nano], [8.7.1], [nano-devel@gnu.org], [nano])
 AC_CONFIG_SRCDIR([src/nano.c])
 AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE([1.14])

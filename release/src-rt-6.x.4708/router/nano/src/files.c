@@ -1,8 +1,8 @@
 /**************************************************************************
  *   files.c  --  This file is part of GNU nano.                          *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
- *   Copyright (C) 2015-2022 Benno Schulenberg                            *
+ *   Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.    *
+ *   Copyright (C) 2015-2022, 2025 Benno Schulenberg                      *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -1419,8 +1419,9 @@ char *get_full_path(const char *origpath)
 
 		/* Upon success, re-add the last component of the original path. */
 		if (target) {
-			target = nrealloc(target, strlen(target) + strlen(slash + 1) + 1);
-			strcat(target, slash + 1);
+			*slash = '/';
+			target = nrealloc(target, strlen(target) + strlen(slash) + 1);
+			strcat(target, slash);
 		}
 	}
 

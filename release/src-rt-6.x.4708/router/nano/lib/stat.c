@@ -1,5 +1,5 @@
 /* Work around platform bugs in stat.
-   Copyright (C) 2009-2025 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -287,8 +287,7 @@ rpl_stat (char const *name, struct stat *buf)
           if (info.nFileSizeHigh > 0 || info.nFileSizeLow > 0)
             {
               const char *last_dot = NULL;
-              const char *p;
-              for (p = info.cFileName; *p != '\0'; p++)
+              for (const char *p = info.cFileName; *p != '\0'; p++)
                 if (*p == '.')
                   last_dot = p;
               if (last_dot != NULL)

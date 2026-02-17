@@ -1,5 +1,5 @@
 /* Convert unibyte character to 32-bit wide character.
-   Copyright (C) 2020-2025 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -42,11 +42,10 @@ btoc32 (int c)
   if (c != EOF)
     {
       mbstate_t state;
-      char s[1];
-      char32_t wc;
-
       mbszero (&state);
+      char s[1];
       s[0] = (unsigned char) c;
+      char32_t wc;
       if (mbrtoc32 (&wc, s, 1, &state) <= 1)
         return wc;
     }

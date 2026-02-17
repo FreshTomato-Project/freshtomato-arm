@@ -1,5 +1,5 @@
 /* Elementary Unicode string functions.
-   Copyright (C) 2001-2002, 2005-2025 Free Software Foundation, Inc.
+   Copyright (C) 2001-2002, 2005-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -267,7 +267,7 @@ extern int
 # else
 static inline int
 u32_mbtouc_unsafe (ucs4_t *puc,
-                   const uint32_t *s, _GL_ATTRIBUTE_MAYBE_UNUSED size_t n)
+                   const uint32_t *s, size_t _GL_UNNAMED (n))
 {
   uint32_t c = *s;
 
@@ -334,7 +334,7 @@ extern int
 # else
 static inline int
 u32_mbtouc (ucs4_t *puc, const uint32_t *s,
-            _GL_ATTRIBUTE_MAYBE_UNUSED size_t n)
+            size_t _GL_UNNAMED (n))
 {
   uint32_t c = *s;
 

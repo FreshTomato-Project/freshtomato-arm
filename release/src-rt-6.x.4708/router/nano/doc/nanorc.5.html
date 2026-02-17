@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed Nov 12 09:43:31 2025 -->
+<!-- CreationDate: Wed Feb  4 08:03:12 2026 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -179,7 +179,10 @@ closing brackets, can end sentences. The default value is
 <p style="margin-left:11%;"><b>set breaklonglines</b></p>
 
 <p style="margin-left:15%;">Automatically hard-wrap the
-current line when it becomes overlong.</p>
+current line when it becomes overlong &mdash; that is: when
+it becomes wider than the value given with <b>set fill</b>
+(which defaults to the width of the terminal minus
+eight).</p>
 
 <p style="margin-left:11%;"><b>set casesensitive</b></p>
 
@@ -1467,10 +1470,9 @@ backup of the current file.</p>
 
 <p style="margin-left:15%;"><b>discardbuffer</b></p>
 
-<p style="margin-left:18%;">When about to write a file,
-discard the current buffer without saving. (This function is
-bound by default only when option <b>--saveonexit</b> is in
-effect.)</p>
+<p style="margin-left:18%;">Discards the current buffer
+without saving (when in the Write Out menu). When it was the
+last buffer, then <b>nano</b> exits with error status 2.</p>
 
 <p style="margin-left:15%;"><b>browser</b></p>
 

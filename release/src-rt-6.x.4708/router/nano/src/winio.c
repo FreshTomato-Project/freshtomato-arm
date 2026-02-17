@@ -1,8 +1,8 @@
 /**************************************************************************
  *   winio.c  --  This file is part of GNU nano.                          *
  *                                                                        *
- *   Copyright (C) 1999-2011, 2013-2025 Free Software Foundation, Inc.    *
- *   Copyright (C) 2014-2022 Benno Schulenberg                            *
+ *   Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.    *
+ *   Copyright (C) 2014-2025 Benno Schulenberg                            *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -349,7 +349,7 @@ void implant(const char *string)
 int get_code_from_plantation(void)
 {
 	if (*plants_pointer == '{') {
-		char *closing = strchr(plants_pointer + 1, '}');
+		const char *closing = strchr(plants_pointer + 1, '}');
 
 		if (!closing)
 			return MISSING_BRACE;
@@ -380,7 +380,7 @@ int get_code_from_plantation(void)
 
 		return PLANTED_A_COMMAND;
 	} else {
-		char *opening = strchr(plants_pointer, '{');
+		const char *opening = strchr(plants_pointer, '{');
 		unsigned char firstbyte = *plants_pointer;
 		int length;
 
@@ -3660,7 +3660,7 @@ void do_credits(void)
 		NULL,                /* "Thank you for using nano!" */
 		"",
 		"",
-		"(C) 2025",
+		"(C) 2026",
 		"Free Software Foundation, Inc.",
 		"",
 		"",

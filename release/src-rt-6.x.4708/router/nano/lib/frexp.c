@@ -1,5 +1,5 @@
 /* Split a double into fraction and mantissa.
-   Copyright (C) 2007-2025 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -57,8 +57,6 @@
 DOUBLE
 FUNC (DOUBLE x, int *expptr)
 {
-  int sign;
-  int exponent;
   DECL_ROUNDING
 
   /* Test for NaN, infinity, and zero.  */
@@ -68,7 +66,7 @@ FUNC (DOUBLE x, int *expptr)
       return x;
     }
 
-  sign = 0;
+  int sign = 0;
   if (x < 0)
     {
       x = - x;
@@ -76,6 +74,8 @@ FUNC (DOUBLE x, int *expptr)
     }
 
   BEGIN_ROUNDING ();
+
+  int exponent;
 
   {
     /* Since the exponent is an 'int', it fits in 64 bits.  Therefore the

@@ -131,6 +131,56 @@ static int poll_restart(struct pollfd *fds, int nfds, int timeout)
 	}
 }
 
+static int usock_check_connect(int fd)
+{
+	int err = 0;
+	socklen_t len = sizeof(err);
+
+	if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len))
+		return -1;
+
+	return err ? -1 : 0;
+}
+
+static int usock_timeout_remaining(struct timespec *deadline)
+{
+	struct timespec cur;
+	int msec;
+
+	clock_gettime(CLOCK_MONOTONIC, &cur);
+	msec = (deadline->tv_sec - cur.tv_sec) * 1000;
+	msec += (deadline->tv_nsec - cur.tv_nsec) / 1000000;
+
+	return msec > 0 ? msec : 0;
+}
+
+#define USOCK_MAX_CANDIDATES 8
+#define USOCK_CONNECT_DELAY_MS 250
+
+static int usock_addr_interleave(struct addrinfo *result,
+				 struct addrinfo **candidates, int max)
+{
+	struct addrinfo *v6[USOCK_MAX_CANDIDATES], *v4[USOCK_MAX_CANDIDATES];
+	struct addrinfo *rp;
+	int n_v6 = 0, n_v4 = 0, n = 0, i;
+
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		if (rp->ai_family == AF_INET6 && n_v6 < USOCK_MAX_CANDIDATES)
+			v6[n_v6++] = rp;
+		else if (rp->ai_family == AF_INET && n_v4 < USOCK_MAX_CANDIDATES)
+			v4[n_v4++] = rp;
+	}
+
+	for (i = 0; n < max && (i < n_v6 || i < n_v4); i++) {
+		if (i < n_v6 && n < max)
+			candidates[n++] = v6[i];
+		if (i < n_v4 && n < max)
+			candidates[n++] = v4[i];
+	}
+
+	return n;
+}
+
 int usock_inet_timeout(int type, const char *host, const char *service,
 		       void *addr, int timeout)
 {
@@ -145,14 +195,13 @@ int usock_inet_timeout(int type, const char *host, const char *service,
 			| ((type & USOCK_SERVER) ? AI_PASSIVE : 0)
 			| ((type & USOCK_NUMERIC) ? AI_NUMERICHOST : 0),
 	};
-	struct addrinfo *rp_v6 = NULL;
-	struct addrinfo *rp_v4 = NULL;
-	struct pollfd pfds[2] = {
-	    { .fd = -1, .events = POLLOUT },
-	    { .fd = -1, .events = POLLOUT },
-	};
+	struct addrinfo *candidates[USOCK_MAX_CANDIDATES];
+	struct addrinfo *pfd_ai[USOCK_MAX_CANDIDATES];
+	struct pollfd pfds[USOCK_MAX_CANDIDATES];
+	struct timespec deadline;
+	int n_candidates, n_active = 0;
 	int sock = -1;
-	int i;
+	int fd, delay, i, j;
 
 	if (getaddrinfo(host, service, &hints, &result))
 		return -1;
@@ -162,76 +211,92 @@ int usock_inet_timeout(int type, const char *host, const char *service,
 		goto free_addrinfo;
 	}
 
-	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		if (rp->ai_family == AF_INET6 && !rp_v6)
-			rp_v6 = rp;
-		if (rp->ai_family == AF_INET && !rp_v4)
-			rp_v4 = rp;
+	clock_gettime(CLOCK_MONOTONIC, &deadline);
+	deadline.tv_nsec += (timeout % 1000) * 1000000;
+	if (deadline.tv_nsec >= 1000000000) {
+		deadline.tv_sec++;
+		deadline.tv_nsec -= 1000000000;
 	}
+	deadline.tv_sec += timeout / 1000;
 
-	if (!rp_v6 && !rp_v4)
+	n_candidates = usock_addr_interleave(result, candidates,
+					     USOCK_MAX_CANDIDATES);
+	if (!n_candidates)
 		goto out;
 
-	if (rp_v6) {
-		rp = rp_v6;
-		pfds[0].fd = usock_connect(type | USOCK_NONBLOCK, rp->ai_addr,
-					   rp->ai_addrlen, rp->ai_family,
-					   socktype, server);
-		if (pfds[0].fd < 0) {
-			rp_v6 = NULL;
-			goto try_v4;
-		}
+	for (i = 0; i < n_candidates; i++) {
+		rp = candidates[i];
+		fd = usock_connect(type | USOCK_NONBLOCK, rp->ai_addr,
+				   rp->ai_addrlen, rp->ai_family,
+				   socktype, server);
+		if (fd < 0)
+			continue;
 
-		if (timeout > 300) {
-			if (poll_restart(pfds, 1, 300) == 1) {
-				rp = rp_v6;
-				sock = pfds[0].fd;
+		pfds[n_active] = (struct pollfd){ .fd = fd, .events = POLLOUT };
+		pfd_ai[n_active] = rp;
+		n_active++;
+
+		delay = usock_timeout_remaining(&deadline);
+		if (delay <= 0)
+			break;
+		if (i < n_candidates - 1 && delay > USOCK_CONNECT_DELAY_MS)
+			delay = USOCK_CONNECT_DELAY_MS;
+
+		poll_restart(pfds, n_active, delay);
+
+		for (j = n_active - 1; j >= 0; j--) {
+			if (!(pfds[j].revents & POLLOUT))
+				continue;
+
+			if (usock_check_connect(pfds[j].fd) == 0) {
+				sock = pfds[j].fd;
+				rp = pfd_ai[j];
 				goto out;
 			}
+
+			close(pfds[j].fd);
+			n_active--;
+			pfds[j] = pfds[n_active];
+			pfd_ai[j] = pfd_ai[n_active];
 		}
-		timeout -= 300;
 	}
 
-try_v4:
-	if (rp_v4) {
-		rp = rp_v4;
-		pfds[1].fd = usock_connect(type | USOCK_NONBLOCK, rp->ai_addr,
-						 rp->ai_addrlen, rp->ai_family,
-						 socktype, server);
-		if (pfds[1].fd < 0) {
-			rp_v4 = NULL;
-			if (!rp_v6)
+	while (n_active > 0) {
+		delay = usock_timeout_remaining(&deadline);
+		if (delay <= 0)
+			break;
+
+		poll_restart(pfds, n_active, delay);
+
+		for (j = n_active - 1; j >= 0; j--) {
+			if (!(pfds[j].revents & POLLOUT))
+				continue;
+
+			if (usock_check_connect(pfds[j].fd) == 0) {
+				sock = pfds[j].fd;
+				rp = pfd_ai[j];
 				goto out;
-			goto wait;
+			}
+
+			close(pfds[j].fd);
+			n_active--;
+			pfds[j] = pfds[n_active];
+			pfd_ai[j] = pfd_ai[n_active];
 		}
-	}
-
-wait:
-	poll_restart(pfds + !rp_v6, !!rp_v6 + !!rp_v4, timeout);
-	if (pfds[0].revents & POLLOUT) {
-		rp = rp_v6;
-		sock = pfds[0].fd;
-		goto out;
-	}
-
-	if (pfds[1].revents & POLLOUT) {
-		rp = rp_v4;
-		sock = pfds[1].fd;
-		goto out;
 	}
 
 out:
-	for (i = 0; i < 2; i++) {
-		int fd = pfds[i].fd;
-		if (fd >= 0 && fd != sock)
-			close(fd);
+	for (j = 0; j < n_active; j++) {
+		if (pfds[j].fd != sock)
+			close(pfds[j].fd);
 	}
 
-	if (!(type & USOCK_NONBLOCK))
-		fcntl(sock, F_SETFL, fcntl(sock, F_GETFL) & ~O_NONBLOCK);
-
-	if (addr && sock >= 0)
-		memcpy(addr, rp->ai_addr, rp->ai_addrlen);
+	if (sock >= 0) {
+		if (!(type & USOCK_NONBLOCK))
+			fcntl(sock, F_SETFL, fcntl(sock, F_GETFL) & ~O_NONBLOCK);
+		if (addr)
+			memcpy(addr, rp->ai_addr, rp->ai_addrlen);
+	}
 free_addrinfo:
 	freeaddrinfo(result);
 	return sock;

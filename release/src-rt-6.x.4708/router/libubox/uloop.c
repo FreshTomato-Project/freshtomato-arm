@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <signal.h>
 
 #include "uloop.h"
 #include "utils.h"
@@ -63,7 +64,7 @@ static int poll_fd = -1;
 bool uloop_cancelled = false;
 bool uloop_handle_sigchld = true;
 static int uloop_status = 0;
-static bool do_sigchld = false;
+static volatile sig_atomic_t do_sigchld = 0;
 
 static struct uloop_fd_event cur_fds[ULOOP_MAX_EVENTS];
 static int cur_fd, cur_nfds;
@@ -426,7 +427,7 @@ static void uloop_handle_processes(void)
 	pid_t pid;
 	int ret;
 
-	do_sigchld = false;
+	do_sigchld = 0;
 
 	while (1) {
 		pid = waitpid(-1, &ret, WNOHANG);
@@ -470,7 +471,7 @@ static void uloop_signal_wake(int signo)
 	uint8_t sigbyte = signo;
 
 	if (signo == SIGCHLD)
-		do_sigchld = true;
+		do_sigchld = 1;
 
 	do {
 		if (write(waker_pipe, &sigbyte, 1) < 0) {

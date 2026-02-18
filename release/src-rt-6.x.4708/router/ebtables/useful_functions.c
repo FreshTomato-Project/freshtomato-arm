@@ -364,8 +364,9 @@ static struct in6_addr *parse_ip6_mask(char *mask)
 	if (bits != 0) {
 		char *p = (char *)&maskaddr;
 		memset(p, 0xff, bits / 8);
-		memset(p + (bits / 8) + 1, 0, (128 - bits) / 8);
-		p[bits / 8] = 0xff << (8 - (bits & 7));
+		memset(p + (bits + 7) / 8, 0, (128 - bits) / 8);
+		if (bits & 7)
+			p[bits / 8] = 0xff << (8 - (bits & 7));
 		return &maskaddr;
 	}
 

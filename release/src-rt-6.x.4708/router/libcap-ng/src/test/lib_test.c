@@ -60,6 +60,27 @@ int main(void)
 
 	puts("Doing basic bit tests...");
 	capng_clear(CAPNG_SELECT_BOTH);
+	if (capng_have_permitted_capabilities() != CAPNG_NONE) {
+		puts("Failed permitted capabilities none test");
+		abort();
+	}
+	saved = capng_save_state();
+	capng_fill(CAPNG_SELECT_BOTH);
+	if (capng_have_permitted_capabilities() != CAPNG_FULL) {
+		puts("Failed permitted capabilities full test");
+		abort();
+	}
+	capng_restore_state(&saved);
+	capng_clear(CAPNG_SELECT_BOTH);
+	rc = capng_update(CAPNG_ADD, CAPNG_PERMITTED, CAP_CHOWN);
+	if (rc) {
+		puts("Failed update permitted test");
+		abort();
+	}
+	if (capng_have_permitted_capabilities() != CAPNG_PARTIAL) {
+		puts("Failed permitted capabilities partial test");
+		abort();
+	}
 	if (capng_have_capabilities(CAPNG_SELECT_BOTH) != CAPNG_NONE) {
 		puts("Failed clearing capabilities");
 		abort();

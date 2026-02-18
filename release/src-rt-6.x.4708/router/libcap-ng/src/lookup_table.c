@@ -74,8 +74,6 @@ static const struct transtab captab[] = {
 #define CAP_NG_CAPABILITY_NAMES (sizeof(captab)/sizeof(captab[0]))
 
 
-
-
 static inline int capng_lookup_name(const char *name)
 {
 	// brute force search
@@ -102,12 +100,26 @@ static inline const char *capng_lookup_number(unsigned int number)
 	return NULL;
 }
 
+/*
+ * capng_name_to_capability - given a string with the name of the capabilty
+ * return its number.
+ * @name  - the name of the capability to lookup
+ *
+ * returns the number associated with the string.
+ */
 int capng_name_to_capability(const char *name)
 {
 	return capng_lookup_name(name);
 }
 
-static char ptr2[32];
+/*
+ * capng_capability_to_name - given a number, return a string with the name of
+ * the capabilty.
+ * @capability  - the number of the capability to lookup
+ *
+ * returns the string associated with the number.
+ */
+static __thread char ptr2[32];
 const char *capng_capability_to_name(unsigned int capability)
 {
 	const char *ptr;

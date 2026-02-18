@@ -73,7 +73,7 @@ static int collect_process_info(void)
 			continue;
 
 		// Parse up the stat file for the proc
-		snprintf(buf, 32, "/proc/%d/stat", pid);
+		snprintf(buf, sizeof(buf), "/proc/%d/stat", pid);
 		fd = open(buf, O_RDONLY|O_CLOEXEC, 0);
 		if (fd < 0)
 			continue;
@@ -88,8 +88,10 @@ static int collect_process_info(void)
 		else
 			continue;
 		memset(cmd, 0, sizeof(cmd));
-		sscanf(buf, "%d (%15c", &ppid, cmd);
-		sscanf(tmp+2, "%c %d", &state, &ppid);
+		if (sscanf(buf, "%d (%15c", &ppid, cmd) != 2)
+			continue;
+		if (sscanf(tmp+2, "%c %d", &state, &ppid) != 2)
+			continue;
 
 		// Skip kthreads
 		if (pid == 2 || ppid == 2)
@@ -120,7 +122,7 @@ static int collect_process_info(void)
 		}
 
 		// Get the effective uid
-		snprintf(buf, 32, "/proc/%d/status", pid);
+		snprintf(buf, sizeof(buf), "/proc/%d/status", pid);
 		sf = fopen(buf, "rte");
 		if (sf == NULL)
 			euid = 0;
@@ -134,12 +136,14 @@ static int collect_process_info(void)
 				}
 				if (memcmp(buf, "Uid:", 4) == 0) {
 					int id;
-					sscanf(buf, "Uid: %d %d",
-						&id, &euid);
-					break;
+					if (sscanf(buf, "Uid: %d %d",
+						&id, &euid) == 2)
+						break;
 				}
 			}
 			fclose(sf);
+			if (euid == -1)
+				euid = 0;
 		}
 
 		caps = capng_have_capabilities(CAPNG_SELECT_AMBIENT);
@@ -167,7 +171,7 @@ static int collect_process_info(void)
 		}
 
 		// Now lets get the inodes each process has open
-		snprintf(buf, 32, "/proc/%d/fd", pid);
+		snprintf(buf, sizeof(buf), "/proc/%d/fd", pid);
 		f = opendir(buf);
 		if (f == NULL) {
 			if (errno == EACCES) {
@@ -186,15 +190,16 @@ static int collect_process_info(void)
 			continue;
 		}
 		// For each file in the fd dir...
-		while (( ent = readdir(f) )) {
+		struct dirent *fd_ent;
+		while (( fd_ent = readdir(f) )) {
 			char line[256], ln[256], *s, *e;
 			unsigned long inode;
 			lnode node;
 			int llen;
 
-			if (ent->d_name[0] == '.')
+			if (fd_ent->d_name[0] == '.')
 				continue;
-			snprintf(ln, 256, "%s/%s", buf, ent->d_name);
+			snprintf(ln, 256, "%s/%s", buf, fd_ent->d_name);
 			if ((llen = readlink(ln, line, sizeof(line)-1)) < 0)
 				continue;
 			line[llen] = 0;
@@ -254,10 +259,10 @@ static void report_finding(unsigned int port, const char *type, const char *ifc)
 
 	// And print out anything with capabilities
 	if (header == 0) {
-		printf("%-5s %-5s %-10s %-16s %-8s %-6s %s\n",
+		printf("%-7s %-7s %-16s %-15s %-8s %-15s %s\n",
 			"ppid", "pid", "acct", "command", "type", "port",
 			"capabilities");
-			header = 1;
+		header = 1;
 	}
 	if (n->uid == 0) {
 		// Take short cut for this one
@@ -272,18 +277,18 @@ static void report_finding(unsigned int port, const char *type, const char *ifc)
 		// If not taking this branch, use last val
 	}
 	if (tacct) {
-		printf("%-5d %-5d %-10s", n->ppid, n->pid, tacct);
+		printf("%-7d %-7d %-16s", n->ppid, n->pid, tacct);
 	} else
-		printf("%-5d %-5d %-10d", n->ppid, n->pid, last_uid);
-	printf(" %-16s %-8s", n->cmd, type);
+		printf("%-7d %-7d %-16d", n->ppid, n->pid, last_uid);
+	printf(" %-15s %-8s", n->cmd, type);
 	if (ifc)
-		printf(" %-6s", ifc);
+		printf(" %-15s", ifc);
 	else
-		printf(" %-6u", port);
+		printf(" %-15u", port);
 	printf(" %s %s%s\n", n->capabilities, n->ambient, n->bounds);
 }
 
-static void read_tcp(const char *proc, const char *type)
+static void read_net(const char *proc, const char *type, int use_local_port)
 {
 	int line = 0;
 	FILE *f;
@@ -307,88 +312,20 @@ static void read_tcp(const char *proc, const char *type)
 			continue;
 		}
 		more[0] = 0;
-		sscanf(buf, "%d: %64[0-9A-Fa-f]:%X %64[0-9A-Fa-f]:%X %X "
+		if (sscanf(buf, "%d: %64[0-9A-Fa-f]:%X %64[0-9A-Fa-f]:%X %X "
 			"%lX:%lX %X:%lX %lX %d %d %lu %511s\n",
 			&d, local_addr, &local_port, rem_addr, &rem_port,
 			&state, &txq, &rxq, &timer_run, &time_len, &retr,
-			&uid, &timeout, &inode, more);
-		if (list_find_inode(&l, inode))
-			report_finding(local_port, type, NULL);
-	}
-	fclose(f);
-}
-
-static void read_udp(const char *proc, const char *type)
-{
-	int line = 0;
-	FILE *f;
-	char buf[256];
-	unsigned long rxq, txq, time_len, retr, inode;
-	unsigned int local_port, rem_port, state, timer_run;
-	int d, uid, timeout;
-	char rem_addr[128], local_addr[128], more[512];
-
-	f = fopen(proc, "rte");
-	if (f == NULL) {
-		if (errno != ENOENT)
-			fprintf(stderr, "Can't open %s: %s\n",
-					proc, strerror(errno));
-		return;
-	}
-	__fsetlocking(f, FSETLOCKING_BYCALLER);
-	while (fgets(buf, sizeof(buf), f)) {
-		if (line == 0) {
-			line++;
+			&uid, &timeout, &inode, more) < 14)
 			continue;
-		}
-		more[0] = 0;
-		sscanf(buf, "%d: %64[0-9A-Fa-f]:%X %64[0-9A-Fa-f]:%X %X "
-			"%lX:%lX %X:%lX %lX %d %d %lu %511s\n",
-			&d, local_addr, &local_port, rem_addr, &rem_port,
-			&state, &txq, &rxq, &timer_run, &time_len, &retr,
-			&uid, &timeout, &inode, more);
 		if (list_find_inode(&l, inode))
-			report_finding(local_port, type, NULL);
+			report_finding(use_local_port ? local_port : 0,
+					type, NULL);
 	}
 	fclose(f);
 }
 
-static void read_raw(const char *proc, const char *type)
-{
-	int line = 0;
-	FILE *f;
-	char buf[256];
-	unsigned long rxq, txq, time_len, retr, inode;
-	unsigned int local_port, rem_port, state, timer_run;
-	int d, uid, timeout;
-	char rem_addr[128], local_addr[128], more[512];
-
-	f = fopen(proc, "rte");
-	if (f == NULL) {
-		if (errno != ENOENT)
-			fprintf(stderr, "Can't open %s: %s\n",
-					proc, strerror(errno));
-		return;
-	}
-	__fsetlocking(f, FSETLOCKING_BYCALLER);
-	while (fgets(buf, sizeof(buf), f)) {
-		if (line == 0) {
-			line++;
-			continue;
-		}
-		more[0] = 0;
-		sscanf(buf, "%d: %64[0-9A-Fa-f]:%X %64[0-9A-Fa-f]:%X %X "
-			"%lX:%lX %X:%lX %lX %d %d %lu %511s\n",
-			&d, local_addr, &local_port, rem_addr, &rem_port,
-			&state, &txq, &rxq, &timer_run, &time_len, &retr,
-			&uid, &timeout, &inode, more);
-		if (list_find_inode(&l, inode))
-			report_finding(0, type, NULL);
-	}
-	fclose(f);
-}
-
-// Caller must have buffer > 16 bytes
+// Caller must have buffer >= 17 bytes
 static void get_interface(unsigned int iface, char *ifc)
 {
 	unsigned int line = 0;
@@ -398,8 +335,8 @@ static void get_interface(unsigned int iface, char *ifc)
 	// Terminate the interface in case of error
 	*ifc = 0;
 
-	// Increment the interface number since header is 2 lines long
-	iface++;
+	// Offset the interface number since header is 2 lines long
+	iface += 2;
 
 	f = fopen("/proc/net/dev", "rte");
 	if (f == NULL) {
@@ -447,9 +384,10 @@ static void read_packet(void)
 			continue;
 		}
 		more[0] = 0;
-		sscanf(buf, "%lX %u %u %X %u %u %u %u %lu %255s\n",
+		if (sscanf(buf, "%lX %u %u %X %u %u %u %u %lu %255s\n",
 			&sk, &ref_cnt, &type, &proto, &iface,
-			&r, &rmem, &uid, &inode, more);
+			&r, &rmem, &uid, &inode, more) < 9)
+			continue;
 		get_interface(iface, ifc);
 		if (list_find_inode(&l, inode))
 			report_finding(0, "pkt", ifc);
@@ -468,18 +406,18 @@ int main(int argc, char __attribute__((unused)) *argv[])
 	collect_process_info();
 
 	// Now we check the tcp socket list...
-	read_tcp("/proc/net/tcp", "tcp");
-	read_tcp("/proc/net/tcp6", "tcp6");
+	read_net("/proc/net/tcp", "tcp", 1);
+	read_net("/proc/net/tcp6", "tcp6", 1);
 
 	// Next udp sockets...
-	read_udp("/proc/net/udp", "udp");
-	read_udp("/proc/net/udp6", "udp6");
-	read_udp("/proc/net/udplite", "udplite");
-	read_udp("/proc/net/udplite6", "udplite6");
+	read_net("/proc/net/udp", "udp", 1);
+	read_net("/proc/net/udp6", "udp6", 1);
+	read_net("/proc/net/udplite", "udplite", 1);
+	read_net("/proc/net/udplite6", "udplite6", 1);
 
 	// Next, raw sockets...
-	read_raw("/proc/net/raw", "raw");
-	read_raw("/proc/net/raw6", "raw6");
+	read_net("/proc/net/raw", "raw", 0);
+	read_net("/proc/net/raw6", "raw6", 0);
 
 	// And last, read packet sockets
 	read_packet();

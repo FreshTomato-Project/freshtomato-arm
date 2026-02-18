@@ -1,5 +1,5 @@
 /* libcap-ng.c --
- * Copyright 2009-10, 2013, 2017, 2020-21 Red Hat Inc.
+ * Copyright 2009-10, 2013, 2017, 2020-26 Red Hat Inc.
  * All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -910,7 +910,7 @@ static int save_data(struct vfs_cap_data *filedata, int *size)
 #ifdef VFS_CAP_REVISION_3
 	if (m.vfs_cap_ver == 3) {
 		// Kernel doesn't support namespaces with non-0 rootid
-		if (m.rootid!= 0)
+		if (m.rootid != 0)
 			return -1;
 		filedata->rootid = FIXUP(m.rootid);
 		*size = XATTR_CAPS_SZ_3;
@@ -1230,6 +1230,7 @@ capng_results_t capng_have_permitted_capabilities(void)
 	else
 		return CAPNG_PARTIAL;
 
+	// At this point, lower 32 bits are either full or empty
 	if ((m.data.v3[1].permitted & UPPER_MASK) == 0 && !full)
 		empty = 1;
 	else if ((m.data.v3[1].permitted & UPPER_MASK) == UPPER_MASK && !empty)
@@ -1237,12 +1238,11 @@ capng_results_t capng_have_permitted_capabilities(void)
 	else
 		return CAPNG_PARTIAL;
 
-	if (empty == 1 && full == 0)
+	// Partial is already handled, it's either empty or full now
+	if (empty)
 		return CAPNG_NONE;
-	else if (empty == 0 && full == 1)
-		return CAPNG_FULL;
 
-	return CAPNG_PARTIAL;
+	return CAPNG_FULL;
 }
 
 static int check_effective(unsigned int capability, unsigned int idx)
@@ -1369,16 +1369,18 @@ if (HAVE_PR_CAPBSET_DROP) {
 #ifdef PR_CAP_AMBIENT
 if (HAVE_PR_CAP_AMBIENT) {
 		if (set & CAPNG_SELECT_AMBIENT)
-			printf("Ambient :     %08X, %08X\n",
+			printf("Ambient:      %08X, %08X\n",
 				m.ambient[1] & UPPER_MASK, m.ambient[0]);
 }
 #endif
 	} else if (where == CAPNG_PRINT_BUFFER) {
 		if (set & CAPNG_SELECT_CAPS) {
 			// Make it big enough for bounding & ambient set, too
-			ptr = malloc(160);
+			size_t buf_size = 180;
+			ptr = malloc(buf_size);
 			if (m.cap_ver == 1) {
-				snprintf(ptr, 160,
+				// 22 * 3 + 1
+				snprintf(ptr, buf_size,
 					"Effective:   %08X\n"
 					"Permitted:   %08X\n"
 					"Inheritable: %08X\n",
@@ -1386,7 +1388,8 @@ if (HAVE_PR_CAP_AMBIENT) {
 					m.data.v1.permitted,
 					m.data.v1.inheritable);
 			} else {
-				snprintf(ptr, 160,
+				// 35 * 5 + 1  (bounding is 35)
+				snprintf(ptr, buf_size,
 					"Effective:   %08X, %08X\n"
 					"Permitted:   %08X, %08X\n"
 					"Inheritable: %08X, %08X\n",
@@ -1411,6 +1414,7 @@ if (HAVE_PR_CAPBSET_DROP) {
 				s = ptr;
 			} else
 				s = ptr + strlen(ptr);
+			// prints 34 + 1 chars
 			snprintf(s, 40, "Bounding Set: %08X, %08X\n",
 					m.bounds[1] & UPPER_MASK, m.bounds[0]);
 }
@@ -1420,7 +1424,7 @@ if (HAVE_PR_CAPBSET_DROP) {
 #ifdef PR_CAP_AMBIENT
 if (HAVE_PR_CAP_AMBIENT) {
 			char *s;
-			// If ptr is NULL, we only room for ambient
+			// If ptr is NULL, we only have room for ambient
 			if (ptr == NULL ) {
 				ptr = malloc(40);
 				if (ptr == NULL)
@@ -1429,6 +1433,7 @@ if (HAVE_PR_CAP_AMBIENT) {
 				s = ptr;
 			} else
 				s = ptr + strlen(ptr);
+			// prints 33 + 1 chars
 			snprintf(s, 40, "Ambient Set: %08X, %08X\n",
 					m.ambient[1] & UPPER_MASK,
 					m.ambient[0]);

@@ -21,5 +21,4 @@
 #
 
 EXTRA_DIST = capng_swig.i
-SWIG_SOURCES = capng_swig.i
 CONFIG_CLEAN_FILES = *.loT *.rej *.orig

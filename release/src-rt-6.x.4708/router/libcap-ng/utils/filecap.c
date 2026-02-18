@@ -78,12 +78,12 @@ static int check_file(const char *fpath,
 		if (rc > CAPNG_NONE) {
 			if (header == 0) {
 				header = 1;
-				printf("%-9s %-20s capabilities  rootid\n",
+				printf("%-9s %-22s capabilities  rootid\n",
 				       "set", "file");
 			}
 
 			int rootid = capng_get_rootid();
-			printf("%s %s    ",
+			printf("%s %-22s ",
 			       permitted ? "permitted" : "effective",  fpath);
 
 			if (rc == CAPNG_FULL)

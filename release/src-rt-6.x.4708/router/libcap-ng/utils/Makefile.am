@@ -29,14 +29,19 @@ else
 SUBDIRS =
 endif
 DIST_SUBDIRS = cap-audit
-EXTRA_DIST = $(man_MANS)
+EXTRA_DIST = $(man_MANS) captest.c captest.8
 AM_CPPFLAGS = -I${top_srcdir} -I${top_srcdir}/src
 LDADD = ${top_builddir}/src/libcap-ng.la
 AM_CFLAGS = -W -Wall -Wshadow ${WFLAGS} -Wundef -D_GNU_SOURCE
-bin_PROGRAMS = pscap netcap filecap captest
-man_MANS = pscap.8 netcap.8 filecap.8 captest.8
+bin_PROGRAMS = pscap netcap filecap
+man_MANS = pscap.8 netcap.8 filecap.8
 
 pscap_SOURCES = pscap.c
 netcap_SOURCES = netcap.c proc-llist.c proc-llist.h
 filecap_SOURCES = filecap.c
+
+if BUILD_DEPRECATED
+bin_PROGRAMS += captest
+man_MANS += captest.8
 captest_SOURCES = captest.c
+endif

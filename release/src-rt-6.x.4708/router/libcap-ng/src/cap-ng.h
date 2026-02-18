@@ -86,10 +86,8 @@ capng_results_t capng_have_permitted_capabilities(void);
 int capng_have_capability(capng_type_t which, unsigned int capability);
 
 // These functions printout capabilities
-char *capng_print_caps_numeric(capng_print_t where, capng_select_t set)
-	__attr_dealloc_free;
-char *capng_print_caps_text(capng_print_t where, capng_type_t which)
-	__attr_dealloc_free;
+char *capng_print_caps_numeric(capng_print_t where, capng_select_t set);
+char *capng_print_caps_text(capng_print_t where, capng_type_t which);
 
 // These functions convert between numeric and text string
 int capng_name_to_capability(const char *name);

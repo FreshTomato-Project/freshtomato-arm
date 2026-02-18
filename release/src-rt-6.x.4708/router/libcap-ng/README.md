@@ -2,7 +2,7 @@ libcap-ng
 =========
 
 The libcap-ng library should make programming with POSIX capabilities
-easier. The library has some utilities to help you analyse a system
+easier. The library has some utilities to help you analyze a system
 for apps that may have too much privileges.
 
 The included utilities are designed to let admins and developers spot apps from various ways that may be running with too much privilege. For example, any investigation should start with network facing apps since they would be prime targets for intrusion. The **netcap** program will check all running apps that have listening socket and display the results. Sample output from netcap:
@@ -26,7 +26,7 @@ to access. This typically can be resolved by having membership in the correct
 groups. Try to avoid needing CAP_DAC_OVERRIDE...you may as well be root if you
 need it.
 
-Some application developers have chosen to use file system base capabilities
+Some application developers have chosen to use file system based capabilities
 rather than be setuid root and have to drop capabilities. Libcap-ng provides
 **filecap** to recursively search directories and show you which ones have
 capabilities and exactly what those are.
@@ -82,7 +82,7 @@ capabilities, and retain capabilities across a uid change.
 
 Now, isn't that a lot simpler? Note that the last example takes about 60 lines
 of code using the older capabilities library. As of the 0.6 release, there is
-a m4 macro file to help adding libcap-ng to your autotools config system. In
+a m4 macro file to help add libcap-ng to your autotools config system. In
 configure.ac, add LIBCAP_NG_PATH. Then in Makefile.am locate the apps that
 link to libcap-ng, add $(CAPNG_LDADD) to their LDADD entries. And lastly,
 surround the optional capabilities code with #ifdef HAVE_LIBCAP_NG.
@@ -164,6 +164,8 @@ daemon.
 Building
 --------
 
+Note: As of the 0.9 release, libcap-ng is no longer being distributed from people.redhat.com/sgrubb/libcap-ng/ please adjust any scripts to watch this github page for new releases.
+
 After cloning libcap-ng, run:
 
 ```
@@ -174,7 +176,7 @@ make
 make install
 ```
 
-If you want python bindings, add that option to the configure command. There is also a spec file to use if you are on a rpm based distribution. To do that, run "make dist" instead of make in the above instructions. Then use the resulting tar file with the spec file.
+If you want python bindings, add that option to the configure command. The cap-audit program has to be specifically enabled and defaults to not being built. There is also a spec file to use if you are on a rpm based distribution. To do that, run "make dist" instead of make in the above instructions. Then use the resulting tar file with the spec file.
 
 NOTE: to distributions
 ----------------------
@@ -190,7 +192,7 @@ kernels.
 
 cap-audit
 ---------
-As of the 0.9 release of libcap-ng, there is a new utility **cap-audit**. This program can be used to determine the actual capabilities that a program needs. To do this, use it to run the applictaion kind of the way one would use strace. Use '--' to separate the options to cap-audit from the program being audited. You need to use cap-audit as root because it places an eBPF program in the kernel to hook the capability checks to determine what was requested, was it granted, and what syscall did it originate from. When testing a daemon, pass commanline options that keep it in the foreground. The following is an example checking sshd: 
+As of the 0.9 release of libcap-ng, there is a new utility **cap-audit**. This program can be used to determine the actual capabilities that a program needs. To do this, use it to run the application kind of the way one would use strace. Use '--' to separate the options to cap-audit from the program being audited. You need to use cap-audit as root because it places an eBPF program in the kernel to hook the capability checks to determine what was requested, was it granted, and what syscall did it originate from. When testing a daemon, pass command line options that keep it in the foreground. The following is an example checking sshd: 
 
 ```
 cap-audit -- /usr/sbin/sshd -D

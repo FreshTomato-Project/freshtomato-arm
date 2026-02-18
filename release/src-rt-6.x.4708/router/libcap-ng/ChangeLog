@@ -1,4 +1,14 @@
-0.8.6
+0.9.1
+- Deprecate captest
+- In cap-audit, if tested app uses file system based capabilities, drop setpcap
+- In cap-audit, fully resolve paths before classifying
+- In cap-audit, add JSON escaping to output
+- In cap-audit, filter pre-exec, startup, and shutdown capability noise
+- pscap now has a --tree disply mode
+- More code cleanups
+- Improve output alignment of various utilities (Miroslav Koškár)
+
+0.9
 - Fix python path when invoking py-compile (Jan Palus)
 - Drop python2 bindings (Rudi Heitbaum)
 - Optimize capability name translation lookups

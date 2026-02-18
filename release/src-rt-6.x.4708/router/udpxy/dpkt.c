@@ -235,7 +235,6 @@ read_rtp_file( int fd, char* data, const size_t len, FILE* log )
 {
     ssize_t nrd = -1, offset = 0;
     size_t hdrlen = 0, rdlen = 0;
-    u_int frg = 0;
     int rtp_end = 0, rc = 0;
     off_t where = 0;
 
@@ -322,7 +321,7 @@ read_rtp_file( int fd, char* data, const size_t len, FILE* log )
 
 
     /* read TS records until there is another RTP header or EOF */
-    for( frg = 0; (ssize_t)len > offset; ++frg ) {
+    for( ; (ssize_t)len > offset; ) {
 
         rdlen = ( (len - offset) < TS_SEG_LEN
                   ? (len - offset)
@@ -743,7 +742,7 @@ write_data( const struct dstream_ctx* spc,
     if( spc->flags & F_SCATTERED ) {
         n_count = spc->pkt_count;
         n = writev( fd, spc->pkt, n_count );
-        if( n <= 0 ) {
+        if( n < 0 ) {
             if( EAGAIN == errno ) {
                 (void)tmfprintf( g_flog, "Write on fd=[%d] timed out\n", fd);
                 error = IO_BLK;
@@ -758,7 +757,7 @@ write_data( const struct dstream_ctx* spc,
             error = n;
     }
 
-    return (n > 0) ? n : error;
+    return (n >= 0) ? n : error;
 }
 
 

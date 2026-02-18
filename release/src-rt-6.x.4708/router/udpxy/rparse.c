@@ -184,6 +184,9 @@ parse_udprelay( const char*  opt, size_t optlen,
         /*If s_index is not the original string size, then we have a match for SSM*/
         if (s_index != strlen(s)){
             s[s_index] = '\0';
+            if (s_index >= s_addrlen)
+                return -EINVAL;
+
             strncpy( s_addr, s, s_index);
             s_addr[ s_addrlen - 1 ] ='\0';
             s += s_index + 1;

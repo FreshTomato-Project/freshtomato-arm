@@ -1,0 +1,14 @@
+--- xl2tpd/xl2tpd.c
++++ xl2tpd/xl2tpd.c
+@@ -1567,8 +1567,10 @@
+     return 1;
+ }
+ 
+-static int control_handle_lac_status(FILE*, char*)
++static int control_handle_lac_status(FILE* resf, char* bufp)
+ {
++    UNUSED(resf);
++    UNUSED(bufp);
+     show_status ();
+     return 1;
+ }

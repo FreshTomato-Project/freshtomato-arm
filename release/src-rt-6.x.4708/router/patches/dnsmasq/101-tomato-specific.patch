@@ -1,6 +1,6 @@
 --- dnsmasq/src/config.h
 +++ dnsmasq/src/config.h
-@@ -85,6 +85,10 @@
+@@ -86,6 +86,10 @@
     NOTE: when enabling or disabling this, be sure to delete any old
     leases file, otherwise dnsmasq may get very confused.
  
@@ -11,7 +11,7 @@
  HAVE_TFTP
     define this to get dnsmasq's built-in TFTP server.
  
-@@ -372,6 +376,10 @@
+@@ -373,6 +377,10 @@
  #undef HAVE_LOOP
  #endif
  
@@ -22,7 +22,7 @@
  #ifdef NO_DUMPFILE
  #undef HAVE_DUMPFILE
  #endif
-@@ -460,6 +468,9 @@
+@@ -461,6 +469,9 @@
  "no-"
  #endif
  "nftset "
@@ -117,7 +117,7 @@
  	  fclose(daemon->lease_stream);
 --- dnsmasq/src/dnsmasq.h
 +++ dnsmasq/src/dnsmasq.h
-@@ -1692,6 +1692,12 @@
+@@ -1695,6 +1695,12 @@
  int icmp_ping(struct in_addr addr);
  int delay_dhcp(time_t start, int sec, int fd, uint32_t addr, unsigned short id);
  #endif

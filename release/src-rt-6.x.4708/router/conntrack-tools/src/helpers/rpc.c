@@ -399,6 +399,11 @@ rpc_helper_cb(struct pkt_buff *pkt, uint32_t protoff,
 				 xid, rpc_info->xid);
 			goto out;
 		}
+		/* Ignore portmap program number */
+		if (rpc_info->pm_prog == PMAPPROG) {
+			pr_debug("RPC REPL: ignore portmap program number %lu\n", PMAPPROG);
+			goto out;
+		}
 		if (rpc_reply(data, offset, datalen, rpc_info, &port_ptr) < 0)
 			goto out;
 

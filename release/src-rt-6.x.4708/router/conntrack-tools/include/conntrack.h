@@ -78,7 +78,7 @@ enum ct_command {
 };
 
 #define NUMBER_OF_CMD   _CT_BIT_MAX
-#define NUMBER_OF_OPT   29
+#define NUMBER_OF_OPT   30
 
 struct nf_conntrack;
 

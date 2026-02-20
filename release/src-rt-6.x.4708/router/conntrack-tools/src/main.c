@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 			}
 			show_usage(argv[0]);
 			dlog(LOG_ERR, "Missing config filename");
-			break;
+			exit(EXIT_FAILURE);
 		case 'F':
 			set_operation_mode(&type, REQUEST, argv);
 			i = set_action_by_table(i, argc, argv,
@@ -309,8 +309,7 @@ int main(int argc, char *argv[])
 		default:
 			show_usage(argv[0]);
 			dlog(LOG_ERR, "Unknown option: %s", argv[i]);
-			return 0;
-			break;
+			exit(EXIT_FAILURE);
 		}
 	}
 

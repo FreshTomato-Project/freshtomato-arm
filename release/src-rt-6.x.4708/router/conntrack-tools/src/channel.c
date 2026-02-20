@@ -56,7 +56,7 @@ channel_buffer_open(int mtu, int headersiz)
 {
 	struct channel_buffer *b;
 
-	b = calloc(sizeof(struct channel_buffer), 1);
+	b = calloc(1, sizeof(struct channel_buffer));
 	if (b == NULL)
 		return NULL;
 
@@ -94,7 +94,7 @@ channel_open(struct channel_conf *cfg)
 	if (cfg->channel_flags >= CHANNEL_F_MAX)
 		return NULL;
 
-	c = calloc(sizeof(struct channel), 1);
+	c = calloc(1, sizeof(struct channel));
 	if (c == NULL)
 		return NULL;
 

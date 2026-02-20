@@ -84,7 +84,7 @@ In this synchronization mode you may configure \fBResendQueueSize\fP,
 .TP
 .BI "ResendQueueSize <value>"
 Size of the resend queue (in objects). This is the maximum number of objects
-that can be stored waiting to be confirmed via acknoledgment.
+that can be stored waiting to be confirmed via acknowledgment.
 If you keep this value low, the daemon will have less chances to recover
 state-changes under message omission. On the other hand, if you keep this value
 high, the daemon will consume more memory to store dead objects.
@@ -120,8 +120,8 @@ Default is 60 seconds.
 
 .TP
 .BI "ACKWindowSize <value>"
-Set the acknowledgement window size. If you decrease this value, the number of
-acknowlegdments increases. More acknowledgments means more overhead as
+Set the acknowledgment window size. If you decrease this value, the number of
+acknowledgments increases. More acknowledgments means more overhead as
 \fBconntrackd(8)\fP has to handle more control messages. On the other hand, if
 you increase this value, the resend queue gets more populated. This results in
 more overhead in the queue releasing.
@@ -334,7 +334,7 @@ fault-tolerance. In case of doubt, use it.
 This section indicates to \fBconntrackd(8)\fP to use UDP as transport
 mechanism between nodes of the firewall cluster.
 
-As in the \fBMulticast\fP configuration, you may especify several fail-over
+As in the \fBMulticast\fP configuration, you may specify several fail-over
 dedicated links using the \fIDefault\fP keyword.
 
 Example:
@@ -407,7 +407,7 @@ If you combine this transport with the \fBNOTRACK\fP mode, it becomes reliable.
 The TCP transport protocol can be configured in exactly the same way as
 the \fBUDP\fP transport protocol.
 
-As in the \fBMulticast\fP configuration, you may especify several fail-over
+As in the \fBMulticast\fP configuration, you may specify several fail-over
 dedicated links using the \fIDefault\fP keyword.
 
 Example:

@@ -21,7 +21,7 @@ multichannel_open(struct channel_conf *conf, int len)
 	if (len <= 0 || len > MULTICHANNEL_MAX)
 		return NULL;
 
-	m = calloc(sizeof(struct multichannel), 1);
+	m = calloc(1, sizeof(struct multichannel));
 	if (m == NULL)
 		return NULL;
 

@@ -165,13 +165,13 @@ static int parse_options(char c,
 	case '8':
 		port = htons(atoi(optarg));
 		nfct_set_attr_u16(exptuple, ATTR_ORIG_PORT_SRC, port);
-		nfct_set_attr_u8(exptuple, ATTR_ORIG_L4PROTO, port);
+		nfct_set_attr_u8(exptuple, ATTR_ORIG_L4PROTO, IPPROTO_TCP);
 		*flags |= CT_TCP_EXPTUPLE_SPORT;
 		break;
 	case '9':
 		port = htons(atoi(optarg));
 		nfct_set_attr_u16(exptuple, ATTR_ORIG_PORT_DST, port); 
-		nfct_set_attr_u8(exptuple, ATTR_ORIG_L4PROTO, port);
+		nfct_set_attr_u8(exptuple, ATTR_ORIG_L4PROTO, IPPROTO_TCP);
 		*flags |= CT_TCP_EXPTUPLE_DPORT;
 		break;
 	}

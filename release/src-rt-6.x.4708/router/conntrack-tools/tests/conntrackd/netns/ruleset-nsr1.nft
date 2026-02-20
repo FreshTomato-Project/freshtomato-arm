@@ -1,4 +1,4 @@
-table ip filter {
+table inet filter {
 	chain postrouting {
 		type nat hook postrouting priority srcnat; policy accept;
 		oif veth0 masquerade

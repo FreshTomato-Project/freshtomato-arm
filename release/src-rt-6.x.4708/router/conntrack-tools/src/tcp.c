@@ -31,7 +31,7 @@ struct tcp_sock *tcp_server_create(struct tcp_conf *c)
 	struct tcp_sock *m;
 	socklen_t socklen = sizeof(int);
 
-	m = calloc(sizeof(struct tcp_sock), 1);
+	m = calloc(1, sizeof(struct tcp_sock));
 	if (m == NULL)
 		return NULL;
 
@@ -209,7 +209,7 @@ struct tcp_sock *tcp_client_create(struct tcp_conf *c)
 {
 	struct tcp_sock *m;
 
-	m = calloc(sizeof(struct tcp_sock), 1);
+	m = calloc(1, sizeof(struct tcp_sock));
 	if (m == NULL)
 		return NULL;
 

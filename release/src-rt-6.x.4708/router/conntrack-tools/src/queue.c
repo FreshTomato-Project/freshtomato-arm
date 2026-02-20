@@ -33,7 +33,7 @@ queue_create(const char *name, int max_objects, unsigned int flags)
 {
 	struct queue *b;
 
-	b = calloc(sizeof(struct queue), 1);
+	b = calloc(1, sizeof(struct queue));
 	if (b == NULL)
 		return NULL;
 

@@ -19,7 +19,7 @@ static void
 	struct mcast_channel *m;
 	struct mcast_conf *c = conf;
 
-	m = calloc(sizeof(struct mcast_channel), 1);
+	m = calloc(1, sizeof(struct mcast_channel));
 	if (m == NULL)
 		return NULL;
 

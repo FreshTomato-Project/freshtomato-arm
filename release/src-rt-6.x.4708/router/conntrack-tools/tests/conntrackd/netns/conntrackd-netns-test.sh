@@ -17,24 +17,34 @@ start () {
 	ip link add veth2 netns nsr1 type veth peer name veth0 netns nsr2
 
 	ip -net ns1 addr add 192.168.10.2/24 dev veth0
+	ip -6 -net ns1 addr add bbbb::2/64 dev veth0
 	ip -net ns1 link set up dev veth0
 	ip -net ns1 ro add 10.0.1.0/24 via 192.168.10.1 dev veth0
+	ip -6 -net ns1 ro add aaaa::/64 via bbbb::1 dev veth0
 
 	ip -net nsr1 addr add 10.0.1.1/24 dev veth0
 	ip -net nsr1 addr add 192.168.10.1/24 dev veth1
+	ip -6 -net nsr1 addr add aaaa::1/64 dev veth0
+	ip -6 -net nsr1 addr add bbbb::1/64 dev veth1
 	ip -net nsr1 link set up dev veth0
 	ip -net nsr1 link set up dev veth1
 	ip -net nsr1 route add default via 192.168.10.2
+	ip -6 -net nsr1 route add default via bbbb::2
 	ip netns exec nsr1 sysctl net.ipv4.ip_forward=1
+	ip netns exec nsr1 sysctl net.ipv6.conf.all.forwarding=1
 
 	ip -net nsr1 addr add 192.168.100.2/24 dev veth2
+	ip -6 -net nsr1 addr add cccc::2/96 dev veth2
 	ip -net nsr1 link set up dev veth2
 	ip -net nsr2 addr add 192.168.100.3/24 dev veth0
+	ip -6 -net nsr2 addr add cccc::3/96 dev veth0
 	ip -net nsr2 link set up dev veth0
 
 	ip -net ns2 addr add 10.0.1.2/24 dev veth0
+	ip -6 -net ns2 addr add aaaa::2/64 dev veth0
 	ip -net ns2 link set up dev veth0
 	ip -net ns2 route add default via 10.0.1.1
+	ip -6 -net ns2 route add default via aaaa::1
 
 	echo 1 > /proc/sys/net/netfilter/nf_log_all_netns
 

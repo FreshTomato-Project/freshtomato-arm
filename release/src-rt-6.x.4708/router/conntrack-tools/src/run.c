@@ -277,6 +277,18 @@ init(void)
 	}
 	register_fd(STATE(local).fd, local_cb, NULL, STATE(fds));
 
+	/* Initialization */
+	if (CONFIG(flags) & (CTD_SYNC_MODE | CTD_STATS_MODE))
+		if (ctnl_init() < 0)
+			return -1;
+
+#ifdef BUILD_CTHELPER
+	if (CONFIG(flags) & CTD_HELPER) {
+		if (cthelper_init() < 0)
+			return -1;
+	}
+#endif
+
 	/* Signals handling */
 	sigemptyset(&STATE(block));
 	sigaddset(&STATE(block), SIGTERM);
@@ -296,17 +308,6 @@ init(void)
 	if (signal(SIGCHLD, child) == SIG_ERR)
 		return -1;
 
-	/* Initialization */
-	if (CONFIG(flags) & (CTD_SYNC_MODE | CTD_STATS_MODE))
-		if (ctnl_init() < 0)
-			return -1;
-
-#ifdef BUILD_CTHELPER
-	if (CONFIG(flags) & CTD_HELPER) {
-		if (cthelper_init() < 0)
-			return -1;
-	}
-#endif
 	time(&STATE(stats).daemon_start_time);
 
 	dlog(LOG_NOTICE, "initialization completed");

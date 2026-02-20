@@ -229,6 +229,9 @@ static int nfct_cmd_helper_add(struct mnl_socket *nl, int argc, char *argv[])
 	portid = mnl_socket_get_portid(nl);
 	if (nfct_mnl_talk(nl, nlh, seq, portid, NULL, NULL) < 0) {
 		nfct_perror("netlink error");
+		if (errno == EBUSY)
+			fprintf(stderr,
+				"Maybe unload nf_conntrack_%s.ko first?\n", argv[3]);
 		return -1;
 	}
 

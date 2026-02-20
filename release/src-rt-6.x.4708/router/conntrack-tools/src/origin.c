@@ -31,7 +31,7 @@ int origin_register(struct nfct_handle *h, int origin_type)
 {
 	struct origin *nlp;
 
-	nlp = calloc(sizeof(struct origin), 1);
+	nlp = calloc(1, sizeof(struct origin));
 	if (nlp == NULL)
 		return -1;
 

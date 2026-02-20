@@ -37,7 +37,7 @@ int fork_process_new(int type, int flags, void (*cb)(void *data), void *data)
 			}
 		}
 	}
-	c = calloc(sizeof(struct child_process), 1);
+	c = calloc(1, sizeof(struct child_process));
 	if (c == NULL)
 		return -1;
 

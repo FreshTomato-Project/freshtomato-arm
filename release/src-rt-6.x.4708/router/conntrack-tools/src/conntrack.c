@@ -122,6 +122,12 @@ struct ct_cmd {
 	struct ct_tmpl	tmpl;
 };
 
+struct ct_label {
+	struct list_head list;
+	char *name;
+	bool is_modify;
+};
+
 static int alloc_tmpl_objects(struct ct_tmpl *tmpl)
 {
 	tmpl->ct = nfct_new();
@@ -249,6 +255,9 @@ enum ct_options {
 
 	CT_OPT_REPL_ZONE_BIT	= 28,
 	CT_OPT_REPL_ZONE	= (1 << CT_OPT_REPL_ZONE_BIT),
+
+	CT_OPT_LABELMAP_BIT	= 29,
+	CT_OPT_LABELMAP		= (1 << CT_OPT_LABELMAP_BIT),
 };
 /* If you add a new option, you have to update NUMBER_OF_OPT in conntrack.h */
 
@@ -288,6 +297,7 @@ static const char *optflags[NUMBER_OF_OPT] = {
 	[CT_OPT_DEL_LABEL_BIT]	= "label-del",
 	[CT_OPT_ORIG_ZONE_BIT]	= "orig-zone",
 	[CT_OPT_REPL_ZONE_BIT]	= "reply-zone",
+	[CT_OPT_LABELMAP_BIT]	= "labelmap",
 };
 
 static struct option original_opts[] = {
@@ -321,7 +331,7 @@ static struct option original_opts[] = {
 	{"nat-range", 1, 0, 'a'},	/* deprecated */
 	{"mark", 1, 0, 'm'},
 	{"secmark", 1, 0, 'c'},
-	{"id", 2, 0, 'i'},		/* deprecated */
+	{"id", 1, 0, 'i'},		/* deprecated */
 	{"family", 1, 0, 'f'},
 	{"src-nat", 2, 0, 'n'},
 	{"dst-nat", 2, 0, 'g'},
@@ -330,6 +340,7 @@ static struct option original_opts[] = {
 	{"any-nat", 2, 0, 'j'},
 	{"zone", 1, 0, 'w'},
 	{"label", 1, 0, 'l'},
+	{"labelmap", 1, 0, 'M'},
 	{"label-add", 1, 0, '<'},
 	{"label-del", 2, 0, '>'},
 	{"orig-zone", 1, 0, '('},
@@ -337,9 +348,9 @@ static struct option original_opts[] = {
 	{0, 0, 0, 0}
 };
 
-static const char *getopt_str = ":L::I::U::D::G::E::F::A::hVs:d:r:q:"
+static const char *getopt_str = ":LIUDGEFAhVs:d:r:q:"
 				"p:t:u:e:a:z[:]:{:}:m:i:f:o:n::"
-				"g::c:b:C::Sj::w:l:<:>::(:):";
+				"g::c:b:C::Sj::w:l:<:>::(:):M:";
 
 /* Table of legal combinations of commands and options.  If any of the
  * given commands make an option legal, that option is legal (applies to
@@ -354,27 +365,27 @@ static const char *getopt_str = ":L::I::U::D::G::E::F::A::hVs:d:r:q:"
 static char commands_v_options[NUMBER_OF_CMD][NUMBER_OF_OPT] =
 /* Well, it's better than "Re: Linux vs FreeBSD" */
 {
-			/* s d r q p t u z e [ ] { } a m i f n g o c b j w l < > ( ) */
-	[CT_LIST_BIT]	= {2,2,2,2,2,0,2,2,0,0,0,2,2,0,2,0,2,2,2,2,2,0,2,2,2,0,0,2,2},
-	[CT_CREATE_BIT]	= {3,3,3,3,1,1,2,0,0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,2,0,2,0,2,2},
-	[CT_UPDATE_BIT]	= {2,2,2,2,2,2,2,0,0,0,0,2,2,0,2,2,2,2,2,2,0,0,0,0,2,2,2,0,0},
-	[CT_DELETE_BIT]	= {2,2,2,2,2,2,2,0,0,0,0,2,2,0,2,2,2,2,2,2,0,0,0,2,2,0,0,2,2},
-	[CT_GET_BIT]	= {3,3,3,3,1,0,0,0,0,0,0,0,0,0,0,2,0,0,0,2,0,0,0,0,2,0,0,0,0},
-	[CT_FLUSH_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
-	[CT_EVENT_BIT]	= {2,2,2,2,2,0,0,0,2,0,0,2,2,0,2,0,2,2,2,2,2,2,2,2,2,0,0,2,2},
-	[CT_VERSION_BIT]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[CT_HELP_BIT]	= {0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[EXP_LIST_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0},
-	[EXP_CREATE_BIT]= {1,1,2,2,1,1,2,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[EXP_DELETE_BIT]= {1,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[EXP_GET_BIT]	= {1,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[EXP_FLUSH_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[EXP_EVENT_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0},
-	[CT_COUNT_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[EXP_COUNT_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[CT_STATS_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[EXP_STATS_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	[CT_ADD_BIT]	= {3,3,3,3,1,1,2,0,0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,2,0,2,0,2,2},
+			/* s d r q p t u z e [ ] { } a m i f n g o c b j w l < > ( ) M */
+	[CT_LIST_BIT]	= {2,2,2,2,2,0,2,2,0,0,0,2,2,0,2,0,2,2,2,2,2,0,2,2,2,0,0,2,2,2},
+	[CT_CREATE_BIT]	= {3,3,3,3,1,1,2,0,0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,2,0,2,0,2,2,0},
+	[CT_UPDATE_BIT]	= {2,2,2,2,2,2,2,0,0,0,0,2,2,0,2,2,2,2,2,2,0,0,0,0,2,2,2,0,0,2},
+	[CT_DELETE_BIT]	= {2,2,2,2,2,2,2,0,0,0,0,2,2,0,2,2,2,2,2,2,0,0,0,2,2,0,0,2,2,2},
+	[CT_GET_BIT]	= {3,3,3,3,1,0,0,0,0,0,0,0,0,0,0,2,0,0,0,2,0,0,0,0,2,0,0,0,0,0},
+	[CT_FLUSH_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[CT_EVENT_BIT]	= {2,2,2,2,2,0,0,0,2,0,0,2,2,0,2,0,2,2,2,2,2,2,2,2,2,0,0,2,2,2},
+	[CT_VERSION_BIT]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[CT_HELP_BIT]	= {0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[EXP_LIST_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0},
+	[EXP_CREATE_BIT]= {1,1,2,2,1,1,2,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[EXP_DELETE_BIT]= {1,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[EXP_GET_BIT]	= {1,1,2,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[EXP_FLUSH_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[EXP_EVENT_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0},
+	[CT_COUNT_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[EXP_COUNT_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[CT_STATS_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[EXP_STATS_BIT]	= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	[CT_ADD_BIT]	= {3,3,3,3,1,1,2,0,0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,2,0,2,0,2,2,0},
 };
 
 static const int cmd2type[][2] = {
@@ -413,6 +424,7 @@ static const int opt2type[] = {
 	['>']	= CT_OPT_DEL_LABEL,
 	['(']	= CT_OPT_ORIG_ZONE,
 	[')']	= CT_OPT_REPL_ZONE,
+	['M']	= CT_OPT_LABELMAP,
 };
 
 static const int opt2maskopt[] = {
@@ -521,7 +533,8 @@ static const char usage_conntrack_parameters[] =
 	"  -e, --event-mask eventmask\t\tEvent mask, eg. NEW,DESTROY\n"
 	"  -z, --zero \t\t\t\tZero counters while listing\n"
 	"  -o, --output type[,...]\t\tOutput format, eg. xml\n"
-	"  -l, --label label[,...]\t\tconntrack labels\n";
+	"  -l, --label label[,...]\t\tconntrack labels\n"
+	"  --labelmap path\t\t\tconnlabel file to use instead of default\n";
 
 static const char usage_expectation_parameters[] =
 	"Expectation parameters and options:\n"
@@ -566,6 +579,7 @@ static unsigned int addr_valid_flags[ADDR_VALID_FLAGS_MAX] = {
 
 static LIST_HEAD(proto_list);
 
+static char *labelmap_path;
 static struct nfct_labelmap *labelmap;
 static int filter_family;
 
@@ -1213,17 +1227,55 @@ parse_parameter_mask(const char *arg, unsigned int *status, unsigned int *mask, 
 		exit_error(PARAMETER_PROBLEM, "Bad parameter `%s'", arg);
 }
 
-static void
+static int parse_value(const char *str, uint32_t *ret, uint64_t max)
+{
+	char *endptr;
+	uint64_t val;
+
+	assert(max <= UINT32_MAX);
+
+	errno = 0;
+	val = strtoul(str, &endptr, 0);
+	if (endptr == str ||
+	    *endptr != '\0' ||
+	    (val == ULONG_MAX && errno == ERANGE) ||
+	    val > max)
+		return -1;
+
+	*ret = val;
+
+	return 0;
+}
+
+static int
 parse_u32_mask(const char *arg, struct u32_mask *m)
 {
-	char *end;
+	uint64_t val, mask;
+	char *endptr;
 
-	m->value = (uint32_t) strtoul(arg, &end, 0);
+	val = strtoul(arg, &endptr, 0);
+	if (endptr == arg ||
+	    (*endptr != '\0' && *endptr != '/') ||
+	    (val == ULONG_MAX && errno == ERANGE) ||
+	    val > UINT32_MAX)
+		return -1;
 
-	if (*end == '/')
-		m->mask = (uint32_t) strtoul(end+1, NULL, 0);
-	else
+	m->value = val;
+
+	if (*endptr == '/') {
+		mask = strtoul(endptr + 1, &endptr, 0);
+		if (endptr == arg ||
+		    *endptr != '\0' ||
+		    (val == ULONG_MAX && errno == ERANGE) ||
+		    val > UINT32_MAX)
+			return -1;
+
+		m->mask = mask;
+	} else {
 		m->mask = ~0;
+	}
+
+	return 0;
 }
 
 static int
@@ -1876,6 +1928,25 @@ static char *get_progname(uint32_t portid)
 	return NULL;
 }
 
+static void event_print_timestamp(const struct nf_conntrack *ct)
+{
+	struct timeval tv;
+
+	/* nfct_attr_is_set returns -1 if attr is unknown */
+	if (nfct_attr_is_set(ct, ATTR_TIMESTAMP_EVENT) > 0) {
+		uint64_t event_ts = nfct_get_attr_u64(ct, ATTR_TIMESTAMP_EVENT);
+		static const uint64_t ns_per_s = 1000000000ul;
+		static const uint64_t ns_to_usec = 1000ul;
+
+		tv.tv_sec = event_ts / ns_per_s;
+		tv.tv_usec = (event_ts % ns_per_s) / ns_to_usec;
+	} else {
+		gettimeofday(&tv, NULL);
+	}
+
+	printf("[%-.8ld.%-.6ld]\t", tv.tv_sec, tv.tv_usec);
+}
+
 static int event_cb(const struct nlmsghdr *nlh, void *data)
 {
 	struct nfgenmsg *nfh = mnl_nlmsg_get_payload(nlh);
@@ -1931,9 +2002,7 @@ static int event_cb(const struct nlmsghdr *nlh, void *data)
 		op_flags = NFCT_OF_SHOW_LAYER3;
 	if (output_mask & _O_TMS) {
 		if (!(output_mask & _O_XML)) {
-			struct timeval tv;
-			gettimeofday(&tv, NULL);
-			printf("[%-.8ld.%-.6ld]\t", tv.tv_sec, tv.tv_usec);
+			event_print_timestamp(ct);
 		} else
 			op_flags |= NFCT_OF_TIME;
 	}
@@ -1944,7 +2013,7 @@ static int event_cb(const struct nlmsghdr *nlh, void *data)
 
 	nfct_snprintf_labels(buf, sizeof(buf), ct, type, op_type, op_flags, labelmap);
 done:
-	if (nlh->nlmsg_pid) {
+	if (nlh->nlmsg_pid && !(output_mask & _O_XML)) {
 		char *prog = get_progname(nlh->nlmsg_pid);
 
 		if (prog)
@@ -1992,7 +2061,7 @@ static int mnl_nfct_delete_cb(const struct nlmsghdr *nlh, void *data)
 	if (res < 0) {
 		/* the entry has vanish in middle of the delete */
 		if (errno == ENOENT)
-			goto done;
+			goto destroy_ok;
 		exit_error(OTHER_PROBLEM,
 			   "Operation failed: %s",
 			   err2str(errno, CT_DELETE));
@@ -2195,6 +2264,11 @@ static int mnl_nfct_update_cb(const struct nlmsghdr *nlh, void *data)
 		/* the entry has vanish in middle of the update */
 		if (errno == ENOENT)
 			goto destroy_ok;
+		else if (cmd->options & (CT_OPT_ADD_LABEL | CT_OPT_DEL_LABEL) &&
+			 !nfct_attr_is_set(ct, ATTR_CONNLABELS) &&
+			 errno == ENOSPC)
+			goto destroy_ok;
+
 		exit_error(OTHER_PROBLEM,
 			   "Operation failed: %s",
 			   err2str(errno, CT_UPDATE));
@@ -2696,7 +2770,7 @@ static void labelmap_init(void)
 {
 	if (labelmap)
 		return;
-	labelmap = nfct_labelmap_new(NULL);
+	labelmap = nfct_labelmap_new(labelmap_path);
 	if (!labelmap)
 		perror("nfct_labelmap_new");
 }
@@ -2903,6 +2977,32 @@ static int print_stats(const struct ct_cmd *cmd)
 	return 0;
 }
 
+static void parse_and_merge_labels(struct list_head *label_list, struct ct_tmpl *tmpl)
+{
+	struct ct_label *label, *next;
+	struct nfct_bitmask *bitmask;
+	unsigned int max;
+
+	list_for_each_entry_safe(label, next, label_list, list) {
+		max = parse_label_get_max(label->name);
+		bitmask = nfct_bitmask_new(max);
+		if (!bitmask)
+			exit_error(OTHER_PROBLEM, "out of memory");
+
+		parse_label(bitmask, label->name);
+
+		/* join "-l foo -l bar" into single bitmask object */
+		if (label->is_modify)
+			merge_bitmasks(&tmpl->label_modify, bitmask);
+		else
+			merge_bitmasks(&tmpl->label, bitmask);
+
+		list_del(&label->list);
+		free(label->name);
+		free(label);
+	}
+}
+
 static void do_parse(struct ct_cmd *ct_cmd, int argc, char *argv[])
 {
 	unsigned int type = 0, event_mask = 0, l4flags = 0, status = 0;
@@ -2913,6 +3013,8 @@ static void do_parse(struct ct_cmd *ct_cmd, int argc, char *argv[])
 	struct ct_tmpl *tmpl;
 	int res = 0, partial;
 	union ct_address ad;
+	LIST_HEAD(labels);
+	uint32_t value;
 	int c, cmd;
 
 	/* we release these objects in the exit_error() path. */
@@ -3027,8 +3129,6 @@ static void do_parse(struct ct_cmd *ct_cmd, int argc, char *argv[])
 		case 'o':
 			options |= CT_OPT_OUTPUT;
 			parse_parameter(optarg, &output_mask, PARSE_OUTPUT);
-			if (output_mask & _O_CL)
-				labelmap_init();
 			if ((output_mask & _O_SAVE) &&
 			    (output_mask & (_O_EXT |_O_TMS |_O_ID | _O_KTMS | _O_CL | _O_XML)))
 				exit_error(OTHER_PROBLEM,
@@ -3073,21 +3173,25 @@ static void do_parse(struct ct_cmd *ct_cmd, int argc, char *argv[])
 		case 'w':
 		case '(':
 		case ')':
+			if (parse_value(optarg, &value, UINT16_MAX) < 0)
+				exit_error(OTHER_PROBLEM, "unexpected value '%s' with -%c option", optarg, c);
+
 			options |= opt2type[c];
-			nfct_set_attr_u16(tmpl->ct,
-					  opt2attr[c],
-					  strtoul(optarg, NULL, 0));
+			nfct_set_attr_u16(tmpl->ct, opt2attr[c], value);
 			break;
 		case 'i':
 		case 'c':
+			if (parse_value(optarg, &value, UINT32_MAX) < 0)
+				exit_error(OTHER_PROBLEM, "unexpected value '%s' with -%c option", optarg, c);
+
 			options |= opt2type[c];
-			nfct_set_attr_u32(tmpl->ct,
-					  opt2attr[c],
-					  strtoul(optarg, NULL, 0));
+			nfct_set_attr_u32(tmpl->ct, opt2attr[c], value);
 			break;
 		case 'm':
 			options |= opt2type[c];
-			parse_u32_mask(optarg, &tmpl->mark);
+			if (parse_u32_mask(optarg, &tmpl->mark) < 0)
+				exit_error(OTHER_PROBLEM, "unexpected value '%s' with -%c option", optarg, c);
+
 			tmpl->filter_mark_kernel.val = tmpl->mark.value;
 			tmpl->filter_mark_kernel.mask = tmpl->mark.mask;
 			tmpl->filter_mark_kernel_set = true;
@@ -3096,8 +3200,6 @@ static void do_parse(struct ct_cmd *ct_cmd, int argc, char *argv[])
 		case '<':
 		case '>':
 			options |= opt2type[c];
-
-			labelmap_init();
 
 			if ((options & (CT_OPT_DEL_LABEL|CT_OPT_ADD_LABEL)) ==
 			    (CT_OPT_DEL_LABEL|CT_OPT_ADD_LABEL))
@@ -3111,22 +3213,13 @@ static void do_parse(struct ct_cmd *ct_cmd, int argc, char *argv[])
 				optarg = tmp;
 			}
 
-			char *optarg2 = strdup(optarg);
-			unsigned int max = parse_label_get_max(optarg);
-			struct nfct_bitmask * b = nfct_bitmask_new(max);
-			if (!b)
+			struct ct_label *l = calloc(1, sizeof(*l));
+			if (!l)
 				exit_error(OTHER_PROBLEM, "out of memory");
 
-			parse_label(b, optarg2);
-
-			/* join "-l foo -l bar" into single bitmask object */
-			if (c == 'l') {
-				merge_bitmasks(&tmpl->label, b);
-			} else {
-				merge_bitmasks(&tmpl->label_modify, b);
-			}
-
-			free(optarg2);
+			l->name = strdup(optarg);
+			l->is_modify = c == '<' || c == '>';
+			list_add_tail(&l->list, &labels);
 			break;
 		case 'a':
 			fprintf(stderr, "WARNING: ignoring -%c, "
@@ -3146,6 +3239,13 @@ static void do_parse(struct ct_cmd *ct_cmd, int argc, char *argv[])
 		case 'b':
 			socketbuffersize = atol(optarg);
 			options |= CT_OPT_BUFFERSIZE;
+			break;
+		case 'M':
+			if (labelmap_path)
+				exit_error(PARAMETER_PROBLEM, "option `--labelmap' can only be specified once");
+
+			labelmap_path = strdup(optarg);
+			options |= CT_OPT_LABELMAP;
 			break;
 		case ':':
 			exit_error(PARAMETER_PROBLEM,
@@ -3181,6 +3281,12 @@ static void do_parse(struct ct_cmd *ct_cmd, int argc, char *argv[])
 		}
 	}
 
+	/* any of these options (might) use labels */
+	if ((options & (CT_OPT_LABEL | CT_OPT_ADD_LABEL | CT_OPT_DEL_LABEL)) ||
+	    ((options & CT_OPT_OUTPUT) && (output_mask & _O_CL))) {
+		labelmap_init();
+		parse_and_merge_labels(&labels, tmpl);
+	}
 
 	/* we cannot check this combination with generic_opt_check. */
 	if (options & CT_OPT_ANY_NAT &&
@@ -3611,6 +3717,7 @@ try_proc:
 	free_tmpl_objects(&cmd->tmpl);
 	if (labelmap)
 		nfct_labelmap_destroy(labelmap);
+	free(labelmap_path);
 
 	return EXIT_SUCCESS;
 }

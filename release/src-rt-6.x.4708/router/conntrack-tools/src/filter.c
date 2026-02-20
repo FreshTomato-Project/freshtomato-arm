@@ -77,7 +77,7 @@ struct ct_filter *ct_filter_create(void)
 	int i;
 	struct ct_filter *filter;
 
-	filter = calloc(sizeof(struct ct_filter), 1);
+	filter = calloc(1, sizeof(struct ct_filter));
 	if (!filter)
 		return NULL;
 

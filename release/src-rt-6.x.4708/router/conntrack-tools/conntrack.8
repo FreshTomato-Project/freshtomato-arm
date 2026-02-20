@@ -189,10 +189,19 @@ This option is only available in conjunction with "\-L, \-\-dump",
 Match entries whose labels include those specified as arguments.
 Use multiple \-l options to specify multiple labels that need to be set.
 .TP
+.BI "--labelmap " "PATH"
+Specify the path to a connlabel.conf file to load instead of the default one.
+This option is only available in conjunction with "\-L, \-\-dump", "\-E,
+\-\-event", "\-U \-\-update" or "\-D \-\-delete".
+.TP
 .BI "--label-add " "LABEL"
 Specify the conntrack label to add to the selected conntracks.
 This option is only available in conjunction with "\-I, \-\-create",
 "\-A, \-\-add" or "\-U, \-\-update".
+As a rule of thumb, you must use either the 'connlabel' match in your iptables
+ruleset or the 'ct label' statement in your nftables ruleset, this turns on the
+ct label support in the kernel and it allows you to update labels via
+"\-U, \-\-update", otherwise label updates are ignored.
 .TP
 .BI "--label-del " "[LABEL]"
 Specify the conntrack label to delete from the selected conntracks.

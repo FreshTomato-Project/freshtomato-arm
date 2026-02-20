@@ -25,7 +25,7 @@ struct udp_sock *udp_server_create(struct udp_conf *conf)
 	struct udp_sock *m;
 	socklen_t socklen = sizeof(int);
 
-	m = calloc(sizeof(struct udp_sock), 1);
+	m = calloc(1, sizeof(struct udp_sock));
 	if (m == NULL)
 		return NULL;
 
@@ -97,7 +97,7 @@ struct udp_sock *udp_client_create(struct udp_conf *conf)
 	struct udp_sock *m;
 	socklen_t socklen = sizeof(int);
 
-	m = calloc(sizeof(struct udp_sock), 1);
+	m = calloc(1, sizeof(struct udp_sock));
 	if (m == NULL)
 		return NULL;
 

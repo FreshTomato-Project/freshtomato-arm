@@ -35,7 +35,7 @@ struct vector *vector_create(size_t size)
 {
 	struct vector *v;
 
-	v = calloc(sizeof(struct vector), 1);
+	v = calloc(1, sizeof(struct vector));
 	if (v == NULL)
 		return NULL;
 
@@ -60,13 +60,16 @@ void vector_destroy(struct vector *v)
 
 int vector_add(struct vector *v, void *data)
 {
+	void *ptr;
+
 	if (v->cur_elems >= v->max_elems) {
 		v->max_elems += DEFAULT_VECTOR_GROWTH;
-		v->data = realloc(v->data, v->max_elems * v->size);
-		if (v->data == NULL) {
+		ptr = realloc(v->data, v->max_elems * v->size);
+		if (!ptr) {
 			v->max_elems -= DEFAULT_VECTOR_GROWTH;
 			return -1;
 		}
+		v->data = ptr;
 	}
 	memcpy(v->data + (v->size * v->cur_elems), data, v->size);
 	v->cur_elems++;

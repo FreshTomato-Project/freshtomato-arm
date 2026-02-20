@@ -30,7 +30,7 @@ struct fds *create_fds(void)
 {
 	struct fds *fds;
 
-	fds = (struct fds *) calloc(sizeof(struct fds), 1);
+	fds = calloc(1, sizeof(struct fds));
 	if (fds == NULL)
 		return NULL;
 
@@ -60,7 +60,7 @@ int register_fd(int fd, void (*cb)(void *data), void *data, struct fds *fds)
 	if (fd > fds->maxfd)
 		fds->maxfd = fd;
 
-	item = calloc(sizeof(struct fds_item), 1);
+	item = calloc(1, sizeof(struct fds_item));
 	if (item == NULL)
 		return -1;
 

@@ -19,7 +19,7 @@ static void
 	struct udp_channel *m;
 	struct udp_conf *c = conf;
 
-	m = calloc(sizeof(struct udp_channel), 1);
+	m = calloc(1, sizeof(struct udp_channel));
 	if (m == NULL)
 		return NULL;
 

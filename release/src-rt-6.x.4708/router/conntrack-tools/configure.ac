@@ -1,4 +1,4 @@
-AC_INIT([conntrack-tools],[1.4.8],[pablo@netfilter.org])
+AC_INIT([conntrack-tools],[1.4.9],[pablo@netfilter.org])
 AC_CONFIG_AUX_DIR([build-aux])
 
 AC_CANONICAL_HOST
@@ -53,7 +53,7 @@ AC_CHECK_HEADER([rpc/rpc_msg.h], [AC_SUBST([LIBTIRPC_CFLAGS],'')], [PKG_CHECK_MO
 
 PKG_CHECK_MODULES([LIBNFNETLINK], [libnfnetlink >= 1.0.1])
 PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.3])
-PKG_CHECK_MODULES([LIBNETFILTER_CONNTRACK], [libnetfilter_conntrack >= 1.0.9])
+PKG_CHECK_MODULES([LIBNETFILTER_CONNTRACK], [libnetfilter_conntrack >= 1.1.1])
 AS_IF([test "x$enable_cttimeout" = "xyes"], [
 	PKG_CHECK_MODULES([LIBNETFILTER_CTTIMEOUT], [libnetfilter_cttimeout >= 1.0.0])
 ])

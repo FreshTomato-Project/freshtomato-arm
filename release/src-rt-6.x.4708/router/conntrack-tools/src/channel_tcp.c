@@ -21,7 +21,7 @@ static void
 	struct tcp_channel *m;
 	struct tcp_conf *c = conf;
 
-	m = calloc(sizeof(struct tcp_channel), 1);
+	m = calloc(1, sizeof(struct tcp_channel));
 	if (m == NULL)
 		return NULL;
 

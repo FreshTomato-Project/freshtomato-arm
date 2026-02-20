@@ -144,6 +144,7 @@ enum nf_conntrack_attr {
 	ATTR_SYNPROXY_ISN = 72,			/* u32 bits */
 	ATTR_SYNPROXY_ITS,			/* u32 bits */
 	ATTR_SYNPROXY_TSOFF,			/* u32 bits */
+	ATTR_TIMESTAMP_EVENT,			/* u64 bits */
 	ATTR_MAX
 };
 

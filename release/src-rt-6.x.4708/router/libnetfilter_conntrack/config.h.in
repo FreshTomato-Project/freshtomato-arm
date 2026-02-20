@@ -6,7 +6,7 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Define to 1 if you have the `inet_ntop' function. */
+/* Define to 1 if you have the 'inet_ntop' function. */
 #undef HAVE_INET_NTOP
 
 /* Define to 1 if inet_ntop supports IPv6. */
@@ -15,7 +15,7 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `setns' function. */
+/* Define to 1 if you have the 'setns' function. */
 #undef HAVE_SETNS
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -66,7 +66,7 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS

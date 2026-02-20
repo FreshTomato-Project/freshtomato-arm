@@ -384,6 +384,11 @@ static const void *get_attr_synproxy_tsoff(const struct nf_conntrack *ct)
 	return &ct->synproxy.tsoff;
 }
 
+static const void *get_attr_timestamp_event(const struct nf_conntrack *ct)
+{
+	return &ct->timestamp_event;
+}
+
 const get_attr get_attr_array[ATTR_MAX] = {
 	[ATTR_ORIG_IPV4_SRC]		= get_attr_orig_ipv4_src,
 	[ATTR_ORIG_IPV4_DST] 		= get_attr_orig_ipv4_dst,
@@ -460,4 +465,5 @@ const get_attr get_attr_array[ATTR_MAX] = {
 	[ATTR_SYNPROXY_ISN]		= get_attr_synproxy_isn,
 	[ATTR_SYNPROXY_ITS]		= get_attr_synproxy_its,
 	[ATTR_SYNPROXY_TSOFF]		= get_attr_synproxy_tsoff,
+	[ATTR_TIMESTAMP_EVENT]		= get_attr_timestamp_event,
 };

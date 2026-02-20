@@ -201,6 +201,7 @@ struct nf_conntrack {
 
 	struct nfct_bitmask *connlabels;
 	struct nfct_bitmask *connlabels_mask;
+	uint64_t timestamp_event;
 };
 
 /*

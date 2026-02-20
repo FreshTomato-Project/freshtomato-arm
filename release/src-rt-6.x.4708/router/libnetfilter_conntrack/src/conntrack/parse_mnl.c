@@ -897,6 +897,10 @@ nfct_parse_conntrack_attr_cb(const struct nlattr *attr, void *data)
 	case CTA_NAT_DST:
 		/* deprecated */
 		break;
+	case CTA_TIMESTAMP_EVENT:
+		if (mnl_attr_validate(attr, MNL_TYPE_U64) < 0)
+			abi_breakage();
+		break;
 	}
 	tb[type] = attr;
 	return MNL_CB_OK;
@@ -1027,6 +1031,12 @@ nfct_payload_parse(const void *payload, size_t payload_len,
 	if (tb[CTA_SYNPROXY]) {
 		if (nfct_parse_synproxy(tb[CTA_SYNPROXY], ct) < 0)
 			return -1;
+	}
+
+	if (tb[CTA_TIMESTAMP_EVENT]) {
+		set_bit(ATTR_TIMESTAMP_EVENT, ct->head.set);
+		ct->timestamp_event =
+			be64toh(mnl_attr_get_u64(tb[CTA_TIMESTAMP_EVENT]));
 	}
 
 	return 0;

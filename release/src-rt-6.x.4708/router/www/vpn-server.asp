@@ -535,10 +535,10 @@ function downloadClientConfig(num) {
 		}
 	}
 
-	elem.display(E('server'+num+'_gen_progress_div'), true);
+	elem.display(E('vpns'+num+'_gen_progress_div'), true);
 	keyGenRequest = new XmlHttp();
 	keyGenRequest.onCompleted = function(text, xml) {
-		elem.display(E('server'+num+'_gen_progress_div'), false);
+		elem.display(E('vpns'+num+'_gen_progress_div'), false);
 		keyGenRequest = null;
 
 		var dlFileFakeLink = document.createElement('a');

@@ -2029,8 +2029,8 @@ libid3tag: libid3tag/static/Makefile libid3tag/build/Makefile
 	$(MAKE) -C libid3tag/build all $(PARALLEL_BUILD)
 
 libid3tag-install:
-	install -D libid3tag/build/libid3tag.so.0.16.3 $(INSTALLDIR)/libid3tag/usr/lib/libid3tag.so.0.16.3
-	cd $(INSTALLDIR)/libid3tag/usr/lib/ && $(STRIP) libid3tag.so.0.16.3 && ln -sf libid3tag.so.0.16.3 libid3tag.so && ln -sf libid3tag.so.0.16.3 libid3tag.so.0
+	install -D libid3tag/build/libid3tag.so.0.16.4 $(INSTALLDIR)/libid3tag/usr/lib/libid3tag.so.0.16.4
+	cd $(INSTALLDIR)/libid3tag/usr/lib/ && $(STRIP) libid3tag.so.0.16.4 && ln -sf libid3tag.so.0.16.4 libid3tag.so && ln -sf libid3tag.so.0.16.4 libid3tag.so.0
 
 libid3tag-clean:
 	@rm -rf libid3tag/static

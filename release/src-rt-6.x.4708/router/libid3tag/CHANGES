@@ -1,10 +1,28 @@
 
  libid3tag - ID3 tag manipulation library
  Copyright (C) 2000-2004 Underbit Technologies, Inc.
-
- $Id: CHANGES,v 1.11 2004/02/17 02:04:10 rob Exp $
+ Copyright (C) 2021-2026 Tenacity Team and Contributors
 
 ===============================================================================
+
+Version 0.16.4
+  * Allow files greater than 2 GiB on 32-bit UNIX-based/UNIX-like systems.
+  * Add support for generating source packages with CPack.
+  * id3_tag_parse() now returns the number of parsed frames so far instead of
+    trashing the entire tag.
+  * Update ID3v1 genre list.
+    * Add genres from Winamp 5.60.
+    * Rename offensive genre.
+    * Auto-generate genre list code at build time.
+  * Require gperf at build time to generate gperf code.
+  * Bump minimum required CMake version to 3.10.
+  * Reorganize source tree.
+  * Fix mojibake with UTF-16LE-encoded tags.
+  * Fix build under pure C toolchain.
+  * Fix support for PIC frames, including setting the correct MIME type.
+  * Fix some miscellaneous build warnings.
+  * Improve iTunes compatibility.
+  * Apply more patches from Perl's Audio::Scan and FreeBSD.
 
 Version 0.16.3
   * Fix backward compatibility with libid3tag 0.15.1b.
@@ -60,7 +78,7 @@ Version 0.15.0 (beta)
     null buffer pointer is passed.
 
   * Changed the file implementation to maintain information about present
-    but unparseable tags, instead of ignoring all tags and returning an
+    but unparsable tags, instead of ignoring all tags and returning an
     error.
 
   * Added an external dependency on zlib (libz), which is no longer

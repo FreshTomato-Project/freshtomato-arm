@@ -1,0 +1,248 @@
+/*
+ * libid3tag - ID3 tag manipulation library
+ * Copyright (C) 2000-2004 Underbit Technologies, Inc.
+ * Copyright (C) 2021-2026 Tenacity Team and Contributors
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * These are the ID3 genre names, taken as a combination of names from ID3v1
+ * (listed in Appendix A of the ID3 tag version 2.4.0 informal standard) and
+ * the extensions made by Winamp as of version 5.6.
+ */
+
+/* ID3v1 names (0-79) */
+
+Blues
+Classic Rock
+Country
+Dance
+Disco
+Funk
+Grunge
+Hip-Hop
+Jazz
+Metal
+New Age
+Oldies
+Other
+Pop
+R&B
+Rap
+Reggae
+Rock
+Techno
+Industrial
+Alternative
+Ska
+Death Metal
+Pranks
+Soundtrack
+Euro-Techno
+Ambient
+Trip-Hop
+Vocal
+Jazz+Funk
+Fusion
+Trance
+Classical
+Instrumental
+Acid
+House
+Game
+Sound Clip
+Gospel
+Noise
+AlternRock
+Bass
+Soul
+Punk
+Space
+Meditative
+Instrumental Pop
+Instrumental Rock
+Ethnic
+Gothic
+Darkwave
+Techno-Industrial
+Electronic
+Pop-Folk
+Eurodance
+Dream
+Southern Rock
+Comedy
+Cult
+Gangsta
+Top 40
+Christian Rap
+Pop/Funk
+Jungle
+Native American
+Cabaret
+New Wave
+Psychedelic
+Rave
+Showtunes
+Trailer
+Lo-Fi
+Tribal
+Acid Punk
+Acid Jazz
+Polka
+Retro
+Musical
+Rock & Roll
+Hard Rock
+
+/* Winamp extensions (80-147) */
+
+Folk
+Folk/Rock
+National Folk
+Swing
+Fast-Fusion
+Bebop
+Latin
+Revival
+Celtic
+Bluegrass
+Avantgarde
+Gothic Rock
+Progressive Rock
+Psychedelic Rock
+Symphonic Rock
+Slow Rock
+Big Band
+Chorus
+Easy Listening
+Acoustic
+Humour
+Speech
+Chanson
+Opera
+Chamber Music
+Sonata
+Symphony
+Booty Bass
+Primus
+Porn Groove
+Satire
+Slow Jam
+Club
+Tango
+Samba
+Folklore
+Ballad
+Power Ballad
+Rhythmic Soul
+Freestyle
+Duet
+Punk Rock
+Drum Solo
+A Capella
+Euro-House
+Dance Hall
+Goa
+Drum & Bass
+Club-House
+Hardcore Techno
+Terror
+Indie
+BritPop
+Afro-Punk
+Polsk Punk
+Beat
+Christian Gangsta Rap
+Heavy Metal
+Black Metal
+Crossover
+Contemporary Christian
+Christian Rock
+Merengue
+Salsa
+Thrash Metal
+Anime
+Jpop
+Synthpop
+Abstract
+Art Rock
+Baroque
+Bhangra
+Big Beat
+Breakbeat
+Chillout
+Downtempo
+Dub
+EBM
+Eclectic
+Electro
+Electroclash
+Emo
+Experimental
+Garage
+Global
+IDM
+Illbient
+Industro-Goth
+Jam Band
+Krautrock
+Leftfield
+Lounge
+Math Rock
+New Romantic
+Nu-Breakz
+Post-Punk
+Post-Rock
+Psytrance
+Shoegaze
+Space Rock
+Trop Rock
+World Music
+Neoclassical
+Audiobook
+Audio Theatre
+Neue Deutsche Welle
+Podcast
+Indie-Rock
+G-Funk
+Dubstep
+Garage Rock
+Psybient
+/*
+ * You almost certainly should *NOT* add entries to the above list.  Yes,
+ * even if your favourite genre is missing and you *really* feel it belongs!
+ *
+ * In the now-ancient ID3v1 system, the genre was stored as an 8-bit value
+ * representing the above fixed choices.  If you wanted a different option,
+ * you were out of luck.
+ *
+ * Modern software uses a free-form string for the genre (via the "TCO"
+ * frame type introduced in 1998's ID3v2.2.0, later the "TCON" type
+ * starting with in 1999's ID3v2.3.0) so is not limited to any fixed set
+ * of choices.
+ *
+ * The above list is only needed because that style of genre tag will
+ * always exist in old files.  In addition, the TCO/TCON frames can refer
+ * to the original genre entries by using parenthesised numbers (e.g. "(3)"
+ * will expand to "Dance", perhaps after localisation).
+ *
+ * In any case, adding to this fixed list would only be useful if you could
+ * get all other software that interprets ID3 tags to agree.  In effect, the
+ * only ones that will ever be valid are the original 80 entries from the ID3v1
+ * specification and 112 additions from Winamp between 1997 and 2010.
+ *
+ * For more information, see https://en.wikipedia.org/wiki/List_of_ID3v1_genres
+ */

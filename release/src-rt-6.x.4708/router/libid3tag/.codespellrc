@@ -1,0 +1,3 @@
+[codespell]
+skip = .git,build,build-static,build-shared
+ignore-words-list = TYE,WORS

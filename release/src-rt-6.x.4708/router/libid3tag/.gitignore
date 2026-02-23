@@ -1,1 +1,10 @@
-build
+/build/
+/build-shared/
+/build-static/
+.vscode/
+.cache
+*~
+.DS_store
+# Vim:
+*.swp
+*.swo

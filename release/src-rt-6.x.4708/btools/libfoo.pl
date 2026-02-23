@@ -220,7 +220,7 @@ sub fixDyn
 	fixDynDep("minidlna", "libjpeg.so.8.3.2");
 	fixDynDep("minidlna", "libogg.so.0");
 	fixDynDep("minidlna", "libvorbis.so.0");
-	fixDynDep("minidlna", "libid3tag.so.0.16.3");
+	fixDynDep("minidlna", "libid3tag.so.0.16.4");
 	fixDynDep("minidlna", "libexif.so.12");
 	fixDynDep("minidlna", "libFLAC.so.14.0.0");
 	fixDynDep("minidlna", "libsqlite3.so.3.51.2");
@@ -724,7 +724,7 @@ elsif ($openssldir eq "openssl-3.0") {
 #genSO("${root}/usr/lib/libwolfssl.so.42.2.0", "${router}/wolfssl/src/.libs/libwolfssl.a", "${stripshared}");
 
 if ($is_arm ne "y") { # MIPS only (ARM - bigger)
-	genSO("${root}/usr/lib/libid3tag.so.0.16.3", "${router}/libid3tag/static/libid3tag.a", "${stripshared}", "-L${router}/zlib");
+	genSO("${root}/usr/lib/libid3tag.so.0.16.4", "${router}/libid3tag/static/libid3tag.a", "${stripshared}", "-L${router}/zlib");
 	genSO("${root}/usr/lib/libexif.so.12", "${router}/libexif/libexif/.libs/libexif.a", "${stripshared}");
 	genSO("${root}/usr/lib/libavcodec.so.54", "${router}/ffmpeg//libavcodec/libavcodec.a", "${stripshared}", "-L${router}/ffmpeg/libavutil -L${router}/zlib");
 	genSO("${root}/usr/lib/libavformat.so.54", "${router}/ffmpeg/libavformat/libavformat.a", "${stripshared}", "-L${router}/ffmpeg/libavutil -L${router}/ffmpeg/libavcodec -L${router}/zlib");

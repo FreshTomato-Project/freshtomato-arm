@@ -23,7 +23,7 @@
 
 <script>
 
-//	<% nvram("vpns_eas,vpns_dns,vpns1_poll,vpns1_if,vpns1_proto,vpns1_port,vpns1_firewall,vpns1_sn,vpns1_nm,vpns1_local,vpns1_remote,vpns1_dhcp,vpns1_r1,vpns1_r2,vpns1_crypt,vpns1_comp,vpns1_digest,vpns1_cipher,vpns1_ncp_ciphers,vpns1_reneg,vpns1_hmac,vpns1_plan,vpns1_ccd,vpns1_c2c,vpns1_ccd_excl,vpns1_ccd_val,vpns1_pdns,vpns1_rgw,vpns1_userpass,vpns1_nocert,vpns1_users_val,vpns1_custom,vpns1_static,vpns1_ca,vpns1_ca_key,vpns1_crt,vpns1_crl,vpns1_key,vpns1_dh,vpns1_br,vpns1_ecdh,vpns2_poll,vpns2_if,vpns2_proto,vpns2_port,vpns2_firewall,vpns2_sn,vpns2_nm,vpns2_local,vpns2_remote,vpns2_dhcp,vpns2_r1,vpns2_r2,vpns2_crypt,vpns2_comp,vpns2_digest,vpns2_cipher,vpns2_ncp_ciphers,vpns2_reneg,vpns2_hmac,vpns2_plan,vpns2_ccd,vpns2_c2c,vpns2_ccd_excl,vpns2_ccd_val,vpns2_pdns,vpns2_rgw,vpns2_userpass,vpns2_nocert,vpns2_users_val,vpns2_custom,vpns2_static,vpns2_ca,vpns2_ca_key,vpns2_crt,vpns2_crl,vpns2_key,vpns2_dh,vpns2_br,vpns2_ecdh,lan_ifname"); %>
+//	<% nvram("vpns_eas,vpns_dns,vpns1_poll,vpns1_if,vpns1_proto,vpns1_port,vpns1_firewall,vpns1_sn,vpns1_nm,vpns1_local,vpns1_remote,vpns1_dhcp,vpns1_r1,vpns1_r2,vpns1_crypt,vpns1_digest,vpns1_cipher,vpns1_ncp_ciphers,vpns1_reneg,vpns1_hmac,vpns1_plan,vpns1_ccd,vpns1_c2c,vpns1_ccd_excl,vpns1_ccd_val,vpns1_pdns,vpns1_rgw,vpns1_userpass,vpns1_nocert,vpns1_users_val,vpns1_custom,vpns1_static,vpns1_ca,vpns1_ca_key,vpns1_crt,vpns1_crl,vpns1_key,vpns1_dh,vpns1_br,vpns1_ecdh,vpns2_poll,vpns2_if,vpns2_proto,vpns2_port,vpns2_firewall,vpns2_sn,vpns2_nm,vpns2_local,vpns2_remote,vpns2_dhcp,vpns2_r1,vpns2_r2,vpns2_crypt,vpns2_digest,vpns2_cipher,vpns2_ncp_ciphers,vpns2_reneg,vpns2_hmac,vpns2_plan,vpns2_ccd,vpns2_c2c,vpns2_ccd_excl,vpns2_ccd_val,vpns2_pdns,vpns2_rgw,vpns2_userpass,vpns2_nocert,vpns2_users_val,vpns2_custom,vpns2_static,vpns2_ca,vpns2_ca_key,vpns2_crt,vpns2_crl,vpns2_key,vpns2_dh,vpns2_br,vpns2_ecdh,lan_ifname"); %>
 
 var changed = 0, i;
 var unitCount = OVPN_SERVER_COUNT;
@@ -637,9 +637,6 @@ function verifyFields(focused, quiet) {
 		var ccd = E('_f_'+t+'_ccd').checked;
 		var userpass = E('_f_'+t+'_userpass').checked;
 		var dns = E('_f_'+t+'_dns').checked;
-/* SIZEOPTMORE-BEGIN */
-		var comp = E('_'+t+'_comp').value;
-/* SIZEOPTMORE-END */
 
 		elem.display(PR('_'+t+'_ca'), PR('_'+t+'_ca_key'), PR('_'+t+'_ca_key_div_help'),
 /* KEYGEN-BEGIN */
@@ -989,11 +986,6 @@ function init() {
 				{ title: 'Advertise DNS to clients', name: 'f_'+t+'_pdns', type: 'checkbox', value: nvram[t+'_pdns'] != 0 },
 				{ title: 'Data ciphers', name: t+'_ncp_ciphers', type: 'text', size: 70, maxlen: 127, value: nvram[t+'_ncp_ciphers'] },
 				{ title: 'Cipher', name: t+'_cipher', type: 'select', options: ciphers, value: nvram[t+'_cipher'] },
-				{ title: 'Compression', name: t+'_comp', type: 'select', options: [['-1','Disabled'],['no','None']
-/* SIZEOPTMORE-BEGIN */
-				         ,['lz4','LZ4'],['lz4-v2','LZ4-V2']
-/* SIZEOPTMORE-END */
-				         ], value: nvram[t+'_comp'] },
 				{ title: 'TLS Renegotiation Time', name: t+'_reneg', type: 'text', maxlen: 10, size: 7, value: nvram[t+'_reneg'], suffix: ' <small> seconds; -1 for default<\/small>' },
 				{ title: 'Manage Client-Specific Options', name: 'f_'+t+'_ccd', type: 'checkbox', value: nvram[t+'_ccd'] != 0 },
 				{ title: 'Allow Client<->Client', name: 'f_'+t+'_c2c', type: 'checkbox', value: nvram[t+'_c2c'] != 0 },

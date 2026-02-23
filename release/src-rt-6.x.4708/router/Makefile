@@ -317,10 +317,6 @@ endif
 
 ifeq ($(TCONFIG_OPENVPN),y)
  obj-y				+= $(SSL_TARGET)
- ifneq ($(TCONFIG_OPTIMIZE_SIZE_MORE),y)
-  obj-y				+= lz4
-  export INSTALL_LZ4 := y
- endif
  ifeq ($(TCONFIG_BCMARM),y)
   obj-y				+= libcap-ng openvpn
  else
@@ -2927,14 +2923,11 @@ lzo: lzo/stamp-h1
 	@$(MAKE) -C $@ DESTDIR=$(TOP)/lzo/staged install
 
 lzo-install:
-ifeq ($(TCONFIG_TINC),y)
 	install -D lzo/src/.libs/liblzo2.so.2.0.0 $(INSTALLDIR)/lzo/usr/lib/liblzo2.so.2.0.0
 	$(STRIP) $(INSTALLDIR)/lzo/usr/lib/liblzo2.so.2.0.0
 	cd $(INSTALLDIR)/lzo/usr/lib && \
 		ln -sf liblzo2.so.2.0.0 liblzo2.so.2 && \
 		ln -sf liblzo2.so.2.0.0 liblzo2.so
-endif
-	@true
 
 lzo-clean:
 	-@$(MAKE) -C lzo clean
@@ -2976,8 +2969,6 @@ openvpn-2.5/Makefile:
 		WOLFSSL_CFLAGS="-I$(TOP)/wolfssl/staged/usr/include -I$(TOP)/wolfssl/staged/usr/include/wolfssl" \
 		WOLFSSL_INCLUDEDIR="-I$(TOP)/wolfssl/staged/usr/include -I$(TOP)/wolfssl/staged/usr/include/wolfssl" \
 		WOLFSSL_LIBS="-L$(TOP)/wolfssl/staged/usr/lib -lwolfssl" \
-		LZ4_CFLAGS="-I$(TOP)/lz4/staged/usr/include" \
-		LZ4_LIBS="-L$(TOP)/lz4/staged/usr/lib -llz4" \
 		CFLAGS="$(if $(TCONFIG_BCMARM),-O2,$(CFLAG_OPTIMIZE)) -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
 		LDFLAGS="$(if $(TCONFIG_WOLFSSL),-L$(TOP)/wolfssl/staged/usr/lib,-L$(TOP)/$(OPENSSLDIR)/staged/usr/lib) -lpthread -ldl -Wl,--gc-sections" \
 		CPPFLAGS="$(if $(TCONFIG_WOLFSSL),-I$(TOP)/wolfssl/staged/usr/include -I$(TOP)/wolfssl/staged/usr/include/wolfssl,-I$(TOP)/$(OPENSSLDIR)/staged/usr/include)" \
@@ -2986,7 +2977,7 @@ openvpn-2.5/Makefile:
 			$(if $(TOMATO_EXPERIMENTAL),,--disable-debug) --disable-plugin-auth-pam --disable-plugin-down-root --disable-pf --disable-unit-tests --disable-dependency-tracking \
 			$(if $(or $(TCONFIG_BCMARM),$(TCONFIG_AIO)),--enable-management,--disable-management) \
 			--enable-iproute2 ac_cv_lib_resolv_gethostbyname=no \
-			--disable-lzo $(if $(TCONFIG_OPTIMIZE_SIZE_MORE),--disable-lz4,) $(if $(TCONFIG_BCMARM),,$(if $(TCONFIG_AIO),,--enable-small))
+			--disable-lzo --disable-lz4 $(if $(TCONFIG_BCMARM),,$(if $(TCONFIG_AIO),,--enable-small))
 	@touch openvpn-2.5/.conf
 
 openvpn-2.5: openvpn-2.5/Makefile
@@ -3013,8 +3004,6 @@ openvpn/Makefile:
 		WOLFSSL_LIBS="-L$(TOP)/wolfssl/staged/usr/lib -lwolfssl" \
 		LIBCAPNG_CFLAGS="-I$(TOP)/libcap-ng/src" \
 		LIBCAPNG_LIBS="-L$(TOP)/libcap-ng/src/.libs -lcap-ng" \
-		LZ4_CFLAGS="-I$(TOP)/lz4/staged/usr/include" \
-		LZ4_LIBS="-L$(TOP)/lz4/staged/usr/lib -llz4" \
 		CFLAGS="$(if $(TCONFIG_BCMARM),-O2,$(CFLAG_OPTIMIZE)) -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections $(if $(TCONFIG_BCMARM),-I$(TOP)/libcap-ng/src,)" \
 		LDFLAGS="$(if $(TCONFIG_WOLFSSL),-L$(TOP)/wolfssl/staged/usr/lib,-L$(TOP)/$(OPENSSLDIR)/staged/usr/lib) -lpthread -ldl -Wl,--gc-sections" \
 		CPPFLAGS="$(if $(TCONFIG_WOLFSSL),-I$(TOP)/wolfssl/staged/usr/include -I$(TOP)/wolfssl/staged/usr/include/wolfssl,-I$(TOP)/$(OPENSSLDIR)/staged/usr/include)" \
@@ -3024,7 +3013,7 @@ openvpn/Makefile:
 			$(if $(TOMATO_EXPERIMENTAL),,--disable-debug) --disable-plugin-auth-pam --disable-plugin-down-root --disable-unit-tests --disable-dependency-tracking \
 			$(if $(or $(TCONFIG_BCMARM),$(TCONFIG_AIO)),--enable-management,--disable-management) \
 			--enable-iproute2 ac_cv_lib_resolv_gethostbyname=no \
-			--disable-lzo $(if $(TCONFIG_OPTIMIZE_SIZE_MORE),--disable-lz4,) $(if $(TCONFIG_BCMARM),,$(if $(TCONFIG_AIO),,--enable-small))
+			--disable-lzo --disable-lz4 $(if $(TCONFIG_BCMARM),,$(if $(TCONFIG_AIO),,--enable-small))
 	@touch openvpn/.conf
 
 openvpn: openvpn/Makefile
@@ -3351,12 +3340,9 @@ lz4:
 		$(MAKE) LN_S="ln -sf" install DESTDIR=$(TOP)/lz4/staged
 
 lz4-install:
-ifeq ($(or $(INSTALL_LZ4),$(TCONFIG_TINC)),y)
 	install -D lz4/lib/liblz4.so.1.10.0 $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.10.0
 	$(STRIP) $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.10.0
 	cd $(INSTALLDIR)/lz4/usr/lib && ln -sf liblz4.so.1.10.0 liblz4.so.1 && ln -sf liblz4.so.1.10.0 liblz4.so
-endif
-	@true
 
 lz4-clean:
 	-@$(MAKE) -C lz4 clean

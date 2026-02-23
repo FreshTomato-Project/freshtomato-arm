@@ -11840,6 +11840,7 @@ static void sysinit(void)
 #ifdef TCONFIG_BCMBSD
 	del_bsd_defaults(); /* remove BSD (smart connect / band steering) nvram values if feature is disabled! */
 #endif /* TCONFIG_BCMBSD */
+	nvram_format_compat(); /* migrate renamed NVRAM variables */
 	init_nvram();
 
 	set_jumbo_frame(); /* enable or disable jumbo_frame and set jumbo frame size */

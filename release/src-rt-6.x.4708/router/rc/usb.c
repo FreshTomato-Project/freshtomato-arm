@@ -565,7 +565,7 @@ void stop_usb(void)
 	if ((disabled) || (nvram_get_int("usb_usb2") != 1))
 		modprobe_r(USB20_MOD);
 #ifdef TCONFIG_BCMARM
-	if ((disabled) || (nvram_get_int("usb_xhci") != 1))
+	if ((disabled) || (nvram_get_int("usb_usb3") != 1))
 		modprobe_r(USB30_MOD);
 
 	/* check USB LED */

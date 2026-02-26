@@ -28,7 +28,7 @@ OBJS = rc.o init.o interface.o network.o wan.o services.o dhcp.o \
        firewall.o ppp.o telssh.o wnas.o listen.o redial.o \
        led.o qos.o forward.o misc.o mtd.o buttons.o restrict.o \
        gpio.o sched.o bwlimit.o arpbind.o tomatoanon.o mwan.o pbr.o \
-       dnsmasq.o format.o
+       dnsmasq.o format.o trx_check.o
 
 ifeq ($(or $(TCONFIG_BCMARM),$(TCONFIG_BLINK)),y)
  OBJS += blink.o blink_br.o
@@ -177,6 +177,7 @@ endif
 	@cd $(INSTALLDIR)/sbin && ln -sf rc ppp_event
 
 	@cd $(INSTALLDIR)/sbin && ln -sf rc ntpd_synced
+	@cd $(INSTALLDIR)/sbin && ln -sf rc trx_check
 
 ifeq ($(TCONFIG_BCMARM),y)
 	@cd $(INSTALLDIR)/sbin && ln -sf rc mtd-write2

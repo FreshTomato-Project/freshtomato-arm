@@ -1600,7 +1600,7 @@ void cache_reload(void)
   
 #ifdef HAVE_DNSSEC
   for (ds = daemon->ds; ds; ds = ds->next)
-    if ((cache = get_config_crec()))
+    if (ds->name && (cache = get_config_crec()))
       {
 	
 	if (!(cache->addr.ds.keydata = blockdata_alloc(ds->digest, ds->digestlen)))

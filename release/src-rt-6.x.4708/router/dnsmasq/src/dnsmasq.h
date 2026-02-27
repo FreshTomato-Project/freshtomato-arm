@@ -1497,11 +1497,13 @@ unsigned char *do_rfc1035_name(unsigned char *p, char *sval, char *limit);
 void *safe_malloc(size_t size);
 void safe_strncpy(char *dest, const char *src, size_t size);
 void safe_pipe(int *fd, int read_noblock);
+#define malloc_log(x, y) malloc_log_real(__func__, __LINE__, (x), (y))
 #define whine_malloc(x) whine_malloc_real(__func__, __LINE__, (x))
 #define whine_realloc(x, y) whine_realloc_real(NULL, __func__, __LINE__, (x), (y))
 #define expand_buf(x, y) expand_buf_real(__func__, __LINE__, (x), (y))
 #define expand_workspace(x, y, z) expand_workspace_real(__func__, __LINE__, (x), (y), (z))
 #define free(x) free_real(__func__, __LINE__, (x))
+void malloc_log_real(const char *func, unsigned int line, void *mem, size_t size);
 void free_real(const char *func, unsigned int line, void *ptr);
 void *whine_malloc_real(const char *func, unsigned int line, size_t size);
 void *whine_realloc_real(const char *wrapper, const char *func, unsigned int line, void *ptr, size_t size);

@@ -1427,6 +1427,11 @@ int check_for_ignored_address(struct dns_header *header, size_t qlen)
   return check_bad_address(header, qlen, daemon->ignore_addr, NULL, NULL);
 }
 
+/* Nameoffset > 0 means that the name of the new record already exists at the given offset,
+   so use a "jump" to that.
+   Nameoffset == 0 means use the first variable argument as the name of the new record.
+   nameoffset < 0 means use the first variable argument as the start of the new record name,
+   then "jump" to -nameoffset to complete it. */
 int add_resource_record(struct dns_header *header, char *limit, int *truncp, int nameoffset, unsigned char **pp, 
 			unsigned long ttl, int *offset, unsigned short type, unsigned short class, char *format, ...)
 {

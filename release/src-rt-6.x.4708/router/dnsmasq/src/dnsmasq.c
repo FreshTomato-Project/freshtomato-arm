@@ -946,9 +946,27 @@ int main (int argc, char **argv)
 	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until system time valid"));
 
       for (ds = daemon->ds; ds; ds = ds->next)
-	my_syslog(LOG_INFO,
-		  ds->digestlen == 0 ? _("configured with negative trust anchor for %s") : _("configured with trust anchor for %s keytag %u"),
-		  ds->name[0] == 0 ? "<root>" : ds->name, ds->keytag);
+	{
+	  struct ds_config *ds1;
+	  
+	  for (ds1 = ds->next; ds1; ds1 = ds1->next)
+	    if (strcmp(ds->name, ds1->name) == 0 &&
+		ds->digestlen == ds1->digestlen &&
+		(ds->digestlen == 0 ||
+		 (ds->algo == ds1->algo &&
+		  ds->keytag == ds1->keytag &&
+		  ds->digest_type == ds1->digest_type &&
+		  memcmp(ds->digest, ds1->digest, ds->digestlen) == 0)))
+	      {
+		ds->name = NULL; /* Mark as duplicate */
+		break;
+	      }
+	  
+	  if (ds->name)
+	    my_syslog(LOG_INFO,
+		      ds->digestlen == 0 ? _("configured with negative trust anchor for %s") : _("configured with trust anchor for %s keytag %u"),
+		      ds->name[0] == 0 ? "<root>" : ds->name, ds->keytag);
+	}
     }
 #endif
 

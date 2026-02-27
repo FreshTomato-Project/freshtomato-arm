@@ -266,6 +266,10 @@ char *canonicalise(char *in, int *nomem)
 	  
 	  return NULL;
 	}
+
+      /* IDN library doesnt call our malloc wrapper, so log this by steam */
+      if (ret)
+	malloc_log(ret, strlen(ret)+1);
       
       return ret;
     }
@@ -323,13 +327,15 @@ void *safe_malloc(size_t size)
 }
 
 /* Ensure limited size string is always terminated.
- * Can be replaced by (void)strlcpy() on some platforms */
+   Can be replaced by (void)strlcpy() on some platforms.
+   src may be NULL in which case we return an empty string. */
 void safe_strncpy(char *dest, const char *src, size_t size)
 {
   if (size != 0)
     {
-      dest[size-1] = '\0';
-      strncpy(dest, src, size-1);
+      dest[0] = dest[size-1] = '\0';
+      if (src)
+	strncpy(dest, src, size-1);
     }
 }
 
@@ -991,6 +997,12 @@ int expand_workspace_real(const char *func, unsigned int line, unsigned char ***
   *szp = new;
 
   return 1;
+}
+
+void malloc_log_real(const char *func, unsigned int line, void *mem, size_t size)
+{
+  if (mem && daemon->log_malloc)
+    my_syslog(LOG_INFO, _("malloc: %s:%u %zu bytes at %x"), func, line, size, hash_ptr(mem));
 }
 
 #undef free

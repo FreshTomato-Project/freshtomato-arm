@@ -21,6 +21,8 @@
 <script src="tomato.js?rel=<% version(); %>"></script>
 <script src="interfaces.js?rel=<% version(); %>"></script>
 <script src="wireless.jsx?_http_id=<% nv(http_id); %>"></script>
+<script src="ethernet-icon.js?_http_id=<% nv(http_id); %>"></script>
+<script src="vpn.js?_http_id=<% nv(http_id); %>"></script>
 <script>
 var lastjiffiestotal = 0, lastjiffiesidle = 0, lastjiffiesusage = 100;
 </script>
@@ -251,7 +253,7 @@ function ethstates() {
 
 		code += '<td class="content"><\/td><\/tr><tr>';
 		for (uidx = 0; uidx <= MAX_PORT_ID; ++uidx) {
-			code += '<td class="title indent2"><object id="ethsvg_'+uidx+'" type="image/svg+xml" data="ethernet.svg?speed=0&duplex=HD" width="46" height="35"><\/object><br><span id="ethcap_'+uidx+'"><\/span><\/td>';
+			code += '<td class="title indent2"><span class="eth-icon" id="ethsvg_'+uidx+'"><\/span><span id="ethcap_'+uidx+'"><\/span><\/td>';
 		}
 
 		code += '<td class="content"><\/td><\/tr><tr><td class="title indent1" colspan="6" style="text-align:right">&raquo; <a href="basic-network.asp">Configure ⚙️<\/a><\/td><\/tr><\/table><\/div>';
@@ -270,15 +272,15 @@ function ethstates() {
 		sp = '' + spn;
 		du = (du || '').toUpperCase();
 		if ((du !== 'FD') && (du !== 'HD')) du = 'HD';
-		var data = 'ethernet.svg?speed=' + sp + '&duplex=' + du;
-
 		var o = E('ethsvg_' + uidx);
-		if (o && o.getAttribute('data') != data)
-			o.setAttribute('data', data);
+		var target = o;
+		var captionText = renderEthIcon(o, sp, du, '');
+		if (o)
+			o.title = state[1] || '';
 
 		var cap = E('ethcap_' + uidx);
 		if (cap)
-			cap.innerHTML = (stats.lan_desc == '1') ? state[1] : '';
+			cap.innerHTML = (stats.lan_desc == '1') ? (state[1] || '') : '';
 	}
 }
 
@@ -405,7 +407,6 @@ function show() {
 }
 
 function earlyInit() {
-	show();
 }
 
 function init() {
@@ -446,6 +447,8 @@ function init() {
 	ref.initPage(1000, 5);
 
 	eventHandler();
+	
+	show();
 }
 </script>
 </head>

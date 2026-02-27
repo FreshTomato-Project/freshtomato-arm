@@ -36,6 +36,9 @@
 <script src="tomato.js?rel=<% version(); %>"></script>
 <script src="wireless.jsx?_http_id=<% nv(http_id); %>"></script>
 <script src="interfaces.js?rel=<% version(); %>"></script>
+<script src="ethernet-icon.js?_http_id=<% nv(http_id); %>"></script>
+<script src="vpn.js?_http_id=<% nv(http_id); %>"></script>
+
 
 <script>
 
@@ -46,7 +49,7 @@ var port_vlan_supported = 0;
 var trunk_vlan_supported = 1; /* Enable on all routers */
 var unknown_router = 0;
 
-/*
+/* REMOVE-BEGIN
 	Bind-mount/dev mode note:
 	In firmware builds, router/www/Makefile strips conditional blocks (e.g. EXTSW-*, MULTIWAN-*).
 	When this page is served raw, those markers remain, so feature-specific logic must be guarded
@@ -54,6 +57,7 @@ var unknown_router = 0;
 */
 var hasExtSw = (nvram['t_model_name'] == 'Asus RT-AC88U');
 var hasMultiWan = ((typeof MAXWAN_NUM !== 'undefined') && (MAXWAN_NUM > 2));
+/* REMOVE-END */
 
 function calcWanPortCount() {
 	var count = 0;
@@ -78,11 +82,16 @@ function portCaption(i) {
 	if (i < wanCount)
 		return (i === 0 && (nvram.model == 'DSL-AC68U')) ? 'DSL' : ('WAN' + i);
 
+/* REMOVE-BEGIN */
 	if (hasExtSw && (i == 5))
 		return (wanCount > 0) ? 'LAN4-7' : 'LAN5-8';
+/* REMOVE-END */
 
 	return (wanCount > 0) ? ('LAN' + (i - 1)) : ('LAN' + i);
 }
+
+/* caption/rendering is handled by ethernet-icon.js (renderEthIcon)
+   keep the VLAN page markup minimal and call into renderEthIcon() from show() */
 
 
 function show() {
@@ -97,16 +106,23 @@ function show() {
 		var p = (state[0] || '').split('_');
 		var sp = p[1] || '';
 		var du = p[2] || '';
-		if ((sp == '') || (sp == 'off')) sp = '0';
-		du = (du == '') ? 'HD' : du.toUpperCase();
+		var spn = parseInt(sp, 10);
+		if (!isFinite(spn) || (spn <= 0)) spn = 0;
+		sp = '' + spn;
+		du = (du || '').toUpperCase();
+		if ((du !== 'FD') && (du !== 'HD')) du = 'HD';
 		var cap = portCaption(i);
-		var data = 'ethernet.svg?speed=' + sp + '&duplex=' + du + '&caption=' + encodeURIComponent(cap);
 		var o = E('ethsvg_' + i);
-		if (o) {
-			if (o.getAttribute('data') != data)
-				o.setAttribute('data', data);
-			o.title = state[1] || '';
+		var target = o;
+		if (o && !o._ethShadowHost && o.attachShadow) {
+			var shadow = o.attachShadow({mode:'open'});
+			var inner = document.createElement('div');
+			shadow.appendChild(inner);
+			o._ethShadowHost = inner;
 		}
+		var captionText = renderEthIcon(o, sp, du, cap);
+		if (o)
+			o.title = captionText || state[1] || '';
 	}
 }
 
@@ -234,17 +250,25 @@ var COL_P5;
 var COL_VID_DEF;
 var COL_BRI;
 /* EXTSW-NO-BEGIN */
+/* REMOVE-BEGIN */
 if (!hasExtSw) {
+/* REMOVE-END */
 	COL_VID_DEF = 7;
 	COL_BRI = 8;
+/* REMOVE-BEGIN */
 }
+/* REMOVE-END */
 /* EXTSW-NO-END */
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 if (hasExtSw) {
+/* REMOVE-END */
 	COL_P5  = 7;
 	COL_VID_DEF = 8;
 	COL_BRI = 9;
+/* REMOVE-BEGIN */
 }
+/* REMOVE-END */
 /* EXTSW-END */
 
 /* set to either 5 or 8 when nvram settings are read (FastE or GigE routers) */
@@ -266,9 +290,13 @@ if (port_vlan_supported) {
 		];
 
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasExtSw) {
+/* REMOVE-END */
 			cols.push({ type: 'select', options: portOptions, prefix: '<div class="centered">', suffix: '<\/div>' });
+/* REMOVE-BEGIN */
 		}
+/* REMOVE-END */
 /* EXTSW-END */
 
 		/* Default VLAN */
@@ -276,28 +304,32 @@ if (port_vlan_supported) {
 
 		var bridgeOptions = [[1,'none'],[2,'WAN0'],[3,'LAN0 (br0)'],[4,'LAN1 (br1)'],[5,'LAN2 (br2)'],[6,'LAN3 (br3)'],[7,'WAN1']];
 /* MULTIWAN-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasMultiWan)
+/* REMOVE-END */
 			bridgeOptions.push([8,'WAN2'],[9,'WAN3']);
 /* MULTIWAN-END */
 		cols.push({ type: 'select', options: bridgeOptions, prefix: '<div class="centered">', suffix: '<\/div>' });
 
 		this.init('vlan-grid', 'sort', (MAX_VLAN_ID + 1), cols);
 
-		var ethIconScale = 75; /* percentage */
+		var ethIconScale = 100; /* percentage */
 		var ethIconW = Math.round(46 * ethIconScale / 100);
 		var ethIconH = Math.round(35 * ethIconScale / 100);
 
 
-                var headers = ['VLAN', 'VID',
-					'<div id="vport_0"><object id="ethsvg_0" type="image/svg+xml" data="/ext/ethernet.svg?speed=0&duplex=HD&caption='+encodeURIComponent(portCaption(0))+'" width="'+ethIconW+'" height="'+ethIconH+'"><\/object><\/div>',
-					'<div id="vport_1"><object id="ethsvg_1" type="image/svg+xml" data="/ext/ethernet.svg?speed=0&duplex=HD&caption='+encodeURIComponent(portCaption(1))+'" width="'+ethIconW+'" height="'+ethIconH+'"><\/object><\/div>',
-					'<div id="vport_2"><object id="ethsvg_2" type="image/svg+xml" data="/ext/ethernet.svg?speed=0&duplex=HD&caption='+encodeURIComponent(portCaption(2))+'" width="'+ethIconW+'" height="'+ethIconH+'"><\/object><\/div>',
-					'<div id="vport_3"><object id="ethsvg_3" type="image/svg+xml" data="/ext/ethernet.svg?speed=0&duplex=HD&caption='+encodeURIComponent(portCaption(3))+'" width="'+ethIconW+'" height="'+ethIconH+'"><\/object><\/div>',
-					'<div id="vport_4"><object id="ethsvg_4" type="image/svg+xml" data="/ext/ethernet.svg?speed=0&duplex=HD&caption='+encodeURIComponent(portCaption(4))+'" width="'+ethIconW+'" height="'+ethIconH+'"><\/object><\/div>'
-			];
+				var headers = ['VLAN', 'VID',
+					'<div id="vport_0"><span class="eth-icon" id="ethsvg_0" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
+					'<div id="vport_1"><span class="eth-icon" id="ethsvg_1" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
+					'<div id="vport_2"><span class="eth-icon" id="ethsvg_2" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
+					'<div id="vport_3"><span class="eth-icon" id="ethsvg_3" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
+					'<div id="vport_4"><span class="eth-icon" id="ethsvg_4" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>'
+				];
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasExtSw)
-			headers.push('<div id="vport_5"><object id="ethsvg_5" type="image/svg+xml" data="/ext/ethernet.svg?speed=0&duplex=HD&caption='+encodeURIComponent(portCaption(5))+'" width="'+ethIconW+'" height="'+ethIconH+'"><\/object><\/div>');
+/* REMOVE-END */
+				headers.push('<div id="vport_5"><span class="eth-icon" id="ethsvg_5" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>');
 /* EXTSW-END */
 		headers.push('Native<br>VLAN', 'Bridge');
 		this.headerSet(headers);
@@ -343,17 +375,29 @@ REMOVE-END */
 		}
 
 /* WAN port */
+/* REMOVE-BEGIN */
 		if ((typeof nvram['wan_ifnameX'] === 'string') && (nvram['wan_ifnameX'].indexOf('vlan') != -1))
+/* REMOVE-END */
 			bridged[parseInt(nvram['wan_ifnameX'].replace('vlan',''))] = '2';
+/* REMOVE-BEGIN */
 		if ((typeof nvram['wan2_ifnameX'] === 'string') && (nvram['wan2_ifnameX'].indexOf('vlan') != -1))
+/* REMOVE-END */
 			bridged[parseInt(nvram['wan2_ifnameX'].replace('vlan',''))] = '7';
 /* MULTIWAN-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasMultiWan) {
+/* REMOVE-END */
+/* REMOVE-BEGIN */
 			if ((typeof nvram['wan3_ifnameX'] === 'string') && (nvram['wan3_ifnameX'].indexOf('vlan') != -1))
+/* REMOVE-END */
 				bridged[parseInt(nvram['wan3_ifnameX'].replace('vlan',''))] = '8';
+/* REMOVE-BEGIN */
 			if ((typeof nvram['wan4_ifnameX'] === 'string') && (nvram['wan4_ifnameX'].indexOf('vlan') != -1))
+/* REMOVE-END */
 				bridged[parseInt(nvram['wan4_ifnameX'].replace('vlan',''))] = '9';
+/* REMOVE-BEGIN */
 		}
+/* REMOVE-END */
 /* MULTIWAN-END */
 
 		/* go thru all possible VLANs */
@@ -391,7 +435,9 @@ REMOVE-END */
 						pt(COL_P4N)
 					];
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 					if (hasExtSw)
+/* REMOVE-END */
 						row.push(pt(COL_P5N));
 /* EXTSW-END */
 					row.push((((nvram['vlan'+i+'ports']).indexOf('*') != -1) ? '1' : '0'));
@@ -464,7 +510,11 @@ REMOVE-END */
 		var oldP2 = (old && (old.length > COL_P2)) ? old[COL_P2] : '0';
 		var oldP3 = (old && (old.length > COL_P3)) ? old[COL_P3] : '0';
 		var oldP4 = (old && (old.length > COL_P4)) ? old[COL_P4] : '0';
-		var oldP5 = (hasExtSw && old && (old.length > COL_P5)) ? old[COL_P5] : '0';
+		var oldP5 = (old && (old.length > COL_P5)) ? old[COL_P5] : '0';
+/* REMOVE-BEGIN */
+		if (!hasExtSw)
+			oldP5 = '0';
+/* REMOVE-END */
 		var me = this;
 		var checkNative = function(col, oldVal) {
 			if (f[col].value == '1') {
@@ -485,7 +535,9 @@ REMOVE-END */
 		checkNative(COL_P3, oldP3);
 		checkNative(COL_P4, oldP4);
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasExtSw)
+/* REMOVE-END */
 			checkNative(COL_P5, oldP5);
 /* EXTSW-END */
 
@@ -565,9 +617,13 @@ REMOVE-END */
 			pv(data[COL_P4])
 		];
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasExtSw) {
+/* REMOVE-END */
 			view.push(pv(data[COL_P5]));
+/* REMOVE-BEGIN */
 		}
+/* REMOVE-END */
 /* EXTSW-END */
 		view.push(
 			(data[COL_VID_DEF].toString() != '0') ? '🌑' : '',
@@ -583,7 +639,9 @@ REMOVE-END */
 	vlg.dataToFieldValues = function (data) {
 		var values = [data[COL_VID], data[COL_MAP], data[COL_P0], data[COL_P1], data[COL_P2], data[COL_P3], data[COL_P4]];
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasExtSw)
+/* REMOVE-END */
 			values.push(data[COL_P5]);
 /* EXTSW-END */
 		values.push((data[COL_VID_DEF] != 0) ? 1 : 0, data[COL_BRI]);
@@ -601,7 +659,9 @@ REMOVE-END */
 			parseInt(f[COL_P4].value, 10) || 0
 		];
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasExtSw)
+/* REMOVE-END */
 			data.push(parseInt(f[COL_P5].value, 10) || 0);
 /* EXTSW-END */
 		data.push(f[COL_VID_DEF].checked ? 1 : 0, f[COL_BRI].value);
@@ -719,9 +779,13 @@ REMOVE-END */
 		f[COL_P3].value = '0';
 		f[COL_P4].value = '0';
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasExtSw) {
+/* REMOVE-END */
 			f[COL_P5].value = '0';
+/* REMOVE-BEGIN */
 		}
+/* REMOVE-END */
 /* EXTSW-END */
 		f[COL_VID_DEF].checked = 0;
 		if (this.countDefaultVID() > 0)
@@ -762,7 +826,11 @@ function save() {
 
 	var i, j, k, p, d, e, v = '';
 	var fom = E('t_fom');
-	var maxWan = (hasMultiWan ? MAXWAN_NUM : 2);
+	var maxWan = MAXWAN_NUM;
+/* REMOVE-BEGIN */
+	if (!hasMultiWan)
+		maxWan = 2;
+/* REMOVE-END */
 
 	/* wipe out relevant fields just in case this is not the first time we try to submit */
 	for (i = 0 ; i <= MAX_VLAN_ID ; i++) {
@@ -814,11 +882,15 @@ function save() {
 		p += trailingSpace(p);
 
 /* EXTSW-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasExtSw) {
+/* REMOVE-END */
 			p += (d[i][COL_P5].toString() != '0') ? COL_P5N : '';
 			p += ((trunk_vlan_supported) && (d[i][COL_P5].toString() == '2')) ? 't' : '';
 			p += trailingSpace(p);
+/* REMOVE-BEGIN */
 		}
+/* REMOVE-END */
 /* EXTSW-END */
 
 		p += (d[i][COL_VID_DEF].toString() != '0') ? (SWITCH_INTERNAL_PORT+'*') : SWITCH_INTERNAL_PORT;
@@ -851,10 +923,14 @@ REMOVE-END */
 		fom['lan3_ifnames'].value += (d[i][COL_BRI] == '6') ? 'vlan'+d[i][0] : '';
 		fom['wan2_ifnameX'].value += (d[i][COL_BRI] == '7') ? 'vlan'+d[i][0] : '';
 /* MULTIWAN-BEGIN */
+/* REMOVE-BEGIN */
 		if (hasMultiWan) {
+/* REMOVE-END */
 			fom['wan3_ifnameX'].value += (d[i][COL_BRI] == '8') ? 'vlan'+d[i][0] : '';
 			fom['wan4_ifnameX'].value += (d[i][COL_BRI] == '9') ? 'vlan'+d[i][0] : '';
+/* REMOVE-BEGIN */
 		}
+/* REMOVE-END */
 /* MULTIWAN-END */
 	}
 
@@ -971,6 +1047,7 @@ function init() {
 		E('sesdiv').style.display = 'block';
 		vlg.recolor();
 		vlg.resetNewEditor();
+/* REMOVE-BEGIN */
 		if (!hasMultiWan) {
 			var fom = E('t_fom');
 			if (fom['wan3_ifnameX']) { fom['wan3_ifnameX'].disabled = 1; fom['wan3_ifnameX'].value = ''; }
@@ -984,6 +1061,7 @@ function init() {
 			if (fom['wan3_proto']) { fom['wan3_proto'].disabled = 1; fom['wan3_proto'].value = ''; }
 			if (fom['wan4_proto']) { fom['wan4_proto'].disabled = 1; fom['wan4_proto'].value = ''; }
 		}
+/* REMOVE-END */
 		var c;
 		if (((c = cookie.get(cprefix+'_notes_vis')) != null) && (c == '1'))
 			toggleVisibility(cprefix, 'notes');

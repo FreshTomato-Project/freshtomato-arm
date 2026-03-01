@@ -21,7 +21,7 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Define to 1 if you have the `elf_aux_info' function. */
+/* Define to 1 if you have the 'elf_aux_info' function. */
 #undef HAVE_ELF_AUX_INFO
 
 /* Define if fcntl file locking is available */
@@ -30,7 +30,7 @@
 /* Define if the compiler understands __attribute__ */
 #undef HAVE_GCC_ATTRIBUTE
 
-/* Define to 1 if you have the `getline' function. */
+/* Define to 1 if you have the 'getline' function. */
 #undef HAVE_GETLINE
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -39,7 +39,7 @@
 /* Define to 1 if you have dlopen (with -ldl). */
 #undef HAVE_LIBDL
 
-/* Define to 1 if you have the `gmp' library (-lgmp). */
+/* Define to 1 if you have the 'gmp' library (-lgmp). */
 #undef HAVE_LIBGMP
 
 /* Define if compiler and linker supports __attribute__ ifunc */
@@ -119,7 +119,7 @@
 /* Define to 1 if you have the <openssl/rsa.h> header file. */
 #undef HAVE_OPENSSL_RSA_H
 
-/* Define to 1 if you have the `secure_getenv' function. */
+/* Define to 1 if you have the 'secure_getenv' function. */
 #undef HAVE_SECURE_GETENV
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -167,10 +167,10 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* The size of `long', as computed by sizeof. */
+/* The size of 'long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of `size_t', as computed by sizeof. */
+/* The size of 'size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
 
 /* If using the C implementation of alloca, define if you know the
@@ -181,7 +181,7 @@
 	STACK_DIRECTION = 0 => direction of growth unknown */
 #undef STACK_DIRECTION
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
@@ -207,22 +207,22 @@
 # endif
 #endif
 
-/* Define to empty if `const' does not conform to ANSI C. */
+/* Define to empty if 'const' does not conform to ANSI C. */
 #undef const
 
-/* Define to `int' if <sys/types.h> doesn't define. */
+/* Define as 'int' if <sys/types.h> doesn't define. */
 #undef gid_t
 
-/* Define to `__inline__' or `__inline' if that's what the C compiler
+/* Define to '__inline__' or '__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
 #undef inline
 #endif
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define as 'unsigned int' if <stddef.h> doesn't define. */
 #undef size_t
 
-/* Define to `int' if <sys/types.h> doesn't define. */
+/* Define as 'int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
 /* AIX requires this to be the first thing in the file.  */

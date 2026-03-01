@@ -93,7 +93,15 @@ static void null_hash_update(void *ctxv, size_t length, const uint8_t *src)
   memcpy(null_hash_buff + ctx->len, src, length);
   ctx->len += length;
 }
- 
+
+/* The prototype changes in nettle 4.0 to omit the length argument */
+#if MIN_VERSION(4, 0)
+static void null_hash_digest(void *ctx, uint8_t *dst)
+{
+  ((struct null_hash_digest *)dst)->buff = null_hash_buff;
+  ((struct null_hash_digest *)dst)->len = ((struct null_hash_ctx *)ctx)->len;
+}
+#else
 static void null_hash_digest(void *ctx, size_t length, uint8_t *dst)
 {
   (void)length;
@@ -101,6 +109,7 @@ static void null_hash_digest(void *ctx, size_t length, uint8_t *dst)
   ((struct null_hash_digest *)dst)->buff = null_hash_buff;
   ((struct null_hash_digest *)dst)->len = ((struct null_hash_ctx *)ctx)->len;
 }
+#endif
 
 static struct nettle_hash null_hash = {
   "null_hash",
@@ -500,5 +509,17 @@ const struct nettle_hash *hash_find(char *name)
   return NULL;
 #endif
 }
+
+/* The prototype changes in nettle 4.0 to omit the length argument */
+void nettle_digest_wrapper(const struct nettle_hash *hash, void *ctx, size_t length, uint8_t *dst)
+{
+#if MIN_VERSION(4, 0)
+  (void)length;
+  hash->digest(ctx, dst);
+#else
+  hash->digest(ctx, length, dst);
+#endif
+}
+
 
 #endif /* defined(HAVE_DNSSEC) */

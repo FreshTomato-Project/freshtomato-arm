@@ -201,6 +201,11 @@ struct event_desc {
 #define EVENT_TIME_ERR   24
 #define EVENT_SCRIPT_LOG 25
 #define EVENT_TIME       26
+#define EVENT_LINK_ERR   27
+#define EVENT_INOTFY_ERR 28
+#define EVENT_TMSL_ERR   29
+#define EVENT_RESOLV_ERR 30
+#define EVENT_IFILE_ERR  31
 
 /* Exit codes. */
 #define EC_GOOD        0
@@ -1484,6 +1489,7 @@ int verify(struct blockdata *key_data, unsigned int key_len, unsigned char *sig,
 char *ds_digest_name(int digest);
 char *algo_digest_name(int algo);
 char *nsec3_digest_name(int digest);
+void nettle_digest_wrapper(const struct nettle_hash *hash, void *ctx, size_t length, uint8_t *dst);
 
 /* util.c */
 void rand_init(void);
@@ -1907,7 +1913,7 @@ int detect_loop(char *query, int type);
 
 /* inotify.c */
 #ifdef HAVE_INOTIFY
-void inotify_dnsmasq_init(void);
+void inotify_dnsmasq_init(int errfd);
 int inotify_check(time_t now);
 void set_dynamic_inotify(int flag, int total_size, struct crec **rhash, int revhashsz);
 #endif

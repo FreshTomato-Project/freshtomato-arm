@@ -28,6 +28,12 @@ version 2.93
 	relay is in use. Many thanks to Jørgen Søvik for help
 	finding this bug.
 	
+	Modify the inotify implementation so that inotify watches are
+	only created after dnsmasq has changed permissions and userid.
+	This means that the permissions used when creating the watches
+	are the same as used for accessing watched files, which makes
+	more sense and avoids odd and confusing error conditions.
+
 	
 version 2.92
         Redesign the interaction between DNSSEC validation and per-domain

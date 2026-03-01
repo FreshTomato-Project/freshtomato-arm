@@ -656,7 +656,7 @@ static int validate_rrset(time_t now, struct dns_header *header, size_t plen, in
 	    }
 	}
      
-      hash->digest(ctx, hash->digest_size, digest);
+      nettle_digest_wrapper(hash, ctx, hash->digest_size, digest);
       
       /* namebuff used for workspace above, restore to leave unchanged on exit */
       p = (unsigned char*)(rrset[0]);
@@ -836,7 +836,7 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
 		 rather then O(keys x DSs) */
 	      hash->update(ctx, (unsigned int)wire_len, (unsigned char *)name);
 	      hash->update(ctx, (unsigned int)rdlen, psave);
-	      hash->digest(ctx, hash->digest_size, digest);
+	      nettle_digest_wrapper(hash, ctx, hash->digest_size, digest);
 	      
 	      from_wire(name);
 
@@ -1385,13 +1385,13 @@ static int hash_name(char *in, unsigned char **out, struct nettle_hash const *ha
  
   hash->update(ctx, to_wire(in), (unsigned char *)in);
   hash->update(ctx, salt_len, salt);
-  hash->digest(ctx, hash->digest_size, digest);
+  nettle_digest_wrapper(hash, ctx, hash->digest_size, digest);
 
   for(i = 0; i < iterations; i++)
     {
       hash->update(ctx, hash->digest_size, digest);
       hash->update(ctx, salt_len, salt);
-      hash->digest(ctx, hash->digest_size, digest);
+      nettle_digest_wrapper(hash, ctx, hash->digest_size, digest);
     }
    
   from_wire(in);

@@ -437,14 +437,6 @@ int main (int argc, char **argv)
 	daemon->tcp_pipes[i] = -1;
     }
 
-#ifdef HAVE_INOTIFY
-  if ((daemon->port != 0 && !option_bool(OPT_NO_RESOLV)) ||
-      daemon->dynamic_dirs)
-    inotify_dnsmasq_init();
-  else
-    daemon->inotifyfd = -1;
-#endif
-
   if (daemon->dump_file)
 #ifdef HAVE_DUMPFILE
     dump_init();
@@ -864,6 +856,14 @@ int main (int argc, char **argv)
     }
 #endif
 
+#ifdef HAVE_INOTIFY
+  if ((daemon->port != 0 && !option_bool(OPT_NO_RESOLV)) ||
+      daemon->dynamic_dirs)
+    inotify_dnsmasq_init(err_pipe[1]);
+  else
+    daemon->inotifyfd = -1;
+#endif
+  
    /* Don't start logging malloc before logging is set up. */
   daemon->log_malloc = option_bool(OPT_LOG_MALLOC);
   
@@ -1545,6 +1545,26 @@ static void fatal_event(struct event_desc *ev, char *msg)
       /* fall through */
     case EVENT_TIME_ERR:
       die(_("cannot create timestamp file %s: %s" ), msg, EC_BADCONF);
+
+      /* fall through */
+    case EVENT_LINK_ERR:
+      die(_("cannot access path %s: %s" ), msg, EC_MISC);
+
+       /* fall through */
+    case EVENT_INOTFY_ERR:
+      die(_("failed to create inotify: %s" ), NULL, EC_MISC);
+
+      /* fall through */
+    case EVENT_TMSL_ERR:
+      die(_("too many symlinks following %s"), msg, EC_MISC);
+
+      /* fall through */
+    case EVENT_RESOLV_ERR:
+      die(_("directory %s for resolv-file is missing, cannot poll"), msg, EC_MISC);
+
+      /* fall through */
+    case EVENT_IFILE_ERR:
+      die(_("failed to create inotify for %s: %s"), msg, EC_MISC);
     }
 }	
       

@@ -3389,15 +3389,326 @@ static void do_service(const char *name, const char *action, int user)
 		logmsg(LOG_DEBUG, "*** %s: OUT waited %d second(s) for execution of 'action_service': [%s]", __FUNCTION__, ((200 - n) / 10), s);
 }
 
+/* Return the daemon process name to verify after start/stop, or NULL for
+ * one-shot / config-only services that leave no persistent process behind. */
+static const char *svc_get_proc(const char *name)
+{
+	/* prefix-matched families */
+	if (!strncmp(name, "vpnclient", 9)) return name; /* vpnclientN == process name */
+	if (!strncmp(name, "vpnserver", 9)) return name; /* vpnserverN == process name */
+	if (!strncmp(name, "wireguard", 9)) return NULL;  /* kernel subsystem, no daemon */
+	if (!strncmp(name, "wan",       3)) return NULL;  /* complex WAN bringup, no single process */
+	if (!strncmp(name, "dhcpc_wan", 9)) return "udhcpc";
+
+	static const struct { const char *svc, *proc; } map[] = {
+		/* daemon services: proc = process name for pidof */
+		{ "sshd",            "dropbear"        },
+		{ "dropbear",        "dropbear"        },
+		{ "telnetd",         "telnetd"         },
+		{ "httpd",           "httpd"           },
+		{ "samba",           "smbd"            },
+		{ "smbd",            "smbd"            },
+		{ "ftpd",            "vsftpd"          },
+		{ "vsftpd",          "vsftpd"          },
+		{ "media",           "minidlna"        },
+		{ "minidlna",        "minidlna"        },
+		{ "crond",           "crond"           },
+		{ "dnsmasq",         "dnsmasq"         },
+		{ "dns",             "dnsmasq"         },
+		{ "dhcpd",           "dnsmasq"         },
+		{ "ntpd",            "ntpd"            },
+		{ "upnp",            "miniupnpd"       },
+		{ "miniupnpd",       "miniupnpd"       },
+		{ "rstats",          "rstats"          },
+		{ "rstatsnew",       "rstats"          },
+		{ "cstats",          "cstats"          },
+		{ "cstatsnew",       "cstats"          },
+		{ "logging",         "syslogd"         },
+		{ "sched",           "sched"           },
+		{ "nginx",           "nginx"           },
+		{ "mysql",           "mysqld"          },
+		{ "mysqld",          "mysqld"          },
+		{ "haveged",         "haveged"         },
+		{ "irqbalance",      "irqbalance"      },
+		{ "mdns",            "avahi-daemon"    },
+		{ "avahi_daemon",    "avahi-daemon"    },
+		{ "stubby",          "stubby"          },
+		{ "tor",             "tor"             },
+		{ "tinc",            "tincd"           },
+		{ "tincd",           "tincd"           },
+		{ "snmp",            "snmpd"           },
+		{ "transmission",    "transmission-da" },
+		{ "bittorrent",      "transmission-da" },
+		{ "transmission_da", "transmission-da" },
+		{ "pptpd",           "pptpd"           },
+		{ "pptpclient",      "pptpclient"      },
+		{ "zebra",           "zebra"           },
+		{ "dhcp6",           "dhcp6c"          },
+		{ "ups",             "apcupsd"         },
+		{ "dnscrypt",        "dnscrypt-proxy"  },
+		{ "dnscrypt_proxy",  "dnscrypt-proxy"  },
+		{ "splashd",         "splashd"         },
+		{ "roamast",         "roamast"         },
+		{ "rssi",            "roamast"         },
+		{ "bsd",             "bsd"             },
+		{ "cifs",            "mount-cifs"      },
+		{ "hotplug",         "hotplug2"        },
+		{ "nas",             "nas"             },
+		{ "fanctrl",         "phy_tempsense"   },
+		{ "nfs",             "nfsd"            },
+		{ "nfsd",            "nfsd"            },
+		/* one-shot / config-only: no persistent process to verify */
+		{ "admin",           NULL },
+		{ "adminnosshd",     NULL },
+		{ "arpbind",         NULL },
+		{ "bwlimit",         NULL },
+		{ "ctnf",            NULL },
+		{ "ddns",            NULL },
+		{ "firewall",        NULL },
+		{ "jffs",            NULL },
+		{ "mmc",             NULL },
+		{ "net",             NULL },
+		{ "porthealth",      NULL },
+		{ "qos",             NULL },
+		{ "restrict",        NULL },
+		{ "routing",         NULL },
+		{ "tomatoanon",      NULL },
+		{ "upgrade",         NULL },
+		{ "usb",             NULL },
+		{ "usbapps",         NULL },
+		{ "wireless",        NULL },
+		{ "wl",              NULL },
+		{ "wlgui",           NULL },
+		{ NULL, NULL }
+	};
+	int i;
+	for (i = 0; map[i].svc; i++)
+		if (strcmp(name, map[i].svc) == 0)
+			return map[i].proc;
+	/* unknown service: skip process verification */
+	return NULL;
+}
+
+static int svc_validate(const char *s)
+{
+	/* prefix-matched services (mirror exec_service strncmp logic) */
+	if (!strncmp(s, "admin",     5)) return 1;
+	if (!strncmp(s, "dhcpc_wan", 9)) return 1;
+	if (!strncmp(s, "jffs",      4)) return 1;
+	if (!strncmp(s, "rstats",    6)) return 1;
+	if (!strncmp(s, "cstats",    6)) return 1;
+	if (!strncmp(s, "wan",       3)) return 1;
+	if (!strncmp(s, "vpnclient", 9)) return 1;
+	if (!strncmp(s, "vpnserver", 9)) return 1;
+	if (!strncmp(s, "wireguard", 9)) return 1;
+	/* exact matches — all known names across all build configs */
+	static const char * const names[] = {
+		"arpbind","avahi_daemon","bittorrent","bsd","bsd_nvram",
+		"bwlimit","cifs","crond","cstats_nvram","ctnf","ddns","dhcp6",
+		"dns","dnsmasq","dnscrypt","dnscrypt_proxy","dropbear","fanctrl",
+		"firewall","ftpd","ftp_nvram","haveged","hotplug","httpd",
+		"irqbalance","logging","mdns","media","minidlna","miniupnpd",
+		"mmc","mysql","mysqld","nas","net","nfs","nfsd","nginx",
+		"ntpd","porthealth","pptpclient","pptpd","qos","restrict",
+		"roamast","routing","rssi","rstats_nvram","rstatsnew","cstatsnew",
+		"samba","sched","smbd","snmp","snmp_nvram","splashd","sshd",
+		"stubby","telnetd","tinc","tincd","tor","tomatoanon",
+		"transmission","transmission_da","upnp","upnp_nvram","upgrade",
+		"ups","usb","usbapps","vsftpd","wireless","wl","wlgui","zebra",
+		NULL
+	};
+	const char * const *p;
+	for (p = names; *p; p++)
+		if (!strcmp(s, *p)) return 1;
+	return 0;
+}
+
+static void list_services(void)
+{
+	/* always available */
+	puts(	"admin\narpbind\nbwlimit\ncrond\ncstats\nctnf\nddns\n"
+		"dnsmasq\ndns\nfirewall\nhttpd\nhotplug\nlogging\nnas\nnet\n"
+		"ntpd\nqos\nrestrict\nrouting\nrstats\nsched\nsshd\ntelnetd\n"
+		"tomatoanon\nupnp\nwan\nwireless\nwlgui");
+#ifdef TCONFIG_BT
+	puts("transmission");
+#endif
+#ifdef TCONFIG_CIFS
+	puts("cifs");
+#endif
+#ifdef TCONFIG_DNSCRYPT
+	puts("dnscrypt");
+#endif
+#ifdef TCONFIG_FANCTRL
+	puts("fanctrl");
+#endif
+#ifdef TCONFIG_FTP
+	puts("ftpd");
+#endif
+#ifdef TCONFIG_HAVEGED
+	puts("haveged");
+#endif
+#ifdef TCONFIG_IPV6
+	puts("dhcp6");
+#endif
+#ifdef TCONFIG_IRQBALANCE
+	puts("irqbalance");
+#endif
+#ifdef TCONFIG_JFFS2
+	puts("jffs");
+#endif
+#ifdef TCONFIG_MDNS
+	puts("mdns");
+#endif
+#ifdef TCONFIG_MEDIA_SERVER
+	puts("media");
+#endif
+#ifdef TCONFIG_NFS
+	puts("nfs");
+#endif
+#ifdef TCONFIG_NGINX
+	puts("nginx\nmysql");
+#endif
+#ifdef TCONFIG_NOCAT
+	puts("splashd");
+#endif
+#ifdef TCONFIG_OPENVPN
+	puts("vpnclient1\nvpnclient2\nvpnclient3\nvpnserver1\nvpnserver2\nvpnserver3");
+#endif
+#ifdef TCONFIG_PPTPD
+	puts("pptpd\npptpclient");
+#endif
+#ifdef TCONFIG_ROAM
+	puts("roamast");
+#endif
+#ifdef TCONFIG_SAMBASRV
+	puts("samba");
+#endif
+#ifdef TCONFIG_SDHC
+	puts("mmc");
+#endif
+#ifdef TCONFIG_SNMP
+	puts("snmp");
+#endif
+#ifdef TCONFIG_STUBBY
+	puts("stubby");
+#endif
+#ifdef TCONFIG_TINC
+	puts("tinc");
+#endif
+#ifdef TCONFIG_TOR
+	puts("tor");
+#endif
+#ifdef TCONFIG_UPS
+	puts("ups");
+#endif
+#ifdef TCONFIG_USB
+	puts("usb");
+#endif
+#ifdef TCONFIG_WIREGUARD
+	puts("wireguard1\nwireguard2\nwireguard3");
+#endif
+#ifdef TCONFIG_ZEBRA
+	puts("zebra");
+#endif
+}
+
+static void service_status(const char *name)
+{
+	pid_t pid = pidof(svc_get_proc(name));
+	if (pid > 0)
+		printf("%s: running (pid %d)\n", name, (int)pid);
+	else
+		printf("%s: stopped\n", name);
+}
+
+static void print_service_help(const char *prog)
+{
+	printf(
+		"Usage:  %s <name> start|stop|restart|status\n"
+		"        %s list\n"
+		"\n"
+		"  start    Start the service\n"
+		"  stop     Stop the service\n"
+		"  restart  Stop then start the service\n"
+		"  status   Show whether the service process is running\n"
+		"\n"
+		"Exit status: 0 on success, 1 on failure.\n"
+		"Run '%s list' for all available service names.\n",
+		prog, prog, prog
+	);
+}
+
 int service_main(int argc, char *argv[])
 {
+	const char *name, *action, *proc;
+	int n, ok, is_stop;
+
+	if (argc < 2 || strcmp(argv[1], "help") == 0) {
+		print_service_help(argv[0]);
+		return 0;
+	}
+
+	if (strcmp(argv[1], "list") == 0) {
+		list_services();
+		return 0;
+	}
+
 	if (argc != 3)
-		usage_exit(argv[0], "<service> <action>");
+		usage_exit(argv[0], "<service> <action>  |  list  |  help");
 
-	do_service(argv[1], argv[2], 1);
-	printf("\nDone.\n");
+	name   = argv[1];
+	action = argv[2];
 
-	return 0;
+	if (!svc_validate(name)) {
+		fprintf(stderr, "%s: unknown service '%s'\n", argv[0], name);
+		return 1;
+	}
+	if (strcmp(action, "start") && strcmp(action, "stop") &&
+	    strcmp(action, "restart") && strcmp(action, "status")) {
+		fprintf(stderr, "%s: unknown action '%s'\n", argv[0], action);
+		return 1;
+	}
+
+	if (strcmp(action, "status") == 0) {
+		service_status(name);
+		return 0;
+	}
+
+	proc = svc_get_proc(name);
+
+	if (strcmp(action, "restart") == 0) {
+		do_service(name, "stop", 0);
+		if (proc) {
+			/* wait up to 5s for old process to exit before starting */
+			n = 50;
+			while (pidof(proc) > 0 && n-- > 0)
+				usleep(100 * 1000);
+		}
+		do_service(name, "start", 0);
+	} else {
+		do_service(name, action, 0);
+	}
+
+	if (proc) {
+		/* daemon service: poll for result, one dot per second, up to 15 seconds */
+		is_stop = (strcmp(action, "stop") == 0);
+		for (n = 0; n < 15; n++) {
+			ok = is_stop ? (pidof(proc) <= 0) : (pidof(proc) > 0);
+			if (ok) break;
+			putchar('.');
+			fflush(stdout);
+			sleep(1);
+		}
+		if (n == 15)
+			ok = is_stop ? (pidof(proc) <= 0) : (pidof(proc) > 0);
+	} else {
+		/* one-shot service: do_service already waited for completion */
+		ok = 1;
+	}
+
+	printf("\n%s\n", ok ? "Done." : "Failed!");
+	return ok ? 0 : 1;
 }
 
 void start_service(const char *name)

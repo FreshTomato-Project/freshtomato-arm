@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -43,10 +42,6 @@ typedef u_int8_t u8;
 
 #include "etc53xx.h"
 #define ROBO_PHY_ADDR	0x1E	/* robo switch phy address */
-#define LINK_STATE_FILE	"/tmp/robocfg-linkstate"
-#define LINK_PORTS	9
-/* Persisted state and hold time to debounce flaky link reports */
-#define DOWN_HOLD_SECONDS	5	/* seconds: hold BEFORE reporting DOWN to avoid transient glitches */
 
 /* MII registers */
 #define REG_MII_PAGE	0x10	/* MII Page register */
@@ -313,49 +308,6 @@ static int robo_vlan535x(robo_t *robo, u32 phyid)
 #endif
 }
 
-/* BMSR link status can be latched-low. Read twice and use the second read. */
-static int phy_link_up(robo_t *robo, int phy_port)
-{
-	if (phy_port < 0 || phy_port > 5)
-		return 0;
-	mdio_read(robo, phy_port, MII_BMSR);
-	return (mdio_read(robo, phy_port, MII_BMSR) & BMSR_LSTATUS) ? 1 : 0;
-}
-
-/* Note: double-read above prevents latched-low BMSR from falsely
- * indicating link down on a single read. */
-
-typedef struct {
-	u8 up[LINK_PORTS];               /* 1 if we believe port is up (persisted) */
-	u32 down_since[LINK_PORTS];      /* timestamp when first seen DOWN while previously up */
-	u8 last_duplex_fd[LINK_PORTS];   /* last stable duplex (0=HD/1=FD) */
-	u32 duplex_changed_at[LINK_PORTS]; /* timestamp when duplex first changed (for debounce) */
-} link_state_t;
-
-static void load_link_state(link_state_t *state)
-{
-	FILE *fp = fopen(LINK_STATE_FILE, "rb");
-	if (!fp) {
-		memset(state, 0, sizeof(*state));
-		return;
-	}
-	if (fread(state, 1, sizeof(*state), fp) != sizeof(*state))
-		memset(state, 0, sizeof(*state));
-	fclose(fp);
-}
-
-/* load_link_state/save_link_state persist the debounce timestamps and
- * last known link/duplex so short UI refresh gaps don't lose the hold timers. */
-
-static void save_link_state(const link_state_t *state)
-{
-	FILE *fp = fopen(LINK_STATE_FILE, "wb");
-	if (!fp)
-		return;
-	fwrite(state, 1, sizeof(*state), fp);
-	fclose(fp);
-}
-
 u8 port[9] = { 0, 1, 2, 3, 4, 8, 0, 0, 8};
 char ports[] = "01234???5???????";
 char *speed[4] = { "10", "100", "1000" , "4" };
@@ -427,19 +379,12 @@ void usage()
 			jumbo[0], jumbo[1]);
 }
 
-
 int
 main(int argc, char *argv[])
 {
 	u16 val16;
 	u32 val32;
 	u16 mac[3];
-	u16 link_summary;
-	u16 speed_summary16 = 0;
-	u32 speed_summary32 = 0;
-	u16 duplex_summary;
-	u32 now_s;
-	link_state_t link_state;
 	int i = 0, j;
 	int robo535x = 0; /* 0 - 5365, 1 - 5325/5352/5354, 3 - 5356, 4 - 53115, 5 - 5301x */
 	u32 phyid;
@@ -447,9 +392,6 @@ main(int argc, char *argv[])
 	
 	static robo_t robo;
 	struct ethtool_drvinfo info;
-
-	load_link_state(&link_state);
-	now_s = (u32)time(NULL);
 	
 	if ((robo.fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket");
@@ -848,79 +790,18 @@ main(int argc, char *argv[])
 		
 	printf("Switch: %sabled %s\n", robo_read16(&robo, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE) & 2 ? "en" : "dis",
 		    robo.gmii ? "gigabit" : "");
-	link_summary = robo_read16(&robo, ROBO_STAT_PAGE, ROBO_LINK_STAT_SUMMARY);
-	if (robo535x >= 4)
-		speed_summary32 = robo_read32(&robo, ROBO_STAT_PAGE, ROBO_SPEED_STAT_SUMMARY);
-	else
-		speed_summary16 = robo_read16(&robo, ROBO_STAT_PAGE, ROBO_SPEED_STAT_SUMMARY);
-	duplex_summary = robo_read16(&robo, ROBO_STAT_PAGE,
-		(robo535x >= 4) ? ROBO_DUPLEX_STAT_SUMMARY_53115 : ROBO_DUPLEX_STAT_SUMMARY);
 
 	for (i = 0; i <= 8; i++) {
-		int phy_port;
-		int link_up;
-		int measured_up;
-		int duplex_fd;
-		int was_up;
-		if (i < 8 && ((robo535x < 4 && i > 4) || (robo535x < 5 && i > 5) || (robo535x == 5 && i == 6))) {
+		if (i < 8 && ((robo535x < 4 && i > 4) || (robo535x < 5 && i > 5) || (robo535x == 5 && i == 6)))
 			continue;
-		}
-		phy_port = (robo535x >= 4) ? i : ports[i] - '0';
-		was_up = link_state.up[i];
-		measured_up = (link_summary & (1 << i)) ? 1 : 0;
-		if (!measured_up && i != 8)
-			measured_up = phy_link_up(&robo, phy_port);
-
-		if (measured_up) {
-			link_up = 1;
-			link_state.up[i] = 1;
-			link_state.down_since[i] = 0;
-		}
-		else {
-			if (link_state.up[i]) {
-				if (link_state.down_since[i] == 0)
-					link_state.down_since[i] = now_s;
-				if ((now_s - link_state.down_since[i]) < DOWN_HOLD_SECONDS)
-					link_up = 1;
-				else {
-					link_up = 0;
-					link_state.up[i] = 0;
-					link_state.duplex_changed_at[i] = 0;
-				}
-			}
-			else {
-				link_up = 0;
-				link_state.down_since[i] = 0;
-				link_state.duplex_changed_at[i] = 0;
-			}
-		}
-
-		duplex_fd = (duplex_summary & (1 << i)) ? 1 : 0;
-		if (link_up) {
-			if (!was_up) {
-				link_state.last_duplex_fd[i] = duplex_fd;
-				link_state.duplex_changed_at[i] = 0;
-			}
-			else if (duplex_fd != link_state.last_duplex_fd[i]) {
-				if (link_state.duplex_changed_at[i] == 0)
-					link_state.duplex_changed_at[i] = now_s;
-				if ((now_s - link_state.duplex_changed_at[i]) >=  DOWN_HOLD_SECONDS) {
-					link_state.last_duplex_fd[i] = duplex_fd;
-					link_state.duplex_changed_at[i] = 0;
-				}
-			}
-			else {
-				link_state.duplex_changed_at[i] = 0;
-			}
-			duplex_fd = link_state.last_duplex_fd[i];
-		}
-		printf(link_up ?
+		printf(robo_read16(&robo, ROBO_STAT_PAGE, ROBO_LINK_STAT_SUMMARY) & (1 << i) ?
 			"Port %d: %4s%s " : "Port %d:   DOWN ",
 			(robo535x >= 4) ? i : ports[i] - '0',
 			speed[(robo535x >= 4) ?
-				(speed_summary32 >> i * 2) & 3 :
-				(speed_summary16 >> i) & 1],
-			duplex_fd ? "FD" : "HD");
+				(robo_read32(&robo, ROBO_STAT_PAGE, ROBO_SPEED_STAT_SUMMARY) >> i * 2) & 3 :
+				(robo_read16(&robo, ROBO_STAT_PAGE, ROBO_SPEED_STAT_SUMMARY) >> i) & 1],
+			robo_read16(&robo, ROBO_STAT_PAGE, (robo535x >= 4) ?
+				ROBO_DUPLEX_STAT_SUMMARY_53115 : ROBO_DUPLEX_STAT_SUMMARY) & (1 << i) ? "FD" : "HD");
 
 		val16 = robo_read16(&robo, ROBO_CTRL_PAGE, i);
 
@@ -936,9 +817,8 @@ main(int argc, char *argv[])
 		printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n",
 			mac[2] >> 8, mac[2] & 255, mac[1] >> 8, mac[1] & 255, mac[0] >> 8, mac[0] & 255);
 	}
-	save_link_state(&link_state);
 	
-	if (novlan) return (0); 	// Only show ethernet port states, used by webui
+	if (novlan) return (0);	// Only show ethernet port states, used by webui
 	val16 = robo_read16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0);
 	
 	printf("VLANs: %s %sabled%s%s\n", 
@@ -1009,4 +889,3 @@ main(int argc, char *argv[])
 	
 	return (0);
 }
-

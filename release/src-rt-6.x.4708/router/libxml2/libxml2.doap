@@ -26,8 +26,15 @@ CygWin, MacOS X, RISC Os, OS/2, QNX, MVS,
 
   <maintainer>
     <foaf:Person>
-      <foaf:name>Nick Wellnhofer</foaf:name>
-      <gnome:userid>nwellnhof</gnome:userid>
+      <foaf:name>Iván Chavero</foaf:name>
+      <gnome:userid>ichavero</gnome:userid>
+    </foaf:Person>
+  </maintainer>
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Daniel Garcia Moreno</foaf:name>
+      <foaf:mbox rdf:resource="mailto:danigm@gnome.org" />
+      <gnome:userid>danigm</gnome:userid>
     </foaf:Person>
   </maintainer>
 </Project>

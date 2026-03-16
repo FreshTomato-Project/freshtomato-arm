@@ -286,7 +286,7 @@ sub fixDyn
 		fixDynDep("php-cgi", "libxml2.so.2.13.7");
 	}
 	else {
-		fixDynDep("php-cgi", "libxml2.so.16.1.1");
+		fixDynDep("php-cgi", "libxml2.so.16.1.2");
 	}
 	fixDynDep("php-cgi", "libpng16.so.16.55.0");
 	fixDynDep("php-cgi", "libiconv.so.2.7.0");
@@ -307,7 +307,7 @@ sub fixDyn
 		fixDynDep("php-cli", "libxml2.so.2.13.7");
 	}
 	else {
-		fixDynDep("php-cli", "libxml2.so.16.1.1");
+		fixDynDep("php-cli", "libxml2.so.16.1.2");
 	}
 	fixDynDep("php-cli", "libpng16.so.16.55.0");
 	fixDynDep("php-cli", "libiconv.so.2.7.0");
@@ -328,7 +328,7 @@ sub fixDyn
 		fixDynDep("php-fpm", "libxml2.so.2.13.7");
 	}
 	else {
-		fixDynDep("php-fpm", "libxml2.so.16.1.1");
+		fixDynDep("php-fpm", "libxml2.so.16.1.2");
 	}
 	fixDynDep("php-fpm", "libpng16.so.16.55.0");
 	fixDynDep("php-fpm", "libiconv.so.2.7.0");
@@ -756,7 +756,7 @@ if ($is_arm ne "y") { # MIPS
 	genSO("${root}/usr/lib/libxml2.so.2.13.7", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
 }
 else {
-	genSO("${root}/usr/lib/libxml2.so.16.1.1", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
+	genSO("${root}/usr/lib/libxml2.so.16.1.2", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
 }
 genSO("${root}/usr/lib/libpcre.so.1.2.13", "${router}/pcre/.libs/libpcre.a", "${stripshared}");
 genSO("${root}/usr/lib/libpcre2-8.so.0.15.0", "${router}/pcre2/staged/usr/lib/libpcre2-8.a", "${stripshared}");

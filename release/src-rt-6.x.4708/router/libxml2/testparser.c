@@ -399,6 +399,49 @@ testCtxtParseContent(void) {
     return err;
 }
 
+/*
+ * Test that xmlParseInNodeContext doesn't hang when called on a node
+ * whose parent is an entity reference (not an element).
+ * Regression test for infinite loop bug in xmlCtxtParseContent.
+ */
+static int
+testParseInNodeContextEntityParent(void) {
+    xmlDocPtr doc;
+    xmlNodePtr root, entRef, textNode, result = NULL;
+    int err = 0;
+
+    doc = xmlNewDoc(BAD_CAST "1.0");
+    root = xmlNewNode(NULL, BAD_CAST "root");
+    xmlDocSetRootElement(doc, root);
+
+    /* Create an entity reference node */
+    entRef = xmlNewReference(doc, BAD_CAST "testentity");
+    xmlAddChild(root, entRef);
+
+    /* Create a text node as child of the entity reference */
+    textNode = xmlNewText(BAD_CAST "content");
+    xmlAddChild(entRef, textNode);
+
+    /*
+     * This used to hang in an infinite loop because the code walked
+     * up parents with "cur = node->parent" instead of "cur = cur->parent".
+     */
+    xmlParseInNodeContext(textNode, "<x/>", 4, 0, &result);
+
+    if (result != NULL)
+        xmlFreeNodeList(result);
+
+    /*
+     * Entity reference children aren't freed automatically by xmlFreeDoc,
+     * so we need to unlink and free the text node manually.
+     */
+    xmlUnlinkNode(textNode);
+    xmlFreeNode(textNode);
+    xmlFreeDoc(doc);
+
+    return err;
+}
+
 static int
 testNoBlanks(void) {
     const xmlChar xml[] =
@@ -1487,6 +1530,68 @@ testCharEncConvImpl(void) {
     return err;
 }
 
+static int
+testRemoveParamEntityIntSubset(void) {
+    xmlDocPtr doc;
+    xmlEntityPtr ent;
+    int err = 0;
+
+    doc = xmlNewDoc(BAD_CAST "1.0");
+    xmlCreateIntSubset(doc, BAD_CAST "doc", NULL, NULL);
+
+    xmlAddDocEntity(doc, BAD_CAST "param1", XML_INTERNAL_PARAMETER_ENTITY,
+                    NULL, NULL, BAD_CAST "value");
+    ent = xmlGetParameterEntity(doc, BAD_CAST "param1");
+    if (ent == NULL) {
+        fprintf(stderr, "testRemoveParamEntityIntSubset: "
+                "entity not found after add\n");
+        xmlFreeDoc(doc);
+        return 1;
+    }
+    xmlUnlinkNode((xmlNodePtr) ent);
+    if (xmlGetParameterEntity(doc, BAD_CAST "param1") != NULL) {
+        fprintf(stderr, "testRemoveParamEntityIntSubset: "
+                "parameter entity still in pentities after unlink\n");
+        err = 1;
+    } else {
+        xmlFreeNode((xmlNodePtr) ent);
+    }
+    xmlFreeDoc(doc);
+
+    return err;
+}
+
+static int
+testRemoveParamEntityExtSubset(void) {
+    xmlDocPtr doc;
+    xmlEntityPtr ent;
+    int err = 0;
+
+    doc = xmlNewDoc(BAD_CAST "1.0");
+    xmlNewDtd(doc, BAD_CAST "doc", NULL, BAD_CAST "doc.dtd");
+
+    xmlAddDtdEntity(doc, BAD_CAST "param2", XML_EXTERNAL_PARAMETER_ENTITY,
+                    NULL, NULL, BAD_CAST "value");
+    ent = xmlGetParameterEntity(doc, BAD_CAST "param2");
+    if (ent == NULL) {
+        fprintf(stderr, "testRemoveParamEntityExtSubset: "
+                "entity not found after add\n");
+        xmlFreeDoc(doc);
+        return 1;
+    }
+    xmlUnlinkNode((xmlNodePtr) ent);
+    if (xmlGetParameterEntity(doc, BAD_CAST "param2") != NULL) {
+        fprintf(stderr, "testRemoveParamEntityExtSubset: "
+                "parameter entity still in pentities after unlink\n");
+        err = 1;
+    } else {
+        xmlFreeNode((xmlNodePtr) ent);
+    }
+    xmlFreeDoc(doc);
+
+    return err;
+}
+
 int
 main(void) {
     int err = 0;
@@ -1504,6 +1609,7 @@ main(void) {
 #endif
 #ifdef LIBXML_OUTPUT_ENABLED
     err |= testCtxtParseContent();
+    err |= testParseInNodeContextEntityParent();
     err |= testNoBlanks();
     err |= testSaveNullEnc();
     err |= testDocDumpFormatMemoryEnc();
@@ -1547,6 +1653,8 @@ main(void) {
     err |= testTruncatedMultiByte();
 #endif
     err |= testCharEncConvImpl();
+    err |= testRemoveParamEntityIntSubset();
+    err |= testRemoveParamEntityExtSubset();
 
     return err;
 }

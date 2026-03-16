@@ -11,7 +11,7 @@ import re
 
 from .base import ArLikeLinker, RSPFileSyntax
 from .. import mesonlib
-from ..mesonlib import EnvironmentException, MesonException
+from ..mesonlib import EnvironmentException, MesonException, path_has_root
 from ..arglist import CompilerArgs
 
 if T.TYPE_CHECKING:
@@ -612,7 +612,7 @@ def order_rpaths(rpath_list: T.List[str]) -> T.List[str]:
 def evaluate_rpath(p: str, build_dir: str, from_dir: str) -> str:
     if p == from_dir:
         return '' # relpath errors out in this case
-    elif os.path.isabs(p):
+    elif path_has_root(p):
         return p # These can be outside of build dir.
     else:
         return os.path.relpath(os.path.join(build_dir, p), os.path.join(build_dir, from_dir))
@@ -899,10 +899,19 @@ class AppleDynamicLinker(PosixDynamicLinkerMixin, DynamicLinker):
     def bitcode_args(self) -> T.List[str]:
         return self._apply_prefix('-bitcode_bundle')
 
+    def no_warn_duplicate_libraries(self) -> T.List[str]:
+        # -no_warn_duplicate_libraries was added in Xcode 15, which has two
+        # linkers: classic ld64 (PROJECT:ld64-907) and the new one
+        # (PROJECT:dyld-1009.5).  Both version numbers are >= 907, so a
+        # single comparison works for both.
+        if mesonlib.version_compare(self.version, '>=907'):
+            return self._apply_prefix('-no_warn_duplicate_libraries')
+        return []
+
     def fatal_warnings(self) -> T.List[str]:
         # no one else warns for duplicate libraries, and they're harmless;
         # just make ld shup up when testing for supported flags
-        return self._apply_prefix('-fatal_warnings') + self._apply_prefix('-no_warn_duplicate_libraries')
+        return self._apply_prefix('-fatal_warnings') + self.no_warn_duplicate_libraries()
 
     def get_soname_args(self, prefix: str, shlib_name: str, suffix: str,
                         soversion: str, darwin_versions: T.Tuple[str, str]
@@ -956,6 +965,20 @@ class AppleDynamicLinker(PosixDynamicLinkerMixin, DynamicLinker):
 class LLVMLD64DynamicLinker(AppleDynamicLinker):
 
     id = 'ld64.lld'
+
+    def no_warn_duplicate_libraries(self) -> T.List[str]:
+        # The flag currently has no effect on ld64.lld, but it is accepted
+        # since LLVM 19 and may do something in the future.
+        if mesonlib.version_compare(self.version, '>=19'):
+            return self._apply_prefix('-no_warn_duplicate_libraries')
+        return []
+
+    def export_dynamic_args(self) -> T.List[str]:
+        # -export_dynamic existed before LLVM 13 but did not work properly
+        # on macOS until https://github.com/llvm/llvm-project/commit/3eb2fc4b
+        if mesonlib.version_compare(self.version, '>=13'):
+            return self._apply_prefix('-export_dynamic')
+        return []
 
 
 class GnuDynamicLinker(GnuLikeDynamicLinkerMixin, PosixDynamicLinkerMixin, DynamicLinker):
@@ -1660,7 +1683,7 @@ class AIXDynamicLinker(PosixDynamicLinkerMixin, DynamicLinker):
     def get_command_to_archive_shlib(self) -> T.List[str]:
         # Archive shared library object and remove the shared library object,
         # since it already exists in the archive.
-        command = ['ar', '-r', '-s', '-v', '$out', '$in', '&&', 'rm', '-f', '$in']
+        command = ['ar', '-X32_64', '-r', '-s', '-v', '$out', '$in', '&&', 'rm', '-f', '$in']
         return command
 
     def get_link_whole_for(self, args: T.List[str]) -> T.List[str]:

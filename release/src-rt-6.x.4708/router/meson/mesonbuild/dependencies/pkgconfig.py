@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .base import ExternalDependency, DependencyException, sort_libpaths, DependencyTypeName
 from ..mesonlib import (EnvironmentVariables, OrderedSet, PerMachine, Popen_safe, Popen_safe_logged, MachineChoice,
-                        join_args, MesonException)
+                        join_args, MesonException, path_has_root)
 from ..options import OptionKey
 from ..programs import find_external_program, ExternalProgram
 from .. import mlog
@@ -420,7 +420,7 @@ class PkgConfigDependency(ExternalDependency):
         for arg in raw_link_args:
             if arg.startswith('-L') and not arg.startswith(('-L-l', '-L-L')):
                 path = arg[2:]
-                if not os.path.isabs(path):
+                if not path_has_root(path):
                     # Resolve the path as a compiler in the build directory would
                     path = os.path.join(self.env.get_build_dir(), path)
                 prefix_libpaths.add(path)
@@ -488,8 +488,12 @@ class PkgConfigDependency(ExternalDependency):
                 if lib in libs_found:
                     continue
                 if self.clib_compiler:
+                    # Libraries from pkg-config are trusted to be linkable, so
+                    # we skip the potentially expensive link check for
+                    # performance reasons.
                     args = self.clib_compiler.find_library(
-                        lib[2:], libpaths, self.libtype, lib_prefix_warning=False)
+                        lib[2:], libpaths, self.libtype, lib_prefix_warning=False,
+                        skip_link_check=True)
                 # If the project only uses a non-clib language such as D, Rust,
                 # C#, Python, etc, all we can do is limp along by adding the
                 # arguments as-is and then adding the libpaths at the end.

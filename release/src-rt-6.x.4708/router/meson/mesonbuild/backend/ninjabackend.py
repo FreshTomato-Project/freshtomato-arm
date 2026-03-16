@@ -32,7 +32,7 @@ from ..mesonlib import (
     File, LibType, MachineChoice, MesonBugException, MesonException, OrderedSet, PerMachine,
     ProgressBar, quote_arg, unique_list
 )
-from ..mesonlib import get_compiler_for_source, has_path_sep, is_parent_path
+from ..mesonlib import get_compiler_for_source, has_path_sep, is_parent_path, lookbehind
 from ..options import OptionKey
 from .backends import CleanTrees
 from ..build import GeneratedList, InvalidArguments
@@ -410,6 +410,12 @@ class NinjaBuildElement:
             line = f' {name} = '
             newelems = []
             for i in elems:
+                if mesonlib.is_windows():
+                    # Support network paths with double-backslash (UNC)
+                    # Officially //foo/bar is not an UNC and mostly doesn't work
+                    # in Windows
+                    if i.startswith('//'):
+                        i = i.replace('//', '\\\\', 1)
                 if not should_quote or i == '&&': # Hackety hack hack
                     newelems.append(ninja_quote(i))
                 else:
@@ -1605,7 +1611,9 @@ class NinjaBackend(backends.Backend):
             rel_src = src.rel_to_builddir(self.build_to_src)
             rel_srcs.append(rel_src)
 
-            plain_class_path = src.fname[:-4] + 'class'
+            # Preserve any additional path components on top of the target's subdir
+            plain_class_path = os.path.relpath(src.relative_name(), target.get_subdir())
+            plain_class_path = plain_class_path[:-4] + 'class'
             plain_class_paths.append(plain_class_path)
             rel_obj = os.path.join(self.get_target_private_dir(target), plain_class_path)
             rel_objs.append(rel_obj)
@@ -2134,9 +2142,20 @@ class NinjaBackend(backends.Backend):
                 args.append(f'-Clink-arg={lib}')
 
         for e in external_deps:
-            for a in e.get_link_args():
-                if a.startswith('-L'):
+            prev: T.Optional[str] = None
+            for prev, a in lookbehind(e.get_link_args()):
+                if prev == '-framework':
+                    args.append(f'-lframework={a}')
+                    continue
+                elif a.startswith('-L'):
                     args.append(a)
+                    continue
+                elif a.startswith('-F'):
+                    path = a[2:]
+                    args.append(f'-Lframework={path}')
+                    continue
+                elif a == '-framework':
+                    # handled once the framework name is available
                     continue
                 elif is_library(a):
                     if isinstance(target, build.StaticLibrary):
@@ -3305,11 +3324,11 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
     def target_uses_import_std(self, target: build.BuildTarget) -> bool:
         if 'cpp' not in target.compilers:
             return False
-        if 'cpp_importstd' not in self.environment.coredata.optstore:
+        try:
+            if self.environment.coredata.get_option_for_target(target, 'cpp_importstd') == 'true':
+                return True
+        except KeyError:
             return False
-        if self.environment.coredata.get_option_for_target(target, 'cpp_importstd') == 'false':
-            return False
-        return True
 
     def handle_cpp_import_std(self, target: build.BuildTarget, compiler):
         istd_args = []

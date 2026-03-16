@@ -11,10 +11,10 @@ import platform
 import sys
 
 from . import mesonlib
-from .mesonlib import EnvironmentException, HoldableObject, Popen_safe
+from .mesonlib import EnvironmentException, HoldableObject, lazy_property, Popen_safe
 from .programs import ExternalProgram
 from . import mlog
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 
 if T.TYPE_CHECKING:
     from .options import ElementaryOptionValues
@@ -317,6 +317,13 @@ class MachineInfo(HoldableObject):
         Machine is cygwin?
         """
         return self.system == 'cygwin'
+
+    @lazy_property
+    def pure_path_class(self) -> T.Type[PurePath]:
+        """Get the appropriate PurePath class for this machine."""
+        if self.is_windows():
+            return PureWindowsPath
+        return PurePosixPath
 
     def is_linux(self) -> bool:
         """
@@ -743,7 +750,10 @@ def machine_info_can_run(machine_info: MachineInfo) -> bool:
     detect_cpu_family() here because we always want to know the OS
     architecture, not what the compiler environment tells us.
     """
-    if machine_info.system != detect_system():
+    system = detect_system()
+    if machine_info.system != system:
+        return False
+    if machine_info.subsystem != detect_subsystem(system):
         return False
     true_build_cpu_family = detect_cpu_family({})
     assert machine_info.cpu_family is not None, 'called on incomplete machine_info'

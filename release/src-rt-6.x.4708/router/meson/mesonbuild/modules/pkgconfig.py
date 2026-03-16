@@ -4,7 +4,7 @@
 from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
-from pathlib import PurePath
+from pathlib import PurePath, PurePosixPath
 import os
 import typing as T
 
@@ -18,7 +18,7 @@ from .. import mlog
 from ..options import BUILTIN_DIR_OPTIONS
 from ..dependencies.pkgconfig import PkgConfigDependency, PkgConfigInterface
 from ..interpreter.type_checking import D_MODULE_VERSIONS_KW, INSTALL_DIR_KW, VARIABLES_KW, NoneType
-from ..interpreterbase import FeatureNew, FeatureDeprecated
+from ..interpreterbase import FeatureNew, FeatureDeprecated, FeatureBroken
 from ..interpreterbase.decorators import ContainerTypeInfo, KwargInfo, typed_kwargs, typed_pos_args
 
 if T.TYPE_CHECKING:
@@ -453,15 +453,34 @@ class PkgConfigModule(NewExtensionModule):
             value = value.as_posix()
         return value.replace(' ', r'\ ')
 
-    def _make_relative(self, prefix: T.Union[PurePath, str], subdir: T.Union[PurePath, str]) -> str:
-        prefix = PurePath(prefix)
-        subdir = PurePath(subdir)
+    def _make_relative(self, prefix: T.Union[PurePath, str], subdir: T.Union[PurePath, str],
+                       path_class: T.Type[PurePath]) -> PurePosixPath:
+        prefix = path_class(prefix)
+        subdir = path_class(subdir)
         try:
             libdir = subdir.relative_to(prefix)
         except ValueError:
             libdir = subdir
         # pathlib joining makes sure absolute libdir is not appended to '${prefix}'
-        return ('${prefix}' / libdir).as_posix()
+        return '${prefix}' / PurePosixPath(libdir)
+
+    def _get_relocatable_prefix(self, pkgroot: str, prefix: PurePath,
+                                path_class: T.Type[PurePath]) -> PurePosixPath:
+        '''Compute the prefix variable for relocatable pkg-config files.
+
+        Returns a path expression like '${pcfiledir}/../..' that represents
+        the relative path from the pkgconfig directory up to the installation prefix.
+        '''
+        pkgroot_ = path_class(pkgroot)
+        if not pkgroot_.is_absolute():
+            pkgroot_ = prefix / pkgroot
+        elif prefix not in pkgroot_.parents:
+            raise mesonlib.MesonException('Pkgconfig prefix cannot be outside of the prefix '
+                                          'when pkgconfig.relocatable=true. '
+                                          f'Pkgconfig prefix is {pkgroot_}.')
+        # relative_to only works for subpaths
+        rel = pkgroot_.relative_to(prefix)
+        return '${pcfiledir}' / PurePosixPath(*(['..'] * len(rel.parts)))
 
     def _generate_pkgconfig_file(self, state: ModuleState, deps: DependenciesHelper,
                                  subdirs: T.List[str], name: str,
@@ -512,20 +531,18 @@ class PkgConfigModule(NewExtensionModule):
             outdir = os.path.join(state.environment.build_dir, 'meson-uninstalled')
             if not os.path.exists(outdir):
                 os.mkdir(outdir)
+            pure_path_class = PurePath
             prefix = PurePath(state.environment.get_build_dir())
             srcdir = PurePath(state.environment.get_source_dir())
         else:
+            pure_path_class = state.environment.machines.host.pure_path_class
             outdir = state.environment.scratch_dir
-            prefix = PurePath(_as_str(coredata.optstore.get_value_for(OptionKey('prefix'))))
+            prefix = pure_path_class(_as_str(coredata.optstore.get_value_for(OptionKey('prefix'))))
             if pkgroot:
-                pkgroot_ = PurePath(pkgroot)
-                if not pkgroot_.is_absolute():
-                    pkgroot_ = prefix / pkgroot
-                elif prefix not in pkgroot_.parents:
-                    raise mesonlib.MesonException('Pkgconfig prefix cannot be outside of the prefix '
-                                                  'when pkgconfig.relocatable=true. '
-                                                  f'Pkgconfig prefix is {pkgroot_.as_posix()}.')
-                prefix = PurePath('${pcfiledir}', os.path.relpath(prefix, pkgroot_))
+                prefix = self._get_relocatable_prefix(pkgroot, prefix, pure_path_class)
+                # relocatable paths will never have a drive letter
+                pure_path_class = PurePosixPath
+
         fname = os.path.join(outdir, pcfile)
         with open(fname, 'w', encoding='utf-8') as ofile:
             for optname in optnames:
@@ -580,12 +597,13 @@ class PkgConfigModule(NewExtensionModule):
                             continue
                         if isinstance(l, build.BuildTarget) and 'cs' in l.compilers:
                             if isinstance(install_dir, str):
-                                Lflag = '-r{}/{}'.format(self._escape(self._make_relative(prefix, install_dir)), l.filename)
+                                Lflag = '-r{}/{}'.format(self._escape(self._make_relative(prefix, install_dir, pure_path_class)),
+                                                         l.filename)
                             else:  # install_dir is True
                                 Lflag = '-r${libdir}/%s' % l.filename
                         else:
                             if isinstance(install_dir, str):
-                                Lflag = '-L{}'.format(self._escape(self._make_relative(prefix, install_dir)))
+                                Lflag = '-L{}'.format(self._escape(self._make_relative(prefix, install_dir, pure_path_class)))
                             else:  # install_dir is True
                                 Lflag = '-L${libdir}'
                         if Lflag not in Lflags:
@@ -608,14 +626,14 @@ class PkgConfigModule(NewExtensionModule):
             if uninstalled:
                 for d in deps.uninstalled_incdirs:
                     for basedir in ['${prefix}', '${srcdir}']:
-                        path = self._escape(PurePath(basedir, d).as_posix())
+                        path = self._escape(PurePosixPath(basedir, d))
                         cflags.append(f'-I{path}')
             else:
                 for d in subdirs:
                     if d == '.':
                         cflags.append('-I${includedir}')
                     else:
-                        cflags.append(self._escape(PurePath('-I${includedir}') / d))
+                        cflags.append('-I' + self._escape(PurePosixPath('${includedir}', d)))
             cflags += [self._escape(f) for f in deps.cflags]
             if cflags and not dataonly:
                 ofile.write('Cflags: {}\n'.format(' '.join(cflags)))
@@ -682,6 +700,11 @@ class PkgConfigModule(NewExtensionModule):
             default_install_dir = os.path.join(state.environment.get_datadir(), 'pkgconfig')
 
         subdirs = kwargs['subdirs'] or default_subdirs
+        if any(mesonlib.path_has_root(d) for d in subdirs):
+            FeatureBroken.single_use('subdirs cannot be absolute', '1.10.2', state.subproject,
+                                     'This never worked; absolute paths ended up in Cflags without the -I option.',
+                                     location=state.current_node)
+
         version = kwargs['version'] if kwargs['version'] is not None else default_version
         name = kwargs['name'] if kwargs['name'] is not None else default_name
         assert isinstance(name, str), 'for mypy'

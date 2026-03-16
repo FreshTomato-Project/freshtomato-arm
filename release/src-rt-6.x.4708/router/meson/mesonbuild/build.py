@@ -1174,20 +1174,23 @@ class BuildTarget(Target):
         at link time, see get_dependencies() for that.
         """
         result: OrderedSet[BuildTargetTypes] = OrderedSet()
+        nonresults: T.Set[BuildTargetTypes] = set()
         stack: T.Deque[BuildTargetTypes] = deque()
         stack.appendleft(self)
         while stack:
             t = stack.pop()
-            if t in result:
+            if t in result or t in nonresults:
                 continue
             if isinstance(t, CustomTargetIndex):
                 stack.appendleft(t.target)
                 continue
             if isinstance(t, SharedLibrary):
                 result.add(t)
+            else:
+                nonresults.add(t)
             if isinstance(t, BuildTarget):
-                stack.extendleft(t.link_targets)
-                stack.extendleft(t.link_whole_targets)
+                stack.extendleft((t2 for t2 in t.link_targets if t2 not in nonresults))
+                stack.extendleft((t2 for t2 in t.link_whole_targets if t2 not in nonresults))
         return list(result)
 
     @lru_cache(maxsize=None)
@@ -1377,30 +1380,52 @@ class BuildTarget(Target):
         # get_internal_static_libraries(): Installed static libraries include
         # objects from all their dependencies already.
         result: OrderedSet[BuildTargetTypes] = OrderedSet()
+        visited: T.Set[BuildTargetTypes] = set()
         for t in itertools.chain(self.link_targets, self.link_whole_targets):
             if t not in result:
                 result.add(t)
                 if isinstance(t, StaticLibrary):
-                    t.get_dependencies_recurse(result, include_proc_macros = self.uses_rust())
+                    t.get_dependencies_recurse(result, visited, handled_by_rustc=self.uses_rust())
         return result
 
-    def get_dependencies_recurse(self, result: OrderedSet[BuildTargetTypes], include_internals: bool = True, include_proc_macros: bool = False) -> None:
+    def get_dependencies_recurse(self, result: OrderedSet[BuildTargetTypes], visited: T.Set[BuildTargetTypes],
+                                 include_internals: bool = True, handled_by_rustc: bool = False) -> None:
         # self is always a static library because we don't need to pull dependencies
         # of shared libraries. If self is installed (not internal) it already
         # include objects extracted from all its internal dependencies so we can
         # skip them.
         include_internals = include_internals and self.is_internal()
         for t in self.link_targets:
-            if t in result:
+            if t in visited:
                 continue
-            if not include_proc_macros and t.rust_crate_type == 'proc-macro':
-                continue
-            if include_internals or not t.is_internal():
+            visited.add(t)
+            uses_rust_abi = isinstance(t, BuildTarget) and t.uses_rust_abi()
+            if not handled_by_rustc and uses_rust_abi:
+                # Rules for including libraries via Rust rlibs and staticlibs are complex:
+                # - proc-macro crates should be skipped completely when the build product
+                #   is not a Rust program, because only rustc knows that they are
+                #   special build-machine shared libraries
+                # - rlibs must always be returned for Rust programs, because even though
+                #   the -l flag is implicitly added, the -L flag is not.  ninjabackend.py
+                #   handles leaving out the -l flag
+                # - rlibs are bundled into staticlibs and need not be in the command line of
+                #   non-Rust programs; this is the case when t is not added to result.
+                # - C-ABI libraries included in link_with use -lstatic:-bundle, so even for
+                #   staticlibs we do need to recurse into rlibs and collect these non-bundled
+                #   libraries.  So don't return, unlike for procedural macros
+                if t.rust_crate_type == 'proc-macro':
+                    continue
+
+            elif not include_internals and t.is_internal():
+                pass
+
+            else:
                 result.add(t)
             if isinstance(t, StaticLibrary):
-                t.get_dependencies_recurse(result, include_internals, include_proc_macros)
+                t.get_dependencies_recurse(result, visited, include_internals, handled_by_rustc and uses_rust_abi)
         for t in self.link_whole_targets:
-            t.get_dependencies_recurse(result, include_internals, include_proc_macros)
+            uses_rust_abi = isinstance(t, BuildTarget) and t.uses_rust_abi()
+            t.get_dependencies_recurse(result, visited, include_internals, handled_by_rustc and uses_rust_abi)
 
     def get_sources(self) -> T.List[File]:
         return self.sources
@@ -2821,7 +2846,8 @@ class CustomTargetBase:
 
     rust_crate_type = ''
 
-    def get_dependencies_recurse(self, result: OrderedSet[BuildTargetTypes], include_internals: bool = True) -> None:
+    def get_dependencies_recurse(self, result: OrderedSet[BuildTargetTypes], visited: T.Set[BuildTargetTypes],
+                                 include_internals: bool = True) -> None:
         pass
 
     def get_internal_static_libraries(self) -> OrderedSet[BuildTargetTypes]:

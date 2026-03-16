@@ -3220,6 +3220,9 @@ test cases/java/10 resources/src/meson.build
 test cases/java/10 resources/src/com/mesonbuild/Resources.java
 test cases/java/10 resources/src/resources/resource1.txt
 test cases/java/10 resources/src/resources/subdir/resource2.txt
+test cases/java/11 build subdir/com-mesonbuild-HelloWorldMainLauncherClass.java
+test cases/java/11 build subdir/copyfile.py
+test cases/java/11 build subdir/meson.build
 test cases/java/2 subdir/meson.build
 test cases/java/2 subdir/sub/meson.build
 test cases/java/2 subdir/sub/com/mesonbuild/Simple.java
@@ -3675,6 +3678,7 @@ test cases/rust/20 rust and cpp/test.json
 test cases/rust/21 transitive dependencies/app.rs
 test cases/rust/21 transitive dependencies/foo.c
 test cases/rust/21 transitive dependencies/foo.rs
+test cases/rust/21 transitive dependencies/main-with-staticlib.rs
 test cases/rust/21 transitive dependencies/main.rs
 test cases/rust/21 transitive dependencies/meson.build
 test cases/rust/21 transitive dependencies/proc.rs
@@ -3687,6 +3691,7 @@ test cases/rust/21 transitive dependencies/diamond/meson.build
 test cases/rust/21 transitive dependencies/diamond/r1.rs
 test cases/rust/21 transitive dependencies/diamond/r2.rs
 test cases/rust/21 transitive dependencies/diamond/r3.rs
+test cases/rust/21 transitive dependencies/diamond/test.c
 test cases/rust/21 transitive dependencies/liba/lib.rs
 test cases/rust/21 transitive dependencies/liba/meson.build
 test cases/rust/21 transitive dependencies/libb/lib.rs
@@ -3783,6 +3788,14 @@ test cases/rust/33 cargo multiple versions/subprojects/foo-2-rs/Cargo.toml
 test cases/rust/33 cargo multiple versions/subprojects/foo-2-rs/lib.rs
 test cases/rust/33 cargo multiple versions/subprojects/main/Cargo.toml
 test cases/rust/33 cargo multiple versions/subprojects/main/lib.rs
+test cases/rust/34 staticlib rlib deps/lib.rs
+test cases/rust/34 staticlib rlib deps/main.c
+test cases/rust/34 staticlib rlib deps/meson.build
+test cases/rust/34 staticlib rlib deps/staticlib.rs
+test cases/rust/35 apple framework/lib.rs
+test cases/rust/35 apple framework/main.rs
+test cases/rust/35 apple framework/meson.build
+test cases/rust/36 compiles/meson.build
 test cases/rust/4 polyglot/meson.build
 test cases/rust/4 polyglot/proc.rs
 test cases/rust/4 polyglot/prog.c
@@ -3995,6 +4008,9 @@ test cases/unit/131 vala internal glib/meson.build
 test cases/unit/131 vala internal glib/meson.options
 test cases/unit/132 custom target index test/meson.build
 test cases/unit/133 nasm language only/meson.build
+test cases/unit/134 minimal bindgen/header.h
+test cases/unit/134 minimal bindgen/meson.build
+test cases/unit/134 minimal bindgen/meson.options
 test cases/unit/14 testsetup selection/main.c
 test cases/unit/14 testsetup selection/meson.build
 test cases/unit/14 testsetup selection/subprojects/bar/bar.c

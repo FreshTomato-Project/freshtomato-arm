@@ -260,7 +260,7 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
         for arg in args:
             if arg.startswith(('/LIBPATH:', '-LIBPATH:')):
                 result.append('-L' + arg[9:])
-            elif arg.endswith(('.a', '.lib')) and not os.path.isabs(arg):
+            elif arg.endswith(('.a', '.lib')) and not mesonlib.path_has_root(arg):
                 result.append('-l' + arg)
             else:
                 result.append(arg)
@@ -443,6 +443,14 @@ class ClangClCompiler(VisualStudioLikeCompiler):
         # Assembly
         self.can_compile_suffixes.add('s')
         self.can_compile_suffixes.add('sx')
+
+    def sanitizer_compile_args(self, target: T.Optional[BuildTarget], value: T.List[str]) -> T.List[str]:
+        if not value:
+            return value
+        args = ['/clang:-fsanitize=' + ','.join(value)]
+        if 'address' in value:
+            args.append('/clang:-fno-omit-frame-pointer')
+        return args
 
     def has_arguments(self, args: T.List[str], code: str, mode: CompileCheckMode) -> T.Tuple[bool, bool]:
         if mode != CompileCheckMode.LINK:

@@ -1,4 +1,32 @@
 
+Changes with nginx 1.29.6                                        10 Mar 2026
+
+    *) Feature: session affinity support; the "sticky" directive in the
+       "upstream" block of the "http" module; the "server" directive
+       supports the "route" and "drain" parameters.
+
+    *) Change: now nginx limits the size and rate of QUIC stateless reset
+       packets.
+
+    *) Bugfix: receiving a QUIC packet by a wrong worker process could cause
+       the connection to terminate.
+
+    *) Bugfix: "[crit] cache file ... contains invalid header" messages
+       might appear in logs when sending a cached HTTP/2 response.
+
+    *) Bugfix: proxying to scgi backends might not work when using chunked
+       transfer encoding and the "scgi_request_buffering" directive.
+       Thanks to Mufeed VH.
+
+    *) Bugfix: in the ngx_http_mp4_module.
+       Thanks to Andrew Lacambra.
+
+    *) Bugfix: nginx treated a comma as separator in the "Cookie" request
+       header line when evaluating "$cookie_..." variables.
+
+    *) Bugfix: in IMAP command literal argument parsing.
+
+
 Changes with nginx 1.29.5                                        04 Feb 2026
 
     *) Security: an attacker might inject plain text data in the response

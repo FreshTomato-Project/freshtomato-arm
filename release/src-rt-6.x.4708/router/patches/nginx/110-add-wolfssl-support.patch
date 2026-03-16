@@ -40,7 +40,7 @@
              # FreeBSD port
 --- nginx/auto/options
 +++ nginx/auto/options
-@@ -155,6 +155,7 @@ PCRE2=YES
+@@ -156,6 +156,7 @@ PCRE2=YES
  USE_OPENSSL=NO
  USE_OPENSSL_QUIC=NO
  OPENSSL=NONE
@@ -48,7 +48,7 @@
  
  USE_ZLIB=NO
  ZLIB=NONE
-@@ -371,6 +372,7 @@ use the \"--with-mail_ssl_module\" option instead"
+@@ -373,6 +374,7 @@ use the \"--with-mail_ssl_module\" option instead"
          --with-pcre-jit)                 PCRE_JIT=YES               ;;
          --without-pcre2)                 PCRE2=DISABLED             ;;
  
@@ -56,7 +56,7 @@
          --with-openssl=*)                OPENSSL="$value"           ;;
          --with-openssl-opt=*)            OPENSSL_OPT="$value"       ;;
  
-@@ -601,6 +603,7 @@ cat << END
+@@ -604,6 +606,7 @@ cat << END
    --with-libatomic                   force libatomic_ops library usage
    --with-libatomic=DIR               set path to libatomic_ops library sources
  

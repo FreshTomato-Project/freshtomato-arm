@@ -40,6 +40,7 @@ static void log6_opts(int nest, unsigned int xid, void *start_opts, void *end_op
 static void log6_packet(struct state *state, char *type, struct in6_addr *addr, char *string);
 static void log6_quiet(struct state *state, char *type, struct in6_addr *addr, char *string);
 static void *opt6_find (uint8_t *opts, uint8_t *end, unsigned int search, unsigned int minsize);
+static void *opt6_first(uint8_t *opt, uint8_t *end);
 static void *opt6_next(uint8_t *opts, uint8_t *end);
 static unsigned int opt6_uint(unsigned char *opt, int offset, int size);
 static void get_context_tag(struct state *state, struct dhcp_context *context);
@@ -112,10 +113,17 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
 {
   uint8_t *end = inbuff + sz;
   uint8_t *opts = inbuff + 34;
-  int msg_type = *inbuff;
+  int msg_type;
   unsigned char *outmsgtypep;
   uint8_t *opt;
   struct dhcp_vendor *vendor;
+
+  /* must have at least msg_type+trans_id
+     which is               1   +   3      = 4 */
+  if (sz < 4)
+    return 0;
+
+  msg_type = *inbuff;
 
   /* if not an encapsulated relayed message, just do the stuff */
   if (msg_type != DHCP6RELAYFORW)
@@ -233,11 +241,8 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
       memcpy(&state->mac[0], opt6_ptr(opt, 2), state->mac_len);
     }
   
-  for (opt = opts; opt; opt = opt6_next(opt, end))
+  for (opt = opt6_first(opts, end); opt; opt = opt6_next(opt, end))
     {
-      if ((uint8_t *)opt6_ptr(opt, 0) + opt6_len(opt) > end)
-        return 0;
-     
       /* Don't copy MAC address into reply. */
       if (opt6_type(opt) != OPTION6_CLIENT_MAC)
 	{
@@ -290,7 +295,7 @@ static int dhcp6_no_relay(struct state *state, int msg_type, unsigned char *inbu
   state->hostname = NULL;
   state->client_hostname = NULL;
   state->fqdn_flags = 0x01; /* default to send if we receive no FQDN option */
-
+  
   /* set tag with name == interface */
   iface_id.net = state->iface_name;
   iface_id.next = state->tags;
@@ -2113,6 +2118,19 @@ static void *opt6_find (uint8_t *opts, uint8_t *end, unsigned int search, unsign
     }
 }
 
+static void *opt6_first(uint8_t *opt, uint8_t *end)
+{
+  /* make sure we have option number and length. */
+  if ((uint8_t *)opt6_ptr(opt, 0) > end)
+    return NULL;
+
+  /* make sure we have bytes promised by length. */
+  if ((uint8_t *)opt6_ptr(opt, opt6_len(opt)) > end)
+    return NULL;
+
+  return opt;
+}
+  
 static void *opt6_next(uint8_t *opts, uint8_t *end)
 {
   u16 opt_len;

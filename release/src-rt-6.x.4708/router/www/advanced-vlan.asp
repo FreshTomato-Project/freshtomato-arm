@@ -278,7 +278,7 @@ var SWITCH_INTERNAL_PORT = 0;
 if (port_vlan_supported) {
 	var vlg = new TomatoGrid();
 	vlg.setup = function() {
-		var portOptions = trunk_vlan_supported ? [[0,''],[1,'🌕 On'],[2,'🌓 Tag']] : [[0,'Off'],[1,'On 🌕']];
+		var portOptions = ((trunk_vlan_supported) || (PORT_VLAN_SUPPORT_OVERRIDE)) ? [[0,''],[1,'🌕 On'],[2,'🌓 Tag']] : [[0,'Off'],[1,'On 🌕']];
 		var cols = [
 			{ type: 'select', options: [[0,'0'],[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6'],[7,'7'],[8,'8'],[9,'9'],[10,'10'],[11,'11'],[12,'12'],[13,'13'],[14,'14'],[15,'15']], prefix: '<div class="centered">', suffix: '<\/div>' },
 			{ type: 'text', maxlen: 4, prefix: '<div class="centered">', suffix: '<\/div>' },
@@ -482,35 +482,78 @@ REMOVE-END */
 	}
 
 	vlg.verifyFields = function(row, quiet) {
-		var valid = 1;
+		var i, j, old, oldP0, oldP1, oldP2, oldP3, oldP4, oldP5, me, checkNative, valid = 1;
 		var f = fields.getAll(row);
 
-		for (var i=0; i<= MAX_VLAN_ID ; i++)
+		for (i = 0; i<= MAX_VLAN_ID ; i++)
 			f[COL_VID].options[i].disabled = (this.countVID(i) > 0);
 
-		for (var i=0; i <= MAX_BRIDGE_ID; i++) {
-			var j = (i == 0) ? '' : i.toString();
+		for (i = 0; i <= MAX_BRIDGE_ID; i++) {
+			j = (i == 0) ? '' : i.toString();
 			f[COL_BRI].options[i+2].disabled = (nvram['lan'+j+'_ifname'].length < 1);
 		}
 
 		if (!v_range(f[COL_MAP], quiet, 0, 4094))
 			valid = 0;
 
+		function countNativeInForm(excludeCol) {
+			var ports = [COL_P0, COL_P1, COL_P2, COL_P3, COL_P4
+/* EXTSW-BEGIN */
+			             , COL_P5
+/* EXTSW-END */
+			];
+
+			var total = 0;
+			for (var i = 0; i < ports.length; i++) {
+				var col = ports[i];
+				if (col === excludeCol) continue;
+				if (parseInt(f[col].value, 10) === 1)
+					total++;
+			}
+			return total;
+		}
+
+		/* enforce trunk VLAN rules */
+		function enforcePortState(col) {
+			var val = parseInt(f[col].value, 10);
+			var trunkAllowed = (trunk_vlan_supported || PORT_VLAN_SUPPORT_OVERRIDE);
+
+			if (f[col].options.length > 2)
+				f[col].options[2].disabled = !trunkAllowed;
+
+			if (!trunkAllowed && val === 2) {
+				if (countNativeInForm(col) > 0)
+					f[col].value = '0';
+				else
+					f[col].value = '1';
+			}
+			if (val !== 0 && val !== 1 && val !== 2)
+				f[col].value = '0';
+		}
+		enforcePortState(COL_P0);
+		enforcePortState(COL_P1);
+		enforcePortState(COL_P2);
+		enforcePortState(COL_P3);
+		enforcePortState(COL_P4);
+/* EXTSW-BEGIN */
+		enforcePortState(COL_P5);
+/* EXTSW-END */
+
 		/* Modifications to enable Native VLAN support (allow one untagged vlan per port) by default */
 		var err_vlan = 'Only one untagged VLAN per port is allowed (Native VLAN)';
-		var old = ((row == this.editor) && this.source) ? this.source.getRowData() : null;
-		var oldP0 = (old && (old.length > COL_P0)) ? old[COL_P0] : '0';
-		var oldP1 = (old && (old.length > COL_P1)) ? old[COL_P1] : '0';
-		var oldP2 = (old && (old.length > COL_P2)) ? old[COL_P2] : '0';
-		var oldP3 = (old && (old.length > COL_P3)) ? old[COL_P3] : '0';
-		var oldP4 = (old && (old.length > COL_P4)) ? old[COL_P4] : '0';
-		var oldP5 = (old && (old.length > COL_P5)) ? old[COL_P5] : '0';
+		old = ((row == this.editor) && this.source) ? this.source.getRowData() : null;
+		oldP0 = (old && (old.length > COL_P0)) ? old[COL_P0] : '0';
+		oldP1 = (old && (old.length > COL_P1)) ? old[COL_P1] : '0';
+		oldP2 = (old && (old.length > COL_P2)) ? old[COL_P2] : '0';
+		oldP3 = (old && (old.length > COL_P3)) ? old[COL_P3] : '0';
+		oldP4 = (old && (old.length > COL_P4)) ? old[COL_P4] : '0';
+		oldP5 = (old && (old.length > COL_P5)) ? old[COL_P5] : '0';
 /* REMOVE-BEGIN */
 		if (!hasExtSw)
 			oldP5 = '0';
 /* REMOVE-END */
-		var me = this;
-		var checkNative = function(col, oldVal) {
+		me = this;
+		checkNative = function(col, oldVal) {
 			if (f[col].value == '1') {
 				if ((me.countElem(col, 1) - ((oldVal == '1') ? 1 : 0)) > 0) {
 					ferror.set(f[col], err_vlan, quiet);
@@ -584,7 +627,7 @@ REMOVE-END */
 			ferror.clear(f[COL_BRI]);
 /* MULTIWAN-END */
 
-		for (var i = 0; i < 4; i++) {
+		for (i = 0; i < 4; i++) {
 			if ((this.countLan(i) > 0) && (f[COL_BRI].selectedIndex == (i + 2))) {
 				ferror.set(f[COL_BRI], 'One and only one VID can be used for LAN'+i+' (br'+i+') at any time', quiet);
 				valid = 0;

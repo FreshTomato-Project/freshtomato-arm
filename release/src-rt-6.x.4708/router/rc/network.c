@@ -1789,6 +1789,8 @@ void start_lan(void)
 		else if (*lan_ifname) {
 			ifconfig(lan_ifname, IFUP, NULL, NULL);
 			wlconf(lan_ifname, -1, -1);
+			free(lan_ifname); /* fix: lan_ifname was leaked in this branch */
+			continue;
 		}
 		else {
 			close(sfd);

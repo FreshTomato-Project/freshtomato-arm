@@ -60,7 +60,7 @@ static int ovpn_setup_iface(char *iface, ovpn_if_t iface_type, ovpn_route_t rout
 
 	/* Create tap/tun interface */
 	if (eval("openvpn", "--mktun", "--dev", iface)) {
-		logmsg(LOG_WARNING, "unable to create tunnel interface %s (%s)!", iface, strerror(errno));
+		logmsg(LOG_ERR, "unable to create tunnel interface %s (%s)!", iface, strerror(errno));
 		return -1;
 	}
 
@@ -68,13 +68,13 @@ static int ovpn_setup_iface(char *iface, ovpn_if_t iface_type, ovpn_route_t rout
 	if (iface_type == OVPN_IF_TAP) {
 		if (route_mode == BRIDGE) {
 			if (eval("brctl", "addif", nvram_safe_get(buffer), iface)) {
-				logmsg(LOG_WARNING, "unable to add interface %s to bridge!", iface);
+				logmsg(LOG_ERR, "unable to add interface %s to bridge!", iface);
 				return -1;
 			}
 		}
 
 		if (eval("ifconfig", iface, "promisc", "up")) {
-			logmsg(LOG_WARNING, "unable to bring tunnel interface %s up!", iface);
+			logmsg(LOG_ERR, "unable to bring tunnel interface %s up!", iface);
 			return -1;
 		}
 	}
@@ -235,7 +235,7 @@ void start_ovpn_client(int unit)
 	else if (nvram_contains_word(buffer, "custom"))
 		auth_mode = OVPN_AUTH_CUSTOM;
 	else {
-		logmsg(LOG_WARNING, "invalid encryption mode, %.6s", nvram_safe_get(buffer));
+		logmsg(LOG_ERR, "invalid encryption mode, %.6s", nvram_safe_get(buffer));
 		return;
 	}
 
@@ -595,7 +595,7 @@ void start_ovpn_client(int unit)
 	taskset_ret = eval(buffer, "--cd", buffer2, "--config", "config.ovpn");
 
 	if (taskset_ret) {
-		logmsg(LOG_WARNING, "starting OpenVPN client%d failed - check configuration ...", unit);
+		logmsg(LOG_ERR, "starting OpenVPN client%d failed - check configuration ...", unit);
 		stop_ovpn_client(unit);
 		return;
 	}
@@ -678,7 +678,7 @@ void start_ovpn_server(int unit)
 	else if (nvram_contains_word(buffer, "tun"))
 		if_type = OVPN_IF_TUN;
 	else {
-		logmsg(LOG_WARNING, "invalid interface type, %.3s", nvram_safe_get(buffer));
+		logmsg(LOG_ERR, "invalid interface type, %.3s", nvram_safe_get(buffer));
 		return;
 	}
 
@@ -694,7 +694,7 @@ void start_ovpn_server(int unit)
 	else if (nvram_contains_word(buffer, "custom"))
 		auth_mode = OVPN_AUTH_CUSTOM;
 	else {
-		logmsg(LOG_WARNING, "invalid encryption mode, %.6s", nvram_safe_get(buffer));
+		logmsg(LOG_ERR, "invalid encryption mode, %.6s", nvram_safe_get(buffer));
 		return;
 	}
 
@@ -843,7 +843,7 @@ void start_ovpn_server(int unit)
 			snprintf(buffer, BUF_SIZE, OVPN_DIR"/server%d/ccd", unit);
 			mkdir(buffer, 0700);
 			if (chdir(buffer) != 0) {
-				logmsg(LOG_WARNING, "chdir to %s failed (%s)", buffer, strerror(errno));
+				logmsg(LOG_ERR, "chdir to %s failed (%s)", buffer, strerror(errno));
 				stop_ovpn_server(unit);
 				return;
 			}
@@ -1188,7 +1188,7 @@ void start_ovpn_server(int unit)
 	taskset_ret = eval(buffer, "--cd", buffer2, "--config", "config.ovpn");
 
 	if (taskset_ret) {
-		logmsg(LOG_WARNING, "starting OpenVPN server%d failed - check configuration ...", unit);
+		logmsg(LOG_ERR, "starting OpenVPN server%d failed - check configuration ...", unit);
 		stop_ovpn_server(unit);
 		return;
 	}

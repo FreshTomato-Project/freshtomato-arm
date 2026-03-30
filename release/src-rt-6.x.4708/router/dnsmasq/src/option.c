@@ -4580,39 +4580,41 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    only allowed for agent-options. */
 	 
 	 arg = comma;
-	 if ((comma = split(arg)))
+	 if (option  == 'U' && strstr(arg, "enterprise:") == arg)
 	   {
-	     if (option  != 'U' || strstr(arg, "enterprise:") != arg)
+	     comma = split(arg);
+	     new->enterprise = atoi(arg+11);
+	     arg = comma;
+	   }
+	 
+	 if (arg)
+	   {
+	     for (dig = 0, colon = 0, p = (unsigned char *)arg; *p; p++)
+	       if (isxdigit(*p))
+		 dig = 1;
+	       else if (*p == ':')
+		 colon = 1;
+	       else
+		 break;
+	     
+	     unhide_metas(arg);
+	     if (option == 'U' || option == 'j' || *p || !dig || !colon)
 	       {
-	         free(new->netid.net);
-	         ret_err_free(gen_err, new);
+		 new->len = strlen(arg);  
+		 new->data = opt_malloc(new->len);
+		 memcpy(new->data, arg, new->len);
 	       }
 	     else
-	       new->enterprise = atoi(arg+11);
+	       {
+		 new->len = parse_hex(comma, (unsigned char *)arg, strlen(arg), NULL, NULL);
+		 new->data = opt_malloc(new->len);
+		 memcpy(new->data, arg, new->len);
+	       }
 	   }
-	 else
-	   comma = arg;
-	 
-	 for (dig = 0, colon = 0, p = (unsigned char *)comma; *p; p++)
-	   if (isxdigit(*p))
-	     dig = 1;
-	   else if (*p == ':')
-	     colon = 1;
-	   else
-	     break;
-	 
-	 unhide_metas(comma);
-	 if (option == 'U' || option == 'j' || *p || !dig || !colon)
+	 else if (option != 'U' || new->enterprise == 0)
 	   {
-	     new->len = strlen(comma);  
-	     new->data = opt_malloc(new->len);
-	     memcpy(new->data, comma, new->len);
-	   }
-	 else
-	   {
-	     new->len = parse_hex(comma, (unsigned char *)comma, strlen(comma), NULL, NULL);
-	     new->data = opt_malloc(new->len);
-	     memcpy(new->data, comma, new->len);
+	     free(new->netid.net);
+	     ret_err_free(gen_err, new);
 	   }
 	 
 	 switch (option)
@@ -4635,7 +4637,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	   }
 	 new->next = daemon->dhcp_vendors;
 	 daemon->dhcp_vendors = new;
-
+	 
 	 break;
       }
       

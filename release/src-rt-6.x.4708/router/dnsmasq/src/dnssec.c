@@ -1027,21 +1027,21 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
 		  (flags = in_arpa_name_2_addr(name, &a)) &&
 		  ((flags == F_IPV6 && private_net6(&a.addr6, 0)) || (flags == F_IPV4 && private_net(a.addr4, 0))))
 		{
-		  my_syslog(LOG_INFO, _("Insecure reply received for DS %s, assuming that's OK for a RFC-1918 address."), name);
+		  my_syslog(LOG_INFO, _("insecure reply received for DS %s, assuming that's OK for a RFC-1918 address"), name);
 		  neganswer = 1;
 		  nons = 0; /* If we're faking a DS, fake one with an NS. */
 		  neg_ttl = DNSSEC_ASSUMED_DS_TTL;
 		}
 	      else if (lookup_domain(name, F_DOMAINSRV, NULL, NULL))
 		{
-		  my_syslog(LOG_INFO, _("Insecure reply received for DS %s, assuming non-DNSSEC domain-specific server."), name);
+		  my_syslog(LOG_INFO, _("insecure reply received for DS %s, assuming non-DNSSEC domain-specific server"), name);
 		  neganswer = 1;
 		  nons = 0; /* If we're faking a DS, fake one with an NS. */
 		  neg_ttl = DNSSEC_ASSUMED_DS_TTL;
 		}
 	      else
 		{
-		  my_syslog(LOG_WARNING, _("Insecure DS reply received for %s, check domain configuration and upstream DNS server DNSSEC support"), name);
+		  my_syslog(LOG_WARNING, _("insecure DS reply received for %s, check domain configuration and upstream DNS server DNSSEC support"), name);
 		  log_query(F_NOEXTRA | F_UPSTREAM, name, NULL, "BOGUS DS - not secure", 0);
 		  return STAT_BOGUS | DNSSEC_FAIL_INDET; 
 		}
@@ -1141,43 +1141,46 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
     }
   
   flags = F_FORWARD | F_DS | F_NEG | F_DNSSECOK;
-  
+
   if (neganswer)
     {
       if (RCODE(header) == NXDOMAIN)
 	flags |= F_NXDOMAIN;
       
-      /* We only cache validated DS records, DNSSECOK flag hijacked 
-	 to store presence/absence of NS. */
       if (nons)
 	{
 	  if (lookup_domain(name, F_DOMAINSRV, NULL, NULL))
 	    {
-	      my_syslog(LOG_WARNING, _("Negative DS reply without NS record received for %s, assuming non-DNSSEC domain-specific server."), name);
+	      my_syslog(LOG_WARNING, _("negative DS reply without NS record received for %s, assuming non-DNSSEC domain-specific server"), name);
 	      nons = 0;
+	      neg_ttl = DNSSEC_ASSUMED_DS_TTL;
 	    }
 	  else
 	    /* We only cache validated DS records, DNSSECOK flag hijacked 
 	       to store presence/absence of NS. */
 	    flags &= ~F_DNSSECOK;
 	}
+      
+      log_query(F_NOEXTRA | F_UPSTREAM, name, NULL,
+		servfail ? "SERVFAIL" : (nons ? "no DS/cut" : "no DS"), 0);
     }
-
+  
+  return cache_neg_ds(name, flags, class, now, neg_ttl);
+  
+}
+       
+int cache_neg_ds(char *name, int flags, int class, time_t now, int ttl)
+{
   cache_start_insert();
   
   /* Use TTL from NSEC for negative cache entries */
-  if (!cache_insert(name, NULL, class, now, neg_ttl, flags))
+  if (!cache_insert(name, NULL, class, now, ttl, flags))
     return STAT_ABANDONED;
   
   cache_end_insert();  
   
-  if (neganswer)
-    log_query(F_NOEXTRA | F_UPSTREAM, name, NULL,
-	      servfail ? "SERVFAIL" : (nons ? "no DS/cut" : "no DS"), 0);
-      
   return STAT_OK;
 }
-
 
 /* 4034 6.1 */
 static int hostname_cmp(const char *a, const char *b)

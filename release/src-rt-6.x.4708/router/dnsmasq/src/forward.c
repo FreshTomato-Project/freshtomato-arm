@@ -954,6 +954,7 @@ static void dnssec_validate(struct frec *forward, struct dns_header *header,
 	  /* As soon as anything returns BOGUS, we stop and unwind, to do otherwise
 	     would invite infinite loops, since the answers to DNSKEY and DS queries
 	     will not be cached, so they'll be repeated. */
+	ds_retry:
 	  if (forward->flags & FREC_DNSKEY_QUERY)
 	    status = dnssec_validate_by_ds(now, header, plen, daemon->namebuff, daemon->keyname, forward->class, &orig->validate_counter);
 	  else if (forward->flags & FREC_DS_QUERY)
@@ -1082,6 +1083,18 @@ static void dnssec_validate(struct frec *forward, struct dns_header *header,
 		  log_query_mysockaddr(F_NOEXTRA | F_DNSSEC | F_SERVER, daemon->keyname, &server->addr,
 				       STAT_ISEQUAL(status, STAT_NEED_KEY) ? "dnssec-query[DNSKEY]" : "dnssec-query[DS]", 0);
 		  return;
+		}
+
+	      /* If there's no server for the parent of a domain-specific server's domain,
+		 assume that said server's contents it legitimately unsigned, as if the parent
+		 contained a negative DS record. This is part of the same logic that's found
+		 in dnssec_validate_ds() when it gets a negative DS repsonse. */
+	      if (STAT_ISEQUAL(status, STAT_NEED_DS) && serverind == -1 && lookup_domain(daemon->keyname, F_DOMAINSRV, NULL, NULL) &&
+		  cache_neg_ds(daemon->keyname, F_FORWARD | F_DS | F_NEG | F_DNSSECOK, forward->class, now, DNSSEC_ASSUMED_DS_TTL) == STAT_OK)
+		{
+		  my_syslog(LOG_WARNING, _("no server for parent domain of %s, assuming unsigned domain"), daemon->keyname);
+		  blockdata_free(stash);
+		  goto ds_retry;
 		}
 	      
 	      /* error unwind */

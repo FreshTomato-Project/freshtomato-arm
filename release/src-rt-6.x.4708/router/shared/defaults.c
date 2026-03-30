@@ -1498,6 +1498,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpnc_eas",			""				, 0 },
 	{ "vpnc1_poll",			"0"				, 0 },
 	{ "vpnc1_tchk",			"0"				, 0 },	/* check if tunnel is up */
+	{ "vpnc1_tunchk",		""				, 0 },	/* IP to check the tunnel */
 	{ "vpnc1_if",			"tun"				, 0 },
 	{ "vpnc1_bridge",		"1"				, 0 },
 	{ "vpnc1_nat",			"1"				, 0 },
@@ -1536,6 +1537,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpnc1_prio",			""				, 0 },
 	{ "vpnc2_poll",			"0"				, 0 },
 	{ "vpnc2_tchk",			"0"				, 0 },	/* check if tunnel is up */
+	{ "vpnc2_tunchk",		""				, 0 },	/* IP to check the tunnel */
 	{ "vpnc2_if",			"tun"				, 0 },
 	{ "vpnc2_bridge",		"1"				, 0 },
 	{ "vpnc2_nat",			"1"				, 0 },
@@ -1575,6 +1577,7 @@ struct nvram_tuple router_defaults[] = {
 #ifdef TCONFIG_BCMARM
 	{ "vpnc3_poll",			"0"				, 0 },
 	{ "vpnc3_tchk",			"0"				, 0 },	/* check if tunnel is up */
+	{ "vpnc3_tunchk",		""				, 0 },	/* IP to check the tunnel */
 	{ "vpnc3_if",			"tun"				, 0 },
 	{ "vpnc3_bridge",		"1"				, 0 },
 	{ "vpnc3_nat",			"1"				, 0 },
@@ -1663,6 +1666,7 @@ struct nvram_tuple router_defaults[] = {
 	{"wg0_enable",			"0"				, 0 },
 	{"wg0_poll",			"0"				, 0 },
 	{"wg0_tchk",			"0"				, 0 },	/* check if tunnel is up */
+	{"wg0_tunchk",			""				, 0 },	/* IP to check the tunnel */
 	{"wg0_sleep",			"1"				, 0 },	/* delay at startup */
 	{"wg0_file",			""				, 0 },
 	{"wg0_key",			""				, 0 },
@@ -1693,6 +1697,7 @@ struct nvram_tuple router_defaults[] = {
 	{"wg1_enable",			"0"				, 0 },
 	{"wg1_poll",			"0"				, 0 },
 	{"wg1_tchk",			"0"				, 0 },	/* check if tunnel is up */
+	{"wg2_tunchk",			""				, 0 },	/* IP to check the tunnel */
 	{"wg1_sleep",			"1"				, 0 },	/* delay at startup */
 	{"wg1_file",			""				, 0 },
 	{"wg1_key",			""				, 0 },
@@ -1723,6 +1728,7 @@ struct nvram_tuple router_defaults[] = {
 	{"wg2_enable",			"0"				, 0 },
 	{"wg2_poll",			"0"				, 0 },
 	{"wg2_tchk",			"0"				, 0 },	/* check if tunnel is up */
+	{"wg3_tunchk",			""				, 0 },	/* IP to check the tunnel */
 	{"wg2_sleep",			"1"				, 0 },	/* delay at startup */
 	{"wg2_file",			""				, 0 },
 	{"wg2_key",			""				, 0 },

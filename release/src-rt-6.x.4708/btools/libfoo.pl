@@ -288,7 +288,7 @@ sub fixDyn
 	else {
 		fixDynDep("php-cgi", "libxml2.so.16.1.2");
 	}
-	fixDynDep("php-cgi", "libpng16.so.16.55.0");
+	fixDynDep("php-cgi", "libpng16.so.16.56.0");
 	fixDynDep("php-cgi", "libiconv.so.2.7.0");
 	fixDynDep("php-cgi", "libsqlite3.so.3.51.3");
 	if ($openssldir eq "openssl-3.0") {
@@ -309,7 +309,7 @@ sub fixDyn
 	else {
 		fixDynDep("php-cli", "libxml2.so.16.1.2");
 	}
-	fixDynDep("php-cli", "libpng16.so.16.55.0");
+	fixDynDep("php-cli", "libpng16.so.16.56.0");
 	fixDynDep("php-cli", "libiconv.so.2.7.0");
 	fixDynDep("php-cli", "libsqlite3.so.3.51.3");
 	if ($openssldir eq "openssl-3.0") {
@@ -330,7 +330,7 @@ sub fixDyn
 	else {
 		fixDynDep("php-fpm", "libxml2.so.16.1.2");
 	}
-	fixDynDep("php-fpm", "libpng16.so.16.55.0");
+	fixDynDep("php-fpm", "libpng16.so.16.56.0");
 	fixDynDep("php-fpm", "libiconv.so.2.7.0");
 	fixDynDep("php-fpm", "libsqlite3.so.3.51.3");
 	if ($openssldir eq "openssl-3.0") {
@@ -751,7 +751,7 @@ else {
 }
 genSO("${root}/usr/lib/libevent-2.1.so.7", "${router}/libevent/.libs/libevent.a", "${stripshared}");
 genSO("${root}/usr/lib/libiconv.so.2.7.0", "${router}/libiconv/lib/.libs/libiconv.a", "${stripshared}");
-genSO("${root}/usr/lib/libpng16.so.16.55.0", "${router}/libpng/staged/usr/lib/libpng16.a", "${stripshared}", "-L${router}/zlib");
+genSO("${root}/usr/lib/libpng16.so.16.56.0", "${router}/libpng/staged/usr/lib/libpng16.a", "${stripshared}", "-L${router}/zlib");
 if ($is_arm ne "y") { # MIPS
 	genSO("${root}/usr/lib/libxml2.so.2.13.7", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
 }

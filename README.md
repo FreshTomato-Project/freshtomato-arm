@@ -1,6 +1,8 @@
 # **FreshTomato-ARM** #
   
-  
+**NOTICE, This is a Forked Version of FreshTomato ripping out the linux kernel for a custom kernel implementation. This REPO is therefore declared unusable to the normal user!!***  
+
+
 **Alternative open source firmware for Broadcom ARM based routers**
   
   

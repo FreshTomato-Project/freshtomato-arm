@@ -1,6 +1,6 @@
 /*
- * Copyright (C)2011-2012, 2014-2015, 2017-2018, 2022-2024 D. R. Commander.
- *                                                         All Rights Reserved.
+ * Copyright (C) 2011-2012, 2014-2015, 2017-2018, 2022-2024, 2026
+ *           D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,19 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * This program demonstrates how to use the TurboJPEG C API to approximate the
- * functionality of the IJG's djpeg program.  djpeg features that are not
- * covered:
- *
- * - OS/2 BMP, GIF, and Targa output file formats [legacy feature]
- * - Color quantization and dithering [legacy feature]
- * - The floating-point IDCT method [legacy feature]
- * - Extracting an ICC color management profile
- * - Progress reporting
- * - Skipping rows (i.e. exclusive rather than inclusive partial decompression)
- * - Debug output
- */
+// This program demonstrates how to use the TurboJPEG Java API to approximate
+// the functionality of the IJG's djpeg program.  djpeg features that are not
+// covered:
+//
+// - OS/2 BMP, GIF, and Targa output file formats [legacy feature]
+// - Color quantization and dithering [legacy feature]
+// - The floating-point IDCT method [legacy feature]
+// - Extracting an ICC color management profile
+// - Progress reporting
+// - Skipping rows (i.e. exclusive rather than inclusive partial decompression)
+// - Debug output
 
 import java.io.*;
 import java.util.*;
@@ -81,7 +79,6 @@ final class TJDecomp {
 
 
   static void usage() {
-    int i;
     TJScalingFactor[] scalingFactors = TJ.getScalingFactors();
     int numScalingFactors = scalingFactors.length;
 
@@ -127,7 +124,7 @@ final class TJDecomp {
     System.out.println("-scale M/N");
     System.out.println("    Scale the width/height of the JPEG image by a factor of M/N when");
     System.out.print("    decompressing it (M/N = ");
-    for (i = 0; i < numScalingFactors; i++) {
+    for (int i = 0; i < numScalingFactors; i++) {
       System.out.format("%d/%d", scalingFactors[i].getNum(),
                         scalingFactors[i].getDenom());
       if (numScalingFactors == 2 && i != numScalingFactors - 1)
@@ -159,9 +156,6 @@ final class TJDecomp {
 
   public static void main(String[] argv) {
     int exitStatus = 0;
-    TJDecompressor tjd = null;
-    FileInputStream fis = null;
-    FileOutputStream fos = null;
 
     try {
 
@@ -258,102 +252,102 @@ final class TJDecomp {
       if (i != argv.length - 2)
         usage();
 
-      tjd = new TJDecompressor();
+      try (TJDecompressor tjd = new TJDecompressor()) {
 
-      if (stopOnWarning >= 0)
-        tjd.set(TJ.PARAM_STOPONWARNING, stopOnWarning);
-      if (fastUpsample >= 0)
-        tjd.set(TJ.PARAM_FASTUPSAMPLE, fastUpsample);
-      if (fastDCT >= 0)
-        tjd.set(TJ.PARAM_FASTDCT, fastDCT);
-      if (maxScans >= 0)
-        tjd.set(TJ.PARAM_SCANLIMIT, maxScans);
-      if (maxMemory >= 0)
-        tjd.set(TJ.PARAM_MAXMEMORY, maxMemory);
+        if (stopOnWarning >= 0)
+          tjd.set(TJ.PARAM_STOPONWARNING, stopOnWarning);
+        if (fastUpsample >= 0)
+          tjd.set(TJ.PARAM_FASTUPSAMPLE, fastUpsample);
+        if (fastDCT >= 0)
+          tjd.set(TJ.PARAM_FASTDCT, fastDCT);
+        if (maxScans >= 0)
+          tjd.set(TJ.PARAM_SCANLIMIT, maxScans);
+        if (maxMemory >= 0)
+          tjd.set(TJ.PARAM_MAXMEMORY, maxMemory);
 
-      File jpegFile = new File(argv[i++]);
-      fis = new FileInputStream(jpegFile);
-      int jpegSize = fis.available();
-      if (jpegSize < 1)
-        throw new Exception("Input file contains no data");
-      jpegBuf = new byte[jpegSize];
-      fis.read(jpegBuf);
-      fis.close();  fis = null;
+        File jpegFile = new File(argv[i++]);
+        int jpegSize;
+        try (FileInputStream fis = new FileInputStream(jpegFile)) {
+          jpegSize = fis.available();
+          if (jpegSize < 1)
+            throw new Exception("Input file contains no data");
+          jpegBuf = new byte[jpegSize];
+          fis.read(jpegBuf);
+        }
 
-      try {
-        tjd.setSourceImage(jpegBuf, jpegSize);
-      } catch (TJException e) { handleTJException(e, stopOnWarning); }
-      subsamp = tjd.get(TJ.PARAM_SUBSAMP);
-      width = tjd.get(TJ.PARAM_JPEGWIDTH);
-      height = tjd.get(TJ.PARAM_JPEGHEIGHT);
-      precision = tjd.get(TJ.PARAM_PRECISION);
-      colorspace = tjd.get(TJ.PARAM_COLORSPACE);
-
-      if (iccFilename != null) {
         try {
-          iccBuf = tjd.getICCProfile();
+          tjd.setSourceImage(jpegBuf, jpegSize);
         } catch (TJException e) { handleTJException(e, stopOnWarning); }
-        if (iccBuf != null) {
-          File iccFile = new File(iccFilename);
-          fos = new FileOutputStream(iccFile);
-          fos.write(iccBuf, 0, iccBuf.length);
+        subsamp = tjd.get(TJ.PARAM_SUBSAMP);
+        width = tjd.get(TJ.PARAM_JPEGWIDTH);
+        height = tjd.get(TJ.PARAM_JPEGHEIGHT);
+        precision = tjd.get(TJ.PARAM_PRECISION);
+        colorspace = tjd.get(TJ.PARAM_COLORSPACE);
+
+        if (iccFilename != null) {
+          try {
+            iccBuf = tjd.getICCProfile();
+          } catch (TJException e) { handleTJException(e, stopOnWarning); }
+          if (iccBuf != null) {
+            File iccFile = new File(iccFilename);
+            try (FileOutputStream fos = new FileOutputStream(iccFile)) {
+              fos.write(iccBuf, 0, iccBuf.length);
+            }
+          }
         }
-      }
 
-      if (pixelFormat == TJ.PF_UNKNOWN) {
-        if (colorspace == TJ.CS_GRAY)
-          pixelFormat = TJ.PF_GRAY;
-        else if (colorspace == TJ.CS_CMYK || colorspace == TJ.CS_YCCK)
-          pixelFormat = TJ.PF_CMYK;
-        else
-          pixelFormat = TJ.PF_RGB;
-      }
-
-      if (tjd.get(TJ.PARAM_LOSSLESS) == 0) {
-        tjd.setScalingFactor(scalingFactor);
-        width = scalingFactor.getScaled(width);
-        height = scalingFactor.getScaled(height);
-
-        if (isCropped(croppingRegion)) {
-          int adjustment;
-
-          if (subsamp == TJ.SAMP_UNKNOWN)
-            throw new Exception("Could not determine subsampling level of JPEG image");
-          adjustment = croppingRegion.x %
-                       scalingFactor.getScaled(TJ.getMCUWidth(subsamp));
-          croppingRegion.x -= adjustment;
-          croppingRegion.width += adjustment;
-          tjd.setCroppingRegion(croppingRegion);
-          width = croppingRegion.width;
-          height = croppingRegion.height;
+        if (pixelFormat == TJ.PF_UNKNOWN) {
+          if (colorspace == TJ.CS_GRAY)
+            pixelFormat = TJ.PF_GRAY;
+          else if (colorspace == TJ.CS_CMYK || colorspace == TJ.CS_YCCK)
+            pixelFormat = TJ.PF_CMYK;
+          else
+            pixelFormat = TJ.PF_RGB;
         }
-      }
 
-      if (precision <= 8)
-        dstBuf = new byte[width * height * TJ.getPixelSize(pixelFormat)];
-      else
-        dstBuf = new short[width * height * TJ.getPixelSize(pixelFormat)];
+        if (tjd.get(TJ.PARAM_LOSSLESS) == 0) {
+          tjd.setScalingFactor(scalingFactor);
+          width = scalingFactor.getScaled(width);
+          height = scalingFactor.getScaled(height);
 
-      try {
+          if (isCropped(croppingRegion)) {
+            int adjustment;
+
+            if (subsamp == TJ.SAMP_UNKNOWN)
+              throw new Exception("Could not determine subsampling level of JPEG image");
+            adjustment = croppingRegion.x %
+                         scalingFactor.getScaled(TJ.getMCUWidth(subsamp));
+            croppingRegion.x -= adjustment;
+            croppingRegion.width += adjustment;
+            tjd.setCroppingRegion(croppingRegion);
+            width = croppingRegion.width;
+            height = croppingRegion.height;
+          }
+        }
+
         if (precision <= 8)
-          tjd.decompress8((byte[])dstBuf, 0, 0, 0, pixelFormat);
-        else if (precision <= 12)
-          tjd.decompress12((short[])dstBuf, 0, 0, 0, pixelFormat);
+          dstBuf = new byte[width * height * TJ.getPixelSize(pixelFormat)];
         else
-          tjd.decompress16((short[])dstBuf, 0, 0, 0, pixelFormat);
-      } catch (TJException e) { handleTJException(e, stopOnWarning); }
+          dstBuf = new short[width * height * TJ.getPixelSize(pixelFormat)];
 
-      tjd.saveImage(argv[i], dstBuf, 0, 0, width, 0, height, pixelFormat);
+        try {
+          if (precision <= 8)
+            tjd.decompress8((byte[])dstBuf, 0, 0, 0, pixelFormat);
+          else if (precision <= 12)
+            tjd.decompress12((short[])dstBuf, 0, 0, 0, pixelFormat);
+          else
+            tjd.decompress16((short[])dstBuf, 0, 0, 0, pixelFormat);
+        } catch (TJException e) { handleTJException(e, stopOnWarning); }
+
+        tjd.saveImage(argv[i], dstBuf, 0, 0, width, 0, height, pixelFormat);
+
+      }  // try (tjd)
+
     } catch (Exception e) {
       e.printStackTrace();
       exitStatus = -1;
     }
 
-    try {
-      if (tjd != null) tjd.close();
-      if (fis != null) fis.close();
-      if (fos != null) fos.close();
-    } catch (Exception e) {}
     System.exit(exitStatus);
   }
 };

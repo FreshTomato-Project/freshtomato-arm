@@ -7,7 +7,7 @@
  * Lossless JPEG Modifications:
  * Copyright (C) 1999, Ken Murchison.
  * libjpeg-turbo Modifications:
- * Copyright (C) 2010, 2013-2014, 2017, 2019-2022, 2024-2025,
+ * Copyright (C) 2010, 2013-2014, 2017, 2019-2022, 2024-2026,
  *           D. R. Commander.
  * For conditions of distribution and use, see the accompanying README.ijg
  * file.
@@ -157,19 +157,19 @@ static boolean strict;          /* for -strict switch */
 
 #include <setjmp.h>
 
-struct my_error_mgr {
+struct fuzzer_error_mgr {
   struct jpeg_error_mgr pub;
   jmp_buf setjmp_buffer;
 };
 
-void my_error_exit(j_common_ptr cinfo)
+static void fuzzer_error_exit(j_common_ptr cinfo)
 {
-  struct my_error_mgr *myerr = (struct my_error_mgr *)cinfo->err;
+  struct fuzzer_error_mgr *myerr = (struct fuzzer_error_mgr *)cinfo->err;
 
   longjmp(myerr->setjmp_buffer, 1);
 }
 
-static void my_emit_message_fuzzer(j_common_ptr cinfo, int msg_level)
+static void fuzzer_emit_message(j_common_ptr cinfo, int msg_level)
 {
   if (msg_level < 0)
     cinfo->err->num_warnings++;
@@ -182,8 +182,6 @@ static void my_emit_message_fuzzer(j_common_ptr cinfo, int msg_level)
     jpeg_abort_compress(&cinfo); \
   } \
   jpeg_destroy_compress(&cinfo); \
-  if (input_file != stdin && input_file != NULL) \
-    fclose(input_file); \
   if (memdst) \
     free(outbuffer); \
   free(icc_profile); \
@@ -286,17 +284,23 @@ parse_switches(j_compress_ptr cinfo, int argc, char **argv,
   int psv = 0, pt = 0;
 #endif
   boolean force_baseline;
+#ifdef C_PROGRESSIVE_SUPPORTED
   boolean simple_progressive;
+#endif
   char *qualityarg = NULL;      /* saves -quality parm if any */
   char *qtablefile = NULL;      /* saves -qtables filename if any */
   char *qslotsarg = NULL;       /* saves -qslots parm if any */
   char *samplearg = NULL;       /* saves -sample parm if any */
+#ifdef C_MULTISCAN_FILES_SUPPORTED
   char *scansarg = NULL;        /* saves -scans parm if any */
+#endif
 
   /* Set up default JPEG parameters. */
 
   force_baseline = FALSE;       /* by default, allow 16-bit quantizers */
+#ifdef C_PROGRESSIVE_SUPPORTED
   simple_progressive = FALSE;
+#endif
   is_targa = FALSE;
   icc_filename = NULL;
   outfilename = NULL;
@@ -616,12 +620,17 @@ my_emit_message(j_common_ptr cinfo, int msg_level)
  * The main program.
  */
 
+#ifdef CJPEG_FUZZER
+static int
+cjpeg_fuzzer(int argc, char **argv, FILE *input_file)
+#else
 int
 main(int argc, char **argv)
+#endif
 {
   struct jpeg_compress_struct cinfo;
 #ifdef CJPEG_FUZZER
-  struct my_error_mgr myerr;
+  struct fuzzer_error_mgr myerr;
   struct jpeg_error_mgr &jerr = myerr.pub;
 #else
   struct jpeg_error_mgr jerr;
@@ -629,7 +638,9 @@ main(int argc, char **argv)
   struct cdjpeg_progress_mgr progress;
   int file_index;
   cjpeg_source_ptr src_mgr;
+#ifndef CJPEG_FUZZER
   FILE *input_file = NULL;
+#endif
   FILE *icc_file;
   JOCTET *icc_profile = NULL;
   long icc_len = 0;
@@ -696,6 +707,7 @@ main(int argc, char **argv)
   }
 #endif /* TWO_FILE_COMMANDLINE */
 
+#ifndef CJPEG_FUZZER
   /* Open the input file. */
   if (file_index < argc) {
     if ((input_file = fopen(argv[file_index], READ_BINARY)) == NULL) {
@@ -706,6 +718,7 @@ main(int argc, char **argv)
     /* default input file is stdin */
     input_file = read_stdin();
   }
+#endif
 
   /* Open the output file. */
   if (outfilename != NULL) {
@@ -746,8 +759,8 @@ main(int argc, char **argv)
   }
 
 #ifdef CJPEG_FUZZER
-  jerr.error_exit = my_error_exit;
-  jerr.emit_message = my_emit_message_fuzzer;
+  jerr.error_exit = fuzzer_error_exit;
+  jerr.emit_message = fuzzer_emit_message;
   if (setjmp(myerr.setjmp_buffer))
     HANDLE_ERROR()
 #endif
@@ -818,8 +831,10 @@ main(int argc, char **argv)
   jpeg_destroy_compress(&cinfo);
 
   /* Close files, if we opened them */
+#ifndef CJPEG_FUZZER
   if (input_file != stdin)
     fclose(input_file);
+#endif
   if (output_file != stdout && output_file != NULL)
     fclose(output_file);
 

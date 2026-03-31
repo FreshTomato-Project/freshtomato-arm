@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2009-2025 D. R. Commander.  All Rights Reserved.
+ * Copyright (C) 2009-2026 D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -96,10 +96,7 @@ DLLEXPORT int GET_NAME(tj3Compress, BITS_IN_JSAMPLE)
   if ((row_pointer = (_JSAMPROW *)malloc(sizeof(_JSAMPROW) * height)) == NULL)
     THROW("Memory allocation failure");
 
-  if (setjmp(this->jerr.setjmp_buffer)) {
-    /* If we get here, the JPEG code has signaled an error. */
-    retval = -1;  goto bailout;
-  }
+  CATCH_LIBJPEG(this);
 
   cinfo->image_width = width;
   cinfo->image_height = height;
@@ -176,10 +173,7 @@ DLLEXPORT int GET_NAME(tj3Decompress, BITS_IN_JSAMPLE)
 
   dinfo->mem->max_memory_to_use = (long)this->maxMemory * 1048576L;
 
-  if (setjmp(this->jerr.setjmp_buffer)) {
-    /* If we get here, the JPEG code has signaled an error. */
-    retval = -1;  goto bailout;
-  }
+  CATCH_LIBJPEG(this);
 
   if (dinfo->global_state <= DSTATE_INHEADER) {
     jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
@@ -230,10 +224,7 @@ DLLEXPORT int GET_NAME(tj3Decompress, BITS_IN_JSAMPLE)
   if ((row_pointer =
        (_JSAMPROW *)malloc(sizeof(_JSAMPROW) * croppedHeight)) == NULL)
     THROW("Memory allocation failure");
-  if (setjmp(this->jerr.setjmp_buffer)) {
-    /* If we get here, the JPEG code has signaled an error. */
-    retval = -1;  goto bailout;
-  }
+  CATCH_LIBJPEG(this);
   for (i = 0; i < (int)croppedHeight; i++) {
     if (this->bottomUp)
       row_pointer[i] = &dstBuf[(croppedHeight - i - 1) * (size_t)pitch];
@@ -289,15 +280,18 @@ bailout:
 
 /*************************** Packed-Pixel Image I/O **************************/
 
+#if BITS_IN_JSAMPLE != 16 || defined(C_LOSSLESS_SUPPORTED)
+
 /* TurboJPEG 3.0+ */
-DLLEXPORT _JSAMPLE *GET_NAME(tj3LoadImage, BITS_IN_JSAMPLE)
-  (tjhandle handle, const char *filename, int *width, int align, int *height,
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+static
+#endif
+_JSAMPLE *GET_NAME(_tj3LoadImageFromFileHandle, BITS_IN_JSAMPLE)
+  (tjhandle handle, FILE *file, int *width, int align, int *height,
    int *pixelFormat)
 {
   static const char FUNCTION_NAME[] =
     GET_STRING(tj3LoadImage, BITS_IN_JSAMPLE);
-
-#if BITS_IN_JSAMPLE != 16 || defined(C_LOSSLESS_SUPPORTED)
 
   int retval = 0, tempc;
   size_t pitch;
@@ -306,12 +300,11 @@ DLLEXPORT _JSAMPLE *GET_NAME(tj3LoadImage, BITS_IN_JSAMPLE)
   j_compress_ptr cinfo = NULL;
   cjpeg_source_ptr src;
   _JSAMPLE *dstBuf = NULL;
-  FILE *file = NULL;
   boolean invert;
 
   GET_TJINSTANCE(handle, NULL)
 
-  if (!filename || !width || align < 1 || !height || !pixelFormat ||
+  if (!file || !width || align < 1 || !height || !pixelFormat ||
       *pixelFormat < TJPF_UNKNOWN || *pixelFormat >= TJ_NUMPF)
     THROW("Invalid argument");
   if ((align & (align - 1)) != 0)
@@ -324,22 +317,12 @@ DLLEXPORT _JSAMPLE *GET_NAME(tj3LoadImage, BITS_IN_JSAMPLE)
   this2 = (tjinstance *)handle2;
   cinfo = &this2->cinfo;
 
-#ifdef _MSC_VER
-  if (fopen_s(&file, filename, "rb") || file == NULL)
-#else
-  if ((file = fopen(filename, "rb")) == NULL)
-#endif
-    THROW_UNIX("Cannot open input file");
-
   if ((tempc = getc(file)) < 0 || ungetc(tempc, file) == EOF)
     THROW_UNIX("Could not read input file")
   else if (tempc == EOF)
     THROW("Input file contains no data");
 
-  if (setjmp(this2->jerr.setjmp_buffer)) {
-    /* If we get here, the JPEG code has signaled an error. */
-    retval = -1;  goto bailout;
-  }
+  CATCH_LIBJPEG(this2);
 
   cinfo->data_precision = BITS_IN_JSAMPLE;
   if (*pixelFormat == TJPF_UNKNOWN) cinfo->in_color_space = JCS_UNKNOWN;
@@ -390,10 +373,7 @@ DLLEXPORT _JSAMPLE *GET_NAME(tj3LoadImage, BITS_IN_JSAMPLE)
                                    sizeof(_JSAMPLE))) == NULL)
     THROW("Memory allocation failure");
 
-  if (setjmp(this2->jerr.setjmp_buffer)) {
-    /* If we get here, the JPEG code has signaled an error. */
-    retval = -1;  goto bailout;
-  }
+  CATCH_LIBJPEG(this2);
 
   while (cinfo->next_scanline < cinfo->image_height) {
     int i, nlines = (*src->get_pixel_rows) (cinfo, src);
@@ -415,6 +395,41 @@ DLLEXPORT _JSAMPLE *GET_NAME(tj3LoadImage, BITS_IN_JSAMPLE)
 
 bailout:
   tj3Destroy(handle2);
+  if (retval < 0) { free(dstBuf);  dstBuf = NULL; }
+  return dstBuf;
+}
+
+#endif /* BITS_IN_JSAMPLE != 16 || defined(C_LOSSLESS_SUPPORTED) */
+
+DLLEXPORT _JSAMPLE *GET_NAME(tj3LoadImage, BITS_IN_JSAMPLE)
+  (tjhandle handle, const char *filename, int *width, int align, int *height,
+   int *pixelFormat)
+{
+  static const char FUNCTION_NAME[] =
+    GET_STRING(tj3LoadImage, BITS_IN_JSAMPLE);
+
+#if BITS_IN_JSAMPLE != 16 || defined(C_LOSSLESS_SUPPORTED)
+
+  int retval = 0;
+  _JSAMPLE *dstBuf = NULL;
+  FILE *file = NULL;
+
+  GET_TJINSTANCE(handle, NULL)
+
+  if (!filename)
+    THROW("Invalid argument");
+
+#ifdef _MSC_VER
+  if (fopen_s(&file, filename, "rb") || file == NULL)
+#else
+  if ((file = fopen(filename, "rb")) == NULL)
+#endif
+    THROW_UNIX("Cannot open input file");
+
+  dstBuf = GET_NAME(_tj3LoadImageFromFileHandle, BITS_IN_JSAMPLE)
+             (handle, file, width, align, height, pixelFormat);
+
+bailout:
   if (file) fclose(file);
   if (retval < 0) { free(dstBuf);  dstBuf = NULL; }
   return dstBuf;
@@ -454,7 +469,7 @@ DLLEXPORT int GET_NAME(tj3SaveImage, BITS_IN_JSAMPLE)
   j_decompress_ptr dinfo = NULL;
   djpeg_dest_ptr dst;
   FILE *file = NULL;
-  char *ptr = NULL;
+  const char *ptr = NULL;
   boolean invert;
 
   GET_TJINSTANCE(handle, -1)
@@ -478,10 +493,7 @@ DLLEXPORT int GET_NAME(tj3SaveImage, BITS_IN_JSAMPLE)
 #endif
     THROW_UNIX("Cannot open output file");
 
-  if (setjmp(this2->jerr.setjmp_buffer)) {
-    /* If we get here, the JPEG code has signaled an error. */
-    retval = -1;  goto bailout;
-  }
+  CATCH_LIBJPEG(this2);
 
   this2->dinfo.out_color_space = pf2cs[pixelFormat];
   dinfo->image_width = width;  dinfo->image_height = height;

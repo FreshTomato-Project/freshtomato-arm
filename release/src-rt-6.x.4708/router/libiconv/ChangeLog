@@ -1,3 +1,131 @@
+2026-03-06  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for version 1.19.
+	* configure.ac: Bump version number to 1.19.
+	* include/iconv.h.in (_LIBICONV_VERSION): Likewise.
+	* lib/Makefile.in (LIBICONV_VERSION_INFO): Bump to 9:1:7.
+	* src/iconv.c (print_version): Update copyright year.
+	* windows/iconv.rc: Likewise.
+	* windows/libiconv.rc: Likewise.
+	* NEWS: Update.
+	* README: Update download link.
+
+2026-03-06  Bruno Haible  <bruno@clisp.org>
+
+	Use new approach for gnulib localizations.
+	* src/iconv.c (main): Invoke bindtextdomain for the domain 'gnulib'.
+	* DEPENDENCIES: Mention the gnulib localizations.
+
+2026-03-06  Bruno Haible  <bruno@clisp.org>
+
+	Use the newest gettext release.
+	* srcm4/po.m4: New file, from gettext-1.0.
+	* Makefile.devel (srclib/Makefile.gnulib): Don't override it with the
+	older version from gnulib.
+	* DEPENDENCIES: Mention that GNU make >= 4.0 is required.
+
+2026-03-06  KO Myung-Hun  <komh78@gmail.com>
+
+	Add OS/2-dependent aliases.
+	Support aliases available on OS/2, especially results of
+	kLIBC nl_langinfo(CODESET).
+	* Makefile.devel (all): Depend on lib/aliases_sysos2.h.
+	(lib/aliases_sysos2.h lib/canonical_sysos2.h
+	lib/canonical_local_sysos2.h): New rules.
+	(lib/aliases_os2.h lib/canonical_os2.h): New rules.
+	(lib/aliases_os2_sysos2.h lib/canonical_os2_sysos2.h): New rules.
+	(totally-clean): Remove lib/aliases_sysos2.gperf, lib/aliases_os2.h,
+	lib/aliases_os2_sysos2.h, lib/canonical_sysos2.h, lib/canonical_os2.h,
+	lib/canonical_os2_sysos2.h, lib/canonical_local_sysos2.h.
+	* lib/Makefile.in (iconv.lo): Depend on $(srcdir)/aliases_sysos2.h,
+	$(srcdir)/aliases_os2.h, $(srcdir)/aliases_os2_sysos2.h.
+	(GENERATED_FILES): Add aliases_sysos2.gperf, aliases_sysos2.h,
+	aliases_os2.h, aliases_os2_sysos2.h, canonical_sysos2.h,
+	canonical_os2.h, canonical_os2_sysos2.h, canonical_local_sysos2.h.
+	* lib/aliases2.h: Include headers for OS/2 aliases.
+	* lib/encodings.def: Add DEFALIAS statements, conditional on
+	USE_OS2_ALIASES.
+	* lib/encodings_aix.def: Add DEFALIAS statements, conditional on
+	USE_OS2_ALIASES.
+	* lib/encodings_dos.def: Add DEFALIAS statements, conditional on
+	USE_OS2_ALIASES.
+	* lib/genaliases2.c (main): Include encodings_aix.def and
+	encodings_dos.def for OS/2.
+	* lib/genflags.c: Define USE_OS2.
+	* lib/iconv.c: Define USE_OS2 if ENABLE_EXTRA, otherwise define USE_OS2,
+	USE_AIX, USE_DOS on OS/2.
+	(all_encodings): Include OS/2-dependent headers on OS/2 aliases.
+	(aliases2_lookup): Define OS/2-dependent alias lookup table.
+	(all_canonical): Include OS/2-dependent headers on OS/2 aliases.
+
+2025-12-26  Collin Funk  <collin.funk1@gmail.com>  (tiny change)
+
+	Update after relocatable-lib change in gnulib on 2025-12-09.
+	* autogen.sh: Copy libdl.m4 to libcharset/m4 since it is now used by
+	relocatable-lib.m4.
+
+2025-07-07  Bruno Haible  <bruno@clisp.org>
+
+	Add support for --enable-relocatable in mingw builds on Cygwin hosts.
+	Reported by Michele Locati <michele@locati.it> in
+	<https://github.com/mlocati/gettext-iconv-windows/pull/47#issuecomment-3041406917>.
+	* configure.ac: Invoke gl_BUILD_TO_HOST_BINDIR.
+	* src/Makefile.in (bindir_c_make, localedir_c_make): New variables.
+	(iconv_no_i18n.@OBJEXT@, iconv.@OBJEXT@): Fix value of INSTALLDIR and
+	LOCALEDIR.
+
+2025-06-09  Bruno Haible  <bruno@clisp.org>
+
+	More install-tests.
+	* install-tests/test-api.c: New file.
+	* install-tests/Makefile.in (installcheck): Compile and run test-api.
+	(SOURCE_FILES): Add test-api.c.
+	(clean): Remove test-api.
+
+2025-06-09  Bruno Haible  <bruno@clisp.org>
+
+	build: Implement 'installcheck' target.
+	* install-tests/test-version.c: New file.
+	* install-tests/Makefile.in: New file.
+	* configure.ac (PATH_SEPARATOR, AUGMENT_SHLIBPATH): New variables.
+	(AC_CONFIG_FILES): Add install-tests/Makefile.
+	* Makefile.in (bindir): New variable.
+	(all, mostlyclean, clean, distclean, maintainer-clean, distdir): Recurse
+	into install-tests.
+	(installcheck): New target.
+
+2025-05-31  Bruno Haible  <bruno@clisp.org>
+
+	Switch to automake 1.18.
+	* autogen.sh: Update comment.
+	* Makefile.devel (AUTOMAKE, ACLOCAL): Use binary from automake 1.18.
+
+2025-05-30  Bruno Haible  <bruno@clisp.org>
+
+	Document the 'const char **' vs. 'char **' problem.
+	Reported by Braden Ganetsky <braden.ganetsky@gmail.com> in
+	<https://lists.gnu.org/archive/html/bug-gnu-libiconv/2025-05/msg00003.html>.
+	* man/iconv.3 (SYNOPSIS, CONFORMING TO): List also the POSIX-compatible
+	declaration. Explain the background. Mention AM_ICONV.
+
+2025-04-16  Bruno Haible  <bruno@clisp.org>
+
+	Update after gnulib changed.
+	* gitsub.sh: Update from gnulib.
+
+2025-02-14  Bruno Haible  <bruno@clisp.org>
+
+	Fix a buffer overrun in the GB18030 converter (regression 2023-05-29).
+	Reported by Nick Wellnhofer <wellnhofer@aevum.de>.
+	* lib/gb18030_2005.h (gb18030_2005_wctomb): Return RET_TOOSMALL if there
+	is not enough room for 4 bytes.
+
+2024-12-28  Bruno Haible  <bruno@clisp.org>
+
+	Update after gnulib changed.
+	* Makefile.devel (GNULIB_MODULES): Use the new names of renamed gnulib
+	modules.
+
 2024-12-15  Bruno Haible  <bruno@clisp.org>
 
 	Update translations.

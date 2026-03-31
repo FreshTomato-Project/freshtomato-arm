@@ -7,37 +7,37 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNU libiconv 1.17-pre1\n"
 "Report-Msgid-Bugs-To: bug-gnu-libiconv@gnu.org\n"
-"POT-Creation-Date: 2024-12-15 13:23+0100\n"
-"PO-Revision-Date: 2022-06-14 09:46+0200\n"
+"POT-Creation-Date: 2022-02-12 13:29+0100\n"
+"PO-Revision-Date: 2025-09-20 09:55+0200\n"
 "Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
 "Language-Team: Georgian <(nothing)>\n"
 "Language: ka\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Bugs: Report translation errors to the Language-Team address.\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 3.1\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 3.7\n"
 
 #. TRANSLATORS: The first line of the short usage message.
-#: src/iconv.c:108
+#: src/iconv.c:104
 msgid "Usage: iconv [-c] [-s] [-f fromcode] [-t tocode] [file ...]"
 msgstr "გამოყენება: iconv [-c] [-s] [-f კოდიდან] [-t კოდამდე] [ფაილი ...]"
 
 #. TRANSLATORS: The second line of the short usage message.
 #. Align it correctly against the first line.
-#: src/iconv.c:112
+#: src/iconv.c:108
 msgid "or:    iconv -l"
 msgstr "ან: iconv -l"
 
-#: src/iconv.c:114
+#: src/iconv.c:110
 #, c-format
 msgid "Try '%s --help' for more information.\n"
 msgstr "მეტი ინფორმაციისთვის სცადეთ '%s --help'.\n"
 
 #. TRANSLATORS: The first line of the long usage message.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:119
+#: src/iconv.c:115
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION...] [-f ENCODING] [-t ENCODING] [INPUTFILE...]\n"
 msgstr "გამოყენება: %s [პარამეტრი...] [-f კოდირება] [-t კოდირება] [ფაილი...]\n"
@@ -45,23 +45,23 @@ msgstr "გამოყენება: %s [პარამეტრი...] [-f 
 #. TRANSLATORS: The second line of the long usage message.
 #. Align it correctly against the first line.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:126
+#: src/iconv.c:122
 #, c-format, no-wrap
 msgid "or:    %s -l\n"
 msgstr "ან: %s -l\n"
 
 #. TRANSLATORS: Description of the iconv program.
-#: src/iconv.c:132
+#: src/iconv.c:128
 #, c-format, no-wrap
 msgid "Converts text from one encoding to another encoding.\n"
 msgstr "აკონვერტებს ტექსტს ერთი კოდირებიდან მეორეში.\n"
 
-#: src/iconv.c:136
+#: src/iconv.c:132
 #, c-format, no-wrap
 msgid "Options controlling the input and output format:\n"
 msgstr "პარამეტრები, რომლებიც აკონტროლებენ შეყვანის და გამოყვანის ფორმატს:\n"
 
-#: src/iconv.c:139
+#: src/iconv.c:135
 #, c-format, no-wrap
 msgid ""
 "  -f ENCODING, --from-code=ENCODING\n"
@@ -70,7 +70,7 @@ msgstr ""
 "  -f კოდირება, --from-code=კოდირება\n"
 "                              შეყვანის კოდირება\n"
 
-#: src/iconv.c:143
+#: src/iconv.c:139
 #, c-format, no-wrap
 msgid ""
 "  -t ENCODING, --to-code=ENCODING\n"
@@ -79,17 +79,17 @@ msgstr ""
 "  -t კოდირება, --to-code=კოდირება\n"
 "                              გამოტანის კოდირება\n"
 
-#: src/iconv.c:148
+#: src/iconv.c:144
 #, c-format, no-wrap
 msgid "Options controlling conversion problems:\n"
 msgstr "პარამეტრები, რომლებიც აკონტროლებენ გადაყვანის პრობლემებს:\n"
 
-#: src/iconv.c:151
+#: src/iconv.c:147
 #, c-format, no-wrap
 msgid "  -c                          discard unconvertible characters\n"
 msgstr "  -c                      არაგადაყვანადი სიმბოლოების გამოტოვება\n"
 
-#: src/iconv.c:154
+#: src/iconv.c:150
 #, c-format, no-wrap
 msgid ""
 "  --unicode-subst=FORMATSTRING\n"
@@ -98,12 +98,12 @@ msgstr ""
 "  --Unicode-subst=სტრიქფორმატ\n"
 "                       არა გადაყვანადი იუნიკოდის სიმბოლების ჩანაცვლება\n"
 
-#: src/iconv.c:158
+#: src/iconv.c:154
 #, c-format, no-wrap
 msgid "  --byte-subst=FORMATSTRING   substitution for unconvertible bytes\n"
 msgstr "   --byte-subst=სტრიქფორმატ   არა-გადაყვანადი ბაიტების ჩანაცვლება\n"
 
-#: src/iconv.c:161
+#: src/iconv.c:157
 #, c-format, no-wrap
 msgid ""
 "  --widechar-subst=FORMATSTRING\n"
@@ -112,32 +112,32 @@ msgstr ""
 "  --widechar-subst=სტრიქფორმატ\n"
 "                                  არაგადაყვანადი ფართო სიმბოლოების ჩანაცვლება\n"
 
-#: src/iconv.c:166
+#: src/iconv.c:162
 #, c-format, no-wrap
 msgid "Options controlling error output:\n"
 msgstr "პარამეტრები, რომლებიც აკონტროლებენ გამოტანას:\n"
 
-#: src/iconv.c:169
+#: src/iconv.c:165
 #, c-format, no-wrap
 msgid "  -s, --silent                suppress error messages about conversion problems\n"
 msgstr "  -s, --silent             გადაყვანის შეცდომები ეკრანზე გამოტანილი არ იქნება\n"
 
-#: src/iconv.c:173
+#: src/iconv.c:169
 #, c-format, no-wrap
 msgid "Informative output:\n"
 msgstr "ინფორმაცია:\n"
 
-#: src/iconv.c:176
+#: src/iconv.c:172
 #, c-format, no-wrap
 msgid "  -l, --list                  list the supported encodings\n"
 msgstr "  -l, --list                  მხარდაჭერილი კოდირებების სია\n"
 
-#: src/iconv.c:179
+#: src/iconv.c:175
 #, c-format, no-wrap
 msgid "  --help                      display this help and exit\n"
 msgstr "  --help                          ამ დახმარების გამოტანა და გამოსვლა\n"
 
-#: src/iconv.c:182
+#: src/iconv.c:178
 #, c-format, no-wrap
 msgid "  --version                   output version information and exit\n"
 msgstr "  --version                ვერსიის ჩვენება და გასვლა\n"
@@ -147,7 +147,7 @@ msgstr "  --version                ვერსიის ჩვენება �
 #. email address for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/iconv.c:190
+#: src/iconv.c:186
 #, c-format
 msgid ""
 "Report bugs in the bug tracker at <%s>\n"
@@ -157,7 +157,7 @@ msgstr ""
 "ან ელფოსტით <%s>-ზე.\n"
 
 #. TRANSLATORS: The %s placeholder is the web address of the GPL license.
-#: src/iconv.c:206
+#: src/iconv.c:202
 #, c-format, no-wrap
 msgid ""
 "License GPLv3+: GNU GPL version 3 or later <%s>\n"
@@ -169,38 +169,35 @@ msgstr ""
 "კანონით ნებადართული გარანტია არ არსებობს.\n"
 
 #. TRANSLATORS: The %s placeholder expands to an author's name.
-#: src/iconv.c:212
+#: src/iconv.c:208
 #, c-format
 msgid "Written by %s.\n"
 msgstr "ავტორი: %s.\n"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:306
+#: src/iconv.c:302
 #, c-format
-msgid ""
-"%s argument: A format directive with a variable width is not allowed here."
+msgid "%s argument: A format directive with a variable width is not allowed here."
 msgstr "%s არგუმენტი: ფორმატის დირექტივა ცვლადი სიგანით აქ დაუშვებელია."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:321
+#: src/iconv.c:317
 #, c-format
-msgid ""
-"%s argument: A format directive with a variable precision is not allowed "
-"here."
+msgid "%s argument: A format directive with a variable precision is not allowed here."
 msgstr "%s არგუმენტი: ფორმატის დირექტივა ცვლადი სიზუსტით აქ დაუშვებელია."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:337
+#: src/iconv.c:333
 #, c-format
 msgid "%s argument: A format directive with a size is not allowed here."
 msgstr "%s არგუმენტი: ზომის მქონე ფორმატის დირექტივა აქ დაუშვებელია."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:379
+#: src/iconv.c:375
 #, c-format
 msgid "%s argument: The string ends in the middle of a directive."
 msgstr "%s არგუმენტი: სტრიქონი დირექტივის შუაში მთავრდება."
@@ -208,42 +205,37 @@ msgstr "%s არგუმენტი: სტრიქონი დირექ
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #. The %c placeholder expands to an unknown format directive.
-#: src/iconv.c:386
+#: src/iconv.c:382
 #, c-format
 msgid "%s argument: The character '%c' is not a valid conversion specifier."
 msgstr "%s არგუმენტი: სიმბოლო „%c“ არ არის სწორი გადაყვანის მითითება."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
-#: src/iconv.c:392
+#: src/iconv.c:388
 #, c-format
-msgid ""
-"%s argument: The character that terminates the format directive is not a "
-"valid conversion specifier."
-msgstr ""
+msgid "%s argument: The character that terminates the format directive is not a valid conversion specifier."
+msgstr "%s არგუმენტი: სიმბოლო, რომელიც ასრულებს ფორმატის დირექტივას, არ წარმოადგენს სწორ გადაყვანის მიმთითებელს."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a command-line option.
 #. The %u placeholder expands to the number of arguments consumed by the format string.
-#: src/iconv.c:408
+#: src/iconv.c:404
 #, c-format
-msgid ""
-"%s argument: The format string consumes more than one argument: %u argument."
-msgid_plural ""
-"%s argument: The format string consumes more than one argument: %u arguments."
-msgstr[0] ""
-"%s არგუმენტი: ფორმატის სტრიქონი მოიხმარს ერთზე მეტ არგუმენტს: %u არგუმენტი."
+msgid "%s argument: The format string consumes more than one argument: %u argument."
+msgid_plural "%s argument: The format string consumes more than one argument: %u arguments."
+msgstr[0] "%s არგუმენტი: ფორმატის სტრიქონი მოიხმარს ერთზე მეტ არგუმენტს: %u არგუმენტი."
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --byte-subst.
-#: src/iconv.c:464
+#: src/iconv.c:462
 #, c-format
 msgid "cannot convert byte substitution to Unicode: %s"
 msgstr "ბაიტის ჩანაცვლების უნიკოდად გარდაქმნა შეუძლებელია: %s"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --unicode-subst.
-#: src/iconv.c:504
+#: src/iconv.c:502
 #, c-format
 msgid "cannot convert unicode substitution to target encoding: %s"
 msgstr "უნიკოდის ჩანაცვლებას მითითებულ კოდირებაზე ვერ გადაიყვანს : %s"
@@ -260,19 +252,18 @@ msgstr "ბაიტის ჩანაცვლება ფართო სტ
 #: src/iconv.c:584
 #, c-format
 msgid "cannot convert widechar substitution to target encoding: %s"
-msgstr ""
-"ფართო სიმბოლოების ჩანაცვლების გადაყვანა მითითებულ კოდირებაზე შეუძლებელია: %s"
+msgstr "ფართო სიმბოლოების ჩანაცვლების გადაყვანა მითითებულ კოდირებაზე შეუძლებელია: %s"
 
 #. TRANSLATORS: An error message.
 #. The %s placeholder expands to a piece of text, specified through --byte-subst.
-#: src/iconv.c:618
+#: src/iconv.c:625
 #, c-format
 msgid "cannot convert byte substitution to target encoding: %s"
 msgstr "ბაიტის ჩანაცვლების მითითებულ კოდირებაზე გადაყვანა შეუძლებელია: %s"
 
 #. TRANSLATORS: An error message.
 #. The placeholders expand to the input file name, a line number, and a column number.
-#: src/iconv.c:637
+#: src/iconv.c:644
 #, c-format
 msgid "%s:%u:%u: cannot convert"
 msgstr "%s:%u:%u: გადაყვანა შეუძლებელია"
@@ -281,7 +272,7 @@ msgstr "%s:%u:%u: გადაყვანა შეუძლებელია"
 #. The placeholders expand to the input file name, a line number, and a column number.
 #. A "shift sequence" is a sequence of bytes that changes the state of the converter;
 #. this concept exists only for "stateful" encodings like ISO-2022-JP.
-#: src/iconv.c:651
+#: src/iconv.c:658
 #, c-format
 msgid "%s:%u:%u: incomplete character or shift sequence"
 msgstr "%s:%u:%u: დაუსრულებელი სიმბოლო ან წანაცვლების მიმდევრობა"
@@ -289,61 +280,61 @@ msgstr "%s:%u:%u: დაუსრულებელი სიმბოლო ა
 #. TRANSLATORS: The first part of an error message.
 #. It is followed by a colon and a detail message.
 #. The placeholders expand to the input file name, a line number, and a column number.
-#: src/iconv.c:664
+#: src/iconv.c:671
 #, c-format
 msgid "%s:%u:%u"
 msgstr "%s:%u:%u"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the input file name.
-#: src/iconv.c:830
+#: src/iconv.c:832
 #, c-format
 msgid "%s: I/O error"
 msgstr "%s: I/O შეცდომა"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the encoding name, specified through --from-code.
-#: src/iconv.c:1033
+#: src/iconv.c:1030
 #, c-format
 msgid "conversion from %s unsupported"
 msgstr "%s-დან გადაყვანა მხარდაუჭერელია"
 
 #. TRANSLATORS: An error message.
 #. The placeholder expands to the encoding name, specified through --to-code.
-#: src/iconv.c:1039
+#: src/iconv.c:1036
 #, c-format
 msgid "conversion to %s unsupported"
 msgstr "%s-ში გადაყვანა მხარდაუჭერელია"
 
 #. TRANSLATORS: An error message.
 #. The placeholders expand to the encoding names, specified through --from-code and --to-code, respectively.
-#: src/iconv.c:1045
+#: src/iconv.c:1042
 #, c-format
 msgid "conversion from %s to %s unsupported"
 msgstr "%s-დან %s-ში გადაყვანა მხარდაუჭერელია"
 
 #. TRANSLATORS: Additional advice after an error message.
 #. The %s placeholder expands to the program name.
-#: src/iconv.c:1050
+#: src/iconv.c:1047
 #, c-format
 msgid "try '%s -l' to get the list of supported encodings"
 msgstr "მხარდაჭერილი კოდირების სიის მისაღებად სცადეთ '%s -l'"
 
 #. TRANSLATORS: A filename substitute denoting standard input.
-#: src/iconv.c:1113 src/iconv.c:1122
+#: src/iconv.c:1104
 msgid "(stdin)"
 msgstr "(stdin)"
 
 #. TRANSLATORS: The first part of an error message.
 #. It is followed by a colon and a detail message.
 #. The %s placeholder expands to the input file name.
-#: src/iconv.c:1132
+#: src/iconv.c:1116
 #, c-format
 msgid "%s"
 msgstr "%s"
 
 #. TRANSLATORS: An error message.
-#: src/iconv.c:1147
+#: src/iconv.c:1130
 #, c-format
 msgid "I/O error"
 msgstr "I/O შეცდომა"

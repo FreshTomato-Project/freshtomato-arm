@@ -1,5 +1,5 @@
 /* Relocating wrapper program.
-   Copyright (C) 2003, 2005-2007, 2009-2024 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2005-2007, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003.
 
    This program is free software: you can redistribute it and/or modify
@@ -148,9 +148,7 @@ static_assert (sizeof (libdirs) / sizeof (libdirs[0]) > 1);
 static void
 relocate_libdirs ()
 {
-  size_t i;
-
-  for (i = 0; i < sizeof (libdirs) / sizeof (libdirs[0]) - 1; i++)
+  for (size_t i = 0; i < sizeof (libdirs) / sizeof (libdirs[0]) - 1; i++)
     libdirs[i] = relocate (libdirs[i]);
 }
 
@@ -158,40 +156,35 @@ relocate_libdirs ()
 static void
 activate_libdirs ()
 {
-  const char *old_value;
-  size_t total;
-  size_t i;
-  char *value;
-  char *p;
-
-  old_value = getenv (LIBPATHVAR);
+  const char *old_value = getenv (LIBPATHVAR);
   if (old_value == NULL)
     old_value = "";
 
-  total = 0;
-  for (i = 0; i < sizeof (libdirs) / sizeof (libdirs[0]) - 1; i++)
+  size_t total = 0;
+  for (size_t i = 0; i < sizeof (libdirs) / sizeof (libdirs[0]) - 1; i++)
     total += strlen (libdirs[i]) + 1;
   total += strlen (old_value) + 1;
 
-  value = (char *) malloc (total);
+  char *value = (char *) malloc (total);
   if (value == NULL)
     {
       fprintf (stderr, "%s: %s\n", program_name, "memory exhausted");
       exit (1);
     }
-  p = value;
-  for (i = 0; i < sizeof (libdirs) / sizeof (libdirs[0]) - 1; i++)
-    {
-      size_t len = strlen (libdirs[i]);
-      memcpy (p, libdirs[i], len);
-      p += len;
-      *p++ = ':';
-    }
-  if (old_value[0] != '\0')
-    strcpy (p, old_value);
-  else
-    p[-1] = '\0';
-
+  {
+    char *p = value;
+    for (size_t i = 0; i < sizeof (libdirs) / sizeof (libdirs[0]) - 1; i++)
+      {
+        size_t len = strlen (libdirs[i]);
+        memcpy (p, libdirs[i], len);
+        p += len;
+        *p++ = ':';
+      }
+    if (old_value[0] != '\0')
+      strcpy (p, old_value);
+    else
+      p[-1] = '\0';
+  }
   if (setenv (LIBPATHVAR, value, 1) < 0)
     {
       fprintf (stderr, "%s: %s\n", program_name, "memory exhausted");
@@ -202,14 +195,12 @@ activate_libdirs ()
 int
 main (int argc, char *argv[])
 {
-  char *full_program_name;
-
   /* Set the program name and perform preparations for
      get_full_program_name() and relocate().  */
   set_program_name_and_installdir (argv[0], INSTALLPREFIX, INSTALLDIR);
 
   /* Get the full program path.  (Important if accessed through a symlink.)  */
-  full_program_name = get_full_program_name ();
+  char *full_program_name = get_full_program_name ();
   if (full_program_name == NULL)
     full_program_name = argv[0];
 

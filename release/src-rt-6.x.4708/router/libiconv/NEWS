@@ -1,3 +1,10 @@
+New in 1.19:
+* Fixed a bug in the GB18030 converter.
+* Special support for OS/2: Encoding names that are results of
+  kLIBC nl_langinfo(CODESET) are recognized as aliases.
+  (Contributed by KO Myung-Hun.)
+* Fixed --enable-relocatable on native Windows.
+
 New in 1.18:
 * Many more transliterations, in particular also of Emoji characters.
 * The iconv_open function is now POSIX:2024 compliant: it recognizes a

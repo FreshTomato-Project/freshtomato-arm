@@ -404,7 +404,7 @@ conflux_decide_circ_cwndrtt(const conflux_t *cfx)
   const conflux_leg_t *leg = NULL;
 
   /* Can't get here without any legs. */
-  tor_assert(!CONFLUX_NUM_LEGS(cfx));
+  tor_assert(CONFLUX_NUM_LEGS(cfx));
 
   /* Find the leg with the minimum RTT.*/
   CONFLUX_FOR_EACH_LEG_BEGIN(cfx, l) {
@@ -508,9 +508,6 @@ conflux_decide_circ_for_send(conflux_t *cfx,
       tor_assert(cfx->prev_leg);
       tor_assert(cfx->curr_leg);
 
-      uint64_t relative_seq = cfx->prev_leg->last_seq_sent -
-                              cfx->curr_leg->last_seq_sent;
-
       if (cfx->curr_leg->last_seq_sent > cfx->prev_leg->last_seq_sent) {
         /* Having incoherent sequence numbers, log warn about it but rate limit
          * it to every hour so we avoid redundent report. */
@@ -524,6 +521,9 @@ conflux_decide_circ_for_send(conflux_t *cfx,
                                    END_CIRC_REASON_TORPROTOCOL);
         return NULL;
       }
+
+      uint64_t relative_seq = cfx->prev_leg->last_seq_sent -
+                              cfx->curr_leg->last_seq_sent;
 
       /* On failure to send the SWITCH, we close everything. This means we have
        * a protocol error or the sending failed and the circuit is closed. */

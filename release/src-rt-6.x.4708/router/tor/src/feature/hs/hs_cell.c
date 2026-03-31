@@ -369,7 +369,7 @@ introduce1_encrypt_and_encode(trn_cell_introduce1_t *cell,
   /* Cleanup. */
   memwipe(&keys, 0, sizeof(keys));
   memwipe(mac, 0, sizeof(mac));
-  memwipe(encrypted, 0, sizeof(encrypted_len));
+  memwipe(encrypted, 0, encrypted_len);
   memwipe(encoded_enc_cell, 0, sizeof(encoded_enc_cell));
   tor_free(encrypted);
 }

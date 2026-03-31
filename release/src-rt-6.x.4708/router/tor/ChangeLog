@@ -1,3 +1,33 @@
+Changes in version 0.4.9.6 - 2026-03-25
+  This is a security release fixing major bugfixes that could possibly lead to
+  remote crashing relays. We strongly recommend upgrading as soon as possible.
+
+  o Major bugfix (security):
+    - Fix a stack overflow of 11 bytes on malicious CREATED2. This lead
+      to a remote crash. TROVE-2026-003. Reported-by: Anas Cherni of
+      Calif.io. Fixes bug 41231; bugfix on 0.4.9.1-alpha.
+
+  o Major bugfix (security, conflux):
+    - Fix a memory compare using the wrong length. This could lead to a
+      remote crash when using the conflux subsystem. TROVE-2026-004.
+      Fixes bug 41232; bugfix on 0.4.8.1-alpha.
+
+  o Minor bugfixes (security):
+    - Fix a series of defense in depth security issues found across the
+      codebase. Fixes bug 41228; bugfix on 0.3.5.1-alpha.
+
+  o Minor bugfixes (portability):
+    - (Hopefully) fix our polyval implementation on big-endian
+      platforms. Fixes bug 41215; bugfix on 0.4.9.3-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on March 25, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/03/25.
+
+
 Changes in version 0.4.9.5 - 2026-02-12
   This first stable release in the 0.4.9 series introduces a new
   circuit-level encryption design for better client security, as well

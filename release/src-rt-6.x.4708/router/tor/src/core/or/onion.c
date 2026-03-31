@@ -183,7 +183,9 @@ check_created_cell(const created_cell_t *cell)
       return -1;
     break;
   case CELL_CREATED2:
-    if (cell->handshake_len > MAX_CREATED_LEN)
+    /* Need to remove 2 bytes because first 2 bytes of the payload is the
+     * handshake_len value and then the payload. */
+    if (cell->handshake_len > (RELAY_PAYLOAD_SIZE_MAX - 2))
       return -1;
     break;
   }
@@ -664,8 +666,11 @@ extended_cell_format(uint8_t *command_out, uint16_t *len_out,
       *command_out = RELAY_COMMAND_EXTENDED2;
       *len_out = 2 + cell_in->created_cell.handshake_len;
       set_uint16(payload_out, htons(cell_in->created_cell.handshake_len));
-      if (cell_in->created_cell.handshake_len > MAX_CREATED_LEN)
+      /* We are about to write the handshake payload into the cell which is
+       * RELAY_PAYLOAD_SIZE_MAX minus the two bytes of the HLEN value. */
+      if (cell_in->created_cell.handshake_len > (RELAY_PAYLOAD_SIZE_MAX - 2)) {
         return -1;
+      }
       memcpy(payload_out+2, cell_in->created_cell.reply,
              cell_in->created_cell.handshake_len);
     }

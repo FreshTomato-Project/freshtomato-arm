@@ -1473,6 +1473,7 @@ int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, ch
 			  char *keyname, int class, int *validate_count);
 int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char *name,
 		       char *keyname, int class, int *validate_count);
+int cache_neg_ds(char *name, int flags, int class, time_t now, int neg_ttl);
 int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int *class,
 			  int check_unsigned, int *neganswer, int *prim_ok, int *nons, int *nsec_ttl, int *validate_count);
 int dnskey_keytag(int alg, int flags, unsigned char *key, int keylen);

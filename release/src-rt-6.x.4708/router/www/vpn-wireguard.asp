@@ -2282,7 +2282,6 @@ function init() {
 <div class="section-title">Notes</div>
 <div class="section" id="sesdiv_notes">
 	<ul>
-		<li><b>Do not change (and save)</b> the settings when wireguard <b>is running</b> - you may end up with a downed firewall or broken routing table!</li>
 		<li>For help, click the link in the upper right corner to the dedicated wiki page.</li>
 	</ul>
 </div>

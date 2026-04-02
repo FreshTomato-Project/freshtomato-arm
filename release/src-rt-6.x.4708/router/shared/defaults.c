@@ -938,6 +938,9 @@ struct nvram_tuple router_defaults[] = {
 #ifdef TCONFIG_BCMNAT
 	{ "bcmnat_disable",		"1"				, 0 },
 #endif
+#ifdef TCONFIG_BCMARM
+	{ "porthealth_cfg",		""				, 0 },
+#endif
 
 /* advanced-dhcpdns */
 	{ "dhcpd_dmdns",		"1"				, 0 },

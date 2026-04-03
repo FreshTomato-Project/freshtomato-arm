@@ -33,7 +33,7 @@ var lastjiffiestotal = 0, lastjiffiesidle = 0, lastjiffiesusage = 100;
 
 <script>
 
-//	<% nvram("wl_auth,wl_auth_mode,wl_ap_isolate,wl_bss_enabled,wl_channel,wl_closed,wl_corerev,wl_crypto,wl_hwaddr,wl_ifname,wl_key,wl_key1,wl_key2,wl_key3,wl_key4,wl_lazywds,wl_mode,wl_nband,wl_nbw_cap,wl_nctrlsb,wl_net_mode,wl_passphrase,wl_phytype,wl_radio,wl_radius_ipaddr,wl_radius_key,wl_radius_port,wl_security_mode,wl_ssid,wl_vifs,wl_wds,wl_wds_enable,wl_wep_bit,wl_wpa_gtk_rekey,wl_wpa_psk,wl_bss_maxassoc,wl_wme,lan_ifname,lan_ifnames,t_features,wl_macmode,wl_maclist");%>
+//	<% nvram("wl_auth,wl_auth_mode,wl_ap_isolate,wl_bss_enabled,wl_channel,wl_clap_hwaddr,wl_closed,wl_corerev,wl_crypto,wl_hwaddr,wl_ifname,wl_key,wl_key1,wl_key2,wl_key3,wl_key4,wl_lazywds,wl_mode,wl_nband,wl_nbw_cap,wl_nctrlsb,wl_net_mode,wl_passphrase,wl_phytype,wl_radio,wl_radius_ipaddr,wl_radius_key,wl_radius_port,wl_security_mode,wl_ssid,wl_vifs,wl_wds,wl_wds_enable,wl_wep_bit,wl_wpa_gtk_rekey,wl_wpa_psk,wl_bss_maxassoc,wl_wme,lan_ifname,lan_ifnames,wan_ifname,wan2_ifname,wan3_ifname,wan4_ifname,t_features,wl_macmode,wl_maclist");%>
 
 var cprefix = 'advanced_wlanvifs';
 var vifs_possible = [];
@@ -50,7 +50,110 @@ var wmo = {'ap':'Access Point','apwds':'Access Point + WDS','sta':'Wireless Clie
 	   };
 var macmode = {'disabled':'Disabled','deny':'Block','allow':'Permit'};
 
-var tabs = [['overview','Overview']];
+var tabs = [['overview','Overview<br>&#8203']];
+
+function getWanIndex(u) {
+	var ifname = nvram['wl'+u+'_ifname'] || ('wl'+u);
+	if (nvram.wan_ifname && nvram.wan_ifname.indexOf(ifname) !== -1) return 0;
+	if (nvram.wan2_ifname && nvram.wan2_ifname.indexOf(ifname) !== -1) return 1;
+	/* REMOVE-BEGIN */
+	if (hasMultiWan) {
+	/* REMOVE-END */
+	if (nvram.wan3_ifname && nvram.wan3_ifname.indexOf(ifname) !== -1) return 2;
+	if (nvram.wan4_ifname && nvram.wan4_ifname.indexOf(ifname) !== -1) return 3;
+	/* REMOVE-BEGIN */
+	}
+	/* REMOVE-END */
+	return 4;
+}
+
+function displayIfnameWithBand(u) {
+	var uidx = wl_ifidxx(u);
+	if (uidx >= 0) return wl_display_ifname(uidx);
+	var base = 'wl'+u;
+	var unit = (u.toString().indexOf('.') > -1) ? u.toString().split('.')[0] : u.toString();
+	var pidx = wl_uidx(unit);
+	var bandSuffix = '';
+	if (pidx >= 0) {
+		if (wl_bands[pidx].length == 1)
+			bandSuffix = (wl_bands[pidx][0] == '1') ? ' / 5 GHz' : ' / 2.4 GHz';
+		else
+			bandSuffix = (nvram['wl'+u+'_nband'] == 1) ? ' / 5 GHz' : ' / 2.4 GHz';
+	}
+	return base + bandSuffix;
+}
+
+function stripIfname(list, ifname) {
+	if (!list) return '';
+	var parts = list.split(/\s+/);
+	var kept = [];
+	for (var i = 0; i < parts.length; ++i) {
+		if (parts[i] && parts[i] != ifname) kept.push(parts[i]);
+	}
+	return kept.join(' ');
+}
+
+function setBridgeOptions(select, mode, u) {
+	if (!select) return;
+	var isSta = (mode === 'sta');
+	var target = isSta ? 'wan' : 'lan';
+	if (select.getAttribute('data-bridge-mode') === target) return;
+
+	var staOptions = [[0,'WAN0'],[1,'WAN1']];
+	/* REMOVE-BEGIN */
+	if (hasMultiWan) {
+	/* REMOVE-END */
+		staOptions.push([2,'WAN2'],[3,'WAN3']);
+	/* REMOVE-BEGIN */
+	}
+	/* REMOVE-END */
+	staOptions.push([4,'none']);
+	var options = isSta ?
+		staOptions :
+		[[0,'LAN0 (br0)'],[1,'LAN1 (br1)'],[2,'LAN2 (br2)'],[3,'LAN3 (br3)'],[4,'none']];
+
+	var currentValue = select.value;
+	while (select.options.length) select.remove(0);
+	for (var i = 0; i < options.length; ++i)
+		select.options.add(new Option(options[i][1], options[i][0]));
+	select.setAttribute('data-bridge-mode', target);
+
+	if (isSta)
+		select.value = (currentValue === '' || currentValue === '4' || typeof currentValue === 'undefined') ? getWanIndex(u) : currentValue;
+	else
+		select.value = (currentValue === '' || typeof currentValue === 'undefined') ? '4' : currentValue;
+
+	if (isSta) {
+		if (!nvram.wan_ifname || nvram.wan_ifname.length < 1)
+			select.options[0].disabled = 1;
+		if (!nvram.wan2_ifname || nvram.wan2_ifname.length < 1)
+			select.options[1].disabled = 1;
+	/* REMOVE-BEGIN */
+	if (hasMultiWan) {
+	/* REMOVE-END */
+		if (!nvram.wan3_ifname || nvram.wan3_ifname.length < 1)
+			select.options[2].disabled = 1;
+		if (!nvram.wan4_ifname || nvram.wan4_ifname.length < 1)
+			select.options[3].disabled = 1;
+	/* REMOVE-BEGIN */
+	}
+	/* REMOVE-END */
+	}
+}
+
+function updateTabLabel(u, ssid) {
+	var w = displayIfnameWithBand(u);
+	var tabName = (ssid ? ssid + '<br>' + w : w);
+	for (var i = 0; i < tabs.length; ++i) {
+		if (tabs[i][0] == u) {
+			tabs[i][1] = tabName;
+			break;
+		}
+	}
+	var tab = E(u);
+	if (tab)
+		tab.innerHTML = tabName;
+}
 
 var xob = null;
 var refresher = [];
@@ -60,6 +163,10 @@ var acphy = features('11ac');
 var ghz = [];
 var bands = [];
 var nm_loaded = [], ch_loaded = [], max_channel = [];
+var ssidHiddenStore = {};
+/* REMOVE-BEGIN */
+var hasMultiWan = ((typeof MAXWAN_NUM !== 'undefined') && (MAXWAN_NUM > 2));
+/* REMOVE-END */
 
 for (var uidx = 0; uidx < wl_ifaces.length; ++uidx) {
 	if (wl_sunit(uidx) < 0) {
@@ -113,12 +220,15 @@ wlg.populate = function() {
 				continue;
 
 			var wmode = (((vifs_defined[uidx][7]) == 'ap') && ((nvram['wl'+u+'_wds_enable']) == '1')) ? 'apwds': (vifs_defined[uidx][7]);
+			var bridgeValue = vifs_defined[uidx][11].toString();
+			if (wmode === 'sta' && (bridgeValue === '4' || bridgeValue === '' || typeof bridgeValue === 'undefined'))
+				bridgeValue = getWanIndex(vifs_defined[uidx][0]).toString();
 			this.insertData(-1, [
 				vifs_defined[uidx][0],
 				vifs_defined[uidx][4],
 				vifs_defined[uidx][8],
 				wmode,
-				vifs_defined[uidx][11].toString(),
+				bridgeValue,
 				vifs_defined[uidx][12].toString()
 			]);
 		}
@@ -154,38 +264,49 @@ REMOVE-END */
 		f[3].options[i].disabled = (f[3].options[i].value != 'ap');
 	}
 
-	if (nvram.lan_ifname.length < 1)
-		f[4].options[0].disabled = 1;
-	if (nvram.lan1_ifname.length < 1)
-		f[4].options[1].disabled = 1;
-	if (nvram.lan2_ifname.length < 1)
-		f[4].options[2].disabled = 1;
-	if (nvram.lan3_ifname.length < 1)
-		f[4].options[3].disabled = 1;
-
-	f[4].selectedIndex = 4;
+	setBridgeOptions(f[4], f[3].value, f[0].value);
+	if (f[3].value !== 'sta') {
+		if (nvram.lan_ifname.length < 1)
+			f[4].options[0].disabled = 1;
+		if (nvram.lan1_ifname.length < 1)
+			f[4].options[1].disabled = 1;
+		if (nvram.lan2_ifname.length < 1)
+			f[4].options[2].disabled = 1;
+		if (nvram.lan3_ifname.length < 1)
+			f[4].options[3].disabled = 1;
+	}
+	if (f[3].value !== 'sta')
+		f[4].selectedIndex = 4;
 	f[5].selectedIndex = 0;
 	ferror.clearAll(fields.getAll(this.newEditor));
 }
 
 wlg.dataToView = function(data) {
-	var ifname, uidx;
-	uidx = wl_ifidxx(data[0]);
-	if (uidx < 0)
-		ifname = 'wl'+data[0];
-	else
-		ifname = wl_display_ifname(uidx);
+	var ifname, bridge;
+	ifname = displayIfnameWithBand(data[0]);
+
+	if (data[3] === 'sta') {
+		var wanValue = data[4];
+		if (wanValue === '4' || wanValue === '' || typeof wanValue === 'undefined')
+			wanValue = getWanIndex(data[0]);
+		bridge = ['WAN0','WAN1','WAN2','WAN3','none'][wanValue * 1] || 'none';
+	} else {
+		bridge = ['LAN0 (br0)','LAN1 (br1)','LAN2 (br2)','LAN3 (br3)','none'][data[4] * 1] || 'none';
+	}
 
 	return ([ifname,(data[1] == 1) ? '&#x2b50' : '',
 	                 data[2] || '<small><i>(unset)<\/i><\/small>',
 	                 wmo[data[3]] || '<small><i>(unset)<\/i><\/small>',
-	                 ['LAN0 (br0)','LAN1 (br1)','LAN2 (br2)','LAN3 (br3)','none' ][data[4]],
+	                 bridge,
 	                 macmode[data[5]] || macmode[nvram['wl'+data[0].toString()+'_macmode']]
 	       ]);
 }
 
 wlg.dataToFieldValues = function (data) {
-	return ([data[0],(data[1] == '1') ? 'checked' : '',data[2],data[3],data[4],data[5]]);
+	var bridgeValue = data[4];
+	if (data[3] === 'sta' && (bridgeValue === '4' || bridgeValue === '' || typeof bridgeValue === 'undefined'))
+		bridgeValue = getWanIndex(data[0]);
+	return ([data[0],(data[1] == '1') ? 'checked' : '',data[2],data[3],bridgeValue,data[5]]);
 }
 
 wlg.fieldValuesToData = function(row) {
@@ -197,11 +318,15 @@ wlg.fieldValuesToData = function(row) {
 wlg.onDelete = function() {
 	this.removeEditor();
 	if (this.source._data[0].indexOf('.') > 0) {
-		var vif = definedVIFidx(this.source._data[0]);
+		var u = this.source._data[0];
+		var vif = definedVIFidx(u);
 		vifs_defined.splice(vif,1);
-		vifs_deleted.push(this.source._data[0]);
+		vifs_deleted.push(u);
 		elem.remove(this.source);
 		this.source = null;
+		updateTabVisibility();
+		if (cookie.get(cprefix+'_tab') == u)
+			tabSelect('overview');
 	}
 	else
 		this.showSource();
@@ -252,6 +377,7 @@ wlg.onAdd = function() {
 	]);
 
 	this.resort();
+	updateTabLabel(u, data[2]);
 	this.disableNewEditor(false);
 	this.resetNewEditor();
 
@@ -263,6 +389,7 @@ wlg.onAdd = function() {
 		}
 	}
 
+	updateTabVisibility();
 	tabSelect(u);
 	verifyFields(null, 1);
 
@@ -309,6 +436,7 @@ REMOVE-END */
 	vifs_defined[vif][7] = data[3]; /* WL mode */
 	vifs_defined[vif][11] = data[4]; /* LAN bridge */
 	vifs_defined[vif][12] = data[5]; /* Wireless Filter */
+	updateTabLabel(u, data[2]);
 /* REMOVE-BEGIN
 	alert(data.join('\n'));
 REMOVE-END */
@@ -344,14 +472,18 @@ wlg.verifyFields = function(row, quiet) {
 	var ok = 1;
 	var f = fields.getAll(row);
 
-	if (nvram.lan_ifname.length < 1)
-		f[4].options[0].disabled = 1;
-	if (nvram.lan1_ifname.length < 1)
-		f[4].options[1].disabled = 1;
-	if (nvram.lan2_ifname.length < 1)
-		f[4].options[2].disabled = 1;
-	if (nvram.lan3_ifname.length < 1)
-		f[4].options[3].disabled = 1;
+	setBridgeOptions(f[4], f[3].value, f[0].value);
+
+	if (f[3].value !== 'sta') {
+		if (nvram.lan_ifname.length < 1)
+			f[4].options[0].disabled = 1;
+		if (nvram.lan1_ifname.length < 1)
+			f[4].options[1].disabled = 1;
+		if (nvram.lan2_ifname.length < 1)
+			f[4].options[2].disabled = 1;
+		if (nvram.lan3_ifname.length < 1)
+			f[4].options[3].disabled = 1;
+	}
 
 	if (f[0].value.indexOf('.') < 0) {
 /* REMOVE-BEGIN
@@ -392,6 +524,15 @@ function definedVIFidx(vif) {
 	return -1;
 }
 
+function updateTabVisibility() {
+	for (var i = 1; i < tabs.length; ++i) {
+		var t = tabs[i][0];
+		var a = E(t);
+		if (!a) continue;
+		a.style.display = (definedVIFidx(t) >= 0) ? '' : 'none';
+	}
+}
+
 function tabSelect(name) {
 	if (wlg.isEditing())
 		return;
@@ -403,7 +544,15 @@ function tabSelect(name) {
 		E('footer-msg').style.display = 'none';
 
 	if (name == 'overview')
+	{
+		/* update tab labels from any open tab SSID edits so Overview shows current names */
+		for (var i = 1; i < tabs.length; ++i) {
+			var t = tabs[i][0];
+			var ss = E('_wl'+t+'_ssid');
+			if (ss && typeof ss.value !== 'undefined') updateTabLabel(t, ss.value);
+		}
 		wlg.populate();
+	}
 
 	elem.display('overview-tab', (name == 'overview'));
 	E('save-button').value = (name != 'overview') ? 'Overview' : 'Save';
@@ -455,7 +604,7 @@ function do_pre_submit_form(fom) {
 			var vif = definedVIFidx(u);
 			if (vif >= 0) {
 				for (var i = 0; i < elem.length ; ++i) {
-					if (elem[i].name.indexOf('wl'+u) == 0)
+					if (elem[i].name && elem[i].name.indexOf('wl'+u) == 0)
 						s += 'nvram set '+elem[i].name+'="'+elem[i].value+'"\n';
 				}
 			}
@@ -484,7 +633,7 @@ REMOVE-END */
 	for (var vidx = 0; vidx < vifs_deleted.length; ++vidx) {
 		var u = vifs_deleted[vidx];
 		for (var i = 0; i < elem.length ; ++i) {
-			if (elem[i].name.indexOf('wl'+u) == 0)
+			if (elem[i].name && elem[i].name.indexOf('wl'+u) == 0)
 				s += 'nvram unset '+elem[i].name+'\n';
 		}
 		lan_ifnames = lan_ifnames.replace('wl'+u, '');
@@ -517,6 +666,42 @@ REMOVE-END */
 		if (typeof(wl2_vifs) != 'undefined')
 			s += 'nvram set wl2_vifs="'+wl2_vifs+'"\n';
 	}
+
+	var staIface = '';
+	var staWan = 4;
+	for (var i = 0; i < vifs_defined.length; ++i) {
+		var u = vifs_defined[i][0];
+		if (typeof u == 'undefined')
+			continue;
+		var modeField = E('_f_wl'+u+'_mode');
+		var wmode = modeField ? modeField.value : vifs_defined[i][7];
+		if (wmode == 'sta') {
+			staIface = vifs_defined[i][1] || ('wl'+u);
+			/* prefer primary unit name for mapping (strip virtual subunit if present) */
+			if (staIface.indexOf('.') !== -1) staIface = staIface.split('.')[0];
+			staWan = vifs_defined[i][11];
+			break;
+		}
+	}
+	if (staIface) {
+		/* only set the specific WAN that needs the sta interface */
+		var effectiveIface = (staIface.indexOf('.') > -1) ? staIface.replace(/\.\d+$/, '') : staIface;
+		var wanPrefixes = ['wan', 'wan2', 'wan3', 'wan4'];
+		var targetIdx = (staWan * 1 >= 0 && staWan * 1 <= 3) ? staWan * 1 : -1;
+		if (targetIdx >= 0) {
+			/* strip sta iface from all WANs, then assign it to the target WAN */
+			for (var wi = 0; wi < wanPrefixes.length; ++wi) {
+				var curVal = nvram[wanPrefixes[wi]+'_ifname'];
+				if (!curVal) continue; /* skip undefined/empty - don't create new nvram entries */
+				var cleaned = stripIfname(curVal, staIface);
+				cleaned = stripIfname(cleaned, effectiveIface);
+				if (wi == targetIdx)
+					cleaned = effectiveIface;
+				if (cleaned !== curVal)
+					s += 'nvram set '+wanPrefixes[wi]+'_ifname="'+cleaned+'"\n';
+			}
+		}
+	}
 	post_pre_submit_form(s);
 }
 
@@ -529,6 +714,8 @@ function error_pre_submit_form() {
 	footermsg.innerHTML = '<tt>'+escapeText(cmdresult)+'<\/tt>';
 	footermsg.style.display = 'inline';
 
+	cmd = null;
+
 	cmdresult = '';
 }
 
@@ -538,10 +725,12 @@ function post_pre_submit_form(s) {
 
 	cmd = new XmlHttp();
 	cmd.onCompleted = function(text, xml) {
+		cmd = null;
 		form.submit(E('t_fom'), 1);
 	}
 	cmd.onError = function(x) {
 		cmdresult = 'ERROR: '+x;
+		cmd = null;
 		error_pre_submit_form();
 	}
 
@@ -618,7 +807,8 @@ function verifyFields(focused, quiet) {
 
 			_f_wl_lazywds: 1,
 			_f_wl_wds_0: 1,
-			_f_wl_macmode: 1
+			_f_wl_macmode: 1,
+			_f_wl_clap_hwaddr: 1
 			};
 		}
 		else {
@@ -662,7 +852,8 @@ REMOVE-END */
 
 			_f_wl_lazywds: 1,
 			_f_wl_wds_0: 1,
-			_f_wl_macmode: 1
+			_f_wl_macmode: 1,
+			_f_wl_clap_hwaddr: 1
 			};
 		}
 		wl_vis[vidx] = a;
@@ -674,6 +865,11 @@ REMOVE-END */
 			continue;
 
 		wmode = E('_f_wl'+u+'_mode').value;
+		E('wl'+u+'_mode_msg').style.display = (((wmode == 'sta') || (wmode == 'wet') ||
+/* BCMWL6-BEGIN */
+							(wmode == 'psta') ||
+/* BCMWL6-END */
+							0) ? 'inline' : 'none');
 
 		if (!E('_f_wl'+u+'_radio').checked) {
 			for (a in wl_vis[vidx]) {
@@ -687,15 +883,10 @@ REMOVE-END */
 			}
 		}
 
-		E('wl'+u+'_mode_msg').style.display = (((wmode == 'sta') || (wmode == 'wet') ||
-/* BCMWL6-BEGIN */
-							(wmode == 'psta') ||
-/* BCMWL6-END */
-							0) ? 'inline' : 'none');
-
 		switch (wmode) {
 			case 'apwds':
 			case 'wds':
+				wl_vis[vidx]._f_wl_clap_hwaddr = 0;
 			break;
 			case 'wet':
 /* BCMWL6-BEGIN */
@@ -703,14 +894,47 @@ REMOVE-END */
 /* BCMWL6-END */
 			case 'sta':
 				wl_vis[vidx]._f_wl_bcast = 0;
+				wl_vis[vidx]._f_wl_lazywds = 0;
+				wl_vis[vidx]._f_wl_wds_0 = 0;
+				wl_vis[vidx]._wl_net_mode = 0;
 				if (u.toString().indexOf('.') < 0) {
 					wl_vis[vidx]._wl_channel = 0;
 					wl_vis[vidx]._wl_nbw_cap = 0;
 				}
+				if (!E('_f_wl'+u+'_radio').checked) {
+					wl_vis[vidx]._f_wl_clap_hwaddr = 2;
+				}
+				else {
+					wl_vis[vidx]._f_wl_clap_hwaddr = 1;
+				}
+			break;
 			default:
 				wl_vis[vidx]._f_wl_lazywds = 0;
 				wl_vis[vidx]._f_wl_wds_0 = 0;
+				wl_vis[vidx]._f_wl_clap_hwaddr = 0;
 			break;
+		}
+
+		/* SSID scan button visibility - direct control because it's in a suffix */
+		var ssidScanBtn = E('_f_wl'+u+'_ssidscan');
+		if (ssidScanBtn) {
+			if (wmode == 'wet' || wmode == 'psta' || wmode == 'sta') {
+				ssidScanBtn.style.display = E('_f_wl'+u+'_radio').checked ? '' : 'none';
+			}
+			else {
+				ssidScanBtn.style.display = 'none';
+			}
+		}
+
+		/* Lock BSSID scan button visibility - direct control because it's in a suffix */
+		var macscanBtn = E('_f_wl'+u+'_macscan');
+		if (macscanBtn) {
+			if (wmode == 'wet' || wmode == 'psta' || wmode == 'sta') {
+				macscanBtn.style.display = E('_f_wl'+u+'_radio').checked ? '' : 'none';
+			}
+			else {
+				macscanBtn.style.display = 'none';
+			}
 		}
 
 		sm2 = E('_wl'+u+'_security_mode').value;
@@ -809,7 +1033,18 @@ REMOVE-END */
 				e.options[i].disabled = (e.options[i].value != 'ap');
 			}
 		}
-
+		var isClientMode = ((wmode == 'wet')
+	/* BCMWL6-BEGIN */
+			|| (wmode == 'psta')
+	/* BCMWL6-END */
+			|| (wmode == 'sta'));
+		var random1 = E('_f_wl'+u+'_psk_random1');
+		if (random1)
+			random1.style.display = isClientMode ? 'none' : '';
+		var random2 = E('_f_wl'+u+'_psk_random2');
+		if (random2)
+			random2.style.display = isClientMode ? 'none' : '';
+		/* mirror basic-network: map random controls visibility to PSK/radius_key so Disabled hides them */
 		wl_vis[vidx]._f_wl_psk_random1 = wl_vis[vidx]._wl_wpa_psk;
 		wl_vis[vidx]._f_wl_psk_random2 = wl_vis[vidx]._wl_radius_key;
 		wl_vis[vidx]._wl_radius_port = wl_vis[vidx]._wl_radius_ipaddr;
@@ -835,6 +1070,65 @@ REMOVE-END */
 			c = wl_vis[vidx][a];
 			b.disabled = (c != 1);
 			PR(b).style.display = (c ? 'table-row' : 'none');
+		}
+
+		/* Handle Broadcast SSID disabled: show '< hidden >' and grey out SSID field */
+		var broadcastEnabled = E('_f_wl'+u+'_bcast').checked;
+		if (!broadcastEnabled)
+			wl_vis[vidx]._wl_ssid = 2;
+		else if (wl_vis[vidx]._wl_ssid != 2)
+			wl_vis[vidx]._wl_ssid = 1;
+		var ssidElement = document.getElementsByName('wl'+u+'_ssid')[0];
+		if (ssidElement && !broadcastEnabled && ssidElement.tagName.toLowerCase() == 'select') {
+			ssidElement.outerHTML = '<input type="text" name="'+ssidElement.name+'" id="_wl'+u+'_ssid">';
+			ssidElement = document.getElementsByName('wl'+u+'_ssid')[0];
+		}
+		if (ssidElement) {
+			if (!broadcastEnabled) {
+				if (typeof ssidHiddenStore[u] === 'undefined')
+					ssidHiddenStore[u] = ssidElement.value;
+				ssidElement.value = ' < hidden >';
+				ssidElement.disabled = true;
+			}
+			else {
+				if (typeof ssidHiddenStore[u] !== 'undefined') {
+					ssidElement.value = ssidHiddenStore[u];
+					delete ssidHiddenStore[u];
+				}
+				ssidElement.disabled = false;
+			}
+		}
+	}
+
+	var clientModes = { 'sta': 1, 'wet': 1, 'psta': 1 };
+	for (var vidx = 0; vidx < vifs_possible.length; ++vidx) {
+		var u = vifs_possible[vidx][0];
+		if (definedVIFidx(u) < 0)
+			continue;
+		if (u.toString().indexOf('.') < 0)
+			continue;
+		var modeSelect = E('_f_wl'+u+'_mode');
+		if (!modeSelect)
+			continue;
+
+		var otherClient = false;
+		for (var other = 0; other < vifs_possible.length; ++other) {
+			var v = vifs_possible[other][0];
+			if (v == u)
+				continue;
+			if (definedVIFidx(v) < 0)
+				continue;
+			var otherMode = E('_f_wl'+v+'_mode').value;
+			if (clientModes[otherMode]) {
+				otherClient = true;
+				break;
+			}
+		}
+
+		for (var opt = 0; opt < modeSelect.options.length; ++opt) {
+			var option = modeSelect.options[opt];
+			if (clientModes[option.value])
+				option.disabled = otherClient;
 		}
 	}
 
@@ -989,6 +1283,22 @@ REMOVE-END */
 			}
 		}
 
+		/* RTNPLUS-BEGIN */
+		/* check MAC addr for wl client modes (sta/psta/wet) - try to connect to this AP */
+		a = E('_f_wl'+u+'_clap_hwaddr');
+		if (a) ferror.clear(a);
+		if (a && wl_vis[vidx]._f_wl_clap_hwaddr) {
+			if (a.value.length > 16) {
+				if (!v_mac(a, quiet || !ok))
+					ok = 0;
+			}
+			else if ((a.value.length > 0) && (a.value.length <= 16)) {
+				ferror.set(a, 'Invalid MAC address length', quiet || !ok);
+				ok = 0;
+			}
+		}
+		/* RTNPLUS-END */
+
 		ferror.clear('_f_wl'+u+'_macmode');
 		a = E('_f_wl'+u+'_macmode').value;
 		if (a != 'disabled' && a != 'deny' && a != 'allow') {
@@ -1053,14 +1363,21 @@ function save() {
 		u = vifs_possible[vidx][0].toString(); /* WL unit (primary) or unit.subunit (virtual) */
 		vif = definedVIFidx(u);
 
-		if (u == 0)
-			fom.wl_macmode.value = E('_f_wl'+u+'_macmode').value; /* rewrite for backward compatibility */
+		if (u == 0) {
+			var el = E('_f_wl'+u+'_macmode');
+			if (el) fom.wl_macmode.value = el.value; /* rewrite for backward compatibility */
+		}
 
-		if (vif < 0)
-			E('_wl'+u+'_macmode').name = '_f_wl'+u+'_macmode_'; /* use fake input name to delete */
+		if (vif < 0) {
+			var el = E('_wl'+u+'_macmode');
+			if (el) el.name = '_f_wl'+u+'_macmode_'; /* use fake input name to delete */
+		}
 		else {
-			E('_wl'+u+'_macmode').value = E('_f_wl'+u+'_macmode').value;
-			E('_wl'+u+'_maclist').value = nvram['wl_maclist'].toString(); /* copy base maclist to 'u' interface */
+			var el1 = E('_wl'+u+'_macmode');
+			var el2 = E('_f_wl'+u+'_macmode');
+			if (el1 && el2) el1.value = el2.value;
+			var el3 = E('_wl'+u+'_maclist');
+			if (el3) el3.value = nvram['wl_maclist'].toString(); /* copy base maclist to 'u' interface */
 		}
 /* REMOVE-BEGIN
 // AB TODO: try to play this safer - save some vital info on primary BSS (just in case?)
@@ -1071,13 +1388,19 @@ REMOVE-END */
 			b = 'wl'+u+'_';
 			for (i = 0; i < a.length; ++i) {
 				c = ''+b+a[i][0];
-				if (typeof(nvram[c]) != 'undefined')
-					E('_'+c).value = a[i][1];
+				if (typeof(nvram[c]) != 'undefined') {
+					var el = E('_'+c);
+					if (el) el.value = a[i][1];
+				}
 			}
 			continue;
 		}
 
-		if (vifs_defined[vif][11]*1 != 4) {
+		var modeForBridge = vifs_defined[vif][7];
+		var modeField = E('_f_wl'+u+'_mode');
+		if (modeField)
+			modeForBridge = modeField.value;
+		if (modeForBridge !== 'sta' && vifs_defined[vif][11]*1 != 4) {
 			var x = (vifs_defined[vif][11] == '0') ? '' : vifs_defined[vif][11].toString();
 			fom['lan'+x+'_ifnames'].value += ' '+vifs_defined[vif][1];
 			fom['lan'+x+'_ifnames'].value = fom['lan'+x+'_ifnames'].value.trim();
@@ -1101,9 +1424,14 @@ REMOVE-END */
 		else
 			E('_wl'+u+'_ifname').value = nvram['wl'+u+'_ifname'] || 'wl'+u;
 
-		wmode = E('_f_wl'+u+'_mode').value;
-		sm2 = E('_wl'+u+'_security_mode').value;
-		wradio = E('_f_wl'+u+'_radio').checked;
+		var el_mode = E('_f_wl'+u+'_mode');
+		var el_sec = E('_wl'+u+'_security_mode');
+		var el_radio = E('_f_wl'+u+'_radio');
+		if (!el_mode || !el_sec || !el_radio) continue;
+		
+		wmode = el_mode.value;
+		sm2 = el_sec.value;
+		wradio = el_radio.checked;
 
 		if (wmode == 'apwds')
 			E('_wl'+u+'_mode').value = 'ap';
@@ -1231,6 +1559,14 @@ REMOVE-END */
 
 		E('_wl'+u+'_closed').value = E('_f_wl'+u+'_bcast').checked ? 0 : 1;
 
+		/* Save clap_hwaddr for client modes */
+		if ((wmode == 'sta') || (wmode == 'wet') || (wmode == 'psta')) {
+			E('_wl'+u+'_clap_hwaddr').value = E('_f_wl'+u+'_clap_hwaddr').value;
+		}
+		else {
+			E('_wl'+u+'_clap_hwaddr').value = ''; /* clean up! */
+		}
+
 		a = fields.radio.selected(fom['f_wl'+u+'_wepidx']);
 /* REMOVE-BEGIN
 		if (a) E('_wl'+u+'_key').value = a.value;
@@ -1325,9 +1661,26 @@ function earlyInit() {
 			var s = (i == 0) ? '' : '.'+i.toString();
 			var t = u+s;
 			var v = wl_ifidxx(t);
-			var w = (v < 0 ? 'wl'+t : wl_display_ifname(v));
+			var w;
+			if (v < 0) {
+				/* virtual name not present in wl_ifaces - build base name and append band */
+				var base = 'wl'+t;
+				var pidx = wl_uidx(u);
+				var bandSuffix = '';
+				if (pidx >= 0) {
+					if (wl_bands[pidx].length == 1)
+						bandSuffix = (wl_bands[pidx][0] == '1') ? ' / 5 GHz' : ' / 2.4 GHz';
+					else
+						bandSuffix = (nvram['wl'+u+'_nband'] == 1) ? ' / 5 GHz' : ' / 2.4 GHz';
+				}
+				w = base + bandSuffix;
+			}
+			else
+				w = wl_display_ifname(v);
+			var ssid = nvram['wl'+t+'_ssid'] || '';
+			var tabName = (ssid ? ssid + '<br>' + w : w);
 			vifs_possible.push([t, w]);
-			tabs.push([t, w]);
+			tabs.push([t, tabName]);
 		}
 	}
 
@@ -1349,7 +1702,11 @@ function init() {
 		return;
 	}
 
-	tabSelect(cookie.get(cprefix+'_tab') || tabs[0][0]);
+	updateTabVisibility();
+	var desiredTab = cookie.get(cprefix+'_tab') || tabs[0][0];
+	if (desiredTab != 'overview' && definedVIFidx(desiredTab) < 0)
+		desiredTab = 'overview';
+	tabSelect(desiredTab);
 
 	var c;
 
@@ -1485,6 +1842,7 @@ function init() {
 				W('<input type="hidden" id="_wl'+u+'_ifname" name="wl'+u+'_ifname">');
 				W('<input type="hidden" id="_wl'+u+'_macmode" name="wl'+u+'_macmode">');
 				W('<input type="hidden" id="_wl'+u+'_maclist" name="wl'+u+'_maclist">');
+				W('<input type="hidden" id="_wl'+u+'_clap_hwaddr" name="wl'+u+'_clap_hwaddr">');
 
 /* only if primary VIF */
 				if (u.toString().indexOf('.') < 0) {
@@ -1507,17 +1865,17 @@ function init() {
 /* common to all VIFs */
 				var f = [];
 				f.push (
-					{ title: 'Enable Interface', name: 'f_wl'+u+'_radio', type: 'checkbox', value: (nvram['wl'+u+'_radio'] == '1' && nvram['wl'+u+'_net_mode'] != 'disabled') },
+					{ title: 'Enable', name: 'f_wl'+u+'_radio', type: 'checkbox', value: (nvram['wl'+u+'_radio'] == '1' && nvram['wl'+u+'_net_mode'] != 'disabled') },
 					{ title: 'AP Isolation', name: 'f_wl'+u+'_ap_isolate', type: 'checkbox', value: nvram['wl'+u+'_ap_isolate'] == '1' },
 					{ title: 'MAC Address', text: '<a href="advanced-mac.asp">'+(nvram['wl'+u+'_hwaddr'] || mac_null)+'<\/a>'+' &nbsp; <b id="wl'+u+'_hwaddr_msg" style="display:none"><small>(warning: WL driver reports BSSID <a href="advanced-mac.asp">'+((typeof(wl_ifaces[wl_ifidxx(u)]) != 'undefined') ? wl_ifaces[wl_ifidxx(u)][9] : '')+'<\/a>)<\/small><\/b>' },
-					{ title: 'Wireless Mode', name: 'f_wl'+u+'_mode', type: 'select', options: wl_modes_available, value: (nvram['wl'+u+'_mode'] == 'ap' && nvram['wl'+u+'_wds_enable'] == '1') ? 'apwds' : nvram['wl'+u+'_mode'], suffix: ' &nbsp; <b id="wl'+u+'_mode_msg" style="display:none"><small>(note: you might wish to cross-check settings later on <a href="basic-network.asp">Basic/Network<\/a>)<\/small><\/b>' }
+					{ title: 'Wireless Mode', name: 'f_wl'+u+'_mode', type: 'select', options: wl_modes_available, value: (nvram['wl'+u+'_mode'] == 'ap' && nvram['wl'+u+'_wds_enable'] == '1') ? 'apwds' : nvram['wl'+u+'_mode'], suffix:  ' <span id="wl'+u+'_mode_msg" style="display:none"><small> Cross check settings on <a href="basic-network.asp">Basic/Network<\/a><\/small><\/span>' }
 				);
 
 /* only if primary VIF */
 				if (u.toString().indexOf('.') < 0) {
 					f.push (
-						{ title: 'Radio Band', name: 'f_wl'+u+'_nband', type: 'select', options: bands[uidx], value: (nvram['wl'+u+'_nband'] || '0' == '0') ? bands[uidx][0][0] : nvram['wl'+u+'_nband'] },
-						{ title: 'Wireless Network Mode', name: 'wl'+u+'_net_mode', type: 'select', value: (nvram['wl'+u+'_net_mode'] == 'disabled') ? 'mixed' : nvram['wl'+u+'_net_mode'], options: [], prefix: '<span id="__wl'+u+'_net_mode">', suffix: '<\/span>' }
+						{ title: 'Radio Band', indent: 2, name: 'f_wl'+u+'_nband', type: 'select', options: bands[uidx], value: (nvram['wl'+u+'_nband'] || '0' == '0') ? bands[uidx][0][0] : nvram['wl'+u+'_nband'] },
+						{ title: 'Wireless Network Mode', indent: 2, name: 'wl'+u+'_net_mode', type: 'select', value: (nvram['wl'+u+'_net_mode'] == 'disabled') ? 'mixed' : nvram['wl'+u+'_net_mode'], options: [], prefix: '<span id="__wl'+u+'_net_mode">', suffix: '<\/span>' }
 					);
 				}
 
@@ -1525,16 +1883,19 @@ function init() {
 					nvram['wl'+u+'_closed'] = '0';
 
 				f.push (
-					{ title: 'SSID', name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: nvram['wl'+u+'_ssid'] },
-					{ title: 'Broadcast', indent: 2, name: 'f_wl'+u+'_bcast', type: 'checkbox', value: nvram['wl'+u+'_closed'] == '0' }
+					{ title: 'Broadcast SSID', indent: 2, name: 'f_wl'+u+'_bcast', type: 'checkbox', value: nvram['wl'+u+'_closed'] == '0' },
+					{ title: 'SSID', indent: 2, name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: nvram['wl'+u+'_ssid'], placeholder: ' < case sensitive >', prefix: '<span id="__wl'+u+'_ssid">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_ssidscan" value="Scan" onclick="scanButton('+u+', \'ssid\')" style="width:auto"> <img src="spin.svg" alt="" id="spinSsid'+u+'" style="display:none;"> <select id="ssidList'+u+'" style="display:none" onchange="selectSsid(this, '+u+')"><\/select>', onchange: 'clearBssidIfPresent('+u+')' },
+/* RTNPLUS-BEGIN */
+					{ title: 'BSSID lock', indent: 2, name: 'f_wl'+u+'_clap_hwaddr', type: 'text', placeholder: ' < optional >', maxlen: 17, size: 20, value: nvram['wl'+u+'_clap_hwaddr'], suffix: ' <input type="button" id="_f_wl'+u+'_macscan" value="Scan" title="Predefined SSID only" onclick="scanBSSID('+u+')" style="display:none"> <img src="spin.svg" alt="" id="spinMac'+u+'" style="display:none;"> <small> Defined SSID only<\/small>' }
+/* RTNPLUS-END */
 				);
 
 /* only if primary VIF */
 				if (u.toString().indexOf('.') < 0) {
 					f.push (
-						{ title: 'Channel', name: 'wl'+u+'_channel', type: 'select', options: ghz[uidx], prefix: '<span id="__wl'+u+'_channel">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_scan" value="Scan" onclick="scanButton('+u+')"> <img src="spin.svg" alt="" id="spin'+u+'">', value: nvram['wl'+u+'_channel'] },
-						{ title: 'Channel Width', name: 'wl'+u+'_nbw_cap', type: 'select', options: [], value: nvram['wl'+u+'_nbw_cap'], prefix: '<span id="__wl'+u+'_nbw_cap">', suffix: '<\/span>' },
-						{ title: 'Control Sideband', name: 'f_wl'+u+'_nctrlsb', type: 'select', options: [['lower','Lower'],['upper','Upper']], value: (nvram['wl'+u+'_nctrlsb'] == 'none') ? 'lower' : nvram['wl'+u+'_nctrlsb'] }
+						{ title: 'Channel', indent: 2, name: 'wl'+u+'_channel', type: 'select', options: ghz[uidx], prefix: '<span id="__wl'+u+'_channel">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_scan" value="Scan" onclick="scanButton('+u+')"> <img src="spin.svg" alt="" id="spin'+u+'">', value: nvram['wl'+u+'_channel'] },
+						{ title: 'Channel Width', indent: 2, name: 'wl'+u+'_nbw_cap', type: 'select', options: [], value: nvram['wl'+u+'_nbw_cap'], prefix: '<span id="__wl'+u+'_nbw_cap">', suffix: '<\/span>' },
+						{ title: 'Control Sideband', indent: 2, name: 'f_wl'+u+'_nctrlsb', type: 'select', options: [['lower','Lower'],['upper','Upper']], value: (nvram['wl'+u+'_nctrlsb'] == 'none') ? 'lower' : nvram['wl'+u+'_nctrlsb'] }
 					);
 				}
 
@@ -1545,11 +1906,11 @@ function init() {
 					null,
 					{ title: '<a href="basic-wfilter.asp" class="new_window">Wireless Filter<\/a>', name: 'f_wl'+u+'_macmode', type: 'select', options: [['disabled','Disable filter on that interface'],['deny','Block clients from the list on that interface'],['allow','Permit only clients from the list on that interface']], value: nvram['wl'+u+'_macmode'] },
 					null,
-					{ title: 'Security', name: 'wl'+u+'_security_mode', type: 'select', options: [['disabled','Disabled'],['wep','WEP'],['wpa_personal','WPA Personal'],['wpa_enterprise','WPA Enterprise'],['wpa2_personal','WPA2 Personal'],['wpa2_enterprise','WPA2 Enterprise'],['wpaX_personal','WPA / WPA2 Personal'],['wpaX_enterprise','WPA / WPA2 Enterprise'],['radius','Radius']], value: nvram['wl'+u+'_security_mode'] },
+					{ title: 'Security', name: 'wl'+u+'_security_mode', type: 'select', options: [['disabled','Disabled'],['wep','WEP'],['wpa_personal','WPA Personal'],['wpa_enterprise','WPA Enterprise'],['wpa2_personal','WPA2 Personal'],['wpa2_enterprise','WPA2 Enterprise'],['wpaX_personal','WPA / WPA2 Personal'],['wpaX_enterprise','WPA / WPA2 Enterprise'],['radius','Radius']], value: nvram['wl'+u+'_security_mode'], onchange: 'verifyFields(null,1)' },
 					{ title: 'Encryption', indent: 2, name: 'wl'+u+'_crypto', type: 'select', options: [['tkip','TKIP'],['aes','AES'],['tkip+aes','TKIP / AES']], value: nvram['wl'+u+'_crypto'] },
-					{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_wpa_psk', type: 'password', maxlen: 64, size: 66, peekaboo: 1,
-						suffix: ' <input type="button" id="_f_wl'+u+'_psk_random1" value="Random" onclick="random_psk(\'_wl'+u+'_wpa_psk\')">', value: nvram['wl'+u+'_wpa_psk'] },
-					{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_radius_key', type: 'password', maxlen: 80, size: 32, peekaboo: 1, suffix: ' <input type="button" id="_f_wl'+u+'_psk_random2" value="Random" onclick="random_psk(\'_wl'+u+'_radius_key\')">', value: nvram['wl'+u+'_radius_key'] },
+					{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_wpa_psk', type: 'password', maxlen: 63, size: 34, peekaboo: 1, placeholder: ' < case sensitive >',
+						suffix: ' <select id="_f_wl'+u+'_psk_random1" onchange="random_psk(\'_wl'+u+'_wpa_psk\', \'_f_wl'+u+'_psk_random1\')" style="width:auto"><option value="default" style="color:grey" selected>Random</option><option value="clear">Clear</option><option value="8">8 chars</option><option value="10">10 chars</option><option value="12">12 chars</option><option value="14">14 chars</option><option value="16">16 chars</option><option value="18">18 chars</option><option value="24">24 chars</option><option value="32">32 chars</option><option value="48">48 chars</option><option value="63">63 chars</option></select>', value: nvram['wl'+u+'_wpa_psk'] },
+					{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_radius_key', type: 'password', maxlen: 80, size: 32, peekaboo: 1, placeholder: ' < case sensitive >', suffix: ' <select id="_f_wl'+u+'_psk_random2" onchange="random_psk(\'_wl'+u+'_radius_key\', \'_f_wl'+u+'_psk_random2\')" style="width:auto"><option value="default" style="color:grey" selected>Random</option><option value="clear">Clear</option><option value="8">8 chars</option><option value="10">10 chars</option><option value="12">12 chars</option><option value="16">16 chars</option><option value="24">24 chars</option><option value="32">32 chars</option><option value="48">48 chars</option><option value="63">63 chars</option></select>', value: nvram['wl'+u+'_radius_key'] },
 					{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey', type: 'text', maxlen: 7, size: 9, suffix: '&nbsp; <small>seconds<\/small>', value: (nvram['wl'+u+'_wpa_gtk_rekey'] || '3600') },
 					{ title: 'Radius Server', indent: 2, multi: [
 						{ name: 'wl'+u+'_radius_ipaddr', type: 'text', maxlen: 15, size: 17, value: nvram['wl'+u+'_radius_ipaddr'] },
@@ -1566,7 +1927,7 @@ function init() {
 						{ title: ('Key '+j), indent: 2, name: ('wl'+u+'_key'+j), type: 'text', maxlen: 26, size: 34, suffix: '&nbsp;<input type="radio" onchange="verifyFields(this,1)" onclick="verifyFields(this,1)" name="f_wl'+u+'_wepidx" id="_f_wl'+u+'_wepidx_'+j+'" value="'+j+'"'+((nvram['wl'+u+'_key'] == j) ? ' checked>' : '>'), value: nvram['wl'+u+'_key'+j] });
 				}
 
-				f.push(null, { title: 'WDS', name: 'f_wl'+u+'_lazywds', type: 'select', options: [['0','Link With...'],['1','Automatic']], value: nvram['wl'+u+'_lazywds'] } );
+				f.push(null, { title: 'WDS peering policy', name: 'f_wl'+u+'_lazywds', type: 'select', options: [['0','Restricted'],['1','Open']], value: nvram['wl'+u+'_lazywds'], onchange: 'verifyFields(null,1)' } );
 
 				var wds = nvram['wl'+u+'_wds'];
 				if (typeof(wds) == 'undefined')

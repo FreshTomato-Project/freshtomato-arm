@@ -1,3 +1,30 @@
+function getElementSize(el) {
+	if (!el) return { width: '', minWidth: '' };
+	var computed = window.getComputedStyle ? window.getComputedStyle(el) : el.style;
+	var width = (computed.width && computed.width !== 'auto') ? computed.width : (el.offsetWidth ? el.offsetWidth + 'px' : el.style.width || '');
+	var minWidth = (computed.minWidth && computed.minWidth !== 'auto') ? computed.minWidth : (el.style.minWidth || width);
+	if (!minWidth || minWidth === '0px') minWidth = width;
+	if (!width) width = el.style.width || 'auto';
+	if (!minWidth) minWidth = width;
+	return { width: width, minWidth: minWidth };
+}
+
+function storeElementSize(el) {
+	var size = getElementSize(el);
+	if (size.width) el.dataset.originalWidth = size.width;
+	if (size.minWidth) el.dataset.originalMinWidth = size.minWidth;
+	return size;
+}
+
+function applyElementSize(el, width, minWidth) {
+	var w = width || el.dataset.originalWidth;
+	var m = minWidth || el.dataset.originalMinWidth || w;
+	if (w) el.style.width = w;
+	if (m) el.style.minWidth = m;
+	if (w) el.dataset.originalWidth = w;
+	if (m) el.dataset.originalMinWidth = m;
+}
+
 function selectedBand(uidx) {
 	if (bands[uidx].length > 1) {
 		var u = wl_fface(uidx);
@@ -82,7 +109,7 @@ function refreshBandWidth(uidx) {
 
 function refreshChannels(uidx) {
 	if (refresher[uidx] != null) return;
-	if (u >= wl_ifaces.length) return;
+	if (uidx >= wl_ifaces.length) return;
 	var u = wl_unit(uidx);
 
 	refresher[uidx] = new XmlHttp();
@@ -225,31 +252,322 @@ function scan() {
 	xob.post('update.cgi', 'exec=wlscan&arg0='+unit);
 }
 
-function spin(x, unit) {
+function spin(x, unit, type) {
 	for (var u = 0; u < wl_ifaces.length; ++u) {
-		E('_f_wl'+wl_unit(u)+'_scan').disabled = x;
+		if (type === 'ssid') {
+			E('_f_wl'+wl_unit(u)+'_ssidscan').disabled = x;
+		} else {
+			E('_f_wl'+wl_unit(u)+'_scan').disabled = x;
+		}
 	}
-	var e = E('_f_wl'+unit+'_scan');
+	var e = type === 'ssid' ? E('_f_wl'+unit+'_ssidscan') : E('_f_wl'+unit+'_scan');
 
 	if (x)
 		e.value = 'Scan ' + (wscan.tries + 1);
 	else
 		e.value = 'Scan';
 
-	E('spin'+unit).style.display = (x ? 'inline' : 'none');
+	E(type === 'ssid' ? 'spinSsid'+unit : 'spin'+unit).style.display = (x ? 'inline' : 'none');
 }
 
-function scanButton(u) {
+function scanButton(u, type) {
 	if (xob) return;
 
 	wscan = {
 		unit: u,
 		seen: [],
 		inuse: [],
-		tries: 0
+		tries: 0,
+		scanned: false
 	};
 
-	scan();
+	if (type === 'ssid') {
+		scanSSID();
+	} else {
+		scan();
+	}
+}
+
+function scanSSID() {
+	var unit = wscan.unit;
+	var ssidInput = document.getElementsByName('wl' + unit + '_ssid')[0];
+	var spinElement = document.getElementById('spinSsid' + unit);
+
+	var size = storeElementSize(ssidInput);
+	var widthValue = size.width || 'auto';
+	var minWidthValue = size.minWidth || widthValue;
+	ssidInput.outerHTML = '<select name="wl' + unit + '_ssid" id="ssidList' + unit + '" style="width: ' + widthValue + '; min-width: ' + minWidthValue + ';" onchange="selectSsid(this, ' + unit + ')" data-original-width="' + widthValue + '" data-original-min-width="' + minWidthValue + '"><\/select>';
+	var list = document.getElementById('ssidList' + unit);
+	if (list) {
+		list.dataset.originalWidth = widthValue;
+		list.dataset.originalMinWidth = minWidthValue;
+		applyElementSize(list, widthValue, minWidthValue);
+	}
+
+	spinElement.style.display = 'inline';
+
+	xob = new XmlHttp();
+	xob.onCompleted = function(text, xml) {
+		try {
+			spinElement.style.display = 'none';
+			list.style.display = '';
+
+			var option = document.createElement('option');
+			option.value = '';
+			option.text = '❮❮ Scan result ❯❯';
+			option.disabled = true;
+			option.style.color = 'grey';
+			option.selected = true;
+			list.appendChild(option);
+
+			wlscandata = [];
+			eval(text);
+			var seenSSIDs = {};
+			wlscandata.forEach(function(data) {
+				var ssid = data[1];
+				var quality = data[5];
+				if (ssid.trim() !== '' && !seenSSIDs[ssid]) {
+					var option = document.createElement('option');
+					option.value = ssid;
+					option.text = ssid + ' 🛜 ' + quality + '%';
+					list.appendChild(option);
+					seenSSIDs[ssid] = true;
+				}
+			});
+
+			var typeManuallyOption = document.createElement('option');
+			typeManuallyOption.value = 'manual';
+			typeManuallyOption.text = '❯❯ Switch to manual input ❮❮';
+			list.appendChild(typeManuallyOption);
+
+			wscan.scanned = true;
+		} catch (x) {
+			console.error(x);
+		}
+		xob = null;
+		spin(0, unit, 'ssid');
+	};
+	xob.onError = function(x) {
+		alert('error: ' + x);
+		spinElement.style.display = 'none';
+		xob = null;
+		spin(0, unit, 'ssid');
+	};
+	spin(1, unit, 'ssid');
+	xob.post('update.cgi', 'exec=wlscan&arg0=' + unit);
+}
+
+function selectSsid(select, u) {
+	var ssidInput = document.createElement('input');
+	ssidInput.type = 'text';
+	ssidInput.name = 'wl' + u + '_ssid';
+	ssidInput.id = '_wl' + u + '_ssid';
+
+	var widthInfo = {
+		width: select.dataset.originalWidth || select.style.width,
+		minWidth: select.dataset.originalMinWidth || select.style.minWidth
+	};
+	applyElementSize(ssidInput, widthInfo.width, widthInfo.minWidth);
+	ssidInput.style.visibility = 'hidden';
+	var parent = select.parentNode;
+	parent.insertBefore(ssidInput, select);
+	parent.removeChild(select);
+	ssidInput.style.visibility = '';
+
+	if (select.value === 'manual') {
+		// already swapped above
+	} else {
+		ssidInput.value = select.options[select.selectedIndex].value.trim();
+	}
+	clearBssidIfPresent(u);
+	verifyFields(ssidInput, 1);
+}
+
+function scanBSSID(unit, targetId, listId, spinnerId, buttonId, filterMode) {
+	if (xob) return;
+
+	var applySsidFilter = (filterMode !== 0) && (filterMode !== '0');
+
+	var tid = targetId || ('_f_wl' + unit + '_clap_hwaddr');
+	var lid = listId || ('macList' + unit);
+	var sid = spinnerId || ('spinMac' + unit);
+	var bid = buttonId || ('_f_wl' + unit + '_macscan');
+
+	var macInput = E(tid) || document.getElementsByName('f_wl' + unit + '_clap_hwaddr')[0];
+	if (!macInput) return;
+
+	var spinElement = E(sid);
+	var scanButton = E(bid);
+	if (scanButton) scanButton.disabled = 1;
+	if (spinElement) spinElement.style.display = 'inline';
+
+	var size = storeElementSize(macInput);
+	var widthValue = size.width || 'auto';
+	var minWidthValue = size.minWidth || widthValue;
+	macInput.dataset.originalWidth = widthValue;
+	macInput.dataset.originalMinWidth = minWidthValue;
+	var styleW = 'width: ' + widthValue + '; min-width: ' + minWidthValue + ';';
+	macInput.outerHTML = "<select name=\"" + macInput.name + "\" id=\"" + lid + "\" style=\"" + styleW + "\" data-original-width=\"" + widthValue + "\" data-original-min-width=\"" + minWidthValue + "\" onchange=\"selectBSSID(this, " + unit + ", '" + tid + "')\"></select>";
+	var list = document.getElementById(lid);
+	if (!list) {
+		if (spinElement) spinElement.style.display = 'none';
+		if (scanButton) scanButton.disabled = 0;
+		return;
+	}
+
+	list.dataset.originalWidth = widthValue;
+	list.dataset.originalMinWidth = minWidthValue;
+	applyElementSize(list, widthValue, minWidthValue);
+
+	while (list.firstChild) list.removeChild(list.firstChild);
+
+	xob = new XmlHttp();
+	xob.onCompleted = function(text, xml) {
+		try {
+			if (spinElement) spinElement.style.display = 'none';
+			if (scanButton) scanButton.disabled = 0;
+
+			while (list.firstChild) list.removeChild(list.firstChild);
+			var header = document.createElement('option');
+			header.value = '';
+			header.text = '❮❮ Scan result ❯❯';
+			header.disabled = true;
+			header.style.color = 'grey';
+			header.selected = true;
+			list.appendChild(header);
+
+			function _ssidLabel(s) {
+				s = (s || '').toString().trim();
+				return (s === '') ? '[ hidden ]' : s;
+			}
+
+			wlscandata = [];
+			eval(text);
+
+			var ssidEl = document.getElementsByName('wl' + unit + '_ssid')[0];
+			var filterSsid = ssidEl ? ((ssidEl.value || '').toString().trim()) : '';
+			var seen = {};
+			wlscandata.forEach(function(data) {
+				var mac = (data[0] || '').toString().trim();
+				var ssid = (data[1] || '').toString().trim();
+				var quality = (data[5] * 1);
+
+				if (mac === '' || seen[mac]) return;
+
+				if (applySsidFilter && filterSsid !== '') {
+					if (ssid !== filterSsid) return;
+				}
+
+				seen[mac] = true;
+				var o = document.createElement('option');
+				o.value = mac;
+				o.text = _ssidLabel(ssid) + ' - ' + mac + ' - ' + ' 🛜 ' + quality + '%';
+				list.appendChild(o);
+			});
+		} catch (x) {
+			console.error(x);
+		}
+
+		try {
+			if (!list.firstChild) {
+				var header = document.createElement('option');
+				header.value = '';
+				header.text = '❮❮ Scan result ❯❯';
+				header.disabled = true;
+				header.style.color = 'grey';
+				header.selected = true;
+				list.appendChild(header);
+			}
+			var typeManuallyOption = document.createElement('option');
+			typeManuallyOption.value = 'manual';
+			typeManuallyOption.text = '❯❯ Switch to manual input ❮❮';
+			list.appendChild(typeManuallyOption);
+		} catch (x2) {
+		}
+
+		list.style.display = '';
+
+		xob = null;
+	};
+	xob.onError = function(x) {
+		alert('error: ' + x);
+		try {
+			while (list.firstChild) list.removeChild(list.firstChild);
+			var header = document.createElement('option');
+			header.value = '';
+			header.text = '❮❮ Scan result ❯❯';
+			header.disabled = true;
+			header.style.color = 'grey';
+			header.selected = true;
+			list.appendChild(header);
+			var typeManuallyOption = document.createElement('option');
+			typeManuallyOption.value = 'manual';
+			typeManuallyOption.text = '❯❯ Switch to manual input ❮❮';
+			list.appendChild(typeManuallyOption);
+			list.style.display = '';
+		} catch (x2) {
+		}
+		if (spinElement) spinElement.style.display = 'none';
+		if (scanButton) scanButton.disabled = 0;
+		xob = null;
+	};
+	xob.post('update.cgi', 'exec=wlscan&arg0=' + unit);
+}
+
+function selectBSSID(select, unit, targetId) {
+	var tid = targetId || ('_f_wl' + unit + '_clap_hwaddr');
+	var macInput = document.createElement('input');
+	macInput.type = 'text';
+	macInput.name = select.name;
+	macInput.id = tid;
+
+	var widthInfo = {
+		width: select.dataset.originalWidth || select.style.width,
+		minWidth: select.dataset.originalMinWidth || select.style.minWidth
+	};
+	applyElementSize(macInput, widthInfo.width, widthInfo.minWidth);
+	macInput.style.visibility = 'hidden';
+	var parent = select.parentNode;
+	parent.insertBefore(macInput, select);
+	parent.removeChild(select);
+	macInput.style.visibility = '';
+
+	if (select.value === 'manual') {
+		macInput.value = '';
+		return;
+	}
+
+	macInput.value = (select.value || '').toString().trim();
+	verifyFields(macInput, 1);
+}
+
+function clearBssidIfPresent(u) {
+	var tid = '_f_wl' + u + '_clap_hwaddr';
+	var selectEl = E('macList' + u);
+	var targetEl = E(tid);
+	if (selectEl) {
+		var width = selectEl.dataset.originalWidth || selectEl.style.width;
+		var minWidth = selectEl.dataset.originalMinWidth || selectEl.style.minWidth || width;
+		var macInput = document.createElement('input');
+		macInput.type = 'text';
+		macInput.name = selectEl.name;
+		macInput.id = tid;
+		macInput.value = '';
+		applyElementSize(macInput, width, minWidth);
+		macInput.style.visibility = 'hidden';
+		var parent = selectEl.parentNode;
+		parent.insertBefore(macInput, selectEl);
+		parent.removeChild(selectEl);
+		macInput.style.visibility = '';
+		return;
+	}
+
+	if (targetEl) {
+		targetEl.value = '';
+		var width = targetEl.dataset.originalWidth || targetEl.style.width;
+		var minWidth = targetEl.dataset.originalMinWidth || targetEl.style.minWidth || width;
+		applyElementSize(targetEl, width, minWidth);
+	}
 }
 
 function joinAddr(a) {
@@ -265,16 +583,55 @@ function joinAddr(a) {
 }
 
 function random_x(max) {
-	var c = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-	var s = '';
-	while (max-- > 0) s += c.substr(Math.floor(c.length * Math.random()), 1);
+	var lower = 'abcdefghijklmnopqrstuvwxyz';
+	var upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	var digits = '0123456789';
+	var specials = '!@#$%^&*-_+=';
+	var all = lower + upper + digits + specials;
+	var chars = [];
+	var pct = Math.round(max * 0.16);
 
-	return s;
+	// Ensure 16% of each character type
+	for (var i = 0; i < pct; ++i) {
+		chars.push(upper.charAt(Math.floor(Math.random() * upper.length)));
+		chars.push(lower.charAt(Math.floor(Math.random() * lower.length)));
+		chars.push(digits.charAt(Math.floor(Math.random() * digits.length)));
+		chars.push(specials.charAt(Math.floor(Math.random() * specials.length)));
+	}
+
+	// Fill remainder with random characters
+	while (chars.length < max)
+		chars.push(all.charAt(Math.floor(Math.random() * all.length)));
+
+	// Shuffle with Fisher-Yates
+	for (var i = chars.length - 1; i > 0; --i) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = chars[i];
+		chars[i] = chars[j];
+		chars[j] = temp;
+	}
+
+	return chars.join('');
 }
 
-function random_psk(id) {
+function random_psk(id, selectId) {
 	var e = E(id);
-	e.value = random_x(63);
+	var sel = selectId ? E(selectId) : null;
+	var val = sel ? sel.value : '';
+
+	if (sel) sel.selectedIndex = 0;
+
+	if (val === 'clear') {
+		e.value = '';
+		ferror.clear(e);
+		return;
+	}
+
+	var len = parseInt(val, 10) || 0;
+	if (len < 8 || len > 63)
+		len = Math.floor(Math.random() * 56) + 8;
+
+	e.value = random_x(len);
 	verifyFields(null, 1);
 }
 
@@ -306,8 +663,10 @@ function v_wep(e, quiet) {
 /* compatible w/ Linksys' and Netgear's (key 1) method for 128-bits */
 function generate_wep(u) {
 	function _wepgen(pass, i) {
-		while (pass.length < 64) pass += pass;
-		return hex_md5(pass.substr(0, 64)).substr(i, (E('_wl'+u+'_wep_bit').value == 128) ? 26 : 10);
+		var seed = pass || '';
+		if (!seed.length) return '';
+		while (seed.length < 64) seed += seed;
+		return hex_md5(seed.substr(0, 64)).substr(i, (E('_wl'+u+'_wep_bit').value == 128) ? 26 : 10);
 	}
 
 	var e = E('_wl'+u+'_passphrase');

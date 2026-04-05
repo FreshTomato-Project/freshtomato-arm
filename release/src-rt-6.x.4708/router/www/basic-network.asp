@@ -24,6 +24,19 @@
 //	<% nvram("dhcp_lease,dhcpd_startip,dhcpd_endip,lan_dhcp,lan_gateway,lan_ipaddr,lan_netmask,lan_proto,lan_state,lan_desc,lan_invert,wl_security_mode,wl_wds_enable,wl_channel,wl_closed,wl_crypto,wl_key,wl_key1,wl_key2,wl_key3,wl_key4,wl_clap_hwaddr,wl_lazywds,wl_mode,wl_net_mode,wl_passphrase,wl_radio,wl_radius_ipaddr,wl_radius_port,wl_ssid,wl_wds,wl_wep_bit,wl_wpa_gtk_rekey,wl_wpa_psk,wl_radius_key,wl_auth,wl_hwaddr,t_features,wl_nbw_cap,wl_nctrlsb,wl_nband,wl_phytype,lan_ifname,lan_stp,cstats_enable,wan_proto,wan_weight,wan_modem_type,wan_modem_pin,wan_modem_dev,wan_modem_init,wan_modem_apn,wan_modem_speed,wan_modem_band,wan_modem_roam,wan_ppp_username,wan_ppp_passwd,wan_ppp_service,wan_l2tp_server_ip,wan_pptp_dhcp,wan_ipaddr,wan_netmask,wan_gateway,wan_pptp_server_ip,wan_ppp_custom,wan_ppp_demand,wan_ppp_idletime,wan_ppp_demand_dnsip,wan_ppp_redialperiod,wan_pppoe_lei,wan_pppoe_lef,wan_mtu_enable,wan_mtu,wan_ppp_mlppp,wan_modem_ipaddr,wan_sta,wan_dns,wan_dns_auto,wan_ifnameX,wan_ckmtd,wan_ck_pause,mwan_num,mwan_cktime,mwan_ckdst,mwan_tune_gc,wan_hilink_ip,wan_status_script,dnscrypt_proxy,dnscrypt_priority,stubby_proxy,stubby_priority,dhcp_moveip,smart_connect_x"); %>
 
 var sta_list = [];
+/* REMOVE-BEGIN */
+if (nvram['usb_support'] == '1') {
+    var hasUsbSupport = true;
+} else {
+    var hasUsbSupport = false;
+}
+
+if (typeof MAXWAN_NUM !== 'undefined' && MAXWAN_NUM > 2) {
+    var hasMultiWan = true;
+} else {
+    var hasMultiWan = false;
+}
+/* REMOVE-END */
 function refresh_sta_list() {
 	var u, wluidx, staidx = 0;
 /* RTAC-NO-BEGIN */
@@ -39,7 +52,9 @@ function refresh_sta_list() {
 /* RTAC-NO-END */
 	/* And finally - Add Option "Disabled" */
 	sta_list[staidx] = [];
-	sta_list[staidx][0] = '';
+	sta_list[staidx][0] = ''; 
+	sta_list[staidx][1] = 'Disabled';
+	sta_list[staidx][2] = 'SSID: ' + nvram['wl'+u+'_ssid'];
 	sta_list[staidx][1] = 'Disabled';
 }
 
@@ -51,7 +66,7 @@ lg.setup = function() {
 		{ type: 'text', maxlen: 15, size: 17 },
 		{ type: 'text', maxlen: 15, size: 17 },
 		{ type: 'checkbox', prefix: '<div class="centered">', suffix: '<\/div>' },
-		{ multi: [ { type: 'text', maxlen: 15, size: 17}, { type: 'text', maxlen: 15, size: 17 } ] },
+		{ multi: [ { type: 'text', maxlen: 15, size: 17 }, { type: 'text', maxlen: 15, size: 17 } ] },
 		{ type: 'text', maxlen: 6, size: 8 }] );
 	this.headerSet(['Bridge','STP','IP Address','Netmask','DHCP','IP&nbsp;Range&nbsp;<i>(first/last)<\/i>','Lease&nbsp;Time&nbsp;<i>(mins)<\/i>']);
 
@@ -67,8 +82,8 @@ lg.setup = function() {
 					nvram['dhcpd'+j+'_endip'] = getAddress('0.0.0.50', n);
 				}
 			}
-			lg.insertData(-1, [i.toString(), nvram['lan'+j+'_stp'], nvram['lan'+j+'_ipaddr'], nvram['lan'+j+'_netmask'], (nvram['lan'+j+'_proto'] == 'dhcp') ? 1 : 0, nvram['dhcpd'+j+'_startip'], 
-			                   nvram['dhcpd'+j+'_endip'], (nvram['lan'+j+'_proto'] == 'dhcp') ? (((nvram['dhcp'+j+'_lease']) * 1 == 0) ? '1440' : (nvram['dhcp'+j+'_lease']).toString()) : '']) ;
+			lg.insertData(-1, [i.toString(), nvram['lan'+j+'_stp'], nvram['lan'+j+'_ipaddr'], nvram['lan'+j+'_netmask'], (nvram['lan'+j+'_proto'] == 'dhcp') ? 1 : 0, nvram['dhcpd'+j+'_startip'],
+							   nvram['dhcpd'+j+'_endip'], (nvram['lan'+j+'_proto'] == 'dhcp') ? (((nvram['dhcp'+j+'_lease']) * 1 == 0) ? '1440' : (nvram['dhcp'+j+'_lease']).toString()) : '']) ;
 			numBridges++;
 		}
 	}
@@ -97,9 +112,9 @@ lg.fieldValuesToData = function(row) {
 	return [f[0].value, f[1].checked ? 1 : 0, f[2].value, f[3].value, f[4].checked ? 1 : 0, f[5].value, f[6].value, f[7].value];
 }
 
-lg.resetNewEditor = function() {
-	var f = fields.getAll(this.newEditor);
-	f[0].selectedIndex=0;
+	lg.resetNewEditor = function() {
+		var f = fields.getAll(this.newEditor);
+		f[0].selectedIndex=0;
 
 	var t = MAX_BRIDGE_ID;
 	while ((this.countBridge(f[0].selectedIndex) > 0) && (t > 0)) {
@@ -226,7 +241,7 @@ lg.verifyFields = function(row, quiet) {
 	else
 		ferror.clear(f[0]);
 /* valid IP address? */
-	if (!v_ip(f[2], quiet || !ok)) 
+	if (!v_ip(f[2], quiet || !ok))
 		ok = 0;
 /* if we have a properly defined IP address - 0.0.0.0 is NOT a valid IP address for our intents/purposes! */
 	if ((f[2].value != '') && (f[2].value != '0.0.0.0')) {
@@ -308,9 +323,9 @@ lg.verifyFields = function(row, quiet) {
 		}
 /* first IP valid? */
 		if ((getNetworkAddress(f[5].value, f[3].value) != getNetworkAddress(f[2].value, f[3].value)) ||
-		    (f[5].value == getBroadcastAddress(getNetworkAddress(f[2].value, f[3].value), f[3].value)) ||
-		    (f[5].value == getNetworkAddress(f[2].value, f[3].value)) ||
-		    (f[2].value == f[5].value)) {
+			(f[5].value == getBroadcastAddress(getNetworkAddress(f[2].value, f[3].value), f[3].value)) ||
+			(f[5].value == getNetworkAddress(f[2].value, f[3].value)) ||
+			(f[2].value == f[5].value)) {
 			ferror.set(f[5], 'Invalid first IP address or subnet mask', quiet || !ok);
 			return 0;
 		}
@@ -318,9 +333,9 @@ lg.verifyFields = function(row, quiet) {
 			ferror.clear(f[5]);
 /* last IP valid? */
 		if ((getNetworkAddress(f[6].value, f[3].value) != getNetworkAddress(f[2].value, f[3].value)) ||
-		    (f[6].value == getBroadcastAddress(getNetworkAddress(f[2].value, f[3].value), f[3].value)) ||
-		    (f[6].value == getNetworkAddress(f[2].value, f[3].value)) ||
-		    (f[2].value == f[6].value)) {
+			(f[6].value == getBroadcastAddress(getNetworkAddress(f[2].value, f[3].value), f[3].value)) ||
+			(f[6].value == getNetworkAddress(f[2].value, f[3].value)) ||
+			(f[2].value == f[6].value)) {
 			ferror.set(f[6], 'Invalid last IP address or subnet mask', quiet || !ok);
 			return 0;
 		}
@@ -335,7 +350,7 @@ lg.verifyFields = function(row, quiet) {
 /* lease time */
 		if (parseInt(f[7].value*1) == 0)
 			f[7].value = 1440; /* from nvram/defaults.c */
-		if (!v_mins(f[7], quiet || !ok, 1, 10080)) 
+		if (!v_mins(f[7], quiet || !ok, 1, 10080))
 			ok = 0;
 	}
 	else {
@@ -369,6 +384,7 @@ var acphy = features('11ac');
 var ghz = [];
 var bands = [];
 var nm_loaded = [], ch_loaded = [], max_channel = [];
+var ssidHiddenStore = {};
 
 for (var uidx = 0; uidx < wl_ifaces.length; ++uidx) {
 	if (wl_sunit(uidx) < 0) {
@@ -457,8 +473,14 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_netmask'] = 1;
 			vis['_wan'+u+'_gateway'] = 1;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_hilink_ip'] = 1;
 			vis['_f_wan'+u+'_status_script'] = 1;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			vis['_wan'+u+'_ckmtd'] = 1;
 			vis['_f_wan'+u+'_ck_pause'] = 1;
@@ -477,6 +499,9 @@ function verifyFields(focused, quiet) {
 /* SIZEOPTMORE-END */
 			vis['_wan'+u+'_modem_ipaddr'] = 1;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_pin'] = 1;
 			vis['_wan'+u+'_modem_dev'] = 1;
 			vis['_wan'+u+'_modem_init'] = 1;
@@ -484,6 +509,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_modem_speed'] = 1;
 			vis['_wan'+u+'_modem_band'] = 1;
 			vis['_wan'+u+'_modem_roam'] = 1;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			vis['_wan'+u+'_sta'] = 1;
 			vis['_f_wan'+u+'_dns_1'] = 1;
@@ -500,8 +528,14 @@ function verifyFields(focused, quiet) {
 			E('_wan'+u+'_netmask').disabled = 0;
 			E('_wan'+u+'_gateway').disabled = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			E('_wan'+u+'_hilink_ip').disabled = 0;
 			E('_f_wan'+u+'_status_script').disabled = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			E('_wan'+u+'_ckmtd').disabled = 0;
 			E('_f_wan'+u+'_ck_pause').disabled = 0;
@@ -520,6 +554,9 @@ function verifyFields(focused, quiet) {
 /* SIZEOPTMORE-END */
 			E('_wan'+u+'_modem_ipaddr').disabled = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			E('_wan'+u+'_modem_pin').disabled = 0;
 			E('_wan'+u+'_modem_dev').disabled = 0;
 			E('_wan'+u+'_modem_init').disabled = 0;
@@ -527,6 +564,9 @@ function verifyFields(focused, quiet) {
 			E('_wan'+u+'_modem_speed').disabled = 0;
 			E('_wan'+u+'_modem_band').disabled = 0;
 			E('_wan'+u+'_modem_roam').disabled = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			E('_wan'+u+'_sta').disabled = 0;
 			E('_f_wan'+u+'_dns_1').disabled = 0;
@@ -562,6 +602,9 @@ function verifyFields(focused, quiet) {
 /* SIZEOPTMORE-END */
 			vis['_wan'+u+'_modem_ipaddr'] = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_pin'] = 0;
 			vis['_wan'+u+'_modem_dev'] = 0;
 			vis['_wan'+u+'_modem_init'] = 0;
@@ -569,6 +612,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_modem_speed'] = 0;
 			vis['_wan'+u+'_modem_band'] = 0;
 			vis['_wan'+u+'_modem_roam'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			vis['_wan'+u+'_sta'] = 0;
 			vis['_f_wan'+u+'_dns_1'] = 0;
@@ -585,8 +631,14 @@ function verifyFields(focused, quiet) {
 			E('_wan'+u+'_netmask').disabled = 1;
 			E('_wan'+u+'_gateway').disabled = 1;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			E('_wan'+u+'_hilink_ip').disabled = 1;
 			E('_f_wan'+u+'_status_script').disabled = 1;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			E('_wan'+u+'_ckmtd').disabled = 1;
 			E('_f_wan'+u+'_ck_pause').disabled = 1;
@@ -605,6 +657,9 @@ function verifyFields(focused, quiet) {
 /* SIZEOPTMORE-END */
 			E('_wan'+u+'_modem_ipaddr').disabled = 1;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			E('_wan'+u+'_modem_pin').disabled = 1;
 			E('_wan'+u+'_modem_dev').disabled = 1;
 			E('_wan'+u+'_modem_init').disabled = 1;
@@ -612,6 +667,9 @@ function verifyFields(focused, quiet) {
 			E('_wan'+u+'_modem_speed').disabled = 1;
 			E('_wan'+u+'_modem_band').disabled = 1;
 			E('_wan'+u+'_modem_roam').disabled = 1;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			E('_f_wan'+u+'_dns_1').disabled = 1;
 			E('_f_wan'+u+'_dns_2').disabled = 1;
@@ -667,26 +725,34 @@ function verifyFields(focused, quiet) {
 
 			if ((wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
-			   ) {
+			) {
+				if (!window._wanProtoBackup) window._wanProtoBackup = [];
 				E('_mwan_num').value = 1;
 				E('_mwan_cktime').value = 0;
 				elem.display('mwan-title', 'mwan-section', 0);
 				for (wan_uidx = 1; wan_uidx <= MAXWAN_NUM; ++wan_uidx) {
 					u = (wan_uidx > 1) ? wan_uidx : '';
 					vis['_wan'+u+'_proto'] = 0;
+					if (typeof window._wanProtoBackup[wan_uidx - 1] === 'undefined')
+						window._wanProtoBackup[wan_uidx - 1] = wanproto[wan_uidx - 1];
 					E('_wan'+u+'_proto').value = 'disabled';
 					wanproto[wan_uidx - 1] = 'disabled';
 					elem.display('wan'+u+'-title', 'sesdiv_wan'+u, 0);
 				}
-				break; /* break the loop! one wlan module is using wireless ethernet bridge or media bridge mode --> hide wan options! */
+				break; /* break the loop! one wlan module is using wireless ethernet bridge or media bridge mode -> hide wan options! */
 			}
 			else { /* not in wireless bridge mode - show wan options */
 				elem.display('mwan-title', 'mwan-section', 1);
 				for (wan_uidx = 1; wan_uidx <= curr_mwan_num; ++wan_uidx) {
 					u = (wan_uidx > 1) ? wan_uidx : '';
 					vis['_wan'+u+'_proto'] = 1;
+					if (window._wanProtoBackup && (typeof window._wanProtoBackup[wan_uidx - 1] !== 'undefined')) {
+						wanproto[wan_uidx - 1] = window._wanProtoBackup[wan_uidx - 1];
+						E('_wan'+u+'_proto').value = window._wanProtoBackup[wan_uidx - 1];
+						window._wanProtoBackup[wan_uidx - 1] = undefined;
+					}
 					elem.display('wan'+u+'-title', 'sesdiv_wan'+u, 1);
 				}
 			}
@@ -707,8 +773,14 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_netmask'] = 0;
 			vis['_wan'+u+'_gateway'] = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_hilink_ip'] = 0;
 			vis['_f_wan'+u+'_status_script'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			vis['_wan'+u+'_ckmtd'] = 0;
 			vis['_f_wan'+u+'_ck_pause'] = 0;
@@ -722,6 +794,9 @@ function verifyFields(focused, quiet) {
 /* SIZEOPTMORE-END */
 			vis['_wan'+u+'_modem_ipaddr'] = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_pin'] = 0;
 			vis['_wan'+u+'_modem_dev'] = 0;
 			vis['_wan'+u+'_modem_init'] = 0;
@@ -729,6 +804,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_modem_speed'] = 0;
 			vis['_wan'+u+'_modem_band'] = 0;
 			vis['_wan'+u+'_modem_roam'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 			vis['_wan'+u+'_pppoe_lei'] = 0;
 			vis['_wan'+u+'_pppoe_lef'] = 0;
@@ -755,6 +833,9 @@ function verifyFields(focused, quiet) {
 			vis['_f_wan'+u+'_ppp_mlppp'] = 0;
 /* SIZEOPTMORE-END */
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_pin'] = 0;
 			vis['_wan'+u+'_modem_dev'] = 0;
 			vis['_wan'+u+'_modem_init'] = 0;
@@ -762,6 +843,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_modem_speed'] = 0;
 			vis['_wan'+u+'_modem_band'] = 0;
 			vis['_wan'+u+'_modem_roam'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		break;
 		case 'pppoe':
@@ -771,6 +855,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_ipaddr'] = 0;
 			vis['_wan'+u+'_netmask'] = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_pin'] = 0;
 			vis['_wan'+u+'_modem_dev'] = 0;
 			vis['_wan'+u+'_modem_init'] = 0;
@@ -778,6 +865,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_modem_speed'] = 0;
 			vis['_wan'+u+'_modem_band'] = 0;
 			vis['_wan'+u+'_modem_roam'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		break;
 /* USB-BEGIN */
@@ -790,9 +880,15 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_ipaddr'] = 0;
 			vis['_wan'+u+'_netmask'] = 0;
 			vis['_wan'+u+'_modem_ipaddr'] = 0;
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_speed'] = 0;
 			vis['_wan'+u+'_modem_band'] = 0;
 			vis['_wan'+u+'_modem_roam'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* SIZEOPTMORE-BEGIN */
 			vis['_f_wan'+u+'_ppp_mlppp'] = 0;
 /* SIZEOPTMORE-END */
@@ -813,8 +909,14 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_ipaddr'] = 0;
 			vis['_wan'+u+'_netmask'] = 0;
 			vis['_wan'+u+'_modem_ipaddr'] = 0;
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_dev'] = 0;
 			vis['_wan'+u+'_modem_init'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* SIZEOPTMORE-BEGIN */
 			vis['_f_wan'+u+'_ppp_mlppp'] = 0;
 /* SIZEOPTMORE-END */
@@ -836,6 +938,9 @@ function verifyFields(focused, quiet) {
 			vis['_f_wan'+u+'_ppp_mlppp'] = 0;
 /* SIZEOPTMORE-END */
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_pin'] = 0;
 			vis['_wan'+u+'_modem_dev'] = 0;
 			vis['_wan'+u+'_modem_init'] = 0;
@@ -843,6 +948,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_modem_speed'] = 0;
 			vis['_wan'+u+'_modem_band'] = 0;
 			vis['_wan'+u+'_modem_roam'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		break;
 		case 'pptp':
@@ -853,6 +961,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_netmask'] = (!E('_f_wan'+u+'_pptp_dhcp').checked);
 			vis['_wan'+u+'_modem_ipaddr'] = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_pin'] = 0;
 			vis['_wan'+u+'_modem_dev'] = 0;
 			vis['_wan'+u+'_modem_init'] = 0;
@@ -860,6 +971,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_modem_speed'] = 0;
 			vis['_wan'+u+'_modem_band'] = 0;
 			vis['_wan'+u+'_modem_roam'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		break;
 		case 'l2tp':
@@ -870,6 +984,9 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_netmask'] = (!E('_f_wan'+u+'_pptp_dhcp').checked);
 			vis['_wan'+u+'_modem_ipaddr'] = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 			vis['_wan'+u+'_modem_pin'] = 0;
 			vis['_wan'+u+'_modem_dev'] = 0;
 			vis['_wan'+u+'_modem_init'] = 0;
@@ -877,11 +994,20 @@ function verifyFields(focused, quiet) {
 			vis['_wan'+u+'_modem_speed'] = 0;
 			vis['_wan'+u+'_modem_band'] = 0;
 			vis['_wan'+u+'_modem_roam'] = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		break;
 		}
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 		vis['_wan'+u+'_modem_band'] = (E('_wan'+u+'_modem_speed').value == '03') && vis['_wan'+u+'_modem_speed'] && (nvram['wan'+u+'_modem_type'] != "qmi_wwan");
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		if (E('_mwan_cktime').value == 0) {
 			vis['_wan'+u+'_ckmtd'] = 0;
@@ -938,6 +1064,11 @@ function verifyFields(focused, quiet) {
 			u = wl_unit(uidx);
 			wmode = E('_f_wl'+u+'_mode').value;
 
+			var ssidScanButton = E('_f_wl' + u + '_ssidscan');
+			if (ssidScanButton) ssidScanButton.style.display = (wmode === 'ap') ? 'none' : '';
+			var macScanButton = E('_f_wl' + u + '_macscan');
+			if (macScanButton) macScanButton.style.display = (wmode !== 'ap' && wmode !== 'apwds' && wmode !== 'wds') ? '' : 'none';
+
 			if (!E('_f_wl'+u+'_radio').checked) { /* WL is disabled */
 				for (a in wl_vis[uidx]) {
 					wl_vis[uidx][a] = 2;
@@ -974,6 +1105,12 @@ function verifyFields(focused, quiet) {
 			switch (wmode) {
 			case 'apwds':
 			case 'wds':
+/* RTNPLUS-BEGIN */
+				/* ensure WDS fields render for all radios in WDS modes */
+				wl_vis[uidx]._f_wl_lazywds = (!E('_f_wl'+u+'_radio').checked) ? 2 : 1;
+				wl_vis[uidx]._f_wl_wds_0 = (!E('_f_wl'+u+'_radio').checked) ? 2 : 1;
+				wl_vis[uidx]._f_wl_clap_hwaddr = 0;
+/* RTNPLUS-END */
 				break;
 			case 'wet':
 /* BCMWL6-BEGIN */
@@ -981,8 +1118,10 @@ function verifyFields(focused, quiet) {
 /* BCMWL6-END */
 			case 'sta':
 				wl_vis[uidx]._f_wl_bcast = 0;
-				/* wl_vis[uidx]._wl_channel = 0; */
-				/* wl_vis[uidx]._wl_nbw_cap = 0; */
+				wl_vis[uidx]._wl_net_mode = 0;
+				wl_vis[uidx]._wl_channel = 0;
+				wl_vis[uidx]._wl_nbw_cap = 0;
+				wl_vis[uidx]._f_wl_nctrlsb = 0;
 				vis['_wan_modem_ipaddr'] = 0;
 /* RTNPLUS-BEGIN */
 				if (!E('_f_wl'+u+'_radio').checked) /* WL is disabled */
@@ -1035,7 +1174,7 @@ function verifyFields(focused, quiet) {
 			}
 
 			if ((E('_f_wl'+u+'_lazywds').value == 1) && (wl_vis[uidx]._f_wl_wds_0 == 1))
-				wl_vis[uidx]._f_wl_wds_0 = 2;
+				wl_vis[uidx]._f_wl_wds_0 = 0;
 
 			if (wl_vis[uidx]._wl_nbw_cap != 0) {
 				switch (E('_wl'+u+'_net_mode').value) {
@@ -1089,6 +1228,17 @@ REMOVE-END */
 			}
 
 			wl_vis[uidx]._f_wl_scan = wl_vis[uidx]._wl_channel;
+			var isClientMode = ((wmode == 'wet')
+/* BCMWL6-BEGIN */
+				|| (wmode == 'psta')
+/* BCMWL6-END */
+				|| (wmode == 'sta'));
+			var pskRandom1 = E('_f_wl'+u+'_psk_random1');
+			if (pskRandom1)
+				pskRandom1.style.display = isClientMode ? 'none' : '';
+			var pskRandom2 = E('_f_wl'+u+'_psk_random2');
+			if (pskRandom2)
+				pskRandom2.style.display = isClientMode ? 'none' : '';
 			wl_vis[uidx]._f_wl_psk_random1 = wl_vis[uidx]._wl_wpa_psk;
 			wl_vis[uidx]._f_wl_psk_random2 = wl_vis[uidx]._wl_radius_key;
 			wl_vis[uidx]._wl_radius_port = wl_vis[uidx]._wl_radius_ipaddr;
@@ -1096,6 +1246,34 @@ REMOVE-END */
 
 			for (i = 1; i < 10; ++i)
 				wl_vis[uidx]['_f_wl_wds_'+i] = wl_vis[uidx]._f_wl_wds_0;
+
+			var broadcastEnabled = E('_f_wl'+u+'_bcast').checked;
+			if (!broadcastEnabled)
+				wl_vis[uidx]._wl_ssid = 2;
+			else if (wl_vis[uidx]._wl_ssid != 2)
+				wl_vis[uidx]._wl_ssid = 1;
+			var ssidElement = document.getElementsByName('wl'+u+'_ssid')[0];
+			if (ssidElement && !broadcastEnabled && ssidElement.tagName.toLowerCase() == 'select') {
+				ssidElement.outerHTML = '<input type="text" name="'+ssidElement.name+'" id="_wl'+u+'_ssid">';
+				ssidElement = document.getElementsByName('wl'+u+'_ssid')[0];
+			}
+			if (ssidElement) {
+				if (!broadcastEnabled) {
+					if (typeof ssidHiddenStore[u] === 'undefined')
+						ssidHiddenStore[u] = ssidElement.value;
+					ssidElement.value = ' < hidden >';
+					ssidElement.disabled = true;
+				}
+				else {
+					if (typeof ssidHiddenStore[u] !== 'undefined') {
+						ssidElement.value = ssidHiddenStore[u];
+						delete ssidHiddenStore[u];
+					}
+					ssidElement.disabled = false;
+				}
+			}
+			if (ssidScanButton)
+				ssidScanButton.disabled = !broadcastEnabled;
 		}
 	} /* for each wl_iface */
 
@@ -1141,7 +1319,11 @@ REMOVE-END */
 				if (a.substr(0, 6) == '_f_wl_')
 					i = 5;
 
-				b = E(a.substr(0, i) + wl_unit(uidx) + a.substr(i, a.length));
+					b = E(a.substr(0, i) + wl_unit(uidx) + a.substr(i, a.length));
+					if (!b) {
+						console.error('Element not found:', a.substr(0, i) + wl_unit(uidx) + a.substr(i, a.length));
+						return;
+					}
 				c = wl_vis[uidx][a];
 				b.disabled = (c != 1);
 				PR(b).style.display = (c ? 'table-row' : 'none');
@@ -1190,9 +1372,9 @@ REMOVE-END */
 			ferror.clear(b);
 			if ((wmode == 'sta') || (wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
-			   ) {
+			) {
 				++wlclnt;
 				if (wlclnt > 1) {
 					ferror.set(b, 'Only one wireless interface can be configured in client mode.', quiet || !ok);
@@ -1225,7 +1407,7 @@ REMOVE-END */
 
 			/* wl channel */
 			if (((wmode == 'wds') || (wmode == 'apwds')) && (wl_vis[uidx]._wl_channel == 1) && (E('_wl'+u+'_channel').value == '0')) {
-				ferror.set('_wl'+u+'_channel', 'Fixed wireless channel required in WDS mode.', quiet || !ok);
+				ferror.set('_wl'+u+'_channel', 'All the WDS peers must share the same static wireless channel.', quiet || !ok);
 				ok = 0;
 			}
 			else
@@ -1249,7 +1431,13 @@ REMOVE-END */
 		if ((vis['_wan'+u+'_gateway']) && (!v_ip('_wan'+u+'_gateway', quiet))) ok = 0;
 		if ((vis['_wan'+u+'_modem_ipaddr']) && (!v_ip('_wan'+u+'_modem_ipaddr', quiet))) ok = 0;
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 		if ((vis['_wan'+u+'_hilink_ip']) && (!v_ip('_wan'+u+'_hilink_ip', quiet))) ok = 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		if ((vis['_wan'+u+'_ppp_demand_dnsip']) && (!v_ip('_wan'+u+'_ppp_demand_dnsip', quiet))) ok = 0;
 		/* WANx netmask */
@@ -1281,9 +1469,9 @@ REMOVE-END */
 
 			if ((wmode == 'sta') || (wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
-			   ) {
+			) {
 				if (a.value.length > 16) {
 					if (!v_mac(a, quiet))
 						ok = 0;
@@ -1323,7 +1511,7 @@ REMOVE-END */
 			}
 
 			/* length */
-			a = [['_ssid', 1], ['_radius_key', 1]];
+			a = [['_ssid', 0], ['_radius_key', 1]];
 			for (i = a.length - 1; i >= 0; --i) {
 				v = a[i];
 				if ((wl_vis[uidx]['_wl'+v[0]]) && (!v_length('_wl'+u+v[0], quiet || !ok, v[1], E('_wl'+u+v[0]).maxlength))) ok = 0;
@@ -1458,6 +1646,9 @@ REMOVE-END */
 	}
 
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 	for (uidx = 1; uidx <= curr_mwan_num; ++uidx) {
 		u = (uidx > 1) ? uidx : '';
 		var lte3g = E('_wan'+u+'_proto').value;
@@ -1470,6 +1661,9 @@ REMOVE-END */
 			}
 		}
 	}
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 
 	return ok;
@@ -1499,13 +1693,14 @@ function save() {
 	var a, b, c, d, e;
 	var i, j;
 	var u, uidx, wan_uidx, wmode, sm2, wradio;
-	var curr_mwan_num = E('_mwan_num').value;
+	var curr_mwan_num = parseInt(E('_mwan_num').value, 10);
 	var s = '';
 
 	if (!verifyFields(null, 0))
 		return;
 
 	var fom = E('t_fom');
+	fom._reboot.value = 0;
 
 /* RTNPLUS-BEGIN */
 	/* save MAC addr for wl client modes (sta/psta/wet) - try to connect to this AP (default "empty" / not needed) */
@@ -1516,9 +1711,9 @@ function save() {
 
 			if ((wmode == 'sta') || (wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
-			   ) {
+				) {
 				E('_wl'+u+'_clap_hwaddr').value = E('_f_wl'+u+'_clap_hwaddr').value;
 			}
 			else
@@ -1543,9 +1738,9 @@ function save() {
 
 			if ((wmode == 'wet')
 /* BCMWL6-BEGIN */
-			    || (wmode == 'psta')
+				|| (wmode == 'psta')
 /* BCMWL6-END */
-			   ) {
+				) {
 				for (wan_uidx = 1; wan_uidx <= MAXWAN_NUM; ++wan_uidx) {
 					d = (wan_uidx > 1) ? wan_uidx : '';
 					E('_wan'+d+'_proto').disabled = 0;
@@ -1723,7 +1918,7 @@ function save() {
 		fom['dhcpd'+j+'_endip'].value = (d[i][4] != '0') ? d[i][6] : '';
 
 /* REMOVE-BEGIN
-alert('lan'+j+'_ifname=' + fom['lan'+j+'_ifname'].value + '\n' +
+	alert('lan'+j+'_ifname=' + fom['lan'+j+'_ifname'].value + '\n' +
 	'lan'+j+'_stp=' + fom['lan'+j+'_stp'].value + '\n' +
 	'lan'+j+'_ipaddr=' + fom['lan'+j+'_ipaddr'].value + '\n' +
 	'lan'+j+'_netmask=' + fom['lan'+j+'_netmask'].value + '\n' +
@@ -1756,7 +1951,13 @@ REMOVE-END */
 		fom['wan'+u+'_ppp_mlppp'].value = fom['f_wan'+u+'_ppp_mlppp'].checked ? 1 : 0;
 /* SIZEOPTMORE-END */
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 		fom['wan'+u+'_status_script'].value = fom['f_wan'+u+'_status_script'].checked ? 1 : 0;
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		fom['wan'+u+'_ck_pause'].value = fom['f_wan'+u+'_ck_pause'].checked ? 1 : 0;
 
@@ -1854,14 +2055,44 @@ function init() {
 			refreshNetModes(uidx);
 			refreshChannels(uidx);
 			refreshBandWidth(uidx);
+			var u = wl_unit(uidx);
+			var wmode = E('_f_wl'+u+'_mode').value;
+			var ssidScanButton = E('_f_wl' + u + '_ssidscan');
+			if (ssidScanButton) ssidScanButton.style.display = (wmode === 'ap') ? 'none' : '';
+			var macScanButton = E('_f_wl' + u + '_macscan');
+			if (macScanButton) macScanButton.style.display = (wmode !== 'ap' && wmode !== 'apwds' && wmode !== 'wds') ? '' : 'none';
+			attachModeChangeHandler(E('_f_wl'+u+'_mode'));
 		}
+	}
+	for (var wan_uidx = 1; wan_uidx <= MAXWAN_NUM; ++wan_uidx) {
+		var u = (wan_uidx > 1) ? wan_uidx : '';
+		attachModeChangeHandler(E('_wan'+u+'_sta'));
 	}
 	refreshWanSection();
 	eventHandler();
 }
+
+function attachModeChangeHandler(elem) {
+	if (!elem) return;
+	var handler = function() {
+		verifyFields(elem, 1);
+	};
+	if (elem.addEventListener)
+		elem.addEventListener('change', handler, false);
+	else if (elem.attachEvent)
+		elem.attachEvent('onchange', handler);
+	else {
+		var prev = elem.onchange;
+		elem.onchange = function(event) {
+			if (typeof prev === 'function') prev.call(this, event);
+			handler.call(this, event);
+		};
+	}
+}
 </script>
 
 </head>
+
 <body onload="init()">
 <form id="t_fom" method="post" action="tomato.cgi">
 <table id="container">
@@ -1922,7 +2153,7 @@ function init() {
 	createFieldTable('', [
 		{ title: 'Number of logical WANs', name: 'mwan_num', type: 'select', options: [['1','1 WAN'],['2','2 WAN']
 /* MULTIWAN-BEGIN */
-											   ,['3','3 WAN'],['4','4 WAN']
+				,['3','3 WAN'],['4','4 WAN']
 /* MULTIWAN-END */
 			], value: nvram.mwan_num, suffix: '&nbsp; <small>Please configure <a href="advanced-vlan.asp">VLAN<\/a> first<\/small>' },
 		{ title: 'Tune route cache', name: 'f_mwan_tune_gc', type: 'checkbox', suffix: '&nbsp; <small>for multiwan in load balancing mode<\/small>', value: (nvram['mwan_tune_gc'] == 1) },
@@ -1955,36 +2186,73 @@ function init() {
 /* SIZEOPTMORE-END */
 		W('<input type="hidden" name="wan'+u+'_dns">');
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
 		W('<input type="hidden" name="wan'+u+'_status_script">');
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
 		W('<input type="hidden" name="wan'+u+'_ck_pause">');
+
 		W('<input type="hidden" name="wan'+u+'_iface">');
 		W('<input type="hidden" name="wan'+u+'_ifname">');
 		W('<input type="hidden" name="wan'+u+'_hwaddr">');
 
 		W('<div class="section-title" id="wan'+u+'-title">WAN'+(uidx - 1)+' Settings<\/div>');
 		W('<div class="section" id="sesdiv_wan'+u+'">');
-		createFieldTable('', [
-			{ title: 'Type', name: 'wan'+u+'_proto', type: 'select', options: [['dhcp','DHCP'],['pppoe','PPPoE'],['static','Static'],['pptp','PPTP'],['l2tp','L2TP'],
+		var wanProtoOptions = [
+			['dhcp','DHCP'],
+			['pppoe','PPPoE'],
+			['static','Static'],
+			['pptp','PPTP'],
+			['l2tp','L2TP']
+		];
 /* USB-BEGIN */
-				['ppp3g','3G Modem'],
-				['lte','4G/LTE'],
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
+		wanProtoOptions.push(['ppp3g','3G Modem']);
+		wanProtoOptions.push(['lte','4G/LTE']);
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
-				['disabled','Disabled']],
+		wanProtoOptions.push(['disabled','Disabled']);
+
+		var wanFields = [
+			{ title: 'Type', name: 'wan'+u+'_proto', type: 'select', options: wanProtoOptions,
 				suffix: '&nbsp; <small id="_f_wan'+u+'_islan" style="display:none"><a href="advanced-vlan.asp">Bridge WAN ?<\/a><\/small>', value: nvram['wan'+u+'_proto'] },
-			{ title: 'Wireless Client Mode', name: 'wan'+u+'_sta', type: 'select', options: sta_list, value: nvram['wan'+u+'_sta'] },
+			{ title: 'Wireless Client Mode', name: 'wan'+u+'_sta', type: 'select', options: sta_list, value: nvram['wan'+u+'_sta'] }
+		];
 /* USB-BEGIN */
-			{ title: 'Modem device', name: 'wan'+u+'_modem_dev', type: 'select', options: [['/dev/ttyUSB0','/dev/ttyUSB0'],['/dev/ttyUSB1','/dev/ttyUSB1'],['/dev/ttyUSB2','/dev/ttyUSB2'],['/dev/ttyUSB3','/dev/ttyUSB3'],['/dev/ttyUSB4','/dev/ttyUSB4'],['/dev/ttyUSB5','/dev/ttyUSB5'],['/dev/ttyUSB6','/dev/ttyUSB6'],['/dev/ttyACM0','/dev/ttyACM0']], value: nvram['wan'+u+'_modem_dev'] },
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
+		wanFields.push({ title: 'Modem device', name: 'wan'+u+'_modem_dev', type: 'select', options: [['/dev/ttyUSB0','/dev/ttyUSB0'],['/dev/ttyUSB1','/dev/ttyUSB1'],['/dev/ttyUSB2','/dev/ttyUSB2'],['/dev/ttyUSB3','/dev/ttyUSB3'],['/dev/ttyUSB4','/dev/ttyUSB4'],['/dev/ttyUSB5','/dev/ttyUSB5'],['/dev/ttyUSB6','/dev/ttyUSB6'],['/dev/ttyACM0','/dev/ttyACM0']], value: nvram['wan'+u+'_modem_dev'] });
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
-			{ title: 'Load Balance Weight', name: 'wan'+u+'_weight', type: 'text', maxlen: 3, size: 8, value: nvram['wan'+u+'_weight'], suffix: '&nbsp; <small>Failover: 0; Load balancing: 1 - 256<\/small>' },
+		wanFields.push({ title: 'Load Balance Weight', name: 'wan'+u+'_weight', type: 'text', maxlen: 3, size: 8, value: nvram['wan'+u+'_weight'], suffix: '&nbsp; <small>Failover: 0; Load balancing: 1 - 256<\/small>' });
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
+		wanFields.push(
 			{ title: 'PIN Code', name: 'wan'+u+'_modem_pin', type: 'text', maxlen: 6, size: 8, value: nvram['wan'+u+'_modem_pin'], suffix: '&nbsp; <small>advised to turn off PIN Code<\/small>' },
 			{ title: 'Modem init string', name: 'wan'+u+'_modem_init', type: 'text', maxlen: 25, size: 32, value: nvram['wan'+u+'_modem_init'] },
 			{ title: 'APN', name: 'wan'+u+'_modem_apn', type: 'text', maxlen: 25, size: 32, suffix: '&nbsp; <small>if empty, AT+CGDCONT will not be sent<\/small>', value: nvram['wan'+u+'_modem_apn'] },
 			{ title: 'Network Type', name: 'wan'+u+'_modem_speed', type: 'select', options: [['00','Auto'],['030201','4G/3G/2G'],['0302','4G/3G only'],['03','4G only'],['02','3G only']], value: nvram['wan'+u+'_modem_speed'], suffix: '&nbsp; <small>works only with non-Hilink modems<\/small>' },
 			{ title: 'Roaming', name: 'wan'+u+'_modem_roam', type: 'select', options: [['2','No change*'],['1','Supported'],['0','Disabled'],['3','Roam only']], value: nvram['wan'+u+'_modem_roam'], suffix: '&nbsp; <small>*default; works only with non-Hilink modems<\/small>' },
-			{ title: 'LTE Band', name: 'wan'+u+'_modem_band', type: 'select', options: [['7FFFFFFFFFFFFFFF','All supported*'],['80000','B20 (800 MHz)'],['80','B8 (900 MHz)'],['4','B3 (1800 MHz)'],['1','B1 (2100 MHz)'],['40','B7 (2600 MHz)']], value: nvram['wan'+u+'_modem_band'], suffix: '&nbsp; <small>*default; tested only on non-Hilink Huawei modems<\/small>' },
+			{ title: 'LTE Band', name: 'wan'+u+'_modem_band', type: 'select', options: [['7FFFFFFFFFFFFFFF','All supported*'],['80000','B20 (800 MHz)'],['80','B8 (900 MHz)'],['4','B3 (1800 MHz)'],['1','B1 (2100 MHz)'],['40','B7 (2600 MHz)']], value: nvram['wan'+u+'_modem_band'], suffix: '&nbsp; <small>*default; tested only on non-Hilink Huawei modems<\/small>' }
+		);
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
+		wanFields.push(
 			{ title: 'Username', name: 'wan'+u+'_ppp_username', type: 'text', maxlen: 60, size: 64, value: nvram['wan'+u+'_ppp_username'] },
 			{ title: 'Password', name: 'wan'+u+'_ppp_passwd', type: 'password', maxlen: 60, size: 64, peekaboo: 1, value: nvram['wan'+u+'_ppp_passwd'] },
 			{ title: 'Service Name', name: 'wan'+u+'_ppp_service', type: 'text', maxlen: 50, size: 64, value: nvram['wan'+u+'_ppp_service'] },
@@ -1997,18 +2265,12 @@ function init() {
 			{ title: 'DNS Server', name: 'wan'+u+'_dns_auto', type: 'select', options: [['1','Auto'],['0','Manual']], suffix: '&nbsp; <small id="dns'+u+'_faq">inactive when using dncrypt-proxy/Stubby with No-Resolv option<\/small>', value: nvram['wan'+u+'_dns_auto']},
 			{ title: 'DNS 1', indent: 2, name: 'f_wan'+u+'_dns_1', type: 'text', maxlen: 21, size: 17, value: dns[0] || '0.0.0.0' },
 			{ title: 'DNS 2', indent: 2, name: 'f_wan'+u+'_dns_2', type: 'text', maxlen: 21, size: 17, value: dns[1] || '0.0.0.0' },
-			{ title: 'Connect Mode', name: 'wan'+u+'_ppp_demand', type: 'select', options: [['1','Connect On Demand'],['0','Keep Alive']],
-				value: nvram['wan'+u+'_ppp_demand'] },
-			{ title: 'IP to trigger Connect', indent: 2, name: 'wan'+u+'_ppp_demand_dnsip', type: 'text', maxlen: 15, size: 17, suffix: '&nbsp; <small>default: 198.51.100.1<\/small>',
-				value: nvram['wan'+u+'_ppp_demand_dnsip'] },
-			{ title: 'Max Idle Time', indent: 2, name: 'wan'+u+'_ppp_idletime', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp; <small>minutes<\/small>',
-				value: nvram['wan'+u+'_ppp_idletime'] },
-			{ title: 'Redial Interval', indent: 2, name: 'wan'+u+'_ppp_redialperiod', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp; <small>seconds<\/small>',
-				value: nvram['wan'+u+'_ppp_redialperiod'] },
-			{ title: 'LCP Echo Interval', indent: 2, name: 'wan'+u+'_pppoe_lei', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp; <small>seconds; range: 1 - 60, default: 10<\/small>',
-				value: nvram['wan'+u+'_pppoe_lei'] },
-			{ title: 'LCP Echo Link fail limit', indent: 2, name: 'wan'+u+'_pppoe_lef', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp; <small>range: 1 - 10, default: 5<\/small>',
-				value: nvram['wan'+u+'_pppoe_lef'] },
+			{ title: 'Connect Mode', name: 'wan'+u+'_ppp_demand', type: 'select', options: [['1','Connect On Demand'],['0','Keep Alive']], value: nvram['wan'+u+'_ppp_demand'] },
+			{ title: 'IP to trigger Connect', indent: 2, name: 'wan'+u+'_ppp_demand_dnsip', type: 'text', maxlen: 15, size: 17, suffix: '&nbsp; <small>default: 198.51.100.1<\/small>', value: nvram['wan'+u+'_ppp_demand_dnsip'] },
+			{ title: 'Max Idle Time', indent: 2, name: 'wan'+u+'_ppp_idletime', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp; <small>minutes<\/small>', value: nvram['wan'+u+'_ppp_idletime'] },
+			{ title: 'Redial Interval', indent: 2, name: 'wan'+u+'_ppp_redialperiod', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp; <small>seconds<\/small>', value: nvram['wan'+u+'_ppp_redialperiod'] },
+			{ title: 'LCP Echo Interval', indent: 2, name: 'wan'+u+'_pppoe_lei', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp; <small>seconds; range: 1 - 60, default: 10<\/small>', value: nvram['wan'+u+'_pppoe_lei'] },
+			{ title: 'LCP Echo Link fail limit', indent: 2, name: 'wan'+u+'_pppoe_lef', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp; <small>range: 1 - 10, default: 5<\/small>', value: nvram['wan'+u+'_pppoe_lef'] },
 			{ title: 'MTU', multi: [
 				{ name: 'wan'+u+'_mtu_enable', type: 'select', options: [['0', 'Default'],['1','Manual']], value: nvram['wan'+u+'_mtu_enable'] },
 				{ name: 'f_wan'+u+'_mtu', type: 'text', maxlen: 4, size: 6, value: nvram['wan'+u+'_mtu'] } ] },
@@ -2016,18 +2278,29 @@ function init() {
 /* SIZEOPTMORE-BEGIN */
 			{ title: 'Single Line MLPPP', name: 'f_wan'+u+'_ppp_mlppp', type: 'checkbox', value: (nvram['wan'+u+'_ppp_mlppp'] == 1) },
 /* SIZEOPTMORE-END */
-			{ title: 'Route Modem IP', name: 'wan'+u+'_modem_ipaddr', type: 'text', maxlen: 15, size: 17, suffix: '&nbsp; <small>must be in different subnet to router, 0.0.0.0 to disable<\/small>', value: nvram['wan'+u+'_modem_ipaddr'] },
+			{ title: 'Route Modem IP', name: 'wan'+u+'_modem_ipaddr', type: 'text', maxlen: 15, size: 17, suffix: '&nbsp; <small>must be in different subnet to router, 0.0.0.0 to disable<\/small>', value: nvram['wan'+u+'_modem_ipaddr'] }
+		);
 /* USB-BEGIN */
+/* REMOVE-BEGIN */
+if (hasUsbSupport) {
+/* REMOVE-END */
+		wanFields.push(
 			{ title: 'Query HiLink Modem IP', name: 'wan'+u+'_hilink_ip', type: 'text', maxlen: 15, size: 17, suffix: '&nbsp; <small>show status of reachable hilink modem, 0.0.0.0 to disable<\/small>', value: nvram['wan'+u+'_hilink_ip'] },
-			{ title: 'Call Custom Status Script', name: 'f_wan'+u+'_status_script', type: 'checkbox', suffix: '&nbsp; <small>Call /www/user/cgi-bin/wan'+u+'_status.sh in the home page. Must output HTML<\/small>', value: (nvram['wan'+u+'_status_script'] == 1) },
+			{ title: 'Call Custom Status Script', name: 'f_wan'+u+'_status_script', type: 'checkbox', suffix: '&nbsp; <small>Call /www/user/cgi-bin/wan'+u+'_status.sh in the home page. Must output HTML<\/small>', value: (nvram['wan'+u+'_status_script'] == 1) }
+		);
+/* REMOVE-BEGIN */
+}
+/* REMOVE-END */
 /* USB-END */
+		wanFields.push(
 			{ title: 'Disable Watchdog', name: 'f_wan'+u+'_ck_pause', type: 'checkbox', suffix: '&nbsp; <small>only for this WAN<\/small>', value: (nvram['wan'+u+'_ck_pause'] == 1) },
 			{ title: 'Watchdog Mode', name: 'wan'+u+'_ckmtd', type: 'select', options: [['1','Ping'],['2','Traceroute*']
 /* BBT-BEGIN */
 				,['3','Curl']
 /* BBT-END */
 				], value: nvram['wan'+u+'_ckmtd'], suffix: '&nbsp; <small>*default; use the other method only when Traceroute is not working correctly<\/small>' }
-		]);
+		);
+		createFieldTable('', wanFields);
 		W('<\/div>');
 	}
 </script>
@@ -2070,7 +2343,7 @@ function init() {
 <div class="section">
 <script>
 	createFieldTable('', [
-		{ title: 'Enable', name: 'f_smart_connect_x', type: 'checkbox', value: (nvram.smart_connect_x == 1), suffix: ' <small>(Wireless settings will be synced to module one after saving to nvram!)<\/small>' }
+		{ title: 'Enable', name: 'f_smart_connect_x', type: 'checkbox', value: (nvram.smart_connect_x == 1), suffix: ' <small>Wireless settings from wl0 will sync to wl1 avter the Save<\/small>' }
 	]);
 </script>
 </div>
@@ -2112,28 +2385,31 @@ function init() {
 			W('<div class="section">');
 
 			var f = [
-				{ title: 'Enable Wireless', name: 'f_wl'+u+'_radio', type: 'checkbox',
+				{ title: 'Enable', name: 'f_wl'+u+'_radio', type: 'checkbox',
 					value: (nvram['wl'+u+'_radio'] == '1') && (nvram['wl'+u+'_net_mode'] != 'disabled') },
 				{ title: 'MAC Address', text: '<a href="advanced-mac.asp">'+nvram['wl'+u+'_hwaddr']+'<\/a>' },
 				{ title: 'Wireless Mode', name: 'f_wl'+u+'_mode', type: 'select',
 					options: [['ap','Access Point'],['apwds','Access Point + WDS'],['sta','Wireless Client'],['wet','Wireless Ethernet Bridge'],['wds','WDS']
 /* BCMWL6-BEGIN */
-						  ,['psta','Media Bridge']
+						,['psta','Media Bridge']
 /* BCMWL6-END */
-						 ],
+						],
 					value: ((nvram['wl'+u+'_mode'] == 'ap') && (nvram['wl'+u+'_wds_enable'] == '1')) ? 'apwds' : nvram['wl'+u+'_mode'] },
 				{ title: 'Radio Band', name: 'f_wl'+u+'_nband', type: 'select', options: bands[uidx],
 					value: nvram['wl'+u+'_nband'] || '0' == '0' ? bands[uidx][0][0] : nvram['wl'+u+'_nband'] },
 				{ title: 'Wireless Network Mode', name: 'wl'+u+'_net_mode', type: 'select',
 					value: (nvram['wl'+u+'_net_mode'] == 'disabled') ? 'mixed' : nvram['wl'+u+'_net_mode'],
 					options: [], prefix: '<span id="__wl'+u+'_net_mode">', suffix: '<\/span>' },
-				{ title: 'SSID', name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: nvram['wl'+u+'_ssid'] },
-				{ title: 'Broadcast', indent: 2, name: 'f_wl'+u+'_bcast', type: 'checkbox', value: (nvram['wl'+u+'_closed'] == '0') },
-				{ title: 'Channel', name: 'wl'+u+'_channel', type: 'select', options: ghz[uidx], prefix: '<span id="__wl'+u+'_channel">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_scan" value="Scan" onclick="scanButton('+u+')"> <img src="spin.svg" alt="" id="spin'+u+'">',
+				{ title: 'Broadcast SSID', name: 'f_wl'+u+'_bcast', type: 'checkbox', value: (nvram['wl'+u+'_closed'] == '0') },
+				{ title: 'SSID', indent: 2, name: 'wl'+u+'_ssid', type: 'text', maxlen: 32, size: 34, value: nvram['wl'+u+'_ssid'], placeholder: ' < case sensitive >', prefix: '<span id="__wl'+u+'_ssid">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_ssidscan" value="Scan" onclick="scanButton('+u+', \'ssid\')"> <img src="spin.svg" alt="" id="spinSsid'+u+'" style="display:none;"> <select id="ssidList'+u+'" style="display:none" onchange="selectSsid(this, '+u+')"><\/select>', onchange: 'clearBssidIfPresent('+u+')' },
+/* RTNPLUS-BEGIN */
+				{ title: 'BSSID lock', indent: 2, name: 'f_wl'+u+'_clap_hwaddr', type: 'text', placeholder: ' < optional >', maxlen: 17, size: 16, value: nvram['wl'+u+'_clap_hwaddr'], suffix: ' <input type="button" id="_f_wl'+u+'_macscan" value="Scan" title="Predefined SSID only" onclick="scanBSSID\('+u+')" style="display:none"> <img src="spin.svg" alt="" id="spinMac'+u+'" style="display:none;"> <small> Defined SSID only<\/small>' },
+/* RTNPLUS-END */					
+				{ title: 'Channel', indent: 2, name: 'wl'+u+'_channel', type: 'select', options: ghz[uidx], prefix: '<span id="__wl'+u+'_channel">', suffix: '<\/span> <input type="button" id="_f_wl'+u+'_scan" value="Scan" onclick="scanButton('+u+')"> <img src="spin.svg" alt="" id="spin'+u+'">',
 					value: nvram['wl'+u+'_channel'] },
-				{ title: 'Channel Width', name: 'wl'+u+'_nbw_cap', type: 'select', options: [],
+				{ title: 'Channel Width', indent: 2, name: 'wl'+u+'_nbw_cap', type: 'select', options: [],
 					value: nvram['wl'+u+'_nbw_cap'], prefix: '<span id="__wl'+u+'_nbw_cap">', suffix: '<\/span>' },
-				{ title: 'Control Sideband', name: 'f_wl'+u+'_nctrlsb', type: 'select', options: [['lower','Lower'],['upper','Upper']],
+				{ title: 'Control Sideband', indent: 2, name: 'f_wl'+u+'_nctrlsb', type: 'select', options: [['lower','Lower'],['upper','Upper']],
 					value: nvram['wl'+u+'_nctrlsb'] == 'none' ? 'lower' : nvram['wl'+u+'_nctrlsb'] },
 				null,
 				{ title: 'Security', name: 'wl'+u+'_security_mode', type: 'select',
@@ -2141,19 +2417,22 @@ function init() {
 					value: nvram['wl'+u+'_security_mode'] },
 				{ title: 'Encryption', indent: 2, name: 'wl'+u+'_crypto', type: 'select',
 					options: [['tkip','TKIP'],['aes','AES'],['tkip+aes','TKIP / AES']], value: nvram['wl'+u+'_crypto'] },
-				{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_wpa_psk', type: 'password', maxlen: 64, size: 66, peekaboo: 1,
-					suffix: ' <input type="button" id="_f_wl'+u+'_psk_random1" value="Random" onclick="random_psk(\'_wl'+u+'_wpa_psk\')">',
+				{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_wpa_psk', type: 'password', placeholder: ' < case sensitive >', maxlen: 63, size: 34, peekaboo: 1,
+					suffix: ' <select id="_f_wl'+u+'_psk_random1" onchange="random_psk(\'_wl'+u+'_wpa_psk\', \'_f_wl'+u+'_psk_random1\')" style="width:auto"><option value="default" style="color:grey" selected>Random</option><option value="clear">Clear</option><option value="8">8 chars</option><option value="10">10 chars</option><option value="12">12 chars</option><option value="14">14 chars</option><option value="16">16 chars</option><option value="18">18 chars</option><option value="20">20 chars</option><option value="24">24 chars</option><option value="32">32 chars</option><option value="48">48 chars</option><option value="63">63 chars</option></select>',
 					value: nvram['wl'+u+'_wpa_psk'] },
-				{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_radius_key', type: 'password', maxlen: 80, size: 32, peekaboo: 1,
-					suffix: ' <input type="button" id="_f_wl'+u+'_psk_random2" value="Random" onclick="random_psk(\'_wl'+u+'_radius_key\')">',
+				{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_radius_key', type: 'password', maxlen: 80, size: 34, peekaboo: 1,
+					suffix: ' <select id="_f_wl'+u+'_psk_random2" onchange="random_psk(\'_wl'+u+'_radius_key\', \'_f_wl'+u+'_psk_random2\')" style="width:auto"><option value="default" style="color:grey" selected>Random</option><option value="clear">Clear</option><option value="8">8 chars</option><option value="10">10 chars</option><option value="12">12 chars</option><option value="16">16 chars</option><option value="24">24 chars</option><option value="32">32 chars</option><option value="48">48 chars</option><option value="63">63 chars</option></select>',
 					value: nvram['wl'+u+'_radius_key'] },
-/* RTNPLUS-NO-BEGIN */
-				{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey', type: 'text', maxlen: 4, size: 6, suffix: '&nbsp; <small>seconds<\/small>',
-/* RTNPLUS-NO-END */
+				{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey',  type: 'text',
 /* RTNPLUS-BEGIN */
-				{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey', type: 'text', maxlen: 7, size: 9, suffix: '&nbsp; <small>seconds<\/small>',
+					maxlen: 7,
+					size: 9,
 /* RTNPLUS-END */
-					value: nvram['wl'+u+'_wpa_gtk_rekey'] },
+/* RTNPLUS-NO-BEGIN */
+					maxlen: 4,
+					size: 6,
+/* RTNPLUS-NO-END */
+					suffix: '&nbsp; <small>seconds<\/small>', value: nvram['wl'+u+'_wpa_gtk_rekey'] },
 				{ title: 'Radius Server', indent: 2, multi: [
 					{ name: 'wl'+u+'_radius_ipaddr', type: 'text', maxlen: 15, size: 17, value: nvram['wl'+u+'_radius_ipaddr'] },
 					{ name: 'wl'+u+'_radius_port', type: 'text', maxlen: 5, size: 7, prefix: ' : ', value: nvram['wl'+u+'_radius_port'] } ] },
@@ -2170,22 +2449,21 @@ function init() {
 						suffix: '<input type="radio" onchange="verifyFields(this,1)" onclick="verifyFields(this,1)" name="f_wl'+u+'_wepidx" id="_f_wl'+u+'_wepidx_'+i+'" value="'+i+'"'+((nvram['wl'+u+'_key'] == i) ? ' checked="checked">' : '>'),
 						value: nvram['wl'+u+'_key'+i] });
 			}
-/* RTNPLUS-BEGIN */
-			f.push(null, { title: 'AP MAC Address to connect', name: 'f_wl'+u+'_clap_hwaddr', type: 'text', maxlen: 17, size: 20, value: nvram['wl'+u+'_clap_hwaddr'], suffix: ' <small>(usually empty/not needed)<\/small>' } );
-/* RTNPLUS-END */
-			f.push(null, { title: 'WDS', name: 'f_wl'+u+'_lazywds', type: 'select', options: [['0','Link With...'],['1','Automatic']], value: nvram['wl'+u+'_lazywds'] } );
+			
+			f.push(null, { title: 'WDS peering policy', name: 'f_wl'+u+'_lazywds', type: 'select', options: [['0','Restricted'],['1','Open']], value: nvram['wl'+u+'_lazywds'], onchange: 'verifyFields(null,1)' } );
 
 			var wds = nvram['wl'+u+'_wds'].split(/\s+/);
-			for (i = 0; i < 10; i += 2) {
-				f.push(
-					{ title: (i ? '' : 'MAC Address'), indent: 2, multi: [
+				for (i = 0; i < 10; i += 2) {
+					f.push(
+						{ title: (i ? '' : 'Allowed BSSID peers'), indent: 2, multi: [
 						{ name: 'f_wl'+u+'_wds_'+i, type: 'text', maxlen: 17, size: 20, value: wds[i] || mac_null },
-						{ name: 'f_wl'+u+'_wds_'+(i + 1), type: 'text', maxlen: 17, size: 20, value: wds[i + 1] || mac_null } ] } );
-			}
-			createFieldTable('', f);
-			W('<\/div>');
-		}
+						{ custom: '<input type="button" id="_f_wl'+u+'_wdsscan_'+i+'" value="Scan" title="Predefined SSID only" onclick="scanBSSID\('+u+', \'_f_wl'+u+'_wds_'+i+'\', \'macListWds'+u+'_'+i+'\', \'spinWdsMac'+u+'_'+i+'\', \'_f_wl'+u+'_wdsscan_'+i+'\')"> <img src="spin.svg" alt="" id="spinWdsMac'+u+'_'+i+'" style="display:none;">'
+							+ '<input type="hidden" id="_f_wl'+u+'_wds_'+(i + 1)+'" name="f_wl'+u+'_wds_'+(i + 1)+'" value="'+(wds[i + 1] || mac_null)+'">' } ] } );
+				}
+					createFieldTable('', f);
+					W('<\/div>');
 	}
+}
 /* for each wlif */
 </script>
 

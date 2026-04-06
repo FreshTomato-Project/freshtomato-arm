@@ -1983,16 +1983,12 @@ function save(nomsg) {
 		nvram[t+'_rgwr'] = E('_'+t+'_rgwr').value;
 		nvram[t+'_com'] = E('_'+t+'_com').value;
 
-		/* set properly value of Push LANX to peers: bit 0 = LAN0, bit 1 = LAN1, bit 2 = LAN2, bit 3 = LAN3 */
+		/* set properly value of Push LANX to peers: bit 0 = LAN0, bit 1 = LAN1, etc. */
 		fom[t+'_lan'].value = 0; /* init with 0 and check */
-		if (fom['_f_'+t+'_lan0'].checked)
-			fom[t+'_lan'].value |= 1;
-		if (fom['_f_'+t+'_lan1'].checked)
-			fom[t+'_lan'].value |= 2;
-		if (fom['_f_'+t+'_lan2'].checked)
-			fom[t+'_lan'].value |= 4;
-		if (fom['_f_'+t+'_lan3'].checked)
-			fom[t+'_lan'].value |= 8;
+		for (var j = 0; j <= MAX_BRIDGE_ID; j++) {
+			if (fom['_f_'+t+'_lan'+j].checked)
+				fom[t+'_lan'].value |= (1 << j);
+		}
 
 		if (E('_f_'+t+'_adns').checked)
 			fom.wg_adns.value += i+',';
@@ -2175,17 +2171,17 @@ function init() {
 			/* peers params tab start */
 			W('<div id="'+t+'-wg-peersp">');
 			W('<div class="section-title">Peers Parameters <span style="font-size:0.7em">(used only to generate peer config files)<\/span><\/div>');
-			createFieldTable('', [
+			var f = [
 				{ title: 'Router behind NAT', name: t+'_ka', type: 'text', maxlen: 2, size: 4, suffix: '&nbsp;<small>configures keepalive interval from this router towards the defined peers (0=disable/no NAT, 10-99s range, 25 is a common setting)<\/small>', value: nvram[t+'_ka'] },
 				{ title: 'Endpoint', name: 'f_'+t+'_endpoint', type: 'select', options: [['0','FQDN'],['1','WAN IP'],['2','Custom Endpoint']], value: nvram[t+'_endpoint'][0] || 0, suffix: '&nbsp;<input type="text" name="f_'+t+'_custom_endpoint" value="'+(nvram[t+'_endpoint'].split('|', 2)[1] || '')+'" onchange="verifyFields(this, 1)" id="_f_'+t+'_custom_endpoint" maxlength="64" size="46">' },
 				{ title: 'Allowed IPs', name: t+'_aip', type: 'text', placeholder: 'CIDR format / comma separated', maxlen: 128, size: 64, value: nvram[t+'_aip'] },
-				{ title: 'DNS Servers for Peers', name: t+'_peer_dns', type: 'text', maxlen: 128, size: 64, placeholder: 'comma separated', value: nvram[t+'_peer_dns'] },
-				{ title: 'Push LAN0 (br0) to peers', name: 'f_'+t+'_lan0', type: 'checkbox', value: (nvram[t+'_lan'] & 0x01) },
-				{ title: 'Push LAN1 (br1) to peers', name: 'f_'+t+'_lan1', type: 'checkbox', value: (nvram[t+'_lan'] & 0x02) },
-				{ title: 'Push LAN2 (br2) to peers', name: 'f_'+t+'_lan2', type: 'checkbox', value: (nvram[t+'_lan'] & 0x04) },
-				{ title: 'Push LAN3 (br3) to peers', name: 'f_'+t+'_lan3', type: 'checkbox', value: (nvram[t+'_lan'] & 0x08) },
-				{ title: 'Forward all peer traffic', name: 'f_'+t+'_rgw', type: 'checkbox', value: nvram[t+'_rgw'] == 1 }
-			]);
+				{ title: 'DNS Servers for Peers', name: t+'_peer_dns', type: 'text', maxlen: 128, size: 64, placeholder: 'comma separated', value: nvram[t+'_peer_dns'] }
+			];
+			for (var j = 0; j <= MAX_BRIDGE_ID; j++) {
+				f.push({ title: 'Push LAN'+j+' (br'+j+') to peers', name: 'f_'+t+'_lan'+j, type: 'checkbox', value: (nvram[t+'_lan'] & (1 << j)) });
+			}
+			f.push({ title: 'Forward all peer traffic', name: 'f_'+t+'_rgw', type: 'checkbox', value: nvram[t+'_rgw'] == 1 });
+			createFieldTable('', f);
 			W('<br><\/div>');
 			/* peers params tab stop */
 

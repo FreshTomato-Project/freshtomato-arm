@@ -9,7 +9,7 @@ FreshTomato-ARM Changelog
 ---------------------------
 
 - Note: Many CVE fixes and improvements, updating is strongly recommended!
-- Warning: due to changes in the naming of some nvram variables, users of OpenVPN should: 
+- Warning: due to naming changes for some nvram variables in release 2026.1 (in subsequent releases, thanks to @lancethepants this is no longer necessary), OpenVPN users should:
   1. clear nvram during the update or
   2. use this script: https://gist.github.com/pedro0311/674f2e19691106417a989a43bf27b0a4 - read the inside HOWTO first!
 

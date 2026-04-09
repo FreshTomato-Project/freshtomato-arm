@@ -740,9 +740,11 @@ static unsigned char *grab_extradata_lua(unsigned char *buf, unsigned char *end,
   if (!buf || (buf == end))
     return NULL;
 
-  for (next = buf; *next != 0; next++)
+  for (next = buf; ; next++)
     if (next == end)
       return NULL;
+    else if (*next == 0)
+      break;
   
   if (next != buf)
     {

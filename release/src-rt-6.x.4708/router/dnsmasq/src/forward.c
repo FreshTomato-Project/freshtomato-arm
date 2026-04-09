@@ -1205,10 +1205,10 @@ void reply_query(int fd, time_t now)
 	  server = daemon->serverarray[serv];
 	  if (server->sfd && server->sfd->fd == fd)
 	    break;
-
-	  if (serv == last)
-	    return;
 	}
+
+      if (serv == last)
+	return;
     }
   
   /* spoof check: answer must come from known server, also
@@ -2175,9 +2175,12 @@ static ssize_t tcp_talk(int first, int last, int start, struct dns_header *heade
 	     someone might be attempting to insert bogus values into the cache by 
 	     sending replies containing questions and bogus answers.
 	     Try another server, or give up */
-	  p = (unsigned char *)(((struct dns_header *)recvbuff->iov_base)+1);
-	  if (extract_name(((struct dns_header *)recvbuff->iov_base), rsize, &p, daemon->namebuff, EXTR_NAME_COMPARE, 4) != 1)
+	  struct dns_header *header = (struct dns_header *)recvbuff->iov_base;
+	  p = (unsigned char *)(header+1);
+	  if (rsize < (unsigned int)sizeof(struct dns_header) || !(header->hb3 & HB3_QR) || ntohs(header->qdcount) != 1 ||
+	      extract_name(header, rsize, &p, daemon->namebuff, EXTR_NAME_COMPARE, 4) != 1)
 	    continue;
+	  
 	  GETSHORT(rtype, p); 
 	  GETSHORT(rclass, p);
       
@@ -2465,18 +2468,18 @@ void tcp_request(int confd, time_t now, struct iovec *bigbuff,
 	      !read_write(confd, (unsigned char *)daemon->packet, size, RW_READ))
 	    break;
 	  
-	  if (size < (int)sizeof(struct dns_header))
+	  /* header == query */
+	  header = (struct dns_header *)daemon->packet;
+
+	  if (size < (int)sizeof(struct dns_header) || (header->hb3 & HB3_QR))
 	    continue;
 	  
 	  /* Make sure we have a buffer big enough for the largest answer. */
 	  expand_buf(bigbuff, 65536 + MAXDNAME + RRFIXEDSZ);
 	  out_header = bigbuff->iov_base;
 	  
-	  /* header == query */
-	  header = (struct dns_header *)daemon->packet;
-
 	  /* Add edns0 pheader to query */
-	  size = add_edns0_config(header, size, ((unsigned char *) header) + daemon->edns_pktsz, &peer_addr, now, &cacheable);
+	  size = add_edns0_config(header, size, ((unsigned char *) header) + daemon->packet_buff_sz, &peer_addr, now, &cacheable);
 
 	  /* Clear buffer to avoid risk of information disclosure. */
 	  memset(bigbuff->iov_base, 0, bigbuff->iov_len);

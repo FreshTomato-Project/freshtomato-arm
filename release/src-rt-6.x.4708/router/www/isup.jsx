@@ -2,6 +2,7 @@
 
 //	<% ddnsx(); %>
 
+//	<% jsdefaults(); %>
 
 if (typeof stats === 'undefined' || stats.length == 0) stats = { };
 stats.dns = [<% dns(); %>];
@@ -38,16 +39,13 @@ isup.bwl = <% nv("bwl_enable"); %>;
 
 /* OPENVPN-BEGIN */
 /* BCMARM-BEGIN */
-var OVPN_CLIENT_COUNT = 3;
 isup.vpnclient3 = parseInt('<% psup("vpnclient3"); %>');
 /* BCMARM-END */
 /* BCMARM-NO-BEGIN */
-var OVPN_CLIENT_COUNT = 2;
 /* BCMARM-NO-END */
 isup.vpnclient1 = parseInt('<% psup("vpnclient1"); %>');
 isup.vpnclient2 = parseInt('<% psup("vpnclient2"); %>');
 
-var OVPN_SERVER_COUNT = 2;
 isup.vpnserver1 = parseInt('<% psup("vpnserver1"); %>');
 isup.vpnserver2 = parseInt('<% psup("vpnserver2"); %>');
 /* OPENVPN-END */
@@ -58,7 +56,6 @@ isup.pptpd = parseInt('<% psup("pptpd"); %>');
 /* PPTPD-END */
 
 /* WIREGUARD-BEGIN */
-var WG_INTERFACE_COUNT = 3;
 isup.wireguard0 = parseInt('<% wgstat("wg0"); %>');
 isup.wireguard1 = parseInt('<% wgstat("wg1"); %>');
 isup.wireguard2 = parseInt('<% wgstat("wg2"); %>');

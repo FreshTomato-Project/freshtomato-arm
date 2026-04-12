@@ -302,13 +302,6 @@ struct nvram_tuple bsd_defaults[] = {
 	{ "bwl_lan" #i "_dlr",		""				, 0 }, \
 	{ "bwl_lan" #i "_ulr",		""				, 0 }, \
 	{ "bwl_lan" #i "_prio",		"2"				, 0 },
-#ifdef TCONFIG_OPENVPN
- #define BRIDGE_BLOCK_OPENVPN(i) \
-	{ "vpns1_plan" #i,		"0"				, 0 }, \
-	{ "vpns2_plan" #i,		"0"				, 0 },
-#else
- #define BRIDGE_BLOCK_OPENVPN(i)
-#endif
 #ifdef TCONFIG_PROXY
  #define BRIDGE_BLOCK_PROXY(i) \
 	{ "multicast_lan" #i,		"0"				, 0 }, /* on LANX (brX) */ \
@@ -332,7 +325,6 @@ struct nvram_tuple bsd_defaults[] = {
 
 #define BRIDGE_BLOCK(i) \
 	BRIDGE_BLOCK_CORE(i) \
-	BRIDGE_BLOCK_OPENVPN(i) \
 	BRIDGE_BLOCK_PROXY(i) \
 	BRIDGE_BLOCK_ZEBRA(i) \
 	BRIDGE_BLOCK_USB_EXTRAS(i)
@@ -1434,7 +1426,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpns1_remote",		"10.6.0.2"			, 0 },
 	{ "vpns1_reneg",		"-1"				, 0 },
 	{ "vpns1_hmac",			"-1"				, 0 },
-	{ "vpns1_plan",			"1"				, 0 },
+	{ "vpns1_plan",			""				, 0 },
 	{ "vpns1_pdns",			"0"				, 0 },
 	{ "vpns1_ccd",			"0"				, 0 },
 	{ "vpns1_c2c",			"0"				, 0 },
@@ -1479,7 +1471,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpns2_remote",		"10.7.0.2"			, 0 },
 	{ "vpns2_reneg",		"-1"				, 0 },
 	{ "vpns2_hmac",			"-1"				, 0 },
-	{ "vpns2_plan",			"1"				, 0 },
+	{ "vpns2_plan",			""				, 0 },
 	{ "vpns2_pdns",			"0"				, 0 },
 	{ "vpns2_ccd",			"0"				, 0 },
 	{ "vpns2_c2c",			"0"				, 0 },

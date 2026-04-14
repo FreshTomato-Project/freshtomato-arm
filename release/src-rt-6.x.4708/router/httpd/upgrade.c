@@ -97,7 +97,7 @@ void wi_upgrade(char *url, int len, char *boundary)
 	led(LED_DIAG, 1);
 
 	/* create unique file */
-	if ((fd = mkstemp(fifo) < 0)) {
+	if ((fd = mkstemp(fifo)) < 0) {
 		error = "Unable to create file";
 		goto ERROR2;
 	}

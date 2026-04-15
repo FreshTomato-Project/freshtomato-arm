@@ -218,6 +218,8 @@ ERROR:
 void wo_restore(char *url)
 {
 	if (rboot) {
+		set_action(ACT_REBOOT);
+		sync();
 		parse_asp("reboot.asp");
 		web_close();
 
@@ -228,9 +230,6 @@ void wo_restore(char *url)
 
 		sleep(2);
 
-		set_action(ACT_REBOOT);
-		sync();
-		//kill(1, SIGTERM);
 		reboot(RB_AUTOBOOT);
 
 		exit(0);

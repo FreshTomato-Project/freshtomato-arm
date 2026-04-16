@@ -1,4 +1,9 @@
 
+Changes with nginx 1.30.0                                        14 Apr 2026
+
+    *) 1.30.x stable branch.
+
+
 Changes with nginx 1.29.8                                        07 Apr 2026
 
     *) Feature: the "max_headers" directive.

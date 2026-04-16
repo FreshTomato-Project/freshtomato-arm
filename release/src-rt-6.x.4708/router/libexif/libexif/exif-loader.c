@@ -45,6 +45,8 @@
 #define JPEG_MARKER_APP1 0xe1
 #undef JPEG_MARKER_APP2
 #define JPEG_MARKER_APP2 0xe2
+#undef JPEG_MARKER_APP3
+#define JPEG_MARKER_APP3 0xe3
 #undef JPEG_MARKER_APP4
 #define JPEG_MARKER_APP4 0xe4
 #undef JPEG_MARKER_APP5
@@ -319,6 +321,7 @@ begin:
 			case JPEG_MARKER_DQT:
 			case JPEG_MARKER_APP0:
 			case JPEG_MARKER_APP2:
+			case JPEG_MARKER_APP3:
 			case JPEG_MARKER_APP4:
 			case JPEG_MARKER_APP5:
 			case JPEG_MARKER_APP10:
@@ -338,7 +341,7 @@ begin:
 					EXIF_LOG_CODE_CORRUPT_DATA,
 					"ExifLoader", _("The data supplied "
 						"does not seem to contain "
-						"EXIF data."));
+						"EXIF data. JPEG Marker type 0x%02x"), eld->b[i]);
 				exif_loader_reset (eld);
 				return 0;
 			}

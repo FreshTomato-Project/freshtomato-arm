@@ -441,6 +441,8 @@ static const struct TagEntry {
 	/* Not in EXIF 2.2 */
 	{EXIF_TAG_RELATED_IMAGE_LENGTH, "RelatedImageLength",
 	 "RelatedImageLength", "", ESL_UNKNOWN},
+	{EXIF_TAG_IMAGE_DEPTH, "ImageDepth",
+	 "ImageDepth", "", ESL_UNKNOWN},
 	/* Not in EXIF 2.2 */
 	{EXIF_TAG_CFA_REPEAT_PATTERN_DIM, "CFARepeatPatternDim",
 	 "CFARepeatPatternDim", "", ESL_UNKNOWN},
@@ -486,7 +488,7 @@ static const struct TagEntry {
 	/* Not in EXIF 2.2 */
 	{EXIF_TAG_IMAGE_RESOURCES, "ImageResources", N_("Image Resources Block"), "",
 	 ESL_UNKNOWN},
-	{EXIF_TAG_EXIF_IFD_POINTER, "ExifIfdPointer", "ExifIFDPointer",
+	{EXIF_TAG_EXIF_IFD_POINTER, "ExifIfdPointer", N_("Exif IFD Pointer"),
 	 N_("A pointer to the Exif IFD. Interoperability, Exif IFD has the "
 	    "same structure as that of the IFD specified in TIFF. "
 	    "ordinarily, however, it does not contain image data as in "

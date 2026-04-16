@@ -1,25 +1,26 @@
 # Swedish translation for libexif
 # Copyright © 2007, 2009, 2016, 2022 Free Software Foundation, Inc.
-# This file is distributed under the same license as the libexif package.
 # SPDX-License-Identifier: LGPL-2.0-or-later
+# This file is distributed under the same license as the libexif package.
 # Daniel Nylander <po@danielnylander.se>, 2007, 2009.
 # Sebastian Rasmussen <sebras@gmail.com>, 2016, 2022.
 # Luna Jernberg <droidbittin@gmail.com>, 2022.
+# Anders Jonsson <anders.jonsson@norsjovallen.se>, 2025.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: libexif 0.6.24\n"
+"Project-Id-Version: libexif 0.6.25\n"
 "Report-Msgid-Bugs-To: libexif-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2025-01-17 15:27+0100\n"
-"PO-Revision-Date: 2022-10-24 22:47+0200\n"
-"Last-Translator: Sebastian Rasmussen <sebras@gmail.com>\n"
+"POT-Creation-Date: 2026-04-07 11:21+0200\n"
+"PO-Revision-Date: 2025-10-09 23:01+0200\n"
+"Last-Translator: Anders Jonsson <anders.jonsson@norsjovallen.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Bugs: Report translation errors to the Language-Team address.\n"
-"X-Generator: Poedit 3.1.1\n"
+"X-Generator: Poedit 3.7\n"
 
 #: libexif/canon/mnote-canon-entry.c:40 libexif/fuji/mnote-fuji-entry.c:37
 #: libexif/olympus/mnote-olympus-entry.c:39
@@ -61,7 +62,7 @@ msgstr "Makro"
 #: libexif/olympus/mnote-olympus-entry.c:200
 #: libexif/olympus/mnote-olympus-entry.c:208
 #: libexif/olympus/mnote-olympus-entry.c:218
-#: libexif/olympus/mnote-olympus-entry.c:596
+#: libexif/olympus/mnote-olympus-entry.c:598
 #: libexif/pentax/mnote-pentax-entry.c:107
 #: libexif/pentax/mnote-pentax-entry.c:112
 #: libexif/pentax/mnote-pentax-entry.c:117
@@ -90,15 +91,15 @@ msgstr "Superfin"
 #: libexif/canon/mnote-canon-entry.c:307 libexif/canon/mnote-canon-entry.c:315
 #: libexif/canon/mnote-canon-entry.c:348 libexif/canon/mnote-canon-entry.c:360
 #: libexif/canon/mnote-canon-entry.c:373 libexif/canon/mnote-canon-entry.c:375
-#: libexif/canon/mnote-canon-entry.c:586 libexif/canon/mnote-canon-entry.c:686
+#: libexif/canon/mnote-canon-entry.c:588 libexif/canon/mnote-canon-entry.c:688
 #: libexif/fuji/mnote-fuji-entry.c:72 libexif/fuji/mnote-fuji-entry.c:105
 #: libexif/fuji/mnote-fuji-entry.c:109 libexif/fuji/mnote-fuji-entry.c:117
 #: libexif/fuji/mnote-fuji-entry.c:144
 #: libexif/olympus/mnote-olympus-entry.c:183
 #: libexif/olympus/mnote-olympus-entry.c:191
 #: libexif/olympus/mnote-olympus-entry.c:256
-#: libexif/olympus/mnote-olympus-entry.c:540
-#: libexif/olympus/mnote-olympus-entry.c:557
+#: libexif/olympus/mnote-olympus-entry.c:542
+#: libexif/olympus/mnote-olympus-entry.c:559
 #: libexif/pentax/mnote-pentax-entry.c:197
 #: libexif/pentax/mnote-pentax-entry.c:262
 msgid "Off"
@@ -130,8 +131,8 @@ msgstr "Auto"
 #: libexif/fuji/mnote-fuji-entry.c:110 libexif/fuji/mnote-fuji-entry.c:118
 #: libexif/fuji/mnote-fuji-entry.c:145
 #: libexif/olympus/mnote-olympus-entry.c:184
-#: libexif/olympus/mnote-olympus-entry.c:543
-#: libexif/olympus/mnote-olympus-entry.c:560
+#: libexif/olympus/mnote-olympus-entry.c:545
+#: libexif/olympus/mnote-olympus-entry.c:562
 #: libexif/pentax/mnote-pentax-entry.c:200
 #: libexif/pentax/mnote-pentax-entry.c:263
 msgid "On"
@@ -424,7 +425,7 @@ msgstr "ISO 3200"
 #: libexif/canon/mnote-canon-entry.c:368 libexif/canon/mnote-canon-entry.c:420
 #: libexif/olympus/mnote-olympus-entry.c:194
 #: libexif/olympus/mnote-olympus-entry.c:231
-#: libexif/olympus/mnote-olympus-entry.c:460
+#: libexif/olympus/mnote-olympus-entry.c:462
 #: libexif/pentax/mnote-pentax-entry.c:244
 msgid "None"
 msgstr "Ingen"
@@ -1046,7 +1047,7 @@ msgid "Fluorescent"
 msgstr "Ljusrör"
 
 #: libexif/canon/mnote-canon-entry.c:336 libexif/canon/mnote-canon-entry.c:408
-#: libexif/exif-entry.c:745 libexif/exif-entry.c:797 libexif/exif-tag.c:628
+#: libexif/exif-entry.c:745 libexif/exif-entry.c:797 libexif/exif-tag.c:630
 #: libexif/fuji/mnote-fuji-entry.c:82 libexif/pentax/mnote-pentax-entry.c:256
 msgid "Flash"
 msgstr "Blixt"
@@ -1097,7 +1098,7 @@ msgstr "Nattscen"
 
 #: libexif/canon/mnote-canon-entry.c:355
 msgid "Center-right"
-msgstr "Centrum höger"
+msgstr "Centrum-höger"
 
 #: libexif/canon/mnote-canon-entry.c:357
 msgid "Left-right"
@@ -1105,7 +1106,7 @@ msgstr "Vänster-höger"
 
 #: libexif/canon/mnote-canon-entry.c:358
 msgid "Left-center"
-msgstr "Vänstercentrerad"
+msgstr "Vänster-centrum"
 
 #: libexif/canon/mnote-canon-entry.c:359
 msgid "All"
@@ -1152,22 +1153,22 @@ msgid "Rotated by software"
 msgstr "Roterad av programvara"
 
 #: libexif/canon/mnote-canon-entry.c:384
-#: libexif/olympus/mnote-olympus-entry.c:616
+#: libexif/olympus/mnote-olympus-entry.c:618
 msgid "Left to right"
 msgstr "Vänster till höger"
 
 #: libexif/canon/mnote-canon-entry.c:385
-#: libexif/olympus/mnote-olympus-entry.c:619
+#: libexif/olympus/mnote-olympus-entry.c:621
 msgid "Right to left"
 msgstr "Höger till vänster"
 
 #: libexif/canon/mnote-canon-entry.c:386
-#: libexif/olympus/mnote-olympus-entry.c:622
+#: libexif/olympus/mnote-olympus-entry.c:624
 msgid "Bottom to top"
 msgstr "Nederkant till överkant"
 
 #: libexif/canon/mnote-canon-entry.c:387
-#: libexif/olympus/mnote-olympus-entry.c:625
+#: libexif/olympus/mnote-olympus-entry.c:627
 msgid "Top to bottom"
 msgstr "Överkant till nederkant"
 
@@ -1251,34 +1252,34 @@ msgstr "Svartvitt"
 msgid ", "
 msgstr ", "
 
-#: libexif/canon/mnote-canon-entry.c:589 libexif/canon/mnote-canon-entry.c:689
+#: libexif/canon/mnote-canon-entry.c:591 libexif/canon/mnote-canon-entry.c:691
 #, c-format
 msgid "%i (ms)"
 msgstr "%i (ms)"
 
-#: libexif/canon/mnote-canon-entry.c:634
+#: libexif/canon/mnote-canon-entry.c:636
 #, c-format
 msgid "%.2f mm"
 msgstr "%.2f mm"
 
-#: libexif/canon/mnote-canon-entry.c:660
+#: libexif/canon/mnote-canon-entry.c:662
 #, c-format
 msgid "%.2f EV"
 msgstr "%.2f EV"
 
-#: libexif/canon/mnote-canon-entry.c:670 libexif/exif-entry.c:1109
+#: libexif/canon/mnote-canon-entry.c:672 libexif/exif-entry.c:1109
 #, c-format
 msgid "1/%.0f"
 msgstr "1/%.0f"
 
-#: libexif/canon/mnote-canon-entry.c:682
+#: libexif/canon/mnote-canon-entry.c:684
 #, c-format
 msgid "%u mm"
 msgstr "%u mm"
 
-#: libexif/canon/mnote-canon-entry.c:818 libexif/fuji/mnote-fuji-entry.c:305
-#: libexif/pentax/mnote-pentax-entry.c:403
-#: libexif/pentax/mnote-pentax-entry.c:499
+#: libexif/canon/mnote-canon-entry.c:820 libexif/fuji/mnote-fuji-entry.c:306
+#: libexif/pentax/mnote-pentax-entry.c:404
+#: libexif/pentax/mnote-pentax-entry.c:500
 #, c-format
 msgid "%i bytes unknown data"
 msgstr "%i byte okänt data"
@@ -1288,7 +1289,7 @@ msgid "Settings (First Part)"
 msgstr "Inställningar (första delen)"
 
 #: libexif/canon/mnote-canon-tag.c:38 libexif/canon/mnote-canon-tag.c:160
-#: libexif/exif-tag.c:632 libexif/pentax/mnote-pentax-tag.c:90
+#: libexif/exif-tag.c:634 libexif/pentax/mnote-pentax-tag.c:90
 msgid "Focal Length"
 msgstr "Brännvidd"
 
@@ -1296,7 +1297,7 @@ msgstr "Brännvidd"
 msgid "Settings (Second Part)"
 msgstr "Inställningar (andra delen)"
 
-#: libexif/canon/mnote-canon-tag.c:40 libexif/olympus/mnote-olympus-entry.c:605
+#: libexif/canon/mnote-canon-tag.c:40 libexif/olympus/mnote-olympus-entry.c:607
 #: libexif/pentax/mnote-pentax-entry.c:179
 msgid "Panorama"
 msgstr "Panorama"
@@ -1342,15 +1343,15 @@ msgstr "Anpassade funktioner"
 
 #: libexif/canon/mnote-canon-tag.c:50
 msgid "Model ID"
-msgstr "Modell ID"
+msgstr "Modell-ID"
 
 #: libexif/canon/mnote-canon-tag.c:51
 msgid "Movie Info"
-msgstr "Film Info"
+msgstr "Filminformation"
 
 #: libexif/canon/mnote-canon-tag.c:52
 msgid "AF Info"
-msgstr "AF info"
+msgstr "AF-info"
 
 #: libexif/canon/mnote-canon-tag.c:53
 msgid "Thumbnail Valid Area"
@@ -1358,7 +1359,7 @@ msgstr "Miniatyrbild giltigt område"
 
 #: libexif/canon/mnote-canon-tag.c:54
 msgid "Serial Number Format"
-msgstr "Serienummer Format"
+msgstr "Serienummerformat"
 
 #: libexif/canon/mnote-canon-tag.c:55
 msgid "Super Macro"
@@ -1374,7 +1375,7 @@ msgstr "Mina färger"
 
 #: libexif/canon/mnote-canon-tag.c:58
 msgid "Firmware Revision"
-msgstr "Firmwarerevision"
+msgstr "Fast programvarurevision"
 
 #: libexif/canon/mnote-canon-tag.c:59
 msgid "Categories"
@@ -1390,19 +1391,19 @@ msgstr "Ansiktsavkänning 2"
 
 #: libexif/canon/mnote-canon-tag.c:62 libexif/olympus/mnote-olympus-tag.c:123
 msgid "AF Info 2"
-msgstr "AF info 2"
+msgstr "AF-info 2"
 
 #: libexif/canon/mnote-canon-tag.c:63
 msgid "Contrast Info"
-msgstr "Kontrast Info"
+msgstr "Kontrastinfo"
 
-#: libexif/canon/mnote-canon-tag.c:64 libexif/exif-tag.c:903
+#: libexif/canon/mnote-canon-tag.c:64 libexif/exif-tag.c:905
 msgid "Image Unique ID"
 msgstr "Unikt bild-ID"
 
 #: libexif/canon/mnote-canon-tag.c:65
 msgid "WB Info"
-msgstr "WB Info"
+msgstr "WB-info"
 
 #: libexif/canon/mnote-canon-tag.c:66
 msgid "Face Detect 3"
@@ -1418,15 +1419,15 @@ msgstr "Batterityp"
 
 #: libexif/canon/mnote-canon-tag.c:69
 msgid "AF Info 3"
-msgstr "AF info 3"
+msgstr "AF-info 3"
 
 #: libexif/canon/mnote-canon-tag.c:70
 msgid "Raw Data Offset"
-msgstr "Offset för rådata"
+msgstr "Förskjutning för rådata"
 
 #: libexif/canon/mnote-canon-tag.c:71
 msgid "Original Decision Data Offset"
-msgstr "Ursprungligt beslutsdataförskjutning"
+msgstr "Ursprunglig beslutsdataförskjutning"
 
 #: libexif/canon/mnote-canon-tag.c:72
 msgid "Personal Functions"
@@ -1434,19 +1435,19 @@ msgstr "Personliga funktioner"
 
 #: libexif/canon/mnote-canon-tag.c:73
 msgid "Personal Functions Values"
-msgstr "Personliga funktioner värden"
+msgstr "Värden för personliga funktioner"
 
 #: libexif/canon/mnote-canon-tag.c:74 libexif/olympus/mnote-olympus-tag.c:124
 msgid "File Info"
 msgstr "Filinformation"
 
-#: libexif/canon/mnote-canon-tag.c:75 libexif/exif-tag.c:929
+#: libexif/canon/mnote-canon-tag.c:75 libexif/exif-tag.c:931
 msgid "Lens Model"
-msgstr "Lins Modell"
+msgstr "Objektivmodell"
 
 #: libexif/canon/mnote-canon-tag.c:76
 msgid "CMOS Serial Number"
-msgstr "CMOS Serienummer"
+msgstr "CMOS-serienummer"
 
 #: libexif/canon/mnote-canon-tag.c:77
 msgid "Dust Removal Data"
@@ -1462,7 +1463,7 @@ msgstr "Anpassade funktioner 2"
 
 #: libexif/canon/mnote-canon-tag.c:80
 msgid "Aspect Info"
-msgstr "Aspekt info"
+msgstr "Aspektinformation"
 
 #: libexif/canon/mnote-canon-tag.c:81
 msgid "Tone Curve Table"
@@ -1470,15 +1471,15 @@ msgstr "Tonkurvtabell"
 
 #: libexif/canon/mnote-canon-tag.c:82
 msgid "Sharpness Table"
-msgstr "Skärpa tabell"
+msgstr "Skärpningstabell"
 
 #: libexif/canon/mnote-canon-tag.c:83
 msgid "Sharpness Frequency Table"
-msgstr "Skärpningsfrekvens tabell"
+msgstr "Skärpningsfrekvenstabell"
 
 #: libexif/canon/mnote-canon-tag.c:84
 msgid "Whitebalance Table"
-msgstr "Vitbalans tabell"
+msgstr "Vitbalanstabell"
 
 #: libexif/canon/mnote-canon-tag.c:85 libexif/olympus/mnote-olympus-tag.c:79
 msgid "Color Balance"
@@ -1494,7 +1495,7 @@ msgstr "Färgtemperatur"
 
 #: libexif/canon/mnote-canon-tag.c:88
 msgid "Canon Flags"
-msgstr "Canon flaggor"
+msgstr "Canon-flaggor"
 
 #: libexif/canon/mnote-canon-tag.c:89
 msgid "Modified Info"
@@ -1502,13 +1503,13 @@ msgstr "Ändrad info"
 
 #: libexif/canon/mnote-canon-tag.c:90
 msgid "Tonecurve Matching"
-msgstr "Tonkurvamatchning"
+msgstr "Tonkurvmatchning"
 
 #: libexif/canon/mnote-canon-tag.c:91
 msgid "Whitebalance Matching"
-msgstr "Vitbalans matchning"
+msgstr "Vitbalansmatchning"
 
-#: libexif/canon/mnote-canon-tag.c:92 libexif/exif-tag.c:713
+#: libexif/canon/mnote-canon-tag.c:92 libexif/exif-tag.c:715
 #: libexif/olympus/mnote-olympus-tag.c:98 libexif/pentax/mnote-pentax-tag.c:104
 msgid "Color Space"
 msgstr "Färgrymd"
@@ -1519,11 +1520,11 @@ msgstr "Förhandsgranska bildinformation"
 
 #: libexif/canon/mnote-canon-tag.c:94
 msgid "VRD Offset"
-msgstr "VRD Offset"
+msgstr "VRD-förskjutning"
 
 #: libexif/canon/mnote-canon-tag.c:95
 msgid "Sensor Info"
-msgstr "Sensor information"
+msgstr "Sensorinformation"
 
 #: libexif/canon/mnote-canon-tag.c:96
 msgid "WB Packet"
@@ -1563,7 +1564,7 @@ msgstr "LjussättningValfri"
 
 #: libexif/canon/mnote-canon-tag.c:105 libexif/pentax/mnote-pentax-tag.c:117
 msgid "Lens Info"
-msgstr "Lins information"
+msgstr "Objektivinformation"
 
 #: libexif/canon/mnote-canon-tag.c:106
 msgid "Ambience_Info"
@@ -1644,13 +1645,13 @@ msgstr "Lätt tagningsläge"
 msgid "Digital Zoom"
 msgstr "Digitalzoom"
 
-#: libexif/canon/mnote-canon-tag.c:132 libexif/exif-tag.c:880
+#: libexif/canon/mnote-canon-tag.c:132 libexif/exif-tag.c:882
 #: libexif/fuji/mnote-fuji-tag.c:44 libexif/pentax/mnote-pentax-tag.c:48
 #: libexif/pentax/mnote-pentax-tag.c:93
 msgid "Contrast"
 msgstr "Kontrast"
 
-#: libexif/canon/mnote-canon-tag.c:133 libexif/exif-tag.c:884
+#: libexif/canon/mnote-canon-tag.c:133 libexif/exif-tag.c:886
 #: libexif/olympus/mnote-olympus-tag.c:77
 #: libexif/olympus/mnote-olympus-tag.c:90 libexif/pentax/mnote-pentax-tag.c:49
 #: libexif/pentax/mnote-pentax-tag.c:92
@@ -1658,7 +1659,7 @@ msgid "Saturation"
 msgstr "Mättnad"
 
 #: libexif/canon/mnote-canon-tag.c:134 libexif/canon/mnote-canon-tag.c:194
-#: libexif/exif-tag.c:888 libexif/fuji/mnote-fuji-tag.c:41
+#: libexif/exif-tag.c:890 libexif/fuji/mnote-fuji-tag.c:41
 #: libexif/pentax/mnote-pentax-tag.c:47 libexif/pentax/mnote-pentax-tag.c:94
 msgid "Sharpness"
 msgstr "Skärpa"
@@ -1667,7 +1668,7 @@ msgstr "Skärpa"
 msgid "ISO"
 msgstr "ISO"
 
-#: libexif/canon/mnote-canon-tag.c:136 libexif/exif-tag.c:622
+#: libexif/canon/mnote-canon-tag.c:136 libexif/exif-tag.c:624
 #: libexif/pentax/mnote-pentax-tag.c:84
 msgid "Metering Mode"
 msgstr "Mätningsläge"
@@ -1680,7 +1681,7 @@ msgstr "Fokusintervall"
 msgid "AF Point"
 msgstr "AF-punkt"
 
-#: libexif/canon/mnote-canon-tag.c:139 libexif/exif-tag.c:847
+#: libexif/canon/mnote-canon-tag.c:139 libexif/exif-tag.c:849
 msgid "Exposure Mode"
 msgstr "Exponeringsläge"
 
@@ -1755,7 +1756,7 @@ msgstr "Färgton"
 
 #: libexif/canon/mnote-canon-tag.c:158
 msgid "SRAW Quality"
-msgstr "SRAW Kvalitet"
+msgstr "SRAW-kvalitet"
 
 #: libexif/canon/mnote-canon-tag.c:159
 msgid "Focal Type"
@@ -1795,7 +1796,7 @@ msgid "Exposure Compensation"
 msgstr "Exponeringskompensering"
 
 #: libexif/canon/mnote-canon-tag.c:169 libexif/canon/mnote-canon-tag.c:200
-#: libexif/exif-tag.c:852 libexif/fuji/mnote-fuji-tag.c:42
+#: libexif/exif-tag.c:854 libexif/fuji/mnote-fuji-tag.c:42
 #: libexif/olympus/mnote-olympus-tag.c:43
 #: libexif/olympus/mnote-olympus-tag.c:132 libexif/pentax/mnote-pentax-tag.c:43
 #: libexif/pentax/mnote-pentax-tag.c:86 libexif/pentax/mnote-pentax-tag.c:126
@@ -1847,12 +1848,12 @@ msgstr "Fokusavstånd övre"
 msgid "Focus Distance Lower"
 msgstr "Fokusavstånd nedre"
 
-#: libexif/canon/mnote-canon-tag.c:182 libexif/exif-tag.c:481
+#: libexif/canon/mnote-canon-tag.c:182 libexif/exif-tag.c:483
 #: libexif/pentax/mnote-pentax-tag.c:81
 msgid "F-Number"
 msgstr "F-nummer"
 
-#: libexif/canon/mnote-canon-tag.c:183 libexif/exif-tag.c:478
+#: libexif/canon/mnote-canon-tag.c:183 libexif/exif-tag.c:480
 #: libexif/pentax/mnote-pentax-tag.c:80
 msgid "Exposure Time"
 msgstr "Slutartid"
@@ -1915,7 +1916,7 @@ msgstr "Bildstil"
 
 #: libexif/canon/mnote-canon-tag.c:203
 msgid "Digital Gain"
-msgstr "Digitalt förstärkning"
+msgstr "Digital förstärkning"
 
 #: libexif/canon/mnote-canon-tag.c:204
 msgid "White Balance Shift AB"
@@ -1933,56 +1934,60 @@ msgstr "Motorola"
 msgid "Intel"
 msgstr "Intel"
 
-#: libexif/exif-data.c:848
+#: libexif/exif-data.c:288
+msgid "Overflow in components detected."
+msgstr ""
+
+#: libexif/exif-data.c:853
 msgid "Size of data too small to allow for EXIF data."
 msgstr "Storlek på data för liten för att tillåta EXIF-data."
 
-#: libexif/exif-data.c:921
+#: libexif/exif-data.c:926
 msgid "EXIF marker not found."
 msgstr "EXIF-markör hittades inte."
 
-#: libexif/exif-data.c:933
+#: libexif/exif-data.c:938
 #, c-format
 msgid "Read length %d is longer than data length %d."
 msgstr "Läslängden %d är längre än datalängden %d."
 
-#: libexif/exif-data.c:938
+#: libexif/exif-data.c:943
 msgid "APP Tag too short."
-msgstr "APP tagg för kort."
+msgstr "APP-tagg för kort."
 
-#: libexif/exif-data.c:958
+#: libexif/exif-data.c:963
 msgid "EXIF header not found."
 msgstr "EXIF-rubriken hittades inte."
 
-#: libexif/exif-data.c:983
+#: libexif/exif-data.c:988
 msgid "Unknown encoding."
 msgstr "Okänd kodning."
 
-#: libexif/exif-data.c:1269
+#: libexif/exif-data.c:1274
 msgid "Ignore unknown tags"
 msgstr "Ignorera okända taggar"
 
-#: libexif/exif-data.c:1270
+#: libexif/exif-data.c:1275
 msgid "Ignore unknown tags when loading EXIF data."
 msgstr "Ignorera okända taggar vid inläsning av EXIF-data."
 
-#: libexif/exif-data.c:1271
+#: libexif/exif-data.c:1276
 msgid "Follow specification"
 msgstr "Följ specifikation"
 
-#: libexif/exif-data.c:1272
+#: libexif/exif-data.c:1277
 msgid ""
 "Add, correct and remove entries to get EXIF data that follows the "
 "specification."
 msgstr ""
-"Lägg till, korrigera och tag bort poster för att få EXIF-data som följer "
+"Lägg till, korrigera och ta bort poster för att få EXIF-data som följer "
 "specifikationen."
 
-#: libexif/exif-data.c:1274
+#: libexif/exif-data.c:1279
 msgid "Do not change maker note"
 msgstr "Ändra inte tillverkaranteckning"
 
-#: libexif/exif-data.c:1275
+#: libexif/exif-data.c:1280
 msgid ""
 "When loading and resaving Exif data, save the maker note unmodified. Be "
 "aware that the maker note can get corrupted."
@@ -2240,9 +2245,9 @@ msgstr "Hård"
 
 #: libexif/exif-entry.c:723 libexif/exif-entry.c:741 libexif/exif-entry.c:786
 #: libexif/exif-entry.c:833 libexif/exif-entry.c:844
-#: libexif/olympus/mnote-olympus-entry.c:599
-#: libexif/olympus/mnote-olympus-entry.c:693
-#: libexif/olympus/mnote-olympus-entry.c:748
+#: libexif/olympus/mnote-olympus-entry.c:601
+#: libexif/olympus/mnote-olympus-entry.c:695
+#: libexif/olympus/mnote-olympus-entry.c:750
 #: libexif/pentax/mnote-pentax-entry.c:258
 msgid "Unknown"
 msgstr "Okänd"
@@ -2361,7 +2366,7 @@ msgstr "Normalt program"
 msgid "Aperture priority"
 msgstr "Bländarprioritet"
 
-#: libexif/exif-entry.c:774 libexif/exif-tag.c:601
+#: libexif/exif-entry.c:774 libexif/exif-tag.c:603
 msgid "Aperture"
 msgstr "Bländare"
 
@@ -2391,7 +2396,7 @@ msgstr "Åtgärd"
 
 #: libexif/exif-entry.c:780
 msgid "Portrait mode (for closeup photos with the background out of focus)"
-msgstr "Stående läge (för närbildsfoton med bakgrunden ut fokus)"
+msgstr "Stående läge (för närbildsfoton med bakgrunden ej i fokus)"
 
 #: libexif/exif-entry.c:782
 msgid "Landscape mode (for landscape photos with the background in focus)"
@@ -2407,7 +2412,7 @@ msgstr "Rekommenderat exponeringsindex (REI)"
 
 #: libexif/exif-entry.c:789
 msgid "ISO speed"
-msgstr "ISO hastighet"
+msgstr "ISO-hastighet"
 
 #: libexif/exif-entry.c:790
 msgid "Standard output sensitivity (SOS) and recommended exposure index (REI)"
@@ -2416,11 +2421,11 @@ msgstr ""
 
 #: libexif/exif-entry.c:791
 msgid "Standard output sensitivity (SOS) and ISO speed"
-msgstr "Standardutgångskänslighet (SOS) och ISO hastighet"
+msgstr "Standardutgångskänslighet (SOS) och ISO-hastighet"
 
 #: libexif/exif-entry.c:792
 msgid "Recommended exposure index (REI) and ISO speed"
-msgstr "Rekommenderat exponeringsindex (REI) och ISO hastighet"
+msgstr "Rekommenderat exponeringsindex (REI) och ISO-hastighet"
 
 #: libexif/exif-entry.c:793
 msgid ""
@@ -2428,7 +2433,7 @@ msgid ""
 "ISO speed"
 msgstr ""
 "Standardutgångskänslighet (SOS) och rekommenderat exponeringsindex (REI) och "
-"ISO hastighet"
+"ISO-hastighet"
 
 #: libexif/exif-entry.c:796 libexif/exif-entry.c:801
 #: libexif/olympus/mnote-olympus-entry.c:102
@@ -2563,11 +2568,11 @@ msgstr "?"
 
 #: libexif/exif-entry.c:835
 msgid "Close view"
-msgstr "Stäng vy"
+msgstr "Nära vy"
 
 #: libexif/exif-entry.c:836
 msgid "Distant view"
-msgstr "Vidsträckt vy"
+msgstr "Fjärran vy"
 
 #: libexif/exif-entry.c:836
 msgid "Distant"
@@ -2586,18 +2591,16 @@ msgid "Uncalibrated"
 msgstr "Okalibrerad"
 
 #: libexif/exif-entry.c:845
-#, fuzzy
 msgid "Not a composite image"
-msgstr "Sammansatt bild"
+msgstr "Inte en sammansatt bild"
 
 #: libexif/exif-entry.c:846
-#, fuzzy
 msgid "General composite image"
-msgstr "Sammansatt bild"
+msgstr "Generell sammansatt bild"
 
 #: libexif/exif-entry.c:847
 msgid "Composite image captured while shooting"
-msgstr ""
+msgstr "Sammansatt bild fångad under tagning"
 
 #: libexif/exif-entry.c:897
 #, c-format
@@ -2698,7 +2701,7 @@ msgstr "DSC"
 #: libexif/exif-entry.c:1153 libexif/exif-entry.c:1193
 #: libexif/exif-entry.c:1277 libexif/exif-entry.c:1330
 #: libexif/exif-entry.c:1339 libexif/exif-entry.c:1375
-#: libexif/fuji/mnote-fuji-entry.c:239 libexif/fuji/mnote-fuji-entry.c:248
+#: libexif/fuji/mnote-fuji-entry.c:240 libexif/fuji/mnote-fuji-entry.c:249
 #, c-format
 msgid "Internal error (unknown value %i)"
 msgstr "Internt fel (okänt värde %i)"
@@ -2823,13 +2826,15 @@ msgstr "Float"
 msgid "Double"
 msgstr "Dubbel"
 
-#: libexif/exif-loader.c:133
+#: libexif/exif-loader.c:135
 #, c-format
 msgid "The file '%s' could not be opened."
 msgstr "Filen \"%s\" kunde inte öppnas."
 
-#: libexif/exif-loader.c:339
-msgid "The data supplied does not seem to contain EXIF data."
+#: libexif/exif-loader.c:342
+#, fuzzy, c-format
+msgid ""
+"The data supplied does not seem to contain EXIF data. JPEG Marker type 0x%02x"
 msgstr "Data som tillhandahölls verkar inte innehålla EXIF-data."
 
 #: libexif/exif-log.c:45
@@ -2842,7 +2847,7 @@ msgstr "Felsökningsinformation finns tillgänglig."
 
 #: libexif/exif-log.c:47
 msgid "Not enough memory"
-msgstr "Inte tillräckligt mycket minne"
+msgstr "För lite minne"
 
 #: libexif/exif-log.c:48
 msgid "The system cannot provide enough memory."
@@ -2858,7 +2863,7 @@ msgstr "Data som tillhandahölls följer inte specifikationen."
 
 #: libexif/exif-tag.c:66
 msgid "GPS Tag Version"
-msgstr "GPS-tagg version"
+msgstr "GPS-taggversion"
 
 #: libexif/exif-tag.c:67
 msgid ""
@@ -2874,7 +2879,7 @@ msgstr ""
 
 #: libexif/exif-tag.c:73
 msgid "Interoperability Index"
-msgstr "Interoperatbilietsindex"
+msgstr "Interoperabilitetsindex"
 
 # sebras: Report lower case initial character?
 #: libexif/exif-tag.c:74
@@ -2920,8 +2925,8 @@ msgstr ""
 "Indikerar latituden. Latituden uttrycks som tre RATIONAL-värden som anger "
 "grader, minuter respektive sekunder. När grader, minuter och sekunder "
 "uttrycks är formatet dd/1,mm/1,ss/1. När grader och minuter används och till "
-"exempel delar av minuter anges i upp till två decimalplatser är formatet "
-"dd/1,mmmm/100,0/1."
+"exempel delar av minuter anges i upp till två decimalplatser är formatet dd/"
+"1,mmmm/100,0/1."
 
 #: libexif/exif-tag.c:95
 msgid "East or West Longitude"
@@ -3098,7 +3103,7 @@ msgstr ""
 
 #: libexif/exif-tag.c:154
 msgid "GPS Image Direction Reference"
-msgstr "GPs bildriktningsreferens"
+msgstr "GPS bildriktningsreferens"
 
 #: libexif/exif-tag.c:155
 msgid ""
@@ -3165,8 +3170,8 @@ msgid ""
 msgstr ""
 "Indikerar latituden till destinationspunkten. Latituden uttrycks som tre "
 "RATIONAL-värden som anger grader, minuter respektive sekunder. Om longitud "
-"uttrycks som grader, minuter och sekunder är formatet typiskt dd/1,mm/1,"
-"ss/1. När grader och minuter används och till exempel delar av minuter anges "
+"uttrycks som grader, minuter och sekunder är formatet typiskt dd/1,mm/1,ss/"
+"1. När grader och minuter används och till exempel delar av minuter anges "
 "upp till två decimaler skulle formatet vara dd/1,mmmm/100,0/1."
 
 #: libexif/exif-tag.c:177
@@ -3197,8 +3202,8 @@ msgid ""
 msgstr ""
 "Indikerar longituden till destinationspunkten. Longituden uttrycks som tre "
 "RATIONAL-värden som anger grader, minuter respektive sekunder. Om longitud "
-"uttrycks som grader, minuter och sekunder är formatet typiskt ddd/1,mm/1,"
-"ss/1. När grader och minuter används och till exempel delar av minuter anges "
+"uttrycks som grader, minuter och sekunder är formatet typiskt ddd/1,mm/1,ss/"
+"1. När grader och minuter används och till exempel delar av minuter anges "
 "upp till två decimaler skulle formatet vara ddd/1,mmmm/100,0/1."
 
 #: libexif/exif-tag.c:190
@@ -3356,7 +3361,7 @@ msgid ""
 "this tag."
 msgstr ""
 "Antal bitar per bildkomponent. I denna standard är varje komponent i bilden "
-"8 bitar, så värdet för denna tagg  är 8. Se också <SamplesPerPixel>. I JPEG-"
+"8 bitar, så värdet för denna tagg är 8. Se också <SamplesPerPixel>. I JPEG-"
 "komprimerad data används en JPEG-markör istället för denna tagg."
 
 #: libexif/exif-tag.c:245
@@ -3404,7 +3409,7 @@ msgid ""
 "used. When a 2-bytes code is necessary, the Exif Private tag <UserComment> "
 "is to be used."
 msgstr ""
-"En teckensträng som ange bildens titel. Det kan vara en kommentar så som "
+"En teckensträng som ange bildens titel. Det kan vara en kommentar såsom "
 "”1988 företagspicknick” eller liknande. Två-byte-teckenkoder kan inte "
 "användas. När en 2-bytekod är nödvändig ska den privata Exif-taggen "
 "<UserComment> användas."
@@ -3435,7 +3440,7 @@ msgid ""
 "generated the image. When the field is left blank, it is treated as unknown."
 msgstr ""
 "Modellnamn eller modellnummer på utrustningen. Detta är modellnamnet eller "
-"modellnumret för den digital stillbildskameran, skannern, "
+"modellnumret för den digitala stillbildskameran, skannern, "
 "videodigitaliseraren eller annan utrustning som genererade bilden. När "
 "fältet lämnas tomt behandlas det som okänt."
 
@@ -3679,7 +3684,7 @@ msgstr ""
 "Antalet byte av JPEG-komprimerad miniatyrbildsdata. Denna används inte för "
 "primär JPEG-bilddata. JPEG-miniatyrbilder är inte uppdelade utan sparas som "
 "en kontinuerlig JPEG-bitström från SOI till EOI. Appn- och COM-markörer bör "
-"inte sparas. Komprimerad miniatyrbilder får inte uppta mer än 64Kbyte, "
+"inte sparas. Komprimerad miniatyrbilder får inte uppta mer än 64 Kbyte, "
 "inklusive all annan data som ska sparas i APP1."
 
 #: libexif/exif-tag.c:392
@@ -3698,7 +3703,7 @@ msgstr ""
 "standardvärde anges för TIFF, men här används värdena från ”Color Space "
 "Guidelines” som standardvärden. Färgrymden deklareras i taggen för "
 "färgrymdsinformation där standardvärdet är det värde som ger optimal "
-"bildkarakteristik för Interoperabilitet detta tillstånd."
+"bildkarakteristik för interoperabilitet detta tillstånd."
 
 #: libexif/exif-tag.c:402
 msgid "YCbCr Sub-Sampling"
@@ -3734,8 +3739,8 @@ msgstr ""
 "Positionen för krominanskomponenter i relation till luminanskomponenten. "
 "Detta fält används bara för JPEG-komprimerad data eller okomprimerad YCbCr-"
 "data. Standardvärdet för TIFF är 1 (centrerad); men när Y:Cb:Cr = 4:2:2 "
-"rekommenderas det att standardvärdet är 2 (samlokaliserad) används för att "
-"spara data, för att förbättra bildkvaliteten när de visas på TV-system. När "
+"rekommenderas det att standardvärdet 2 (samlokaliserad) används för att "
+"spara data, för att förbättra bildkvaliteten när det visas på TV-system. När "
 "detta fält inte finns skall läsaren anta standardvärdet för TIFF. Om Y:Cb:Cr "
 "= 4:2:0 rekommenderas standardvärdet för TIFF (centrerad). Om läsaren inte "
 "har förmågan att ha stöd för båda sorternas av <YCbCrPositioning> skall den "
@@ -3759,7 +3764,7 @@ msgstr ""
 "standardvärden anges i TIFF men värdena nedan används som standardvärden "
 "här. Färgrymden deklareras i taggen för färgrymdsinformation där "
 "standardvärdet är det värde som ger optimal bildkarakteristik för "
-"Interoperabilitet dessa tillstånd."
+"interoperabilitet vid dessa tillstånd."
 
 #: libexif/exif-tag.c:433
 msgid "XML Packet"
@@ -3769,29 +3774,29 @@ msgstr "XML-paket"
 msgid "XMP Metadata"
 msgstr "XMP-metadata"
 
-#: libexif/exif-tag.c:449 libexif/exif-tag.c:836
+#: libexif/exif-tag.c:451 libexif/exif-tag.c:838
 msgid "CFA Pattern"
 msgstr "CFA-mönster"
 
-#: libexif/exif-tag.c:450 libexif/exif-tag.c:837
+#: libexif/exif-tag.c:452 libexif/exif-tag.c:839
 msgid ""
 "Indicates the color filter array (CFA) geometric pattern of the image sensor "
 "when a one-chip color area sensor is used. It does not apply to all sensing "
 "methods."
 msgstr ""
 "Indikerar geometrimönstret för färgfilterområdet (color filter array, CFA) "
-"för bildsensorns när en en-chips-färgområdessensor används. Det tillämpas "
-"inte för alla sensormetoder."
+"för bildsensorn när en en-chips-färgområdessensor används. Det tillämpas "
+"inte för alla avkänningsmetoder."
 
-#: libexif/exif-tag.c:454
+#: libexif/exif-tag.c:456
 msgid "Battery Level"
 msgstr "Batterinivå"
 
-#: libexif/exif-tag.c:456
+#: libexif/exif-tag.c:458
 msgid "Copyright"
 msgstr "Copyright"
 
-#: libexif/exif-tag.c:457
+#: libexif/exif-tag.c:459
 msgid ""
 "Copyright information. In this standard the tag is used to indicate both the "
 "photographer and editor copyrights. It is the copyright notice of the person "
@@ -3818,27 +3823,32 @@ msgstr ""
 "fotografens och redaktörens upphovsrätter med var och en i en separat del. "
 "När det finns en uttrycklig skillnad mellan fotografen och redaktörens "
 "upphovsrätt ska dessa skrivas med fotografens upphovsrätt följd av "
-"redaktörens upphovsrätt NULL-separerade ( i detta fall, eftersom texten "
-"också slutar med ett NULL finns det två NULL-koder) (se exempel 1). När bara "
+"redaktörens upphovsrätt NULL-separerade (i detta fall, eftersom texten också "
+"slutar med ett NULL finns det två NULL-koder) (se exempel 1). När bara "
 "fotografen är angiven avslutas denna med en NULL-kod (se exempel 2). När "
 "bara redaktörens upphovsrätt anges består fotografens upphovsrättsdel av ett "
 "blanksteg åtföljt av en avslutande NULL-kod, sedan anges redaktörens "
 "upphovsrättsdel (se exempel 3). När fältet lämnas tomt, behandlas det som "
 "okänt."
 
-#: libexif/exif-tag.c:479
+#: libexif/exif-tag.c:481
 msgid "Exposure time, given in seconds (sec)."
 msgstr "Exponeringstid, angiven i sekunder (sek)."
 
-#: libexif/exif-tag.c:482
+#: libexif/exif-tag.c:484
 msgid "The F number."
 msgstr "F-nummer."
 
-#: libexif/exif-tag.c:487
+#: libexif/exif-tag.c:489
 msgid "Image Resources Block"
 msgstr "Bildresursblock"
 
-#: libexif/exif-tag.c:490
+#: libexif/exif-tag.c:491
+#, fuzzy
+msgid "Exif IFD Pointer"
+msgstr "Pekare till GPS-Info-IFD"
+
+#: libexif/exif-tag.c:492
 msgid ""
 "A pointer to the Exif IFD. Interoperability, Exif IFD has the same structure "
 "as that of the IFD specified in TIFF. ordinarily, however, it does not "
@@ -3848,11 +3858,11 @@ msgstr ""
 "IFD som specificerats i TIFF. Vanligtvis innehåller den dock ingen bilddata "
 "som i fallet med TIFF."
 
-#: libexif/exif-tag.c:498
+#: libexif/exif-tag.c:500
 msgid "Exposure Program"
 msgstr "Exponeringsprogram"
 
-#: libexif/exif-tag.c:499
+#: libexif/exif-tag.c:501
 msgid ""
 "The class of the program used by the camera to set exposure when the picture "
 "is taken."
@@ -3860,11 +3870,11 @@ msgstr ""
 "Klassen för programmet som användes av kameran för att ställa in "
 "exponeringen när bilden togs."
 
-#: libexif/exif-tag.c:503
+#: libexif/exif-tag.c:505
 msgid "Spectral Sensitivity"
 msgstr "Spektralkänslighet"
 
-#: libexif/exif-tag.c:504
+#: libexif/exif-tag.c:506
 msgid ""
 "Indicates the spectral sensitivity of each channel of the camera used. The "
 "tag value is an ASCII string compatible with the standard developed by the "
@@ -3874,11 +3884,11 @@ msgstr ""
 "Taggvärdet är en ASCII-sträng som är kompatibel med standarden som "
 "utvecklats av ASTM:s tekniska kommitté."
 
-#: libexif/exif-tag.c:509
+#: libexif/exif-tag.c:511
 msgid "GPS Info IFD Pointer"
 msgstr "Pekare till GPS-Info-IFD"
 
-#: libexif/exif-tag.c:510
+#: libexif/exif-tag.c:512
 msgid ""
 "A pointer to the GPS Info IFD. The Interoperability structure of the GPS "
 "Info IFD, like that of Exif IFD, has no image data."
@@ -3886,11 +3896,11 @@ msgstr ""
 "En pekare till GPS-Info-IFD:t. Interoperabilitetsstrukturen för GPS-Info-"
 "IFD, i likhet med den för Exif-IFD, har ingen bilddata."
 
-#: libexif/exif-tag.c:515
+#: libexif/exif-tag.c:517
 msgid "ISO Speed Ratings"
 msgstr "ISO-hastighetsgradering"
 
-#: libexif/exif-tag.c:516
+#: libexif/exif-tag.c:518
 msgid ""
 "Indicates the ISO Speed and ISO Latitude of the camera or input device as "
 "specified in ISO 12232."
@@ -3898,11 +3908,11 @@ msgstr ""
 "Indikerar ISO-hastigheten och ISO-latituden för kameran eller "
 "inmatningsenheten som angivet i ISO 12232."
 
-#: libexif/exif-tag.c:519
+#: libexif/exif-tag.c:521
 msgid "Opto-Electronic Conversion Function"
 msgstr "Optoelektronisk konverteringsfunktion"
 
-#: libexif/exif-tag.c:520
+#: libexif/exif-tag.c:522
 msgid ""
 "Indicates the Opto-Electronic Conversion Function (OECF) specified in ISO "
 "14524. <OECF> is the relationship between the camera optical input and the "
@@ -3912,19 +3922,19 @@ msgstr ""
 "ISO 14524. <OECF> är förhållandet mellan kamerans optiska inmatning och "
 "bildvärdena."
 
-#: libexif/exif-tag.c:525
+#: libexif/exif-tag.c:527
 msgid "Time Zone Offset"
 msgstr "Tidszonsposition"
 
-#: libexif/exif-tag.c:526
+#: libexif/exif-tag.c:528
 msgid "Encodes time zone of camera clock relative to GMT."
 msgstr "Kodar tidszonen för kameraklockan relativt till GMT."
 
-#: libexif/exif-tag.c:528
+#: libexif/exif-tag.c:530
 msgid "Sensitivity Type"
 msgstr "Känslighetstyp"
 
-#: libexif/exif-tag.c:529
+#: libexif/exif-tag.c:531
 msgid ""
 "The SensitivityType tag indicates which one of the parameters of ISO12232 is "
 "the PhotographicSensitivity tag. Although it is an optional tag, it should "
@@ -3933,46 +3943,46 @@ msgid ""
 msgstr ""
 "Taggen SensitivityType indikerar vilken av parametrarna från ISO12232 är "
 "PhotographicSensitivity-taggen. Även om det är en valfri tagg bör den sparas "
-"när en PhtographicSensitivity-tagg sparas. Värde = 4, 5, 6 eller 7 kan "
+"när en PhotographicSensitivity-tagg sparas. Värde = 4, 5, 6 eller 7 kan "
 "användas om värdena för flera parametrar är samma."
 
-#: libexif/exif-tag.c:535
+#: libexif/exif-tag.c:537
 msgid "Standard Output Sensitivity"
 msgstr "Standardutgångskänslighet"
 
-#: libexif/exif-tag.c:539
+#: libexif/exif-tag.c:541
 msgid "Recommended Exposure Index"
 msgstr "Rekommenderat exponeringsindex"
 
-#: libexif/exif-tag.c:543 libexif/pentax/mnote-pentax-tag.c:56
+#: libexif/exif-tag.c:545 libexif/pentax/mnote-pentax-tag.c:56
 msgid "ISO Speed"
 msgstr "ISO-hastighet"
 
-#: libexif/exif-tag.c:547
+#: libexif/exif-tag.c:549
 msgid "ISO Speed Latitude yyy"
 msgstr "ISO-hastighet latitud yyy"
 
-#: libexif/exif-tag.c:551
+#: libexif/exif-tag.c:553
 msgid "ISO Speed Latitude zzz"
 msgstr "ISO-hastighet latitud zzz"
 
-#: libexif/exif-tag.c:554
+#: libexif/exif-tag.c:556
 msgid "Exif Version"
-msgstr "Exif version"
+msgstr "Exif-version"
 
-#: libexif/exif-tag.c:555
+#: libexif/exif-tag.c:557
 msgid ""
 "The version of this standard supported. Nonexistence of this field is taken "
 "to mean nonconformance to the standard."
 msgstr ""
 "Versionen av denna standard som stöd. Om detta fält utelämnas antas det "
-"innebär att denna standard inte följs."
+"innebära att denna standard inte följs."
 
-#: libexif/exif-tag.c:559
+#: libexif/exif-tag.c:561
 msgid "Date and Time (Original)"
 msgstr "Datum och tid (original)"
 
-#: libexif/exif-tag.c:560
+#: libexif/exif-tag.c:562
 msgid ""
 "The date and time when the original image data was generated. For a digital "
 "still camera the date and time the picture was taken are recorded."
@@ -3980,19 +3990,19 @@ msgstr ""
 "Datum och tid när originalbilddata genererades. För en digital "
 "stillbildskamera sparas datum och tid när bilden togs."
 
-#: libexif/exif-tag.c:565
+#: libexif/exif-tag.c:567
 msgid "Date and Time (Digitized)"
 msgstr "Datum och tid (digitaliserad)"
 
-#: libexif/exif-tag.c:566
+#: libexif/exif-tag.c:568
 msgid "The date and time when the image was stored as digital data."
 msgstr "Datum och tid när bilden sparades som digital data."
 
-#: libexif/exif-tag.c:569
+#: libexif/exif-tag.c:571
 msgid "Offset Time For DateTime"
-msgstr "Offsettid för DateTime"
+msgstr "Tidsförskjutning för DateTime"
 
-#: libexif/exif-tag.c:570
+#: libexif/exif-tag.c:572
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight saving time) of the time of DateTime "
@@ -4011,11 +4021,11 @@ msgstr ""
 "fyllas med blanktecken. Teckensträngen är 7 byte inklusive NULL för "
 "terminering. När fältet lämnas blankt behandlas det som okänt."
 
-#: libexif/exif-tag.c:573
+#: libexif/exif-tag.c:575
 msgid "Offset Time For DateTimeOriginal"
-msgstr "Offset tid för DateTime Original"
+msgstr "Tidsförskjutning för DateTimeOriginal"
 
-#: libexif/exif-tag.c:574
+#: libexif/exif-tag.c:576
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight saving  time)  of  the time  of  "
@@ -4036,11 +4046,11 @@ msgstr ""
 "inklusive NULL för terminering. När fältet lämnas blankt behandlas det som "
 "okänt."
 
-#: libexif/exif-tag.c:577
+#: libexif/exif-tag.c:579
 msgid "Offset Time For DateTimeDigitized"
-msgstr "Offset tid för DateTimeDigitized"
+msgstr "Tidsförskjutning för DateTimeDigitized"
 
-#: libexif/exif-tag.c:578
+#: libexif/exif-tag.c:580
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight  saving  time)  of  the time  of  "
@@ -4061,11 +4071,11 @@ msgstr ""
 "inklusive NULL för terminering. När fältet lämnas blankt behandlas det som "
 "okänt."
 
-#: libexif/exif-tag.c:581
+#: libexif/exif-tag.c:583
 msgid "Components Configuration"
 msgstr "Komponentkonfiguration"
 
-#: libexif/exif-tag.c:582
+#: libexif/exif-tag.c:584
 msgid ""
 "Information specific to compressed data. The channels of each component are "
 "arranged in order from the 1st component to the 4th. For uncompressed data "
@@ -4082,11 +4092,11 @@ msgstr ""
 "komprimerad bilddata använder andra komponenter än Y, Cb och Cr och för att "
 "kunna hantera andra sekvenser."
 
-#: libexif/exif-tag.c:592
+#: libexif/exif-tag.c:594
 msgid "Compressed Bits per Pixel"
 msgstr "Komprimerade bitar per bildpunkt"
 
-#: libexif/exif-tag.c:593
+#: libexif/exif-tag.c:595
 msgid ""
 "Information specific to compressed data. The compression mode used for a "
 "compressed image is indicated in unit bits per pixel."
@@ -4094,11 +4104,11 @@ msgstr ""
 "Information specifik för komprimerad data. Kompressionsläget som används för "
 "en komprimerad bild indikeras i enheten bitar per bildpunkt."
 
-#: libexif/exif-tag.c:597 libexif/olympus/mnote-olympus-tag.c:157
+#: libexif/exif-tag.c:599 libexif/olympus/mnote-olympus-tag.c:157
 msgid "Shutter Speed"
 msgstr "Slutarhastighet"
 
-#: libexif/exif-tag.c:598
+#: libexif/exif-tag.c:600
 msgid ""
 "Shutter speed. The unit is the APEX (Additive System of Photographic "
 "Exposure) setting."
@@ -4106,15 +4116,15 @@ msgstr ""
 "Slutarhastighet. Enheten är APEX-inställningen (Additive System of "
 "Photographic Exposure)."
 
-#: libexif/exif-tag.c:602
+#: libexif/exif-tag.c:604
 msgid "The lens aperture. The unit is the APEX value."
 msgstr "Objektivbländare. Enheten är APEX-värdet."
 
-#: libexif/exif-tag.c:604
+#: libexif/exif-tag.c:606
 msgid "Brightness"
 msgstr "Ljusstyrka"
 
-#: libexif/exif-tag.c:605
+#: libexif/exif-tag.c:607
 msgid ""
 "The value of brightness. The unit is the APEX value. Ordinarily it is given "
 "in the range of -99.99 to 99.99."
@@ -4122,11 +4132,11 @@ msgstr ""
 "Värdet för ljusstyrka. Enheten är APEX-värdet. Vanligtvis anges det i "
 "intervallet -99.99 till 99.99."
 
-#: libexif/exif-tag.c:609
+#: libexif/exif-tag.c:611
 msgid "Exposure Bias"
 msgstr "Exponeringsnivå"
 
-#: libexif/exif-tag.c:610
+#: libexif/exif-tag.c:612
 msgid ""
 "The exposure bias. The units is the APEX value. Ordinarily it is given in "
 "the range of -99.99 to 99.99."
@@ -4134,45 +4144,45 @@ msgstr ""
 "Exponeringsnivån. Enheten är APEX-värdet. Vanligtvis anges det i intervallet "
 "från -99.99 till 99.99."
 
-#: libexif/exif-tag.c:613
+#: libexif/exif-tag.c:615
 msgid "Maximum Aperture Value"
 msgstr "Maximalt bländarvärde"
 
-#: libexif/exif-tag.c:614
+#: libexif/exif-tag.c:616
 msgid ""
 "The smallest F number of the lens. The unit is the APEX value. Ordinarily it "
 "is given in the range of 00.00 to 99.99, but it is not limited to this range."
 msgstr ""
 "Det minsta F-numret för objektivet. Enheten är APEX-värdet. Vanligtvis anges "
 "det i intervallet 00.00 till 99.99, men det är inte begränsat till detta "
-"intervallet."
+"intervall."
 
-#: libexif/exif-tag.c:619
+#: libexif/exif-tag.c:621
 msgid "Subject Distance"
 msgstr "Avstånd till objekt"
 
-#: libexif/exif-tag.c:620
+#: libexif/exif-tag.c:622
 msgid "The distance to the subject, given in meters."
 msgstr "Avståndet till objektet, angivet i meter."
 
-#: libexif/exif-tag.c:623
+#: libexif/exif-tag.c:625
 msgid "The metering mode."
 msgstr "Mätarläge."
 
-#: libexif/exif-tag.c:625
+#: libexif/exif-tag.c:627
 msgid "Light Source"
 msgstr "Ljuskälla"
 
-#: libexif/exif-tag.c:626
+#: libexif/exif-tag.c:628
 msgid "The kind of light source."
 msgstr "Typ av ljuskälla."
 
-#: libexif/exif-tag.c:629
+#: libexif/exif-tag.c:631
 msgid ""
 "This tag is recorded when an image is taken using a strobe light (flash)."
 msgstr "Denna tagg sparas när en bild tas med ett strobljus (blixt)."
 
-#: libexif/exif-tag.c:633
+#: libexif/exif-tag.c:635
 msgid ""
 "The actual focal length of the lens, in mm. Conversion is not made to the "
 "focal length of a 35 mm film camera."
@@ -4180,25 +4190,25 @@ msgstr ""
 "Den verkliga brännvidden för objektivet i mm. Konvertering görs inte för "
 "brännvidden för en 35mm filmkamera."
 
-#: libexif/exif-tag.c:636
+#: libexif/exif-tag.c:638
 msgid "Subject Area"
 msgstr "Område för objekt"
 
-#: libexif/exif-tag.c:637
+#: libexif/exif-tag.c:639
 msgid ""
 "This tag indicates the location and area of the main subject in the overall "
 "scene."
 msgstr "Denna tagg indikerar platsen och området för huvudobjektet i scenen."
 
-#: libexif/exif-tag.c:641
+#: libexif/exif-tag.c:643
 msgid "TIFF/EP Standard ID"
 msgstr "TIFF/EP Standard-ID"
 
-#: libexif/exif-tag.c:643
+#: libexif/exif-tag.c:645
 msgid "Maker Note"
 msgstr "Tillverkaranteckning"
 
-#: libexif/exif-tag.c:644
+#: libexif/exif-tag.c:646
 msgid ""
 "A tag for manufacturers of Exif writers to record any desired information. "
 "The contents are up to the manufacturer."
@@ -4206,114 +4216,114 @@ msgstr ""
 "En tagg för tillverkare av Exif-skrivare att spara önskad information. "
 "Innehållet är upp till tillverkaren."
 
-#: libexif/exif-tag.c:647
+#: libexif/exif-tag.c:649
 msgid "User Comment"
 msgstr "Användarkommentar"
 
-#: libexif/exif-tag.c:648
+#: libexif/exif-tag.c:650
 msgid ""
 "A tag for Exif users to write keywords or comments on the image besides "
 "those in <ImageDescription>, and without the character code limitations of "
 "the <ImageDescription> tag. The character code used in the <UserComment> tag "
 "is identified based on an ID code in a fixed 8-byte area at the start of the "
-"tag data area. The unused portion of the area is padded with NULL (\"00."
-"h\"). ID codes are assigned by means of registration. The designation method "
-"and references for each character code are defined in the specification. The "
-"value of CountN is determined based on the 8 bytes in the character code "
-"area and the number of bytes in the user comment part. Since the TYPE is not "
-"ASCII, NULL termination is not necessary. The ID code for the <UserComment> "
-"area may be a Defined code such as JIS or ASCII, or may be Undefined. The "
-"Undefined name is UndefinedText, and the ID code is filled with 8 bytes of "
-"all \"NULL\" (\"00.H\"). An Exif reader that reads the <UserComment> tag "
-"must have a function for determining the ID code. This function is not "
-"required in Exif readers that do not use the <UserComment> tag. When a "
-"<UserComment> area is set aside, it is recommended that the ID code be ASCII "
-"and that the following user comment part be filled with blank characters [20."
-"H]."
+"tag data area. The unused portion of the area is padded with NULL "
+"(\"00.h\"). ID codes are assigned by means of registration. The designation "
+"method and references for each character code are defined in the "
+"specification. The value of CountN is determined based on the 8 bytes in the "
+"character code area and the number of bytes in the user comment part. Since "
+"the TYPE is not ASCII, NULL termination is not necessary. The ID code for "
+"the <UserComment> area may be a Defined code such as JIS or ASCII, or may be "
+"Undefined. The Undefined name is UndefinedText, and the ID code is filled "
+"with 8 bytes of all \"NULL\" (\"00.H\"). An Exif reader that reads the "
+"<UserComment> tag must have a function for determining the ID code. This "
+"function is not required in Exif readers that do not use the <UserComment> "
+"tag. When a <UserComment> area is set aside, it is recommended that the ID "
+"code be ASCII and that the following user comment part be filled with blank "
+"characters [20.H]."
 msgstr ""
 "En tagg för Exif-användare att skriva nyckelord eller kommentarer om bilden "
 "förutom de i <ImageDescription>, och utan de begränsningar för teckenkoder "
 "som finns i <ImageDescription>. Teckenkoden som används i <UserComment>-"
 "taggen identifieras baserat på en ID-kod i ett fixt 8-byteområde i början av "
-"taggens dataområde. Den oanvända delen av området fyllas ut med NULL (”00."
-"h”). ID-koder tilldelas genom registrering. Beteckningsmetoder och "
+"taggens dataområde. Den oanvända delen av området fylls ut med NULL "
+"(”00.h”). ID-koder tilldelas genom registrering. Beteckningsmetoder och "
 "referenser för varje teckenkod definieras i specifikationen. Värdet för "
 "CountN bestäms baserat på de 8 byten i teckenkodsområdet och antal byte i "
 "kommentarsdelen för användare. Eftersom TYPEN inte är ASCII, behövs inte "
 "NULL-terminering. ID-koden för <UserComment>-området kan vara en definierad "
-"kod så som JIS eller ASCII, eller vara Odefinierad. Det Odefinierade namnet "
-"är OdefinieradText och ID-koden fylls med 8 byte som alla är ”NULL” (”00."
-"H”). En Exif-läsare som läser <UserComment>-taggen måste har en funktion för "
-"att bestämma ID-koden. Denna funktion behövs inte i Exif-läsare som inte "
+"kod såsom JIS eller ASCII, eller vara odefinierad. Det odefinierade namnet "
+"är OdefinieradText och ID-koden fylls med 8 byte som alla är ”NULL” "
+"(”00.H”). En Exif-läsare som läser <UserComment>-taggen måste ha en funktion "
+"för att bestämma ID-koden. Denna funktion behövs inte i Exif-läsare som inte "
 "använder <UserComment>-taggen. När ett <UserComment>-område sätts till sidan "
 "rekommenderas det att ID-koden är ASCII och att den följande kommentarsdelen "
 "fylls med blanksteg [20.H]."
 
-#: libexif/exif-tag.c:671
+#: libexif/exif-tag.c:673
 msgid "Sub-second Time"
 msgstr "Tid, delar av sekunder"
 
-#: libexif/exif-tag.c:672
+#: libexif/exif-tag.c:674
 msgid "A tag used to record fractions of seconds for the <DateTime> tag."
 msgstr ""
 "En tagg som används för att spara delar av sekunder för taggen <DateTime>."
 
-#: libexif/exif-tag.c:676
+#: libexif/exif-tag.c:678
 msgid "Sub-second Time (Original)"
 msgstr "Tid under en sekund (original)"
 
-#: libexif/exif-tag.c:677
+#: libexif/exif-tag.c:679
 msgid ""
 "A tag used to record fractions of seconds for the <DateTimeOriginal> tag."
 msgstr ""
 "En tag som används för att spara delar av sekunder för taggen "
 "<DateTimeOriginal>."
 
-#: libexif/exif-tag.c:681
+#: libexif/exif-tag.c:683
 msgid "Sub-second Time (Digitized)"
 msgstr "Tid, delar av sekunder (digitaliserad)"
 
-#: libexif/exif-tag.c:682
+#: libexif/exif-tag.c:684
 msgid ""
 "A tag used to record fractions of seconds for the <DateTimeDigitized> tag."
 msgstr ""
 "En tagg som används för att spara delar av sekunder för taggen "
 "<DateTimeDigitized>."
 
-#: libexif/exif-tag.c:686
+#: libexif/exif-tag.c:688
 msgid "XP Title"
 msgstr "XP-titel"
 
-#: libexif/exif-tag.c:687
+#: libexif/exif-tag.c:689
 msgid "A character string giving the title of the image, encoded in UTF-16LE."
 msgstr "En teckensträng som anger bildens titel, kodad i UTF-16LE."
 
-#: libexif/exif-tag.c:691
+#: libexif/exif-tag.c:693
 msgid "XP Comment"
 msgstr "XP-kommentar"
 
-#: libexif/exif-tag.c:692
+#: libexif/exif-tag.c:694
 msgid ""
 "A character string containing a comment about the image, encoded in UTF-16LE."
 msgstr ""
 "En teckensträng som innehåller en kommentar om bilden, kodad i UTF-16LE."
 
-#: libexif/exif-tag.c:696
+#: libexif/exif-tag.c:698
 msgid "XP Author"
 msgstr "XP-upphovsman"
 
-#: libexif/exif-tag.c:697
+#: libexif/exif-tag.c:699
 msgid ""
 "A character string containing the name of the image creator, encoded in "
 "UTF-16LE."
 msgstr ""
 "En teckensträng som anger namnet på bildens upphovsman, kodat i UTF-16LE."
 
-#: libexif/exif-tag.c:701
+#: libexif/exif-tag.c:703
 msgid "XP Keywords"
 msgstr "XP-nyckelord"
 
-#: libexif/exif-tag.c:702
+#: libexif/exif-tag.c:704
 msgid ""
 "A character string containing key words describing the image, encoded in "
 "UTF-16LE."
@@ -4321,19 +4331,19 @@ msgstr ""
 "En teckensträng som innehåller nyckelord som beskriver bilden, kodade i "
 "UTF-16LE."
 
-#: libexif/exif-tag.c:706
+#: libexif/exif-tag.c:708
 msgid "XP Subject"
 msgstr "XP-objekt"
 
-#: libexif/exif-tag.c:707
+#: libexif/exif-tag.c:709
 msgid "A character string giving the image subject, encoded in UTF-16LE."
 msgstr "En teckensträng som anger bildobjektet, kodat i UTF-16LE."
 
-#: libexif/exif-tag.c:711
+#: libexif/exif-tag.c:713
 msgid "The FlashPix format version supported by a FPXR file."
 msgstr "FlashPix-formatversionen som stöd av en FPXR-fil."
 
-#: libexif/exif-tag.c:714
+#: libexif/exif-tag.c:716
 msgid ""
 "The color space information tag is always recorded as the color space "
 "specifier. Normally sRGB (=1) is used to define the color space based on the "
@@ -4347,11 +4357,11 @@ msgstr ""
 "(=FFFF.H) in. Bilddata som sparats som Okalibrerat kan behandlas som sRGB "
 "när det konverteras till FlashPix."
 
-#: libexif/exif-tag.c:722
+#: libexif/exif-tag.c:724
 msgid "Pixel X Dimension"
 msgstr "Bildpunkt X-dimension"
 
-#: libexif/exif-tag.c:723
+#: libexif/exif-tag.c:725
 msgid ""
 "Information specific to compressed data. When a compressed file is recorded, "
 "the valid width of the meaningful image must be recorded in this tag, "
@@ -4363,11 +4373,11 @@ msgstr ""
 "huruvida det finns utfyllnadsdata eller en omstartsmarkör. Denna tagg bör "
 "inte existera i en okomprimerad fil."
 
-#: libexif/exif-tag.c:729
+#: libexif/exif-tag.c:731
 msgid "Pixel Y Dimension"
 msgstr "Bildpunkt Y-dimension"
 
-#: libexif/exif-tag.c:730
+#: libexif/exif-tag.c:732
 msgid ""
 "Information specific to compressed data. When a compressed file is recorded, "
 "the valid height of the meaningful image must be recorded in this tag, "
@@ -4383,11 +4393,11 @@ msgstr ""
 "vertikal riktning så kommer antalet rader som sparas i denna giltiga "
 "bildhöjdstagg faktiskt vara densamma som den som sparats i SOF:en."
 
-#: libexif/exif-tag.c:740
+#: libexif/exif-tag.c:742
 msgid "Related Sound File"
 msgstr "Relaterad ljudfil"
 
-#: libexif/exif-tag.c:741
+#: libexif/exif-tag.c:743
 msgid ""
 "This tag is used to record the name of an audio file related to the image "
 "data. The only relational information recorded here is the Exif audio file "
@@ -4400,16 +4410,16 @@ msgid ""
 "done in any of three ways, [1], [2] and [3]. If multiple files are mapped to "
 "one file as in [2] or [3], the above format is used to record just one audio "
 "file name. If there are multiple audio files, the first recorded file is "
-"given. In the case of [3], for example, for the Exif image file \"DSC00001."
-"JPG\" only  \"SND00001.WAV\" is given as the related Exif audio file. When "
-"there are three Exif audio files \"SND00001.WAV\", \"SND00002.WAV\" and "
-"\"SND00003.WAV\", the Exif image file name for each of them, \"DSC00001."
-"JPG\", is indicated. By combining multiple relational information, a variety "
-"of playback possibilities can be supported. The method of using relational "
-"information is left to the implementation on the playback side. Since this "
-"information is an ASCII character string, it is terminated by NULL. When "
-"this tag is used to map audio files, the relation of the audio file to image "
-"data must also be indicated on the audio file end."
+"given. In the case of [3], for example, for the Exif image file "
+"\"DSC00001.JPG\" only  \"SND00001.WAV\" is given as the related Exif audio "
+"file. When there are three Exif audio files \"SND00001.WAV\", "
+"\"SND00002.WAV\" and \"SND00003.WAV\", the Exif image file name for each of "
+"them, \"DSC00001.JPG\", is indicated. By combining multiple relational "
+"information, a variety of playback possibilities can be supported. The "
+"method of using relational information is left to the implementation on the "
+"playback side. Since this information is an ASCII character string, it is "
+"terminated by NULL. When this tag is used to map audio files, the relation "
+"of the audio file to image data must also be indicated on the audio file end."
 msgstr ""
 "Denna tagg används för att spara namnet på en ljudfil relaterad till "
 "bilddata. Den enda relationsinformationen som sparas här är Exif-"
@@ -4417,15 +4427,15 @@ msgstr ""
 "3 tecken). Sökvägen sparas inte. Bestämmelser för ljud- och "
 "filnamnskonventioner definieras i specifikationen. När denna tagg används "
 "måste ljudfiler sparas i överensstämmelse med Exif-ljudformatet. Skrivare "
-"får också spara data så som ljud i APP2 som FlashPix-utökad strömdata. "
+"får också spara data såsom ljud i APP2 som FlashPix-utökad strömdata. "
 "Mappningen av Exif-bildfiler och -ljudfiler görs enligt endera av tre sätt, "
 "[1], [2] och [3]. Om flera filer mappas till en fil som i [2] eller [3], "
 "används formatet ovan för att spara endast ett ljudfilsnamn. Om det finns "
 "flera ljudfiler anges den som sparats först. I fallet [3], anges till "
 "exempel för Exif-bildfilen ”DSC00001.JPG” endast ”SND00001.WAV” som den "
 "relaterade Exif-ljudfilen. När det finns tre Exif-ljudfiler ”SND00001.WAV”, "
-"”SND00002.WAV” och ”SND00003.WAV” indikeras Exif-bildfilsnamnet ”DSC00001."
-"JPG” för var och en av dem. Genom att kombinera flera "
+"”SND00002.WAV” och ”SND00003.WAV” indikeras Exif-bildfilsnamnet "
+"”DSC00001.JPG” för var och en av dem. Genom att kombinera flera "
 "relationsinformationsstycken stöds flera uppspelningsmöjligheter. Metoden "
 "att använda relationsinformation lämnas till implementationen på "
 "uppspelningssidan. Eftersom denna information är en ASCII-teckensträng "
@@ -4433,11 +4443,11 @@ msgstr ""
 "också relationen mellan ljudfilen och bilddata också indikeras i "
 "ljudfilsänden."
 
-#: libexif/exif-tag.c:771
+#: libexif/exif-tag.c:773
 msgid "Interoperability IFD Pointer"
 msgstr "Pekare till interoperabilitets-IFD"
 
-#: libexif/exif-tag.c:772
+#: libexif/exif-tag.c:774
 msgid ""
 "Interoperability IFD is composed of tags which stores the information to "
 "ensure the Interoperability and pointed by the following tag located in Exif "
@@ -4451,11 +4461,11 @@ msgstr ""
 "IFD:n är den samma som för TIFF definierade strukturen men innehåller inte "
 "bilddata jämfört med en normal TIFF-IFD."
 
-#: libexif/exif-tag.c:781
+#: libexif/exif-tag.c:783
 msgid "Flash Energy"
 msgstr "Blixtenergi"
 
-#: libexif/exif-tag.c:782
+#: libexif/exif-tag.c:784
 msgid ""
 "Indicates the strobe energy at the time the image is captured, as measured "
 "in Beam Candle Power Seconds (BCPS)."
@@ -4463,11 +4473,11 @@ msgstr ""
 "Indikerar strobenergin vid tiden då bilden togs, mäts i Beam Candle Power "
 "Seconds (BCPS)."
 
-#: libexif/exif-tag.c:786
+#: libexif/exif-tag.c:788
 msgid "Spatial Frequency Response"
 msgstr "Spatialt frekvenssvar"
 
-#: libexif/exif-tag.c:787
+#: libexif/exif-tag.c:789
 msgid ""
 "This tag records the camera or input device spatial frequency table and SFR "
 "values in the direction of image width, image height, and diagonal "
@@ -4475,37 +4485,38 @@ msgid ""
 msgstr ""
 "Denna tagg sparar kamerans eller inmatningsenhetens spatiala frekvenstabell "
 "och SFR-värden i bildbreddens, bildhöjdens och bilddiagonalens riktning, så "
-"som specificerats i ISO 122333."
+"som specificerats i ISO 12233."
 
-#: libexif/exif-tag.c:793
+#: libexif/exif-tag.c:795
 msgid "Focal Plane X-Resolution"
 msgstr "X-upplösning i fokalplanet"
 
-#: libexif/exif-tag.c:794
+#: libexif/exif-tag.c:796
 msgid ""
 "Indicates the number of pixels in the image width (X) direction per "
 "<FocalPlaneResolutionUnit> on the camera focal plane."
 msgstr ""
-"Indikerar antalet pixlar i bildbreddens (X) riktning per "
+"Indikerar antalet bildpunkter i bildbreddens (X) riktning per "
 "<FocalPlaneResolutionUnit> i kamerans fokalplan."
 
-#: libexif/exif-tag.c:798
+#: libexif/exif-tag.c:800
 msgid "Focal Plane Y-Resolution"
 msgstr "Y-upplösning i fokalplanet"
 
-#: libexif/exif-tag.c:799
+# TODO: (Y) ?
+#: libexif/exif-tag.c:801
 msgid ""
 "Indicates the number of pixels in the image height (V) direction per "
 "<FocalPlaneResolutionUnit> on the camera focal plane."
 msgstr ""
-"Indikerar antalet pixlar i bildhöjdens (Y) riktning per "
+"Indikerar antalet bildpunkter i bildhöjdens (Y) riktning per "
 "<FocalPlaneResolutionUnit> i kamerans fokalplan."
 
-#: libexif/exif-tag.c:803
+#: libexif/exif-tag.c:805
 msgid "Focal Plane Resolution Unit"
 msgstr "Upplösningsenhet i fokalplanet"
 
-#: libexif/exif-tag.c:804
+#: libexif/exif-tag.c:806
 msgid ""
 "Indicates the unit for measuring <FocalPlaneXResolution> and "
 "<FocalPlaneYResolution>. This value is the same as the <ResolutionUnit>."
@@ -4513,11 +4524,11 @@ msgstr ""
 "Indikerar enheten för mättning av <FocalPlaneXResolution> och "
 "<FocalPlaneYResolution>. Detta värde är det samma som <ResolutionUnit>."
 
-#: libexif/exif-tag.c:809
+#: libexif/exif-tag.c:811
 msgid "Subject Location"
 msgstr "Objektsplats"
 
-#: libexif/exif-tag.c:810
+#: libexif/exif-tag.c:812
 msgid ""
 "Indicates the location of the main subject in the scene. The value of this "
 "tag represents the pixel at the center of the main subject relative to the "
@@ -4526,15 +4537,15 @@ msgid ""
 "number."
 msgstr ""
 "Indikerar platsen för huvudobjektet i scenen. Värdet i denna tagg "
-"representerar bildpunkten i mitten av huvudobjektet relativt till vänster "
-"kanten, före rotationsbehandling enligt <Rotation>-taggen. Det första värdet "
-"indikerar X-kolumnnumret och det andra indikerar Y-radnumret."
+"representerar bildpunkten i mitten av huvudobjektet relativt till "
+"vänsterkanten, före rotationsbehandling enligt <Rotation>-taggen. Det första "
+"värdet indikerar X-kolumnnumret och det andra indikerar Y-radnumret."
 
-#: libexif/exif-tag.c:817
+#: libexif/exif-tag.c:819
 msgid "Exposure Index"
 msgstr "Exponeringsindex"
 
-#: libexif/exif-tag.c:818
+#: libexif/exif-tag.c:820
 msgid ""
 "Indicates the exposure index selected on the camera or input device at the "
 "time the image is captured."
@@ -4542,19 +4553,19 @@ msgstr ""
 "Indikerar exponeringsindex valt på kameran eller inmatningsenheten vid tiden "
 "då bilden togs."
 
-#: libexif/exif-tag.c:821
+#: libexif/exif-tag.c:823
 msgid "Sensing Method"
 msgstr "Avkänningsmetod"
 
-#: libexif/exif-tag.c:822
+#: libexif/exif-tag.c:824
 msgid "Indicates the image sensor type on the camera or input device."
 msgstr "Indikerar bildsensortypen i kameran eller inmatningsenheten."
 
-#: libexif/exif-tag.c:825 libexif/fuji/mnote-fuji-tag.c:66
+#: libexif/exif-tag.c:827 libexif/fuji/mnote-fuji-tag.c:66
 msgid "File Source"
 msgstr "Filkälla"
 
-#: libexif/exif-tag.c:826
+#: libexif/exif-tag.c:828
 msgid ""
 "Indicates the image source. If a DSC recorded the image, the tag value of "
 "this tag always be set to 3, indicating that the image was recorded on a DSC."
@@ -4563,11 +4574,11 @@ msgstr ""
 "taggvärdet för denna tagg alltid att vara 3, vilket indikerar att bilden "
 "togs av en digital stillbildskamera."
 
-#: libexif/exif-tag.c:830
+#: libexif/exif-tag.c:832
 msgid "Scene Type"
 msgstr "Scentyp"
 
-#: libexif/exif-tag.c:831
+#: libexif/exif-tag.c:833
 msgid ""
 "Indicates the type of scene. If a DSC recorded the image, this tag value "
 "must always be set to 1, indicating that the image was directly photographed."
@@ -4575,11 +4586,11 @@ msgstr ""
 "Indikerar typen av scen. Om en digital stillbildskamera sparat bilden måste "
 "taggvärdet alltid vara 1, vilket indikerar att bilden tagits direkt."
 
-#: libexif/exif-tag.c:841
+#: libexif/exif-tag.c:843
 msgid "Custom Rendered"
 msgstr "Anpassad rendering"
 
-#: libexif/exif-tag.c:842
+#: libexif/exif-tag.c:844
 msgid ""
 "This tag indicates the use of special processing on image data, such as "
 "rendering geared to output. When special processing is performed, the reader "
@@ -4589,7 +4600,7 @@ msgstr ""
 "rendering avsedd för utmatning. När speciell behandling genomförs förväntas "
 "läsaren att inaktivera eller minimera vidare behandling."
 
-#: libexif/exif-tag.c:848
+#: libexif/exif-tag.c:850
 msgid ""
 "This tag indicates the exposure mode set when the image was shot. In auto-"
 "bracketing mode, the camera shoots a series of frames of the same scene at "
@@ -4599,15 +4610,15 @@ msgstr ""
 "autogafflingsläget tar kameran en serie av bilder av samma scen vid olika "
 "exponeringsinställningar."
 
-#: libexif/exif-tag.c:853
+#: libexif/exif-tag.c:855
 msgid "This tag indicates the white balance mode set when the image was shot."
 msgstr "Denna tagg indikerar vitbalansläget som var inställt då bilden togs."
 
-#: libexif/exif-tag.c:857
+#: libexif/exif-tag.c:859
 msgid "Digital Zoom Ratio"
 msgstr "Digitalt zoomförhållande"
 
-#: libexif/exif-tag.c:858
+#: libexif/exif-tag.c:860
 msgid ""
 "This tag indicates the digital zoom ratio when the image was shot. If the "
 "numerator of the recorded value is 0, this indicates that digital zoom was "
@@ -4617,11 +4628,11 @@ msgstr ""
 "täljaren för det inspelade värdet är 0 indikerar detta att digitalzoom inte "
 "använts."
 
-#: libexif/exif-tag.c:863
+#: libexif/exif-tag.c:865
 msgid "Focal Length in 35mm Film"
 msgstr "Brännvidd i 35mm film"
 
-#: libexif/exif-tag.c:864
+#: libexif/exif-tag.c:866
 msgid ""
 "This tag indicates the equivalent focal length assuming a 35mm film camera, "
 "in mm. A value of 0 means the focal length is unknown. Note that this tag "
@@ -4631,11 +4642,11 @@ msgstr ""
 "mm. Ett värde som är 0 innebär att brännvidden är okänd. Notera att denna "
 "tagg skiljer sig från taggen FocalLength."
 
-#: libexif/exif-tag.c:870
+#: libexif/exif-tag.c:872
 msgid "Scene Capture Type"
 msgstr "Scentagningstyp"
 
-#: libexif/exif-tag.c:871
+#: libexif/exif-tag.c:873
 msgid ""
 "This tag indicates the type of scene that was shot. It can also be used to "
 "record the mode in which the image was shot. Note that this differs from the "
@@ -4645,15 +4656,15 @@ msgstr ""
 "att spara läget i vilket bilden tagits. Notera att den skiljer sig från "
 "scentypstaggen <SceneType>."
 
-#: libexif/exif-tag.c:876
+#: libexif/exif-tag.c:878
 msgid "Gain Control"
 msgstr "Nivåkontroll"
 
-#: libexif/exif-tag.c:877
+#: libexif/exif-tag.c:879
 msgid "This tag indicates the degree of overall image gain adjustment."
 msgstr "Denna tagg indikerar graden av bildövergripande nivåjustering."
 
-#: libexif/exif-tag.c:881
+#: libexif/exif-tag.c:883
 msgid ""
 "This tag indicates the direction of contrast processing applied by the "
 "camera when the image was shot."
@@ -4661,7 +4672,7 @@ msgstr ""
 "Denna tagg indikerar riktningen för kontrastbehandling som tillämpats av "
 "kameran när bilden togs."
 
-#: libexif/exif-tag.c:885
+#: libexif/exif-tag.c:887
 msgid ""
 "This tag indicates the direction of saturation processing applied by the "
 "camera when the image was shot."
@@ -4669,7 +4680,7 @@ msgstr ""
 "Denna tagg indikerar riktningen för mättnadsbehandling som tillämpades av "
 "kameran när bilden togs."
 
-#: libexif/exif-tag.c:889
+#: libexif/exif-tag.c:891
 msgid ""
 "This tag indicates the direction of sharpness processing applied by the "
 "camera when the image was shot."
@@ -4677,11 +4688,11 @@ msgstr ""
 "Denna tagg indikerar riktningen av skärpebehandling som tillämpades av "
 "kameran när bilden togs."
 
-#: libexif/exif-tag.c:893
+#: libexif/exif-tag.c:895
 msgid "Device Setting Description"
 msgstr "Enhetsinställningsbeskrivning"
 
-#: libexif/exif-tag.c:894
+#: libexif/exif-tag.c:896
 msgid ""
 "This tag indicates information on the picture-taking conditions of a "
 "particular camera model. The tag is used only to indicate the picture-taking "
@@ -4691,127 +4702,127 @@ msgstr ""
 "kameramodell. Taggen används bara för att indikera bildtagningsförhållanden "
 "i läsaren."
 
-#: libexif/exif-tag.c:900
+#: libexif/exif-tag.c:902
 msgid "Subject Distance Range"
 msgstr "Avståndsintervall till objekt"
 
-#: libexif/exif-tag.c:901
+#: libexif/exif-tag.c:903
 msgid "This tag indicates the distance to the subject."
 msgstr "Denna tagg indikerar avståndet till objektet."
 
-#: libexif/exif-tag.c:904
+#: libexif/exif-tag.c:906
 msgid ""
 "This tag indicates an identifier assigned uniquely to each image. It is "
 "recorded as an ASCII string equivalent to hexadecimal notation and 128-bit "
 "fixed length."
 msgstr ""
-"Denna tagg indikerar en identifierar som unikt tilldelas varje bild. Den "
+"Denna tagg indikerar en identifierare som unikt tilldelas varje bild. Den "
 "sparas som en ASCII-sträng ekvivalent med hexadecimal notation och 128-"
 "bitars fixlängd."
 
-#: libexif/exif-tag.c:909
+#: libexif/exif-tag.c:911
 msgid "Camera Owner Name"
-msgstr "Kamera ägarens namn"
+msgstr "Kameraägarens namn"
 
-#: libexif/exif-tag.c:910
+#: libexif/exif-tag.c:912
 msgid ""
 "This tag indicates the name of the camera owner, photographer or image "
 "creator."
 msgstr ""
-"Den här taggen anger namnet på kameraägaren, fotografen eller bildskaparen."
+"Denna tagg indikerar namnet på kameraägaren, fotografen eller bildskaparen."
 
-#: libexif/exif-tag.c:914
+#: libexif/exif-tag.c:916
 msgid "Body Serial Number"
 msgstr "Kamerahusets serienummer"
 
-#: libexif/exif-tag.c:915
+#: libexif/exif-tag.c:917
 msgid "This tag indicates the serial number of the body of the camera"
 msgstr "Denna tagg indikerar serienumret på kamerahuset"
 
-#: libexif/exif-tag.c:918
+#: libexif/exif-tag.c:920
 msgid "Lens Specification"
-msgstr "Lins specifikation"
+msgstr "Objektivspecifikation"
 
-#: libexif/exif-tag.c:919
+#: libexif/exif-tag.c:921
 msgid ""
 "This tag indicates minimum focal length, maximum focal length, minimum F "
 "number in the minimum focal length, and minimum F number in the maximum "
 "focal length."
 msgstr ""
-"Den här taggen anger minsta brännvidd, maximal brännvidd, minsta F-nummer i "
+"Denna tagg indikerar minsta brännvidd, maximal brännvidd, minsta F-nummer i "
 "minsta brännvidd och minsta F-nummer i maximal brännvidd."
 
-#: libexif/exif-tag.c:925
+#: libexif/exif-tag.c:927
 msgid "Lens Make"
-msgstr "Linsmärke"
+msgstr "Objektivmärke"
 
-#: libexif/exif-tag.c:926
+#: libexif/exif-tag.c:928
 msgid "This tag indicates the lens manufacturer."
-msgstr "Denna tagg indikerar linstillverkaren."
+msgstr "Denna tagg indikerar objektivets tillverkare."
 
-#: libexif/exif-tag.c:930
+#: libexif/exif-tag.c:932
 msgid "This tag indicates the lens' model name and model number."
-msgstr "Denna tagg anger objektivets modellnamn och modellnummer."
+msgstr "Denna tagg indikerar objektivets modellnamn och modellnummer."
 
-#: libexif/exif-tag.c:933
+#: libexif/exif-tag.c:935
 msgid "Lens Serial Number"
-msgstr "Lins Serienummer"
+msgstr "Serienummer för objektiv"
 
-#: libexif/exif-tag.c:934
+#: libexif/exif-tag.c:936
 msgid "This tag indicates the serial number of the interchangeable lens."
-msgstr "Denna tagg anger serienumret på den utbytbara linsen."
+msgstr "Denna tagg indikerar serienumret på det utbytbara objektivet."
 
-#: libexif/exif-tag.c:937
+#: libexif/exif-tag.c:939
 msgid "Composite Image"
 msgstr "Sammansatt bild"
 
-#: libexif/exif-tag.c:938
+#: libexif/exif-tag.c:940
 msgid "This tag indicates whether this image was composed from multiple images"
-msgstr "Den här taggen anger om bilden komponerades av flera bilder"
+msgstr "Denna tagg indikerar om bilden komponerades av flera bilder"
 
-#: libexif/exif-tag.c:941
+#: libexif/exif-tag.c:943
 msgid "Source Image Number Of Composite Image"
 msgstr "Källbildnummer för sammansatt bild"
 
-#: libexif/exif-tag.c:942
+#: libexif/exif-tag.c:944
 msgid ""
 "This tag indicates how many images are included and used in the composition "
 "of this image"
 msgstr ""
-"Den här taggen anger hur många bilder som ingår och används i kompositionen "
+"Denna tagg indikerar hur många bilder som ingår och används i kompositionen "
 "av denna bild"
 
-#: libexif/exif-tag.c:945
+#: libexif/exif-tag.c:947
 msgid "Source Exposure Times of Composite Image"
 msgstr "Källexponeringstider för sammansatt bild"
 
-#: libexif/exif-tag.c:946
+#: libexif/exif-tag.c:948
 msgid ""
 "This tag indicates the exposure times of the source images of this image"
 msgstr ""
 "Denna tagg indikerar exponeringstiderna för källbilderna för denna bild"
 
-#: libexif/exif-tag.c:949
+#: libexif/exif-tag.c:951
 msgid "Gamma"
 msgstr "Gamma"
 
-#: libexif/exif-tag.c:950
+#: libexif/exif-tag.c:952
 msgid "Indicates the value of coefficient gamma."
 msgstr "Indikerar värdet för gammakoefficienten."
 
-#: libexif/exif-tag.c:953
+#: libexif/exif-tag.c:955
 msgid "PRINT Image Matching"
 msgstr "Bildmatchning för PRINT"
 
-#: libexif/exif-tag.c:954
+#: libexif/exif-tag.c:956
 msgid "Related to Epson's PRINT Image Matching technology"
 msgstr "Relaterat till Epsons bildmatchningsteknologi PRINT"
 
-#: libexif/exif-tag.c:957
+#: libexif/exif-tag.c:959
 msgid "Padding"
 msgstr "Utfyllnad"
 
-#: libexif/exif-tag.c:958
+#: libexif/exif-tag.c:960
 msgid ""
 "This tag reserves space that can be reclaimed later when additional metadata "
 "are added. New metadata can be written in place by replacing this tag with a "
@@ -4821,7 +4832,7 @@ msgstr ""
 "Denna tagg reserverar plats som kan göras anspråk på senare när ytterligare "
 "metadata läggs till. Ny metadata kan skrivas på plats genom att ersätta "
 "denna tagg med ett mindre dataelement och använda utrymmet för att spara de "
-"nya eller expanderade metadata taggarna."
+"nya eller expanderade metadatataggarna."
 
 #: libexif/fuji/mnote-fuji-entry.c:64
 msgid "Softest"
@@ -4993,7 +5004,7 @@ msgstr "Bred1 (230%)"
 msgid "Wide2 (400%)"
 msgstr "Bred2 (400%)"
 
-#: libexif/fuji/mnote-fuji-entry.c:266
+#: libexif/fuji/mnote-fuji-entry.c:267
 #, c-format
 msgid "%2.2f mm"
 msgstr "%2.2f mm"
@@ -5004,7 +5015,7 @@ msgstr "Version av tillverkaranteckning"
 
 #: libexif/fuji/mnote-fuji-tag.c:39
 msgid "This number is unique and based on the date of manufacture."
-msgstr "Detta tal är unikt och baserad på tillverkningsdatum."
+msgstr "Detta tal är unikt och baserat på tillverkningsdatum."
 
 #: libexif/fuji/mnote-fuji-tag.c:43
 msgid "Chromaticity Saturation"
@@ -5423,117 +5434,117 @@ msgstr "15 bildrutor/s"
 msgid "20 frames/sec"
 msgstr "20 bildrutor/s"
 
-#: libexif/olympus/mnote-olympus-entry.c:384
+#: libexif/olympus/mnote-olympus-entry.c:386
 #, c-format
 msgid "Red Correction %f, blue Correction %f"
 msgstr "Rödkorrigering %f, blåkorrigering %f"
 
-#: libexif/olympus/mnote-olympus-entry.c:391
+#: libexif/olympus/mnote-olympus-entry.c:393
 msgid "No manual focus selection"
 msgstr "Inget manuellt fokusval"
 
-#: libexif/olympus/mnote-olympus-entry.c:394
+#: libexif/olympus/mnote-olympus-entry.c:396
 #, c-format
 msgid "%2.2f meters"
 msgstr "%2.2f meter"
 
-#: libexif/olympus/mnote-olympus-entry.c:420
+#: libexif/olympus/mnote-olympus-entry.c:422
 msgid "AF position: center"
 msgstr "AF-position: centrum"
 
-#: libexif/olympus/mnote-olympus-entry.c:421
+#: libexif/olympus/mnote-olympus-entry.c:423
 msgid "AF position: top"
 msgstr "AF-position: toppen"
 
-#: libexif/olympus/mnote-olympus-entry.c:422
+#: libexif/olympus/mnote-olympus-entry.c:424
 msgid "AF position: bottom"
 msgstr "AF-position: botten"
 
-#: libexif/olympus/mnote-olympus-entry.c:423
+#: libexif/olympus/mnote-olympus-entry.c:425
 msgid "AF position: left"
 msgstr "AF-position: vänster"
 
-#: libexif/olympus/mnote-olympus-entry.c:424
+#: libexif/olympus/mnote-olympus-entry.c:426
 msgid "AF position: right"
 msgstr "AF-position: höger"
 
-#: libexif/olympus/mnote-olympus-entry.c:425
+#: libexif/olympus/mnote-olympus-entry.c:427
 msgid "AF position: upper-left"
 msgstr "AF-position: övre vänster"
 
-#: libexif/olympus/mnote-olympus-entry.c:426
+#: libexif/olympus/mnote-olympus-entry.c:428
 msgid "AF position: upper-right"
-msgstr "AF-position: över höger"
+msgstr "AF-position: övre höger"
 
-#: libexif/olympus/mnote-olympus-entry.c:427
+#: libexif/olympus/mnote-olympus-entry.c:429
 msgid "AF position: lower-left"
 msgstr "AF-position: nedre vänster"
 
-#: libexif/olympus/mnote-olympus-entry.c:428
+#: libexif/olympus/mnote-olympus-entry.c:430
 msgid "AF position: lower-right"
 msgstr "AF-position: nedre höger"
 
-#: libexif/olympus/mnote-olympus-entry.c:429
+#: libexif/olympus/mnote-olympus-entry.c:431
 msgid "AF position: far left"
-msgstr "AF-position: lång till vänster"
+msgstr "AF-position: långt till vänster"
 
-#: libexif/olympus/mnote-olympus-entry.c:430
+#: libexif/olympus/mnote-olympus-entry.c:432
 msgid "AF position: far right"
 msgstr "AF-position: långt till höger"
 
-#: libexif/olympus/mnote-olympus-entry.c:431
+#: libexif/olympus/mnote-olympus-entry.c:433
 msgid "Unknown AF position"
 msgstr "Okänd AF-position"
 
-#: libexif/olympus/mnote-olympus-entry.c:442
-#: libexif/olympus/mnote-olympus-entry.c:513
+#: libexif/olympus/mnote-olympus-entry.c:444
+#: libexif/olympus/mnote-olympus-entry.c:515
 #, c-format
 msgid "Internal error (unknown value %hi)"
 msgstr "Internt fel (okänt värde %hi)"
 
-#: libexif/olympus/mnote-olympus-entry.c:450
-#: libexif/olympus/mnote-olympus-entry.c:521
+#: libexif/olympus/mnote-olympus-entry.c:452
+#: libexif/olympus/mnote-olympus-entry.c:523
 #, c-format
 msgid "Unknown value %hi"
 msgstr "Okänt värde %hi"
 
-#: libexif/olympus/mnote-olympus-entry.c:546
-#: libexif/olympus/mnote-olympus-entry.c:566
+#: libexif/olympus/mnote-olympus-entry.c:548
+#: libexif/olympus/mnote-olympus-entry.c:568
 #, c-format
 msgid "Unknown %hu"
 msgstr "Okänd %hu"
 
-#: libexif/olympus/mnote-olympus-entry.c:563
+#: libexif/olympus/mnote-olympus-entry.c:565
 msgid "2 sec."
 msgstr "2 sek."
 
-#: libexif/olympus/mnote-olympus-entry.c:602
+#: libexif/olympus/mnote-olympus-entry.c:604
 msgid "Fast"
 msgstr "Snabb"
 
-#: libexif/olympus/mnote-olympus-entry.c:706
+#: libexif/olympus/mnote-olympus-entry.c:708
 msgid "Automatic"
 msgstr "Automatisk"
 
-#: libexif/olympus/mnote-olympus-entry.c:736
+#: libexif/olympus/mnote-olympus-entry.c:738
 #, c-format
 msgid "Manual: %liK"
 msgstr "Manuell: %li K"
 
-#: libexif/olympus/mnote-olympus-entry.c:739
+#: libexif/olympus/mnote-olympus-entry.c:741
 msgid "Manual: unknown"
 msgstr "Manuell: okänd"
 
-#: libexif/olympus/mnote-olympus-entry.c:745
+#: libexif/olympus/mnote-olympus-entry.c:747
 msgid "One-touch"
 msgstr "En-berörings"
 
-#: libexif/olympus/mnote-olympus-entry.c:813
-#: libexif/olympus/mnote-olympus-entry.c:823
+#: libexif/olympus/mnote-olympus-entry.c:815
+#: libexif/olympus/mnote-olympus-entry.c:825
 msgid "Infinite"
 msgstr "Oändlig"
 
-#: libexif/olympus/mnote-olympus-entry.c:831
+#: libexif/olympus/mnote-olympus-entry.c:833
 #, c-format
 msgid "%i bytes unknown data: "
 msgstr "%i byte okänt data: "
@@ -5582,7 +5593,7 @@ msgstr ""
 
 #: libexif/olympus/mnote-olympus-tag.c:53
 msgid "Exposurediff ?"
-msgstr "Exponeringsskillnad ?"
+msgstr "Exponeringsskillnad?"
 
 #: libexif/olympus/mnote-olympus-tag.c:56
 msgid "Image Boundary"
@@ -5669,7 +5680,7 @@ msgstr "Brusreducering"
 
 #: libexif/olympus/mnote-olympus-tag.c:80
 msgid "Lens Data"
-msgstr "Linsdata"
+msgstr "Objektivdata"
 
 #: libexif/olympus/mnote-olympus-tag.c:81
 msgid "Sensor Pixel Size"
@@ -5721,7 +5732,7 @@ msgstr "Exponeringsjustering"
 
 #: libexif/olympus/mnote-olympus-tag.c:99
 msgid "VR Info"
-msgstr "VR Info"
+msgstr "VR-info"
 
 #: libexif/olympus/mnote-olympus-tag.c:100
 msgid "Image Authentication"
@@ -5745,7 +5756,7 @@ msgstr "Världstid"
 
 #: libexif/olympus/mnote-olympus-tag.c:105
 msgid "ISO Info"
-msgstr "ISO info"
+msgstr "ISO-info"
 
 #: libexif/olympus/mnote-olympus-tag.c:106
 msgid "Vignette Control"
@@ -5774,7 +5785,7 @@ msgstr "Svartnivå"
 
 #: libexif/olympus/mnote-olympus-tag.c:113
 msgid "Image Size Raw"
-msgstr "Bildstorlek Raw"
+msgstr "Rå bildstorlek"
 
 #: libexif/olympus/mnote-olympus-tag.c:114
 msgid "Crop Area"
@@ -5786,7 +5797,7 @@ msgstr "Nikon-inställningar"
 
 #: libexif/olympus/mnote-olympus-tag.c:116
 msgid "Color Temperature Auto"
-msgstr "Färgtemperatur Auto"
+msgstr "Färgtemperatur auto"
 
 #: libexif/olympus/mnote-olympus-tag.c:117
 msgid "Serial Number 2"
@@ -5798,11 +5809,11 @@ msgstr "Mättnad 2"
 
 #: libexif/olympus/mnote-olympus-tag.c:120
 msgid "High ISO Noise Reduction"
-msgstr "Hög ISO brusreducering"
+msgstr "Hög ISO-brusreducering"
 
 #: libexif/olympus/mnote-olympus-tag.c:121
 msgid "Toning Effect"
-msgstr "Toning effekt"
+msgstr "Toningseffekt"
 
 #: libexif/olympus/mnote-olympus-tag.c:122
 msgid "Powerup Time"
@@ -6155,15 +6166,15 @@ msgstr "Grönläge"
 
 #: libexif/pentax/mnote-pentax-entry.c:186
 msgid "Light pet"
-msgstr "Ljus husdjur"
+msgstr "Husdjur ljus"
 
 #: libexif/pentax/mnote-pentax-entry.c:187
 msgid "Dark pet"
-msgstr "Mörkt husdjur"
+msgstr "Husdjur mörk"
 
 #: libexif/pentax/mnote-pentax-entry.c:188
 msgid "Medium pet"
-msgstr "Medium husdjur"
+msgstr "Husdjur medium"
 
 #: libexif/pentax/mnote-pentax-entry.c:190
 #: libexif/pentax/mnote-pentax-entry.c:298
@@ -6286,18 +6297,18 @@ msgstr "3008x2008 eller 3040x2024"
 msgid "Digital filter?"
 msgstr "Digitalt filter?"
 
-#: libexif/pentax/mnote-pentax-entry.c:354
-#: libexif/pentax/mnote-pentax-entry.c:363
+#: libexif/pentax/mnote-pentax-entry.c:355
+#: libexif/pentax/mnote-pentax-entry.c:364
 #, c-format
 msgid "Internal error (unknown value %hu)"
 msgstr "Internt fel (okänt värde %hu)"
 
-#: libexif/pentax/mnote-pentax-entry.c:378
+#: libexif/pentax/mnote-pentax-entry.c:379
 #, c-format
 msgid "Internal error (unknown value %hu %hu)"
 msgstr "Internt fel (okänt värde %hu %hu)"
 
-#: libexif/pentax/mnote-pentax-entry.c:387
+#: libexif/pentax/mnote-pentax-entry.c:388
 #, c-format
 msgid "Internal error (unknown value %hi %hi)"
 msgstr "Internt fel (okänt värde %hi %hi)"
@@ -6389,19 +6400,19 @@ msgstr "Destinationsstad"
 
 #: libexif/pentax/mnote-pentax-tag.c:98
 msgid "Hometown DST"
-msgstr "Hemstads sommartid"
+msgstr "Sommartid för hemstad"
 
 #: libexif/pentax/mnote-pentax-tag.c:98
 msgid "Home Daylight Savings Time"
-msgstr "Sommartid hemma"
+msgstr "Sommartid för hemstad"
 
 #: libexif/pentax/mnote-pentax-tag.c:99
 msgid "Destination DST"
-msgstr "Destination sommartid"
+msgstr "Sommartid för destination"
 
 #: libexif/pentax/mnote-pentax-tag.c:99
 msgid "Destination Daylight Savings Time"
-msgstr "Sommartid destination"
+msgstr "Sommartid för destination"
 
 #: libexif/pentax/mnote-pentax-tag.c:101
 msgid "Image Processing"
@@ -6421,7 +6432,7 @@ msgstr "Storlek för råbild"
 
 #: libexif/pentax/mnote-pentax-tag.c:107
 msgid "Autofocus Points Used"
-msgstr "Autofokus punkter som använts"
+msgstr "Autofokuspunkter som använts"
 
 #: libexif/pentax/mnote-pentax-tag.c:112
 msgid "Image Tone"
@@ -6445,11 +6456,11 @@ msgstr "Batteriinformation"
 
 #: libexif/pentax/mnote-pentax-tag.c:121
 msgid "Hometown City Code"
-msgstr "Postkod hemstad"
+msgstr "Postnummer för hemstad"
 
 #: libexif/pentax/mnote-pentax-tag.c:122
 msgid "Destination City Code"
-msgstr "Postkod destination"
+msgstr "Postnummer för destination"
 
 #: libexif/pentax/mnote-pentax-tag.c:127
 msgid "Object Distance"
@@ -6575,14 +6586,6 @@ msgstr "[DO_NOT_TRANSLATE_THIS_MARKER]"
 
 #~ msgid "close"
 #~ msgstr "nära"
-
-#, fuzzy
-#~ msgid "Internal error."
-#~ msgstr "Internt fel"
-
-#, fuzzy
-#~ msgid "Internal error (unknown value %i)."
-#~ msgstr "Internt fel (okänt värde %i)"
 
 #~ msgid "SQ"
 #~ msgstr "SQ"

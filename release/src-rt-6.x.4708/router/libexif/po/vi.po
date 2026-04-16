@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: libexif 0.6.24\n"
 "Report-Msgid-Bugs-To: libexif-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2025-01-17 15:27+0100\n"
+"POT-Creation-Date: 2026-04-07 11:21+0200\n"
 "PO-Revision-Date: 2023-07-09 15:27+0700\n"
 "Last-Translator: Trần Ngọc Quân <vnwildman@gmail.com>\n"
 "Language-Team: Vietnamese <translation-team-vi@lists.sourceforge.net>\n"
@@ -64,7 +64,7 @@ msgstr "Cận cảnh"
 #: libexif/olympus/mnote-olympus-entry.c:200
 #: libexif/olympus/mnote-olympus-entry.c:208
 #: libexif/olympus/mnote-olympus-entry.c:218
-#: libexif/olympus/mnote-olympus-entry.c:596
+#: libexif/olympus/mnote-olympus-entry.c:598
 #: libexif/pentax/mnote-pentax-entry.c:107
 #: libexif/pentax/mnote-pentax-entry.c:112
 #: libexif/pentax/mnote-pentax-entry.c:117
@@ -93,15 +93,15 @@ msgstr "Hảo hạng"
 #: libexif/canon/mnote-canon-entry.c:307 libexif/canon/mnote-canon-entry.c:315
 #: libexif/canon/mnote-canon-entry.c:348 libexif/canon/mnote-canon-entry.c:360
 #: libexif/canon/mnote-canon-entry.c:373 libexif/canon/mnote-canon-entry.c:375
-#: libexif/canon/mnote-canon-entry.c:586 libexif/canon/mnote-canon-entry.c:686
+#: libexif/canon/mnote-canon-entry.c:588 libexif/canon/mnote-canon-entry.c:688
 #: libexif/fuji/mnote-fuji-entry.c:72 libexif/fuji/mnote-fuji-entry.c:105
 #: libexif/fuji/mnote-fuji-entry.c:109 libexif/fuji/mnote-fuji-entry.c:117
 #: libexif/fuji/mnote-fuji-entry.c:144
 #: libexif/olympus/mnote-olympus-entry.c:183
 #: libexif/olympus/mnote-olympus-entry.c:191
 #: libexif/olympus/mnote-olympus-entry.c:256
-#: libexif/olympus/mnote-olympus-entry.c:540
-#: libexif/olympus/mnote-olympus-entry.c:557
+#: libexif/olympus/mnote-olympus-entry.c:542
+#: libexif/olympus/mnote-olympus-entry.c:559
 #: libexif/pentax/mnote-pentax-entry.c:197
 #: libexif/pentax/mnote-pentax-entry.c:262
 msgid "Off"
@@ -133,8 +133,8 @@ msgstr "Tự động"
 #: libexif/fuji/mnote-fuji-entry.c:110 libexif/fuji/mnote-fuji-entry.c:118
 #: libexif/fuji/mnote-fuji-entry.c:145
 #: libexif/olympus/mnote-olympus-entry.c:184
-#: libexif/olympus/mnote-olympus-entry.c:543
-#: libexif/olympus/mnote-olympus-entry.c:560
+#: libexif/olympus/mnote-olympus-entry.c:545
+#: libexif/olympus/mnote-olympus-entry.c:562
 #: libexif/pentax/mnote-pentax-entry.c:200
 #: libexif/pentax/mnote-pentax-entry.c:263
 msgid "On"
@@ -427,7 +427,7 @@ msgstr "ISO 3200"
 #: libexif/canon/mnote-canon-entry.c:368 libexif/canon/mnote-canon-entry.c:420
 #: libexif/olympus/mnote-olympus-entry.c:194
 #: libexif/olympus/mnote-olympus-entry.c:231
-#: libexif/olympus/mnote-olympus-entry.c:460
+#: libexif/olympus/mnote-olympus-entry.c:462
 #: libexif/pentax/mnote-pentax-entry.c:244
 msgid "None"
 msgstr "Không có"
@@ -1050,7 +1050,7 @@ msgid "Fluorescent"
 msgstr "Huỳnh quang"
 
 #: libexif/canon/mnote-canon-entry.c:336 libexif/canon/mnote-canon-entry.c:408
-#: libexif/exif-entry.c:745 libexif/exif-entry.c:797 libexif/exif-tag.c:628
+#: libexif/exif-entry.c:745 libexif/exif-entry.c:797 libexif/exif-tag.c:630
 #: libexif/fuji/mnote-fuji-entry.c:82 libexif/pentax/mnote-pentax-entry.c:256
 msgid "Flash"
 msgstr "Đèn nháy"
@@ -1156,22 +1156,22 @@ msgid "Rotated by software"
 msgstr "Được xoay bằng phần mềm"
 
 #: libexif/canon/mnote-canon-entry.c:384
-#: libexif/olympus/mnote-olympus-entry.c:616
+#: libexif/olympus/mnote-olympus-entry.c:618
 msgid "Left to right"
 msgstr "Trái qua phải"
 
 #: libexif/canon/mnote-canon-entry.c:385
-#: libexif/olympus/mnote-olympus-entry.c:619
+#: libexif/olympus/mnote-olympus-entry.c:621
 msgid "Right to left"
 msgstr "Phải qua trái"
 
 #: libexif/canon/mnote-canon-entry.c:386
-#: libexif/olympus/mnote-olympus-entry.c:622
+#: libexif/olympus/mnote-olympus-entry.c:624
 msgid "Bottom to top"
 msgstr "Dưới lên trên"
 
 #: libexif/canon/mnote-canon-entry.c:387
-#: libexif/olympus/mnote-olympus-entry.c:625
+#: libexif/olympus/mnote-olympus-entry.c:627
 msgid "Top to bottom"
 msgstr "Trên xuống dưới"
 
@@ -1255,34 +1255,34 @@ msgstr "Đơn sắc"
 msgid ", "
 msgstr ", "
 
-#: libexif/canon/mnote-canon-entry.c:589 libexif/canon/mnote-canon-entry.c:689
+#: libexif/canon/mnote-canon-entry.c:591 libexif/canon/mnote-canon-entry.c:691
 #, c-format
 msgid "%i (ms)"
 msgstr "%i (miligiây)"
 
-#: libexif/canon/mnote-canon-entry.c:634
+#: libexif/canon/mnote-canon-entry.c:636
 #, c-format
 msgid "%.2f mm"
 msgstr "%.2f mm"
 
-#: libexif/canon/mnote-canon-entry.c:660
+#: libexif/canon/mnote-canon-entry.c:662
 #, c-format
 msgid "%.2f EV"
 msgstr "%.2f EV"
 
-#: libexif/canon/mnote-canon-entry.c:670 libexif/exif-entry.c:1109
+#: libexif/canon/mnote-canon-entry.c:672 libexif/exif-entry.c:1109
 #, c-format
 msgid "1/%.0f"
 msgstr "1/%.0f"
 
-#: libexif/canon/mnote-canon-entry.c:682
+#: libexif/canon/mnote-canon-entry.c:684
 #, c-format
 msgid "%u mm"
 msgstr "%u mm"
 
-#: libexif/canon/mnote-canon-entry.c:818 libexif/fuji/mnote-fuji-entry.c:305
-#: libexif/pentax/mnote-pentax-entry.c:403
-#: libexif/pentax/mnote-pentax-entry.c:499
+#: libexif/canon/mnote-canon-entry.c:820 libexif/fuji/mnote-fuji-entry.c:306
+#: libexif/pentax/mnote-pentax-entry.c:404
+#: libexif/pentax/mnote-pentax-entry.c:500
 #, c-format
 msgid "%i bytes unknown data"
 msgstr "%i byte dữ liệu lạ"
@@ -1292,7 +1292,7 @@ msgid "Settings (First Part)"
 msgstr "Cài đặt (Phần đầu tiên)"
 
 #: libexif/canon/mnote-canon-tag.c:38 libexif/canon/mnote-canon-tag.c:160
-#: libexif/exif-tag.c:632 libexif/pentax/mnote-pentax-tag.c:90
+#: libexif/exif-tag.c:634 libexif/pentax/mnote-pentax-tag.c:90
 msgid "Focal Length"
 msgstr "Tiêu cự"
 
@@ -1300,7 +1300,7 @@ msgstr "Tiêu cự"
 msgid "Settings (Second Part)"
 msgstr "Cài đặt (Phần thứ hai)"
 
-#: libexif/canon/mnote-canon-tag.c:40 libexif/olympus/mnote-olympus-entry.c:605
+#: libexif/canon/mnote-canon-tag.c:40 libexif/olympus/mnote-olympus-entry.c:607
 #: libexif/pentax/mnote-pentax-entry.c:179
 msgid "Panorama"
 msgstr "Chụp toàn cảnh"
@@ -1400,7 +1400,7 @@ msgstr "Thông tin AF 2"
 msgid "Contrast Info"
 msgstr "Thông tin tương phản"
 
-#: libexif/canon/mnote-canon-tag.c:64 libexif/exif-tag.c:903
+#: libexif/canon/mnote-canon-tag.c:64 libexif/exif-tag.c:905
 msgid "Image Unique ID"
 msgstr "ID ảnh duy nhất"
 
@@ -1444,7 +1444,7 @@ msgstr "Các giá trị hàm cá nhân"
 msgid "File Info"
 msgstr "Thông tin tập tin"
 
-#: libexif/canon/mnote-canon-tag.c:75 libexif/exif-tag.c:929
+#: libexif/canon/mnote-canon-tag.c:75 libexif/exif-tag.c:931
 msgid "Lens Model"
 msgstr "Mô hình ống kính"
 
@@ -1512,7 +1512,7 @@ msgstr "Khớp đường cong tông"
 msgid "Whitebalance Matching"
 msgstr "Khớp Cân bằng trắng"
 
-#: libexif/canon/mnote-canon-tag.c:92 libexif/exif-tag.c:713
+#: libexif/canon/mnote-canon-tag.c:92 libexif/exif-tag.c:715
 #: libexif/olympus/mnote-olympus-tag.c:98 libexif/pentax/mnote-pentax-tag.c:104
 msgid "Color Space"
 msgstr "Miền màu"
@@ -1648,13 +1648,13 @@ msgstr "Chế độ chụp dễ"
 msgid "Digital Zoom"
 msgstr "Phóng to Số"
 
-#: libexif/canon/mnote-canon-tag.c:132 libexif/exif-tag.c:880
+#: libexif/canon/mnote-canon-tag.c:132 libexif/exif-tag.c:882
 #: libexif/fuji/mnote-fuji-tag.c:44 libexif/pentax/mnote-pentax-tag.c:48
 #: libexif/pentax/mnote-pentax-tag.c:93
 msgid "Contrast"
 msgstr "Tương phản"
 
-#: libexif/canon/mnote-canon-tag.c:133 libexif/exif-tag.c:884
+#: libexif/canon/mnote-canon-tag.c:133 libexif/exif-tag.c:886
 #: libexif/olympus/mnote-olympus-tag.c:77
 #: libexif/olympus/mnote-olympus-tag.c:90 libexif/pentax/mnote-pentax-tag.c:49
 #: libexif/pentax/mnote-pentax-tag.c:92
@@ -1662,7 +1662,7 @@ msgid "Saturation"
 msgstr "Bão hòa"
 
 #: libexif/canon/mnote-canon-tag.c:134 libexif/canon/mnote-canon-tag.c:194
-#: libexif/exif-tag.c:888 libexif/fuji/mnote-fuji-tag.c:41
+#: libexif/exif-tag.c:890 libexif/fuji/mnote-fuji-tag.c:41
 #: libexif/pentax/mnote-pentax-tag.c:47 libexif/pentax/mnote-pentax-tag.c:94
 msgid "Sharpness"
 msgstr "Sắc nét"
@@ -1671,7 +1671,7 @@ msgstr "Sắc nét"
 msgid "ISO"
 msgstr "ISO"
 
-#: libexif/canon/mnote-canon-tag.c:136 libexif/exif-tag.c:622
+#: libexif/canon/mnote-canon-tag.c:136 libexif/exif-tag.c:624
 #: libexif/pentax/mnote-pentax-tag.c:84
 msgid "Metering Mode"
 msgstr "Chế độ đo"
@@ -1684,7 +1684,7 @@ msgstr "Vùng lấy nét"
 msgid "AF Point"
 msgstr "Điểm AF"
 
-#: libexif/canon/mnote-canon-tag.c:139 libexif/exif-tag.c:847
+#: libexif/canon/mnote-canon-tag.c:139 libexif/exif-tag.c:849
 msgid "Exposure Mode"
 msgstr "Chế độ phơi sáng"
 
@@ -1799,7 +1799,7 @@ msgid "Exposure Compensation"
 msgstr "Sự bù phơi sáng"
 
 #: libexif/canon/mnote-canon-tag.c:169 libexif/canon/mnote-canon-tag.c:200
-#: libexif/exif-tag.c:852 libexif/fuji/mnote-fuji-tag.c:42
+#: libexif/exif-tag.c:854 libexif/fuji/mnote-fuji-tag.c:42
 #: libexif/olympus/mnote-olympus-tag.c:43
 #: libexif/olympus/mnote-olympus-tag.c:132 libexif/pentax/mnote-pentax-tag.c:43
 #: libexif/pentax/mnote-pentax-tag.c:86 libexif/pentax/mnote-pentax-tag.c:126
@@ -1851,12 +1851,12 @@ msgstr "Tầm lấy nét Trên"
 msgid "Focus Distance Lower"
 msgstr "Tầm lấy nét Dưới"
 
-#: libexif/canon/mnote-canon-tag.c:182 libexif/exif-tag.c:481
+#: libexif/canon/mnote-canon-tag.c:182 libexif/exif-tag.c:483
 #: libexif/pentax/mnote-pentax-tag.c:81
 msgid "F-Number"
 msgstr "Số-F"
 
-#: libexif/canon/mnote-canon-tag.c:183 libexif/exif-tag.c:478
+#: libexif/canon/mnote-canon-tag.c:183 libexif/exif-tag.c:480
 #: libexif/pentax/mnote-pentax-tag.c:80
 msgid "Exposure Time"
 msgstr "Thời gian phơi sáng"
@@ -1939,54 +1939,58 @@ msgstr "Motorola"
 msgid "Intel"
 msgstr "Intel"
 
-#: libexif/exif-data.c:848
+#: libexif/exif-data.c:288
+msgid "Overflow in components detected."
+msgstr ""
+
+#: libexif/exif-data.c:853
 msgid "Size of data too small to allow for EXIF data."
 msgstr "Dữ liệu có kích cỡ quá nhỏ để chứa dữ liệu EXIF."
 
-#: libexif/exif-data.c:921
+#: libexif/exif-data.c:926
 msgid "EXIF marker not found."
 msgstr "Không tìm thấy dấu hiệu EXIF."
 
-#: libexif/exif-data.c:933
+#: libexif/exif-data.c:938
 #, c-format
 msgid "Read length %d is longer than data length %d."
 msgstr "Đọc chiều dài %d là dài hơn chiều dài dữ liệu %d."
 
-#: libexif/exif-data.c:938
+#: libexif/exif-data.c:943
 msgid "APP Tag too short."
 msgstr "Thẻ APP quá ngắn."
 
-#: libexif/exif-data.c:958
+#: libexif/exif-data.c:963
 msgid "EXIF header not found."
 msgstr "Không tìm thấy phần đầu EXIF."
 
-#: libexif/exif-data.c:983
+#: libexif/exif-data.c:988
 msgid "Unknown encoding."
 msgstr "Không biết bảng mã."
 
-#: libexif/exif-data.c:1269
+#: libexif/exif-data.c:1274
 msgid "Ignore unknown tags"
 msgstr "Bỏ qua các thẻ lạ"
 
-#: libexif/exif-data.c:1270
+#: libexif/exif-data.c:1275
 msgid "Ignore unknown tags when loading EXIF data."
 msgstr "Bỏ qua các thẻ lạ khi tải dữ liệu EXIF."
 
-#: libexif/exif-data.c:1271
+#: libexif/exif-data.c:1276
 msgid "Follow specification"
 msgstr "Theo đặc tả"
 
-#: libexif/exif-data.c:1272
+#: libexif/exif-data.c:1277
 msgid ""
 "Add, correct and remove entries to get EXIF data that follows the "
 "specification."
 msgstr "Thêm, sửa và gỡ bỏ mục nhập để tạo dữ liệu EXIF tùy theo đặc tả."
 
-#: libexif/exif-data.c:1274
+#: libexif/exif-data.c:1279
 msgid "Do not change maker note"
 msgstr "Không thay đổi ghi chú hãng chế tạo"
 
-#: libexif/exif-data.c:1275
+#: libexif/exif-data.c:1280
 msgid ""
 "When loading and resaving Exif data, save the maker note unmodified. Be "
 "aware that the maker note can get corrupted."
@@ -2241,9 +2245,9 @@ msgstr "Cứng"
 
 #: libexif/exif-entry.c:723 libexif/exif-entry.c:741 libexif/exif-entry.c:786
 #: libexif/exif-entry.c:833 libexif/exif-entry.c:844
-#: libexif/olympus/mnote-olympus-entry.c:599
-#: libexif/olympus/mnote-olympus-entry.c:693
-#: libexif/olympus/mnote-olympus-entry.c:748
+#: libexif/olympus/mnote-olympus-entry.c:601
+#: libexif/olympus/mnote-olympus-entry.c:695
+#: libexif/olympus/mnote-olympus-entry.c:750
 #: libexif/pentax/mnote-pentax-entry.c:258
 msgid "Unknown"
 msgstr "Không rõ"
@@ -2365,7 +2369,7 @@ msgstr "Chương trình chuẩn"
 msgid "Aperture priority"
 msgstr "Ưu tiên khẩu độ"
 
-#: libexif/exif-entry.c:774 libexif/exif-tag.c:601
+#: libexif/exif-entry.c:774 libexif/exif-tag.c:603
 msgid "Aperture"
 msgstr "Khẩu độ"
 
@@ -2701,7 +2705,7 @@ msgstr "DSC"
 #: libexif/exif-entry.c:1153 libexif/exif-entry.c:1193
 #: libexif/exif-entry.c:1277 libexif/exif-entry.c:1330
 #: libexif/exif-entry.c:1339 libexif/exif-entry.c:1375
-#: libexif/fuji/mnote-fuji-entry.c:239 libexif/fuji/mnote-fuji-entry.c:248
+#: libexif/fuji/mnote-fuji-entry.c:240 libexif/fuji/mnote-fuji-entry.c:249
 #, c-format
 msgid "Internal error (unknown value %i)"
 msgstr "Lỗi nội bộ (giá trị không rõ %i)"
@@ -2826,13 +2830,15 @@ msgstr "DCĐ"
 msgid "Double"
 msgstr "Đôi"
 
-#: libexif/exif-loader.c:133
+#: libexif/exif-loader.c:135
 #, c-format
 msgid "The file '%s' could not be opened."
 msgstr "Không thể mở tập tin \"%s\"."
 
-#: libexif/exif-loader.c:339
-msgid "The data supplied does not seem to contain EXIF data."
+#: libexif/exif-loader.c:342
+#, fuzzy, c-format
+msgid ""
+"The data supplied does not seem to contain EXIF data. JPEG Marker type 0x%02x"
 msgstr "Dữ liệu được cung cấp có vẻ không chứa dữ liệu EXIF."
 
 #: libexif/exif-log.c:45
@@ -2920,9 +2926,9 @@ msgid ""
 "given up to two decimal places, the format is dd/1,mmmm/100,0/1."
 msgstr ""
 "Cho biết độ vĩ. Độ vĩ được thế hiện là ba giá trị HỮU TỶ đưa ra độ, phút và "
-"giây riêng từng. Khi thế hiện độ, phút và giây, định dạng là <đđ/1,pp/1,"
-"gg/1>. Khi dùng độ và phút, và, lấy thí dụ, phần độ được đưa ra đến hai lần "
-"số, định dạng là <đđ/1,pppp/100,0/1>."
+"giây riêng từng. Khi thế hiện độ, phút và giây, định dạng là <đđ/1,pp/1,gg/"
+"1>. Khi dùng độ và phút, và, lấy thí dụ, phần độ được đưa ra đến hai lần số, "
+"định dạng là <đđ/1,pppp/100,0/1>."
 
 #: libexif/exif-tag.c:95
 msgid "East or West Longitude"
@@ -2949,9 +2955,9 @@ msgid ""
 "given up to two decimal places, the format is ddd/1,mmmm/100,0/1."
 msgstr ""
 "Cho biết kinh độ. Độ kinh được thế hiện là ba giá trị HỮU TỶ đưa ra độ, phút "
-"và giây riêng từng. Khi thế hiện độ, phút và giây, định dạng là <đđ/1,pp/1,"
-"gg/1>. Khi dùng độ và phút, và, lấy thí dụ, phần độ được đưa ra đến hai lần "
-"số, định dạng là <đđ/1,pppp/100,0/1>."
+"và giây riêng từng. Khi thế hiện độ, phút và giây, định dạng là <đđ/1,pp/"
+"1,gg/1>. Khi dùng độ và phút, và, lấy thí dụ, phần độ được đưa ra đến hai "
+"lần số, định dạng là <đđ/1,pppp/100,0/1>."
 
 #: libexif/exif-tag.c:107
 msgid "Altitude Reference"
@@ -3760,11 +3766,11 @@ msgstr "Gói tin XML"
 msgid "XMP Metadata"
 msgstr "Siêu dữ liệu XMP"
 
-#: libexif/exif-tag.c:449 libexif/exif-tag.c:836
+#: libexif/exif-tag.c:451 libexif/exif-tag.c:838
 msgid "CFA Pattern"
 msgstr "Mẫu CFA"
 
-#: libexif/exif-tag.c:450 libexif/exif-tag.c:837
+#: libexif/exif-tag.c:452 libexif/exif-tag.c:839
 msgid ""
 "Indicates the color filter array (CFA) geometric pattern of the image sensor "
 "when a one-chip color area sensor is used. It does not apply to all sensing "
@@ -3773,15 +3779,15 @@ msgstr ""
 "Cho biết mẫu hình học mảng lọc màu (CFA) của cảm biến ảnh, khi dùng một cảm "
 "biến vùng màu phiến tinh thể đơn. Không áp dụng vào mọi phương pháp dò tìm."
 
-#: libexif/exif-tag.c:454
+#: libexif/exif-tag.c:456
 msgid "Battery Level"
 msgstr "Mức pin"
 
-#: libexif/exif-tag.c:456
+#: libexif/exif-tag.c:458
 msgid "Copyright"
 msgstr "Tác quyền"
 
-#: libexif/exif-tag.c:457
+#: libexif/exif-tag.c:459
 msgid ""
 "Copyright information. In this standard the tag is used to indicate both the "
 "photographer and editor copyrights. It is the copyright notice of the person "
@@ -3815,19 +3821,24 @@ msgstr ""
 "ảnh), rồi mã NULL chấm dứt, rồi bản quyền của nhà soạn thảo (xem thí dụ 3). "
 "Khi trường còn trống, nó được xử lý là không rõ."
 
-#: libexif/exif-tag.c:479
+#: libexif/exif-tag.c:481
 msgid "Exposure time, given in seconds (sec)."
 msgstr "Thời gian phơi sáng, theo giây."
 
-#: libexif/exif-tag.c:482
+#: libexif/exif-tag.c:484
 msgid "The F number."
 msgstr "Số F."
 
-#: libexif/exif-tag.c:487
+#: libexif/exif-tag.c:489
 msgid "Image Resources Block"
 msgstr "Khối Tài nguyên Ảnh"
 
-#: libexif/exif-tag.c:490
+#: libexif/exif-tag.c:491
+#, fuzzy
+msgid "Exif IFD Pointer"
+msgstr "Con trỏ IFD thông tin GPS"
+
+#: libexif/exif-tag.c:492
 msgid ""
 "A pointer to the Exif IFD. Interoperability, Exif IFD has the same structure "
 "as that of the IFD specified in TIFF. ordinarily, however, it does not "
@@ -3837,22 +3848,22 @@ msgstr ""
 "một cấu trúc với IFD được ghi rõ trong TIFF. Tuy nhiên, bình thường nó không "
 "chứa dữ liệu ảnh như TIFF."
 
-#: libexif/exif-tag.c:498
+#: libexif/exif-tag.c:500
 msgid "Exposure Program"
 msgstr "Chương trình phơi sáng"
 
-#: libexif/exif-tag.c:499
+#: libexif/exif-tag.c:501
 msgid ""
 "The class of the program used by the camera to set exposure when the picture "
 "is taken."
 msgstr ""
 "Hạng của chương trình được dùng bởi máy ảnh để đặt độ phơi sáng khi chụp ảnh."
 
-#: libexif/exif-tag.c:503
+#: libexif/exif-tag.c:505
 msgid "Spectral Sensitivity"
 msgstr "Độ nhạy quang phổ"
 
-#: libexif/exif-tag.c:504
+#: libexif/exif-tag.c:506
 msgid ""
 "Indicates the spectral sensitivity of each channel of the camera used. The "
 "tag value is an ASCII string compatible with the standard developed by the "
@@ -3862,11 +3873,11 @@ msgstr ""
 "thẻ là chuỗi ASCII tương thích với tiêu chuẩn được phát triển bởi Ủy ban Kỹ "
 "thuật ASTM."
 
-#: libexif/exif-tag.c:509
+#: libexif/exif-tag.c:511
 msgid "GPS Info IFD Pointer"
 msgstr "Con trỏ IFD thông tin GPS"
 
-#: libexif/exif-tag.c:510
+#: libexif/exif-tag.c:512
 msgid ""
 "A pointer to the GPS Info IFD. The Interoperability structure of the GPS "
 "Info IFD, like that of Exif IFD, has no image data."
@@ -3874,11 +3885,11 @@ msgstr ""
 "Bộ trỏ tới IFD Thông tin GPS. Cấu trúc thao tác với nhau của IFD Thông tin "
 "GPS, cùng với IFD Exif, không có dữ liệu ảnh."
 
-#: libexif/exif-tag.c:515
+#: libexif/exif-tag.c:517
 msgid "ISO Speed Ratings"
 msgstr "Tỷ lệ tốc độ ISO"
 
-#: libexif/exif-tag.c:516
+#: libexif/exif-tag.c:518
 msgid ""
 "Indicates the ISO Speed and ISO Latitude of the camera or input device as "
 "specified in ISO 12232."
@@ -3886,11 +3897,11 @@ msgstr ""
 "Cho biết Tốc độ ISO và Độ Vĩ ISO của máy ảnh hay thiết bị nhập, như được ghi "
 "rõ trong ISO 12232."
 
-#: libexif/exif-tag.c:519
+#: libexif/exif-tag.c:521
 msgid "Opto-Electronic Conversion Function"
 msgstr "Hàm chuyển đổi quang điện tử học"
 
-#: libexif/exif-tag.c:520
+#: libexif/exif-tag.c:522
 msgid ""
 "Indicates the Opto-Electronic Conversion Function (OECF) specified in ISO "
 "14524. <OECF> is the relationship between the camera optical input and the "
@@ -3899,20 +3910,20 @@ msgstr ""
 "Cho biết hàm Chuyển đổi Quang-Điện (OECF) được ghi rõ trong ISO 14524. "
 "<OECF> là quan hệ giữa dữ liệu nhập quang của máy ảnh, và các giá trị ảnh."
 
-#: libexif/exif-tag.c:525
+#: libexif/exif-tag.c:527
 msgid "Time Zone Offset"
 msgstr "Hiệu Múi Giờ"
 
-#: libexif/exif-tag.c:526
+#: libexif/exif-tag.c:528
 msgid "Encodes time zone of camera clock relative to GMT."
 msgstr ""
 "Mã hóa múi giờ của đồng hồ máy ảnh tương ứng với UTC (Thời gian Thế giới)."
 
-#: libexif/exif-tag.c:528
+#: libexif/exif-tag.c:530
 msgid "Sensitivity Type"
 msgstr "Kiểu độ nhạy"
 
-#: libexif/exif-tag.c:529
+#: libexif/exif-tag.c:531
 msgid ""
 "The SensitivityType tag indicates which one of the parameters of ISO12232 is "
 "the PhotographicSensitivity tag. Although it is an optional tag, it should "
@@ -3925,31 +3936,31 @@ msgstr ""
 "7 có thể được sử dụng trong trường hợp giá trị của các tham số số nhiều "
 "giống nhau."
 
-#: libexif/exif-tag.c:535
+#: libexif/exif-tag.c:537
 msgid "Standard Output Sensitivity"
 msgstr "Độ nhạy đầu ra tiêu chuẩn"
 
-#: libexif/exif-tag.c:539
+#: libexif/exif-tag.c:541
 msgid "Recommended Exposure Index"
 msgstr "Chỉ số phơi sáng khuyến nghị"
 
-#: libexif/exif-tag.c:543 libexif/pentax/mnote-pentax-tag.c:56
+#: libexif/exif-tag.c:545 libexif/pentax/mnote-pentax-tag.c:56
 msgid "ISO Speed"
 msgstr "Tốc độ ISO"
 
-#: libexif/exif-tag.c:547
+#: libexif/exif-tag.c:549
 msgid "ISO Speed Latitude yyy"
 msgstr "Tốc độ ISO yyy vĩ độ"
 
-#: libexif/exif-tag.c:551
+#: libexif/exif-tag.c:553
 msgid "ISO Speed Latitude zzz"
 msgstr "Tốc độ ISO zzz vĩ độ"
 
-#: libexif/exif-tag.c:554
+#: libexif/exif-tag.c:556
 msgid "Exif Version"
 msgstr "Phiên bản Exif"
 
-#: libexif/exif-tag.c:555
+#: libexif/exif-tag.c:557
 msgid ""
 "The version of this standard supported. Nonexistence of this field is taken "
 "to mean nonconformance to the standard."
@@ -3957,11 +3968,11 @@ msgstr ""
 "Phiên bản tiêu chuẩn này được hỗ trợ. Nếu không có trường này, giả sử không "
 "tuân theo tiêu chuẩn."
 
-#: libexif/exif-tag.c:559
+#: libexif/exif-tag.c:561
 msgid "Date and Time (Original)"
 msgstr "Ngày và Giờ (Gốc)"
 
-#: libexif/exif-tag.c:560
+#: libexif/exif-tag.c:562
 msgid ""
 "The date and time when the original image data was generated. For a digital "
 "still camera the date and time the picture was taken are recorded."
@@ -3969,19 +3980,19 @@ msgstr ""
 "Ngày và giờ tạo ảnh gốc. Đối với máy ảnh tĩnh số, có ghi lưu ngày và giờ "
 "chụp ảnh."
 
-#: libexif/exif-tag.c:565
+#: libexif/exif-tag.c:567
 msgid "Date and Time (Digitized)"
 msgstr "Ngày và Giờ (Đã số hóa)"
 
-#: libexif/exif-tag.c:566
+#: libexif/exif-tag.c:568
 msgid "The date and time when the image was stored as digital data."
 msgstr "Ngày tháng và thời gian lưu ảnh dưới dạng dữ liệu số."
 
-#: libexif/exif-tag.c:569
+#: libexif/exif-tag.c:571
 msgid "Offset Time For DateTime"
 msgstr "Thời gian bù cho DateTime"
 
-#: libexif/exif-tag.c:570
+#: libexif/exif-tag.c:572
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight saving time) of the time of DateTime "
@@ -4001,11 +4012,11 @@ msgstr ""
 "trống. Độ dài chuỗi ký tự là 7 Byte bao gồm NULL để kết thúc. Khi trường để "
 "trống, nó được coi là không xác định."
 
-#: libexif/exif-tag.c:573
+#: libexif/exif-tag.c:575
 msgid "Offset Time For DateTimeOriginal"
 msgstr "Thời gian bù cho DateTimeOriginal"
 
-#: libexif/exif-tag.c:574
+#: libexif/exif-tag.c:576
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight saving  time)  of  the time  of  "
@@ -4026,11 +4037,11 @@ msgstr ""
 "trống. Độ dài chuỗi ký tự là 7 Byte bao gồm NULL để kết thúc. Khi trường để "
 "trống, nó được coi là không xác định."
 
-#: libexif/exif-tag.c:577
+#: libexif/exif-tag.c:579
 msgid "Offset Time For DateTimeDigitized"
 msgstr "Thời gian bù cho DateTimeDigitized"
 
-#: libexif/exif-tag.c:578
+#: libexif/exif-tag.c:580
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight  saving  time)  of  the time  of  "
@@ -4051,11 +4062,11 @@ msgstr ""
 "trống. Độ dài chuỗi ký tự là 7 Byte bao gồm NULL để kết thúc. Khi trường để "
 "trống, nó được coi là không xác định."
 
-#: libexif/exif-tag.c:581
+#: libexif/exif-tag.c:583
 msgid "Components Configuration"
 msgstr "Cấu hình thành phần"
 
-#: libexif/exif-tag.c:582
+#: libexif/exif-tag.c:584
 msgid ""
 "Information specific to compressed data. The channels of each component are "
 "arranged in order from the 1st component to the 4th. For uncompressed data "
@@ -4072,11 +4083,11 @@ msgstr ""
 "nén dùng thành phần khác với Y, Cb vra Cr, và để hiệu lực khả năng hỗ trợ "
 "các dãy khác."
 
-#: libexif/exif-tag.c:592
+#: libexif/exif-tag.c:594
 msgid "Compressed Bits per Pixel"
 msgstr "Số bit đã nén/điểm ảnh"
 
-#: libexif/exif-tag.c:593
+#: libexif/exif-tag.c:595
 msgid ""
 "Information specific to compressed data. The compression mode used for a "
 "compressed image is indicated in unit bits per pixel."
@@ -4084,11 +4095,11 @@ msgstr ""
 "Thông tin đặc trưng cho dữ liệu đã nén. Chế độ nén được dùng cho ảnh đã nén "
 "được đưa ra theo đơn vị bit trên mỗi điểm ảnh."
 
-#: libexif/exif-tag.c:597 libexif/olympus/mnote-olympus-tag.c:157
+#: libexif/exif-tag.c:599 libexif/olympus/mnote-olympus-tag.c:157
 msgid "Shutter Speed"
 msgstr "Tốc độ màn trập"
 
-#: libexif/exif-tag.c:598
+#: libexif/exif-tag.c:600
 msgid ""
 "Shutter speed. The unit is the APEX (Additive System of Photographic "
 "Exposure) setting."
@@ -4096,15 +4107,15 @@ msgstr ""
 "Tốc độ của màn chập. Đơn vị là cài đặt APEX (hệ thống phơi sáng chụp ảnh "
 "kiểu cộng vào)."
 
-#: libexif/exif-tag.c:602
+#: libexif/exif-tag.c:604
 msgid "The lens aperture. The unit is the APEX value."
 msgstr "Khẩu độ ống kính. Đơn vị là giá trị APEX."
 
-#: libexif/exif-tag.c:604
+#: libexif/exif-tag.c:606
 msgid "Brightness"
 msgstr "Độ sáng"
 
-#: libexif/exif-tag.c:605
+#: libexif/exif-tag.c:607
 msgid ""
 "The value of brightness. The unit is the APEX value. Ordinarily it is given "
 "in the range of -99.99 to 99.99."
@@ -4112,11 +4123,11 @@ msgstr ""
 "Giá trị của độ sáng. Đơn vị là giá trị APEX. Bình thường, nó được đưa ra "
 "trong Vùng <-99.99 … 99.99>."
 
-#: libexif/exif-tag.c:609
+#: libexif/exif-tag.c:611
 msgid "Exposure Bias"
 msgstr "Khuynh hướng phơi sáng"
 
-#: libexif/exif-tag.c:610
+#: libexif/exif-tag.c:612
 msgid ""
 "The exposure bias. The units is the APEX value. Ordinarily it is given in "
 "the range of -99.99 to 99.99."
@@ -4124,11 +4135,11 @@ msgstr ""
 "Khuynh hướng của sự phơi sáng. Đơn vị là giá trị APEX. Bình thường, nó được "
 "đưa ra trong phạm vi \"-99.99 … 99.99\"."
 
-#: libexif/exif-tag.c:613
+#: libexif/exif-tag.c:615
 msgid "Maximum Aperture Value"
 msgstr "Giá trị Khẩu độ Tối đa"
 
-#: libexif/exif-tag.c:614
+#: libexif/exif-tag.c:616
 msgid ""
 "The smallest F number of the lens. The unit is the APEX value. Ordinarily it "
 "is given in the range of 00.00 to 99.99, but it is not limited to this range."
@@ -4137,32 +4148,32 @@ msgstr ""
 "ra trong phạm vi <00.00 … 99.99>, nhưng mà nó vẫn không bị giới hạn thành "
 "phạm vi này."
 
-#: libexif/exif-tag.c:619
+#: libexif/exif-tag.c:621
 msgid "Subject Distance"
 msgstr "Khoảng cách chủ thể"
 
-#: libexif/exif-tag.c:620
+#: libexif/exif-tag.c:622
 msgid "The distance to the subject, given in meters."
 msgstr "Khoảng cách tới chủ đề, ghi theo mét."
 
-#: libexif/exif-tag.c:623
+#: libexif/exif-tag.c:625
 msgid "The metering mode."
 msgstr "Chế độ đo."
 
-#: libexif/exif-tag.c:625
+#: libexif/exif-tag.c:627
 msgid "Light Source"
 msgstr "Nguồn ánh sáng"
 
-#: libexif/exif-tag.c:626
+#: libexif/exif-tag.c:628
 msgid "The kind of light source."
 msgstr "Kiểu nguồn ánh dáng."
 
-#: libexif/exif-tag.c:629
+#: libexif/exif-tag.c:631
 msgid ""
 "This tag is recorded when an image is taken using a strobe light (flash)."
 msgstr "Thẻ này được ghi lưu khi chụp ảnh bằng đèn nháy."
 
-#: libexif/exif-tag.c:633
+#: libexif/exif-tag.c:635
 msgid ""
 "The actual focal length of the lens, in mm. Conversion is not made to the "
 "focal length of a 35 mm film camera."
@@ -4170,26 +4181,26 @@ msgstr ""
 "Tiêu cự thật của ống kính, theo milimét. Không chuyển đổi sang tiêu cự của "
 "máy ảnh phim 35mm."
 
-#: libexif/exif-tag.c:636
+#: libexif/exif-tag.c:638
 msgid "Subject Area"
 msgstr "Diện tích chủ thể"
 
-#: libexif/exif-tag.c:637
+#: libexif/exif-tag.c:639
 msgid ""
 "This tag indicates the location and area of the main subject in the overall "
 "scene."
 msgstr ""
 "Thẻ này cho biết vị trí và diện tích của chủ thể chính trong toàn bộ cảnh."
 
-#: libexif/exif-tag.c:641
+#: libexif/exif-tag.c:643
 msgid "TIFF/EP Standard ID"
 msgstr "ID chuẩn TIFF/EP"
 
-#: libexif/exif-tag.c:643
+#: libexif/exif-tag.c:645
 msgid "Maker Note"
 msgstr "Hãng chế tạo ghi chú"
 
-#: libexif/exif-tag.c:644
+#: libexif/exif-tag.c:646
 msgid ""
 "A tag for manufacturers of Exif writers to record any desired information. "
 "The contents are up to the manufacturer."
@@ -4197,30 +4208,30 @@ msgstr ""
 "Thẻ cho hãng chế tạo bộ ghi Exif, để ghi lưu thông tin nào đã muốn. Nội dung "
 "theo ý kiến của mỗi hãng chế tạo."
 
-#: libexif/exif-tag.c:647
+#: libexif/exif-tag.c:649
 msgid "User Comment"
 msgstr "Người dùng ghi chú"
 
-#: libexif/exif-tag.c:648
+#: libexif/exif-tag.c:650
 msgid ""
 "A tag for Exif users to write keywords or comments on the image besides "
 "those in <ImageDescription>, and without the character code limitations of "
 "the <ImageDescription> tag. The character code used in the <UserComment> tag "
 "is identified based on an ID code in a fixed 8-byte area at the start of the "
-"tag data area. The unused portion of the area is padded with NULL (\"00."
-"h\"). ID codes are assigned by means of registration. The designation method "
-"and references for each character code are defined in the specification. The "
-"value of CountN is determined based on the 8 bytes in the character code "
-"area and the number of bytes in the user comment part. Since the TYPE is not "
-"ASCII, NULL termination is not necessary. The ID code for the <UserComment> "
-"area may be a Defined code such as JIS or ASCII, or may be Undefined. The "
-"Undefined name is UndefinedText, and the ID code is filled with 8 bytes of "
-"all \"NULL\" (\"00.H\"). An Exif reader that reads the <UserComment> tag "
-"must have a function for determining the ID code. This function is not "
-"required in Exif readers that do not use the <UserComment> tag. When a "
-"<UserComment> area is set aside, it is recommended that the ID code be ASCII "
-"and that the following user comment part be filled with blank characters [20."
-"H]."
+"tag data area. The unused portion of the area is padded with NULL "
+"(\"00.h\"). ID codes are assigned by means of registration. The designation "
+"method and references for each character code are defined in the "
+"specification. The value of CountN is determined based on the 8 bytes in the "
+"character code area and the number of bytes in the user comment part. Since "
+"the TYPE is not ASCII, NULL termination is not necessary. The ID code for "
+"the <UserComment> area may be a Defined code such as JIS or ASCII, or may be "
+"Undefined. The Undefined name is UndefinedText, and the ID code is filled "
+"with 8 bytes of all \"NULL\" (\"00.H\"). An Exif reader that reads the "
+"<UserComment> tag must have a function for determining the ID code. This "
+"function is not required in Exif readers that do not use the <UserComment> "
+"tag. When a <UserComment> area is set aside, it is recommended that the ID "
+"code be ASCII and that the following user comment part be filled with blank "
+"characters [20.H]."
 msgstr ""
 "Thẻ này cho phép người dùng Exif ghi từ khóa hay ghi chú về ảnh, thêm vào "
 "thông tin trong <ImageDescription> (mô tả ảnh), và không có hạn chế mã ký tự "
@@ -4239,85 +4250,85 @@ msgstr ""
 "<UserComment> được dành riêng, khuyên dùng mã số kiểu ASCII, và phần người "
 "dùng ghi chú mà theo sau được điền vào bằng ký tự trắng [20.H]."
 
-#: libexif/exif-tag.c:671
+#: libexif/exif-tag.c:673
 msgid "Sub-second Time"
 msgstr "Thời gian dưới giây"
 
-#: libexif/exif-tag.c:672
+#: libexif/exif-tag.c:674
 msgid "A tag used to record fractions of seconds for the <DateTime> tag."
 msgstr "Thẻ dùng để ghi lưu phần giây cho thẻ <DateTime> (Ngày Giờ)."
 
-#: libexif/exif-tag.c:676
+#: libexif/exif-tag.c:678
 msgid "Sub-second Time (Original)"
 msgstr "Thời gian dưới giây (gốc)"
 
-#: libexif/exif-tag.c:677
+#: libexif/exif-tag.c:679
 msgid ""
 "A tag used to record fractions of seconds for the <DateTimeOriginal> tag."
 msgstr ""
 "Thẻ dùng để ghi lưu phần giây cho thẻ <DateTimeOriginal> (Ngày Giờ Gốc)."
 
-#: libexif/exif-tag.c:681
+#: libexif/exif-tag.c:683
 msgid "Sub-second Time (Digitized)"
 msgstr "Thời gian dưới giây (đã số hóa)"
 
-#: libexif/exif-tag.c:682
+#: libexif/exif-tag.c:684
 msgid ""
 "A tag used to record fractions of seconds for the <DateTimeDigitized> tag."
 msgstr ""
 "Thẻ dùng để ghi lưu phần giây cho thẻ <DateTimeDigitized> (Ngày Giờ đã Số "
 "hóa)."
 
-#: libexif/exif-tag.c:686
+#: libexif/exif-tag.c:688
 msgid "XP Title"
 msgstr "Tựa XP"
 
-#: libexif/exif-tag.c:687
+#: libexif/exif-tag.c:689
 msgid "A character string giving the title of the image, encoded in UTF-16LE."
 msgstr "Một chuỗi ký tự đưa ra tựa đề của ảnh, mã hóa theo UTF-16LE."
 
-#: libexif/exif-tag.c:691
+#: libexif/exif-tag.c:693
 msgid "XP Comment"
 msgstr "Ghi chú XP"
 
-#: libexif/exif-tag.c:692
+#: libexif/exif-tag.c:694
 msgid ""
 "A character string containing a comment about the image, encoded in UTF-16LE."
 msgstr "Một chuỗi ký tự chứa ghi chú về ảnh, mã hóa theo UTF-16LE."
 
-#: libexif/exif-tag.c:696
+#: libexif/exif-tag.c:698
 msgid "XP Author"
 msgstr "Tác giả XP"
 
-#: libexif/exif-tag.c:697
+#: libexif/exif-tag.c:699
 msgid ""
 "A character string containing the name of the image creator, encoded in "
 "UTF-16LE."
 msgstr "Một chuỗi ký tự chứa tên của người tạo ảnh, mã hóa theo UTF-16LE."
 
-#: libexif/exif-tag.c:701
+#: libexif/exif-tag.c:703
 msgid "XP Keywords"
 msgstr "Từ khóa XP"
 
-#: libexif/exif-tag.c:702
+#: libexif/exif-tag.c:704
 msgid ""
 "A character string containing key words describing the image, encoded in "
 "UTF-16LE."
 msgstr "Một chuỗi ký tự chứa từ khóa diễn tả ảnh, mã hóa theo UTF-16LE."
 
-#: libexif/exif-tag.c:706
+#: libexif/exif-tag.c:708
 msgid "XP Subject"
 msgstr "Chủ đề XP"
 
-#: libexif/exif-tag.c:707
+#: libexif/exif-tag.c:709
 msgid "A character string giving the image subject, encoded in UTF-16LE."
 msgstr "Một chuỗi ký tự đưa ra chủ đề của ảnh, mã hóa theo UTF-16LE."
 
-#: libexif/exif-tag.c:711
+#: libexif/exif-tag.c:713
 msgid "The FlashPix format version supported by a FPXR file."
 msgstr "Phiên bản định dạng FlashPix được hỗ trợ bởi tập tin FPXR."
 
-#: libexif/exif-tag.c:714
+#: libexif/exif-tag.c:716
 msgid ""
 "The color space information tag is always recorded as the color space "
 "specifier. Normally sRGB (=1) is used to define the color space based on the "
@@ -4331,11 +4342,11 @@ msgstr ""
 "chuẩn (=FFFF.H) được đặt. Dữ liệu ảnh được ghi lưu dạng Chưa định chuẩn có "
 "thể được xử lý dạng sRGB khi được chuyển đổi sang FlashPix."
 
-#: libexif/exif-tag.c:722
+#: libexif/exif-tag.c:724
 msgid "Pixel X Dimension"
 msgstr "Điểm ảnh chiều X"
 
-#: libexif/exif-tag.c:723
+#: libexif/exif-tag.c:725
 msgid ""
 "Information specific to compressed data. When a compressed file is recorded, "
 "the valid width of the meaningful image must be recorded in this tag, "
@@ -4347,11 +4358,11 @@ msgstr ""
 "đệm hay dấu hiệu sở khởi lại. Không nên có thẻ này trong tập tin không đã "
 "nén."
 
-#: libexif/exif-tag.c:729
+#: libexif/exif-tag.c:731
 msgid "Pixel Y Dimension"
 msgstr "Điểm ảnh chiều Y"
 
-#: libexif/exif-tag.c:730
+#: libexif/exif-tag.c:732
 msgid ""
 "Information specific to compressed data. When a compressed file is recorded, "
 "the valid height of the meaningful image must be recorded in this tag, "
@@ -4366,11 +4377,11 @@ msgstr ""
 "Vì không cần đệm dữ liệu về hướng dọc, số các dòng được ghi lưu trong thẻ độ "
 "cao ảnh hợp lệ này thực sự cùng một số với số được ghi lưu trong SOF."
 
-#: libexif/exif-tag.c:740
+#: libexif/exif-tag.c:742
 msgid "Related Sound File"
 msgstr "Tập tin âm thanh liên quan"
 
-#: libexif/exif-tag.c:741
+#: libexif/exif-tag.c:743
 msgid ""
 "This tag is used to record the name of an audio file related to the image "
 "data. The only relational information recorded here is the Exif audio file "
@@ -4383,16 +4394,16 @@ msgid ""
 "done in any of three ways, [1], [2] and [3]. If multiple files are mapped to "
 "one file as in [2] or [3], the above format is used to record just one audio "
 "file name. If there are multiple audio files, the first recorded file is "
-"given. In the case of [3], for example, for the Exif image file \"DSC00001."
-"JPG\" only  \"SND00001.WAV\" is given as the related Exif audio file. When "
-"there are three Exif audio files \"SND00001.WAV\", \"SND00002.WAV\" and "
-"\"SND00003.WAV\", the Exif image file name for each of them, \"DSC00001."
-"JPG\", is indicated. By combining multiple relational information, a variety "
-"of playback possibilities can be supported. The method of using relational "
-"information is left to the implementation on the playback side. Since this "
-"information is an ASCII character string, it is terminated by NULL. When "
-"this tag is used to map audio files, the relation of the audio file to image "
-"data must also be indicated on the audio file end."
+"given. In the case of [3], for example, for the Exif image file "
+"\"DSC00001.JPG\" only  \"SND00001.WAV\" is given as the related Exif audio "
+"file. When there are three Exif audio files \"SND00001.WAV\", "
+"\"SND00002.WAV\" and \"SND00003.WAV\", the Exif image file name for each of "
+"them, \"DSC00001.JPG\", is indicated. By combining multiple relational "
+"information, a variety of playback possibilities can be supported. The "
+"method of using relational information is left to the implementation on the "
+"playback side. Since this information is an ASCII character string, it is "
+"terminated by NULL. When this tag is used to map audio files, the relation "
+"of the audio file to image data must also be indicated on the audio file end."
 msgstr ""
 "Thẻ này dùng để ghi lưu tên tập tin âm thanh tương ứng với dữ liệu ảnh. "
 "Thông tin tương ứng duy nhất được ghi lưu vào đây là tên và phần mở rộng của "
@@ -4417,11 +4428,11 @@ msgstr ""
 "giữa tập tin âm thanh và dữ liệu ảnh cũng phải được chỉ ra ở cuối tập tin âm "
 "thanh."
 
-#: libexif/exif-tag.c:771
+#: libexif/exif-tag.c:773
 msgid "Interoperability IFD Pointer"
 msgstr "Con trỏ IFD khả năng thao tác với nhau"
 
-#: libexif/exif-tag.c:772
+#: libexif/exif-tag.c:774
 msgid ""
 "Interoperability IFD is composed of tags which stores the information to "
 "ensure the Interoperability and pointed by the following tag located in Exif "
@@ -4435,11 +4446,11 @@ msgstr ""
 "trúc với IFD đã định nghĩa TIFF, nhưng không chứa dữ liệu ảnh thường được so "
 "sánh với IFD TIFF chuẩn."
 
-#: libexif/exif-tag.c:781
+#: libexif/exif-tag.c:783
 msgid "Flash Energy"
 msgstr "Năng lượng đèn nháy"
 
-#: libexif/exif-tag.c:782
+#: libexif/exif-tag.c:784
 msgid ""
 "Indicates the strobe energy at the time the image is captured, as measured "
 "in Beam Candle Power Seconds (BCPS)."
@@ -4447,11 +4458,11 @@ msgstr ""
 "Cho biết năng lượng của đèn nháy vào lúc chụp ảnh, theo BCPS (giây năng "
 "lượng cây nến tia)"
 
-#: libexif/exif-tag.c:786
+#: libexif/exif-tag.c:788
 msgid "Spatial Frequency Response"
 msgstr "Đáp ứng tần số không gian"
 
-#: libexif/exif-tag.c:787
+#: libexif/exif-tag.c:789
 msgid ""
 "This tag records the camera or input device spatial frequency table and SFR "
 "values in the direction of image width, image height, and diagonal "
@@ -4461,11 +4472,11 @@ msgstr ""
 "thiết bị nhập, về hướng độ rộng ảnh, độ cao ảnh và hướng chéo, như được ghi "
 "rõ trong ISO 12233."
 
-#: libexif/exif-tag.c:793
+#: libexif/exif-tag.c:795
 msgid "Focal Plane X-Resolution"
 msgstr "Phân giải X phẳng tiêu"
 
-#: libexif/exif-tag.c:794
+#: libexif/exif-tag.c:796
 msgid ""
 "Indicates the number of pixels in the image width (X) direction per "
 "<FocalPlaneResolutionUnit> on the camera focal plane."
@@ -4473,11 +4484,11 @@ msgstr ""
 "Cho biết số điểm ảnh về hướng độ rộng ảnh (X) trên mỗi <đơn vị độ phân giải "
 "phằng tiêu> trên phẳng tiêu của máy ảnh."
 
-#: libexif/exif-tag.c:798
+#: libexif/exif-tag.c:800
 msgid "Focal Plane Y-Resolution"
 msgstr "Phân giải Y phẳng tiêu"
 
-#: libexif/exif-tag.c:799
+#: libexif/exif-tag.c:801
 msgid ""
 "Indicates the number of pixels in the image height (V) direction per "
 "<FocalPlaneResolutionUnit> on the camera focal plane."
@@ -4485,11 +4496,11 @@ msgstr ""
 "Cho biết số điểm ảnh về hướng độ cao ảnh (Y) trên mỗi <đơn vị độ phân giải "
 "phằng tiêu> trên phẳng tiêu của máy ảnh."
 
-#: libexif/exif-tag.c:803
+#: libexif/exif-tag.c:805
 msgid "Focal Plane Resolution Unit"
 msgstr "Đơn vị độ phân giải phẳng tiêu"
 
-#: libexif/exif-tag.c:804
+#: libexif/exif-tag.c:806
 msgid ""
 "Indicates the unit for measuring <FocalPlaneXResolution> and "
 "<FocalPlaneYResolution>. This value is the same as the <ResolutionUnit>."
@@ -4497,11 +4508,11 @@ msgstr ""
 "Cho biết đơn vị để đo <độ phân giải X phẳng tiêu> và <độ phân giải Y phẳng "
 "tiêu>. Giá trị này bằng <đơn vị độ phân giải>."
 
-#: libexif/exif-tag.c:809
+#: libexif/exif-tag.c:811
 msgid "Subject Location"
 msgstr "Vị trí chủ thể"
 
-#: libexif/exif-tag.c:810
+#: libexif/exif-tag.c:812
 msgid ""
 "Indicates the location of the main subject in the scene. The value of this "
 "tag represents the pixel at the center of the main subject relative to the "
@@ -4514,11 +4525,11 @@ msgstr ""
 "độ xoay tùy theo thẻ <độ xoay>. Giá trị thứ nhất cho biết số hiệu cột X, còn "
 "giá trị thứ hai cho biết số hiệu hàng Y."
 
-#: libexif/exif-tag.c:817
+#: libexif/exif-tag.c:819
 msgid "Exposure Index"
 msgstr "Chỉ số phơi sáng"
 
-#: libexif/exif-tag.c:818
+#: libexif/exif-tag.c:820
 msgid ""
 "Indicates the exposure index selected on the camera or input device at the "
 "time the image is captured."
@@ -4526,19 +4537,19 @@ msgstr ""
 "Cho biết chỉ số phơi sáng đã chọn trên máy ảnh hay thiết bị nhập vào lúc "
 "chụp ảnh."
 
-#: libexif/exif-tag.c:821
+#: libexif/exif-tag.c:823
 msgid "Sensing Method"
 msgstr "Phương thức cảm biến"
 
-#: libexif/exif-tag.c:822
+#: libexif/exif-tag.c:824
 msgid "Indicates the image sensor type on the camera or input device."
 msgstr "Chỉ ra kiểu cảm biến ảnh trên máy ảnh hay thiết bị nhập."
 
-#: libexif/exif-tag.c:825 libexif/fuji/mnote-fuji-tag.c:66
+#: libexif/exif-tag.c:827 libexif/fuji/mnote-fuji-tag.c:66
 msgid "File Source"
 msgstr "Nguồn tập tin"
 
-#: libexif/exif-tag.c:826
+#: libexif/exif-tag.c:828
 msgid ""
 "Indicates the image source. If a DSC recorded the image, the tag value of "
 "this tag always be set to 3, indicating that the image was recorded on a DSC."
@@ -4546,11 +4557,11 @@ msgstr ""
 "Cho biết nguồn ảnh. Nếu DSC đã ghi lưu ảnh đó, giá trị thẻ của thẻ này phải "
 "luôn được đặt thành 3, cho biết là ảnh được ghi lưu trên DSC."
 
-#: libexif/exif-tag.c:830
+#: libexif/exif-tag.c:832
 msgid "Scene Type"
 msgstr "Kiểu cảnh"
 
-#: libexif/exif-tag.c:831
+#: libexif/exif-tag.c:833
 msgid ""
 "Indicates the type of scene. If a DSC recorded the image, this tag value "
 "must always be set to 1, indicating that the image was directly photographed."
@@ -4558,11 +4569,11 @@ msgstr ""
 "Cho biết kiểu cảnh. Nếu DSC đã ghi lưu ảnh đó, giá trị thẻ của thẻ này phải "
 "luôn được đặt là 1, cho biết là ảnh đã được chụp ảnh một cách trực tiếp."
 
-#: libexif/exif-tag.c:841
+#: libexif/exif-tag.c:843
 msgid "Custom Rendered"
 msgstr "Đã vẽ tự chọn"
 
-#: libexif/exif-tag.c:842
+#: libexif/exif-tag.c:844
 msgid ""
 "This tag indicates the use of special processing on image data, such as "
 "rendering geared to output. When special processing is performed, the reader "
@@ -4572,7 +4583,7 @@ msgstr ""
 "thích hợp với kết xuất. Khi việc xử lý đặc biệt đã được thực hiện, ngờ bộ "
 "đọc tắt hoặc tối thiểu hóa việc xử lý thêm nào."
 
-#: libexif/exif-tag.c:848
+#: libexif/exif-tag.c:850
 msgid ""
 "This tag indicates the exposure mode set when the image was shot. In auto-"
 "bracketing mode, the camera shoots a series of frames of the same scene at "
@@ -4582,15 +4593,15 @@ msgstr ""
 "động định vị ảnh giữa ngoặc, máy ảnh chụp một dãy khung của cùng một cảnh "
 "tại một số cấp phơi sáng khác nhau."
 
-#: libexif/exif-tag.c:853
+#: libexif/exif-tag.c:855
 msgid "This tag indicates the white balance mode set when the image was shot."
 msgstr "Thẻ này cho biết chế độ cân bằng trắng được đặt vào lúc chụp ảnh."
 
-#: libexif/exif-tag.c:857
+#: libexif/exif-tag.c:859
 msgid "Digital Zoom Ratio"
 msgstr "Tỷ lệ phóng to số"
 
-#: libexif/exif-tag.c:858
+#: libexif/exif-tag.c:860
 msgid ""
 "This tag indicates the digital zoom ratio when the image was shot. If the "
 "numerator of the recorded value is 0, this indicates that digital zoom was "
@@ -4599,11 +4610,11 @@ msgstr ""
 "Thẻ này cho biết tỷ lệ phóng to số vào lúc chụp ảnh. Nếu tử số của giá trị "
 "đã ghi lưu là 0, khả năng phóng to số đã không dùng."
 
-#: libexif/exif-tag.c:863
+#: libexif/exif-tag.c:865
 msgid "Focal Length in 35mm Film"
 msgstr "Tiêu cự trên phim 35mm"
 
-#: libexif/exif-tag.c:864
+#: libexif/exif-tag.c:866
 msgid ""
 "This tag indicates the equivalent focal length assuming a 35mm film camera, "
 "in mm. A value of 0 means the focal length is unknown. Note that this tag "
@@ -4613,11 +4624,11 @@ msgstr ""
 "milimét. Giá trị 0 có nghĩa là không biết tiêu cự. Ghi chú rằng thẻ này khác "
 "với thẻ FocalLength (Chiều dài lấy nét)."
 
-#: libexif/exif-tag.c:870
+#: libexif/exif-tag.c:872
 msgid "Scene Capture Type"
 msgstr "Kiểu chụp quang cảnh"
 
-#: libexif/exif-tag.c:871
+#: libexif/exif-tag.c:873
 msgid ""
 "This tag indicates the type of scene that was shot. It can also be used to "
 "record the mode in which the image was shot. Note that this differs from the "
@@ -4626,15 +4637,15 @@ msgstr ""
 "Thẻ này cho biết kiểu cảnh đã chụp. Cũng có thể sử dụng nó để ghi lưu chế độ "
 "chụp ảnh. Ghi chú rằng nó khác với thẻ <SceneType> (kiểu cảnh)."
 
-#: libexif/exif-tag.c:876
+#: libexif/exif-tag.c:878
 msgid "Gain Control"
 msgstr "Điều khiển khuếch đại"
 
-#: libexif/exif-tag.c:877
+#: libexif/exif-tag.c:879
 msgid "This tag indicates the degree of overall image gain adjustment."
 msgstr "Thẻ này cho biết độ điều chỉnh khuếch đại ảnh toàn bộ."
 
-#: libexif/exif-tag.c:881
+#: libexif/exif-tag.c:883
 msgid ""
 "This tag indicates the direction of contrast processing applied by the "
 "camera when the image was shot."
@@ -4642,7 +4653,7 @@ msgstr ""
 "Thẻ này cho biết hướng xử lý độ tương phản được áp dụng bởi máy ảnh vào lúc "
 "chụp ảnh."
 
-#: libexif/exif-tag.c:885
+#: libexif/exif-tag.c:887
 msgid ""
 "This tag indicates the direction of saturation processing applied by the "
 "camera when the image was shot."
@@ -4650,7 +4661,7 @@ msgstr ""
 "Thẻ này cho biết hướng xử lý độ bão hòa được áp dụng bởi máy ảnh vào lúc "
 "chụp ảnh."
 
-#: libexif/exif-tag.c:889
+#: libexif/exif-tag.c:891
 msgid ""
 "This tag indicates the direction of sharpness processing applied by the "
 "camera when the image was shot."
@@ -4658,11 +4669,11 @@ msgstr ""
 "Thẻ này cho biết hướng xử lý độ sắc được áp dụng bởi máy ảnh vào lúc chụp "
 "ảnh."
 
-#: libexif/exif-tag.c:893
+#: libexif/exif-tag.c:895
 msgid "Device Setting Description"
 msgstr "Mô tả cài đặt thiết bị"
 
-#: libexif/exif-tag.c:894
+#: libexif/exif-tag.c:896
 msgid ""
 "This tag indicates information on the picture-taking conditions of a "
 "particular camera model. The tag is used only to indicate the picture-taking "
@@ -4672,15 +4683,15 @@ msgstr ""
 "ảnh nào đó. Thẻ này dùng chỉ để cho biết những điều kiện chụp ảnh trong bộ "
 "đọc."
 
-#: libexif/exif-tag.c:900
+#: libexif/exif-tag.c:902
 msgid "Subject Distance Range"
 msgstr "Vùng khoảng cách chủ thể"
 
-#: libexif/exif-tag.c:901
+#: libexif/exif-tag.c:903
 msgid "This tag indicates the distance to the subject."
 msgstr "Thẻ này cho biết khoảng cách tới chủ thể."
 
-#: libexif/exif-tag.c:904
+#: libexif/exif-tag.c:906
 msgid ""
 "This tag indicates an identifier assigned uniquely to each image. It is "
 "recorded as an ASCII string equivalent to hexadecimal notation and 128-bit "
@@ -4690,11 +4701,11 @@ msgstr ""
 "được ghi lưu dạng chuỗi  ASCII tương tương với cách ghi hệ thập lục phân và "
 "độ dài cố định 12-bit."
 
-#: libexif/exif-tag.c:909
+#: libexif/exif-tag.c:911
 msgid "Camera Owner Name"
 msgstr "Tên chủ sở hữu máy ảnh"
 
-#: libexif/exif-tag.c:910
+#: libexif/exif-tag.c:912
 msgid ""
 "This tag indicates the name of the camera owner, photographer or image "
 "creator."
@@ -4702,19 +4713,19 @@ msgstr ""
 "Thẻ này cho biết tên của chủ sở hữu máy ảnh, nhiếp ảnh gia hoặc bộ tạo hình "
 "ảnh."
 
-#: libexif/exif-tag.c:914
+#: libexif/exif-tag.c:916
 msgid "Body Serial Number"
 msgstr "Số sê ri thân máy"
 
-#: libexif/exif-tag.c:915
+#: libexif/exif-tag.c:917
 msgid "This tag indicates the serial number of the body of the camera"
 msgstr "Thẻ này cho biết số sê-ri của phần thân máy ảnh"
 
-#: libexif/exif-tag.c:918
+#: libexif/exif-tag.c:920
 msgid "Lens Specification"
 msgstr "Theo đặc tả ống kính"
 
-#: libexif/exif-tag.c:919
+#: libexif/exif-tag.c:921
 msgid ""
 "This tag indicates minimum focal length, maximum focal length, minimum F "
 "number in the minimum focal length, and minimum F number in the maximum "
@@ -4723,41 +4734,41 @@ msgstr ""
 "Thẻ này cho biết độ dài tiêu cự tối thiểu, độ dài tiêu cự tối đa, số F tối "
 "thiểu ở độ dài tiêu cự tối thiểu và số F tối thiểu ở độ dài tiêu cự tối đa."
 
-#: libexif/exif-tag.c:925
+#: libexif/exif-tag.c:927
 msgid "Lens Make"
 msgstr "Nhà sản xuất ống kính"
 
-#: libexif/exif-tag.c:926
+#: libexif/exif-tag.c:928
 msgid "This tag indicates the lens manufacturer."
 msgstr "Thẻ này cho biết nhà sản xuất ống kính."
 
-#: libexif/exif-tag.c:930
+#: libexif/exif-tag.c:932
 msgid "This tag indicates the lens' model name and model number."
 msgstr "Thẻ này cho biết tên và số của mô hình của ống kính."
 
-#: libexif/exif-tag.c:933
+#: libexif/exif-tag.c:935
 msgid "Lens Serial Number"
 msgstr "Số sê-ri ống kính"
 
-#: libexif/exif-tag.c:934
+#: libexif/exif-tag.c:936
 msgid "This tag indicates the serial number of the interchangeable lens."
 msgstr "Thẻ này cho biết số sê-ri của ống kính hoán đổi."
 
-#: libexif/exif-tag.c:937
+#: libexif/exif-tag.c:939
 msgid "Composite Image"
 msgstr "Ảnh ghép"
 
-#: libexif/exif-tag.c:938
+#: libexif/exif-tag.c:940
 msgid "This tag indicates whether this image was composed from multiple images"
 msgstr ""
 "Thẻ này cho biết liệu hình ảnh này có được sáng tác từ nhiều hình ảnh hay "
 "không"
 
-#: libexif/exif-tag.c:941
+#: libexif/exif-tag.c:943
 msgid "Source Image Number Of Composite Image"
 msgstr "Số hình ảnh nguồn của ảnh ghép"
 
-#: libexif/exif-tag.c:942
+#: libexif/exif-tag.c:944
 msgid ""
 "This tag indicates how many images are included and used in the composition "
 "of this image"
@@ -4765,37 +4776,37 @@ msgstr ""
 "Thẻ này cho biết số lượng hình ảnh được bao gồm và được sử dụng trong thành "
 "phần của hình ảnh này"
 
-#: libexif/exif-tag.c:945
+#: libexif/exif-tag.c:947
 msgid "Source Exposure Times of Composite Image"
 msgstr "Thời gian phơi sáng nguồn của ảnh ghép"
 
-#: libexif/exif-tag.c:946
+#: libexif/exif-tag.c:948
 msgid ""
 "This tag indicates the exposure times of the source images of this image"
 msgstr ""
 "Thẻ này cho biết thời gian phơi sáng của hình ảnh nguồn của hình ảnh này"
 
-#: libexif/exif-tag.c:949
+#: libexif/exif-tag.c:951
 msgid "Gamma"
 msgstr "Gamma"
 
-#: libexif/exif-tag.c:950
+#: libexif/exif-tag.c:952
 msgid "Indicates the value of coefficient gamma."
 msgstr "Cho biết giá trị của gamma hệ số."
 
-#: libexif/exif-tag.c:953
+#: libexif/exif-tag.c:955
 msgid "PRINT Image Matching"
 msgstr "Khớp ảnh PRINT"
 
-#: libexif/exif-tag.c:954
+#: libexif/exif-tag.c:956
 msgid "Related to Epson's PRINT Image Matching technology"
 msgstr "Liên quan đến kỹ thuật khớp ảnh PRINT của công ty Epson"
 
-#: libexif/exif-tag.c:957
+#: libexif/exif-tag.c:959
 msgid "Padding"
 msgstr "Đệm"
 
-#: libexif/exif-tag.c:958
+#: libexif/exif-tag.c:960
 msgid ""
 "This tag reserves space that can be reclaimed later when additional metadata "
 "are added. New metadata can be written in place by replacing this tag with a "
@@ -4977,7 +4988,7 @@ msgstr "Rộng 1 (230%)"
 msgid "Wide2 (400%)"
 msgstr "Rộng 2 (400%)"
 
-#: libexif/fuji/mnote-fuji-entry.c:266
+#: libexif/fuji/mnote-fuji-entry.c:267
 #, c-format
 msgid "%2.2f mm"
 msgstr "%2.2f mm"
@@ -5411,117 +5422,117 @@ msgstr "15 khung/giây"
 msgid "20 frames/sec"
 msgstr "20 khung/giây"
 
-#: libexif/olympus/mnote-olympus-entry.c:384
+#: libexif/olympus/mnote-olympus-entry.c:386
 #, c-format
 msgid "Red Correction %f, blue Correction %f"
 msgstr "Sửa đỏ %f, Sửa xanh %f"
 
-#: libexif/olympus/mnote-olympus-entry.c:391
+#: libexif/olympus/mnote-olympus-entry.c:393
 msgid "No manual focus selection"
 msgstr "Chưa tự chọn lấy nét"
 
-#: libexif/olympus/mnote-olympus-entry.c:394
+#: libexif/olympus/mnote-olympus-entry.c:396
 #, c-format
 msgid "%2.2f meters"
 msgstr "%2.2f mét"
 
-#: libexif/olympus/mnote-olympus-entry.c:420
+#: libexif/olympus/mnote-olympus-entry.c:422
 msgid "AF position: center"
 msgstr "Vị trí AF: giữa"
 
-#: libexif/olympus/mnote-olympus-entry.c:421
+#: libexif/olympus/mnote-olympus-entry.c:423
 msgid "AF position: top"
 msgstr "Vị trí AF: trên"
 
-#: libexif/olympus/mnote-olympus-entry.c:422
+#: libexif/olympus/mnote-olympus-entry.c:424
 msgid "AF position: bottom"
 msgstr "Vị trí AF: dưới"
 
-#: libexif/olympus/mnote-olympus-entry.c:423
+#: libexif/olympus/mnote-olympus-entry.c:425
 msgid "AF position: left"
 msgstr "Vị trí AF: trái"
 
-#: libexif/olympus/mnote-olympus-entry.c:424
+#: libexif/olympus/mnote-olympus-entry.c:426
 msgid "AF position: right"
 msgstr "Vị trí AF: phải"
 
-#: libexif/olympus/mnote-olympus-entry.c:425
+#: libexif/olympus/mnote-olympus-entry.c:427
 msgid "AF position: upper-left"
 msgstr "Vị trí AF: trái-trên"
 
-#: libexif/olympus/mnote-olympus-entry.c:426
+#: libexif/olympus/mnote-olympus-entry.c:428
 msgid "AF position: upper-right"
 msgstr "Vị trí AF: phải-trên"
 
-#: libexif/olympus/mnote-olympus-entry.c:427
+#: libexif/olympus/mnote-olympus-entry.c:429
 msgid "AF position: lower-left"
 msgstr "Vị trí AF: trái-dưới"
 
-#: libexif/olympus/mnote-olympus-entry.c:428
+#: libexif/olympus/mnote-olympus-entry.c:430
 msgid "AF position: lower-right"
 msgstr "Vị trí AF: phải-dưới"
 
-#: libexif/olympus/mnote-olympus-entry.c:429
+#: libexif/olympus/mnote-olympus-entry.c:431
 msgid "AF position: far left"
 msgstr "Vị trí AF: trái-xa"
 
-#: libexif/olympus/mnote-olympus-entry.c:430
+#: libexif/olympus/mnote-olympus-entry.c:432
 msgid "AF position: far right"
 msgstr "Vị trí AF: phải-xa"
 
-#: libexif/olympus/mnote-olympus-entry.c:431
+#: libexif/olympus/mnote-olympus-entry.c:433
 msgid "Unknown AF position"
 msgstr "Vị trí AF không rõ"
 
-#: libexif/olympus/mnote-olympus-entry.c:442
-#: libexif/olympus/mnote-olympus-entry.c:513
+#: libexif/olympus/mnote-olympus-entry.c:444
+#: libexif/olympus/mnote-olympus-entry.c:515
 #, c-format
 msgid "Internal error (unknown value %hi)"
 msgstr "Lỗi nội bộ (giá trị không rõ %hi)"
 
-#: libexif/olympus/mnote-olympus-entry.c:450
-#: libexif/olympus/mnote-olympus-entry.c:521
+#: libexif/olympus/mnote-olympus-entry.c:452
+#: libexif/olympus/mnote-olympus-entry.c:523
 #, c-format
 msgid "Unknown value %hi"
 msgstr "Giá trị chưa biết %hi"
 
-#: libexif/olympus/mnote-olympus-entry.c:546
-#: libexif/olympus/mnote-olympus-entry.c:566
+#: libexif/olympus/mnote-olympus-entry.c:548
+#: libexif/olympus/mnote-olympus-entry.c:568
 #, c-format
 msgid "Unknown %hu"
 msgstr "Chưa biết %hu"
 
-#: libexif/olympus/mnote-olympus-entry.c:563
+#: libexif/olympus/mnote-olympus-entry.c:565
 msgid "2 sec."
 msgstr "2 giây"
 
-#: libexif/olympus/mnote-olympus-entry.c:602
+#: libexif/olympus/mnote-olympus-entry.c:604
 msgid "Fast"
 msgstr "Nhanh"
 
-#: libexif/olympus/mnote-olympus-entry.c:706
+#: libexif/olympus/mnote-olympus-entry.c:708
 msgid "Automatic"
 msgstr "Tự động"
 
-#: libexif/olympus/mnote-olympus-entry.c:736
+#: libexif/olympus/mnote-olympus-entry.c:738
 #, c-format
 msgid "Manual: %liK"
 msgstr "Bằng tay: %liK"
 
-#: libexif/olympus/mnote-olympus-entry.c:739
+#: libexif/olympus/mnote-olympus-entry.c:741
 msgid "Manual: unknown"
 msgstr "Bằng tay: không rõ"
 
-#: libexif/olympus/mnote-olympus-entry.c:745
+#: libexif/olympus/mnote-olympus-entry.c:747
 msgid "One-touch"
 msgstr "Bấm đơn"
 
-#: libexif/olympus/mnote-olympus-entry.c:813
-#: libexif/olympus/mnote-olympus-entry.c:823
+#: libexif/olympus/mnote-olympus-entry.c:815
+#: libexif/olympus/mnote-olympus-entry.c:825
 msgid "Infinite"
 msgstr "Vô cực"
 
-#: libexif/olympus/mnote-olympus-entry.c:831
+#: libexif/olympus/mnote-olympus-entry.c:833
 #, c-format
 msgid "%i bytes unknown data: "
 msgstr "%i byte dữ liệu không rõ: "
@@ -6273,18 +6284,18 @@ msgstr "3008×2008 hay 3040×2024"
 msgid "Digital filter?"
 msgstr "Lọc số?"
 
-#: libexif/pentax/mnote-pentax-entry.c:354
-#: libexif/pentax/mnote-pentax-entry.c:363
+#: libexif/pentax/mnote-pentax-entry.c:355
+#: libexif/pentax/mnote-pentax-entry.c:364
 #, c-format
 msgid "Internal error (unknown value %hu)"
 msgstr "Lỗi nội bộ (giá trị không rõ %hu)"
 
-#: libexif/pentax/mnote-pentax-entry.c:378
+#: libexif/pentax/mnote-pentax-entry.c:379
 #, c-format
 msgid "Internal error (unknown value %hu %hu)"
 msgstr "Lỗi nội bộ (giá trị không rõ %hu %hu)"
 
-#: libexif/pentax/mnote-pentax-entry.c:387
+#: libexif/pentax/mnote-pentax-entry.c:388
 #, c-format
 msgid "Internal error (unknown value %hi %hi)"
 msgstr "Lỗi nội bộ (giá trị không rõ %hi %hi)"

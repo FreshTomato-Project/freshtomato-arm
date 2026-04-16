@@ -3,43 +3,44 @@
 # Copyright (C) 2021 Lutz Mueller and others
 # This file is distributed under the same license as the libexif package.
 # SPDX-License-Identifier: LGPL-2.0-or-later
-# Boyuan Yang <073plan@gmail.com>, 2021.
+# Boyuan Yang <073plan@gmail.com>, 2021
+# Tyson Tan <tysontanx@gmail.com>, 2025
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: libexif 0.6.24\n"
+"Project-Id-Version: libexif 0.6.25\n"
 "Report-Msgid-Bugs-To: libexif-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2025-01-17 15:27+0100\n"
-"PO-Revision-Date: 2021-12-03 13:02-0500\n"
-"Last-Translator: Boyuan Yang <073plan@gmail.com>\n"
+"POT-Creation-Date: 2026-04-07 11:21+0200\n"
+"PO-Revision-Date: 2025-10-10 22:01+0800\n"
+"Last-Translator: Tyson Tan <tysontanx@gmail.com>\n"
 "Language-Team: Chinese (simplified) <i18n-zh@googlegroups.com>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Bugs: Report translation errors to the Language-Team address.\n"
-"X-Generator: Poedit 3.0\n"
+"X-Generator: Poedit 3.6\n"
 
 #: libexif/canon/mnote-canon-entry.c:40 libexif/fuji/mnote-fuji-entry.c:37
 #: libexif/olympus/mnote-olympus-entry.c:39
 #: libexif/pentax/mnote-pentax-entry.c:41
 #, c-format
 msgid "Invalid format '%s', expected '%s'."
-msgstr "无效的格式“%s”，期望得到“%s”。"
+msgstr "无效的格式“%s”，预期格式为“%s”。"
 
 #: libexif/canon/mnote-canon-entry.c:52 libexif/fuji/mnote-fuji-entry.c:49
 #: libexif/olympus/mnote-olympus-entry.c:64
 #: libexif/pentax/mnote-pentax-entry.c:53
 #, c-format
 msgid "Invalid number of components (%i, expected %i)."
-msgstr "无效的组件数量（%i，期望得到 %i）。"
+msgstr "无效的组件数量 (%i，预期数量为 %i)。"
 
 #: libexif/canon/mnote-canon-entry.c:61
 #: libexif/olympus/mnote-olympus-entry.c:74
 #: libexif/pentax/mnote-pentax-entry.c:63
 #, c-format
 msgid "Invalid number of components (%i, expected %i or %i)."
-msgstr "无效的组件数量（%i，期望得到 %i 或 %i）。"
+msgstr "无效的组件数量 (%i，预期数量为 %i 或 %i)。"
 
 #: libexif/canon/mnote-canon-entry.c:76 libexif/canon/mnote-canon-entry.c:130
 #: libexif/canon/mnote-canon-entry.c:182 libexif/exif-entry.c:834
@@ -49,7 +50,7 @@ msgstr "无效的组件数量（%i，期望得到 %i 或 %i）。"
 #: libexif/pentax/mnote-pentax-entry.c:211
 #: libexif/pentax/mnote-pentax-entry.c:299
 msgid "Macro"
-msgstr ""
+msgstr "微距"
 
 #: libexif/canon/mnote-canon-entry.c:77 libexif/canon/mnote-canon-entry.c:79
 #: libexif/canon/mnote-canon-entry.c:157 libexif/canon/mnote-canon-entry.c:160
@@ -60,21 +61,21 @@ msgstr ""
 #: libexif/olympus/mnote-olympus-entry.c:200
 #: libexif/olympus/mnote-olympus-entry.c:208
 #: libexif/olympus/mnote-olympus-entry.c:218
-#: libexif/olympus/mnote-olympus-entry.c:596
+#: libexif/olympus/mnote-olympus-entry.c:598
 #: libexif/pentax/mnote-pentax-entry.c:107
 #: libexif/pentax/mnote-pentax-entry.c:112
 #: libexif/pentax/mnote-pentax-entry.c:117
 #: libexif/pentax/mnote-pentax-entry.c:210
 msgid "Normal"
-msgstr ""
+msgstr "标准"
 
 #: libexif/canon/mnote-canon-entry.c:78
 msgid "Economy"
-msgstr ""
+msgstr "经济"
 
 #: libexif/canon/mnote-canon-entry.c:80
 msgid "Fine"
-msgstr ""
+msgstr "高画质"
 
 #: libexif/canon/mnote-canon-entry.c:81 libexif/fuji/mnote-fuji-entry.c:180
 #: libexif/pentax/mnote-pentax-entry.c:143
@@ -83,25 +84,25 @@ msgstr "RAW"
 
 #: libexif/canon/mnote-canon-entry.c:82
 msgid "Superfine"
-msgstr ""
+msgstr "超高画质"
 
 #: libexif/canon/mnote-canon-entry.c:83 libexif/canon/mnote-canon-entry.c:304
 #: libexif/canon/mnote-canon-entry.c:307 libexif/canon/mnote-canon-entry.c:315
 #: libexif/canon/mnote-canon-entry.c:348 libexif/canon/mnote-canon-entry.c:360
 #: libexif/canon/mnote-canon-entry.c:373 libexif/canon/mnote-canon-entry.c:375
-#: libexif/canon/mnote-canon-entry.c:586 libexif/canon/mnote-canon-entry.c:686
+#: libexif/canon/mnote-canon-entry.c:588 libexif/canon/mnote-canon-entry.c:688
 #: libexif/fuji/mnote-fuji-entry.c:72 libexif/fuji/mnote-fuji-entry.c:105
 #: libexif/fuji/mnote-fuji-entry.c:109 libexif/fuji/mnote-fuji-entry.c:117
 #: libexif/fuji/mnote-fuji-entry.c:144
 #: libexif/olympus/mnote-olympus-entry.c:183
 #: libexif/olympus/mnote-olympus-entry.c:191
 #: libexif/olympus/mnote-olympus-entry.c:256
-#: libexif/olympus/mnote-olympus-entry.c:540
-#: libexif/olympus/mnote-olympus-entry.c:557
+#: libexif/olympus/mnote-olympus-entry.c:542
+#: libexif/olympus/mnote-olympus-entry.c:559
 #: libexif/pentax/mnote-pentax-entry.c:197
 #: libexif/pentax/mnote-pentax-entry.c:262
 msgid "Off"
-msgstr ""
+msgstr "关闭"
 
 #: libexif/canon/mnote-canon-entry.c:84 libexif/canon/mnote-canon-entry.c:167
 #: libexif/canon/mnote-canon-entry.c:180 libexif/canon/mnote-canon-entry.c:331
@@ -129,94 +130,94 @@ msgstr "自动"
 #: libexif/fuji/mnote-fuji-entry.c:110 libexif/fuji/mnote-fuji-entry.c:118
 #: libexif/fuji/mnote-fuji-entry.c:145
 #: libexif/olympus/mnote-olympus-entry.c:184
-#: libexif/olympus/mnote-olympus-entry.c:543
-#: libexif/olympus/mnote-olympus-entry.c:560
+#: libexif/olympus/mnote-olympus-entry.c:545
+#: libexif/olympus/mnote-olympus-entry.c:562
 #: libexif/pentax/mnote-pentax-entry.c:200
 #: libexif/pentax/mnote-pentax-entry.c:263
 msgid "On"
-msgstr ""
+msgstr "开启"
 
 #: libexif/canon/mnote-canon-entry.c:86 libexif/fuji/mnote-fuji-entry.c:106
 #: libexif/olympus/mnote-olympus-entry.c:189
 #: libexif/pentax/mnote-pentax-entry.c:96
 msgid "Red-eye reduction"
-msgstr ""
+msgstr "红眼消除"
 
 #: libexif/canon/mnote-canon-entry.c:87
 msgid "Slow synchro"
-msgstr ""
+msgstr "慢速同步"
 
 #: libexif/canon/mnote-canon-entry.c:88
 msgid "Auto, red-eye reduction"
-msgstr ""
+msgstr "自动，红眼消除"
 
 #: libexif/canon/mnote-canon-entry.c:89 libexif/pentax/mnote-pentax-entry.c:202
 msgid "On, red-eye reduction"
-msgstr ""
+msgstr "开启，红眼消除"
 
 #: libexif/canon/mnote-canon-entry.c:90
 msgid "External flash"
-msgstr ""
+msgstr "外接闪光灯"
 
 #: libexif/canon/mnote-canon-entry.c:91 libexif/canon/mnote-canon-entry.c:101
 #: libexif/canon/mnote-canon-entry.c:297
 msgid "Single"
-msgstr ""
+msgstr "单张"
 
 #: libexif/canon/mnote-canon-entry.c:92 libexif/canon/mnote-canon-entry.c:102
 #: libexif/canon/mnote-canon-entry.c:298
 msgid "Continuous"
-msgstr ""
+msgstr "连拍"
 
 #: libexif/canon/mnote-canon-entry.c:93
 msgid "Movie"
-msgstr ""
+msgstr "视频"
 
 #: libexif/canon/mnote-canon-entry.c:94
 msgid "Continuous, speed priority"
-msgstr ""
+msgstr "速度优先连拍"
 
 #: libexif/canon/mnote-canon-entry.c:95
 msgid "Continuous, low"
-msgstr ""
+msgstr "低速连拍"
 
 #: libexif/canon/mnote-canon-entry.c:96
 msgid "Continuous, high"
-msgstr ""
+msgstr "高速连拍"
 
 #: libexif/canon/mnote-canon-entry.c:97
 msgid "One-shot AF"
-msgstr ""
+msgstr "单次 AF 自动对焦"
 
 #: libexif/canon/mnote-canon-entry.c:98
 msgid "AI servo AF"
-msgstr ""
+msgstr "AI 伺服 AF 自动对焦"
 
 #: libexif/canon/mnote-canon-entry.c:99
 msgid "AI focus AF"
-msgstr ""
+msgstr "AI AF 自动对焦"
 
 #: libexif/canon/mnote-canon-entry.c:100 libexif/canon/mnote-canon-entry.c:103
 msgid "Manual focus"
-msgstr ""
+msgstr "手动对焦"
 
 #: libexif/canon/mnote-canon-entry.c:104 libexif/canon/mnote-canon-entry.c:132
 #: libexif/canon/mnote-canon-entry.c:187
 #: libexif/pentax/mnote-pentax-entry.c:214
 msgid "Pan focus"
-msgstr ""
+msgstr "泛焦"
 
 #: libexif/canon/mnote-canon-entry.c:105
 msgid "JPEG"
-msgstr ""
+msgstr "JPEG"
 
 #: libexif/canon/mnote-canon-entry.c:106
 msgid "CRW+THM"
-msgstr ""
+msgstr "CRW+THM"
 
 #: libexif/canon/mnote-canon-entry.c:107
 msgid "AVI+THM"
-msgstr ""
+msgstr "AVI+THM"
 
 #: libexif/canon/mnote-canon-entry.c:108
 msgid "TIF"
@@ -236,39 +237,39 @@ msgstr "CR2+JPEG"
 
 #: libexif/canon/mnote-canon-entry.c:112
 msgid "Large"
-msgstr ""
+msgstr "大"
 
 #: libexif/canon/mnote-canon-entry.c:113
 msgid "Medium"
-msgstr ""
+msgstr "中"
 
 #: libexif/canon/mnote-canon-entry.c:114
 msgid "Small"
-msgstr ""
+msgstr "小"
 
 #: libexif/canon/mnote-canon-entry.c:115
 msgid "Medium 1"
-msgstr ""
+msgstr "中 1"
 
 #: libexif/canon/mnote-canon-entry.c:116
 msgid "Medium 2"
-msgstr ""
+msgstr "中 2"
 
 #: libexif/canon/mnote-canon-entry.c:117
 msgid "Medium 3"
-msgstr ""
+msgstr "中 3"
 
 #: libexif/canon/mnote-canon-entry.c:118
 msgid "Postcard"
-msgstr ""
+msgstr "明信片"
 
 #: libexif/canon/mnote-canon-entry.c:119
 msgid "Widescreen"
-msgstr ""
+msgstr "宽屏"
 
 #: libexif/canon/mnote-canon-entry.c:120
 msgid "Full auto"
-msgstr ""
+msgstr "全自动"
 
 #: libexif/canon/mnote-canon-entry.c:121 libexif/canon/mnote-canon-entry.c:179
 #: libexif/canon/mnote-canon-entry.c:201 libexif/canon/mnote-canon-entry.c:288
@@ -282,27 +283,27 @@ msgstr ""
 #: libexif/pentax/mnote-pentax-entry.c:213
 #: libexif/pentax/mnote-pentax-entry.c:252
 msgid "Manual"
-msgstr ""
+msgstr "手动"
 
 #: libexif/canon/mnote-canon-entry.c:122 libexif/canon/mnote-canon-entry.c:433
 #: libexif/exif-entry.c:699 libexif/exif-entry.c:783
 #: libexif/fuji/mnote-fuji-entry.c:123 libexif/pentax/mnote-pentax-entry.c:169
 #: libexif/pentax/mnote-pentax-entry.c:303
 msgid "Landscape"
-msgstr ""
+msgstr "风景"
 
 #: libexif/canon/mnote-canon-entry.c:123
 msgid "Fast shutter"
-msgstr ""
+msgstr "高速快门"
 
 #: libexif/canon/mnote-canon-entry.c:124
 msgid "Slow shutter"
-msgstr ""
+msgstr "低速快门"
 
 #: libexif/canon/mnote-canon-entry.c:125 libexif/fuji/mnote-fuji-entry.c:125
 #: libexif/olympus/mnote-olympus-entry.c:259
 msgid "Night"
-msgstr ""
+msgstr "夜景"
 
 #: libexif/canon/mnote-canon-entry.c:126
 msgid "Grayscale"
@@ -311,7 +312,7 @@ msgstr "灰阶"
 #: libexif/canon/mnote-canon-entry.c:127 libexif/canon/mnote-canon-entry.c:311
 #: libexif/pentax/mnote-pentax-entry.c:130
 msgid "Sepia"
-msgstr ""
+msgstr "棕色调"
 
 #: libexif/canon/mnote-canon-entry.c:128 libexif/canon/mnote-canon-entry.c:432
 #: libexif/exif-entry.c:699 libexif/exif-entry.c:781
@@ -320,11 +321,11 @@ msgstr ""
 #: libexif/pentax/mnote-pentax-entry.c:296
 #: libexif/pentax/mnote-pentax-entry.c:302
 msgid "Portrait"
-msgstr ""
+msgstr "人像"
 
 #: libexif/canon/mnote-canon-entry.c:129 libexif/fuji/mnote-fuji-entry.c:124
 msgid "Sports"
-msgstr "体育"
+msgstr "运动"
 
 #: libexif/canon/mnote-canon-entry.c:131 libexif/canon/mnote-canon-entry.c:312
 #: libexif/canon/mnote-canon-entry.c:338 libexif/canon/mnote-canon-entry.c:410
@@ -334,29 +335,29 @@ msgstr "黑白"
 
 #: libexif/canon/mnote-canon-entry.c:133 libexif/canon/mnote-canon-entry.c:308
 msgid "Vivid"
-msgstr ""
+msgstr "鲜艳"
 
 #: libexif/canon/mnote-canon-entry.c:134 libexif/canon/mnote-canon-entry.c:309
 #: libexif/canon/mnote-canon-entry.c:434
 msgid "Neutral"
-msgstr ""
+msgstr "中性"
 
 #: libexif/canon/mnote-canon-entry.c:135 libexif/pentax/mnote-pentax-entry.c:95
 msgid "Flash off"
-msgstr ""
+msgstr "闪光关闭"
 
 #: libexif/canon/mnote-canon-entry.c:136
 msgid "Long shutter"
-msgstr ""
+msgstr "长快门"
 
 #: libexif/canon/mnote-canon-entry.c:137 libexif/canon/mnote-canon-entry.c:188
 #: libexif/olympus/mnote-olympus-entry.c:176
 msgid "Super macro"
-msgstr ""
+msgstr "超级微距"
 
 #: libexif/canon/mnote-canon-entry.c:138
 msgid "Foliage"
-msgstr ""
+msgstr "植物"
 
 #: libexif/canon/mnote-canon-entry.c:139
 msgid "Indoor"
@@ -381,107 +382,107 @@ msgstr "水下"
 
 #: libexif/canon/mnote-canon-entry.c:143 libexif/fuji/mnote-fuji-entry.c:136
 msgid "Snow"
-msgstr "雪地"
+msgstr "雪景"
 
 #: libexif/canon/mnote-canon-entry.c:144
 msgid "Kids & pets"
-msgstr ""
+msgstr "儿童和宠物"
 
 #: libexif/canon/mnote-canon-entry.c:145
 msgid "Night snapshot"
-msgstr ""
+msgstr "夜间抓拍"
 
 #: libexif/canon/mnote-canon-entry.c:146
 msgid "Digital macro"
-msgstr ""
+msgstr "数码微距"
 
 #: libexif/canon/mnote-canon-entry.c:147
 msgid "My colors"
-msgstr ""
+msgstr "我的色彩"
 
 #: libexif/canon/mnote-canon-entry.c:148
 msgid "Still image"
-msgstr ""
+msgstr "静止图像"
 
 #: libexif/canon/mnote-canon-entry.c:149
 msgid "Color accent"
-msgstr ""
+msgstr "颜色强调"
 
 #: libexif/canon/mnote-canon-entry.c:150
 msgid "Color swap"
-msgstr ""
+msgstr "颜色替换"
 
 #: libexif/canon/mnote-canon-entry.c:151
 msgid "Aquarium"
-msgstr ""
+msgstr "水族馆"
 
 #: libexif/canon/mnote-canon-entry.c:152
 msgid "ISO 3200"
-msgstr ""
+msgstr "ISO 3200"
 
 #: libexif/canon/mnote-canon-entry.c:153 libexif/canon/mnote-canon-entry.c:351
 #: libexif/canon/mnote-canon-entry.c:368 libexif/canon/mnote-canon-entry.c:420
 #: libexif/olympus/mnote-olympus-entry.c:194
 #: libexif/olympus/mnote-olympus-entry.c:231
-#: libexif/olympus/mnote-olympus-entry.c:460
+#: libexif/olympus/mnote-olympus-entry.c:462
 #: libexif/pentax/mnote-pentax-entry.c:244
 msgid "None"
-msgstr ""
+msgstr "无"
 
 #: libexif/canon/mnote-canon-entry.c:154
 msgid "2x"
-msgstr ""
+msgstr "2x"
 
 #: libexif/canon/mnote-canon-entry.c:155
 msgid "4x"
-msgstr ""
+msgstr "4x"
 
 #: libexif/canon/mnote-canon-entry.c:156 libexif/exif-entry.c:730
 #: libexif/exif-entry.c:760
 msgid "Other"
-msgstr ""
+msgstr "其他"
 
 #: libexif/canon/mnote-canon-entry.c:158 libexif/canon/mnote-canon-entry.c:161
 #: libexif/canon/mnote-canon-entry.c:164 libexif/canon/mnote-canon-entry.c:401
 #: libexif/fuji/mnote-fuji-entry.c:88 libexif/pentax/mnote-pentax-entry.c:114
 #: libexif/pentax/mnote-pentax-entry.c:119
 msgid "High"
-msgstr ""
+msgstr "高"
 
 #: libexif/canon/mnote-canon-entry.c:159 libexif/canon/mnote-canon-entry.c:162
 #: libexif/canon/mnote-canon-entry.c:165 libexif/canon/mnote-canon-entry.c:399
 #: libexif/pentax/mnote-pentax-entry.c:113
 #: libexif/pentax/mnote-pentax-entry.c:118
 msgid "Low"
-msgstr ""
+msgstr "低"
 
 #: libexif/canon/mnote-canon-entry.c:166
 msgid "Auto high"
-msgstr ""
+msgstr "自动高"
 
 #: libexif/canon/mnote-canon-entry.c:168
 msgid "50"
-msgstr ""
+msgstr "50"
 
 #: libexif/canon/mnote-canon-entry.c:169
 #: libexif/pentax/mnote-pentax-entry.c:122
 #: libexif/pentax/mnote-pentax-entry.c:124
 msgid "100"
-msgstr ""
+msgstr "100"
 
 #: libexif/canon/mnote-canon-entry.c:170
 #: libexif/pentax/mnote-pentax-entry.c:123
 #: libexif/pentax/mnote-pentax-entry.c:125
 msgid "200"
-msgstr ""
+msgstr "200"
 
 #: libexif/canon/mnote-canon-entry.c:171
 msgid "400"
-msgstr ""
+msgstr "400"
 
 #: libexif/canon/mnote-canon-entry.c:172
 msgid "800"
-msgstr ""
+msgstr "800"
 
 #: libexif/canon/mnote-canon-entry.c:173
 msgid "Default"
@@ -489,23 +490,23 @@ msgstr "默认"
 
 #: libexif/canon/mnote-canon-entry.c:174 libexif/exif-entry.c:726
 msgid "Spot"
-msgstr ""
+msgstr "点测光"
 
 #: libexif/canon/mnote-canon-entry.c:175 libexif/exif-entry.c:724
 msgid "Average"
-msgstr ""
+msgstr "平均测光"
 
 #: libexif/canon/mnote-canon-entry.c:176
 msgid "Evaluative"
-msgstr ""
+msgstr "评价测光"
 
 #: libexif/canon/mnote-canon-entry.c:177 libexif/exif-entry.c:729
 msgid "Partial"
-msgstr ""
+msgstr "局部测光"
 
 #: libexif/canon/mnote-canon-entry.c:178 libexif/exif-entry.c:725
 msgid "Center-weighted average"
-msgstr ""
+msgstr "中心权重平均测光"
 
 #: libexif/canon/mnote-canon-entry.c:181
 msgid "Not known"
@@ -513,19 +514,19 @@ msgstr "未知"
 
 #: libexif/canon/mnote-canon-entry.c:183
 msgid "Very close"
-msgstr ""
+msgstr "极近"
 
 #: libexif/canon/mnote-canon-entry.c:184 libexif/exif-entry.c:835
 msgid "Close"
-msgstr ""
+msgstr "近"
 
 #: libexif/canon/mnote-canon-entry.c:185
 msgid "Middle range"
-msgstr ""
+msgstr "中距"
 
 #: libexif/canon/mnote-canon-entry.c:186
 msgid "Far range"
-msgstr ""
+msgstr "远"
 
 #: libexif/canon/mnote-canon-entry.c:189
 #: libexif/pentax/mnote-pentax-entry.c:212
@@ -534,422 +535,422 @@ msgstr "无限远"
 
 #: libexif/canon/mnote-canon-entry.c:190
 msgid "Manual AF point selection"
-msgstr ""
+msgstr "手动对焦点选择"
 
 #: libexif/canon/mnote-canon-entry.c:191 libexif/canon/mnote-canon-entry.c:352
 msgid "None (MF)"
-msgstr ""
+msgstr "无 (MF 手动对焦)"
 
 #: libexif/canon/mnote-canon-entry.c:192
 msgid "Auto-selected"
-msgstr ""
+msgstr "自动选择"
 
 #: libexif/canon/mnote-canon-entry.c:193 libexif/canon/mnote-canon-entry.c:353
 #: libexif/pentax/mnote-pentax-entry.c:226
 #: libexif/pentax/mnote-pentax-entry.c:240
 msgid "Right"
-msgstr ""
+msgstr "右侧"
 
 #: libexif/canon/mnote-canon-entry.c:194 libexif/canon/mnote-canon-entry.c:354
 #: libexif/pentax/mnote-pentax-entry.c:224
 #: libexif/pentax/mnote-pentax-entry.c:239
 msgid "Center"
-msgstr ""
+msgstr "中间"
 
 #: libexif/canon/mnote-canon-entry.c:195 libexif/canon/mnote-canon-entry.c:356
 #: libexif/pentax/mnote-pentax-entry.c:222
 #: libexif/pentax/mnote-pentax-entry.c:238
 msgid "Left"
-msgstr ""
+msgstr "左侧"
 
 #: libexif/canon/mnote-canon-entry.c:196
 msgid "Auto AF point selection"
-msgstr ""
+msgstr "自动 AF 对焦点选择"
 
 #: libexif/canon/mnote-canon-entry.c:197
 msgid "Easy shooting"
-msgstr ""
+msgstr "简易拍摄模式"
 
 #: libexif/canon/mnote-canon-entry.c:198
 #: libexif/pentax/mnote-pentax-entry.c:165
 msgid "Program"
-msgstr ""
+msgstr "P 程序自动曝光"
 
 #: libexif/canon/mnote-canon-entry.c:199
 msgid "Tv-priority"
-msgstr ""
+msgstr "Tv 快门优先"
 
 #: libexif/canon/mnote-canon-entry.c:200
 msgid "Av-priority"
-msgstr ""
+msgstr "Av 光圈优先"
 
 #: libexif/canon/mnote-canon-entry.c:202
 msgid "A-DEP"
-msgstr ""
+msgstr "A-DEP"
 
 #: libexif/canon/mnote-canon-entry.c:203
 msgid "M-DEP"
-msgstr ""
+msgstr "M-DEP"
 
 #: libexif/canon/mnote-canon-entry.c:204
 msgid "Canon EF 50mm f/1.8"
-msgstr ""
+msgstr "佳能 EF 50mm f/1.8"
 
 #: libexif/canon/mnote-canon-entry.c:205
 msgid "Canon EF 28mm f/2.8"
-msgstr ""
+msgstr "佳能 EF 28mm f/2.8"
 
 #: libexif/canon/mnote-canon-entry.c:206
 msgid "Sigma UC Zoom 35-135mm f/4-5.6"
-msgstr ""
+msgstr "适马 UC Zoom 35-135mm f/4-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:207
 msgid "Tokina AF193-2 19-35mm f/3.5-4.5"
-msgstr ""
+msgstr "图丽 AF193-2 19-35mm f/3.5-4.5"
 
 #: libexif/canon/mnote-canon-entry.c:208
 msgid "Canon EF 100-300mm F5.6L"
-msgstr ""
+msgstr "佳能 EF 100-300mm F5.6L"
 
 #: libexif/canon/mnote-canon-entry.c:209
 msgid "Sigma 50mm f/2.8 EX or 28mm f/1.8"
-msgstr ""
+msgstr "适马 50mm f/2.8 EX 或 28mm f/1.8"
 
 #: libexif/canon/mnote-canon-entry.c:210
 msgid "Canon EF 35mm f/2"
-msgstr ""
+msgstr "佳能 EF 35mm f/2"
 
 #: libexif/canon/mnote-canon-entry.c:211
 msgid "Canon EF 15mm f/2.8"
-msgstr ""
+msgstr "佳能 EF 15mm f/2.8"
 
 #: libexif/canon/mnote-canon-entry.c:212
 msgid "Canon EF 80-200mm f/2.8L"
-msgstr ""
+msgstr "佳能 EF 80-200mm f/2.8L"
 
 #: libexif/canon/mnote-canon-entry.c:213
 msgid "Tokina AT-X280AF PRO 28-80mm F2.8 Aspherical"
-msgstr ""
+msgstr "图丽 AT-X280AF PRO 28-80mm F2.8 Aspherical"
 
 #: libexif/canon/mnote-canon-entry.c:214
 msgid "Cosina 100mm f/3.5 Macro AF"
-msgstr ""
+msgstr "确善能 100mm f/3.5 Macro AF"
 
 #: libexif/canon/mnote-canon-entry.c:215
 msgid "Tamron AF Aspherical 28-200mm f/3.8-5.6"
-msgstr ""
+msgstr "腾龙 AF Aspherical 28-200mm f/3.8-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:216
 msgid "Canon EF 50mm f/1.8 MkII"
-msgstr ""
+msgstr "佳能 EF 50mm f/1.8 MkII"
 
 #: libexif/canon/mnote-canon-entry.c:217
 msgid "Tamron SP AF 300mm f/2.8 LD IF"
-msgstr ""
+msgstr "腾龙 SP AF 300mm f/2.8 LD IF"
 
 #: libexif/canon/mnote-canon-entry.c:218
 msgid "Canon EF 24mm f/2.8 or Sigma 15mm f/2.8 EX Fisheye"
-msgstr ""
+msgstr "佳能 EF 24mm f/2.8 或 适马 15mm f/2.8 EX Fisheye"
 
 #: libexif/canon/mnote-canon-entry.c:219
 msgid "Canon EF 35-80mm f/4-5.6"
-msgstr ""
+msgstr "佳能 EF 35-80mm f/4-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:220
 msgid "Canon EF 75-300mm f/4-5.6"
-msgstr ""
+msgstr "佳能 EF 75-300mm f/4-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:221
 msgid "Canon EF 28-80mm f/3.5-5.6"
-msgstr ""
+msgstr "佳能 EF 28-80mm f/3.5-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:222
 msgid "Canon EF 28-105mm f/4-5.6"
-msgstr ""
+msgstr "佳能 EF 28-105mm f/4-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:223
 msgid "Canon EF-S 18-55mm f/3.5-5.6"
-msgstr ""
+msgstr "佳能 EF-S 18-55mm f/3.5-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:224
 msgid "Canon EF-S 18-55mm f/3.5-5.6 IS II"
-msgstr ""
+msgstr "佳能 EF-S 18-55mm f/3.5-5.6 IS II"
 
 #: libexif/canon/mnote-canon-entry.c:225
 msgid "Canon MP-E 65mm f/2.8 1-5x Macro Photo"
-msgstr ""
+msgstr "佳能 MP-E 65mm f/2.8 1-5x Macro Photo"
 
 #: libexif/canon/mnote-canon-entry.c:226
 msgid "Canon TS-E 24mm f/3.5L"
-msgstr ""
+msgstr "佳能 TS-E 24mm f/3.5L"
 
 #: libexif/canon/mnote-canon-entry.c:227
 msgid "Canon TS-E 45mm f/2.8"
-msgstr ""
+msgstr "佳能 TS-E 45mm f/2.8"
 
 #: libexif/canon/mnote-canon-entry.c:228
 msgid "Canon TS-E 90mm f/2.8"
-msgstr ""
+msgstr "佳能 TS-E 90mm f/2.8"
 
 #: libexif/canon/mnote-canon-entry.c:229
 msgid "Canon EF 50mm f/1.0L"
-msgstr ""
+msgstr "佳能 EF 50mm f/1.0L"
 
 #: libexif/canon/mnote-canon-entry.c:230
 msgid "Sigma 17-35mm f2.8-4 EX Aspherical HSM"
-msgstr ""
+msgstr "适马 17-35mm f2.8-4 EX Aspherical HSM"
 
 #: libexif/canon/mnote-canon-entry.c:231
 msgid "Canon EF 600mm f/4L IS"
-msgstr ""
+msgstr "佳能 EF 600mm f/4L IS"
 
 #: libexif/canon/mnote-canon-entry.c:232
 msgid "Canon EF 200mm f/1.8L"
-msgstr ""
+msgstr "佳能 EF 200mm f/1.8L"
 
 #: libexif/canon/mnote-canon-entry.c:233
 msgid "Canon EF 300mm f/2.8L"
-msgstr ""
+msgstr "佳能 EF 300mm f/2.8L"
 
 #: libexif/canon/mnote-canon-entry.c:234
 msgid "Canon EF 85mm f/1.2L"
-msgstr ""
+msgstr "佳能 EF 85mm f/1.2L"
 
 #: libexif/canon/mnote-canon-entry.c:235
 msgid "Canon EF 400mm f/2.8L"
-msgstr ""
+msgstr "佳能 EF 400mm f/2.8L"
 
 #: libexif/canon/mnote-canon-entry.c:236
 msgid "Canon EF 500mm f/4.5L"
-msgstr ""
+msgstr "佳能 EF 500mm f/4.5L"
 
 #: libexif/canon/mnote-canon-entry.c:237
 msgid "Canon EF 300mm f/2.8L IS"
-msgstr ""
+msgstr "佳能 EF 300mm f/2.8L IS"
 
 #: libexif/canon/mnote-canon-entry.c:238
 msgid "Canon EF 500mm f/4L IS"
-msgstr ""
+msgstr "佳能 EF 500mm f/4L IS"
 
 #: libexif/canon/mnote-canon-entry.c:239
 msgid "Canon EF 100mm f/2"
-msgstr ""
+msgstr "佳能 EF 100mm f/2"
 
 #: libexif/canon/mnote-canon-entry.c:240
 msgid "Sigma 20mm EX f/1.8"
-msgstr ""
+msgstr "适马 20mm EX f/1.8"
 
 #: libexif/canon/mnote-canon-entry.c:241
 msgid "Canon EF 200mm f/2.8L"
-msgstr ""
+msgstr "佳能 EF 200mm f/2.8L"
 
 #: libexif/canon/mnote-canon-entry.c:242
 msgid "Sigma 10-20mm F4-5.6 or 12-24mm f/4.5-5.6 or 14mm f/2.8"
-msgstr ""
+msgstr "适马 10-20mm F4-5.6 或 12-24mm f/4.5-5.6 或 14mm f/2.8"
 
 #: libexif/canon/mnote-canon-entry.c:243
 msgid "Canon EF 35-350mm f/3.5-5.6L"
-msgstr ""
+msgstr "佳能 EF 35-350mm f/3.5-5.6L"
 
 #: libexif/canon/mnote-canon-entry.c:244
 msgid "Canon EF 85mm f/1.8 USM"
-msgstr ""
+msgstr "佳能 EF 85mm f/1.8 USM"
 
 #: libexif/canon/mnote-canon-entry.c:245
 msgid "Canon EF 28-105mm f/3.5-4.5 USM"
-msgstr ""
+msgstr "佳能 EF 28-105mm f/3.5-4.5 USM"
 
 #: libexif/canon/mnote-canon-entry.c:246
 msgid "Canon EF 20-35mm f/3.5-4.5 USM"
-msgstr ""
+msgstr "佳能 EF 20-35mm f/3.5-4.5 USM"
 
 #: libexif/canon/mnote-canon-entry.c:247
 msgid "Canon EF 28-70mm f/2.8L or Sigma 24-70mm EX f/2.8"
-msgstr ""
+msgstr "佳能 EF 28-70mm f/2.8L or Sigma 24-70mm EX f/2.8"
 
 #: libexif/canon/mnote-canon-entry.c:248
 msgid "Canon EF 70-200mm f/2.8 L"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/2.8 L"
 
 #: libexif/canon/mnote-canon-entry.c:249
 msgid "Canon EF 70-200mm f/2.8 L + x1.4"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/2.8 L + x1.4"
 
 #: libexif/canon/mnote-canon-entry.c:250
 msgid "Canon EF 70-200mm f/2.8 L + x2"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/2.8 L + x2"
 
 #: libexif/canon/mnote-canon-entry.c:251
 msgid "Canon EF 28mm f/1.8 USM"
-msgstr ""
+msgstr "佳能 EF 28mm f/1.8 USM"
 
 #: libexif/canon/mnote-canon-entry.c:252
 msgid "Sigma 15-30mm f/3.5-4.5 EX DG Aspherical"
-msgstr ""
+msgstr "适马 15-30mm f/3.5-4.5 EX DG Aspherical"
 
 #: libexif/canon/mnote-canon-entry.c:253
 msgid "Canon EF 200mm f/2.8L II"
-msgstr ""
+msgstr "佳能 EF 200mm f/2.8L II"
 
 #: libexif/canon/mnote-canon-entry.c:254
 msgid "Canon EF 180mm Macro f/3.5L or Sigma 180mm EX HSM Macro f/3.5"
-msgstr ""
+msgstr "佳能 EF 180mm Macro f/3.5L 或 适马 180mm EX HSM Macro f/3.5"
 
 #: libexif/canon/mnote-canon-entry.c:255
 msgid "Canon EF 135mm f/2L"
-msgstr ""
+msgstr "佳能 EF 135mm f/2L"
 
 #: libexif/canon/mnote-canon-entry.c:256
 msgid "Canon EF 24-85mm f/3.5-4.5 USM"
-msgstr ""
+msgstr "佳能 EF 24-85mm f/3.5-4.5 USM"
 
 #: libexif/canon/mnote-canon-entry.c:257
 msgid "Canon EF 300mm f/4L IS"
-msgstr ""
+msgstr "佳能 EF 300mm f/4L IS"
 
 #: libexif/canon/mnote-canon-entry.c:258
 msgid "Canon EF 28-135mm f/3.5-5.6 IS"
-msgstr ""
+msgstr "佳能 EF 28-135mm f/3.5-5.6 IS"
 
 #: libexif/canon/mnote-canon-entry.c:259
 msgid "Canon EF 35mm f/1.4L"
-msgstr ""
+msgstr "佳能 EF 35mm f/1.4L"
 
 #: libexif/canon/mnote-canon-entry.c:260
 msgid "Canon EF 100-400mm f/4.5-5.6L IS + x1.4"
-msgstr ""
+msgstr "佳能 EF 100-400mm f/4.5-5.6L IS + x1.4"
 
 #: libexif/canon/mnote-canon-entry.c:261
 msgid "Canon EF 100-400mm f/4.5-5.6L IS + x2"
-msgstr ""
+msgstr "佳能 EF 100-400mm f/4.5-5.6L IS + x2"
 
 #: libexif/canon/mnote-canon-entry.c:262
 msgid "Canon EF 100-400mm f/4.5-5.6L IS"
-msgstr ""
+msgstr "佳能 EF 100-400mm f/4.5-5.6L IS"
 
 #: libexif/canon/mnote-canon-entry.c:263
 msgid "Canon EF 400mm f/2.8L + x2"
-msgstr ""
+msgstr "佳能 EF 400mm f/2.8L + x2"
 
 #: libexif/canon/mnote-canon-entry.c:264
 msgid "Canon EF 70-200mm f/4L"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/4L"
 
 #: libexif/canon/mnote-canon-entry.c:265
 msgid "Canon EF 100mm f/2.8 Macro"
-msgstr ""
+msgstr "佳能 EF 100mm f/2.8 Macro"
 
 #: libexif/canon/mnote-canon-entry.c:266
 msgid "Canon EF 400mm f/4 DO IS"
-msgstr ""
+msgstr "佳能 EF 400mm f/4 DO IS"
 
 #: libexif/canon/mnote-canon-entry.c:267
 msgid "Canon EF 75-300mm f/4-5.6 IS"
-msgstr ""
+msgstr "佳能 EF 75-300mm f/4-5.6 IS"
 
 #: libexif/canon/mnote-canon-entry.c:268
 msgid "Canon EF 50mm f/1.4"
-msgstr ""
+msgstr "佳能 EF 50mm f/1.4"
 
 #: libexif/canon/mnote-canon-entry.c:269
 msgid "Canon EF 28-80 f/3.5-5.6 USM IV"
-msgstr ""
+msgstr "佳能 EF 28-80 f/3.5-5.6 USM IV"
 
 #: libexif/canon/mnote-canon-entry.c:270
 msgid "Canon EF 28-200mm f/3.5-5.6"
-msgstr ""
+msgstr "佳能 EF 28-200mm f/3.5-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:271
 msgid "Canon EF 90-300mm f/4.5-5.6"
-msgstr ""
+msgstr "佳能 EF 90-300mm f/4.5-5.6"
 
 #: libexif/canon/mnote-canon-entry.c:272
 msgid "Canon EF-S 18-55mm f/3.5-4.5 USM"
-msgstr ""
+msgstr "佳能 EF-S 18-55mm f/3.5-4.5 USM"
 
 #: libexif/canon/mnote-canon-entry.c:273
 msgid "Canon EF 70-200mm f/2.8L IS USM"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/2.8L IS USM"
 
 #: libexif/canon/mnote-canon-entry.c:274
 msgid "Canon EF 70-200mm f/2.8L IS USM + x1.4"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/2.8L IS USM + x1.4"
 
 #: libexif/canon/mnote-canon-entry.c:275
 msgid "Canon EF 70-200mm f/2.8L IS USM + x2"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/2.8L IS USM + x2"
 
 #: libexif/canon/mnote-canon-entry.c:276
 msgid "Canon EF 16-35mm f/2.8L"
-msgstr ""
+msgstr "佳能 EF 16-35mm f/2.8L"
 
 #: libexif/canon/mnote-canon-entry.c:277
 msgid "Canon EF 24-70mm f/2.8L"
-msgstr ""
+msgstr "佳能 EF 24-70mm f/2.8L"
 
 #: libexif/canon/mnote-canon-entry.c:278
 msgid "Canon EF 17-40mm f/4L"
-msgstr ""
+msgstr "佳能 EF 17-40mm f/4L"
 
 #: libexif/canon/mnote-canon-entry.c:279
 msgid "Canon EF 70-300mm f/4.5-5.6 DO IS USM"
-msgstr ""
+msgstr "佳能 EF 70-300mm f/4.5-5.6 DO IS USM"
 
 #: libexif/canon/mnote-canon-entry.c:280
 msgid "Canon EF-S 17-85mm f4-5.6 IS USM"
-msgstr ""
+msgstr "佳能 EF-S 17-85mm f4-5.6 IS USM"
 
 #: libexif/canon/mnote-canon-entry.c:281
 msgid "Canon EF-S10-22mm F3.5-4.5 USM"
-msgstr ""
+msgstr "佳能 EF-S10-22mm F3.5-4.5 USM"
 
 #: libexif/canon/mnote-canon-entry.c:282
 msgid "Canon EF-S60mm F2.8 Macro USM"
-msgstr ""
+msgstr "佳能 EF-S60mm F2.8 Macro USM"
 
 #: libexif/canon/mnote-canon-entry.c:283
 msgid "Canon EF 24-105mm f/4L IS"
-msgstr ""
+msgstr "佳能 EF 24-105mm f/4L IS"
 
 #: libexif/canon/mnote-canon-entry.c:284
 msgid "Canon EF 70-300mm F4-5.6 IS USM"
-msgstr ""
+msgstr "佳能 EF 70-300mm F4-5.6 IS USM"
 
 #: libexif/canon/mnote-canon-entry.c:285
 msgid "Canon EF 50mm F1.2L USM"
-msgstr ""
+msgstr "佳能 EF 50mm F1.2L USM"
 
 #: libexif/canon/mnote-canon-entry.c:286
 msgid "Canon EF 70-200mm f/4L IS USM"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/4L IS USM"
 
 #: libexif/canon/mnote-canon-entry.c:287
 msgid "Canon EF 70-200mm f/2.8L IS II USM"
-msgstr ""
+msgstr "佳能 EF 70-200mm f/2.8L IS II USM"
 
 #: libexif/canon/mnote-canon-entry.c:289
 msgid "TTL"
-msgstr ""
+msgstr "TTL"
 
 #: libexif/canon/mnote-canon-entry.c:290
 msgid "A-TTL"
-msgstr ""
+msgstr "A-TTL"
 
 #: libexif/canon/mnote-canon-entry.c:291
 msgid "E-TTL"
-msgstr ""
+msgstr "E-TTL"
 
 #: libexif/canon/mnote-canon-entry.c:292
 msgid "FP sync enabled"
-msgstr ""
+msgstr "FP 前帘同步启用"
 
 #: libexif/canon/mnote-canon-entry.c:293
 msgid "2nd-curtain sync used"
-msgstr ""
+msgstr "使用后帘同步"
 
 #: libexif/canon/mnote-canon-entry.c:294
 msgid "FP sync used"
-msgstr ""
+msgstr "使用 FP 前帘同步"
 
 #: libexif/canon/mnote-canon-entry.c:295
 #: libexif/olympus/mnote-olympus-entry.c:195
@@ -963,128 +964,128 @@ msgstr "外部"
 
 #: libexif/canon/mnote-canon-entry.c:299
 msgid "Normal AE"
-msgstr ""
+msgstr "标准 AE 自动曝光"
 
 #: libexif/canon/mnote-canon-entry.c:300
 msgid "Exposure compensation"
-msgstr ""
+msgstr "曝光补偿"
 
 #: libexif/canon/mnote-canon-entry.c:301
 msgid "AE lock"
-msgstr ""
+msgstr "AE 自动曝光锁定"
 
 #: libexif/canon/mnote-canon-entry.c:302
 msgid "AE lock + exposure compensation"
-msgstr ""
+msgstr "AE 自动曝光锁定 + 曝光补偿"
 
 #: libexif/canon/mnote-canon-entry.c:303
 msgid "No AE"
-msgstr ""
+msgstr "无 AE 自动曝光锁定"
 
 #: libexif/canon/mnote-canon-entry.c:306
 msgid "On, shot only"
-msgstr ""
+msgstr "开启，仅拍照时"
 
 #: libexif/canon/mnote-canon-entry.c:310
 msgid "Smooth"
-msgstr ""
+msgstr "平滑"
 
 #: libexif/canon/mnote-canon-entry.c:313 libexif/canon/mnote-canon-entry.c:337
 #: libexif/canon/mnote-canon-entry.c:396 libexif/canon/mnote-canon-entry.c:409
 #: libexif/fuji/mnote-fuji-entry.c:83 libexif/pentax/mnote-pentax-entry.c:89
 msgid "Custom"
-msgstr ""
+msgstr "自定义"
 
 #: libexif/canon/mnote-canon-entry.c:314
 msgid "My color data"
-msgstr ""
+msgstr "我的色彩数据"
 
 #: libexif/canon/mnote-canon-entry.c:316 libexif/canon/mnote-canon-entry.c:378
 #: libexif/pentax/mnote-pentax-entry.c:128
 #: libexif/pentax/mnote-pentax-entry.c:147
 msgid "Full"
-msgstr ""
+msgstr "完全"
 
 #: libexif/canon/mnote-canon-entry.c:317 libexif/canon/mnote-canon-entry.c:377
 msgid "2/3"
-msgstr ""
+msgstr "2/3"
 
 #: libexif/canon/mnote-canon-entry.c:318 libexif/canon/mnote-canon-entry.c:376
 msgid "1/3"
-msgstr ""
+msgstr "1/3"
 
 #: libexif/canon/mnote-canon-entry.c:324
 msgid "Fixed"
-msgstr ""
+msgstr "固定"
 
 #: libexif/canon/mnote-canon-entry.c:325 libexif/pentax/mnote-pentax-tag.c:46
 msgid "Zoom"
-msgstr ""
+msgstr "变焦"
 
 #: libexif/canon/mnote-canon-entry.c:332
 msgid "Sunny"
-msgstr ""
+msgstr "晴天"
 
 #: libexif/canon/mnote-canon-entry.c:333 libexif/canon/mnote-canon-entry.c:405
 #: libexif/exif-entry.c:747 libexif/fuji/mnote-fuji-entry.c:77
 #: libexif/olympus/mnote-olympus-entry.c:141
 #: libexif/pentax/mnote-pentax-entry.c:257
 msgid "Cloudy"
-msgstr ""
+msgstr "多云"
 
 #: libexif/canon/mnote-canon-entry.c:334 libexif/canon/mnote-canon-entry.c:406
 #: libexif/exif-entry.c:744 libexif/pentax/mnote-pentax-entry.c:102
 #: libexif/pentax/mnote-pentax-entry.c:251
 msgid "Tungsten"
-msgstr ""
+msgstr "钨灯"
 
 #: libexif/canon/mnote-canon-entry.c:335 libexif/canon/mnote-canon-entry.c:407
 #: libexif/exif-entry.c:743 libexif/pentax/mnote-pentax-entry.c:103
 #: libexif/pentax/mnote-pentax-entry.c:250
 msgid "Fluorescent"
-msgstr ""
+msgstr "荧光灯"
 
 #: libexif/canon/mnote-canon-entry.c:336 libexif/canon/mnote-canon-entry.c:408
-#: libexif/exif-entry.c:745 libexif/exif-entry.c:797 libexif/exif-tag.c:628
+#: libexif/exif-entry.c:745 libexif/exif-entry.c:797 libexif/exif-tag.c:630
 #: libexif/fuji/mnote-fuji-entry.c:82 libexif/pentax/mnote-pentax-entry.c:256
 msgid "Flash"
-msgstr ""
+msgstr "闪光灯"
 
 #: libexif/canon/mnote-canon-entry.c:339 libexif/canon/mnote-canon-entry.c:411
 #: libexif/exif-entry.c:748 libexif/pentax/mnote-pentax-entry.c:101
 #: libexif/pentax/mnote-pentax-entry.c:249
 msgid "Shade"
-msgstr ""
+msgstr "阴影"
 
 #: libexif/canon/mnote-canon-entry.c:340 libexif/canon/mnote-canon-entry.c:412
 msgid "Manual temperature (Kelvin)"
-msgstr "手动温度（开尔文）"
+msgstr "手动色温 (K)"
 
 #: libexif/canon/mnote-canon-entry.c:341 libexif/canon/mnote-canon-entry.c:413
 msgid "PC set 1"
-msgstr ""
+msgstr "电脑设置 1"
 
 #: libexif/canon/mnote-canon-entry.c:342 libexif/canon/mnote-canon-entry.c:414
 msgid "PC set 2"
-msgstr ""
+msgstr "电脑设置 2"
 
 #: libexif/canon/mnote-canon-entry.c:343 libexif/canon/mnote-canon-entry.c:415
 msgid "PC set 3"
-msgstr ""
+msgstr "电脑设置 3"
 
 #: libexif/canon/mnote-canon-entry.c:344 libexif/canon/mnote-canon-entry.c:416
 #: libexif/exif-entry.c:749 libexif/fuji/mnote-fuji-entry.c:78
 #: libexif/pentax/mnote-pentax-entry.c:253
 msgid "Daylight fluorescent"
-msgstr ""
+msgstr "荧光灯 (日光色)"
 
 #: libexif/canon/mnote-canon-entry.c:345 libexif/canon/mnote-canon-entry.c:417
 msgid "Custom 1"
-msgstr "自定义1"
+msgstr "自定义 1"
 
 #: libexif/canon/mnote-canon-entry.c:346 libexif/canon/mnote-canon-entry.c:418
 msgid "Custom 2"
-msgstr "自定义2"
+msgstr "自定义 2"
 
 #: libexif/canon/mnote-canon-entry.c:349 libexif/exif-entry.c:700
 #: libexif/pentax/mnote-pentax-entry.c:80
@@ -1092,51 +1093,51 @@ msgstr "自定义2"
 #: libexif/pentax/mnote-pentax-entry.c:171
 #: libexif/pentax/mnote-pentax-entry.c:297
 msgid "Night scene"
-msgstr ""
+msgstr "夜景"
 
 #: libexif/canon/mnote-canon-entry.c:355
 msgid "Center-right"
-msgstr ""
+msgstr "中-右"
 
 #: libexif/canon/mnote-canon-entry.c:357
 msgid "Left-right"
-msgstr ""
+msgstr "左-右"
 
 #: libexif/canon/mnote-canon-entry.c:358
 msgid "Left-center"
-msgstr ""
+msgstr "左-中"
 
 #: libexif/canon/mnote-canon-entry.c:359
 msgid "All"
-msgstr ""
+msgstr "全部"
 
 #: libexif/canon/mnote-canon-entry.c:361
 msgid "On (shot 1)"
-msgstr ""
+msgstr "开启 (第 1 张)"
 
 #: libexif/canon/mnote-canon-entry.c:362
 msgid "On (shot 2)"
-msgstr ""
+msgstr "开启 (第 2 张)"
 
 #: libexif/canon/mnote-canon-entry.c:363
 msgid "On (shot 3)"
-msgstr ""
+msgstr "开启 (第 3 张)"
 
 #: libexif/canon/mnote-canon-entry.c:365
 msgid "EOS high-end"
-msgstr ""
+msgstr "EOS 高端相机"
 
 #: libexif/canon/mnote-canon-entry.c:366
 msgid "Compact"
-msgstr ""
+msgstr "小型相机"
 
 #: libexif/canon/mnote-canon-entry.c:367
 msgid "EOS mid-range"
-msgstr ""
+msgstr "EOS 中端相机"
 
 #: libexif/canon/mnote-canon-entry.c:369
 msgid "Rotate 90 CW"
-msgstr "顺时针旋转 90 度"
+msgstr "旋转 90 度，顺时针"
 
 #: libexif/canon/mnote-canon-entry.c:370
 msgid "Rotate 180"
@@ -1144,35 +1145,35 @@ msgstr "旋转 180 度"
 
 #: libexif/canon/mnote-canon-entry.c:371
 msgid "Rotate 270 CW"
-msgstr "顺时针旋转 270 度"
+msgstr "旋转 270 度，顺时针"
 
 #: libexif/canon/mnote-canon-entry.c:372
 msgid "Rotated by software"
-msgstr ""
+msgstr "由软件旋转"
 
 #: libexif/canon/mnote-canon-entry.c:384
-#: libexif/olympus/mnote-olympus-entry.c:616
+#: libexif/olympus/mnote-olympus-entry.c:618
 msgid "Left to right"
-msgstr "从左至右"
+msgstr "从左到右"
 
 #: libexif/canon/mnote-canon-entry.c:385
-#: libexif/olympus/mnote-olympus-entry.c:619
+#: libexif/olympus/mnote-olympus-entry.c:621
 msgid "Right to left"
-msgstr "从右至左"
+msgstr "从右到左"
 
 #: libexif/canon/mnote-canon-entry.c:386
-#: libexif/olympus/mnote-olympus-entry.c:622
+#: libexif/olympus/mnote-olympus-entry.c:624
 msgid "Bottom to top"
-msgstr ""
+msgstr "从下到上"
 
 #: libexif/canon/mnote-canon-entry.c:387
-#: libexif/olympus/mnote-olympus-entry.c:625
+#: libexif/olympus/mnote-olympus-entry.c:627
 msgid "Top to bottom"
-msgstr ""
+msgstr "从上到下"
 
 #: libexif/canon/mnote-canon-entry.c:388
 msgid "2x2 matrix (clockwise)"
-msgstr ""
+msgstr "2x2 矩阵 (顺时针)"
 
 #: libexif/canon/mnote-canon-entry.c:394 libexif/canon/mnote-canon-entry.c:400
 #: libexif/canon/mnote-canon-entry.c:421 libexif/canon/mnote-canon-entry.c:431
@@ -1180,125 +1181,125 @@ msgstr ""
 #: libexif/fuji/mnote-fuji-entry.c:95 libexif/fuji/mnote-fuji-entry.c:165
 #: libexif/olympus/mnote-olympus-entry.c:232
 msgid "Standard"
-msgstr ""
+msgstr "标准"
 
 #: libexif/canon/mnote-canon-entry.c:397
 msgid "N/A"
-msgstr ""
+msgstr "不适用"
 
 #: libexif/canon/mnote-canon-entry.c:398
 msgid "Lowest"
-msgstr ""
+msgstr "最低"
 
 #: libexif/canon/mnote-canon-entry.c:402
 msgid "Highest"
-msgstr ""
+msgstr "最高"
 
 #: libexif/canon/mnote-canon-entry.c:404 libexif/exif-entry.c:742
 #: libexif/fuji/mnote-fuji-entry.c:76 libexif/olympus/mnote-olympus-entry.c:138
 #: libexif/pentax/mnote-pentax-entry.c:100
 #: libexif/pentax/mnote-pentax-entry.c:248
 msgid "Daylight"
-msgstr ""
+msgstr "日光"
 
 #: libexif/canon/mnote-canon-entry.c:422
 msgid "Set 1"
-msgstr ""
+msgstr "设置 1"
 
 #: libexif/canon/mnote-canon-entry.c:423
 msgid "Set 2"
-msgstr ""
+msgstr "设置 2"
 
 #: libexif/canon/mnote-canon-entry.c:424
 msgid "Set 3"
-msgstr ""
+msgstr "设置 3"
 
 #: libexif/canon/mnote-canon-entry.c:425
 msgid "User def. 1"
-msgstr "用户定义1"
+msgstr "用户定义 1"
 
 #: libexif/canon/mnote-canon-entry.c:426
 msgid "User def. 2"
-msgstr "用户定义2"
+msgstr "用户定义 2"
 
 #: libexif/canon/mnote-canon-entry.c:427
 msgid "User def. 3"
-msgstr "用户定义3"
+msgstr "用户定义 3"
 
 #: libexif/canon/mnote-canon-entry.c:428
 msgid "External 1"
-msgstr ""
+msgstr "外部 1"
 
 #: libexif/canon/mnote-canon-entry.c:429
 msgid "External 2"
-msgstr ""
+msgstr "外部 2"
 
 #: libexif/canon/mnote-canon-entry.c:430
 msgid "External 3"
-msgstr ""
+msgstr "外部 3"
 
 #: libexif/canon/mnote-canon-entry.c:435
 msgid "Faithful"
-msgstr ""
+msgstr "真实"
 
 #: libexif/canon/mnote-canon-entry.c:436
 #: libexif/olympus/mnote-olympus-entry.c:120
 msgid "Monochrome"
-msgstr ""
+msgstr "单色"
 
 #: libexif/canon/mnote-canon-entry.c:494
 msgid ", "
-msgstr ""
+msgstr "，"
 
-#: libexif/canon/mnote-canon-entry.c:589 libexif/canon/mnote-canon-entry.c:689
+#: libexif/canon/mnote-canon-entry.c:591 libexif/canon/mnote-canon-entry.c:691
 #, c-format
 msgid "%i (ms)"
-msgstr ""
+msgstr "%i (毫秒)"
 
-#: libexif/canon/mnote-canon-entry.c:634
+#: libexif/canon/mnote-canon-entry.c:636
 #, c-format
 msgid "%.2f mm"
-msgstr ""
+msgstr "%.2f mm"
 
-#: libexif/canon/mnote-canon-entry.c:660
+#: libexif/canon/mnote-canon-entry.c:662
 #, c-format
 msgid "%.2f EV"
-msgstr ""
+msgstr "%.2f EV"
 
-#: libexif/canon/mnote-canon-entry.c:670 libexif/exif-entry.c:1109
+#: libexif/canon/mnote-canon-entry.c:672 libexif/exif-entry.c:1109
 #, c-format
 msgid "1/%.0f"
-msgstr ""
+msgstr "1/%.0f"
 
-#: libexif/canon/mnote-canon-entry.c:682
+#: libexif/canon/mnote-canon-entry.c:684
 #, c-format
 msgid "%u mm"
-msgstr ""
+msgstr "%u mm"
 
-#: libexif/canon/mnote-canon-entry.c:818 libexif/fuji/mnote-fuji-entry.c:305
-#: libexif/pentax/mnote-pentax-entry.c:403
-#: libexif/pentax/mnote-pentax-entry.c:499
+#: libexif/canon/mnote-canon-entry.c:820 libexif/fuji/mnote-fuji-entry.c:306
+#: libexif/pentax/mnote-pentax-entry.c:404
+#: libexif/pentax/mnote-pentax-entry.c:500
 #, c-format
 msgid "%i bytes unknown data"
-msgstr ""
+msgstr "%i 字节的未知数据"
 
 #: libexif/canon/mnote-canon-tag.c:37
 msgid "Settings (First Part)"
-msgstr "设置（第一部分）"
+msgstr "设置 (第 1 部分)"
 
 #: libexif/canon/mnote-canon-tag.c:38 libexif/canon/mnote-canon-tag.c:160
-#: libexif/exif-tag.c:632 libexif/pentax/mnote-pentax-tag.c:90
+#: libexif/exif-tag.c:634 libexif/pentax/mnote-pentax-tag.c:90
 msgid "Focal Length"
-msgstr ""
+msgstr "焦距"
 
 #: libexif/canon/mnote-canon-tag.c:39
 msgid "Settings (Second Part)"
-msgstr "设置（第二部分）"
+msgstr "设置 (第 2 部分)"
 
-#: libexif/canon/mnote-canon-tag.c:40 libexif/olympus/mnote-olympus-entry.c:605
+#: libexif/canon/mnote-canon-tag.c:40 libexif/olympus/mnote-olympus-entry.c:607
 #: libexif/pentax/mnote-pentax-entry.c:179
 msgid "Panorama"
-msgstr ""
+msgstr "全景"
 
 #: libexif/canon/mnote-canon-tag.c:41
 msgid "Image Type"
@@ -1311,15 +1312,15 @@ msgstr "固件版本"
 
 #: libexif/canon/mnote-canon-tag.c:43
 msgid "Image Number"
-msgstr ""
+msgstr "图像数量"
 
 #: libexif/canon/mnote-canon-tag.c:44
 msgid "Owner Name"
-msgstr ""
+msgstr "所有者名称"
 
 #: libexif/canon/mnote-canon-tag.c:45
 msgid "Color Information"
-msgstr "颜色信息"
+msgstr "色彩信息"
 
 #: libexif/canon/mnote-canon-tag.c:46 libexif/fuji/mnote-fuji-tag.c:39
 #: libexif/olympus/mnote-olympus-tag.c:84
@@ -1337,244 +1338,244 @@ msgstr "文件长度"
 
 #: libexif/canon/mnote-canon-tag.c:49
 msgid "Custom Functions"
-msgstr ""
+msgstr "自定义功能"
 
 #: libexif/canon/mnote-canon-tag.c:50
 msgid "Model ID"
-msgstr ""
+msgstr "型号 ID"
 
 #: libexif/canon/mnote-canon-tag.c:51
 msgid "Movie Info"
-msgstr ""
+msgstr "视频信息"
 
 #: libexif/canon/mnote-canon-tag.c:52
 msgid "AF Info"
-msgstr ""
+msgstr "AF 自动对焦信息"
 
 #: libexif/canon/mnote-canon-tag.c:53
 msgid "Thumbnail Valid Area"
-msgstr ""
+msgstr "缩略图有效区域"
 
 #: libexif/canon/mnote-canon-tag.c:54
 msgid "Serial Number Format"
-msgstr ""
+msgstr "序列号格式"
 
 #: libexif/canon/mnote-canon-tag.c:55
 msgid "Super Macro"
-msgstr ""
+msgstr "超级微距"
 
 #: libexif/canon/mnote-canon-tag.c:56
 msgid "Date Stamp Mode"
-msgstr ""
+msgstr "时间戳模式"
 
 #: libexif/canon/mnote-canon-tag.c:57
 msgid "My Colors"
-msgstr ""
+msgstr "我的色彩"
 
 #: libexif/canon/mnote-canon-tag.c:58
 msgid "Firmware Revision"
-msgstr ""
+msgstr "固件版本"
 
 #: libexif/canon/mnote-canon-tag.c:59
 msgid "Categories"
-msgstr ""
+msgstr "类别"
 
 #: libexif/canon/mnote-canon-tag.c:60
 msgid "Face Detect 1"
-msgstr ""
+msgstr "人脸检测 1"
 
 #: libexif/canon/mnote-canon-tag.c:61
 msgid "Face Detect 2"
-msgstr ""
+msgstr "人脸检测 2"
 
 #: libexif/canon/mnote-canon-tag.c:62 libexif/olympus/mnote-olympus-tag.c:123
 msgid "AF Info 2"
-msgstr ""
+msgstr "AF 自动对焦信息 2"
 
 #: libexif/canon/mnote-canon-tag.c:63
 msgid "Contrast Info"
-msgstr ""
+msgstr "对比度信息"
 
-#: libexif/canon/mnote-canon-tag.c:64 libexif/exif-tag.c:903
+#: libexif/canon/mnote-canon-tag.c:64 libexif/exif-tag.c:905
 msgid "Image Unique ID"
-msgstr ""
+msgstr "图像唯一 ID"
 
 #: libexif/canon/mnote-canon-tag.c:65
 msgid "WB Info"
-msgstr ""
+msgstr "WB 白平衡信息"
 
 #: libexif/canon/mnote-canon-tag.c:66
 msgid "Face Detect 3"
-msgstr ""
+msgstr "人脸检测 3"
 
 #: libexif/canon/mnote-canon-tag.c:67
 msgid "Time Info"
-msgstr ""
+msgstr "时间信息"
 
 #: libexif/canon/mnote-canon-tag.c:68
 msgid "Battery Type"
-msgstr ""
+msgstr "电池类型"
 
 #: libexif/canon/mnote-canon-tag.c:69
 msgid "AF Info 3"
-msgstr ""
+msgstr "AF 自动对焦信息"
 
 #: libexif/canon/mnote-canon-tag.c:70
 msgid "Raw Data Offset"
-msgstr ""
+msgstr "原始数据偏移"
 
 #: libexif/canon/mnote-canon-tag.c:71
 msgid "Original Decision Data Offset"
-msgstr ""
+msgstr "原始决策数据偏移"
 
 #: libexif/canon/mnote-canon-tag.c:72
 msgid "Personal Functions"
-msgstr ""
+msgstr "个人功能"
 
 #: libexif/canon/mnote-canon-tag.c:73
 msgid "Personal Functions Values"
-msgstr ""
+msgstr "个人功能值"
 
 #: libexif/canon/mnote-canon-tag.c:74 libexif/olympus/mnote-olympus-tag.c:124
 msgid "File Info"
-msgstr ""
+msgstr "文件信息"
 
-#: libexif/canon/mnote-canon-tag.c:75 libexif/exif-tag.c:929
+#: libexif/canon/mnote-canon-tag.c:75 libexif/exif-tag.c:931
 msgid "Lens Model"
-msgstr ""
+msgstr "镜头型号"
 
 #: libexif/canon/mnote-canon-tag.c:76
 msgid "CMOS Serial Number"
-msgstr ""
+msgstr "CMOS 序列号"
 
 #: libexif/canon/mnote-canon-tag.c:77
 msgid "Dust Removal Data"
-msgstr ""
+msgstr "除尘数据"
 
 #: libexif/canon/mnote-canon-tag.c:78
 msgid "Crop Info"
-msgstr ""
+msgstr "裁剪信息"
 
 #: libexif/canon/mnote-canon-tag.c:79
 msgid "Custom Functions 2"
-msgstr ""
+msgstr "自定义功能 2"
 
 #: libexif/canon/mnote-canon-tag.c:80
 msgid "Aspect Info"
-msgstr ""
+msgstr "宽高比信息"
 
 #: libexif/canon/mnote-canon-tag.c:81
 msgid "Tone Curve Table"
-msgstr ""
+msgstr "色调曲线表"
 
 #: libexif/canon/mnote-canon-tag.c:82
 msgid "Sharpness Table"
-msgstr ""
+msgstr "锐度表"
 
 #: libexif/canon/mnote-canon-tag.c:83
 msgid "Sharpness Frequency Table"
-msgstr ""
+msgstr "锐度频率表"
 
 #: libexif/canon/mnote-canon-tag.c:84
 msgid "Whitebalance Table"
-msgstr ""
+msgstr "白平衡表"
 
 #: libexif/canon/mnote-canon-tag.c:85 libexif/olympus/mnote-olympus-tag.c:79
 msgid "Color Balance"
-msgstr ""
+msgstr "色彩平衡"
 
 #: libexif/canon/mnote-canon-tag.c:86
 msgid "Measured Color"
-msgstr ""
+msgstr "测量颜色"
 
 #: libexif/canon/mnote-canon-tag.c:87 libexif/canon/mnote-canon-tag.c:201
 msgid "Color Temperature"
-msgstr ""
+msgstr "色温"
 
 #: libexif/canon/mnote-canon-tag.c:88
 msgid "Canon Flags"
-msgstr ""
+msgstr "佳能标识"
 
 #: libexif/canon/mnote-canon-tag.c:89
 msgid "Modified Info"
-msgstr ""
+msgstr "修改信息"
 
 #: libexif/canon/mnote-canon-tag.c:90
 msgid "Tonecurve Matching"
-msgstr ""
+msgstr "色调曲线匹配"
 
 #: libexif/canon/mnote-canon-tag.c:91
 msgid "Whitebalance Matching"
-msgstr ""
+msgstr "白平衡匹配"
 
-#: libexif/canon/mnote-canon-tag.c:92 libexif/exif-tag.c:713
+#: libexif/canon/mnote-canon-tag.c:92 libexif/exif-tag.c:715
 #: libexif/olympus/mnote-olympus-tag.c:98 libexif/pentax/mnote-pentax-tag.c:104
 msgid "Color Space"
-msgstr ""
+msgstr "色彩空间"
 
 #: libexif/canon/mnote-canon-tag.c:93
 msgid "Preview Image Info"
-msgstr ""
+msgstr "预览图像信息"
 
 #: libexif/canon/mnote-canon-tag.c:94
 msgid "VRD Offset"
-msgstr ""
+msgstr "VRD 偏移"
 
 #: libexif/canon/mnote-canon-tag.c:95
 msgid "Sensor Info"
-msgstr ""
+msgstr "传感器信息"
 
 #: libexif/canon/mnote-canon-tag.c:96
 msgid "WB Packet"
-msgstr ""
+msgstr "WB 白平衡数据包"
 
 #: libexif/canon/mnote-canon-tag.c:97
 msgid "Flavor"
-msgstr ""
+msgstr "风格"
 
 #: libexif/canon/mnote-canon-tag.c:98
 msgid "Picture Style Userdefined"
-msgstr ""
+msgstr "照片风格 (用户自定义)"
 
 #: libexif/canon/mnote-canon-tag.c:99
 msgid "Picture Style PC"
-msgstr ""
+msgstr "照片风格 (电脑)"
 
 #: libexif/canon/mnote-canon-tag.c:100
 msgid "Custom Picture Style Filename"
-msgstr ""
+msgstr "自定义照片风格文件名"
 
 #: libexif/canon/mnote-canon-tag.c:101
 msgid "AF Micro Adjust"
-msgstr ""
+msgstr "AF 自动对焦微调"
 
 #: libexif/canon/mnote-canon-tag.c:102
 msgid "Vignetting Correct"
-msgstr ""
+msgstr "暗角校正"
 
 #: libexif/canon/mnote-canon-tag.c:103
 msgid "Vignetting Correct 2"
-msgstr ""
+msgstr "暗角校正 2"
 
 #: libexif/canon/mnote-canon-tag.c:104
 msgid "LightingOpt"
-msgstr ""
+msgstr "照明优化"
 
 #: libexif/canon/mnote-canon-tag.c:105 libexif/pentax/mnote-pentax-tag.c:117
 msgid "Lens Info"
-msgstr ""
+msgstr "镜头信息"
 
 #: libexif/canon/mnote-canon-tag.c:106
 msgid "Ambience_Info"
-msgstr ""
+msgstr "环境信息"
 
 #: libexif/canon/mnote-canon-tag.c:107 libexif/olympus/mnote-olympus-tag.c:119
 msgid "Multi Exposure"
-msgstr ""
+msgstr "多重曝光"
 
 #: libexif/canon/mnote-canon-tag.c:108
 msgid "Filter Info"
-msgstr ""
+msgstr "滤镜信息"
 
 #: libexif/canon/mnote-canon-tag.c:109 libexif/olympus/mnote-olympus-tag.c:109
 msgid "HDR Info"
@@ -1582,39 +1583,39 @@ msgstr "HDR 信息"
 
 #: libexif/canon/mnote-canon-tag.c:110
 msgid "AF Config"
-msgstr ""
+msgstr "AF 自动曝光配置"
 
 #: libexif/canon/mnote-canon-tag.c:111
 msgid "Raw Burst Info"
-msgstr ""
+msgstr "RAW 连拍信息"
 
 #: libexif/canon/mnote-canon-tag.c:122 libexif/fuji/mnote-fuji-tag.c:47
 msgid "Macro Mode"
-msgstr ""
+msgstr "微距模式"
 
 #: libexif/canon/mnote-canon-tag.c:123 libexif/canon/mnote-canon-tag.c:189
 #: libexif/olympus/mnote-olympus-tag.c:209
 #: libexif/pentax/mnote-pentax-tag.c:130
 msgid "Self-timer"
-msgstr ""
+msgstr "自拍计时器"
 
 #: libexif/canon/mnote-canon-tag.c:124 libexif/fuji/mnote-fuji-tag.c:40
 #: libexif/olympus/mnote-olympus-tag.c:42
 #: libexif/olympus/mnote-olympus-tag.c:128
 #: libexif/olympus/mnote-olympus-tag.c:141
 msgid "Quality"
-msgstr "质量"
+msgstr "品质"
 
 #: libexif/canon/mnote-canon-tag.c:125 libexif/fuji/mnote-fuji-tag.c:45
 #: libexif/olympus/mnote-olympus-tag.c:47
 #: libexif/olympus/mnote-olympus-tag.c:161 libexif/pentax/mnote-pentax-tag.c:40
 #: libexif/pentax/mnote-pentax-tag.c:75
 msgid "Flash Mode"
-msgstr ""
+msgstr "闪光模式"
 
 #: libexif/canon/mnote-canon-tag.c:126 libexif/pentax/mnote-pentax-tag.c:103
 msgid "Drive Mode"
-msgstr ""
+msgstr "驱动模式"
 
 #: libexif/canon/mnote-canon-tag.c:127 libexif/canon/mnote-canon-tag.c:148
 #: libexif/olympus/mnote-olympus-tag.c:45
@@ -1622,179 +1623,179 @@ msgstr ""
 #: libexif/olympus/mnote-olympus-tag.c:207 libexif/pentax/mnote-pentax-tag.c:39
 #: libexif/pentax/mnote-pentax-tag.c:76 libexif/pentax/mnote-pentax-tag.c:132
 msgid "Focus Mode"
-msgstr ""
+msgstr "对焦模式"
 
 #: libexif/canon/mnote-canon-tag.c:128 libexif/pentax/mnote-pentax-tag.c:129
 msgid "Record Mode"
-msgstr ""
+msgstr "录制模式"
 
 #: libexif/canon/mnote-canon-tag.c:129 libexif/pentax/mnote-pentax-tag.c:73
 msgid "Image Size"
-msgstr ""
+msgstr "图像尺寸"
 
 #: libexif/canon/mnote-canon-tag.c:130
 msgid "Easy Shooting Mode"
-msgstr ""
+msgstr "简易拍照模式"
 
 #: libexif/canon/mnote-canon-tag.c:131 libexif/olympus/mnote-olympus-tag.c:66
 #: libexif/olympus/mnote-olympus-tag.c:135
 #: libexif/olympus/mnote-olympus-tag.c:144
 #: libexif/olympus/mnote-olympus-tag.c:214 libexif/pentax/mnote-pentax-tag.c:91
 msgid "Digital Zoom"
-msgstr ""
+msgstr "数码变焦"
 
-#: libexif/canon/mnote-canon-tag.c:132 libexif/exif-tag.c:880
+#: libexif/canon/mnote-canon-tag.c:132 libexif/exif-tag.c:882
 #: libexif/fuji/mnote-fuji-tag.c:44 libexif/pentax/mnote-pentax-tag.c:48
 #: libexif/pentax/mnote-pentax-tag.c:93
 msgid "Contrast"
-msgstr ""
+msgstr "对比度"
 
-#: libexif/canon/mnote-canon-tag.c:133 libexif/exif-tag.c:884
+#: libexif/canon/mnote-canon-tag.c:133 libexif/exif-tag.c:886
 #: libexif/olympus/mnote-olympus-tag.c:77
 #: libexif/olympus/mnote-olympus-tag.c:90 libexif/pentax/mnote-pentax-tag.c:49
 #: libexif/pentax/mnote-pentax-tag.c:92
 msgid "Saturation"
-msgstr ""
+msgstr "饱和度"
 
 #: libexif/canon/mnote-canon-tag.c:134 libexif/canon/mnote-canon-tag.c:194
-#: libexif/exif-tag.c:888 libexif/fuji/mnote-fuji-tag.c:41
+#: libexif/exif-tag.c:890 libexif/fuji/mnote-fuji-tag.c:41
 #: libexif/pentax/mnote-pentax-tag.c:47 libexif/pentax/mnote-pentax-tag.c:94
 msgid "Sharpness"
-msgstr ""
+msgstr "锐利度"
 
 #: libexif/canon/mnote-canon-tag.c:135
 msgid "ISO"
 msgstr "ISO"
 
-#: libexif/canon/mnote-canon-tag.c:136 libexif/exif-tag.c:622
+#: libexif/canon/mnote-canon-tag.c:136 libexif/exif-tag.c:624
 #: libexif/pentax/mnote-pentax-tag.c:84
 msgid "Metering Mode"
-msgstr ""
+msgstr "测光模式"
 
 #: libexif/canon/mnote-canon-tag.c:137 libexif/olympus/mnote-olympus-tag.c:167
 msgid "Focus Range"
-msgstr ""
+msgstr "对焦范围"
 
 #: libexif/canon/mnote-canon-tag.c:138 libexif/canon/mnote-canon-tag.c:175
 msgid "AF Point"
-msgstr ""
+msgstr "AF 自动对焦点"
 
-#: libexif/canon/mnote-canon-tag.c:139 libexif/exif-tag.c:847
+#: libexif/canon/mnote-canon-tag.c:139 libexif/exif-tag.c:849
 msgid "Exposure Mode"
-msgstr ""
+msgstr "曝光模式"
 
 #: libexif/canon/mnote-canon-tag.c:140 libexif/olympus/mnote-olympus-tag.c:63
 #: libexif/pentax/mnote-pentax-tag.c:108
 msgid "Lens Type"
-msgstr ""
+msgstr "镜头类型"
 
 #: libexif/canon/mnote-canon-tag.c:141
 msgid "Long Focal Length of Lens"
-msgstr ""
+msgstr "镜头长焦距"
 
 #: libexif/canon/mnote-canon-tag.c:142
 msgid "Short Focal Length of Lens"
-msgstr ""
+msgstr "镜头短焦距"
 
 #: libexif/canon/mnote-canon-tag.c:143
 msgid "Focal Units per mm"
-msgstr ""
+msgstr "每毫米焦距单位"
 
 #: libexif/canon/mnote-canon-tag.c:144
 msgid "Maximal Aperture"
-msgstr ""
+msgstr "最大光圈"
 
 #: libexif/canon/mnote-canon-tag.c:145
 msgid "Minimal Aperture"
-msgstr ""
+msgstr "最小光圈"
 
 #: libexif/canon/mnote-canon-tag.c:146
 msgid "Flash Activity"
-msgstr ""
+msgstr "闪光灯活动"
 
 #: libexif/canon/mnote-canon-tag.c:147
 msgid "Flash Details"
-msgstr ""
+msgstr "闪光灯详情"
 
 #: libexif/canon/mnote-canon-tag.c:149
 msgid "AE Setting"
-msgstr ""
+msgstr "AE 自动曝光设置"
 
 #: libexif/canon/mnote-canon-tag.c:150
 msgid "Image Stabilization"
-msgstr ""
+msgstr "图像防抖"
 
 #: libexif/canon/mnote-canon-tag.c:151
 msgid "Display Aperture"
-msgstr ""
+msgstr "显示光圈"
 
 #: libexif/canon/mnote-canon-tag.c:152
 msgid "Zoom Source Width"
-msgstr ""
+msgstr "变焦来源宽度"
 
 #: libexif/canon/mnote-canon-tag.c:153
 msgid "Zoom Target Width"
-msgstr ""
+msgstr "变焦目标宽度"
 
 #: libexif/canon/mnote-canon-tag.c:154
 msgid "Spot Metering Mode"
-msgstr ""
+msgstr "点测光模式"
 
 #: libexif/canon/mnote-canon-tag.c:155
 msgid "Photo Effect"
-msgstr ""
+msgstr "照片效果"
 
 #: libexif/canon/mnote-canon-tag.c:156 libexif/canon/mnote-canon-tag.c:190
 msgid "Manual Flash Output"
-msgstr ""
+msgstr "手动闪光输出"
 
 #: libexif/canon/mnote-canon-tag.c:157
 msgid "Color Tone"
-msgstr ""
+msgstr "色调"
 
 #: libexif/canon/mnote-canon-tag.c:158
 msgid "SRAW Quality"
-msgstr ""
+msgstr "SRAW 画质"
 
 #: libexif/canon/mnote-canon-tag.c:159
 msgid "Focal Type"
-msgstr ""
+msgstr "焦距类型"
 
 #: libexif/canon/mnote-canon-tag.c:161
 msgid "Focal Plane X Size"
-msgstr ""
+msgstr "焦平面 X 尺寸"
 
 #: libexif/canon/mnote-canon-tag.c:162
 msgid "Focal Plane Y Size"
-msgstr ""
+msgstr "焦平面 Y 尺寸"
 
 #: libexif/canon/mnote-canon-tag.c:163
 msgid "Auto ISO"
-msgstr ""
+msgstr "自动 ISO"
 
 #: libexif/canon/mnote-canon-tag.c:164
 msgid "Shot ISO"
-msgstr ""
+msgstr "拍摄 ISO"
 
 #: libexif/canon/mnote-canon-tag.c:165
 msgid "Measured EV"
-msgstr ""
+msgstr "测量 EV 曝光值"
 
 #: libexif/canon/mnote-canon-tag.c:166
 msgid "Target Aperture"
-msgstr ""
+msgstr "目标光圈值"
 
 #: libexif/canon/mnote-canon-tag.c:167
 msgid "Target Exposure Time"
-msgstr ""
+msgstr "目标曝光时间"
 
 #: libexif/canon/mnote-canon-tag.c:168 libexif/olympus/mnote-olympus-tag.c:163
 #: libexif/pentax/mnote-pentax-tag.c:83
 msgid "Exposure Compensation"
-msgstr ""
+msgstr "曝光补偿"
 
 #: libexif/canon/mnote-canon-tag.c:169 libexif/canon/mnote-canon-tag.c:200
-#: libexif/exif-tag.c:852 libexif/fuji/mnote-fuji-tag.c:42
+#: libexif/exif-tag.c:854 libexif/fuji/mnote-fuji-tag.c:42
 #: libexif/olympus/mnote-olympus-tag.c:43
 #: libexif/olympus/mnote-olympus-tag.c:132 libexif/pentax/mnote-pentax-tag.c:43
 #: libexif/pentax/mnote-pentax-tag.c:86 libexif/pentax/mnote-pentax-tag.c:126
@@ -1803,255 +1804,261 @@ msgstr "白平衡"
 
 #: libexif/canon/mnote-canon-tag.c:170
 msgid "Slow Shutter"
-msgstr ""
+msgstr "低速快门"
 
 #: libexif/canon/mnote-canon-tag.c:171
 msgid "Sequence Number"
-msgstr ""
+msgstr "序列编号"
 
 #: libexif/canon/mnote-canon-tag.c:172
 msgid "Optical Zoom Code"
-msgstr ""
+msgstr "光学变焦代码"
 
 #: libexif/canon/mnote-canon-tag.c:173 libexif/pentax/mnote-pentax-tag.c:109
 msgid "Camera Temperature"
-msgstr ""
+msgstr "相机机身温度"
 
 #: libexif/canon/mnote-canon-tag.c:174
 msgid "Flash Guide Number"
-msgstr ""
+msgstr "闪光灯导引数"
 
 #: libexif/canon/mnote-canon-tag.c:176 libexif/olympus/mnote-olympus-tag.c:54
 #: libexif/pentax/mnote-pentax-tag.c:111
 msgid "Flash Exposure Compensation"
-msgstr ""
+msgstr "闪光曝光补偿"
 
 #: libexif/canon/mnote-canon-tag.c:177
 msgid "AE Bracketing"
-msgstr ""
+msgstr "AE 自动曝光包围"
 
 #: libexif/canon/mnote-canon-tag.c:178
 msgid "AE Bracket Value"
-msgstr ""
+msgstr "AE 自动曝光包围值"
 
 #: libexif/canon/mnote-canon-tag.c:179
 msgid "Control Mode"
-msgstr ""
+msgstr "控制模式"
 
 #: libexif/canon/mnote-canon-tag.c:180
 msgid "Focus Distance Upper"
-msgstr ""
+msgstr "对焦距离上限"
 
 #: libexif/canon/mnote-canon-tag.c:181
 msgid "Focus Distance Lower"
-msgstr ""
+msgstr "对焦距离下限"
 
-#: libexif/canon/mnote-canon-tag.c:182 libexif/exif-tag.c:481
+#: libexif/canon/mnote-canon-tag.c:182 libexif/exif-tag.c:483
 #: libexif/pentax/mnote-pentax-tag.c:81
 msgid "F-Number"
-msgstr ""
+msgstr "F/光圈值"
 
-#: libexif/canon/mnote-canon-tag.c:183 libexif/exif-tag.c:478
+#: libexif/canon/mnote-canon-tag.c:183 libexif/exif-tag.c:480
 #: libexif/pentax/mnote-pentax-tag.c:80
 msgid "Exposure Time"
-msgstr ""
+msgstr "曝光时间"
 
 #: libexif/canon/mnote-canon-tag.c:184
 msgid "Measured EV 2"
-msgstr ""
+msgstr "测量 EV 曝光值 2"
 
 #: libexif/canon/mnote-canon-tag.c:185
 msgid "Bulb Duration"
-msgstr ""
+msgstr "B 门持续时间"
 
 #: libexif/canon/mnote-canon-tag.c:186
 msgid "Camera Type"
-msgstr ""
+msgstr "相机类型"
 
 #: libexif/canon/mnote-canon-tag.c:187
 msgid "Auto Rotate"
-msgstr ""
+msgstr "自动旋转"
 
 #: libexif/canon/mnote-canon-tag.c:188
 msgid "ND Filter"
-msgstr ""
+msgstr "ND 滤镜"
 
 #: libexif/canon/mnote-canon-tag.c:191
 msgid "Panorama Frame"
-msgstr ""
+msgstr "全景帧"
 
 #: libexif/canon/mnote-canon-tag.c:192
 msgid "Panorama Direction"
-msgstr ""
+msgstr "全景扫描方向"
 
 #: libexif/canon/mnote-canon-tag.c:193
 msgid "Tone Curve"
-msgstr ""
+msgstr "色调曲线"
 
 #: libexif/canon/mnote-canon-tag.c:195
 msgid "Sharpness Frequency"
-msgstr ""
+msgstr "锐利度频率"
 
 #: libexif/canon/mnote-canon-tag.c:196
 msgid "Sensor Red Level"
-msgstr ""
+msgstr "传感器红级别"
 
 #: libexif/canon/mnote-canon-tag.c:197
 msgid "Sensor Blue Level"
-msgstr ""
+msgstr "传感器蓝级别"
 
 #: libexif/canon/mnote-canon-tag.c:198
 msgid "White Balance Red"
-msgstr ""
+msgstr "白平衡红"
 
 #: libexif/canon/mnote-canon-tag.c:199
 msgid "White Balance Blue"
-msgstr ""
+msgstr "白平衡蓝"
 
 #: libexif/canon/mnote-canon-tag.c:202
 msgid "Picture Style"
-msgstr ""
+msgstr "照片风格"
 
 #: libexif/canon/mnote-canon-tag.c:203
 msgid "Digital Gain"
-msgstr ""
+msgstr "数码颗粒"
 
 #: libexif/canon/mnote-canon-tag.c:204
 msgid "White Balance Shift AB"
-msgstr ""
+msgstr "白平衡偏移 AB (琥珀-蓝)"
 
 #: libexif/canon/mnote-canon-tag.c:205
 msgid "White Balance Shift GM"
-msgstr ""
+msgstr "白平衡偏移 GM (绿-品红)"
 
 #: libexif/exif-byte-order.c:35
 msgid "Motorola"
-msgstr ""
+msgstr "摩托罗拉"
 
 #: libexif/exif-byte-order.c:37
 msgid "Intel"
+msgstr "英特尔"
+
+#: libexif/exif-data.c:288
+msgid "Overflow in components detected."
 msgstr ""
 
-#: libexif/exif-data.c:848
+#: libexif/exif-data.c:853
 msgid "Size of data too small to allow for EXIF data."
-msgstr ""
+msgstr "数据体积太小，无法包含 EXIF 数据。"
 
-#: libexif/exif-data.c:921
+#: libexif/exif-data.c:926
 msgid "EXIF marker not found."
-msgstr ""
-
-#: libexif/exif-data.c:933
-#, c-format
-msgid "Read length %d is longer than data length %d."
-msgstr ""
+msgstr "没有找到 EXIF 标记。"
 
 #: libexif/exif-data.c:938
+#, c-format
+msgid "Read length %d is longer than data length %d."
+msgstr "读取长度 %d 大于数据长度 %d 。"
+
+#: libexif/exif-data.c:943
 msgid "APP Tag too short."
-msgstr ""
+msgstr "APP 标签长度太短。"
 
-#: libexif/exif-data.c:958
+#: libexif/exif-data.c:963
 msgid "EXIF header not found."
-msgstr ""
+msgstr "没有找到 EXIF 标头。"
 
-#: libexif/exif-data.c:983
+#: libexif/exif-data.c:988
 msgid "Unknown encoding."
 msgstr "未知编码。"
 
-#: libexif/exif-data.c:1269
+#: libexif/exif-data.c:1274
 msgid "Ignore unknown tags"
 msgstr "忽略未知标签"
 
-#: libexif/exif-data.c:1270
+#: libexif/exif-data.c:1275
 msgid "Ignore unknown tags when loading EXIF data."
-msgstr ""
+msgstr "加载 EXIF 数据时忽略未知标签。"
 
-#: libexif/exif-data.c:1271
+#: libexif/exif-data.c:1276
 msgid "Follow specification"
-msgstr ""
+msgstr "符合规范"
 
-#: libexif/exif-data.c:1272
+#: libexif/exif-data.c:1277
 msgid ""
 "Add, correct and remove entries to get EXIF data that follows the "
 "specification."
-msgstr ""
+msgstr "添加、更正和删除条目以得到符合规范的 EXIF 数据。"
 
-#: libexif/exif-data.c:1274
+#: libexif/exif-data.c:1279
 msgid "Do not change maker note"
-msgstr ""
+msgstr "不更改 Maker Note (厂商注释) 标签"
 
-#: libexif/exif-data.c:1275
+#: libexif/exif-data.c:1280
 msgid ""
 "When loading and resaving Exif data, save the maker note unmodified. Be "
 "aware that the maker note can get corrupted."
 msgstr ""
+"加载和重新保存 EXIF 数据时保持 Maker Note (厂商注释) 标签内容不变。请注意，厂"
+"商注释标签的内容可能会损坏。"
 
 #: libexif/exif-entry.c:245 libexif/exif-entry.c:314 libexif/exif-entry.c:347
 #, c-format
 msgid ""
 "Tag '%s' was of format '%s' (which is against specification) and has been "
 "changed to format '%s'."
-msgstr ""
+msgstr "标签“%s”的格式为“%s”(不符合规范)，现已更改为格式“%s”。"
 
 #: libexif/exif-entry.c:282
 #, c-format
 msgid ""
 "Tag '%s' is of format '%s' (which is against specification) but cannot be "
 "changed to format '%s'."
-msgstr ""
+msgstr "标签“%s”的格式为“%s”(不符合规范)，但无法更改为格式“%s”。"
 
 #: libexif/exif-entry.c:365
 #, c-format
 msgid ""
 "Tag 'UserComment' had invalid format '%s'. Format has been set to "
 "'undefined'."
-msgstr ""
+msgstr "标签“UserComment”(用户注释) 的格式“%s”无效。格式已设置为“未定义”。"
 
 #: libexif/exif-entry.c:391
 msgid ""
 "Tag 'UserComment' has been expanded to at least 8 bytes in order to follow "
 "the specification."
-msgstr ""
+msgstr "标签“UserComment”(用户注释) 已扩展至至少 8 个字节以符合规范。"
 
 #: libexif/exif-entry.c:406
 msgid ""
 "Tag 'UserComment' is not empty but does not start with a format identifier. "
 "This has been fixed."
-msgstr ""
+msgstr "标签“UserComment”(用户注释) 不为空，但没有以格式标识符开头。已修复。"
 
 #: libexif/exif-entry.c:433
 msgid ""
 "Tag 'UserComment' did not start with a format identifier. This has been "
 "fixed."
-msgstr ""
+msgstr "标签“UserComment”(用户注释) 没有以格式标识符开头。已修复。"
 
 #: libexif/exif-entry.c:470
 #, c-format
 msgid "%i bytes undefined data"
-msgstr ""
+msgstr "%i 字节的未定义数据"
 
 #: libexif/exif-entry.c:593
 #, c-format
 msgid "%i bytes unsupported data type"
-msgstr ""
+msgstr "%i 字节的不支持的数据类型"
 
 #: libexif/exif-entry.c:650
 #, c-format
 msgid "The tag '%s' contains data of an invalid format ('%s', expected '%s')."
-msgstr ""
+msgstr "标签“%s”包含无效格式的数据格式 (“%s”，预期格式为“%s”)。"
 
 #: libexif/exif-entry.c:663
 #, c-format
 msgid ""
 "The tag '%s' contains an invalid number of components (%i, expected %i)."
-msgstr ""
+msgstr "标签“%s”包含的组件数量无效 (实际数量 %i，预期数量 %i)。"
 
 #: libexif/exif-entry.c:677
 msgid "Chunky format"
-msgstr ""
+msgstr "交错格式"
 
 #: libexif/exif-entry.c:677
 msgid "Planar format"
-msgstr ""
+msgstr "平面格式"
 
 #: libexif/exif-entry.c:679 libexif/exif-entry.c:771 test/nls/test-codeset.c:58
 msgid "Not defined"
@@ -2059,148 +2066,148 @@ msgstr "未定义"
 
 #: libexif/exif-entry.c:679
 msgid "One-chip color area sensor"
-msgstr ""
+msgstr "单芯片彩色区域传感器"
 
 #: libexif/exif-entry.c:680
 msgid "Two-chip color area sensor"
-msgstr ""
+msgstr "双芯片彩色区域传感器"
 
 #: libexif/exif-entry.c:680
 msgid "Three-chip color area sensor"
-msgstr ""
+msgstr "三芯片彩色区域传感器"
 
 #: libexif/exif-entry.c:681
 msgid "Color sequential area sensor"
-msgstr ""
+msgstr "彩色顺序区域传感器"
 
 #: libexif/exif-entry.c:681
 msgid "Trilinear sensor"
-msgstr ""
+msgstr "三线性传感器"
 
 #: libexif/exif-entry.c:682
 msgid "Color sequential linear sensor"
-msgstr ""
+msgstr "彩色顺序线性传感器"
 
 #: libexif/exif-entry.c:684 libexif/pentax/mnote-pentax-entry.c:235
 msgid "Top-left"
-msgstr ""
+msgstr "左上"
 
 #: libexif/exif-entry.c:684 libexif/pentax/mnote-pentax-entry.c:237
 msgid "Top-right"
-msgstr ""
+msgstr "右上"
 
 #: libexif/exif-entry.c:684 libexif/pentax/mnote-pentax-entry.c:243
 msgid "Bottom-right"
-msgstr ""
+msgstr "右下"
 
 #: libexif/exif-entry.c:685 libexif/pentax/mnote-pentax-entry.c:241
 msgid "Bottom-left"
-msgstr ""
+msgstr "左下"
 
 #: libexif/exif-entry.c:685
 msgid "Left-top"
-msgstr ""
+msgstr "左上"
 
 #: libexif/exif-entry.c:685
 msgid "Right-top"
-msgstr ""
+msgstr "右上"
 
 #: libexif/exif-entry.c:686
 msgid "Right-bottom"
-msgstr ""
+msgstr "右下"
 
 #: libexif/exif-entry.c:686
 msgid "Left-bottom"
-msgstr ""
+msgstr "左下"
 
 #: libexif/exif-entry.c:688
 msgid "Centered"
-msgstr ""
+msgstr "居中"
 
 #: libexif/exif-entry.c:688
 msgid "Co-sited"
-msgstr ""
+msgstr "共线"
 
 #: libexif/exif-entry.c:690
 msgid "Reversed mono"
-msgstr ""
+msgstr "反向单色"
 
 #: libexif/exif-entry.c:690
 msgid "Normal mono"
-msgstr ""
+msgstr "正常单色"
 
 #: libexif/exif-entry.c:690
 msgid "RGB"
-msgstr ""
+msgstr "RGB"
 
 #: libexif/exif-entry.c:690
 msgid "Palette"
-msgstr ""
+msgstr "调色板"
 
 #: libexif/exif-entry.c:691
 msgid "CMYK"
-msgstr ""
+msgstr "CMYK"
 
 #: libexif/exif-entry.c:691
 msgid "YCbCr"
-msgstr ""
+msgstr "YCbCr"
 
 #: libexif/exif-entry.c:691
 msgid "CieLAB"
-msgstr ""
+msgstr "CieLAB"
 
 #: libexif/exif-entry.c:693
 msgid "Normal process"
-msgstr ""
+msgstr "正常处理"
 
 #: libexif/exif-entry.c:693
 msgid "Custom process"
-msgstr ""
+msgstr "自定义处理"
 
 #: libexif/exif-entry.c:695
 msgid "Auto exposure"
-msgstr ""
+msgstr "自动曝光"
 
 #: libexif/exif-entry.c:695 libexif/fuji/mnote-fuji-entry.c:141
 msgid "Manual exposure"
-msgstr ""
+msgstr "手动曝光"
 
 #: libexif/exif-entry.c:695
 msgid "Auto bracket"
-msgstr ""
+msgstr "自动包围曝光"
 
 #: libexif/exif-entry.c:697
 msgid "Auto white balance"
-msgstr ""
+msgstr "自动白平衡"
 
 #: libexif/exif-entry.c:697
 msgid "Manual white balance"
-msgstr ""
+msgstr "手动白平衡"
 
 #: libexif/exif-entry.c:702
 msgid "Low gain up"
-msgstr ""
+msgstr "低增益提高"
 
 #: libexif/exif-entry.c:702
 msgid "High gain up"
-msgstr ""
+msgstr "高增益提高"
 
 #: libexif/exif-entry.c:703
 msgid "Low gain down"
-msgstr ""
+msgstr "低增益降低"
 
 #: libexif/exif-entry.c:703
 msgid "High gain down"
-msgstr ""
+msgstr "高增益降低"
 
 #: libexif/exif-entry.c:705
 msgid "Low saturation"
-msgstr ""
+msgstr "低饱和度"
 
 #: libexif/exif-entry.c:705 test/nls/test-codeset.c:52
 #: test/nls/test-codeset.c:65
 msgid "High saturation"
-msgstr ""
+msgstr "高饱和度"
 
 #: libexif/exif-entry.c:706 libexif/exif-entry.c:707
 #: libexif/fuji/mnote-fuji-entry.c:65 libexif/olympus/mnote-olympus-entry.c:210
@@ -2208,7 +2215,7 @@ msgstr ""
 #: libexif/pentax/mnote-pentax-entry.c:108
 #: libexif/pentax/mnote-pentax-entry.c:172
 msgid "Soft"
-msgstr ""
+msgstr "柔和"
 
 #: libexif/exif-entry.c:706 libexif/exif-entry.c:707
 #: libexif/fuji/mnote-fuji-entry.c:67 libexif/fuji/mnote-fuji-entry.c:97
@@ -2216,32 +2223,32 @@ msgstr ""
 #: libexif/olympus/mnote-olympus-entry.c:217
 #: libexif/pentax/mnote-pentax-entry.c:109
 msgid "Hard"
-msgstr ""
+msgstr "锐利"
 
 #: libexif/exif-entry.c:723 libexif/exif-entry.c:741 libexif/exif-entry.c:786
 #: libexif/exif-entry.c:833 libexif/exif-entry.c:844
-#: libexif/olympus/mnote-olympus-entry.c:599
-#: libexif/olympus/mnote-olympus-entry.c:693
-#: libexif/olympus/mnote-olympus-entry.c:748
+#: libexif/olympus/mnote-olympus-entry.c:601
+#: libexif/olympus/mnote-olympus-entry.c:695
+#: libexif/olympus/mnote-olympus-entry.c:750
 #: libexif/pentax/mnote-pentax-entry.c:258
 msgid "Unknown"
 msgstr "未知"
 
 #: libexif/exif-entry.c:724
 msgid "Avg"
-msgstr ""
+msgstr "平均测光"
 
 #: libexif/exif-entry.c:725
 msgid "Center-weight"
-msgstr ""
+msgstr "中心加权平均测光"
 
 #: libexif/exif-entry.c:727
 msgid "Multi spot"
-msgstr ""
+msgstr "多点测光"
 
 #: libexif/exif-entry.c:728
 msgid "Pattern"
-msgstr ""
+msgstr "矩阵测光"
 
 #: libexif/exif-entry.c:733
 msgid "Uncompressed"
@@ -2261,164 +2268,164 @@ msgstr "Deflate/ZIP 压缩"
 
 #: libexif/exif-entry.c:738
 msgid "PackBits compression"
-msgstr ""
+msgstr "PackBits 压缩"
 
 #: libexif/exif-entry.c:744
 msgid "Tungsten incandescent light"
-msgstr ""
+msgstr "钨灯"
 
 #: libexif/exif-entry.c:746
 msgid "Fine weather"
-msgstr ""
+msgstr "晴天"
 
 #: libexif/exif-entry.c:747
 msgid "Cloudy weather"
-msgstr ""
+msgstr "多云"
 
 #: libexif/exif-entry.c:750 libexif/fuji/mnote-fuji-entry.c:79
 #: libexif/pentax/mnote-pentax-entry.c:254
 msgid "Day white fluorescent"
-msgstr ""
+msgstr "荧光灯 (日光白)"
 
 #: libexif/exif-entry.c:751
 msgid "Cool white fluorescent"
-msgstr ""
+msgstr "荧光灯 (冷白)"
 
 #: libexif/exif-entry.c:752 libexif/fuji/mnote-fuji-entry.c:80
 #: libexif/pentax/mnote-pentax-entry.c:255
 msgid "White fluorescent"
-msgstr ""
+msgstr "荧光灯 (白光)"
 
 #: libexif/exif-entry.c:753
 msgid "Standard light A"
-msgstr ""
+msgstr "标准光 A"
 
 #: libexif/exif-entry.c:754
 msgid "Standard light B"
-msgstr ""
+msgstr "标准光 B"
 
 #: libexif/exif-entry.c:755
 msgid "Standard light C"
-msgstr ""
+msgstr "标准光 C"
 
 #: libexif/exif-entry.c:756
 msgid "D55"
-msgstr ""
+msgstr "D55"
 
 #: libexif/exif-entry.c:757
 msgid "D65"
-msgstr ""
+msgstr "D65"
 
 #: libexif/exif-entry.c:758
 msgid "D75"
-msgstr ""
+msgstr "D75"
 
 #: libexif/exif-entry.c:759
 msgid "ISO studio tungsten"
-msgstr ""
+msgstr "ISO 摄影棚钨灯"
 
 #: libexif/exif-entry.c:763 libexif/exif-entry.c:767
 msgid "Inch"
-msgstr ""
+msgstr "英寸"
 
 #: libexif/exif-entry.c:763 libexif/exif-entry.c:767
 msgid "in"
-msgstr ""
+msgstr "in"
 
 #: libexif/exif-entry.c:764 libexif/exif-entry.c:768
 msgid "Centimeter"
-msgstr ""
+msgstr "厘米"
 
 #: libexif/exif-entry.c:764 libexif/exif-entry.c:768
 msgid "cm"
-msgstr ""
+msgstr "cm"
 
 #: libexif/exif-entry.c:773
 msgid "Normal program"
-msgstr ""
+msgstr "标准程序"
 
 #: libexif/exif-entry.c:774
 msgid "Aperture priority"
-msgstr ""
+msgstr "光圈优先"
 
-#: libexif/exif-entry.c:774 libexif/exif-tag.c:601
+#: libexif/exif-entry.c:774 libexif/exif-tag.c:603
 msgid "Aperture"
-msgstr ""
+msgstr "光圈"
 
 #: libexif/exif-entry.c:775
 msgid "Shutter priority"
-msgstr ""
+msgstr "快门优先"
 
 #: libexif/exif-entry.c:775
 msgid "Shutter"
-msgstr ""
+msgstr "快门"
 
 #: libexif/exif-entry.c:776
 msgid "Creative program (biased toward depth of field)"
-msgstr ""
+msgstr "创意程序 (侧重景深)"
 
 #: libexif/exif-entry.c:777
 msgid "Creative"
-msgstr ""
+msgstr "创意"
 
 #: libexif/exif-entry.c:778
 msgid "Creative program (biased toward fast shutter speed)"
-msgstr ""
+msgstr "创意程序 (侧重快门速度)"
 
 #: libexif/exif-entry.c:779
 msgid "Action"
-msgstr ""
+msgstr "运动"
 
 #: libexif/exif-entry.c:780
 msgid "Portrait mode (for closeup photos with the background out of focus)"
-msgstr ""
+msgstr "人像模式 (用于拍摄背景虚化的特写照片)"
 
 #: libexif/exif-entry.c:782
 msgid "Landscape mode (for landscape photos with the background in focus)"
-msgstr ""
+msgstr "风景模式 (用于背景清晰的风景照片)"
 
 #: libexif/exif-entry.c:787
 msgid "Standard output sensitivity (SOS)"
-msgstr ""
+msgstr "标准输出灵敏度 (SOS)"
 
 #: libexif/exif-entry.c:788
 msgid "Recommended exposure index (REI)"
-msgstr ""
+msgstr "建议曝光指数 (REI)"
 
 #: libexif/exif-entry.c:789
 msgid "ISO speed"
-msgstr ""
+msgstr "ISO 感光度"
 
 #: libexif/exif-entry.c:790
 msgid "Standard output sensitivity (SOS) and recommended exposure index (REI)"
-msgstr ""
+msgstr "标准输出灵敏度 (SOS) + 建议曝光指数 (REI)"
 
 #: libexif/exif-entry.c:791
 msgid "Standard output sensitivity (SOS) and ISO speed"
-msgstr ""
+msgstr "标准输出灵敏度 (SOS) + ISO 感光度"
 
 #: libexif/exif-entry.c:792
 msgid "Recommended exposure index (REI) and ISO speed"
-msgstr ""
+msgstr "建议曝光指数 (REI) + ISO 感光度"
 
 #: libexif/exif-entry.c:793
 msgid ""
 "Standard output sensitivity (SOS) and recommended exposure index (REI) and "
 "ISO speed"
-msgstr ""
+msgstr "标准输出灵敏度 (SOS) + 建议曝光指数 (REI) + ISO 感光度"
 
 #: libexif/exif-entry.c:796 libexif/exif-entry.c:801
 #: libexif/olympus/mnote-olympus-entry.c:102
 msgid "Flash did not fire"
-msgstr ""
+msgstr "闪光灯未闪"
 
 #: libexif/exif-entry.c:796
 msgid "No flash"
-msgstr ""
+msgstr "没有闪光灯"
 
 #: libexif/exif-entry.c:797
 msgid "Flash fired"
-msgstr ""
+msgstr "闪光灯已闪"
 
 #: libexif/exif-entry.c:797 libexif/olympus/mnote-olympus-entry.c:175
 #: libexif/olympus/mnote-olympus-entry.c:180
@@ -2426,120 +2433,120 @@ msgstr ""
 #: libexif/olympus/mnote-olympus-entry.c:223
 #: libexif/olympus/mnote-olympus-entry.c:246
 msgid "Yes"
-msgstr ""
+msgstr "是"
 
 #: libexif/exif-entry.c:798
 msgid "Strobe return light not detected"
-msgstr ""
+msgstr "未检测到频闪返回光"
 
 #: libexif/exif-entry.c:798
 msgid "Without strobe"
-msgstr ""
+msgstr "不带频闪"
 
 #: libexif/exif-entry.c:800
 msgid "Strobe return light detected"
-msgstr ""
+msgstr "检测到频闪返回光"
 
 #: libexif/exif-entry.c:800
 msgid "With strobe"
-msgstr ""
+msgstr "带频闪"
 
 #: libexif/exif-entry.c:802
 msgid "Flash fired, compulsory flash mode"
-msgstr ""
+msgstr "闪光灯已闪，强制闪光模式"
 
 #: libexif/exif-entry.c:803
 msgid "Flash fired, compulsory flash mode, return light not detected"
-msgstr ""
+msgstr "闪光灯已闪，强制闪光模式，返回光未检测到"
 
 #: libexif/exif-entry.c:805
 msgid "Flash fired, compulsory flash mode, return light detected"
-msgstr ""
+msgstr "闪光灯已闪，强制闪光模式，返回光已检测到"
 
 #: libexif/exif-entry.c:807
 msgid "Flash did not fire, compulsory flash mode"
-msgstr ""
+msgstr "闪光灯未闪，强制闪光模式"
 
 #: libexif/exif-entry.c:808
 msgid "Flash did not fire, auto mode"
-msgstr ""
+msgstr "闪光灯未闪，自动模式"
 
 #: libexif/exif-entry.c:809
 msgid "Flash fired, auto mode"
-msgstr ""
+msgstr "闪光灯已闪，自动模式"
 
 #: libexif/exif-entry.c:810
 msgid "Flash fired, auto mode, return light not detected"
-msgstr ""
+msgstr "闪光灯已闪，自动模式，返回光未检测到"
 
 #: libexif/exif-entry.c:812
 msgid "Flash fired, auto mode, return light detected"
-msgstr ""
+msgstr "闪光灯已闪，自动模式，返回光已检测到"
 
 #: libexif/exif-entry.c:813
 msgid "No flash function"
-msgstr ""
+msgstr "无闪光灯功能"
 
 #: libexif/exif-entry.c:814
 msgid "Flash fired, red-eye reduction mode"
-msgstr ""
+msgstr "闪光灯已闪，红眼消除模式"
 
 #: libexif/exif-entry.c:815
 msgid "Flash fired, red-eye reduction mode, return light not detected"
-msgstr ""
+msgstr "闪光灯已闪，红眼消除模式，返回光未检测到"
 
 #: libexif/exif-entry.c:817
 msgid "Flash fired, red-eye reduction mode, return light detected"
-msgstr ""
+msgstr "闪光灯已闪，红眼消除模式，返回光已检测到"
 
 #: libexif/exif-entry.c:819
 msgid "Flash fired, compulsory flash mode, red-eye reduction mode"
-msgstr ""
+msgstr "闪光灯已闪，强制闪光模式，红眼消除模式"
 
 #: libexif/exif-entry.c:821
 msgid ""
 "Flash fired, compulsory flash mode, red-eye reduction mode, return light not "
 "detected"
-msgstr ""
+msgstr "闪光灯已闪，强制闪光模式，红眼消除模式，返回光未检测到"
 
 #: libexif/exif-entry.c:823
 msgid ""
 "Flash fired, compulsory flash mode, red-eye reduction mode, return light "
 "detected"
-msgstr ""
+msgstr "闪光灯已闪，强制闪光模式，红眼消除模式，返回光已检测到"
 
 #: libexif/exif-entry.c:825
 msgid "Flash did not fire, auto mode, red-eye reduction mode"
-msgstr ""
+msgstr "闪光灯未闪，自动模式，红眼消除模式"
 
 #: libexif/exif-entry.c:826
 msgid "Flash fired, auto mode, red-eye reduction mode"
-msgstr ""
+msgstr "闪光灯亦闪，自动模式，红眼消除模式"
 
 #: libexif/exif-entry.c:827
 msgid ""
 "Flash fired, auto mode, return light not detected, red-eye reduction mode"
-msgstr ""
+msgstr "闪光灯亦闪，自动模式，返回光未检测到，红眼消除模式"
 
 #: libexif/exif-entry.c:829
 msgid "Flash fired, auto mode, return light detected, red-eye reduction mode"
-msgstr ""
+msgstr "闪光灯亦闪，自动模式，返回光已检测到，红眼消除模式"
 
 #: libexif/exif-entry.c:833
 msgid "?"
-msgstr ""
+msgstr "？"
 
 #: libexif/exif-entry.c:835
 msgid "Close view"
-msgstr ""
+msgstr "近景"
 
 #: libexif/exif-entry.c:836
 msgid "Distant view"
-msgstr ""
+msgstr "远景"
 
 #: libexif/exif-entry.c:836
 msgid "Distant"
-msgstr ""
+msgstr "远景"
 
 #: libexif/exif-entry.c:839
 msgid "sRGB"
@@ -2551,182 +2558,182 @@ msgstr "Adobe RGB"
 
 #: libexif/exif-entry.c:841
 msgid "Uncalibrated"
-msgstr ""
+msgstr "未校准"
 
 #: libexif/exif-entry.c:845
 msgid "Not a composite image"
-msgstr ""
+msgstr "非合成图像"
 
 #: libexif/exif-entry.c:846
 msgid "General composite image"
-msgstr ""
+msgstr "常规合成图像"
 
 #: libexif/exif-entry.c:847
 msgid "Composite image captured while shooting"
-msgstr ""
+msgstr "拍摄时合成图像"
 
 #: libexif/exif-entry.c:897
 #, c-format
 msgid "Invalid size of entry (%i, expected %li x %i)."
-msgstr ""
+msgstr "无效的项目尺寸 (%i，预期为 %li x %i)。"
 
 #: libexif/exif-entry.c:930
 msgid "Unsupported UNICODE string"
-msgstr ""
+msgstr "不支持的 UNICODE 字符串"
 
 #: libexif/exif-entry.c:938
 msgid "Unsupported JIS string"
-msgstr ""
+msgstr "不支持的 JIS 字符串"
 
 #: libexif/exif-entry.c:955
 msgid "Tag UserComment contains data but is against specification."
-msgstr ""
+msgstr "UserComment (用户注释) 标签包含数据但不符合规范。"
 
 #: libexif/exif-entry.c:959
 #, c-format
 msgid "Byte at position %i: 0x%02x"
-msgstr ""
+msgstr "位于 %i 的字节：0x%02x"
 
 #: libexif/exif-entry.c:967
 msgid "Unknown Exif Version"
-msgstr ""
+msgstr "未知 EXIF 版本"
 
 #: libexif/exif-entry.c:971
 #, c-format
 msgid "Exif Version %d.%d"
-msgstr ""
+msgstr "EXIF 版本 %d.%d"
 
 #: libexif/exif-entry.c:982
 msgid "FlashPix Version 1.0"
-msgstr ""
+msgstr "FlashPix 版本 1.0"
 
 #: libexif/exif-entry.c:984
 msgid "FlashPix Version 1.01"
-msgstr ""
+msgstr "FlashPix 版本 1.01"
 
 #: libexif/exif-entry.c:986
 msgid "Unknown FlashPix Version"
-msgstr ""
+msgstr "未知 FlashPix 版本"
 
 #: libexif/exif-entry.c:999 libexif/exif-entry.c:1018 libexif/exif-entry.c:1773
 #: libexif/exif-entry.c:1778 libexif/exif-entry.c:1782
 #: libexif/exif-entry.c:1787 libexif/exif-entry.c:1788
 msgid "[None]"
-msgstr ""
+msgstr "[无]"
 
 #: libexif/exif-entry.c:1001
 msgid "(Photographer)"
-msgstr ""
+msgstr "(摄影师)"
 
 #: libexif/exif-entry.c:1020
 msgid "(Editor)"
-msgstr ""
+msgstr "(编辑)"
 
 #: libexif/exif-entry.c:1044 libexif/exif-entry.c:1123
 #: libexif/exif-entry.c:1141 libexif/exif-entry.c:1184
 #, c-format
 msgid "%.02f EV"
-msgstr ""
+msgstr "%.02f EV"
 
 #: libexif/exif-entry.c:1045
 #, c-format
 msgid " (f/%.01f)"
-msgstr ""
+msgstr " (f/%.01f)"
 
 #: libexif/exif-entry.c:1078
 #, c-format
 msgid " (35 equivalent: %.0f mm)"
-msgstr ""
+msgstr " (35 mm 等效：%.0f mm)"
 
 #: libexif/exif-entry.c:1112
 msgid " sec."
-msgstr ""
+msgstr " 秒"
 
 #: libexif/exif-entry.c:1127
 #, c-format
 msgid " (1/%.0f sec.)"
-msgstr ""
+msgstr " (1/%.0f 秒)"
 
 #: libexif/exif-entry.c:1129
 #, c-format
 msgid " (%.0f sec.)"
-msgstr ""
+msgstr " (%.0f 秒)"
 
 #: libexif/exif-entry.c:1142
 #, c-format
 msgid " (%.02f cd/m^2)"
-msgstr ""
+msgstr " (%.02f cd/m^2)"
 
 #: libexif/exif-entry.c:1151
 msgid "DSC"
-msgstr ""
+msgstr "DSC"
 
 #: libexif/exif-entry.c:1153 libexif/exif-entry.c:1193
 #: libexif/exif-entry.c:1277 libexif/exif-entry.c:1330
 #: libexif/exif-entry.c:1339 libexif/exif-entry.c:1375
-#: libexif/fuji/mnote-fuji-entry.c:239 libexif/fuji/mnote-fuji-entry.c:248
+#: libexif/fuji/mnote-fuji-entry.c:240 libexif/fuji/mnote-fuji-entry.c:249
 #, c-format
 msgid "Internal error (unknown value %i)"
-msgstr "内部错误（未知值 %i）"
+msgstr "内部错误 (未知值 %i)"
 
 #: libexif/exif-entry.c:1161
 msgid "-"
-msgstr ""
+msgstr "-"
 
 #: libexif/exif-entry.c:1162
 msgid "Y"
-msgstr ""
+msgstr "Y"
 
 #: libexif/exif-entry.c:1163
 msgid "Cb"
-msgstr ""
+msgstr "Cb"
 
 #: libexif/exif-entry.c:1164
 msgid "Cr"
-msgstr ""
+msgstr "Cr"
 
 #: libexif/exif-entry.c:1165
 msgid "R"
-msgstr ""
+msgstr "R"
 
 #: libexif/exif-entry.c:1166
 msgid "G"
-msgstr ""
+msgstr "G"
 
 #: libexif/exif-entry.c:1167
 msgid "B"
-msgstr ""
+msgstr "B"
 
 #: libexif/exif-entry.c:1168
 msgid "Reserved"
-msgstr ""
+msgstr "反转"
 
 #: libexif/exif-entry.c:1191
 msgid "Directly photographed"
-msgstr ""
+msgstr "直拍"
 
 #: libexif/exif-entry.c:1204
 msgid "YCbCr4:2:2"
-msgstr ""
+msgstr "YCbCr4:2:2"
 
 #: libexif/exif-entry.c:1206
 msgid "YCbCr4:2:0"
-msgstr ""
+msgstr "YCbCr4:2:0"
 
 #: libexif/exif-entry.c:1223
 #, c-format
 msgid "Within distance %i of (x,y) = (%i,%i)"
-msgstr ""
+msgstr "位于距离 (x,y) %i 的范围之内 = (%i,%i)"
 
 #: libexif/exif-entry.c:1232
 #, c-format
 msgid "Within rectangle (width %i, height %i) around (x,y) = (%i,%i)"
-msgstr ""
+msgstr "位于以 (x,y) 为中心，(宽度 %i，高度 %i) 的矩形之内 = (%i,%i)"
 
 #: libexif/exif-entry.c:1238
 #, c-format
 msgid "Unexpected number of components (%li, expected 2, 3, or 4)."
-msgstr ""
+msgstr "不符合预期的组件数量 (%li，预期数量为 2、3、4)。"
 
 #: libexif/exif-entry.c:1273
 msgid "Sea level"
@@ -2734,7 +2741,7 @@ msgstr "海平面"
 
 #: libexif/exif-entry.c:1275
 msgid "Sea level reference"
-msgstr "海平面参考"
+msgstr "海平面基准"
 
 #: libexif/exif-entry.c:1385
 #, c-format
@@ -2743,88 +2750,90 @@ msgstr "未知值 %i"
 
 #: libexif/exif-format.c:39
 msgid "Short"
-msgstr ""
+msgstr "Short (短整数)"
 
 #: libexif/exif-format.c:40
 msgid "Rational"
-msgstr ""
+msgstr "Rational (有理数)"
 
 #: libexif/exif-format.c:41
 msgid "SRational"
-msgstr ""
+msgstr "SRational (有符号有理数)"
 
 #: libexif/exif-format.c:42
 msgid "Undefined"
-msgstr ""
+msgstr "未定义"
 
 #: libexif/exif-format.c:43
 msgid "ASCII"
-msgstr "ASCII"
+msgstr "ASCII (ASCII 字符串)"
 
 #: libexif/exif-format.c:44
 msgid "Long"
-msgstr ""
+msgstr "Long (长整数)"
 
 #: libexif/exif-format.c:45
 msgid "Byte"
-msgstr ""
+msgstr "Byte (字节)"
 
 #: libexif/exif-format.c:46
 msgid "SByte"
-msgstr ""
+msgstr "SByte (有符号字节)"
 
 #: libexif/exif-format.c:47
 msgid "SShort"
-msgstr ""
+msgstr "SShort (有符号短整数)"
 
 #: libexif/exif-format.c:48
 msgid "SLong"
-msgstr ""
+msgstr "SLong (有符号长整数)"
 
 #: libexif/exif-format.c:49
 msgid "Float"
-msgstr ""
+msgstr "Float (单精度浮点数)"
 
 #: libexif/exif-format.c:50
 msgid "Double"
-msgstr ""
+msgstr "Double (双精度浮点数)"
 
-#: libexif/exif-loader.c:133
+#: libexif/exif-loader.c:135
 #, c-format
 msgid "The file '%s' could not be opened."
-msgstr ""
+msgstr "无法打开文件“%s”。"
 
-#: libexif/exif-loader.c:339
-msgid "The data supplied does not seem to contain EXIF data."
-msgstr ""
+#: libexif/exif-loader.c:342
+#, fuzzy, c-format
+msgid ""
+"The data supplied does not seem to contain EXIF data. JPEG Marker type 0x%02x"
+msgstr "提供的数据似乎不包含 EXIF 数据。"
 
 #: libexif/exif-log.c:45
 msgid "Debugging information"
-msgstr ""
+msgstr "调试信息"
 
 #: libexif/exif-log.c:46
 msgid "Debugging information is available."
-msgstr ""
+msgstr "调试信息可用。"
 
 #: libexif/exif-log.c:47
 msgid "Not enough memory"
-msgstr ""
+msgstr "内存不足"
 
 #: libexif/exif-log.c:48
 msgid "The system cannot provide enough memory."
-msgstr ""
+msgstr "系统无法提供足够的内存。"
 
 #: libexif/exif-log.c:49
 msgid "Corrupt data"
-msgstr ""
+msgstr "数据损坏"
 
 #: libexif/exif-log.c:50
 msgid "The data provided does not follow the specification."
-msgstr ""
+msgstr "提供的数据不符合规范。"
 
 #: libexif/exif-tag.c:66
 msgid "GPS Tag Version"
-msgstr ""
+msgstr "GPS 标签版本"
 
 #: libexif/exif-tag.c:67
 msgid ""
@@ -2833,10 +2842,13 @@ msgid ""
 "tag is given in bytes, unlike the <ExifVersion> tag. When the version is "
 "2.0.0.0, the tag value is 02000000.H)."
 msgstr ""
+"表示 <GPSInfoIFD> 的版本。版本以 2.0.0.0 的形式给出。当存在 <GPSInfo> 标签"
+"时，前述标签是必需项。(注意：<GPSVersionID> 标签以字节形式给出，与 "
+"<ExifVersion> 标签不同。当版本为 2.0.0.0 时，标签值为 02000000.H)。"
 
 #: libexif/exif-tag.c:73
 msgid "Interoperability Index"
-msgstr ""
+msgstr "互操作性指数"
 
 #: libexif/exif-tag.c:74
 msgid ""
@@ -2845,20 +2857,24 @@ msgid ""
 "(NULL). see the separate volume of Recommended Exif Interoperability Rules "
 "(ExifR98) for other tags used for ExifR98."
 msgstr ""
+"表示互操作性规则的标识。使用 ExifR98 规则时，请使用“R98”。使用 4 个字节，包括"
+"终止码 (NULL) 在内。有关 ExifR98 所使用的其他标签，请参阅《Recommended Exif "
+"Interoperability Rules (ExifR98) (推荐的 Exif 互操作性规则 (ExifR98))》的单独"
+"卷册。"
 
 #: libexif/exif-tag.c:80
 msgid "North or South Latitude"
-msgstr ""
+msgstr "北纬或南纬"
 
 #: libexif/exif-tag.c:81
 msgid ""
 "Indicates whether the latitude is north or south latitude. The ASCII value "
 "'N' indicates north latitude, and 'S' is south latitude."
-msgstr ""
+msgstr "表示纬度是北纬还是南纬。ASCII 值为“N”表示北纬，“S”表示南纬。"
 
 #: libexif/exif-tag.c:85
 msgid "Interoperability Version"
-msgstr ""
+msgstr "互操作性版本"
 
 #: libexif/exif-tag.c:87
 msgid "Latitude"
@@ -2872,16 +2888,19 @@ msgid ""
 "degrees and minutes are used and, for example, fractions of minutes are "
 "given up to two decimal places, the format is dd/1,mmmm/100,0/1."
 msgstr ""
+"表示纬度。纬度以三个有理数分别表示度、分和秒。当使用度、分和秒时，格式为 dd/"
+"1,mm/1,ss/1。当仅使用度和分，例如分的分数精确到两位小数时，格式为 dd/1,mmmm/"
+"100,0/1。"
 
 #: libexif/exif-tag.c:95
 msgid "East or West Longitude"
-msgstr ""
+msgstr "东经或西经"
 
 #: libexif/exif-tag.c:96
 msgid ""
 "Indicates whether the longitude is east or west longitude. ASCII 'E' "
 "indicates east longitude, and 'W' is west longitude."
-msgstr ""
+msgstr "表示精度是东经还是西经。ASCII 值为“E”表示东经，“W”表示西经。"
 
 #: libexif/exif-tag.c:99
 msgid "Longitude"
@@ -2895,10 +2914,13 @@ msgid ""
 "degrees and minutes are used and, for example, fractions of minutes are "
 "given up to two decimal places, the format is ddd/1,mmmm/100,0/1."
 msgstr ""
+"表示经度。经度用三个有理数分别表示度、分和秒。当表示度、分和秒时，格式为 ddd/"
+"1,mm/1,ss/1。当仅使用度和分，例如分的分数精确到两位小数时，格式为 ddd/1,mmmm/"
+"100,0/1。"
 
 #: libexif/exif-tag.c:107
 msgid "Altitude Reference"
-msgstr ""
+msgstr "高度基准"
 
 #: libexif/exif-tag.c:108
 msgid ""
@@ -2908,30 +2930,37 @@ msgid ""
 "an absolute value in the GPSAltitude tag. The reference unit is meters. Note "
 "that this tag is BYTE type, unlike other reference tags."
 msgstr ""
+"表示用作参考基准的高度值类型。若以海平面为基准且高度位于海平面上方，则标记为 "
+"0；若高度低于海平面，则标记为 1，此时实际高度值在 GPSAltitude 标签中以绝对值"
+"记录。参考单位为米。需注意此标签为 BYTE (字节) 类型，与其他基准标签不同。"
 
 #: libexif/exif-tag.c:114
 msgid "Altitude"
-msgstr "海拔"
+msgstr "高度"
 
 #: libexif/exif-tag.c:115
 msgid ""
 "Indicates the altitude based on the reference in GPSAltitudeRef. Altitude is "
 "expressed as one RATIONAL value. The reference unit is meters."
 msgstr ""
+"基于 GPSAltitudeRef 中的参考基准表示的具体高度数值。以单个有理数 (RATIONAL) "
+"值的形式表示，单位始终为米。"
 
 #: libexif/exif-tag.c:118
 msgid "GPS Time (Atomic Clock)"
-msgstr "GPS 时间（原子钟）"
+msgstr "GPS 时间 (原子钟)"
 
 #: libexif/exif-tag.c:119
 msgid ""
 "Indicates the time as UTC (Coordinated Universal Time). TimeStamp is "
 "expressed as three RATIONAL values giving the hour, minute, and second."
 msgstr ""
+"作为协调世界时 (UTC) 表示时间。时间戳以 3 个 RATIONAL (有理数) 值的形式表示，"
+"分别给出小时、分钟和秒。"
 
 #: libexif/exif-tag.c:122
 msgid "GPS Satellites"
-msgstr ""
+msgstr "GPS 卫星"
 
 #: libexif/exif-tag.c:123
 msgid ""
@@ -2941,100 +2970,113 @@ msgid ""
 "specified. If the GPS receiver is incapable of taking measurements, value of "
 "the tag shall be set to NULL."
 msgstr ""
+"表示用于测量的 GPS 卫星。此标签可用于描述卫星数量、卫星 ID 号码、仰角、方位"
+"角、信噪比等信息，以 ASCII 字符串表示。格式未作规定。如果 GPS 接收器无法进行"
+"测量，则该标签的值应设为 NULL。"
 
 #: libexif/exif-tag.c:129
 msgid "GPS Receiver Status"
-msgstr ""
+msgstr "GPS 接收器状态"
 
+# 'V'（Interoperability）‍ 存在术语差异：原始描述可能为笔误，权威标准（如Exif 2.31）实际定义为 "measurement is interrupted"（测量已中断）
 #: libexif/exif-tag.c:130
 msgid ""
 "Indicates the status of the GPS receiver when the image is recorded. 'A' "
 "means measurement is in progress, and 'V' means the measurement is "
 "Interoperability."
-msgstr ""
+msgstr "表示图像记录时 GPS 接收器的状态。“A”表示正在测量，“V”表示测量已中断。"
 
 #: libexif/exif-tag.c:133
 msgid "GPS Measurement Mode"
-msgstr ""
+msgstr "GPS 测量模式"
 
 #: libexif/exif-tag.c:134
 msgid ""
 "Indicates the GPS measurement mode. '2' means two-dimensional measurement "
 "and '3' means three-dimensional measurement is in progress."
-msgstr ""
+msgstr "表示 GPS 测量模式。“2”表示正在进行二维测量，“3”表示正在进行三维测量。"
 
 #: libexif/exif-tag.c:137
 msgid "Measurement Precision"
-msgstr ""
+msgstr "测量精度"
 
+# 中文测绘领域标准（如《全球定位系统（GPS）测量规范》GB/T 18314）明确使用 “精度衰减因子” 作为 DOP 的标准译名，符合国际标准 ISO 19116:2009。
 #: libexif/exif-tag.c:138
 msgid ""
 "Indicates the GPS DOP (data degree of precision). An HDOP value is written "
 "during two-dimensional measurement, and PDOP during three-dimensional "
 "measurement."
 msgstr ""
+"表示 GPS 精度衰减因子 (DOP，data degree of precision)。二维测量时记录 HDOP "
+"(水平精度衰减因子) 值，三维测量时记录 PDOP (空间位置精度衰减因子) 值。"
 
 #: libexif/exif-tag.c:141
 msgid "Speed Unit"
-msgstr ""
+msgstr "速度单位"
 
 #: libexif/exif-tag.c:142
 msgid ""
 "Indicates the unit used to express the GPS receiver speed of movement. 'K', "
 "'M' and 'N' represent kilometers per hour, miles per hour, and knots."
 msgstr ""
+"表示用于表达 GPS 接收器移动速度的单位。“K”、“M”和“N”分别代表千米每小时、英里"
+"每小时和节。"
 
 #: libexif/exif-tag.c:145
 msgid "Speed of GPS Receiver"
-msgstr ""
+msgstr "GPS 接收器速度"
 
 #: libexif/exif-tag.c:146
 msgid "Indicates the speed of GPS receiver movement."
-msgstr ""
+msgstr "表示 GPS 接收器移动的速度。"
 
 #: libexif/exif-tag.c:147
 msgid "Reference for direction of movement"
-msgstr ""
+msgstr "移动方向参考"
 
 #: libexif/exif-tag.c:148
 msgid ""
 "Indicates the reference for giving the direction of GPS receiver movement. "
 "'T' denotes true direction and 'M' is magnetic direction."
 msgstr ""
+"表示给出 GPS 接收器移动方向的参考基准。“T”表示真方向 (基于地理北极)，“M”表示"
+"磁方向 (基于地磁北极)。"
 
 #: libexif/exif-tag.c:151
 msgid "Direction of Movement"
-msgstr ""
+msgstr "移动方向"
 
 #: libexif/exif-tag.c:152
 msgid ""
 "Indicates the direction of GPS receiver movement. The range of values is "
 "from 0.00 to 359.99."
-msgstr ""
+msgstr "表示 GPS 接收器移动的方向。值范围从 0.00 到 359.99。"
 
 #: libexif/exif-tag.c:154
 msgid "GPS Image Direction Reference"
-msgstr ""
+msgstr "GPS 图像方向参考"
 
 #: libexif/exif-tag.c:155
 msgid ""
 "Indicates the reference for giving the direction of the image when it is "
 "captured. 'T' denotes true direction and 'M' is magnetic direction."
 msgstr ""
+"表示拍摄时图像方向的参考标准。其中“T”表示真方向 (基于地理北极)，“M”表示磁方"
+"向 (基于地磁北极)。"
 
 #: libexif/exif-tag.c:157
 msgid "GPS Image Direction"
-msgstr ""
+msgstr "GPS 图像方向"
 
 #: libexif/exif-tag.c:158
 msgid ""
 "Indicates the direction of the image when it was captured. The range of "
 "values is from 0.00 to 359.99."
-msgstr ""
+msgstr "表示拍摄时图像的具体方向。值范围从 0.00 到 359.99。"
 
 #: libexif/exif-tag.c:160
 msgid "Geodetic Survey Data Used"
-msgstr ""
+msgstr "GPS 大地测量数据基准"
 
 #: libexif/exif-tag.c:161
 msgid ""
@@ -3043,21 +3085,23 @@ msgid ""
 "If a GPS Info tag is recorded, it is strongly recommended that this tag be "
 "recorded."
 msgstr ""
+"表示 GPS 接收器使用的大地测量数据。如果数据限制在日本，此标签的值可以"
+"是“TOKYO”或“WGS-84”。此外，如果记录了 GPS 信息标签，强烈建议记录此参数。"
 
 #: libexif/exif-tag.c:165
 msgid "Reference For Latitude of Destination"
-msgstr ""
+msgstr "目的地纬度参考"
 
 #: libexif/exif-tag.c:166
 msgid ""
 "Indicates whether the latitude of the destination point is north or south "
 "latitude. The ASCII value 'N' indicates north latitude, and 'S' is south "
 "latitude."
-msgstr ""
+msgstr "表示目的地点纬度是北纬还是南纬。ASCII 值“N”表示北纬，“S”表示南纬。"
 
 #: libexif/exif-tag.c:169
 msgid "Latitude of Destination"
-msgstr ""
+msgstr "目的地纬度"
 
 #: libexif/exif-tag.c:170
 msgid ""
@@ -3068,20 +3112,23 @@ msgid ""
 "and, for example, fractions of minutes are given up to two decimal places, "
 "the format would be dd/1,mmmm/100,0/1."
 msgstr ""
+"表示目的地点的纬度值。纬度以三个有理数 (RATIONAL) 形式表示度、分和秒。如果纬"
+"度用度分秒表示，典型格式为 dd/1,mm/1,ss/1。如果仅使用度和分 (分的分数保留两位"
+"小数)，则格式为 dd/1,mmmm/100,0/1。"
 
 #: libexif/exif-tag.c:177
 msgid "Reference for Longitude of Destination"
-msgstr ""
+msgstr "目的地经度参考"
 
 #: libexif/exif-tag.c:178
 msgid ""
 "Indicates whether the longitude of the destination point is east or west "
 "longitude. ASCII 'E' indicates east longitude, and 'W' is west longitude."
-msgstr ""
+msgstr "表示目的地点经度是东经还是西经。ASCII 值“E”表示东经，“W”表示西经。"
 
 #: libexif/exif-tag.c:181
 msgid "Longitude of Destination"
-msgstr ""
+msgstr "目的地经度"
 
 #: libexif/exif-tag.c:182
 msgid ""
@@ -3092,48 +3139,53 @@ msgid ""
 "and, for example, fractions of minutes are given up to two decimal places, "
 "the format would be ddd/1,mmmm/100,0/1."
 msgstr ""
+"表示目的地点的经度值。经度以三个有理数 (RATIONAL) 形式表示度、分和秒。如果纬"
+"度用度分秒表示，典型格式为 ddd/1,mm/1,ss/1。如果仅使用度和分 (分的分数保留两"
+"位小数)，则格式为 ddd/1,mmmm/100,0/1。"
 
 #: libexif/exif-tag.c:190
 msgid "Reference for Bearing of Destination"
-msgstr ""
+msgstr "目的地方位参考"
 
 #: libexif/exif-tag.c:191
 msgid ""
 "Indicates the reference used for giving the bearing to the destination "
 "point. 'T' denotes true direction and 'M' is magnetic direction."
 msgstr ""
+"表示用于给出目的地方位的参考基准。“T”代表真方向 (基于地理北极)，“M”代表磁方"
+"向 (基于地磁北极)。"
 
 #: libexif/exif-tag.c:194
 msgid "Bearing of Destination"
-msgstr ""
+msgstr "目的地方位"
 
 #: libexif/exif-tag.c:195
 msgid ""
 "Indicates the bearing to the destination point. The range of values is from "
 "0.00 to 359.99."
-msgstr ""
+msgstr "表示目的地点的方位角，值范围从 0.00 到 359.99。"
 
 #: libexif/exif-tag.c:197
 msgid "Reference for Distance to Destination"
-msgstr ""
+msgstr "目的地距离单位参考"
 
 #: libexif/exif-tag.c:198
 msgid ""
 "Indicates the unit used to express the distance to the destination point. "
 "'K', 'M' and 'N' represent kilometers, miles and nautical miles."
-msgstr ""
+msgstr "表示到目的地距离的单位类型，“K”代表千米，“M”代表英里，“N”代表海里。"
 
 #: libexif/exif-tag.c:201
 msgid "Distance to Destination"
-msgstr ""
+msgstr "目的地距离"
 
 #: libexif/exif-tag.c:202
 msgid "Indicates the distance to the destination point."
-msgstr ""
+msgstr "表示到目的地的距离。"
 
 #: libexif/exif-tag.c:203
 msgid "Name of GPS Processing Method"
-msgstr ""
+msgstr "GPS 处理方式名称"
 
 #: libexif/exif-tag.c:204
 msgid ""
@@ -3142,10 +3194,12 @@ msgid ""
 "followed by the name of the method. Since the Type is not ASCII, NULL "
 "termination is not necessary."
 msgstr ""
+"记录位置查找的定位方式名称的字符串。首字节指示使用的字符编码，后续字节为方法"
+"名称。此类型并非 ASCII 类型，无需 NULL 终止符。"
 
 #: libexif/exif-tag.c:209
 msgid "Name of GPS Area"
-msgstr ""
+msgstr "GPS 区域名称"
 
 #: libexif/exif-tag.c:210
 msgid ""
@@ -3153,10 +3207,12 @@ msgid ""
 "indicates the character code used, and this is followed by the name of the "
 "GPS area. Since the Type is not ASCII, NULL termination is not necessary."
 msgstr ""
+"记录 GPS 区域名称的字符串。首字节指示使用的字符编码，后续字节为 GPS 区域的名"
+"称。此类型并非 ASCII 类型，无需 NULL 终止符。"
 
 #: libexif/exif-tag.c:214
 msgid "GPS Date"
-msgstr "GPS 日期"
+msgstr "GPS 日期时间"
 
 #: libexif/exif-tag.c:215
 msgid ""
@@ -3164,57 +3220,63 @@ msgid ""
 "(Coordinated Universal Time). The format is \"YYYY:MM:DD\". The length of "
 "the string is 11 bytes including NULL."
 msgstr ""
+"记录相对于协调世界时 (UTC) 的日期和时间信息的字符串。格式为 YYYY:MM:DD。字符"
+"串长度 11 字节 (含 NULL 终止符)。"
 
 #: libexif/exif-tag.c:219
 msgid "GPS Differential Correction"
-msgstr ""
+msgstr "GPS 差分校正"
 
 #: libexif/exif-tag.c:220
 msgid ""
 "Indicates whether differential correction is applied to the GPS receiver."
-msgstr ""
+msgstr "表示是否对 GPS 接收器应用差分校正。"
 
 #: libexif/exif-tag.c:222
 msgid "GPS Horizontal Positioning Error"
-msgstr ""
+msgstr "GPS 水平定位误差"
 
 #: libexif/exif-tag.c:223
 msgid ""
 "Indicates the horizontal positioning errors in meters. This is expressed as "
 "one RATIONAL value."
-msgstr ""
+msgstr "表示水平方向定位误差值，单位为米，表达为 RATIONAL (有理数) 值。"
 
 #: libexif/exif-tag.c:227
 msgid "New Subfile Type"
-msgstr ""
+msgstr "新子文件类型"
 
 #: libexif/exif-tag.c:227
 msgid "A general indication of the kind of data contained in this subfile."
-msgstr ""
+msgstr "表示子文件包含大致数据类别的元数据字段。"
 
 #: libexif/exif-tag.c:230
 msgid "Image Width"
-msgstr ""
+msgstr "图像宽度"
 
 #: libexif/exif-tag.c:231
 msgid ""
 "The number of columns of image data, equal to the number of pixels per row. "
 "In JPEG compressed data a JPEG marker is used instead of this tag."
 msgstr ""
+"图像数据的列数，即每列的像素数量。在 JPEG 压缩数据中，此标签被 JPEG 标记替"
+"代。"
 
 #: libexif/exif-tag.c:235
 msgid "Image Length"
-msgstr ""
+msgstr "图像长度"
 
 #: libexif/exif-tag.c:236
 msgid ""
 "The number of rows of image data. In JPEG compressed data a JPEG marker is "
 "used instead of this tag."
 msgstr ""
+"图像数据的行数，即每行的像素数量。在 JPEG 压缩数据中，此标签被 JPEG 标记替"
+"代。"
 
 #: libexif/exif-tag.c:239
 msgid "Bits per Sample"
-msgstr ""
+msgstr "每样本位数"
 
 #: libexif/exif-tag.c:240
 msgid ""
@@ -3223,10 +3285,12 @@ msgid ""
 "<SamplesPerPixel>. In JPEG compressed data a JPEG marker is used instead of "
 "this tag."
 msgstr ""
+"每个图像颜色分量的位数。本规范中图像的每种颜色分量为 8 位，因此该标签值为 8；"
+"另见 <SamplesPerPixel>。在 JPEG 压缩数据中，此标签被 JPEG 标记替代。"
 
 #: libexif/exif-tag.c:245
 msgid "Compression"
-msgstr ""
+msgstr "压缩方案"
 
 #: libexif/exif-tag.c:246
 msgid ""
@@ -3234,24 +3298,26 @@ msgid ""
 "compressed, this designation is not necessary and is omitted. When "
 "thumbnails use JPEG compression, this tag value is set to 6."
 msgstr ""
+"图像数据使用的压缩方案。主图像采用 JPEG 压缩时，此标签可省略。缩略图采用 "
+"JPEG 压缩时，此标签值设为 6。"
 
 #: libexif/exif-tag.c:252
 msgid "Photometric Interpretation"
-msgstr ""
+msgstr "光度解释"
 
 #: libexif/exif-tag.c:253
 msgid ""
 "The pixel composition. In JPEG compressed data a JPEG marker is used instead "
 "of this tag."
-msgstr ""
+msgstr "表示像素合成方式。在 JPEG 压缩数据中，此标签被 JPEG 标记替代。"
 
 #: libexif/exif-tag.c:257
 msgid "Fill Order"
-msgstr ""
+msgstr "填充顺序"
 
 #: libexif/exif-tag.c:259
 msgid "Document Name"
-msgstr ""
+msgstr "文档名称"
 
 #: libexif/exif-tag.c:262
 msgid "Image Description"
@@ -3264,10 +3330,13 @@ msgid ""
 "used. When a 2-bytes code is necessary, the Exif Private tag <UserComment> "
 "is to be used."
 msgstr ""
+"表示图像标题的字符串。它可以是一条注释，如“1988 年公司团建”之类的内容。不能使"
+"用双字节字符代码 (例如中文或日文字符)。当需要使用双字节代码时，应改为使用 "
+"EXIF 私有标签 <UserComment> 进行记录。"
 
 #: libexif/exif-tag.c:269
 msgid "Manufacturer"
-msgstr ""
+msgstr "制造商"
 
 #: libexif/exif-tag.c:270
 msgid ""
@@ -3275,10 +3344,12 @@ msgid ""
 "DSC, scanner, video digitizer or other equipment that generated the image. "
 "When the field is left blank, it is treated as unknown."
 msgstr ""
+"生成图像的设备的制造商。具体包括数码相机 (DSC)、扫描仪、视频数字化仪或其他生"
+"成了此图像的设备的生产厂家。当此字段留空时，程序将视作未知处理。"
 
 #: libexif/exif-tag.c:276
 msgid "Model"
-msgstr ""
+msgstr "型号"
 
 #: libexif/exif-tag.c:277
 msgid ""
@@ -3286,10 +3357,13 @@ msgid ""
 "number of the DSC, scanner, video digitizer or other equipment that "
 "generated the image. When the field is left blank, it is treated as unknown."
 msgstr ""
+"生成图像的设备的型号名称或型号号码。具体包括数码相机 (DSC)、扫描仪、视频数字"
+"化仪或其他生成了此图像的设备的型号名称或数字。当此字段留空时，程序将视作未知"
+"处理。"
 
 #: libexif/exif-tag.c:282
 msgid "Strip Offsets"
-msgstr ""
+msgstr "条带偏移量"
 
 #: libexif/exif-tag.c:283
 msgid ""
@@ -3298,18 +3372,21 @@ msgid ""
 "JPEG compressed data this designation is not needed and is omitted. See also "
 "<RowsPerStrip> and <StripByteCounts>."
 msgstr ""
+"每个图像条带的字节偏移量。建议设置此值以确保单个条带字节数不超过 64 KB。JPEG "
+"压缩数据无需此参数，可被省略。另见 <RowsPerStrip> (每条带行数) 和 "
+"<StripByteCounts> (条带字节计数) 标签。"
 
 #: libexif/exif-tag.c:289
 msgid "Orientation"
-msgstr ""
+msgstr "图像方向"
 
 #: libexif/exif-tag.c:290
 msgid "The image orientation viewed in terms of rows and columns."
-msgstr ""
+msgstr "图像在查看时像素的行列方向。"
 
 #: libexif/exif-tag.c:293
 msgid "Samples per Pixel"
-msgstr ""
+msgstr "每像素样本数"
 
 #: libexif/exif-tag.c:294
 msgid ""
@@ -3317,10 +3394,12 @@ msgid ""
 "YCbCr images, the value set for this tag is 3. In JPEG compressed data a "
 "JPEG marker is used instead of this tag."
 msgstr ""
+"每个像素的颜色分量数量。本标准适用于 RGB 和 YCbCr 图像，因此该值固定为 3 (即"
+"红、绿、蓝三个分量)。在 JPEG 压缩数据中，此标签被 JPEG 标记取代。"
 
 #: libexif/exif-tag.c:299
 msgid "Rows per Strip"
-msgstr ""
+msgstr "每条带行数"
 
 #: libexif/exif-tag.c:300
 msgid ""
@@ -3329,40 +3408,47 @@ msgid ""
 "designation is not needed and is omitted. See also <StripOffsets> and "
 "<StripByteCounts>."
 msgstr ""
+"每个条带包含的行数。图像被分割为条带 (Strip) 时，单个条带包含的行数。JPEG 压"
+"缩数据无需此参数，可被省略。另见 <StripOffsets> (条带偏移量) 和 "
+"<StripByteCounts> (条带字节计数)。"
 
 #: libexif/exif-tag.c:306
 msgid "Strip Byte Count"
-msgstr ""
+msgstr "条带字节计数"
 
 #: libexif/exif-tag.c:307
 msgid ""
 "The total number of bytes in each strip. With JPEG compressed data this "
 "designation is not needed and is omitted."
-msgstr ""
+msgstr "每个条带的总字节数。JPEG 压缩数据无需此参数，可被省略。"
 
 #: libexif/exif-tag.c:310
 msgid "X-Resolution"
-msgstr ""
+msgstr "X 方向分辨率"
 
 #: libexif/exif-tag.c:311
 msgid ""
 "The number of pixels per <ResolutionUnit> in the <ImageWidth> direction. "
 "When the image resolution is unknown, 72 [dpi] is designated."
 msgstr ""
+"沿图像宽度 (<ImageWidth>) 方向每分辨率单位 (<ResolutionUnit>) 的像素数。图像"
+"分辨率未知时，取 72 dpi。"
 
 #: libexif/exif-tag.c:315
 msgid "Y-Resolution"
-msgstr ""
+msgstr "Y 方向分辨率"
 
 #: libexif/exif-tag.c:316
 msgid ""
 "The number of pixels per <ResolutionUnit> in the <ImageLength> direction. "
 "The same value as <XResolution> is designated."
 msgstr ""
+"沿图像长度 (<ImageLength>) 方向每分辨率单位 (<ResolutionUnit>) 的像素数。与 "
+"X 方向分辨率 (<XResolution>) 取同样的值。"
 
 #: libexif/exif-tag.c:320
 msgid "Planar Configuration"
-msgstr ""
+msgstr "平面配置"
 
 #: libexif/exif-tag.c:321
 msgid ""
@@ -3370,10 +3456,13 @@ msgid ""
 "format. In JPEG compressed files a JPEG marker is used instead of this tag. "
 "If this field does not exist, the TIFF default of 1 (chunky) is assumed."
 msgstr ""
+"表示像素分量是以交错格式 (Chunky) 还是平面格式 (Planar) 存储。在 JPEG 压缩数"
+"据中，此标签被 JPEG 标记替代。如果此字段不存在，将假设为 TIFF 默认的 1 (交错"
+"格式)。"
 
 #: libexif/exif-tag.c:326
 msgid "Resolution Unit"
-msgstr ""
+msgstr "分辨率单位"
 
 #: libexif/exif-tag.c:327
 msgid ""
@@ -3381,10 +3470,13 @@ msgid ""
 "used for both <XResolution> and <YResolution>. If the image resolution is "
 "unknown, 2 (inches) is designated."
 msgstr ""
+"水平分辨率 (<XResolution>) 和垂直分辨率 (<YResolution>) 的度量单位。"
+"<XResolution> 和 <YResolution> 标签使用相同的单位。如果图像分辨率未知，取 2 "
+"(英寸)。"
 
 #: libexif/exif-tag.c:332
 msgid "Transfer Function"
-msgstr ""
+msgstr "转换函数"
 
 #: libexif/exif-tag.c:333
 msgid ""
@@ -3392,6 +3484,8 @@ msgid ""
 "tag is not necessary, since color space is specified in the color space "
 "information tag (<ColorSpace>)."
 msgstr ""
+"图像的色彩转换函数，以表格形式描述。通常此标签并非必要，因为色彩空间信息标签 "
+"(<ColorSpace>) 中已经指定了色彩空间。"
 
 #: libexif/exif-tag.c:337
 msgid "Software"
@@ -3404,6 +3498,8 @@ msgid ""
 "is not specified, but it is recommended that the example shown below be "
 "followed. When the field is left blank, it is treated as unknown."
 msgstr ""
+"此标签记录用于生成图像的相机或图像输入设备的软件或固件的名称和版本。详细格式"
+"未作规定，但建议遵循以下示例。若该字段留空，则视为未知。"
 
 #: libexif/exif-tag.c:345
 msgid "Date and Time"
@@ -3414,10 +3510,11 @@ msgid ""
 "The date and time of image creation. In this standard (EXIF-2.1) it is the "
 "date and time the file was changed."
 msgstr ""
+"图像创建的日期和时间。在本规范 (EXIF-2.1) 中，它是文件被更改的日期和时间。"
 
 #: libexif/exif-tag.c:349
 msgid "Artist"
-msgstr ""
+msgstr "作者"
 
 #: libexif/exif-tag.c:350
 msgid ""
@@ -3426,10 +3523,12 @@ msgid ""
 "the information be written as in the example below for ease of "
 "Interoperability. When the field is left blank, it is treated as unknown."
 msgstr ""
+"此标签记录相机所有者、摄影师或图像创作者的名称。详细格式未作规定，但为便于互"
+"操作，建议按照以下示例填写信息。若该字段留空，则视为未知。"
 
 #: libexif/exif-tag.c:356 libexif/pentax/mnote-pentax-tag.c:115
 msgid "White Point"
-msgstr ""
+msgstr "白点"
 
 #: libexif/exif-tag.c:357
 msgid ""
@@ -3437,10 +3536,12 @@ msgid ""
 "necessary, since color space is specified in the color space information tag "
 "(<ColorSpace>)."
 msgstr ""
+"图像白点的色品。通常此标签并非必要，因为色彩空间信息标签 (<ColorSpace>) 中已"
+"经指定了色彩空间。"
 
 #: libexif/exif-tag.c:362
 msgid "Primary Chromaticities"
-msgstr ""
+msgstr "原色色品"
 
 #: libexif/exif-tag.c:363
 msgid ""
@@ -3448,28 +3549,31 @@ msgid ""
 "is not necessary, since color space is specified in the color space "
 "information tag (<ColorSpace>)."
 msgstr ""
+"图像中三种原色的色品。通常此标签并非必要，因为色彩空间信息标签 "
+"(<ColorSpace>) 中已经指定了色彩空间。"
 
 #: libexif/exif-tag.c:368
 msgid "Defined by Adobe Corporation to enable TIFF Trees within a TIFF file."
-msgstr ""
+msgstr "由 Adobe 公司定义，用于在 TIFF 文件中启用 TIFF 树。"
 
 #: libexif/exif-tag.c:371
 msgid "Transfer Range"
-msgstr ""
+msgstr "转换范围"
 
 #: libexif/exif-tag.c:376
 msgid "JPEG Interchange Format"
-msgstr ""
+msgstr "JPEG 交换格式 (JFIF)"
 
 #: libexif/exif-tag.c:377
 msgid ""
 "The offset to the start byte (SOI) of JPEG compressed thumbnail data. This "
 "is not used for primary image JPEG data."
 msgstr ""
+"JPEG 压缩缩略图数据起始字节 (SOI) 的偏移量。此值不用于主图像的 JPEG 数据。"
 
 #: libexif/exif-tag.c:382
 msgid "JPEG Interchange Format Length"
-msgstr ""
+msgstr "JPEG 交换格式长度"
 
 #: libexif/exif-tag.c:383
 msgid ""
@@ -3479,10 +3583,14 @@ msgid ""
 "be recorded. Compressed thumbnails must be recorded in no more than 64 "
 "Kbytes, including all other data to be recorded in APP1."
 msgstr ""
+"JPEG 压缩缩略图数据的字节数。此值不用于主图像的 JPEG 数据。JPEG 缩略图不分"
+"段，而是记录从起始字节 (SOI) 到结束字节 (EOI) 的连续 JPEG 比特流。不应记录 "
+"Appn 和 COM 标记。压缩缩略图 (包括要记录在 APP1 中的所有其他数据) 的记录大小"
+"不得超过 64 K 字节。"
 
 #: libexif/exif-tag.c:392
 msgid "YCbCr Coefficients"
-msgstr ""
+msgstr "YCbCr 系数"
 
 #: libexif/exif-tag.c:393
 msgid ""
@@ -3492,20 +3600,25 @@ msgid ""
 "space information tag, with the default being the value that gives the "
 "optimal image characteristics Interoperability this condition."
 msgstr ""
+"图像数据从 RGB 转换为 YCbCr 时使用的矩阵系数。TIFF 格式并未给出默认值；但此标"
+"签使用《Color Space Guidelines (色彩空间指南)》中给出的值作为默认值。色彩空间"
+"在色彩空间信息标签中声明，此默认值可以在此用途条件下提高图像特征的互操作性。"
 
 #: libexif/exif-tag.c:402
 msgid "YCbCr Sub-Sampling"
-msgstr ""
+msgstr "YCbCr 子采样"
 
 #: libexif/exif-tag.c:403
 msgid ""
 "The sampling ratio of chrominance components in relation to the luminance "
 "component. In JPEG compressed data a JPEG marker is used instead of this tag."
 msgstr ""
+"色品分量相对于亮度分量的采样比率。在 JPEG 压缩数据中，JPEG 标记被用于代替此标"
+"签。"
 
 #: libexif/exif-tag.c:408
 msgid "YCbCr Positioning"
-msgstr ""
+msgstr "YCbCr 定位"
 
 #: libexif/exif-tag.c:409
 msgid ""
@@ -3521,10 +3634,17 @@ msgid ""
 "the value in this field. It is preferable that readers be able to support "
 "both centered and co-sited positioning."
 msgstr ""
+"色品分量相对于亮度分量的位置。此字段仅用于 JPEG 压缩数据或未压缩的 YCbCr 数"
+"据。TIFF 格式的默认值为 1 (居中)；但当 Y:Cb:Cr = 4:2:2 时，本规范建议使用 2 "
+"(共线) 来记录数据，以提高在电视系统上观看时的图像质量。如果此字段不存在，读取"
+"器将假定 TIFF 默认值。对于 Y:Cb:Cr = 4:2:0 的情况，建议采用 TIFF 默认值 (居"
+"中)。如果读取器无法同时支持两种 <YCbCrPositioning> 类型，则无论此字段中的值如"
+"何，读取器将始终遵循 TIFF 默认值。读取器最好可以同时支持居中和共线两种定位方"
+"式。"
 
 #: libexif/exif-tag.c:424
 msgid "Reference Black/White"
-msgstr ""
+msgstr "参考黑点/白点"
 
 #: libexif/exif-tag.c:425
 msgid ""
@@ -3534,35 +3654,40 @@ msgid ""
 "being the value that gives the optimal image characteristics "
 "Interoperability these conditions."
 msgstr ""
+"参考黑点值和参考白点值。TIFF 格式中未给出默认值，但本规范给出的默认值如下。色"
+"彩空间在色彩空间信息标签中声明，此默认值可以在此用途条件下提高图像特征的互操"
+"作性。"
 
 #: libexif/exif-tag.c:433
 msgid "XML Packet"
-msgstr ""
+msgstr "XML 数据包"
 
 #: libexif/exif-tag.c:433
 msgid "XMP Metadata"
-msgstr ""
+msgstr "XMP 元数据"
 
-#: libexif/exif-tag.c:449 libexif/exif-tag.c:836
+#: libexif/exif-tag.c:451 libexif/exif-tag.c:838
 msgid "CFA Pattern"
-msgstr ""
+msgstr "CFA 几何图案"
 
-#: libexif/exif-tag.c:450 libexif/exif-tag.c:837
+#: libexif/exif-tag.c:452 libexif/exif-tag.c:839
 msgid ""
 "Indicates the color filter array (CFA) geometric pattern of the image sensor "
 "when a one-chip color area sensor is used. It does not apply to all sensing "
 "methods."
 msgstr ""
-
-#: libexif/exif-tag.c:454
-msgid "Battery Level"
-msgstr ""
+"表示使用单芯片彩色区域传感器时，图像传感器的颜色滤镜阵列 (CFA) 的几何图案。不"
+"适用于其他传感器结构。"
 
 #: libexif/exif-tag.c:456
-msgid "Copyright"
-msgstr ""
+msgid "Battery Level"
+msgstr "电池电量"
 
-#: libexif/exif-tag.c:457
+#: libexif/exif-tag.c:458
+msgid "Copyright"
+msgstr "版权信息"
+
+#: libexif/exif-tag.c:459
 msgid ""
 "Copyright information. In this standard the tag is used to indicate both the "
 "photographer and editor copyrights. It is the copyright notice of the person "
@@ -3580,151 +3705,180 @@ msgid ""
 "a terminating NULL code, then the editor copyright is given (see example 3). "
 "When the field is left blank, it is treated as unknown."
 msgstr ""
+"版权信息。在本规范中，该标签用于表明摄影师和编辑的版权。这是声称对图像拥有权"
+"利的个人或组织的版权声明。互操作性版权声明 (包含日期和权利)，应被写入此字段；"
+"例如：“Copyright, John Smith, 19xx. All rights reserved. (版权所有，约翰·史密"
+"斯，19xx 年。保留所有权利。)”在本规范中，该字段同时记录摄影师和编辑的版权，两"
+"种版权信息分别被记录在声明的不同部分。当摄影师和编辑的版权有明确区分时，应按"
+"摄影师版权在前、编辑版权在后的顺序书写，两者之间用 NULL 空字符分隔 (在这种情"
+"况下，由于声明也以 NULL 空字符结尾，因此有两个 NULL 空字符) (见示例 1)。当仅"
+"给出摄影师版权时，以一个 NULL 空字符结束 (见示例 2)。当仅给出编辑版权时，摄影"
+"师版权部分由一个空格和一个结尾 NULL 空字符组成，然后给出编辑版权 (见示例 3)。"
+"当该字段留空时，视为未知。"
 
-#: libexif/exif-tag.c:479
+#: libexif/exif-tag.c:481
 msgid "Exposure time, given in seconds (sec)."
-msgstr ""
+msgstr "曝光时间，单位为秒。"
 
-#: libexif/exif-tag.c:482
+#: libexif/exif-tag.c:484
 msgid "The F number."
-msgstr ""
+msgstr "F/光圈值"
 
-#: libexif/exif-tag.c:487
+#: libexif/exif-tag.c:489
 msgid "Image Resources Block"
-msgstr ""
+msgstr "图像资源块"
 
-#: libexif/exif-tag.c:490
+#: libexif/exif-tag.c:491
+#, fuzzy
+msgid "Exif IFD Pointer"
+msgstr "GPS 信息 IFD 指针"
+
+#: libexif/exif-tag.c:492
 msgid ""
 "A pointer to the Exif IFD. Interoperability, Exif IFD has the same structure "
 "as that of the IFD specified in TIFF. ordinarily, however, it does not "
 "contain image data as in the case of TIFF."
 msgstr ""
+"指向 EXIF IFD 的指针。互操作性方面，EXIF IFD 的结构与 TIFF 中指定的 IFD 相"
+"同。但通常情况下，它不像 TIFF 那样包含图像数据。"
 
-#: libexif/exif-tag.c:498
+#: libexif/exif-tag.c:500
 msgid "Exposure Program"
-msgstr ""
+msgstr "曝光程序"
 
-#: libexif/exif-tag.c:499
+#: libexif/exif-tag.c:501
 msgid ""
 "The class of the program used by the camera to set exposure when the picture "
 "is taken."
-msgstr ""
+msgstr "相机拍摄照片时用于设置曝光的程序类别。"
 
-#: libexif/exif-tag.c:503
+#: libexif/exif-tag.c:505
 msgid "Spectral Sensitivity"
-msgstr ""
+msgstr "光谱敏感度"
 
-#: libexif/exif-tag.c:504
+#: libexif/exif-tag.c:506
 msgid ""
 "Indicates the spectral sensitivity of each channel of the camera used. The "
 "tag value is an ASCII string compatible with the standard developed by the "
 "ASTM Technical Committee."
 msgstr ""
+"表示相机各通道的光谱敏感度。该标签的值为兼容美国材料与试验协会 (ASTM) 技术委"
+"员会制定标准的 ASCII 字符串。"
 
-#: libexif/exif-tag.c:509
+#: libexif/exif-tag.c:511
 msgid "GPS Info IFD Pointer"
-msgstr ""
+msgstr "GPS 信息 IFD 指针"
 
-#: libexif/exif-tag.c:510
+#: libexif/exif-tag.c:512
 msgid ""
 "A pointer to the GPS Info IFD. The Interoperability structure of the GPS "
 "Info IFD, like that of Exif IFD, has no image data."
 msgstr ""
+"指向 GPS 信息 IFD 的指针。与 EXIF IFD 一样，GPS 信息 IFD 的互操作性结构不包含"
+"图像数据。"
 
-#: libexif/exif-tag.c:515
+#: libexif/exif-tag.c:517
 msgid "ISO Speed Ratings"
-msgstr ""
+msgstr "ISO 感光度等级"
 
-#: libexif/exif-tag.c:516
+#: libexif/exif-tag.c:518
 msgid ""
 "Indicates the ISO Speed and ISO Latitude of the camera or input device as "
 "specified in ISO 12232."
-msgstr ""
+msgstr "表示相机或输入设备的 ISO 速度和 ISO 宽容度，符合 ISO 12232 规范。"
 
-#: libexif/exif-tag.c:519
+#: libexif/exif-tag.c:521
 msgid "Opto-Electronic Conversion Function"
-msgstr ""
+msgstr "光电转换函数"
 
-#: libexif/exif-tag.c:520
+#: libexif/exif-tag.c:522
 msgid ""
 "Indicates the Opto-Electronic Conversion Function (OECF) specified in ISO "
 "14524. <OECF> is the relationship between the camera optical input and the "
 "image values."
 msgstr ""
+"表示 ISO 14524 中规定的光电转换函数 (Opto-Electronic Conversion Function, "
+"OECF)。<OECF> 标签反映了相机光学输入与图像值之间的关系。"
 
-#: libexif/exif-tag.c:525
+#: libexif/exif-tag.c:527
 msgid "Time Zone Offset"
-msgstr ""
-
-#: libexif/exif-tag.c:526
-msgid "Encodes time zone of camera clock relative to GMT."
-msgstr ""
+msgstr "时区偏移"
 
 #: libexif/exif-tag.c:528
-msgid "Sensitivity Type"
-msgstr ""
+msgid "Encodes time zone of camera clock relative to GMT."
+msgstr "相对于格林威治标准时间 (GMT) 对相机时钟的时区进行编码。"
 
-#: libexif/exif-tag.c:529
+#: libexif/exif-tag.c:530
+msgid "Sensitivity Type"
+msgstr "感光度类型"
+
+#: libexif/exif-tag.c:531
 msgid ""
 "The SensitivityType tag indicates which one of the parameters of ISO12232 is "
 "the PhotographicSensitivity tag. Although it is an optional tag, it should "
 "be recorded when a PhotographicSensitivity tag is recorded. Value = 4, 5, 6, "
 "or 7 may be used in case that the values of plural parameters are the same."
 msgstr ""
+"感光度类型(SensitivityType) 标签用于表示 ISO12232 规范中的哪个参数是 "
+"PhotographicSensitivity 标签。尽管这是一个可选标签，但在记录 "
+"PhotographicSensitivity 标签时应同时记录此标签。如果多个参数的值相同，则可以"
+"使用值 4、5、6 或 7。"
 
-#: libexif/exif-tag.c:535
+#: libexif/exif-tag.c:537
 msgid "Standard Output Sensitivity"
-msgstr ""
+msgstr "标准输出感光度"
 
-#: libexif/exif-tag.c:539
+#: libexif/exif-tag.c:541
 msgid "Recommended Exposure Index"
-msgstr ""
+msgstr "建议曝光指数"
 
-#: libexif/exif-tag.c:543 libexif/pentax/mnote-pentax-tag.c:56
+#: libexif/exif-tag.c:545 libexif/pentax/mnote-pentax-tag.c:56
 msgid "ISO Speed"
-msgstr "ISO 速度"
+msgstr "ISO 感光度"
 
-#: libexif/exif-tag.c:547
+#: libexif/exif-tag.c:549
 msgid "ISO Speed Latitude yyy"
-msgstr ""
+msgstr "ISO 感光度 yyy 纬度值"
 
-#: libexif/exif-tag.c:551
+#: libexif/exif-tag.c:553
 msgid "ISO Speed Latitude zzz"
-msgstr ""
+msgstr "ISO 感光度 zzz 纬度值"
 
-#: libexif/exif-tag.c:554
+#: libexif/exif-tag.c:556
 msgid "Exif Version"
-msgstr "Exif 版本"
+msgstr "EXIF 版本"
 
-#: libexif/exif-tag.c:555
+#: libexif/exif-tag.c:557
 msgid ""
 "The version of this standard supported. Nonexistence of this field is taken "
 "to mean nonconformance to the standard."
-msgstr ""
+msgstr "本标准所支持的版本。若不存在此字段，则视为不符合规范。"
 
-#: libexif/exif-tag.c:559
+#: libexif/exif-tag.c:561
 msgid "Date and Time (Original)"
-msgstr "日期和时间（原始）"
+msgstr "日期和时间 (原始)"
 
-#: libexif/exif-tag.c:560
+#: libexif/exif-tag.c:562
 msgid ""
 "The date and time when the original image data was generated. For a digital "
 "still camera the date and time the picture was taken are recorded."
 msgstr ""
+"原始图像数据生成的日期和时间。对于数码相机而言，拍摄照片的日期和时间会被记录"
+"在此标签中。"
 
-#: libexif/exif-tag.c:565
+#: libexif/exif-tag.c:567
 msgid "Date and Time (Digitized)"
-msgstr ""
+msgstr "日期和时间 (数字化)"
 
-#: libexif/exif-tag.c:566
+#: libexif/exif-tag.c:568
 msgid "The date and time when the image was stored as digital data."
-msgstr ""
+msgstr "图像被以数字化数据形式存储的日期和时间。"
 
-#: libexif/exif-tag.c:569
+#: libexif/exif-tag.c:571
 msgid "Offset Time For DateTime"
-msgstr ""
+msgstr "DateTime (日期时间) 偏移时间"
 
-#: libexif/exif-tag.c:570
+#: libexif/exif-tag.c:572
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight saving time) of the time of DateTime "
@@ -3735,12 +3889,17 @@ msgid ""
 "characters. The character string length is 7 Bytes including NULL for "
 "termination. When the field is left blank, it is treated as unknown."
 msgstr ""
+"用于记录 DateTime (日期时间) 标签中的时间相对于 UTC (协调世界时) (包括夏令时"
+"与 UTC 的时间差) 的偏移量的标签。记录偏移量时的格式为“+|-HH:MM”。其中“+| -”部"
+"分应记录为“+”或“-”。当偏移量未知时，除冒号 (“:”) 外的所有字符空间应填入空格，"
+"或者在互操作性字段填入空格。字符串长度为 7 字节 (含用于终止的 NULL 空字符)。"
+"当该字段留空时，视为未知。"
 
-#: libexif/exif-tag.c:573
+#: libexif/exif-tag.c:575
 msgid "Offset Time For DateTimeOriginal"
-msgstr ""
+msgstr "DateTimeOriginal (原始日期时间) 偏移时间"
 
-#: libexif/exif-tag.c:574
+#: libexif/exif-tag.c:576
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight saving  time)  of  the time  of  "
@@ -3752,12 +3911,17 @@ msgid ""
 "including NULL for termination. When the field is left blank, it is treated "
 "as unknown."
 msgstr ""
+"用于记录 DateTimeOriginal (原始日期时间) 标签中的时间相对于 UTC (协调世界时) "
+"(包括夏令时与 UTC 的时间差) 的偏移量的标签。记录偏移量时的格式为“+|-HH:MM”。"
+"其中“+| -”部分应记录为“+”或“-”。当偏移量未知时，除冒号 (“:”) 外的所有字符空间"
+"应填入空格，或者在互操作性字段填入空格。字符串长度为 7 字节 (含用于终止的 "
+"NULL 空字符)。当该字段留空时，视为未知。"
 
-#: libexif/exif-tag.c:577
+#: libexif/exif-tag.c:579
 msgid "Offset Time For DateTimeDigitized"
-msgstr ""
+msgstr "DateTimeDigitized (数字化日期时间) 偏移时间"
 
-#: libexif/exif-tag.c:578
+#: libexif/exif-tag.c:580
 msgid ""
 "A tag used to record the offset from UTC (the time difference from Universal "
 "Time Coordinated including daylight  saving  time)  of  the time  of  "
@@ -3769,12 +3933,17 @@ msgid ""
 "including NULL for termination. When the field is left blank, it is treated "
 "as unknown."
 msgstr ""
+"用于记录 DateTimeDigitized (数字化日期时间) 标签中的时间相对于 UTC (协调世界"
+"时) (包括夏令时与 UTC 的时间差) 的偏移量的标签。记录偏移量时的格式为“+|-"
+"HH:MM”。其中“+| -”部分应记录为“+”或“-”。当偏移量未知时，除冒号 (“:”) 外的所有"
+"字符空间应填入空格，或者在互操作性字段填入空格。字符串长度为 7 字节 (含用于终"
+"止的 NULL 空字符)。当该字段留空时，视为未知。"
 
-#: libexif/exif-tag.c:581
+#: libexif/exif-tag.c:583
 msgid "Components Configuration"
-msgstr ""
+msgstr "分量配置"
 
-#: libexif/exif-tag.c:582
+#: libexif/exif-tag.c:584
 msgid ""
 "Information specific to compressed data. The channels of each component are "
 "arranged in order from the 1st component to the 4th. For uncompressed data "
@@ -3783,218 +3952,240 @@ msgid ""
 "Cb and Cr, this tag is provided for cases when compressed data uses "
 "components other than Y, Cb, and Cr and to enable support of other sequences."
 msgstr ""
+"专门用于压缩数据的信息。每个颜色分量的通道按从第 1 到第 4 的顺序排列。对于未"
+"压缩的数据，数据排列在光度解释 (<PhotometricInterpretation>) 标签中给出。然"
+"而，由于 <PhotometricInterpretation> 标签只能表示 Y、Cb 和 Cr 的顺序，因此此"
+"标签用于在压缩数据使用 Y、Cb 和 Cr 以外的颜色分量的情况下支持其他序列形式。"
 
-#: libexif/exif-tag.c:592
+#: libexif/exif-tag.c:594
 msgid "Compressed Bits per Pixel"
-msgstr ""
+msgstr "每像素压缩位数"
 
-#: libexif/exif-tag.c:593
+#: libexif/exif-tag.c:595
 msgid ""
 "Information specific to compressed data. The compression mode used for a "
 "compressed image is indicated in unit bits per pixel."
-msgstr ""
+msgstr "专门用于压缩数据的信息。压缩图像所使用的压缩模式以每像素的位数来表示。"
 
-#: libexif/exif-tag.c:597 libexif/olympus/mnote-olympus-tag.c:157
+#: libexif/exif-tag.c:599 libexif/olympus/mnote-olympus-tag.c:157
 msgid "Shutter Speed"
 msgstr "快门速度"
 
-#: libexif/exif-tag.c:598
+#: libexif/exif-tag.c:600
 msgid ""
 "Shutter speed. The unit is the APEX (Additive System of Photographic "
 "Exposure) setting."
 msgstr ""
-
-#: libexif/exif-tag.c:602
-msgid "The lens aperture. The unit is the APEX value."
-msgstr ""
+"快门速度。单位为加法系统摄影曝光 (Additive System of Photographic Exposure, "
+"APEX) 的设置值。"
 
 #: libexif/exif-tag.c:604
+msgid "The lens aperture. The unit is the APEX value."
+msgstr "镜头光圈。单位为 APEX 值。"
+
+#: libexif/exif-tag.c:606
 msgid "Brightness"
 msgstr "亮度"
 
-#: libexif/exif-tag.c:605
+#: libexif/exif-tag.c:607
 msgid ""
 "The value of brightness. The unit is the APEX value. Ordinarily it is given "
 "in the range of -99.99 to 99.99."
-msgstr ""
+msgstr "亮度值。单位为 APEX 值。通常范围为 -99.99 至 99.99。"
 
-#: libexif/exif-tag.c:609
+#: libexif/exif-tag.c:611
 msgid "Exposure Bias"
 msgstr "曝光偏差"
 
-#: libexif/exif-tag.c:610
+#: libexif/exif-tag.c:612
 msgid ""
 "The exposure bias. The units is the APEX value. Ordinarily it is given in "
 "the range of -99.99 to 99.99."
-msgstr ""
+msgstr "曝光偏差。单位为 APEX 值。通常范围为 -99.99 至 99.99。"
 
-#: libexif/exif-tag.c:613
+#: libexif/exif-tag.c:615
 msgid "Maximum Aperture Value"
-msgstr ""
+msgstr "最大光圈值"
 
-#: libexif/exif-tag.c:614
+#: libexif/exif-tag.c:616
 msgid ""
 "The smallest F number of the lens. The unit is the APEX value. Ordinarily it "
 "is given in the range of 00.00 to 99.99, but it is not limited to this range."
 msgstr ""
+"镜头的最小 F 值。单位为 APEX 值。通常范围为 00.00 至 99.99，但并不仅限于这个"
+"范围。"
 
-#: libexif/exif-tag.c:619
+#: libexif/exif-tag.c:621
 msgid "Subject Distance"
-msgstr ""
+msgstr "主体距离"
 
-#: libexif/exif-tag.c:620
+#: libexif/exif-tag.c:622
 msgid "The distance to the subject, given in meters."
-msgstr ""
-
-#: libexif/exif-tag.c:623
-msgid "The metering mode."
-msgstr ""
+msgstr "拍摄主体的距离，单位为米。"
 
 #: libexif/exif-tag.c:625
+msgid "The metering mode."
+msgstr "测光模式。"
+
+#: libexif/exif-tag.c:627
 msgid "Light Source"
-msgstr ""
+msgstr "光源"
 
-#: libexif/exif-tag.c:626
+#: libexif/exif-tag.c:628
 msgid "The kind of light source."
-msgstr ""
+msgstr "光源类型。"
 
-#: libexif/exif-tag.c:629
+#: libexif/exif-tag.c:631
 msgid ""
 "This tag is recorded when an image is taken using a strobe light (flash)."
-msgstr ""
+msgstr "当使用频闪灯 (闪光灯) 拍摄图像时，会记录此标签。"
 
-#: libexif/exif-tag.c:633
+#: libexif/exif-tag.c:635
 msgid ""
 "The actual focal length of the lens, in mm. Conversion is not made to the "
 "focal length of a 35 mm film camera."
-msgstr ""
+msgstr "镜头的实际焦距，单位为 mm (毫米)。未转换为 35 mm 胶片相机的焦距。"
 
-#: libexif/exif-tag.c:636
+#: libexif/exif-tag.c:638
 msgid "Subject Area"
-msgstr ""
+msgstr "主体区域"
 
-#: libexif/exif-tag.c:637
+#: libexif/exif-tag.c:639
 msgid ""
 "This tag indicates the location and area of the main subject in the overall "
 "scene."
-msgstr ""
-
-#: libexif/exif-tag.c:641
-msgid "TIFF/EP Standard ID"
-msgstr ""
+msgstr "此标签用于标识场景中主要被摄体的位置与范围。"
 
 #: libexif/exif-tag.c:643
-msgid "Maker Note"
-msgstr ""
+msgid "TIFF/EP Standard ID"
+msgstr "TIFF/EP 标准 ID"
 
-#: libexif/exif-tag.c:644
+#: libexif/exif-tag.c:645
+msgid "Maker Note"
+msgstr "厂商注释"
+
+#: libexif/exif-tag.c:646
 msgid ""
 "A tag for manufacturers of Exif writers to record any desired information. "
 "The contents are up to the manufacturer."
 msgstr ""
+"这是供 EXIF 写入程序的制造商记录任意信息的标签。其内容由制造商自行决定。"
 
-#: libexif/exif-tag.c:647
+#: libexif/exif-tag.c:649
 msgid "User Comment"
-msgstr ""
+msgstr "用户注释"
 
-#: libexif/exif-tag.c:648
+#: libexif/exif-tag.c:650
 msgid ""
 "A tag for Exif users to write keywords or comments on the image besides "
 "those in <ImageDescription>, and without the character code limitations of "
 "the <ImageDescription> tag. The character code used in the <UserComment> tag "
 "is identified based on an ID code in a fixed 8-byte area at the start of the "
-"tag data area. The unused portion of the area is padded with NULL (\"00."
-"h\"). ID codes are assigned by means of registration. The designation method "
-"and references for each character code are defined in the specification. The "
-"value of CountN is determined based on the 8 bytes in the character code "
-"area and the number of bytes in the user comment part. Since the TYPE is not "
-"ASCII, NULL termination is not necessary. The ID code for the <UserComment> "
-"area may be a Defined code such as JIS or ASCII, or may be Undefined. The "
-"Undefined name is UndefinedText, and the ID code is filled with 8 bytes of "
-"all \"NULL\" (\"00.H\"). An Exif reader that reads the <UserComment> tag "
-"must have a function for determining the ID code. This function is not "
-"required in Exif readers that do not use the <UserComment> tag. When a "
-"<UserComment> area is set aside, it is recommended that the ID code be ASCII "
-"and that the following user comment part be filled with blank characters [20."
-"H]."
+"tag data area. The unused portion of the area is padded with NULL "
+"(\"00.h\"). ID codes are assigned by means of registration. The designation "
+"method and references for each character code are defined in the "
+"specification. The value of CountN is determined based on the 8 bytes in the "
+"character code area and the number of bytes in the user comment part. Since "
+"the TYPE is not ASCII, NULL termination is not necessary. The ID code for "
+"the <UserComment> area may be a Defined code such as JIS or ASCII, or may be "
+"Undefined. The Undefined name is UndefinedText, and the ID code is filled "
+"with 8 bytes of all \"NULL\" (\"00.H\"). An Exif reader that reads the "
+"<UserComment> tag must have a function for determining the ID code. This "
+"function is not required in Exif readers that do not use the <UserComment> "
+"tag. When a <UserComment> area is set aside, it is recommended that the ID "
+"code be ASCII and that the following user comment part be filled with blank "
+"characters [20.H]."
 msgstr ""
+"这是供 EXIF 用户在图像上记录关键词或注释的标签，用于记录图像描述 "
+"(<ImageDescription>) 标签以外的内容，且不受 <ImageDescription> 标签的字符编码"
+"限制。用户描述 (<UserComment>) 标签中使用的字符编码根据标签数据区域开头固定 "
+"8 字节区域中的 ID 代码来确定。该区域未使用的部分用 NULL (“00.h”) 填充。ID 代"
+"码通过注册分配。每个字符编码的指定方法和参考在规范中有定义。CountN 的值根据字"
+"符编码区域的 8 个字节和用户注释部分的字节数确定。由于标签类型不是 ASCII 字符"
+"串，因此不需要 NULL 结尾。<UserComment> 区域的 ID 代码可以是诸如 JIS 或 "
+"ASCII 这样的已定义代码，也可以是未定义。未定义的名称是 UndefinedText，其 ID "
+"代码用 8 个字节的全“NULL” (“00.H”) 填充。读取 <UserComment> 标签的 EXIF 读取"
+"器必须具有确定 ID 代码的功能。不使用 <UserComment> 标签的 EXIF 读取器则不需要"
+"此功能。当某个 <UserComment> 区域要被留空时，建议 ID 代码采用 ASCII 编码，并"
+"且后续的用户注释部分应填充空格字符 [20.H]。"
 
-#: libexif/exif-tag.c:671
+#: libexif/exif-tag.c:673
 msgid "Sub-second Time"
-msgstr ""
+msgstr "亚秒时间"
 
-#: libexif/exif-tag.c:672
+#: libexif/exif-tag.c:674
 msgid "A tag used to record fractions of seconds for the <DateTime> tag."
-msgstr ""
+msgstr "用于记录日期时间 (<DateTime>) 标签中秒的分数部分的标签。"
 
-#: libexif/exif-tag.c:676
+#: libexif/exif-tag.c:678
 msgid "Sub-second Time (Original)"
-msgstr ""
+msgstr "亚秒时间 (原始)"
 
-#: libexif/exif-tag.c:677
+#: libexif/exif-tag.c:679
 msgid ""
 "A tag used to record fractions of seconds for the <DateTimeOriginal> tag."
-msgstr ""
+msgstr "用于记录原始日期时间 (<DateTimeOriginal>) 标签中秒的分数部分的标签。"
 
-#: libexif/exif-tag.c:681
+#: libexif/exif-tag.c:683
 msgid "Sub-second Time (Digitized)"
-msgstr ""
+msgstr "亚秒时间 (数字化)"
 
-#: libexif/exif-tag.c:682
+#: libexif/exif-tag.c:684
 msgid ""
 "A tag used to record fractions of seconds for the <DateTimeDigitized> tag."
 msgstr ""
+"用于记录数字化日期时间 (<DateTimeDigitized>) 标签中秒的分数部分的标签。"
 
-#: libexif/exif-tag.c:686
+#: libexif/exif-tag.c:688
 msgid "XP Title"
-msgstr ""
+msgstr "XP 标题"
 
-#: libexif/exif-tag.c:687
+#: libexif/exif-tag.c:689
 msgid "A character string giving the title of the image, encoded in UTF-16LE."
-msgstr ""
+msgstr "一条表示图像标题的字符字符串，采用 UTF-16LE 编码。"
 
-#: libexif/exif-tag.c:691
+#: libexif/exif-tag.c:693
 msgid "XP Comment"
-msgstr ""
+msgstr "XP 注释"
 
-#: libexif/exif-tag.c:692
+#: libexif/exif-tag.c:694
 msgid ""
 "A character string containing a comment about the image, encoded in UTF-16LE."
-msgstr ""
+msgstr "一条包含关于图像的注释的字符串，采用 UTF-16LE 编码。"
 
-#: libexif/exif-tag.c:696
+#: libexif/exif-tag.c:698
 msgid "XP Author"
-msgstr ""
+msgstr "XP 作者"
 
-#: libexif/exif-tag.c:697
+#: libexif/exif-tag.c:699
 msgid ""
 "A character string containing the name of the image creator, encoded in "
 "UTF-16LE."
-msgstr ""
+msgstr "一条包含图像创建者名称的字符串，采用 UTF-16LE 编码。"
 
-#: libexif/exif-tag.c:701
+#: libexif/exif-tag.c:703
 msgid "XP Keywords"
-msgstr ""
+msgstr "XP 关键词"
 
-#: libexif/exif-tag.c:702
+#: libexif/exif-tag.c:704
 msgid ""
 "A character string containing key words describing the image, encoded in "
 "UTF-16LE."
-msgstr ""
+msgstr "一条包含描述图像的关键词的字符串，采用 UTF-16LE 编码。"
 
-#: libexif/exif-tag.c:706
+#: libexif/exif-tag.c:708
 msgid "XP Subject"
-msgstr ""
+msgstr "XP 主体"
 
-#: libexif/exif-tag.c:707
+#: libexif/exif-tag.c:709
 msgid "A character string giving the image subject, encoded in UTF-16LE."
-msgstr ""
+msgstr "一条表示图像主体的字符字符串，采用 UTF-16LE 编码。"
 
-#: libexif/exif-tag.c:711
+#: libexif/exif-tag.c:713
 msgid "The FlashPix format version supported by a FPXR file."
-msgstr ""
+msgstr "FPXR 文件所支持的 FlashPix 格式版本。"
 
-#: libexif/exif-tag.c:714
+#: libexif/exif-tag.c:716
 msgid ""
 "The color space information tag is always recorded as the color space "
 "specifier. Normally sRGB (=1) is used to define the color space based on the "
@@ -4002,24 +4193,29 @@ msgid ""
 "used, Uncalibrated (=FFFF.H) is set. Image data recorded as Uncalibrated can "
 "be treated as sRGB when it is converted to FlashPix."
 msgstr ""
+"色彩空间信息标签作为色彩空间标识符而总是会被记录。通常使用 sRGB (=1) 来定义基"
+"于电脑显示器条件和环境的色彩空间。如果使用的是 sRGB 之外的色彩空间，则设置为"
+"未校准 (=FFFF.H)。以未校准形式记录的图像数据在转换为 FlashPix 时可视为 sRGB。"
 
-#: libexif/exif-tag.c:722
+#: libexif/exif-tag.c:724
 msgid "Pixel X Dimension"
-msgstr ""
+msgstr "像素 X 宽度"
 
-#: libexif/exif-tag.c:723
+#: libexif/exif-tag.c:725
 msgid ""
 "Information specific to compressed data. When a compressed file is recorded, "
 "the valid width of the meaningful image must be recorded in this tag, "
 "whether or not there is padding data or a restart marker. This tag should "
 "not exist in an uncompressed file."
 msgstr ""
+"专门用于压缩数据的信息。当记录压缩文件时，无论是否存在填充数据或重新开始标"
+"记，都必须在此标签中记录有意义图像的有效宽度。此标签不应存在于未压缩文件中。"
 
-#: libexif/exif-tag.c:729
+#: libexif/exif-tag.c:731
 msgid "Pixel Y Dimension"
-msgstr ""
+msgstr "像素 Y 宽度"
 
-#: libexif/exif-tag.c:730
+#: libexif/exif-tag.c:732
 msgid ""
 "Information specific to compressed data. When a compressed file is recorded, "
 "the valid height of the meaningful image must be recorded in this tag, "
@@ -4028,12 +4224,16 @@ msgid ""
 "vertical direction, the number of lines recorded in this valid image height "
 "tag will in fact be the same as that recorded in the SOF."
 msgstr ""
+"专门用于压缩数据的信息。当记录压缩文件时，无论是否存在填充数据或重新开始标"
+"记，都必须在此标签中记录有意义图像的有效高度。此标签不应存在于未压缩文件中。"
+"由于垂直方向上不需要数据填充，因此在此有效图像高度标签中记录的行数实际上将与 "
+"SOF (图像帧开始标记) 中记录的行数相同。"
 
-#: libexif/exif-tag.c:740
+#: libexif/exif-tag.c:742
 msgid "Related Sound File"
-msgstr ""
+msgstr "关联音频文件"
 
-#: libexif/exif-tag.c:741
+#: libexif/exif-tag.c:743
 msgid ""
 "This tag is used to record the name of an audio file related to the image "
 "data. The only relational information recorded here is the Exif audio file "
@@ -4046,23 +4246,37 @@ msgid ""
 "done in any of three ways, [1], [2] and [3]. If multiple files are mapped to "
 "one file as in [2] or [3], the above format is used to record just one audio "
 "file name. If there are multiple audio files, the first recorded file is "
-"given. In the case of [3], for example, for the Exif image file \"DSC00001."
-"JPG\" only  \"SND00001.WAV\" is given as the related Exif audio file. When "
-"there are three Exif audio files \"SND00001.WAV\", \"SND00002.WAV\" and "
-"\"SND00003.WAV\", the Exif image file name for each of them, \"DSC00001."
-"JPG\", is indicated. By combining multiple relational information, a variety "
-"of playback possibilities can be supported. The method of using relational "
-"information is left to the implementation on the playback side. Since this "
-"information is an ASCII character string, it is terminated by NULL. When "
-"this tag is used to map audio files, the relation of the audio file to image "
-"data must also be indicated on the audio file end."
+"given. In the case of [3], for example, for the Exif image file "
+"\"DSC00001.JPG\" only  \"SND00001.WAV\" is given as the related Exif audio "
+"file. When there are three Exif audio files \"SND00001.WAV\", "
+"\"SND00002.WAV\" and \"SND00003.WAV\", the Exif image file name for each of "
+"them, \"DSC00001.JPG\", is indicated. By combining multiple relational "
+"information, a variety of playback possibilities can be supported. The "
+"method of using relational information is left to the implementation on the "
+"playback side. Since this information is an ASCII character string, it is "
+"terminated by NULL. When this tag is used to map audio files, the relation "
+"of the audio file to image data must also be indicated on the audio file end."
 msgstr ""
+"此标签用于记录与图像数据关联的音频文件的名称。这里仅记录 EXIF 音频文件名和扩"
+"展名 (由 8 个字符 +“.”+ 3 个字符组成的 ASCII 字符串)。路径不在此处记录。有关"
+"音频和文件命名约定的规定在规范中有定义。使用此标签时，音频文件必须按照 EXIF "
+"音频格式规范进行记录。标签的编写者也可以将诸如音频之类的数据作为 FlashPix 扩"
+"展流数据存储在 APP2 中。EXIF 图像文件和音频文件之间的映射可以通过下面的 [1]、"
+"[2] 和 [3] 三种方式的任意一种实施。如果像 [2] 或 [3] 那样将多个文件映射到一个"
+"文件，则仅使用上述格式记录一个音频文件名。如果有多个音频文件，则仅给出第一个"
+"记录的文件。例如，在 [3] 的情况下，对于 EXIF 图像文件“DSC00001.JPG”，仅给出相"
+"关的 EXIF 音频文件“SND00001.WAV”。如果有三个 EXIF 音频文"
+"件“SND00001.WAV”、“SND00002.WAV”和“SND00003.WAV”，则分别指出每个文件的 EXIF "
+"图像文件名“DSC00001.JPG”。通过结合多种关联信息，可以支持多种播放可能性。使用"
+"关联信息的方法由播放端的实现方式决定。由于此信息为 ASCII 字符串，因此以 NULL "
+"空字符结尾。当此标签用于映射音频文件时，还必须在音频文件端指明音频文件与图像"
+"数据的关系。"
 
-#: libexif/exif-tag.c:771
+#: libexif/exif-tag.c:773
 msgid "Interoperability IFD Pointer"
-msgstr ""
+msgstr "互操作性 IFD 指针"
 
-#: libexif/exif-tag.c:772
+#: libexif/exif-tag.c:774
 msgid ""
 "Interoperability IFD is composed of tags which stores the information to "
 "ensure the Interoperability and pointed by the following tag located in Exif "
@@ -4070,63 +4284,78 @@ msgid ""
 "TIFF defined IFD structure but does not contain the image data "
 "characteristically compared with normal TIFF IFD."
 msgstr ""
+"互操作性 IFD (Image File Directory，图像文件目录) 由存储确保互操作性所需信息"
+"的标签组成，并由以下位于 EXIF IFD 中的标签指向它们。互操作性 IFD 的互操作性结"
+"构与 TIFF 定义的 IFD 结构相同，但与普通 TIFF IFD 相比，其特征在于不包含图像数"
+"据。"
 
-#: libexif/exif-tag.c:781
+#: libexif/exif-tag.c:783
 msgid "Flash Energy"
-msgstr ""
+msgstr "闪光灯能量"
 
-#: libexif/exif-tag.c:782
+#: libexif/exif-tag.c:784
 msgid ""
 "Indicates the strobe energy at the time the image is captured, as measured "
 "in Beam Candle Power Seconds (BCPS)."
 msgstr ""
+"表示拍摄图像时所使用的闪光灯的能量，测量单位为 Beam Candle Power Seconds "
+"(BCPS) (光束烛光秒)。"
 
-#: libexif/exif-tag.c:786
+#: libexif/exif-tag.c:788
 msgid "Spatial Frequency Response"
-msgstr ""
+msgstr "空间频率响应"
 
-#: libexif/exif-tag.c:787
+#: libexif/exif-tag.c:789
 msgid ""
 "This tag records the camera or input device spatial frequency table and SFR "
 "values in the direction of image width, image height, and diagonal "
 "direction, as specified in ISO 12233."
 msgstr ""
+"此标签记录了相机或输入设备在图像宽度方向、图像高度方向以及对角线方向的空间频"
+"率表和 SFR 值，符合 ISO 12233 标准的规定。"
 
-#: libexif/exif-tag.c:793
+#: libexif/exif-tag.c:795
 msgid "Focal Plane X-Resolution"
-msgstr ""
+msgstr "焦平面 X 方向分辨率"
 
-#: libexif/exif-tag.c:794
+#: libexif/exif-tag.c:796
 msgid ""
 "Indicates the number of pixels in the image width (X) direction per "
 "<FocalPlaneResolutionUnit> on the camera focal plane."
 msgstr ""
+"表示相机焦平面的图像宽度 (X 方向) 上每焦平面分辨率单位 "
+"(<FocalPlaneResolutionUnit>) 的的像素数量。"
 
-#: libexif/exif-tag.c:798
+#: libexif/exif-tag.c:800
 msgid "Focal Plane Y-Resolution"
-msgstr ""
+msgstr "焦平面 Y 方向分辨率"
 
-#: libexif/exif-tag.c:799
+#: libexif/exif-tag.c:801
 msgid ""
 "Indicates the number of pixels in the image height (V) direction per "
 "<FocalPlaneResolutionUnit> on the camera focal plane."
 msgstr ""
+"表示相机焦平面的图像高度 (Y 方向) 上每焦平面分辨率单位 "
+"(<FocalPlaneResolutionUnit>) 的的像素数量。"
 
-#: libexif/exif-tag.c:803
+#: libexif/exif-tag.c:805
 msgid "Focal Plane Resolution Unit"
-msgstr ""
+msgstr "焦平面分辨率单位"
 
-#: libexif/exif-tag.c:804
+#: libexif/exif-tag.c:806
 msgid ""
 "Indicates the unit for measuring <FocalPlaneXResolution> and "
 "<FocalPlaneYResolution>. This value is the same as the <ResolutionUnit>."
 msgstr ""
+"表示用于测量焦平面 X 方向分辨率 (<FocalPlaneXResolution>) 和焦平面 Y 方向分辨"
+"率 (<FocalPlaneYResolution>) 的单位。此值与分辨率单元 (<ResolutionUnit>) 相"
+"同。"
 
-#: libexif/exif-tag.c:809
+#: libexif/exif-tag.c:811
 msgid "Subject Location"
-msgstr ""
+msgstr "主体位置"
 
-#: libexif/exif-tag.c:810
+#: libexif/exif-tag.c:812
 msgid ""
 "Indicates the location of the main subject in the scene. The value of this "
 "tag represents the pixel at the center of the main subject relative to the "
@@ -4134,619 +4363,644 @@ msgid ""
 "value indicates the X column number and the second indicates the Y row "
 "number."
 msgstr ""
+"表示场景中被摄主体的位置。此标签的值代表被摄主体中心相对于左边缘的像素，该值"
+"在按照旋转标签 (<Rotation>) 进行旋转处理之前确定。第一个值表示 X 列数，第二个"
+"值表示 Y 行数。"
 
-#: libexif/exif-tag.c:817
+#: libexif/exif-tag.c:819
 msgid "Exposure Index"
-msgstr ""
+msgstr "曝光指数"
 
-#: libexif/exif-tag.c:818
+#: libexif/exif-tag.c:820
 msgid ""
 "Indicates the exposure index selected on the camera or input device at the "
 "time the image is captured."
-msgstr ""
+msgstr "表示拍摄图像时在相机或输入设备上所选的曝光指数。"
 
-#: libexif/exif-tag.c:821
+#: libexif/exif-tag.c:823
 msgid "Sensing Method"
-msgstr ""
+msgstr "传感器类型"
 
-#: libexif/exif-tag.c:822
+#: libexif/exif-tag.c:824
 msgid "Indicates the image sensor type on the camera or input device."
-msgstr ""
+msgstr "表示相机或输入设备上的图像传感器类型。"
 
-#: libexif/exif-tag.c:825 libexif/fuji/mnote-fuji-tag.c:66
+#: libexif/exif-tag.c:827 libexif/fuji/mnote-fuji-tag.c:66
 msgid "File Source"
-msgstr ""
+msgstr "文件来源"
 
-#: libexif/exif-tag.c:826
+#: libexif/exif-tag.c:828
 msgid ""
 "Indicates the image source. If a DSC recorded the image, the tag value of "
 "this tag always be set to 3, indicating that the image was recorded on a DSC."
 msgstr ""
+"表示图像来源。如果图像由数码相机 (DSC) 记录，则此标签的值始终设置为 3，以表明"
+"图像是在数码相机上记录的。"
 
-#: libexif/exif-tag.c:830
+#: libexif/exif-tag.c:832
 msgid "Scene Type"
-msgstr ""
+msgstr "场景类型"
 
-#: libexif/exif-tag.c:831
+#: libexif/exif-tag.c:833
 msgid ""
 "Indicates the type of scene. If a DSC recorded the image, this tag value "
 "must always be set to 1, indicating that the image was directly photographed."
 msgstr ""
+"表示场景类型。如果图像由数码相机 (DSC) 拍摄，此标签值必须始终设置为 1，表示该"
+"图像为直接拍摄所得。"
 
-#: libexif/exif-tag.c:841
+#: libexif/exif-tag.c:843
 msgid "Custom Rendered"
-msgstr ""
+msgstr "定制化渲染"
 
-#: libexif/exif-tag.c:842
+#: libexif/exif-tag.c:844
 msgid ""
 "This tag indicates the use of special processing on image data, such as "
 "rendering geared to output. When special processing is performed, the reader "
 "is expected to disable or minimize any further processing."
 msgstr ""
+"此标签表明图像数据经过了特殊处理，例如针对输出的渲染处理。当进行特殊处理时，"
+"阅读器应禁用或尽量减少任何进一步的处理。"
 
-#: libexif/exif-tag.c:848
+#: libexif/exif-tag.c:850
 msgid ""
 "This tag indicates the exposure mode set when the image was shot. In auto-"
 "bracketing mode, the camera shoots a series of frames of the same scene at "
 "different exposure settings."
 msgstr ""
+"此标签表明拍摄图像时所设置的曝光模式。在自动包围曝光模式下，相机会对同一场景"
+"以不同的曝光设置拍摄一系列画面。"
 
-#: libexif/exif-tag.c:853
+#: libexif/exif-tag.c:855
 msgid "This tag indicates the white balance mode set when the image was shot."
-msgstr ""
+msgstr "此标签表示拍摄图像时所设置的白平衡模式。"
 
-#: libexif/exif-tag.c:857
+#: libexif/exif-tag.c:859
 msgid "Digital Zoom Ratio"
-msgstr ""
+msgstr "数码变焦倍率"
 
-#: libexif/exif-tag.c:858
+#: libexif/exif-tag.c:860
 msgid ""
 "This tag indicates the digital zoom ratio when the image was shot. If the "
 "numerator of the recorded value is 0, this indicates that digital zoom was "
 "not used."
 msgstr ""
+"此标签表示拍摄图像时的数码变焦倍率。如果所记录值的分子为 0，则表示未使用数码"
+"变焦。"
 
-#: libexif/exif-tag.c:863
+#: libexif/exif-tag.c:865
 msgid "Focal Length in 35mm Film"
-msgstr ""
+msgstr "35mm 胶片等效焦距"
 
-#: libexif/exif-tag.c:864
+#: libexif/exif-tag.c:866
 msgid ""
 "This tag indicates the equivalent focal length assuming a 35mm film camera, "
 "in mm. A value of 0 means the focal length is unknown. Note that this tag "
 "differs from the FocalLength tag."
 msgstr ""
+"此标签表示假设使用 35 mm 胶片相机时的等效焦距，单位为mm (毫米)。值为 0 表示焦"
+"距未知。请注意，此标签与“FocalLength”(焦距) 标签不同。"
 
-#: libexif/exif-tag.c:870
+#: libexif/exif-tag.c:872
 msgid "Scene Capture Type"
-msgstr ""
+msgstr "场景捕获类型"
 
-#: libexif/exif-tag.c:871
+#: libexif/exif-tag.c:873
 msgid ""
 "This tag indicates the type of scene that was shot. It can also be used to "
 "record the mode in which the image was shot. Note that this differs from the "
 "scene type <SceneType> tag."
 msgstr ""
+"此标签表明所拍摄场景的类型。它也可用于记录图像的拍摄模式。请注意，这与场景类"
+"型 <SceneType> 标签不同。"
 
-#: libexif/exif-tag.c:876
+#: libexif/exif-tag.c:878
 msgid "Gain Control"
-msgstr ""
+msgstr "增益控制"
 
-#: libexif/exif-tag.c:877
+#: libexif/exif-tag.c:879
 msgid "This tag indicates the degree of overall image gain adjustment."
-msgstr ""
+msgstr "此标签表示整体图像增益调整的程度。"
 
-#: libexif/exif-tag.c:881
+#: libexif/exif-tag.c:883
 msgid ""
 "This tag indicates the direction of contrast processing applied by the "
 "camera when the image was shot."
-msgstr ""
+msgstr "此标签表明相机拍摄图像时所应用的对比度处理方向。"
 
-#: libexif/exif-tag.c:885
+#: libexif/exif-tag.c:887
 msgid ""
 "This tag indicates the direction of saturation processing applied by the "
 "camera when the image was shot."
-msgstr ""
+msgstr "此标签表明相机拍摄图像时所应用的饱和度处理方向。"
 
-#: libexif/exif-tag.c:889
+#: libexif/exif-tag.c:891
 msgid ""
 "This tag indicates the direction of sharpness processing applied by the "
 "camera when the image was shot."
-msgstr ""
+msgstr "此标签表明相机拍摄图像时所应用的锐利度处理方向。"
 
-#: libexif/exif-tag.c:893
+#: libexif/exif-tag.c:895
 msgid "Device Setting Description"
-msgstr ""
+msgstr "设备设置描述"
 
-#: libexif/exif-tag.c:894
+#: libexif/exif-tag.c:896
 msgid ""
 "This tag indicates information on the picture-taking conditions of a "
 "particular camera model. The tag is used only to indicate the picture-taking "
 "conditions in the reader."
 msgstr ""
+"此标签表明特定相机型号的拍摄条件信息。该标签仅用于在读取器中指示拍摄条件。"
 
-#: libexif/exif-tag.c:900
+#: libexif/exif-tag.c:902
 msgid "Subject Distance Range"
-msgstr ""
+msgstr "主体距离范围"
 
-#: libexif/exif-tag.c:901
+#: libexif/exif-tag.c:903
 msgid "This tag indicates the distance to the subject."
-msgstr ""
+msgstr "此标签表示与拍摄对象的距离。"
 
-#: libexif/exif-tag.c:904
+#: libexif/exif-tag.c:906
 msgid ""
 "This tag indicates an identifier assigned uniquely to each image. It is "
 "recorded as an ASCII string equivalent to hexadecimal notation and 128-bit "
 "fixed length."
 msgstr ""
+"此标签表示分配给每张图像的唯一标识符。它以等同于十六进制表示法的 ASCII 字符串"
+"形式记录，且长度固定为 128 位。"
 
-#: libexif/exif-tag.c:909
+#: libexif/exif-tag.c:911
 msgid "Camera Owner Name"
-msgstr ""
+msgstr "相机所有者名称"
 
-#: libexif/exif-tag.c:910
+#: libexif/exif-tag.c:912
 msgid ""
 "This tag indicates the name of the camera owner, photographer or image "
 "creator."
-msgstr ""
+msgstr "此标签表明相机所有者、摄影师或图像创作者的姓名。"
 
-#: libexif/exif-tag.c:914
+#: libexif/exif-tag.c:916
 msgid "Body Serial Number"
-msgstr ""
+msgstr "机身序列号"
 
-#: libexif/exif-tag.c:915
+#: libexif/exif-tag.c:917
 msgid "This tag indicates the serial number of the body of the camera"
-msgstr ""
+msgstr "此标签表示相机机身的序列号。"
 
-#: libexif/exif-tag.c:918
+#: libexif/exif-tag.c:920
 msgid "Lens Specification"
-msgstr ""
+msgstr "镜头规格"
 
-#: libexif/exif-tag.c:919
+#: libexif/exif-tag.c:921
 msgid ""
 "This tag indicates minimum focal length, maximum focal length, minimum F "
 "number in the minimum focal length, and minimum F number in the maximum "
 "focal length."
 msgstr ""
+"此标签表示最小焦距、最大焦距、最小焦距下的最小 F 值以及最大焦距下的最小 F "
+"值。"
 
-#: libexif/exif-tag.c:925
+#: libexif/exif-tag.c:927
 msgid "Lens Make"
-msgstr ""
+msgstr "镜头制造商"
 
-#: libexif/exif-tag.c:926
+#: libexif/exif-tag.c:928
 msgid "This tag indicates the lens manufacturer."
-msgstr ""
+msgstr "此标签表明镜头的制造商。"
 
-#: libexif/exif-tag.c:930
+#: libexif/exif-tag.c:932
 msgid "This tag indicates the lens' model name and model number."
-msgstr ""
+msgstr "此标签表明镜头的型号名称和型号编号。"
 
-#: libexif/exif-tag.c:933
+#: libexif/exif-tag.c:935
 msgid "Lens Serial Number"
-msgstr ""
+msgstr "镜头序列号"
 
-#: libexif/exif-tag.c:934
+#: libexif/exif-tag.c:936
 msgid "This tag indicates the serial number of the interchangeable lens."
-msgstr ""
+msgstr "此标签表明可更换镜头的序列号。"
 
-#: libexif/exif-tag.c:937
+#: libexif/exif-tag.c:939
 msgid "Composite Image"
-msgstr ""
+msgstr "合成图像"
 
-#: libexif/exif-tag.c:938
+#: libexif/exif-tag.c:940
 msgid "This tag indicates whether this image was composed from multiple images"
-msgstr ""
+msgstr "此标签表明该图像是否由多个图像合成。"
 
-#: libexif/exif-tag.c:941
+#: libexif/exif-tag.c:943
 msgid "Source Image Number Of Composite Image"
-msgstr ""
+msgstr "合成图像的源图像数量"
 
-#: libexif/exif-tag.c:942
+#: libexif/exif-tag.c:944
 msgid ""
 "This tag indicates how many images are included and used in the composition "
 "of this image"
-msgstr ""
+msgstr "此标签表明了为合成此图像所使用的源图像数量。"
 
-#: libexif/exif-tag.c:945
+#: libexif/exif-tag.c:947
 msgid "Source Exposure Times of Composite Image"
-msgstr ""
+msgstr "合成图像的源图像曝光时间"
 
-#: libexif/exif-tag.c:946
+#: libexif/exif-tag.c:948
 msgid ""
 "This tag indicates the exposure times of the source images of this image"
-msgstr ""
+msgstr "此标签表明了为合成此图像所使用的源图像的曝光时间。"
 
-#: libexif/exif-tag.c:949
+#: libexif/exif-tag.c:951
 msgid "Gamma"
-msgstr ""
+msgstr "伽马值"
 
-#: libexif/exif-tag.c:950
+#: libexif/exif-tag.c:952
 msgid "Indicates the value of coefficient gamma."
-msgstr ""
+msgstr "表示图像的伽马校正系数。"
 
-#: libexif/exif-tag.c:953
+#: libexif/exif-tag.c:955
 msgid "PRINT Image Matching"
-msgstr ""
+msgstr "打印图像匹配"
 
-#: libexif/exif-tag.c:954
+#: libexif/exif-tag.c:956
 msgid "Related to Epson's PRINT Image Matching technology"
-msgstr ""
+msgstr "此标签用于爱普生的“打印图像匹配”(Epson PRINT Image Matching) 技术"
 
-#: libexif/exif-tag.c:957
+#: libexif/exif-tag.c:959
 msgid "Padding"
-msgstr ""
+msgstr "填充位"
 
-#: libexif/exif-tag.c:958
+#: libexif/exif-tag.c:960
 msgid ""
 "This tag reserves space that can be reclaimed later when additional metadata "
 "are added. New metadata can be written in place by replacing this tag with a "
 "smaller data element and using the reclaimed space to store the new or "
 "expanded metadata tags."
 msgstr ""
+"此标签用于预留空间，日后如需添加更多元数据时可将其回收使用。新的元数据在写入"
+"时可以通过用较小的数据元素替换此标签，并利用回收的空间来存储新的或扩展的元数"
+"据标签。"
 
 #: libexif/fuji/mnote-fuji-entry.c:64
 msgid "Softest"
-msgstr ""
+msgstr "最柔和"
 
 #: libexif/fuji/mnote-fuji-entry.c:68
 msgid "Hardest"
-msgstr ""
+msgstr "最锐利"
 
 #: libexif/fuji/mnote-fuji-entry.c:69 libexif/fuji/mnote-fuji-entry.c:98
 msgid "Medium soft"
-msgstr ""
+msgstr "中等柔和"
 
 #: libexif/fuji/mnote-fuji-entry.c:70 libexif/fuji/mnote-fuji-entry.c:96
 msgid "Medium hard"
-msgstr ""
+msgstr "中等锐利"
 
 #: libexif/fuji/mnote-fuji-entry.c:71 libexif/fuji/mnote-fuji-entry.c:92
 #: libexif/fuji/mnote-fuji-entry.c:100 libexif/fuji/mnote-fuji-entry.c:184
 msgid "Film simulation mode"
-msgstr ""
+msgstr "胶片模拟模式"
 
 #: libexif/fuji/mnote-fuji-entry.c:81
 msgid "Incandescent"
-msgstr ""
+msgstr "白炽灯"
 
 #: libexif/fuji/mnote-fuji-entry.c:87
 msgid "Medium high"
-msgstr ""
+msgstr "中高"
 
 #: libexif/fuji/mnote-fuji-entry.c:89
 msgid "Medium low"
-msgstr ""
+msgstr "中低"
 
 #: libexif/fuji/mnote-fuji-entry.c:90 libexif/fuji/mnote-fuji-entry.c:99
 msgid "Original"
-msgstr ""
+msgstr "原始"
 
 #: libexif/fuji/mnote-fuji-entry.c:126 libexif/pentax/mnote-pentax-entry.c:166
 #: libexif/pentax/mnote-pentax-entry.c:301
 msgid "Program AE"
-msgstr ""
+msgstr "程序 AE 自动曝光"
 
 #: libexif/fuji/mnote-fuji-entry.c:127
 msgid "Natural photo"
-msgstr ""
+msgstr "自然照片"
 
 #: libexif/fuji/mnote-fuji-entry.c:128
 msgid "Vibration reduction"
-msgstr ""
+msgstr "防抖"
 
 #: libexif/fuji/mnote-fuji-entry.c:129
 msgid "Sunset"
-msgstr ""
+msgstr "日落"
 
 #: libexif/fuji/mnote-fuji-entry.c:130 libexif/pentax/mnote-pentax-entry.c:183
 msgid "Museum"
-msgstr ""
+msgstr "博物馆"
 
 #: libexif/fuji/mnote-fuji-entry.c:131
 msgid "Party"
-msgstr ""
+msgstr "派对"
 
 #: libexif/fuji/mnote-fuji-entry.c:132
 msgid "Flower"
-msgstr ""
+msgstr "花卉"
 
 #: libexif/fuji/mnote-fuji-entry.c:133 libexif/pentax/mnote-pentax-entry.c:178
 msgid "Text"
-msgstr ""
+msgstr "文字"
 
 #: libexif/fuji/mnote-fuji-entry.c:134
 msgid "NP & flash"
-msgstr ""
+msgstr "噪点抑制 + 闪光"
 
 #: libexif/fuji/mnote-fuji-entry.c:139
 msgid "Aperture priority AE"
-msgstr ""
+msgstr "光圈优先 AE 自动曝光"
 
 #: libexif/fuji/mnote-fuji-entry.c:140
 msgid "Shutter priority AE"
-msgstr ""
+msgstr "快门优先 AE 自动曝光"
 
 #: libexif/fuji/mnote-fuji-entry.c:148
 msgid "F-Standard"
-msgstr ""
+msgstr "F-富士标准胶片"
 
 #: libexif/fuji/mnote-fuji-entry.c:149
 msgid "F-Chrome"
-msgstr ""
+msgstr "F-富士彩色胶片"
 
 #: libexif/fuji/mnote-fuji-entry.c:150
 msgid "F-B&W"
-msgstr ""
+msgstr "F-富士黑白胶片"
 
 #: libexif/fuji/mnote-fuji-entry.c:153
 msgid "No blur"
-msgstr ""
+msgstr "无模糊"
 
 #: libexif/fuji/mnote-fuji-entry.c:154
 msgid "Blur warning"
-msgstr ""
+msgstr "模糊警告"
 
 #: libexif/fuji/mnote-fuji-entry.c:157
 msgid "Focus good"
-msgstr ""
+msgstr "对焦良好"
 
 #: libexif/fuji/mnote-fuji-entry.c:158
 msgid "Out of focus"
-msgstr ""
+msgstr "失焦"
 
 #: libexif/fuji/mnote-fuji-entry.c:161
 msgid "AE good"
-msgstr ""
+msgstr "AE 曝光良好"
 
 #: libexif/fuji/mnote-fuji-entry.c:162
 msgid "Over exposed"
-msgstr ""
+msgstr "过曝"
 
 #: libexif/fuji/mnote-fuji-entry.c:166
 msgid "Wide"
-msgstr ""
+msgstr "宽"
 
 #: libexif/fuji/mnote-fuji-entry.c:169
 msgid "F0/Standard"
-msgstr ""
+msgstr "F0/标准"
 
 #: libexif/fuji/mnote-fuji-entry.c:170
 msgid "F1/Studio portrait"
-msgstr ""
+msgstr "F1/摄影棚人像"
 
 #: libexif/fuji/mnote-fuji-entry.c:171
 msgid "F1a/Professional portrait"
-msgstr ""
+msgstr "F1a/专业人像"
 
 #: libexif/fuji/mnote-fuji-entry.c:172
 msgid "F1b/Professional portrait"
-msgstr ""
+msgstr "F1b/专业人像"
 
 #: libexif/fuji/mnote-fuji-entry.c:173
 msgid "F1c/Professional portrait"
-msgstr ""
+msgstr "F1c/专业人像"
 
 #: libexif/fuji/mnote-fuji-entry.c:174
 msgid "F2/Fujichrome"
-msgstr ""
+msgstr "F2/富士彩色胶片"
 
 #: libexif/fuji/mnote-fuji-entry.c:175
 msgid "F3/Studio portrait Ex"
-msgstr ""
+msgstr "F3/摄影棚人像增强"
 
 #: libexif/fuji/mnote-fuji-entry.c:176
 msgid "F4/Velvia"
-msgstr ""
+msgstr "F4/Velvia 胶片"
 
 #: libexif/fuji/mnote-fuji-entry.c:179
 msgid "Auto (100-400%)"
-msgstr ""
+msgstr "自动 (100-400%)"
 
 #: libexif/fuji/mnote-fuji-entry.c:181
 msgid "Standard (100%)"
-msgstr ""
+msgstr "标准 (100%)"
 
 #: libexif/fuji/mnote-fuji-entry.c:182
 msgid "Wide1 (230%)"
-msgstr ""
+msgstr "宽 1 (230%)"
 
 #: libexif/fuji/mnote-fuji-entry.c:183
 msgid "Wide2 (400%)"
-msgstr ""
+msgstr "宽 2 (400%)"
 
-#: libexif/fuji/mnote-fuji-entry.c:266
+#: libexif/fuji/mnote-fuji-entry.c:267
 #, c-format
 msgid "%2.2f mm"
-msgstr ""
+msgstr "%2.2f mm"
 
 #: libexif/fuji/mnote-fuji-tag.c:38
 msgid "Maker Note Version"
-msgstr ""
+msgstr "厂商注释版本"
 
 #: libexif/fuji/mnote-fuji-tag.c:39
 msgid "This number is unique and based on the date of manufacture."
-msgstr ""
+msgstr "此数字是根据机器制造日期确定的唯一数字。"
 
 #: libexif/fuji/mnote-fuji-tag.c:43
 msgid "Chromaticity Saturation"
-msgstr ""
+msgstr "色品饱和度"
 
 #: libexif/fuji/mnote-fuji-tag.c:46
 msgid "Flash Firing Strength Compensation"
-msgstr ""
+msgstr "闪光输出强度补偿"
 
 #: libexif/fuji/mnote-fuji-tag.c:48
 msgid "Focusing Mode"
-msgstr ""
+msgstr "对焦模式"
 
 #: libexif/fuji/mnote-fuji-tag.c:49
 msgid "Focus Point"
-msgstr ""
+msgstr "对焦点"
 
 #: libexif/fuji/mnote-fuji-tag.c:50
 msgid "Slow Synchro Mode"
-msgstr ""
+msgstr "慢速同步模式"
 
 #: libexif/fuji/mnote-fuji-tag.c:51 libexif/pentax/mnote-pentax-tag.c:74
 msgid "Picture Mode"
-msgstr ""
+msgstr "画面模式"
 
 #: libexif/fuji/mnote-fuji-tag.c:52
 msgid "Continuous Taking"
-msgstr ""
+msgstr "连拍"
 
 #: libexif/fuji/mnote-fuji-tag.c:53
 msgid "Continuous Sequence Number"
-msgstr ""
+msgstr "连拍序号"
 
 #: libexif/fuji/mnote-fuji-tag.c:54
 msgid "FinePix Color"
-msgstr ""
+msgstr "FinePix 色彩"
 
 #: libexif/fuji/mnote-fuji-tag.c:55
 msgid "Blur Check"
-msgstr ""
+msgstr "模糊检查"
 
 #: libexif/fuji/mnote-fuji-tag.c:56
 msgid "Auto Focus Check"
-msgstr ""
+msgstr "自动对焦检查"
 
 #: libexif/fuji/mnote-fuji-tag.c:57
 msgid "Auto Exposure Check"
-msgstr ""
+msgstr "自动曝光检查"
 
 #: libexif/fuji/mnote-fuji-tag.c:58
 msgid "Dynamic Range"
-msgstr ""
+msgstr "动态范围"
 
 #: libexif/fuji/mnote-fuji-tag.c:59
 msgid "Film Simulation Mode"
-msgstr ""
+msgstr "胶片模拟模式"
 
 #: libexif/fuji/mnote-fuji-tag.c:60
 msgid "Dynamic Range Wide Mode"
-msgstr ""
+msgstr "动态范围宽模式"
 
 #: libexif/fuji/mnote-fuji-tag.c:61
 msgid "Development Dynamic Range Wide Mode"
-msgstr ""
+msgstr "显影动态范围宽模式"
 
 #: libexif/fuji/mnote-fuji-tag.c:62
 msgid "Minimum Focal Length"
-msgstr ""
+msgstr "最小焦距"
 
 #: libexif/fuji/mnote-fuji-tag.c:63
 msgid "Maximum Focal Length"
-msgstr ""
+msgstr "最大焦距"
 
 #: libexif/fuji/mnote-fuji-tag.c:64
 msgid "Maximum Aperture at Minimum Focal"
-msgstr ""
+msgstr "最小焦距时的最大光圈"
 
 #: libexif/fuji/mnote-fuji-tag.c:65
 msgid "Maximum Aperture at Maximum Focal"
-msgstr ""
+msgstr "最大焦距时的最大光圈"
 
 #: libexif/fuji/mnote-fuji-tag.c:67
 msgid "Order Number"
-msgstr ""
+msgstr "排序编号"
 
 #: libexif/fuji/mnote-fuji-tag.c:68 libexif/pentax/mnote-pentax-tag.c:100
 msgid "Frame Number"
-msgstr ""
+msgstr "帧编号"
 
 #: libexif/olympus/mnote-olympus-entry.c:51
 #, c-format
 msgid "Invalid format '%s', expected '%s' or '%s'."
-msgstr ""
+msgstr "无效格式“%s”，预期为“%s”或“%s”。"
 
 #: libexif/olympus/mnote-olympus-entry.c:94
 msgid "AF non D lens"
-msgstr ""
+msgstr "AF 非 D 型镜头"
 
 #: libexif/olympus/mnote-olympus-entry.c:96
 msgid "AF-D or AF-S lens"
-msgstr ""
+msgstr "AF-D 或 AF-S 镜头"
 
 #: libexif/olympus/mnote-olympus-entry.c:97
 msgid "AF-D G lens"
-msgstr ""
+msgstr "AF-D G 镜头"
 
 #: libexif/olympus/mnote-olympus-entry.c:98
 msgid "AF-D VR lens"
-msgstr ""
+msgstr "AF-D VR 镜头"
 
 #: libexif/olympus/mnote-olympus-entry.c:99
 msgid "AF-D G VR lens"
-msgstr ""
+msgstr "AF-D G VR 镜头"
 
 #: libexif/olympus/mnote-olympus-entry.c:103
 msgid "Flash unit unknown"
-msgstr ""
+msgstr "未知闪光灯"
 
 #: libexif/olympus/mnote-olympus-entry.c:104
 msgid "Flash is external"
-msgstr ""
+msgstr "外接闪光灯"
 
 #: libexif/olympus/mnote-olympus-entry.c:105
 msgid "Flash is on camera"
-msgstr ""
+msgstr "机身闪光灯"
 
 #: libexif/olympus/mnote-olympus-entry.c:108
 msgid "VGA basic"
-msgstr ""
+msgstr "VGA 基本"
 
 #: libexif/olympus/mnote-olympus-entry.c:109
 msgid "VGA normal"
-msgstr ""
+msgstr "VGA 标准"
 
 #: libexif/olympus/mnote-olympus-entry.c:110
 msgid "VGA fine"
-msgstr ""
+msgstr "VGA 精细"
 
 #: libexif/olympus/mnote-olympus-entry.c:111
 msgid "SXGA basic"
-msgstr ""
+msgstr "SXGA 基本"
 
 #: libexif/olympus/mnote-olympus-entry.c:112
 msgid "SXGA normal"
-msgstr ""
+msgstr "SXGA 标准"
 
 #: libexif/olympus/mnote-olympus-entry.c:113
 msgid "SXGA fine"
-msgstr ""
+msgstr "SXGA 精细"
 
 #: libexif/olympus/mnote-olympus-entry.c:114
 msgid "2 Mpixel basic"
-msgstr ""
+msgstr "2M 像素基本"
 
 #: libexif/olympus/mnote-olympus-entry.c:115
 msgid "2 Mpixel normal"
-msgstr ""
+msgstr "2M 像素标准"
 
 #: libexif/olympus/mnote-olympus-entry.c:116
 msgid "2 Mpixel fine"
-msgstr ""
+msgstr "2M 像素精细"
 
 #: libexif/olympus/mnote-olympus-entry.c:119
 msgid "Color"
-msgstr ""
+msgstr "色彩"
 
 #: libexif/olympus/mnote-olympus-entry.c:124
 msgid "Bright+"
-msgstr ""
+msgstr "亮度+"
 
 #: libexif/olympus/mnote-olympus-entry.c:125
 msgid "Bright-"
-msgstr ""
+msgstr "亮度-"
 
 #: libexif/olympus/mnote-olympus-entry.c:126
 msgid "Contrast+"
-msgstr ""
+msgstr "对比度+"
 
 #: libexif/olympus/mnote-olympus-entry.c:127
 msgid "Contrast-"
-msgstr ""
+msgstr "对比度-"
 
 #: libexif/olympus/mnote-olympus-entry.c:130
 msgid "ISO 80"
@@ -4767,19 +5021,19 @@ msgstr "ISO 100"
 
 #: libexif/olympus/mnote-olympus-entry.c:137
 msgid "Preset"
-msgstr ""
+msgstr "预设"
 
 #: libexif/olympus/mnote-olympus-entry.c:139
 msgid "Incandescence"
-msgstr ""
+msgstr "白炽灯"
 
 #: libexif/olympus/mnote-olympus-entry.c:140
 msgid "Fluorescence"
-msgstr ""
+msgstr "荧光灯"
 
 #: libexif/olympus/mnote-olympus-entry.c:142
 msgid "SpeedLight"
-msgstr ""
+msgstr "闪光灯"
 
 #: libexif/olympus/mnote-olympus-entry.c:145
 msgid "No fisheye"
@@ -4791,95 +5045,95 @@ msgstr "鱼眼开启"
 
 #: libexif/olympus/mnote-olympus-entry.c:149
 msgid "Normal, SQ"
-msgstr ""
+msgstr "普通，标准画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:150
 msgid "Normal, HQ"
-msgstr ""
+msgstr "普通，高画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:151
 msgid "Normal, SHQ"
-msgstr ""
+msgstr "普通，超高画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:152
 msgid "Normal, RAW"
-msgstr ""
+msgstr "普通，RAW"
 
 #: libexif/olympus/mnote-olympus-entry.c:153
 msgid "Normal, SQ1"
-msgstr ""
+msgstr "普通，标准画质 1"
 
 #: libexif/olympus/mnote-olympus-entry.c:154
 msgid "Normal, SQ2"
-msgstr ""
+msgstr "普通，标准画质 2"
 
 #: libexif/olympus/mnote-olympus-entry.c:155
 msgid "Normal, super high"
-msgstr ""
+msgstr "普通，超高"
 
 #: libexif/olympus/mnote-olympus-entry.c:156
 msgid "Normal, standard"
-msgstr ""
+msgstr "普通，标准"
 
 #: libexif/olympus/mnote-olympus-entry.c:157
 msgid "Fine, SQ"
-msgstr ""
+msgstr "精细，标准画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:158
 msgid "Fine, HQ"
-msgstr ""
+msgstr "精细，高画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:159
 msgid "Fine, SHQ"
-msgstr ""
+msgstr "精细，超高画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:160
 msgid "Fine, RAW"
-msgstr ""
+msgstr "精细，RAW"
 
 #: libexif/olympus/mnote-olympus-entry.c:161
 msgid "Fine, SQ1"
-msgstr ""
+msgstr "精细，标准画质 1"
 
 #: libexif/olympus/mnote-olympus-entry.c:162
 msgid "Fine, SQ2"
-msgstr ""
+msgstr "精细，标准画质 2"
 
 #: libexif/olympus/mnote-olympus-entry.c:163
 msgid "Fine, super high"
-msgstr ""
+msgstr "精细，超高"
 
 #: libexif/olympus/mnote-olympus-entry.c:164
 msgid "Super fine, SQ"
-msgstr ""
+msgstr "超精细，标准画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:165
 msgid "Super fine, HQ"
-msgstr ""
+msgstr "超精细，高画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:166
 msgid "Super fine, SHQ"
-msgstr ""
+msgstr "超精细，超高画质"
 
 #: libexif/olympus/mnote-olympus-entry.c:167
 msgid "Super fine, RAW"
-msgstr ""
+msgstr "超精细，RAW"
 
 #: libexif/olympus/mnote-olympus-entry.c:168
 msgid "Super fine, SQ1"
-msgstr ""
+msgstr "超精细，标准画质 1"
 
 #: libexif/olympus/mnote-olympus-entry.c:169
 msgid "Super fine, SQ2"
-msgstr ""
+msgstr "超精细，标准画质 2"
 
 #: libexif/olympus/mnote-olympus-entry.c:170
 msgid "Super fine, super high"
-msgstr ""
+msgstr "超精细，超高"
 
 #: libexif/olympus/mnote-olympus-entry.c:171
 msgid "Super fine, high"
-msgstr ""
+msgstr "超精细，高"
 
 #: libexif/olympus/mnote-olympus-entry.c:174
 #: libexif/olympus/mnote-olympus-entry.c:179
@@ -4887,417 +5141,417 @@ msgstr ""
 #: libexif/olympus/mnote-olympus-entry.c:222
 #: libexif/olympus/mnote-olympus-entry.c:245
 msgid "No"
-msgstr ""
+msgstr "无"
 
 #: libexif/olympus/mnote-olympus-entry.c:185
 msgid "On (Preset)"
-msgstr ""
+msgstr "开 (预设)"
 
 #: libexif/olympus/mnote-olympus-entry.c:190
 msgid "Fill"
-msgstr ""
+msgstr "填充"
 
 #: libexif/olympus/mnote-olympus-entry.c:197
 msgid "Internal + external"
-msgstr ""
+msgstr "内部 + 外部"
 
 #: libexif/olympus/mnote-olympus-entry.c:226
 msgid "Interlaced"
-msgstr ""
+msgstr "隔行扫描"
 
 #: libexif/olympus/mnote-olympus-entry.c:227
 msgid "Progressive"
-msgstr ""
+msgstr "逐行扫描"
 
 #: libexif/olympus/mnote-olympus-entry.c:233
 #: libexif/pentax/mnote-pentax-entry.c:87
 #: libexif/pentax/mnote-pentax-entry.c:141
 msgid "Best"
-msgstr ""
+msgstr "最佳模式"
 
 #: libexif/olympus/mnote-olympus-entry.c:234
 msgid "Adjust exposure"
-msgstr ""
+msgstr "调整曝光"
 
 #: libexif/olympus/mnote-olympus-entry.c:237
 msgid "Spot focus"
-msgstr ""
+msgstr "点对焦"
 
 #: libexif/olympus/mnote-olympus-entry.c:238
 msgid "Normal focus"
-msgstr ""
+msgstr "普通对焦"
 
 #: libexif/olympus/mnote-olympus-entry.c:241
 msgid "Record while down"
-msgstr ""
+msgstr "按住录制"
 
 #: libexif/olympus/mnote-olympus-entry.c:242
 msgid "Press start, press stop"
-msgstr ""
+msgstr "按下开始，按下停止"
 
 #: libexif/olympus/mnote-olympus-entry.c:250
 msgid "ISO 50"
-msgstr ""
+msgstr "ISO 50"
 
 #: libexif/olympus/mnote-olympus-entry.c:252
 msgid "ISO 200"
-msgstr ""
+msgstr "ISO 200"
 
 #: libexif/olympus/mnote-olympus-entry.c:253
 msgid "ISO 400"
-msgstr ""
+msgstr "ISO 400"
 
 #: libexif/olympus/mnote-olympus-entry.c:257
 #: libexif/pentax/mnote-pentax-entry.c:170
 msgid "Sport"
-msgstr ""
+msgstr "运动模式"
 
 #: libexif/olympus/mnote-olympus-entry.c:258
 msgid "TV"
-msgstr ""
+msgstr "电视模式"
 
 #: libexif/olympus/mnote-olympus-entry.c:260
 msgid "User 1"
-msgstr ""
+msgstr "用户模式 1"
 
 #: libexif/olympus/mnote-olympus-entry.c:261
 msgid "User 2"
-msgstr ""
+msgstr "用户模式 2"
 
 #: libexif/olympus/mnote-olympus-entry.c:262
 msgid "Lamp"
-msgstr ""
+msgstr "灯光模式"
 
 #: libexif/olympus/mnote-olympus-entry.c:265
 msgid "5 frames/sec"
-msgstr ""
+msgstr "5 帧/秒"
 
 #: libexif/olympus/mnote-olympus-entry.c:266
 msgid "10 frames/sec"
-msgstr ""
+msgstr "10 帧/秒"
 
 #: libexif/olympus/mnote-olympus-entry.c:267
 msgid "15 frames/sec"
-msgstr ""
+msgstr "15 帧/秒"
 
 #: libexif/olympus/mnote-olympus-entry.c:268
 msgid "20 frames/sec"
-msgstr ""
+msgstr "20 帧/秒"
 
-#: libexif/olympus/mnote-olympus-entry.c:384
+#: libexif/olympus/mnote-olympus-entry.c:386
 #, c-format
 msgid "Red Correction %f, blue Correction %f"
-msgstr ""
+msgstr "红色校正 %f，蓝色校正 %f"
 
-#: libexif/olympus/mnote-olympus-entry.c:391
+#: libexif/olympus/mnote-olympus-entry.c:393
 msgid "No manual focus selection"
-msgstr ""
+msgstr "无手动对焦选择"
 
-#: libexif/olympus/mnote-olympus-entry.c:394
+#: libexif/olympus/mnote-olympus-entry.c:396
 #, c-format
 msgid "%2.2f meters"
-msgstr ""
-
-#: libexif/olympus/mnote-olympus-entry.c:420
-msgid "AF position: center"
-msgstr ""
-
-#: libexif/olympus/mnote-olympus-entry.c:421
-msgid "AF position: top"
-msgstr ""
+msgstr "%2.2f 米"
 
 #: libexif/olympus/mnote-olympus-entry.c:422
-msgid "AF position: bottom"
-msgstr ""
+msgid "AF position: center"
+msgstr "AF 自动对焦位置：中心"
 
 #: libexif/olympus/mnote-olympus-entry.c:423
-msgid "AF position: left"
-msgstr ""
+msgid "AF position: top"
+msgstr "AF 自动对焦位置：上方"
 
 #: libexif/olympus/mnote-olympus-entry.c:424
-msgid "AF position: right"
-msgstr ""
+msgid "AF position: bottom"
+msgstr "AF 自动对焦位置：下方"
 
 #: libexif/olympus/mnote-olympus-entry.c:425
-msgid "AF position: upper-left"
-msgstr ""
+msgid "AF position: left"
+msgstr "AF 自动对焦位置：左侧"
 
 #: libexif/olympus/mnote-olympus-entry.c:426
-msgid "AF position: upper-right"
-msgstr ""
+msgid "AF position: right"
+msgstr "AF 自动对焦位置：右侧"
 
 #: libexif/olympus/mnote-olympus-entry.c:427
-msgid "AF position: lower-left"
-msgstr ""
+msgid "AF position: upper-left"
+msgstr "AF 自动对焦位置：左上"
 
 #: libexif/olympus/mnote-olympus-entry.c:428
-msgid "AF position: lower-right"
-msgstr ""
+msgid "AF position: upper-right"
+msgstr "AF 自动对焦位置：右上"
 
 #: libexif/olympus/mnote-olympus-entry.c:429
-msgid "AF position: far left"
-msgstr ""
+msgid "AF position: lower-left"
+msgstr "AF 自动对焦位置：左下"
 
 #: libexif/olympus/mnote-olympus-entry.c:430
-msgid "AF position: far right"
-msgstr ""
+msgid "AF position: lower-right"
+msgstr "AF 自动对焦位置：右下"
 
 #: libexif/olympus/mnote-olympus-entry.c:431
-msgid "Unknown AF position"
-msgstr ""
+msgid "AF position: far left"
+msgstr "AF 自动对焦位置：最左"
 
-#: libexif/olympus/mnote-olympus-entry.c:442
-#: libexif/olympus/mnote-olympus-entry.c:513
+#: libexif/olympus/mnote-olympus-entry.c:432
+msgid "AF position: far right"
+msgstr "AF 自动对焦位置：最右"
+
+#: libexif/olympus/mnote-olympus-entry.c:433
+msgid "Unknown AF position"
+msgstr "未知 AF 自动对焦位置"
+
+#: libexif/olympus/mnote-olympus-entry.c:444
+#: libexif/olympus/mnote-olympus-entry.c:515
 #, c-format
 msgid "Internal error (unknown value %hi)"
-msgstr ""
+msgstr "内部错误 (未知值 %hi)"
 
-#: libexif/olympus/mnote-olympus-entry.c:450
-#: libexif/olympus/mnote-olympus-entry.c:521
+#: libexif/olympus/mnote-olympus-entry.c:452
+#: libexif/olympus/mnote-olympus-entry.c:523
 #, c-format
 msgid "Unknown value %hi"
-msgstr ""
+msgstr "未知值 %hi"
 
-#: libexif/olympus/mnote-olympus-entry.c:546
-#: libexif/olympus/mnote-olympus-entry.c:566
+#: libexif/olympus/mnote-olympus-entry.c:548
+#: libexif/olympus/mnote-olympus-entry.c:568
 #, c-format
 msgid "Unknown %hu"
-msgstr ""
+msgstr "位置 %hu"
 
-#: libexif/olympus/mnote-olympus-entry.c:563
+#: libexif/olympus/mnote-olympus-entry.c:565
 msgid "2 sec."
-msgstr ""
+msgstr "2 秒"
 
-#: libexif/olympus/mnote-olympus-entry.c:602
+#: libexif/olympus/mnote-olympus-entry.c:604
 msgid "Fast"
-msgstr ""
+msgstr "快速"
 
-#: libexif/olympus/mnote-olympus-entry.c:706
+#: libexif/olympus/mnote-olympus-entry.c:708
 msgid "Automatic"
-msgstr ""
+msgstr "自动"
 
-#: libexif/olympus/mnote-olympus-entry.c:736
+#: libexif/olympus/mnote-olympus-entry.c:738
 #, c-format
 msgid "Manual: %liK"
-msgstr ""
+msgstr "手动：%liK"
 
-#: libexif/olympus/mnote-olympus-entry.c:739
+#: libexif/olympus/mnote-olympus-entry.c:741
 msgid "Manual: unknown"
-msgstr ""
+msgstr "手动：位置"
 
-#: libexif/olympus/mnote-olympus-entry.c:745
+#: libexif/olympus/mnote-olympus-entry.c:747
 msgid "One-touch"
-msgstr ""
+msgstr "一键式"
 
-#: libexif/olympus/mnote-olympus-entry.c:813
-#: libexif/olympus/mnote-olympus-entry.c:823
+#: libexif/olympus/mnote-olympus-entry.c:815
+#: libexif/olympus/mnote-olympus-entry.c:825
 msgid "Infinite"
-msgstr ""
+msgstr "无限远"
 
-#: libexif/olympus/mnote-olympus-entry.c:831
+#: libexif/olympus/mnote-olympus-entry.c:833
 #, c-format
 msgid "%i bytes unknown data: "
-msgstr ""
+msgstr "%i 字节的未知数据："
 
 #: libexif/olympus/mnote-olympus-tag.c:40
 #: libexif/olympus/mnote-olympus-tag.c:55
 msgid "ISO Setting"
-msgstr ""
+msgstr "ISO 设置"
 
 #: libexif/olympus/mnote-olympus-tag.c:41
 msgid "Color Mode (?)"
-msgstr ""
+msgstr "色彩模式 (?)"
 
 #: libexif/olympus/mnote-olympus-tag.c:44
 msgid "Image Sharpening"
-msgstr ""
+msgstr "图像锐化"
 
 #: libexif/olympus/mnote-olympus-tag.c:46
 msgid "Flash Setting"
-msgstr ""
+msgstr "闪光灯设置"
 
 #: libexif/olympus/mnote-olympus-tag.c:48
 msgid "White Balance Fine Adjustment"
-msgstr ""
+msgstr "白平衡微调"
 
 #: libexif/olympus/mnote-olympus-tag.c:49
 msgid "White Balance RB"
-msgstr ""
+msgstr "白平衡红/蓝调节"
 
 #: libexif/olympus/mnote-olympus-tag.c:50
 msgid "Program Shift"
-msgstr ""
+msgstr "程序移位"
 
 #: libexif/olympus/mnote-olympus-tag.c:51
 msgid "ISO Selection"
-msgstr ""
+msgstr "ISO 选择"
 
 #: libexif/olympus/mnote-olympus-tag.c:52
 msgid "Preview Image IFD"
-msgstr ""
+msgstr "预览图像 IFD"
 
 #: libexif/olympus/mnote-olympus-tag.c:52
 msgid "Offset of the preview image directory (IFD) inside the file."
-msgstr ""
+msgstr "文件中预览图像目录 (IFD) 的偏移量。"
 
 #: libexif/olympus/mnote-olympus-tag.c:53
 msgid "Exposurediff ?"
-msgstr ""
+msgstr "曝光差异？"
 
 #: libexif/olympus/mnote-olympus-tag.c:56
 msgid "Image Boundary"
-msgstr ""
+msgstr "图像边界"
 
 #: libexif/olympus/mnote-olympus-tag.c:57
 msgid "External Flash Exposure Compensation"
-msgstr ""
+msgstr "外接闪光灯曝光补偿"
 
 #: libexif/olympus/mnote-olympus-tag.c:58
 msgid "Flash Exposure Bracket Value"
-msgstr ""
+msgstr "闪光曝光包围值"
 
 #: libexif/olympus/mnote-olympus-tag.c:59
 msgid "Exposure Bracket Value"
-msgstr ""
+msgstr "曝光包围值"
 
 #: libexif/olympus/mnote-olympus-tag.c:60
 #: libexif/olympus/mnote-olympus-tag.c:130
 msgid "Image Adjustment"
-msgstr ""
+msgstr "图像调整"
 
 #: libexif/olympus/mnote-olympus-tag.c:61
 msgid "Tone Compensation"
-msgstr ""
+msgstr "色调补偿"
 
 #: libexif/olympus/mnote-olympus-tag.c:62
 msgid "Adapter"
-msgstr ""
+msgstr "适配器"
 
 #: libexif/olympus/mnote-olympus-tag.c:64
 msgid "Lens"
-msgstr ""
+msgstr "镜头"
 
 #: libexif/olympus/mnote-olympus-tag.c:65
 #: libexif/olympus/mnote-olympus-tag.c:169
 #: libexif/olympus/mnote-olympus-tag.c:219
 msgid "Manual Focus Distance"
-msgstr ""
+msgstr "手动对焦距离"
 
 #: libexif/olympus/mnote-olympus-tag.c:67
 msgid "Flash Used"
-msgstr ""
+msgstr "闪光灯使用状态"
 
 #: libexif/olympus/mnote-olympus-tag.c:68
 msgid "AF Focus Position"
-msgstr ""
+msgstr "AF 自动对焦位置"
 
 #: libexif/olympus/mnote-olympus-tag.c:69
 msgid "Bracketing"
-msgstr ""
+msgstr "包围曝光"
 
 #: libexif/olympus/mnote-olympus-tag.c:71
 msgid "Lens F Stops"
-msgstr ""
+msgstr "镜头 F 值/光圈档位"
 
 #: libexif/olympus/mnote-olympus-tag.c:72
 msgid "Contrast Curve"
-msgstr ""
+msgstr "对比度曲线"
 
 #: libexif/olympus/mnote-olympus-tag.c:73
 #: libexif/olympus/mnote-olympus-tag.c:129
 #: libexif/pentax/mnote-pentax-tag.c:136
 msgid "Color Mode"
-msgstr ""
+msgstr "色彩模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:74
 msgid "Light Type"
-msgstr ""
+msgstr "光源类型"
 
 #: libexif/olympus/mnote-olympus-tag.c:75
 msgid "Shot Info"
-msgstr ""
+msgstr "拍摄信息"
 
 #: libexif/olympus/mnote-olympus-tag.c:76
 msgid "Hue Adjustment"
-msgstr ""
+msgstr "色相调整"
 
 #: libexif/olympus/mnote-olympus-tag.c:78
 #: libexif/olympus/mnote-olympus-tag.c:197
 #: libexif/pentax/mnote-pentax-tag.c:110
 msgid "Noise Reduction"
-msgstr ""
+msgstr "降噪"
 
 #: libexif/olympus/mnote-olympus-tag.c:80
 msgid "Lens Data"
-msgstr ""
+msgstr "镜头数据"
 
 #: libexif/olympus/mnote-olympus-tag.c:81
 msgid "Sensor Pixel Size"
-msgstr ""
+msgstr "传感器像素尺寸"
 
 #: libexif/olympus/mnote-olympus-tag.c:83
 msgid "Retouch History"
-msgstr ""
+msgstr "后期编辑历史记录"
 
 #: libexif/olympus/mnote-olympus-tag.c:85
 msgid "Image Data Size"
-msgstr ""
+msgstr "图像数据大小"
 
 #: libexif/olympus/mnote-olympus-tag.c:85
 msgid "Size of compressed image data in bytes."
-msgstr ""
+msgstr "压缩图像数据的大小 (单位为字节)。"
 
 #: libexif/olympus/mnote-olympus-tag.c:87
 msgid "Total Number of Pictures Taken"
-msgstr ""
+msgstr "拍摄的图片总数"
 
 #: libexif/olympus/mnote-olympus-tag.c:88 libexif/pentax/mnote-pentax-tag.c:118
 msgid "Flash Info"
-msgstr ""
+msgstr "闪光灯信息"
 
 #: libexif/olympus/mnote-olympus-tag.c:89
 msgid "Optimize Image"
-msgstr ""
+msgstr "优化图像"
 
 #: libexif/olympus/mnote-olympus-tag.c:91
 msgid "Vari Program"
-msgstr ""
+msgstr "可变程序"
 
 #: libexif/olympus/mnote-olympus-tag.c:92
 msgid "Capture Editor Data"
-msgstr ""
+msgstr "拍摄编辑器数据"
 
 #: libexif/olympus/mnote-olympus-tag.c:93
 msgid "Capture Editor Version"
-msgstr ""
+msgstr "拍摄编辑器版本"
 
 #: libexif/olympus/mnote-olympus-tag.c:96
 msgid "Crop HiSpeed"
-msgstr ""
+msgstr "高速裁剪模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:97
 msgid "Exposure Tuning"
-msgstr ""
+msgstr "曝光调节"
 
 #: libexif/olympus/mnote-olympus-tag.c:99
 msgid "VR Info"
-msgstr ""
+msgstr "防抖信息"
 
 #: libexif/olympus/mnote-olympus-tag.c:100
 msgid "Image Authentication"
-msgstr ""
+msgstr "图像认证"
 
 #: libexif/olympus/mnote-olympus-tag.c:101
 msgid "Face Detect"
-msgstr ""
+msgstr "人脸检测"
 
 #: libexif/olympus/mnote-olympus-tag.c:102
 msgid "Active DLighting"
-msgstr ""
+msgstr "动态 D-Lighting 高动态范围"
 
 #: libexif/olympus/mnote-olympus-tag.c:103
 msgid "Picture Control Data"
-msgstr ""
+msgstr "画面控制数据"
 
 #: libexif/olympus/mnote-olympus-tag.c:104
 msgid "World Time"
@@ -5309,105 +5563,105 @@ msgstr "ISO 信息"
 
 #: libexif/olympus/mnote-olympus-tag.c:106
 msgid "Vignette Control"
-msgstr ""
+msgstr "暗角控制"
 
 #: libexif/olympus/mnote-olympus-tag.c:107
 msgid "Distort Info"
-msgstr ""
+msgstr "畸变信息"
 
 #: libexif/olympus/mnote-olympus-tag.c:108
 msgid "Shutter Mode"
-msgstr ""
+msgstr "快门模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:110
 msgid "Mechanical Shutter Count"
-msgstr ""
+msgstr "机械快门计数"
 
 #: libexif/olympus/mnote-olympus-tag.c:111
 msgid "MNOTE_NIKON_TAG_LOCATIONINFO"
-msgstr ""
+msgstr "MNOTE_NIKON_TAG_LOCATIONINFO"
 
 #: libexif/olympus/mnote-olympus-tag.c:112
 #: libexif/olympus/mnote-olympus-tag.c:175
 msgid "Black Level"
-msgstr ""
+msgstr "黑电平"
 
 #: libexif/olympus/mnote-olympus-tag.c:113
 msgid "Image Size Raw"
-msgstr ""
+msgstr "原始图像尺寸"
 
 #: libexif/olympus/mnote-olympus-tag.c:114
 msgid "Crop Area"
-msgstr ""
+msgstr "裁剪区域"
 
 #: libexif/olympus/mnote-olympus-tag.c:115
 msgid "Nikon Settings"
-msgstr ""
+msgstr "尼康设置"
 
 #: libexif/olympus/mnote-olympus-tag.c:116
 msgid "Color Temperature Auto"
-msgstr ""
+msgstr "色温自动"
 
 #: libexif/olympus/mnote-olympus-tag.c:117
 msgid "Serial Number 2"
-msgstr ""
+msgstr "序列号 2"
 
 #: libexif/olympus/mnote-olympus-tag.c:118
 msgid "Saturation 2"
-msgstr ""
+msgstr "饱和度 2"
 
 #: libexif/olympus/mnote-olympus-tag.c:120
 msgid "High ISO Noise Reduction"
-msgstr ""
+msgstr "高 ISO 降噪"
 
 #: libexif/olympus/mnote-olympus-tag.c:121
 msgid "Toning Effect"
-msgstr ""
+msgstr "色调效果"
 
 #: libexif/olympus/mnote-olympus-tag.c:122
 msgid "Powerup Time"
-msgstr ""
+msgstr "开机时间"
 
 #: libexif/olympus/mnote-olympus-tag.c:125
 msgid "Retouch Info"
-msgstr ""
+msgstr "后期编辑信息"
 
 #: libexif/olympus/mnote-olympus-tag.c:126
 msgid "Preview Image"
-msgstr ""
+msgstr "预览图像"
 
 #: libexif/olympus/mnote-olympus-tag.c:131
 #: libexif/olympus/mnote-olympus-tag.c:217
 msgid "CCD Sensitivity"
-msgstr ""
+msgstr "CCD 灵敏度"
 
 #: libexif/olympus/mnote-olympus-tag.c:133
 msgid "Focus"
-msgstr ""
+msgstr "对焦"
 
 #: libexif/olympus/mnote-olympus-tag.c:136
 msgid "Converter"
-msgstr ""
+msgstr "转换器"
 
 #: libexif/olympus/mnote-olympus-tag.c:139
 msgid "Thumbnail Image"
-msgstr ""
+msgstr "缩略图图像"
 
 #: libexif/olympus/mnote-olympus-tag.c:140
 msgid "Speed/Sequence/Panorama Direction"
-msgstr ""
+msgstr "速度/顺序/全景扫描方向"
 
 #: libexif/olympus/mnote-olympus-tag.c:143
 msgid "Black & White Mode"
-msgstr ""
+msgstr "黑白模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:145
 msgid "Focal Plane Diagonal"
-msgstr ""
+msgstr "焦平面对角线"
 
 #: libexif/olympus/mnote-olympus-tag.c:146
 msgid "Lens Distortion Parameters"
-msgstr ""
+msgstr "镜头畸变参数"
 
 #: libexif/olympus/mnote-olympus-tag.c:148
 msgid "Info"
@@ -5419,200 +5673,200 @@ msgstr "相机 ID"
 
 #: libexif/olympus/mnote-olympus-tag.c:150
 msgid "Precapture Frames"
-msgstr ""
+msgstr "预拍摄帧"
 
 #: libexif/olympus/mnote-olympus-tag.c:151
 msgid "White Board"
-msgstr ""
+msgstr "白板"
 
 #: libexif/olympus/mnote-olympus-tag.c:152
 msgid "One Touch White Balance"
-msgstr ""
+msgstr "一键白平衡"
 
 #: libexif/olympus/mnote-olympus-tag.c:153
 msgid "White Balance Bracket"
-msgstr ""
+msgstr "白平衡包围曝光"
 
 #: libexif/olympus/mnote-olympus-tag.c:154
 #: libexif/pentax/mnote-pentax-tag.c:125
 msgid "White Balance Bias"
-msgstr ""
+msgstr "白平衡偏移"
 
 #: libexif/olympus/mnote-olympus-tag.c:155
 msgid "Data Dump"
-msgstr ""
+msgstr "数据转储"
 
 #: libexif/olympus/mnote-olympus-tag.c:158
 msgid "ISO Value"
-msgstr ""
+msgstr "ISO 值"
 
 #: libexif/olympus/mnote-olympus-tag.c:159
 msgid "Aperture Value"
-msgstr ""
+msgstr "光圈值"
 
 #: libexif/olympus/mnote-olympus-tag.c:160
 msgid "Brightness Value"
-msgstr ""
+msgstr "亮度值"
 
 #: libexif/olympus/mnote-olympus-tag.c:162
 msgid "Flash Device"
-msgstr ""
+msgstr "闪光灯设备"
 
 #: libexif/olympus/mnote-olympus-tag.c:164
 msgid "Sensor Temperature"
-msgstr ""
+msgstr "传感器温度"
 
 #: libexif/olympus/mnote-olympus-tag.c:165
 msgid "Lens Temperature"
-msgstr ""
+msgstr "镜头温度"
 
 #: libexif/olympus/mnote-olympus-tag.c:166
 msgid "Light Condition"
-msgstr ""
+msgstr "光照条件"
 
 #: libexif/olympus/mnote-olympus-tag.c:170
 msgid "Zoom Step Count"
-msgstr ""
+msgstr "变焦步数"
 
 #: libexif/olympus/mnote-olympus-tag.c:171
 msgid "Focus Step Count"
-msgstr ""
+msgstr "对焦步数"
 
 #: libexif/olympus/mnote-olympus-tag.c:172
 msgid "Sharpness Setting"
-msgstr ""
+msgstr "锐利度设置"
 
 #: libexif/olympus/mnote-olympus-tag.c:173
 msgid "Flash Charge Level"
-msgstr ""
+msgstr "闪光灯充电级别"
 
 #: libexif/olympus/mnote-olympus-tag.c:174
 msgid "Color Matrix"
-msgstr ""
+msgstr "色彩矩阵"
 
 #: libexif/olympus/mnote-olympus-tag.c:176
 msgid "White Balance Setting"
-msgstr ""
+msgstr "白平衡设置"
 
 #: libexif/olympus/mnote-olympus-tag.c:177 libexif/pentax/mnote-pentax-tag.c:89
 msgid "Red Balance"
-msgstr ""
+msgstr "红平衡"
 
 #: libexif/olympus/mnote-olympus-tag.c:178 libexif/pentax/mnote-pentax-tag.c:88
 msgid "Blue Balance"
-msgstr ""
+msgstr "蓝平衡"
 
 #: libexif/olympus/mnote-olympus-tag.c:179
 msgid "Color Matrix Number"
-msgstr ""
+msgstr "色彩矩阵编号"
 
 #: libexif/olympus/mnote-olympus-tag.c:181
 msgid "Flash Exposure Comp"
-msgstr ""
+msgstr "闪光曝光补偿"
 
 #: libexif/olympus/mnote-olympus-tag.c:182
 msgid "Internal Flash Table"
-msgstr ""
+msgstr "内置闪光灯参数表"
 
 #: libexif/olympus/mnote-olympus-tag.c:183
 msgid "External Flash G Value"
-msgstr ""
+msgstr "外接闪光灯 G 值"
 
 #: libexif/olympus/mnote-olympus-tag.c:184
 msgid "External Flash Bounce"
-msgstr ""
+msgstr "外接闪光灯跳闪"
 
 #: libexif/olympus/mnote-olympus-tag.c:185
 msgid "External Flash Zoom"
-msgstr ""
+msgstr "外接闪光灯变焦"
 
 #: libexif/olympus/mnote-olympus-tag.c:186
 msgid "External Flash Mode"
-msgstr ""
+msgstr "外接闪光灯模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:187
 msgid "Contrast Setting"
-msgstr ""
+msgstr "对比度设置"
 
 #: libexif/olympus/mnote-olympus-tag.c:188
 msgid "Sharpness Factor"
-msgstr ""
+msgstr "锐利度因子"
 
 #: libexif/olympus/mnote-olympus-tag.c:189
 msgid "Color Control"
-msgstr ""
+msgstr "色彩控制"
 
 #: libexif/olympus/mnote-olympus-tag.c:190
 msgid "Olympus Image Width"
-msgstr ""
+msgstr "奥林巴斯图像宽度"
 
 #: libexif/olympus/mnote-olympus-tag.c:191
 msgid "Olympus Image Height"
-msgstr ""
+msgstr "奥林巴斯图像高度"
 
 #: libexif/olympus/mnote-olympus-tag.c:192
 msgid "Scene Detect"
-msgstr ""
+msgstr "场景检测"
 
 #: libexif/olympus/mnote-olympus-tag.c:193
 msgid "Compression Ratio"
-msgstr ""
+msgstr "压缩率"
 
 #: libexif/olympus/mnote-olympus-tag.c:194
 msgid "Preview Image Valid"
-msgstr ""
+msgstr "预览图像有效"
 
 #: libexif/olympus/mnote-olympus-tag.c:195
 msgid "AF Result"
-msgstr ""
+msgstr "AF 自动对焦结果"
 
 #: libexif/olympus/mnote-olympus-tag.c:196
 msgid "CCD Scan Mode"
-msgstr ""
+msgstr "CCD 扫描模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:198
 msgid "Infinity Lens Step"
-msgstr ""
+msgstr "无限对焦步长"
 
 #: libexif/olympus/mnote-olympus-tag.c:199
 msgid "Near Lens Step"
-msgstr ""
+msgstr "近摄焦距步进"
 
 #: libexif/olympus/mnote-olympus-tag.c:200
 msgid "Light Value Center"
-msgstr ""
+msgstr "中央光值"
 
 #: libexif/olympus/mnote-olympus-tag.c:201
 msgid "Light Value Periphery"
-msgstr ""
+msgstr "周边光值"
 
 #: libexif/olympus/mnote-olympus-tag.c:204
 msgid "Sequential Shot"
-msgstr ""
+msgstr "连拍"
 
 #: libexif/olympus/mnote-olympus-tag.c:205
 msgid "Wide Range"
-msgstr ""
+msgstr "宽范围模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:206
 msgid "Color Adjustment Mode"
-msgstr ""
+msgstr "色彩调节模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:208
 msgid "Quick Shot"
-msgstr ""
+msgstr "快速拍摄"
 
 #: libexif/olympus/mnote-olympus-tag.c:210
 msgid "Voice Memo"
-msgstr ""
+msgstr "语音备忘录"
 
 #: libexif/olympus/mnote-olympus-tag.c:211
 msgid "Record Shutter Release"
-msgstr ""
+msgstr "快门释放记录"
 
 #: libexif/olympus/mnote-olympus-tag.c:212
 msgid "Flicker Reduce"
-msgstr ""
+msgstr "防闪烁"
 
 #: libexif/olympus/mnote-olympus-tag.c:213
 msgid "Optical Zoom"
@@ -5620,223 +5874,223 @@ msgstr "光学变焦"
 
 #: libexif/olympus/mnote-olympus-tag.c:215
 msgid "Light Source Special"
-msgstr ""
+msgstr "特殊光源模式"
 
 #: libexif/olympus/mnote-olympus-tag.c:216
 msgid "Resaved"
-msgstr ""
+msgstr "重新保存"
 
 #: libexif/olympus/mnote-olympus-tag.c:218
 msgid "Scene Select"
-msgstr ""
+msgstr "场景选择"
 
 #: libexif/olympus/mnote-olympus-tag.c:220
 msgid "Sequence Shot Interval"
-msgstr ""
+msgstr "连拍间隔"
 
 #: libexif/olympus/mnote-olympus-tag.c:223
 msgid "Epson Image Width"
-msgstr "Epson 图像宽度"
+msgstr "爱普生图像宽度"
 
 #: libexif/olympus/mnote-olympus-tag.c:224
 msgid "Epson Image Height"
-msgstr "Epson 图像高度"
+msgstr "爱普生图像高度"
 
 #: libexif/olympus/mnote-olympus-tag.c:225
 msgid "Epson Software Version"
-msgstr "Epson 软件版本"
+msgstr "爱普生软件版本"
 
 #: libexif/pentax/mnote-pentax-entry.c:82
 #: libexif/pentax/mnote-pentax-entry.c:136
 msgid "Multi-exposure"
-msgstr ""
+msgstr "多重曝光"
 
 #: libexif/pentax/mnote-pentax-entry.c:85
 #: libexif/pentax/mnote-pentax-entry.c:139
 msgid "Good"
-msgstr ""
+msgstr "良好"
 
 #: libexif/pentax/mnote-pentax-entry.c:86
 #: libexif/pentax/mnote-pentax-entry.c:140
 msgid "Better"
-msgstr ""
+msgstr "更佳"
 
 #: libexif/pentax/mnote-pentax-entry.c:94
 msgid "Flash on"
-msgstr ""
+msgstr "闪光灯开启"
 
 #: libexif/pentax/mnote-pentax-entry.c:142
 msgid "TIFF"
-msgstr ""
+msgstr "TIFF"
 
 #: libexif/pentax/mnote-pentax-entry.c:152
 msgid "2560x1920 or 2304x1728"
-msgstr ""
+msgstr "2560x1920 或 2304x1728"
 
 #: libexif/pentax/mnote-pentax-entry.c:158
 msgid "2304x1728 or 2592x1944"
-msgstr ""
+msgstr "2304x1728 或 2592x1944"
 
 #: libexif/pentax/mnote-pentax-entry.c:160
 msgid "2816x2212 or 2816x2112"
-msgstr ""
+msgstr "2816x2212 或 2816x2112"
 
 #: libexif/pentax/mnote-pentax-entry.c:173
 msgid "Surf & snow"
-msgstr ""
+msgstr "冲浪与雪景"
 
 #: libexif/pentax/mnote-pentax-entry.c:174
 msgid "Sunset or candlelight"
-msgstr ""
+msgstr "日落或烛光"
 
 #: libexif/pentax/mnote-pentax-entry.c:175
 msgid "Autumn"
-msgstr ""
+msgstr "秋季"
 
 #: libexif/pentax/mnote-pentax-entry.c:180
 msgid "Self portrait"
-msgstr ""
+msgstr "自拍"
 
 #: libexif/pentax/mnote-pentax-entry.c:181
 msgid "Illustrations"
-msgstr ""
+msgstr "插画效果"
 
 #: libexif/pentax/mnote-pentax-entry.c:182
 msgid "Digital filter"
-msgstr ""
+msgstr "数码滤镜"
 
 #: libexif/pentax/mnote-pentax-entry.c:184
 msgid "Food"
-msgstr ""
+msgstr "美食"
 
 #: libexif/pentax/mnote-pentax-entry.c:185
 msgid "Green mode"
-msgstr ""
+msgstr "绿色模式"
 
 #: libexif/pentax/mnote-pentax-entry.c:186
 msgid "Light pet"
-msgstr ""
+msgstr "浅色宠物"
 
 #: libexif/pentax/mnote-pentax-entry.c:187
 msgid "Dark pet"
-msgstr ""
+msgstr "深色宠物"
 
 #: libexif/pentax/mnote-pentax-entry.c:188
 msgid "Medium pet"
-msgstr ""
+msgstr "中色宠物"
 
 #: libexif/pentax/mnote-pentax-entry.c:190
 #: libexif/pentax/mnote-pentax-entry.c:298
 msgid "Candlelight"
-msgstr ""
+msgstr "烛光"
 
 #: libexif/pentax/mnote-pentax-entry.c:191
 msgid "Natural skin tone"
-msgstr ""
+msgstr "自然肤色"
 
 #: libexif/pentax/mnote-pentax-entry.c:192
 msgid "Synchro sound record"
-msgstr ""
+msgstr "同步录音"
 
 #: libexif/pentax/mnote-pentax-entry.c:193
 msgid "Frame composite"
-msgstr ""
+msgstr "帧合成"
 
 #: libexif/pentax/mnote-pentax-entry.c:196
 msgid "Auto, did not fire"
-msgstr ""
+msgstr "自动，未闪光"
 
 #: libexif/pentax/mnote-pentax-entry.c:198
 msgid "Auto, did not fire, red-eye reduction"
-msgstr ""
+msgstr "自动，未闪光，红眼消除"
 
 #: libexif/pentax/mnote-pentax-entry.c:199
 msgid "Auto, fired"
-msgstr ""
+msgstr "自动，闪光"
 
 #: libexif/pentax/mnote-pentax-entry.c:201
 msgid "Auto, fired, red-eye reduction"
-msgstr ""
+msgstr "自动，闪光，红眼消除"
 
 #: libexif/pentax/mnote-pentax-entry.c:203
 msgid "On, wireless"
-msgstr ""
+msgstr "开启，无线"
 
 #: libexif/pentax/mnote-pentax-entry.c:204
 msgid "On, soft"
-msgstr ""
+msgstr "开启，柔光"
 
 #: libexif/pentax/mnote-pentax-entry.c:205
 msgid "On, slow-sync"
-msgstr ""
+msgstr "开启，慢速同步"
 
 #: libexif/pentax/mnote-pentax-entry.c:206
 msgid "On, slow-sync, red-eye reduction"
-msgstr ""
+msgstr "开启，慢速同步，红眼消除"
 
 #: libexif/pentax/mnote-pentax-entry.c:207
 msgid "On, trailing-curtain sync"
-msgstr ""
+msgstr "开启，后帘同步"
 
 #: libexif/pentax/mnote-pentax-entry.c:215
 msgid "AF-S"
-msgstr ""
+msgstr "AF-S"
 
 #: libexif/pentax/mnote-pentax-entry.c:216
 msgid "AF-C"
-msgstr ""
+msgstr "AF-C"
 
 #: libexif/pentax/mnote-pentax-entry.c:219
 msgid "Upper-left"
-msgstr ""
+msgstr "左上"
 
 #: libexif/pentax/mnote-pentax-entry.c:220
 msgid "Top"
-msgstr ""
+msgstr "上"
 
 #: libexif/pentax/mnote-pentax-entry.c:221
 msgid "Upper-right"
-msgstr ""
+msgstr "右上"
 
 #: libexif/pentax/mnote-pentax-entry.c:223
 msgid "Mid-left"
-msgstr ""
+msgstr "左中"
 
 #: libexif/pentax/mnote-pentax-entry.c:225
 msgid "Mid-right"
-msgstr ""
+msgstr "右中"
 
 #: libexif/pentax/mnote-pentax-entry.c:227
 msgid "Lower-left"
-msgstr ""
+msgstr "左下"
 
 #: libexif/pentax/mnote-pentax-entry.c:228
 msgid "Bottom"
-msgstr ""
+msgstr "下"
 
 #: libexif/pentax/mnote-pentax-entry.c:229
 msgid "Lower-right"
-msgstr ""
+msgstr "右下"
 
 #: libexif/pentax/mnote-pentax-entry.c:230
 msgid "Fixed center"
-msgstr ""
+msgstr "固定中心"
 
 #: libexif/pentax/mnote-pentax-entry.c:234
 msgid "Multiple"
-msgstr ""
+msgstr "多点"
 
 #: libexif/pentax/mnote-pentax-entry.c:236
 msgid "Top-center"
-msgstr ""
+msgstr "上中"
 
 #: libexif/pentax/mnote-pentax-entry.c:242
 msgid "Bottom-center"
-msgstr ""
+msgstr "下中"
 
 #: libexif/pentax/mnote-pentax-entry.c:259
 msgid "User selected"
-msgstr ""
+msgstr "用户选择"
 
 #: libexif/pentax/mnote-pentax-entry.c:284
 msgid "3008x2008 or 3040x2024"
@@ -5844,64 +6098,64 @@ msgstr "3008x2008 或 3040x2024"
 
 #: libexif/pentax/mnote-pentax-entry.c:295
 msgid "Digital filter?"
-msgstr ""
+msgstr "数码滤镜？"
 
-#: libexif/pentax/mnote-pentax-entry.c:354
-#: libexif/pentax/mnote-pentax-entry.c:363
+#: libexif/pentax/mnote-pentax-entry.c:355
+#: libexif/pentax/mnote-pentax-entry.c:364
 #, c-format
 msgid "Internal error (unknown value %hu)"
-msgstr ""
+msgstr "内部错误 (未知值 %hu)"
 
-#: libexif/pentax/mnote-pentax-entry.c:378
+#: libexif/pentax/mnote-pentax-entry.c:379
 #, c-format
 msgid "Internal error (unknown value %hu %hu)"
-msgstr ""
+msgstr "内部错误 (未知值 %hu %hu)"
 
-#: libexif/pentax/mnote-pentax-entry.c:387
+#: libexif/pentax/mnote-pentax-entry.c:388
 #, c-format
 msgid "Internal error (unknown value %hi %hi)"
-msgstr ""
+msgstr "内部错误 (未知值 %hi %hi)"
 
 #: libexif/pentax/mnote-pentax-tag.c:37 libexif/pentax/mnote-pentax-tag.c:65
 msgid "Capture Mode"
-msgstr ""
+msgstr "拍摄模式"
 
 #: libexif/pentax/mnote-pentax-tag.c:38 libexif/pentax/mnote-pentax-tag.c:72
 #: libexif/pentax/mnote-pentax-tag.c:131
 msgid "Quality Level"
-msgstr ""
+msgstr "画质级别"
 
 #: libexif/pentax/mnote-pentax-tag.c:58
 msgid "Colors"
-msgstr ""
+msgstr "色彩"
 
 #: libexif/pentax/mnote-pentax-tag.c:61
 msgid "PrintIM Settings"
-msgstr ""
+msgstr "PrintIM 设置"
 
 #: libexif/pentax/mnote-pentax-tag.c:62 libexif/pentax/mnote-pentax-tag.c:133
 msgid "Time Zone"
-msgstr ""
+msgstr "时区"
 
 #: libexif/pentax/mnote-pentax-tag.c:63
 msgid "Daylight Savings"
-msgstr ""
+msgstr "夏令时"
 
 #: libexif/pentax/mnote-pentax-tag.c:66
 msgid "Preview Size"
-msgstr ""
+msgstr "预览尺寸"
 
 #: libexif/pentax/mnote-pentax-tag.c:67
 msgid "Preview Length"
-msgstr ""
+msgstr "预览长度"
 
 #: libexif/pentax/mnote-pentax-tag.c:68 libexif/pentax/mnote-pentax-tag.c:124
 msgid "Preview Start"
-msgstr ""
+msgstr "预览开始"
 
 #: libexif/pentax/mnote-pentax-tag.c:69
 msgid "Model Identification"
-msgstr ""
+msgstr "型号标识"
 
 #: libexif/pentax/mnote-pentax-tag.c:70
 msgid "Date"
@@ -5913,55 +6167,55 @@ msgstr "时间"
 
 #: libexif/pentax/mnote-pentax-tag.c:77
 msgid "AF Point Selected"
-msgstr ""
+msgstr "选择的 AF 自动对焦点"
 
 #: libexif/pentax/mnote-pentax-tag.c:78
 msgid "Auto AF Point"
-msgstr ""
+msgstr "自动 AF 对焦点"
 
 #: libexif/pentax/mnote-pentax-tag.c:79
 msgid "Focus Position"
-msgstr ""
+msgstr "对焦位置"
 
 #: libexif/pentax/mnote-pentax-tag.c:82
 msgid "ISO Number"
-msgstr ""
+msgstr "ISO 感光度"
 
 #: libexif/pentax/mnote-pentax-tag.c:85
 msgid "Auto Bracketing"
-msgstr ""
+msgstr "自动包围曝光"
 
 #: libexif/pentax/mnote-pentax-tag.c:87
 msgid "White Balance Mode"
-msgstr ""
+msgstr "白平衡模式"
 
 #: libexif/pentax/mnote-pentax-tag.c:95
 msgid "World Time Location"
-msgstr ""
+msgstr "世界时间位置"
 
 #: libexif/pentax/mnote-pentax-tag.c:96
 msgid "Hometown City"
-msgstr ""
+msgstr "家乡城市"
 
 #: libexif/pentax/mnote-pentax-tag.c:97
 msgid "Destination City"
-msgstr ""
+msgstr "目的地城市"
 
 #: libexif/pentax/mnote-pentax-tag.c:98
 msgid "Hometown DST"
-msgstr ""
+msgstr "家乡夏令时"
 
 #: libexif/pentax/mnote-pentax-tag.c:98
 msgid "Home Daylight Savings Time"
-msgstr ""
+msgstr "家乡夏令时"
 
 #: libexif/pentax/mnote-pentax-tag.c:99
 msgid "Destination DST"
-msgstr ""
+msgstr "目的地夏令时"
 
 #: libexif/pentax/mnote-pentax-tag.c:99
 msgid "Destination Daylight Savings Time"
-msgstr ""
+msgstr "目的地夏令时"
 
 #: libexif/pentax/mnote-pentax-tag.c:101
 msgid "Image Processing"
@@ -5969,35 +6223,35 @@ msgstr "图像处理"
 
 #: libexif/pentax/mnote-pentax-tag.c:102
 msgid "Picture Mode (2)"
-msgstr ""
+msgstr "画面模式 (2)"
 
 #: libexif/pentax/mnote-pentax-tag.c:105
 msgid "Image Area Offset"
-msgstr ""
+msgstr "图像区域便宜"
 
 #: libexif/pentax/mnote-pentax-tag.c:106
 msgid "Raw Image Size"
-msgstr ""
+msgstr "RAW 图像尺寸"
 
 #: libexif/pentax/mnote-pentax-tag.c:107
 msgid "Autofocus Points Used"
-msgstr ""
+msgstr "使用的 AF 自动对焦点"
 
 #: libexif/pentax/mnote-pentax-tag.c:112
 msgid "Image Tone"
-msgstr ""
+msgstr "图像色调"
 
 #: libexif/pentax/mnote-pentax-tag.c:113
 msgid "Shake Reduction Info"
-msgstr ""
+msgstr "防抖信息"
 
 #: libexif/pentax/mnote-pentax-tag.c:114
 msgid "Black Point"
-msgstr ""
+msgstr "黑点"
 
 #: libexif/pentax/mnote-pentax-tag.c:116
 msgid "AE Info"
-msgstr ""
+msgstr "AE 自动对焦信息"
 
 #: libexif/pentax/mnote-pentax-tag.c:120
 msgid "Battery Info"
@@ -6005,40 +6259,40 @@ msgstr "电池信息"
 
 #: libexif/pentax/mnote-pentax-tag.c:121
 msgid "Hometown City Code"
-msgstr ""
+msgstr "家乡城市代码"
 
 #: libexif/pentax/mnote-pentax-tag.c:122
 msgid "Destination City Code"
-msgstr ""
+msgstr "目的地城市代码"
 
 #: libexif/pentax/mnote-pentax-tag.c:127
 msgid "Object Distance"
-msgstr ""
+msgstr "对象距离"
 
 #: libexif/pentax/mnote-pentax-tag.c:127
 msgid "Distance of photographed object in millimeters."
-msgstr ""
+msgstr "被摄对象的距离 (单位为毫米)。"
 
 #: libexif/pentax/mnote-pentax-tag.c:128
 msgid "Flash Distance"
-msgstr ""
+msgstr "闪光灯距离"
 
 #: libexif/pentax/mnote-pentax-tag.c:134
 msgid "Bestshot Mode"
-msgstr ""
+msgstr "最佳拍摄模式"
 
 #: libexif/pentax/mnote-pentax-tag.c:135
 msgid "CCS ISO Sensitivity"
-msgstr ""
+msgstr "CCS ISO 感光度"
 
 #: libexif/pentax/mnote-pentax-tag.c:137
 msgid "Enhancement"
-msgstr ""
+msgstr "增强"
 
 #: libexif/pentax/mnote-pentax-tag.c:138
 msgid "Finer"
-msgstr ""
+msgstr "更精细"
 
 #: test/nls/test-nls.c:24 test/nls/test-nls.c:27 test/nls/test-nls.c:28
 msgid "[DO_NOT_TRANSLATE_THIS_MARKER]"
-msgstr ""
+msgstr "[DO_NOT_TRANSLATE_THIS_MARKER]"

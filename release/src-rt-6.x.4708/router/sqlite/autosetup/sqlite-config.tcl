@@ -557,7 +557,25 @@ proc proc-debug {msg} {
 }
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
-define OPT_SHELL {}         ; # Feature-related CFLAGS for the sqlite3 CLI app
+#
+# OPT_SHELL = feature-related CFLAGS for the sqlite3 CLI app. The
+# list's initial values are defaults which are always applied and not
+# affected by --feature-flags. The list is appended to by various
+# --feature-flags.
+define OPT_SHELL {
+  -DSQLITE_DQS=0
+  -DSQLITE_ENABLE_FTS4
+  -DSQLITE_ENABLE_RTREE
+  -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  -DSQLITE_ENABLE_STMTVTAB
+  -DSQLITE_ENABLE_DBPAGE_VTAB
+  -DSQLITE_ENABLE_DBSTAT_VTAB
+  -DSQLITE_ENABLE_BYTECODE_VTAB
+  -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+  -DSQLITE_ENABLE_PERCENTILE
+  -DSQLITE_STRICT_SUBTYPE=1
+}
 ########################################################################
 # Adds $args, if not empty, to OPT_FEATURE_FLAGS.  If the first arg is
 # -shell then it strips that arg and passes the remaining args the
@@ -661,6 +679,7 @@ proc sqlite-check-common-system-deps {} {
     define HAVE_ZLIB 1
     define LDFLAGS_ZLIB -lz
     sqlite-add-shell-opt -DSQLITE_HAVE_ZLIB=1
+    sqlite-add-feature-flag -DSQLITE_HAVE_ZLIB=1
   } else {
     define HAVE_ZLIB 0
     define LDFLAGS_ZLIB ""
@@ -724,12 +743,11 @@ proc sqlite-setup-default-cflags {} {
   # compiling binaries for the target system (CC a.k.a. $(T.cc)).
   # Normally they're the same, but they will differ when
   # cross-compiling.
-  #
-  # When cross-compiling we default to not using the -g flag, based on a
-  # /chat discussion prompted by
-  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
   set defaultCFlags {-O2}
   if {!$::sqliteConfig(is-cross-compiling)} {
+    # When cross-compiling we default to not using the -g flag, based
+    # on a /chat discussion prompted by
+    # https://sqlite.org/forum/forumpost/9a67df63eda9925c
     lappend defaultCFlags -g
   }
   define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
@@ -787,7 +805,8 @@ proc sqlite-handle-common-feature-flags {} {
         sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
       }
     }
-    scanstatus      -DSQLITE_ENABLE_STMT_SCANSTATUS {}
+    bytecode-vtab   -DSQLITE_ENABLE_BYTECODE_VTAB {}
+    scanstatus      {-DSQLITE_ENABLE_STMT_SCANSTATUS -DSQLITE_ENABLE_BYTECODE_VTAB} {}
     column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
     dbpage          -DSQLITE_ENABLE_DBPAGE_VTAB {}
     dbstat          -DSQLITE_ENABLE_DBSTAT_VTAB {}
@@ -1118,6 +1137,27 @@ proc sqlite-check-line-editing {} {
   set editLibName "readline"     ; # "readline" or "editline"
   set editLibDef "HAVE_READLINE" ; # "HAVE_READLINE" or "HAVE_EDITLINE"
   set dirLn [opt-val with-linenoise]
+
+  # If none of --with-linenoise, --enable-readline, or --enable-editline
+  # are provided, but there exists a directory "linenoise" at $HOME or
+  # a sibling of the build or source directory, then try to use that linenoise
+  # direcctory.
+  #
+  if {"" eq $dirLn
+   && ![proj-opt-was-provided readline]
+   && ![proj-opt-was-provided editline]
+  } {
+    set dirlist ../linenoise
+    catch {lappend dirlist [file-normalize $::autosetup(srcdir)/../linenoise]}
+    catch {lappend dirlist $::env(HOME)/linenoise}
+    foreach d $dirlist {
+      if {[file exists $d/linenoise.c] && [file exists $d/linenoise.h]} {
+        set dirLn $d
+        break
+      }
+    }
+  }
+
   if {"" ne $dirLn} {
     # Use linenoise from a copy of its sources (not a library)...
     if {![file isdir $dirLn]} {
@@ -1153,6 +1193,8 @@ proc sqlite-check-line-editing {} {
     if {$::sqliteConfig(use-jim-for-codegen) && 2 == $lnVal} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
       user-notice "Adding linenoise support to jimsh."
+    } else {
+      msg-result "Using linenoise at [file-normalize $dirLn]"
     }
     return "linenoise ($flavor)"
   } elseif {[opt-bool editline]} {

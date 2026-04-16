@@ -22,8 +22,9 @@
 #
 
 AM_CPPFLAGS = -I${top_srcdir} -I${top_srcdir}/src
-check_PROGRAMS = lib_test thread_test
+check_PROGRAMS = lib_test thread_test change_id_test
 TESTS = $(check_PROGRAMS)
 
 lib_test_LDADD = ${top_builddir}/src/libcap-ng.la
 thread_test_LDADD = ${top_builddir}/src/libcap-ng.la -lpthread
+change_id_test_LDADD = ${top_builddir}/src/libcap-ng.la

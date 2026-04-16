@@ -29,6 +29,14 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stdint.h>
+#include <unistd.h>
+
+struct proc_caps {
+	uint64_t effective;
+	uint64_t permitted;
+	uint64_t inheritable;
+};
 
 static unsigned int get_last_cap(void)
 {
@@ -51,15 +59,144 @@ static unsigned int get_last_cap(void)
 	return CAP_LAST_CAP;
 }
 
+static int read_process_caps(struct proc_caps *caps)
+{
+	FILE *f;
+	char buf[128];
+	unsigned long long val;
+	int found = 0;
+
+	memset(caps, 0, sizeof(*caps));
+	f = fopen("/proc/self/status", "re");
+	if (f == NULL)
+		return -1;
+
+	while (fgets(buf, sizeof(buf), f)) {
+		if (sscanf(buf, "CapEff:\t%llx", &val) == 1) {
+			caps->effective = val;
+			found |= 1;
+		} else if (sscanf(buf, "CapPrm:\t%llx", &val) == 1) {
+			caps->permitted = val;
+			found |= 2;
+		} else if (sscanf(buf, "CapInh:\t%llx", &val) == 1) {
+			caps->inheritable = val;
+			found |= 4;
+		}
+	}
+	fclose(f);
+
+	return found == 7 ? 0 : -1;
+}
+
+static int expected_cap(uint64_t set, unsigned int capability)
+{
+	return (set & (1ULL << capability)) ? 1 : 0;
+}
+
+static capng_results_t expected_caps_result(uint64_t set, unsigned int last)
+{
+	unsigned int i;
+	int found = 0, missing = 0;
+
+	for (i = 0; i <= last; i++) {
+		if (expected_cap(set, i))
+			found = 1;
+		else
+			missing = 1;
+	}
+	if (!found)
+		return CAPNG_NONE;
+	if (!missing)
+		return CAPNG_FULL;
+	return CAPNG_PARTIAL;
+}
+
 int main(void)
 {
 	int rc;
 	unsigned int i, len, last = get_last_cap();
+	struct proc_caps caps;
+	char expected[128];
 	char *text;
+	const char *name;
 	void *saved;
+
+	puts("Doing process capability tests...");
+	if (read_process_caps(&caps)) {
+		puts("Failed reading process capabilities from procfs");
+		abort();
+	}
+	if (capng_get_caps_process()) {
+		puts("Failed getting process capabilities");
+		abort();
+	}
+
+	for (i = 0; i <= last; i++) {
+		if (capng_have_capability(CAPNG_PERMITTED, i) !=
+				expected_cap(caps.permitted, i)) {
+			puts("Failed process permitted capabilities test");
+			abort();
+		}
+		if (capng_have_capability(CAPNG_EFFECTIVE, i) !=
+				expected_cap(caps.effective, i)) {
+			puts("Failed process effective capabilities test");
+			abort();
+		}
+		if (capng_have_capability(CAPNG_INHERITABLE, i) !=
+				expected_cap(caps.inheritable, i)) {
+			puts("Failed process inheritable capabilities test");
+			abort();
+		}
+	}
+	if (capng_have_permitted_capabilities() !=
+			expected_caps_result(caps.permitted, last)) {
+		puts("Failed process permitted capabilities aggregate test");
+		abort();
+	}
+	if (capng_have_capabilities(CAPNG_SELECT_CAPS) !=
+			expected_caps_result(caps.effective, last)) {
+		puts("Failed process effective capabilities aggregate test");
+		abort();
+	}
+	text = capng_print_caps_numeric(CAPNG_PRINT_BUFFER, CAPNG_SELECT_CAPS);
+	if (text == NULL) {
+		puts("Failed getting process numeric capabilities");
+		abort();
+	}
+	snprintf(expected, sizeof(expected),
+		"Effective:   %08X, %08X\n"
+		"Permitted:   %08X, %08X\n"
+		"Inheritable: %08X, %08X\n",
+		(unsigned int)(caps.effective >> 32),
+		(unsigned int)(caps.effective & 0xFFFFFFFFU),
+		(unsigned int)(caps.permitted >> 32),
+		(unsigned int)(caps.permitted & 0xFFFFFFFFU),
+		(unsigned int)(caps.inheritable >> 32),
+		(unsigned int)(caps.inheritable & 0xFFFFFFFFU));
+	if (strcmp(text, expected)) {
+		snprintf(expected, sizeof(expected),
+			"Effective:   %08X\n"
+			"Permitted:   %08X\n"
+			"Inheritable: %08X\n",
+			(unsigned int)caps.effective,
+			(unsigned int)caps.permitted,
+			(unsigned int)caps.inheritable);
+		if (strcmp(text, expected)) {
+			puts("Failed process numeric capabilities test");
+			free(text);
+			abort();
+		}
+	}
+	free(text);
 
 	puts("Doing basic bit tests...");
 	capng_clear(CAPNG_SELECT_BOTH);
+	errno = 0;
+	rc = capng_apply(0);
+	if (rc != -1 || errno != EINVAL) {
+		puts("Failed apply empty selection test");
+		abort();
+	}
 	if (capng_have_permitted_capabilities() != CAPNG_NONE) {
 		puts("Failed permitted capabilities none test");
 		abort();
@@ -105,7 +242,6 @@ int main(void)
 	}
 	printf("Doing advanced bit tests for %d capabilities...\n", last);
 	for (i=0; i<=last; i++) {
-		const char *name;
 		capng_clear(CAPNG_SELECT_BOTH);
 		rc = capng_update(CAPNG_ADD, CAPNG_EFFECTIVE, i);
 		if (rc) {
@@ -188,6 +324,38 @@ int main(void)
 			abort();
 		}
 	}
+	// Verify text formatting when many capabilities are present
+	capng_clear(CAPNG_SELECT_BOTH);
+	for (i=0; i<=last; i++) {
+		rc = capng_update(CAPNG_ADD, CAPNG_EFFECTIVE, i);
+		if (rc) {
+			puts("Failed setup test for print buffer length");
+			abort();
+		}
+	}
+	text = capng_print_caps_text(CAPNG_PRINT_BUFFER, CAPNG_EFFECTIVE);
+	if (text == NULL) {
+		puts("Failed getting full print text to buffer");
+		abort();
+	}
+	len = 0;
+	for (i=0; i<=last; i++) {
+		if (capng_have_capability(CAPNG_EFFECTIVE, i)) {
+			name = capng_capability_to_name(i);
+			if (name == NULL)
+				name = "unknown";
+			if (len)
+				len += 2;
+			len += strlen(name);
+		}
+	}
+	if (strlen(text) != len) {
+		puts("Failed print text length comparison");
+		printf("%zu != %u\n", strlen(text), len);
+		abort();
+	}
+	free(text);
+
 	// Now test the updatev function
 	capng_clear(CAPNG_SELECT_BOTH);
 	rc = capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE,
@@ -208,4 +376,3 @@ int main(void)
 
 	return EXIT_SUCCESS;
 }
-

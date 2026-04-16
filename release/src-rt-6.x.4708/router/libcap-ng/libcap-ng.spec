@@ -1,7 +1,7 @@
 %global bpf_supported_arches aarch64 x86_64 ppc64le riscv64 s390x
 Summary: An alternate POSIX capabilities library
 Name: libcap-ng
-Version: 0.9.1
+Version: 0.9.3
 Release: 1%{?dist}
 License: LGPL-2.0-or-later
 URL: https://github.com/stevegrubb/libcap-ng
@@ -111,11 +111,12 @@ make check
 %attr(0644,root,root) %{_mandir}/man8/filecap.8.gz
 %attr(0644,root,root) %{_mandir}/man8/netcap.8.gz
 %attr(0644,root,root) %{_mandir}/man8/pscap.8.gz
+%attr(0644,root,root) %{_datadir}/bash-completion/completions/libcap-ng.bash_completion
 %ifarch %{bpf_supported_arches}
 %attr(0755,root,root) %{_bindir}/cap-audit
 %attr(0644,root,root) %{_mandir}/man8/cap-audit.8.gz
 %endif
 
 %changelog
-* Tue Feb 17 2026 Steve Grubb <sgrubb@redhat.com> 0.9.1-1
+* Thu Apr 09 2026 Steve Grubb <sgrubb@redhat.com> 0.9.3-1
 - New upstream release

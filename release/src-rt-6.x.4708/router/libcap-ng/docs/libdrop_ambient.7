@@ -1,8 +1,8 @@
-.TH "LIBDROP_AMBIENT" "7" "Nov 2020" "Red Hat" "Libcap-ng API"
+.TH "LIBDROP_AMBIENT" "7" "March 2026" "Red Hat" "Libcap-ng API"
 .SH NAME
 libdrop_ambient \- force application started with ambient capabilities to drop them
 
-.SH "DESCRIPTION
+.SH "DESCRIPTION"
 
 This library can be used via LD_PRELOAD to force an application started with ambient capabilities to drop them. It leaves other capabilities intact. This can also be linked against and automatically does the right thing. You do not need to make any calls into the library because all the work is done in the constructor which runs before main() is called.
 

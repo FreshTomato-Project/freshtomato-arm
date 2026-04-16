@@ -1,4 +1,4 @@
-.TH "CAPNG_FILL" "3" "Sept 2020" "Red Hat" "Libcap-ng API"
+.TH "CAPNG_FILL" "3" "March 2026" "Red Hat" "Libcap-ng API"
 .SH NAME
 capng_fill \- fill chosen capabilities set
 .SH "SYNOPSIS"
@@ -8,7 +8,7 @@ void capng_fill(capng_select_t set);
 
 .SH "DESCRIPTION"
 
-capng_fill sets all bits to a 1 in the selected POSIX capabilities set. The options are CAPNG_SELECT_CAPS for the traditional capabilities, CAPNG_SELECT_BOUNDS for the bounding set, CAPNG_SELECT_BOTH if filling both is desired, CAPNG_SELECT_AMBIENT if only operating on the ambient capabilities, or CAPNG_SELECT_ALL if clearing all is desired..
+capng_fill sets all bits to a 1 in the selected POSIX capabilities set. The options are CAPNG_SELECT_CAPS for the traditional capabilities, CAPNG_SELECT_BOUNDS for the bounding set, CAPNG_SELECT_BOTH if filling both is desired, CAPNG_SELECT_AMBIENT if only operating on the ambient capabilities, or CAPNG_SELECT_ALL if filling all is desired.
 
 .SH "RETURN VALUE"
 

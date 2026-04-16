@@ -38,6 +38,5 @@ noinst_HEADERS = captab.h
 libcap_ng_la_SOURCES = cap-ng.c lookup_table.c
 libcap_ng_la_LIBADD =
 libcap_ng_la_DEPENDENCIES = $(libcap_ng_la_SOURCES) ../config.h
-libcap_ng_la_LDFLAGS = -Wl,-z,relro
+libcap_ng_la_LDFLAGS = -Wl,-z,relro -Wl,-z,nodelete
 libdrop_ambient_la_SOURCES = libdrop_ambient.c
-

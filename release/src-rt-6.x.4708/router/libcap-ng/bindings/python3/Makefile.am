@@ -33,7 +33,7 @@ _capng_la_CFLAGS = -shared
 _capng_la_LDFLAGS = -module -avoid-version -Wl,-z,relro
 _capng_la_HEADERS: $(top_builddir)/config.h 
 _capng_la_DEPENDENCIES =${top_srcdir}/src/cap-ng.h ${top_builddir}/src/libcap-ng.la
-_capng_la_LIBADD = ${top_builddir}/src/libcap-ng.la
+_capng_la_LIBADD = ${top_builddir}/src/libcap-ng.la $(PYTHON3_LIBS)
 nodist__capng_la_SOURCES  = capng_wrap.c
 
 capng.py capng_wrap.c: ${srcdir}/../src/capng_swig.i caps.h capng.h
@@ -46,3 +46,13 @@ capng.h:
 CLEANFILES = capng.py* capng_wrap.c caps.h capng.h *~
 clean-local:
 	$(RM) -rf __pycache__
+
+check-local:
+	@python3_embed_libs=`python3-config --embed --libs 2>/dev/null`; \
+	if test -z "$$python3_embed_libs"; then \
+		echo "SKIP: python3-config --embed --libs is unavailable"; \
+		exit 77; \
+	fi; \
+	$(MAKE) clean >/dev/null; \
+	$(MAKE) all-am LDFLAGS="$(LDFLAGS) -Wl,--no-undefined" \
+		PYTHON3_LIBS="$$python3_embed_libs"

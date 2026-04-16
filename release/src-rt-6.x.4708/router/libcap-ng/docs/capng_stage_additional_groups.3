@@ -1,0 +1,47 @@
+.TH "CAPNG_STAGE_ADDITIONAL_GROUPS" "3" "Mar 2026" "Red Hat" \
+"Libcap-ng API"
+.SH NAME
+capng_stage_additional_groups \- stage additional gids for
+capng_change_id
+.SH "SYNOPSIS"
+.B #include <cap-ng.h>
+.sp
+int capng_stage_additional_groups(const gid_t *gids, size_t count);
+
+.SH "DESCRIPTION"
+
+This function stages an additional gid list for the next
+.BR capng_change_id (3)
+call that uses
+.BR CAPNG_APPLY_STAGED_GROUPS .
+The gids are copied into libcap-ng internal state. Once
+.B capng_change_id
+returns, libcap-ng clears the staged gids whether they were applied,
+ignored because the flag was not set, or discarded because the call
+failed. If staged gids remain unused, libcap-ng also clears them when the
+thread-local state is deinitialized.
+
+Passing a
+.I count
+of 0 clears any currently staged gids.
+
+Normally, you should stick to using the supplemantal groups that are associated with the uid's account that is being changed to. This is provided to simulate the gid model that systemd uses. This interface is available in libcap-ng 0.9.3 and later.
+
+.SH "RETURN VALUE"
+
+This returns 0 on success and -1 on failure. A non-zero
+.I count
+with a NULL
+.I gids
+pointer fails with
+.B errno
+set to
+.BR EINVAL .
+
+.SH "SEE ALSO"
+
+.BR capng_change_id (3),
+.BR capabilities (7)
+
+.SH AUTHOR
+Steve Grubb

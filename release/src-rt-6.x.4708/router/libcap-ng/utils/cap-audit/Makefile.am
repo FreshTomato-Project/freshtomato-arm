@@ -21,7 +21,13 @@ AM_CPPFLAGS = -I${top_srcdir} -I${top_srcdir}/src ${LIBBPF_CFLAGS} ${LIBAUDIT_CF
 AM_CFLAGS = -W -Wall -Wshadow ${WFLAGS} -Wundef -D_GNU_SOURCE
 
 bin_PROGRAMS = cap-audit
-cap_audit_SOURCES = cap_audit.c
+cap_audit_SOURCES = cap_audit.c \
+	cap_audit_analyze.c \
+	cap_audit_event.c \
+	cap_audit_json.c \
+	cap_audit_util.c \
+	cap_audit_yaml.c \
+	cap_audit.h
 nodist_cap_audit_SOURCES = cap_audit.skel.h
 cap_audit_LDADD = ${top_builddir}/src/libcap-ng.la ${LIBBPF_LIBS} ${LIBAUDIT_LIBS}
 
@@ -31,6 +37,10 @@ CLEANFILES = cap_audit.bpf.o cap_audit.skel.h vmlinux.h
 if BUILD_CAP_AUDIT
 BUILT_SOURCES = cap_audit.bpf.o cap_audit.skel.h vmlinux.h
 endif
+
+cap_audit.$(OBJEXT) cap_audit_analyze.$(OBJEXT) \
+cap_audit_event.$(OBJEXT) cap_audit_json.$(OBJEXT) \
+cap_audit_util.$(OBJEXT) cap_audit_yaml.$(OBJEXT): cap_audit.skel.h
 
 BPF_ARCH = @BPF_ARCH@
 BPFTOOL = @BPFTOOL@

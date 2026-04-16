@@ -1,0 +1,263 @@
+.TH NETCAP: "8" "March 2026" "Red Hat" "System Administration Utilities"
+.SH NAME
+netcap \- a program to review network capability posture
+.SH SYNOPSIS
+.B netcap
+.\" BEGIN_ADVANCED
+.RI [ --advanced
+.RI [ --interface " IFACE ]
+.RI [ --list-interfaces ]
+.RI [ --json ]
+.RI [ --no-color ]]
+.\" END_ADVANCED
+.SH DESCRIPTION
+\fBnetcap\fP is a program that prints out a report of process capabilities.
+By default, it runs in its historical filtered mode: if an application is
+using tcp, udp, raw, or packet family sockets AND has any capabilities, it
+will be in the report. If the process has partial capabilities, it is further
+examined to see if it has an open-ended bounding set. If this is found to be
+true, a '+' symbol is added. If the process has ambient capabilities, a '@'
+symbol is added.
+
+.\" BEGIN_ADVANCED
+With \fB\-\-advanced\fP, \fBnetcap\fP switches to bind/listener inventory
+mode for the current network namespace. In this mode, reachable binds/listeners
+are reported regardless of whether the owning process has capabilities.
+.\" END_ADVANCED
+
+Some directories in the /proc file system are readonly by root. The program
+will try to access and report what it can.
+.\" BEGIN_ADVANCED
+Full output normally requires root,
+or a combination of \fBCAP_DAC_READ_SEARCH\fP (to read other processes'
+\fB/proc/<pid>/fd\fP) and \fBCAP_NET_ADMIN\fP (for
+\fBNETLINK_SOCK_DIAG\fP queries that cover SCTP, DCCP, and VSOCK). Without
+these permissions, the report is partial; missing sock_diag-derived protocols
+are omitted without an explicit warning.
+.\" END_ADVANCED
+
+.\" BEGIN_ADVANCED
+.SH OPTIONS
+.TP
+.B \-\-advanced
+Enable the posture/tree view. This mode inventories reachable binds in
+the current network namespace and shows per-process capabilities, defenses,
+and flags.
+.TP
+.BI \-\-interface " IFACE"
+With \fB\-\-advanced\fP, limit the report to the named interface. Output
+format and wrapping are unchanged; only interface-scoped rows for that
+interface are kept. This also filters \fB\-\-list\-interfaces\fP output to
+the named interface.
+.TP
+.B \-\-list\-interfaces
+With \fB\-\-advanced\fP, list the current network namespace interface names
+instead of the exposure tree.
+.TP
+.B \-\-json
+With \fB\-\-advanced\fP, emit machine-readable JSON instead of the tree
+view. When combined with \fB\-\-list\-interfaces\fP, emit machine-readable
+interface inventory JSON instead of text.
+.TP
+.B \-\-no\-color
+Suppress colored output. By default, when stdout is a terminal, keywords are
+colorized by severity to highlight problems, cautions, and positive hardening
+state.
+.\" END_ADVANCED
+
+.\" BEGIN_ADVANCED
+.SH "ADVANCED MODE"
+Advanced mode is an attack-surface and posture inventory for the current
+network namespace. It is intended for administrators who need a structured
+view of bind ownership and process hardening state.
+
+With \fB\-\-advanced --list\-interfaces\fP, the advanced-mode interface
+snapshot is rendered directly without enumerating listeners. This is intended
+as a simple interface enumeration step before later per-interface analysis.
+With \fB\-\-advanced --interface IFACE\fP, the same inventory and tree/JSON
+renderers are used, but only endpoints projected onto that interface are
+retained.
+
+The tree layout is:
+
+.RS
+Planes \-> interface \-> protocol \-> bind \-> port \-> process \->
+caps/defenses/flags
+.RE
+
+For VSOCK planes, the interface/address hierarchy is skipped and rendered as:
+
+.RS
+Planes \-> endpoint \-> process \-> caps/defenses/flags
+.RE
+
+Planes are grouped as INET (external), INET (loopback), VSOCK, and
+LINK-LAYER. These names match the tree output exactly.
+
+The console tree is a causal exposure chain: protocol, then bind address,
+then port, then owning process. Wildcard binds are printed as \fB*\fP. In
+tree view, a single \fB0.0.0.0\fP or \fB::\fP listener is expanded onto every
+non-loopback interface in the current namespace. The same daemon may therefore
+appear under multiple interfaces, reflecting wildcard-bind reachability.
+Some endpoints may appear under interface \fBmulticast/group\fP when bound to
+multicast addresses that do not map to a single interface; these represent
+group-joined sockets rather than point-to-point listeners.
+
+Under each protocol, \fBbind\fP nodes are socket bind addresses
+(exposure), and \fBport\fP nodes are children of binds.
+Each process entry may include a \fBunit\fP field showing the systemd service
+or scope name, extracted from the process cgroup hierarchy; it is omitted when
+the process is not managed by systemd.
+Each process line also includes an optional \fBexe\fP field showing the full
+executable path read from \fB/proc/<pid>/exe\fP; it is omitted for kernel
+threads or when the path is unreadable. The kernel \fBName:\fP field shown as
+\fBcomm\fP is truncated to 15 characters, so \fBexe\fP provides the complete
+binary path.
+
+Socket selection is protocol-specific:
+.IP \[bu] 2
+TCP: LISTEN sockets only.
+.IP \[bu] 2
+UDP/UDPLITE: bound sockets.
+.IP \[bu] 2
+SCTP/DCCP: listener sockets only; established flows are not shown.
+These protocols are discovered via \fBNETLINK_SOCK_DIAG\fP, which requires
+\fBCAP_NET_ADMIN\fP; without that capability, SCTP and DCCP listeners are
+silently absent from the report.
+.IP \[bu] 2
+VSOCK: stream LISTEN sockets, plus bound datagram/seqpacket sockets.
+.IP \[bu] 2
+RAW/PACKET: shown as binds; semantics differ from port listeners.
+
+The defenses section is best-effort: \fBno_new_privs\fP and
+\fBseccomp\fP mode are read from \fB/proc/<pid>/status\fP when
+available, and the LSM label is read from
+\fB/proc/<pid>/attr/current\fP when available. \fBruns_as_nonroot\fP is
+always reported.
+
+Flags annotate notable conditions:
+.IP \[bu] 2
+\fBwildcard-bind\fP: bind is bound to a wildcard address
+(for example 0.0.0.0 or ::).
+.IP \[bu] 2
+\fBhypervisor-plane\fP: bind is in the VSOCK communication plane.
+.IP \[bu] 2
+\fBssh-on-vsock-port-22\fP: VSOCK bind uses port 22.
+.IP \[bu] 2
+\fBprivileged-caps\fP: process has capabilities considered privileged for
+attack-surface review (CAP_SYS_ADMIN, CAP_SYS_PTRACE,
+CAP_DAC_READ_SEARCH, CAP_NET_ADMIN, and CAP_NET_RAW).
+
+The \fBcaps\fP field may include bracketed annotations:
+\fB[ambient-present]\fP indicates ambient capabilities are set, and
+\fB[open-ended-bounding]\fP indicates the bounding set is non-empty (the
+process or its children can potentially gain additional capabilities).
+
+.SH "JSON OUTPUT"
+When \fB\-\-advanced --json\fP is used, the top-level object contains:
+.IP \[bu] 2
+\fBschema_version\fP (integer).
+.IP \[bu] 2
+\fBplanes\fP (array).
+
+Each plane object contains \fBname\fP, optional \fBscope\fP
+(\fBexternal\fP or \fBloopback\fP), and either:
+.IP \[bu] 2
+\fBifaces\fP (INET/LINK-LAYER planes), or
+.IP \[bu] 2
+\fBendpoints\fP (VSOCK planes).
+
+Under \fBifaces\fP: each interface has \fBname\fP and \fBaddrs\fP
+(array). Each addr object has \fBaddr\fP and \fBendpoints\fP (array).
+
+For INET and LINK-LAYER planes, each endpoint object has \fBlabel\fP,
+\fBproto\fP, \fBbind\fP, \fBport\fP, and \fBprocesses\fP (array).
+For VSOCK planes, endpoint objects use \fBlabel\fP, \fBvsock_type\fP
+(socket type string: \fBstream\fP/\fBdgram\fP/\fBseqpacket\fP), \fBcid\fP
+(source CID or the string \fBANY\fP), \fBport\fP, and \fBprocesses\fP;
+they do not include \fBproto\fP or \fBbind\fP.
+
+Each process object has \fBcomm\fP, optional \fBexe\fP, \fBpid\fP,
+\fBuid\fP, optional \fBunit\fP, \fBcaps\fP,
+\fBambient_present\fP (boolean), \fBopen_ended_bounding\fP (boolean),
+\fBdefenses\fP object, and \fBflags\fP array.
+
+\fBambient_present\fP and \fBopen_ended_bounding\fP are the structured
+equivalents of the \fB[ambient-present]\fP and
+\fB[open-ended-bounding]\fP annotations that may appear in the caps text
+string; both fields are always present in JSON output.
+
+Fields under endpoints/processes/defenses may be omitted when unavailable.
+When process defenses are present, they include \fBruns_as_nonroot\fP, derived
+from the real UID (first field of \fBUid:\fP in \fB/proc/<pid>/status\fP):
+\fByes\fP when real uid != 0, \fBno\fP when real uid == 0. A process that
+started as root and later changed only effective UID via setuid still reports
+\fBno\fP.
+
+If a plane has no discovered binds, it appears with an empty list. If a
+consumer does not receive a given plane, treat it as none found or omitted by
+the producer.
+
+When \fB\-\-advanced --list\-interfaces --json\fP is used, the top-level
+object
+contains \fBschema_version\fP (integer) and \fBinterfaces\fP (array of
+interface-name strings).
+.\" END_ADVANCED
+
+.SH INTERPRETATION
+\fBnetcap\fP reports processes that are both network-facing and running with
+capabilities. The capability set shown is the permitted set. A '+' annotation
+means the process has an open-ended bounding set, and an '@' annotation means
+the process has ambient capabilities.
+
+.\" BEGIN_ADVANCED
+Colorized tree output is intended to prioritize remediation quickly:
+orange highlights problems to fix, yellow highlights cautionary conditions
+to review, green highlights good hardening state, and uncolored output is
+neutral context.
+
+The \fBcaps\fP line shows permitted capabilities. Orange-tier capabilities
+represent severe privilege that is rarely necessary for network-facing daemons:
+\fBsys_ptrace\fP, \fBsys_module\fP, \fBsys_rawio\fP, \fBsetuid\fP, \fBsetgid\fP,
+\fBsetpcap\fP, and \fBaudit_control\fP. Yellow-tier capabilities are common but
+still materially increase attack impact: \fBsys_admin\fP, \fBdac_override\fP,
+\fBdac_read_search\fP, \fBnet_admin\fP, \fBnet_raw\fP, \fBchown\fP, \fBfowner\fP,
+\fBmknod\fP, and \fBsys_chroot\fP. \fBcaps: (full)\fP means all capabilities are
+present (effectively full root privilege). \fBcaps: (none)\fP is ideal.
+
+Ambient capabilities are inherited across \fBexecve\fP by child processes
+(unless constrained by \fBno_new_privs\fP), so their presence on a network
+daemon is typically a problem. The \fBambient:\fP line lists active ambient
+capabilities.
+
+\fB[open-ended-bounding]\fP means the process has not trimmed its bounding
+set ceiling. This is not active privilege by itself, but it leaves future
+privilege-acquisition paths open (for example via file capabilities or ambient
+inheritance). For libcap-ng users, trimming is typically a one-flag change
+(\fBCAPNG_SELECT_BOUNDS\fP) in existing capability-set calls; with libcap,
+bounding capabilities are dropped individually.
+
+Defense fields summarize exploit-resistance posture: \fBno_new_privs: yes\fP
+blocks privilege gain through setuid/file-capability exec paths and is often
+the highest-value single toggle. \fBseccomp: filter\fP restricts available
+syscalls (\fBdisabled\fP means no syscall filtering). \fBruns_as_nonroot: yes\fP
+indicates non-UID-0 execution.
+
+Flags provide reachability and interception context: \fBwildcard-bind\fP means
+the daemon listens on every interface, \fBhypervisor-plane\fP indicates host/
+guest boundary exposure (VSOCK), and \fBreuseport\fP means another process with
+the same UID could bind and potentially intercept traffic.
+
+\fBraw\fP/\fBraw6\fP and \fBpacket\fP protocol nodes denote sockets with IP- or
+link-layer packet craft/sniff capabilities, significantly expanding what an
+attacker can do post-compromise.
+.\" END_ADVANCED
+
+.SH "SEE ALSO"
+.BR pscap (8),
+.BR filecap (8),
+.BR capabilities (7),
+.BR netstat (8).
+
+.SH AUTHOR
+Steve Grubb

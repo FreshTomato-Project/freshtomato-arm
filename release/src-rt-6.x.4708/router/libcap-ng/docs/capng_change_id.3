@@ -1,4 +1,4 @@
-.TH "CAPNG_CHANGE_ID" "3" "Feb 2018" "Red Hat" "Libcap-ng API"
+.TH "CAPNG_CHANGE_ID" "3" "Mar 2026" "Red Hat" "Libcap-ng API"
 .SH NAME
 capng_change_id \- change the credentials retaining capabilities
 .SH "SYNOPSIS"
@@ -10,7 +10,7 @@ int capng_change_id(int uid, int gid, capng_flags_t flag);
 
 This function will change uid and gid to the ones given while retaining the capabilities previously specified in capng_update. It is also possible to specify -1 for either the uid or gid in which case the function will not change the uid or gid and leave it "as is". This is useful if you just want the flag options to be applied (assuming the option doesn't require more privileges that you currently have).
 
-It is not necessary and perhaps better if capng_apply has not been called prior to this function so that all necessary privileges are still intact. The caller may be required to have CAP_SETPCAP capability still active before calling this function or capabilities cannot be changed.
+It is not necessary and perhaps better if capng_apply has not been called prior to this function so that all necessary privileges are still intact. The caller may be required to have CAP_SETPCAP capability still active before calling this function or capabilities cannot be changed. Do not specify CAP_SETPCAP in the capability sets unless you intended to have it after the uid change. The library will silently add and remove it if it can. But if its specified, it will leave it alone.
 
 This function also takes a flag parameter that helps to tailor the exact actions performed by the function to secure the environment. The option may be or'ed together. The legal values are:
 
@@ -20,15 +20,45 @@ This function also takes a flag parameter that helps to tailor the exact actions
 Simply change uid and retain specified capabilities and that's all.
 .TP
 .B CAPNG_DROP_SUPP_GRP
-After changing id, remove any supplement groups that may still be in effect from the old uid.
+After changing the primary group ID, remove all supplementary groups. If no new primary group ID is supplied (gid == -1), this flag has no effect.
 .TP
 .B CAPNG_INIT_SUPP_GRP
-After changing id, initialize any supplement groups that may come with the new account. If given with
+After changing id, initialize any supplemental groups that may come with the new account. If given with
 .B CAPNG_DROP_SUPP_GRP
 it will have no effect.
 .TP
+.B CAPNG_APPLY_STAGED_GROUPS
+Available in libcap-ng 0.9.3 and later.
+Apply additional groups previously staged with
+.BR capng_stage_additional_groups (3).
+If used by itself, the staged list is applied exactly. If combined with
+.B CAPNG_INIT_SUPP_GRP
+the account's natural supplemental groups are initialized first and the
+staged gids are then merged in without duplicates. If combined with
+.B CAPNG_DROP_SUPP_GRP
+the call fails. If this flag is set and no staged gids are present, the
+call fails. Staged gids are intended to be used once and are always cleared before
+.B capng_change_id
+returns, even when the flag is omitted or the call fails.
+.TP
 .B CAPNG_CLEAR_BOUNDING
 Clear the bounding set regardless to the internal representation already setup prior to changing the uid/gid.
+.TP
+.B CAPNG_APPLY_BOUNDING
+Available in libcap-ng 0.9.3 and later.
+Apply the internally prepared bounding set during
+.BR capng_change_id .
+This only acts on bounding-set state explicitly prepared with
+.BR capng_clear (3),
+.BR capng_fill (3),
+or
+.BR capng_update (3)
+using
+.BR CAPNG_BOUNDING_SET .
+If no prepared bounding-set state exists, this flag is a no-op. If
+combined with
+.B CAPNG_CLEAR_BOUNDING
+the call fails.
 .TP
 .B CAPNG_CLEAR_AMBIENT
 Clear ambient capabilities regardless of the internal representation already setup prior to changing the uid/gid.
@@ -47,7 +77,7 @@ This returns 0 on success and a negative number on failure.
 .TP
 -4 means changing gid failed
 .TP
--5 means dropping supplemental groups failed
+-5 means initializing supplemental groups failed
 .TP
 -6 means changing the uid failed
 .TP
@@ -57,8 +87,36 @@ This returns 0 on success and a negative number on failure.
 .TP
 -9 means dropping CAP_SETPCAP or ambient capabilities failed
 .TP
--10 means initializing supplemental groups failed
+-10 means resolving the target account for supplemental groups failed
+.TP
+-11 means dropping supplemental groups failed
+.TP
+-12 means CAPNG_DROP_SUPP_GRP and CAPNG_APPLY_STAGED_GROUPS were both set
+.TP
+-13 means CAPNG_APPLY_STAGED_GROUPS was requested with no staged gids
+.TP
+-14 means applying staged additional groups failed
+.TP
+-15 means looking up a group account in additional groups failed
+.TP
+-16 means merging initialized and staged additional groups failed
+.TP
+-17 means CAPNG_APPLY_BOUNDING and CAPNG_CLEAR_BOUNDING were both set
 .RE
+
+Applications that need to support libcap-ng releases older than 0.9.3
+should detect the availability of
+.B CAPNG_APPLY_BOUNDING
+and
+.B CAPNG_APPLY_STAGED_SUPP_GRP
+and
+.BR capng_stage_additional_groups (3)
+before using this flow. Callers that need the prepared bounding-set
+behavior must request it explicitly with
+.B CAPNG_APPLY_BOUNDING
+so older callers continue to see the historical
+.B capng_change_id
+behavior.
 
 Note: the only safe action to do upon failure of this function is to probably exit. This is because you are likely in a situation with partial permissions and not what you intended.
 
@@ -66,6 +124,7 @@ Note: the only safe action to do upon failure of this function is to probably ex
 
 .BR capng_update (3),
 .BR capng_apply (3),
+.BR capng_stage_additional_groups (3),
 .BR prctl (2),
 .BR capabilities (7)
 

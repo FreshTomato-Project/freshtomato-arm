@@ -1,4 +1,4 @@
-.TH CAPTEST: "8" "Sept 2020" "Red Hat" "System Administration Utilities"
+.TH CAPTEST: "8" "March 2026" "Red Hat" "System Administration Utilities"
 .SH NAME
 captest \- a program to demonstrate capabilities
 .SH SYNOPSIS
@@ -6,7 +6,7 @@ captest \- a program to demonstrate capabilities
 .SH DESCRIPTION
 \fBcaptest\fP is a program that demonstrates and prints out the current process capabilities. Each option prints the same report. It will output current capabilities. then it will try to access /etc/shadow directly to show if that can be done. Then it creates a child process that attempts to read /etc/shadow and outputs the results of that. Then it outputs the capabilities that a child process would have.
 
-You can also apply file system capabilities to this program to study how they work. For example, filecap /usr/bin/captest chown. Then run captest as a normal user. Another interesting test is to make captest suid root so that you can see what the interaction is between root's credentials and capabilities. For example, chmod 4755 /usr/bin/captest. When run as a normal user, the program will see if privilege escalation is possible. But do not leave this app setuid root after you are don testing so that an attacker cannot take advantage of it.
+You can also apply file system capabilities to this program to study how they work. For example, filecap /usr/bin/captest chown. Then run captest as a normal user. Another interesting test is to make captest suid root so that you can see what the interaction is between root's credentials and capabilities. For example, chmod 4755 /usr/bin/captest. When run as a normal user, the program will see if privilege escalation is possible. But do not leave this app setuid root after you are done testing so that an attacker cannot take advantage of it.
 
 .SH OPTIONS
 .TP
@@ -23,7 +23,7 @@ This drops just traditional capabilities.
 This changes to uid and gid 99, drops supplemental groups, and clears the bounding set.
 .TP
 .B \-\-init-grp
-This changes to uid and gid 99 and then adds any supplemental groups that comes with that account. You would have add them prior to testing because by default there are no supplemental groups on account 99.
+This changes to uid and gid 99 and then adds any supplemental groups that comes with that account. You would have to add them prior to testing because by default there are no supplemental groups on account 99.
 .TP
 .B \-\-text
 This option outputs the effective capabilities in text rather than numerically.

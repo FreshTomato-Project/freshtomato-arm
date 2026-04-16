@@ -36,8 +36,10 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include "cap-ng.h"
+#include "proc-sanitize.h"
 
 #define CMD_LEN 16
+#define ACCOUNT_LEN 32
 #define USERNS_MARK_LEN 3	// two characters plus '\0'.
 
 static void usage(void)
@@ -49,9 +51,60 @@ static void usage(void)
 struct proc_info {
 	pid_t pid;
 	pid_t ppid;
-	char cmd[CMD_LEN + USERNS_MARK_LEN];
+	char *cmd;
+	char account[ACCOUNT_LEN];
 	char *caps_text;
 };
+
+static int get_euid(int pid)
+{
+	char path[32], buf[128];
+	FILE *f;
+	int euid = -1;
+
+	snprintf(path, sizeof(path), "/proc/%d/status", pid);
+	f = fopen(path, "rte");
+	if (f == NULL)
+		return 0;
+
+	__fsetlocking(f, FSETLOCKING_BYCALLER);
+	while (fgets(buf, sizeof(buf), f)) {
+		if (memcmp(buf, "Uid:", 4) == 0) {
+			int uid;
+
+			sscanf(buf, "Uid: %d %d", &uid, &euid);
+			break;
+		}
+	}
+	fclose(f);
+
+	if (euid < 0)
+		return 0;
+
+	return euid;
+}
+
+static void get_account_name(int pid, char *account, size_t account_len)
+{
+	struct passwd *p;
+	int euid;
+
+	euid = get_euid(pid);
+	if (euid == 0) {
+		strncpy(account, "root", account_len - 1);
+		account[account_len - 1] = '\0';
+		return;
+	}
+
+	p = getpwuid(euid);
+	if (p && p->pw_name) {
+		strncpy(account, p->pw_name, account_len - 1);
+		account[account_len - 1] = '\0';
+		return;
+	}
+
+	snprintf(account, account_len, "%d", euid);
+}
 
 static int get_width(void)
 {
@@ -68,7 +121,8 @@ static int get_width(void)
 
 		errno = 0;
 		c = strtol(e, &endptr, 10);
-		if (errno == 0 && endptr != e && *endptr == '\0' && c > 0)
+		if (errno == 0 && endptr != e && *endptr == '\0' && c > 0 &&
+		    c < 400)
 			return (int)c;
 	}
 
@@ -229,7 +283,8 @@ static void print_tree_node(struct proc_info *procs, size_t count,
 	strcpy(cont_prefix, prefix);
 	strcat(cont_prefix, branch);
 
-	snprintf(head, sizeof(head), "%s(%d) [", proc->cmd, proc->pid);
+	snprintf(head, sizeof(head), "%s(%d:%s) [", proc->cmd,
+		 proc->pid, proc->account);
 	prefix_len = strlen(line_prefix);
 	cont_len = strlen(cont_prefix);
 	caps = proc->caps_text;
@@ -301,7 +356,8 @@ static void print_tree(struct proc_info *procs, size_t count)
 	size_t i;
 	int width = get_width();
 
-	qsort(procs, count, sizeof(*procs), compare_pid);
+	if (count > 1)
+		qsort(procs, count, sizeof(*procs), compare_pid);
 	for (i = 0; i < count; i++) {
 		if (!find_proc(procs, count, procs[i].ppid))
 			print_tree_node(procs, count, i, "", true, true, width);
@@ -390,8 +446,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	while (( ent = readdir(d) )) {
-		int pid, ppid, euid = -1;
+		int pid, ppid;
 		char buf[100];
+		char *safe_cmd = NULL;
 		char *tmp, cmd[CMD_LEN + USERNS_MARK_LEN], state;
 		int fd, len;
 		struct passwd *p;
@@ -442,15 +499,29 @@ int main(int argc, char *argv[])
 
 		// And print out anything with capabilities
 		caps = capng_have_capabilities(CAPNG_SELECT_CAPS);
-		if (in_child_userns(pid))
-			strcat(cmd, " *");
+		safe_cmd = sanitize_untrusted_field(cmd);
+		if (!safe_cmd)
+			continue;
+		if (in_child_userns(pid)) {
+			char *marked = malloc(strlen(safe_cmd) + 3);
+
+			if (!marked) {
+				free(safe_cmd);
+				continue;
+			}
+			snprintf(marked, strlen(safe_cmd) + 3, "%s *", safe_cmd);
+			free(safe_cmd);
+			safe_cmd = marked;
+		}
 		if (tree_mode) {
 			char *caps_text;
 			bool has_ambient;
 			bool has_bounds;
 
-			if (!show_all && caps <= CAPNG_NONE)
+			if (!show_all && caps <= CAPNG_NONE) {
+				free(safe_cmd);
 				continue;
+			}
 
 			has_ambient = capng_have_capabilities(
 					CAPNG_SELECT_AMBIENT) > CAPNG_NONE;
@@ -458,8 +529,10 @@ int main(int argc, char *argv[])
 					CAPNG_SELECT_BOUNDS) > CAPNG_NONE;
 
 			caps_text = format_caps(caps, has_ambient, has_bounds);
-			if (!caps_text)
+			if (!caps_text) {
+				free(safe_cmd);
 				continue;
+			}
 
 			if (proc_count == proc_capacity) {
 				size_t new_capacity = proc_capacity ?
@@ -470,6 +543,7 @@ int main(int argc, char *argv[])
 					      sizeof(*procs));
 				if (!pi_tmp) {
 					free(caps_text);
+					free(safe_cmd);
 					continue;
 				}
 				procs = pi_tmp;
@@ -478,37 +552,14 @@ int main(int argc, char *argv[])
 
 			procs[proc_count].pid = pid;
 			procs[proc_count].ppid = ppid;
-			strncpy(procs[proc_count].cmd, cmd,
-				sizeof(procs[proc_count].cmd) - 1);
-			procs[proc_count].cmd[
-				sizeof(procs[proc_count].cmd) - 1] = '\0';
+			procs[proc_count].cmd = safe_cmd;
+			get_account_name(pid, procs[proc_count].account,
+					 sizeof(procs[proc_count].account));
 			procs[proc_count].caps_text = caps_text;
 			proc_count++;
+			safe_cmd = NULL;
 		} else if (caps > CAPNG_NONE) {
-			// Get the effective uid
-			FILE *f;
-			int line;
-			snprintf(buf, sizeof(buf), "/proc/%d/status", pid);
-			f = fopen(buf, "rte");
-			if (f == NULL)
-				euid = 0;
-			else {
-				line = 0;
-				__fsetlocking(f, FSETLOCKING_BYCALLER);
-				while (fgets(buf, sizeof(buf), f)) {
-					if (line == 0) {
-						line++;
-						continue;
-					}
-					if (memcmp(buf, "Uid:", 4) == 0) {
-						int id;
-						sscanf(buf, "Uid: %d %d",
-							&id, &euid);
-						break;
-					}
-				}
-				fclose(f);
-			}
+			int euid = get_euid(pid);
 
 			if (header == 0) {
 				printf("%-7s %-7s %-16s %-15s %s\n",
@@ -526,15 +577,16 @@ int main(int argc, char *argv[])
 				uid = euid;
 				if (p)
 					name = p->pw_name;
-				// If not taking this branch, use last val
+				else
+					name = NULL;
 			}
 
 			if (name) {
 				printf("%-7d %-7d %-16s %-15s ", ppid, pid,
-					name, cmd);
+					name, safe_cmd);
 			} else
 				printf("%-7d %-7d %-16d %-15s ", ppid, pid,
-					uid, cmd);
+					uid, safe_cmd);
 			if (caps == CAPNG_PARTIAL) {
 				capng_print_caps_text(CAPNG_PRINT_STDOUT,
 							CAPNG_PERMITTED);
@@ -555,13 +607,19 @@ int main(int argc, char *argv[])
 					printf(" +");
 				printf("\n");
 			}
+			free(safe_cmd);
+			safe_cmd = NULL;
 		}
+		if (safe_cmd)
+			free(safe_cmd);
 	}
 	closedir(d);
 	if (tree_mode) {
 		print_tree(procs, proc_count);
-		for (i = 0; i < proc_count; i++)
+		for (i = 0; i < proc_count; i++) {
+			free(procs[i].cmd);
 			free(procs[i].caps_text);
+		}
 		free(procs);
 	}
 	return 0;

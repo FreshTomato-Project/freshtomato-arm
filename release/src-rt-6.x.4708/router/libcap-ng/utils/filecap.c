@@ -117,8 +117,10 @@ int main(int argc, char *argv[])
 #else
 	char *path_env, *path = NULL, *dir = NULL;
 	struct stat sbuf;
+	struct stat path_sbuf;
 	int nftw_flags = FTW_PHYS;
 	int i, rc = 0;
+	int have_path_stat = 0;
 
 	if (argc >1) {
 		for (i=1; i<argc; i++) {
@@ -149,6 +151,8 @@ int main(int argc, char *argv[])
 				if (S_ISREG(sbuf.st_mode) && path == NULL &&
 								 dir == NULL) {
 					path = argv[i];
+					path_sbuf = sbuf;
+					have_path_stat = 1;
 					capng_clear(CAPNG_SELECT_BOTH);
 				} else if (S_ISDIR(sbuf.st_mode) && path == NULL
 								&& dir == NULL)
@@ -204,11 +208,21 @@ int main(int argc, char *argv[])
 		rc = check_file(path, &sbuf, 0, NULL);
 	} else if (path && capabilities == 1) {
 		// Write capabilities to file
+		struct stat fbuf;
 		int fd = open(path, O_WRONLY|O_NOFOLLOW|O_CLOEXEC);
 		if (fd < 0) {
 			fprintf(stderr,
 				"Could not open %s for writing (%s)\n", path,
 				strerror(errno));
+			return 1;
+		}
+		if (have_path_stat && fstat(fd, &fbuf) == 0 &&
+		    (fbuf.st_dev != path_sbuf.st_dev ||
+		     fbuf.st_ino != path_sbuf.st_ino)) {
+			fprintf(stderr,
+				"File changed during operation, refusing "
+				"to continue\n");
+			close(fd);
 			return 1;
 		}
 		if (capng_apply_caps_fd(fd) < 0) {
@@ -222,4 +236,3 @@ int main(int argc, char *argv[])
 #endif
 	return rc;
 }
-

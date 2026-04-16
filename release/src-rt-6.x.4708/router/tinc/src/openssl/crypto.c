@@ -20,7 +20,9 @@
 #include "../system.h"
 
 #include <openssl/rand.h>
+#if OPENSSL_VERSION_MAJOR < 3
 #include <openssl/engine.h>
+#endif
 
 #include "../crypto.h"
 

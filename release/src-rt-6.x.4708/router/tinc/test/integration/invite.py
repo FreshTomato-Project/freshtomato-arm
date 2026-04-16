@@ -3,13 +3,13 @@
 
 """Test tinc peer invitations."""
 
-import time
-import subprocess as subp
-
-from testlib import check, util
 from testlib.proc import Tinc
 from testlib.log import log
 from testlib.test import Test
+from testlib import check, util
+
+import time
+import subprocess as subp
 
 
 def run_port0_test(ctx: Test) -> None:

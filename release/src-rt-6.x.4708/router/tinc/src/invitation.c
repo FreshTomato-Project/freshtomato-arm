@@ -157,6 +157,7 @@ static bool get_my_hostname(char **out_address, char **out_port) {
 			ssize_t len = recv(s, line, sizeof(line) - 1, MSG_WAITALL);
 
 			if(len > 0) {
+				// NOLINTNEXTLINE
 				line[len] = 0;
 
 				if(line[len - 1] == '\n') {
@@ -399,12 +400,11 @@ int cmd_invite(int argc, char *argv[]) {
 		return 1;
 	}
 
-	errno = 0;
 	int count = 0;
 	struct dirent *ent;
 	time_t deadline = time(NULL) - 604800; // 1 week in the past
 
-	while((ent = readdir(dir))) {
+	while((errno = 0, ent = readdir(dir))) {
 		if(strlen(ent->d_name) != 24) {
 			continue;
 		}
@@ -425,16 +425,15 @@ int cmd_invite(int argc, char *argv[]) {
 			}
 		} else {
 			fprintf(stderr, "Could not stat %s: %s\n", invname, strerror(errno));
-			errno = 0;
 		}
 	}
-
-	closedir(dir);
 
 	if(errno) {
 		fprintf(stderr, "Error while reading directory %s: %s\n", filename, strerror(errno));
 		return 1;
 	}
+
+	closedir(dir);
 
 	ecdsa_t *key;
 	snprintf(filename, sizeof(filename), "%s" SLASH "invitations" SLASH "ed25519_key.priv", confbase);
@@ -809,7 +808,11 @@ make_names:
 		fprintf(stderr, "Could not create file %s: %s\n", filename, strerror(errno));
 		fclose(fh);
 		fclose(f);
-		fclose(finv);
+
+		if(finv) {
+			fclose(finv);
+		}
+
 		return false;
 	}
 
@@ -831,7 +834,7 @@ make_names:
 	// Generate a tinc-up script from Ifconfig and Route keywords.
 	// Other chunks go unfiltered to their respective host config files
 	const char *p = data;
-	char *l, *value;
+	char *l, *value = NULL;
 
 	static char line[1024];
 
@@ -1015,10 +1018,11 @@ make_names:
 		fprintf(stderr, "Could not write public RSA key\n");
 	}
 
-	fclose(f);
+	if(f) {
+		fclose(f);
+	}
 
 	fclose(fh);
-
 	rsa_free(rsa);
 #endif
 
@@ -1399,11 +1403,10 @@ next:
 		return 1;
 	}
 
-	if(memcmp(hishash, hash, 18)) {
+	if(!mem_eq(hishash, hash, 18)) {
 		fprintf(stderr, "Peer has an invalid key. Please make sure you're using the correct URL.\n%s\n", line + 2);
 		ecdsa_free(key);
 		return 1;
-
 	}
 
 	ecdsa_t *hiskey = ecdsa_set_base64_public_key(fingerprint);

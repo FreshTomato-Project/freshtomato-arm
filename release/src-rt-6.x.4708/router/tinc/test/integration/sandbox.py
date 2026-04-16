@@ -2,14 +2,14 @@
 
 """Test that tincd works through proxies."""
 
-import os
-import time
-
 from testlib import check, cmd, path, util
 from testlib.proc import Tinc, Script
 from testlib.test import Test
 from testlib.log import log
 from testlib.feature import HAVE_SANDBOX
+
+import os
+import time
 
 
 def init(ctx: Test, level: str) -> Tinc:

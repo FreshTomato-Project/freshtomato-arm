@@ -184,7 +184,9 @@ bool execute_script(const char *name, environment_t *env) {
 				strncpy(ext, p, pathlen + 1);
 			}
 
-			if((found = !access(fullname, F_OK))) {
+			found = !access(fullname, F_OK);
+
+			if(found) {
 				break;
 			}
 

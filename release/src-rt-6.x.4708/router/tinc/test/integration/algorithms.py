@@ -2,12 +2,12 @@
 
 """Check that legacy protocol works with different cryptographic algorithms."""
 
-import typing as T
-
 from testlib.test import Test
 from testlib.proc import Tinc
 from testlib.log import log
 from testlib import cmd, check
+
+import typing as T
 
 
 def init(ctx: Test, digest: str, cipher: str) -> T.Tuple[Tinc, Tinc]:

@@ -2,12 +2,12 @@
 
 """Test dump commands."""
 
-import subprocess as subp
-
 from testlib import check
 from testlib.log import log
 from testlib.proc import Tinc
 from testlib.test import Test
+
+import subprocess as subp
 
 SUBNETS_FOO = ("10.0.0.0/16", "10.1.2.0/24")
 SUBNETS_BAR = ("10.3.2.0/27", "fe80::/64")

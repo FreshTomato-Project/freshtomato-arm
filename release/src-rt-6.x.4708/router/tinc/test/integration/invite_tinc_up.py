@@ -2,13 +2,13 @@
 
 """Test inviting tinc nodes through tinc-up script."""
 
-import os
-import typing as T
-
-from testlib import check, util
 from testlib.log import log
 from testlib.proc import Tinc, Script
 from testlib.test import Test
+from testlib import check, util
+
+import os
+import typing as T
 
 IFCONFIG = "93.184.216.34/24"
 ROUTES_IPV6 = ("2606:2800:220:1::/64", "2606:2800:220:1:248:1893:25c8:1946")

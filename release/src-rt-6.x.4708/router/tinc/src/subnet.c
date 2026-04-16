@@ -34,7 +34,7 @@
 #include "sandbox.h"
 
 /* lists type of subnet */
-uint32_t hash_seed;
+static uint32_t hash_seed;
 splay_tree_t subnet_tree = {
 	.compare = (splay_compare_t) subnet_compare,
 	.delete = (splay_action_t) free_subnet,
@@ -220,11 +220,11 @@ subnet_t *lookup_subnet(node_t *owner, const subnet_t *subnet) {
 }
 
 subnet_t *lookup_subnet_mac(const node_t *owner, const mac_t *address) {
-	subnet_t *r = NULL;
+	subnet_t *r = hash_search(mac_t, &mac_cache, address);
 
 	// Check if this address is cached
 
-	if((r = hash_search(mac_t, &mac_cache, address))) {
+	if(r) {
 		return r;
 	}
 
@@ -254,11 +254,11 @@ subnet_t *lookup_subnet_mac(const node_t *owner, const mac_t *address) {
 }
 
 subnet_t *lookup_subnet_ipv4(const ipv4_t *address) {
-	subnet_t *r = NULL;
+	subnet_t *r = hash_search(ipv4_t, &ipv4_cache, address);
 
 	// Check if this address is cached
 
-	if((r = hash_search(ipv4_t, &ipv4_cache, address))) {
+	if(r) {
 		return r;
 	}
 
@@ -288,11 +288,11 @@ subnet_t *lookup_subnet_ipv4(const ipv4_t *address) {
 }
 
 subnet_t *lookup_subnet_ipv6(const ipv6_t *address) {
-	subnet_t *r = NULL;
+	subnet_t *r = hash_search(ipv6_t, &ipv6_cache, address);
 
 	// Check if this address is cached
 
-	if((r = hash_search(ipv6_t, &ipv6_cache, address))) {
+	if(r) {
 		return r;
 	}
 

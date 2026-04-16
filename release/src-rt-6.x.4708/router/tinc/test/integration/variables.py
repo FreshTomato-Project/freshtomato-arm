@@ -3,13 +3,13 @@
 
 """Test tinc and tincd configuration variables."""
 
-import typing as T
-from pathlib import Path
-
 from testlib import check, cmd
 from testlib.log import log
 from testlib.proc import Tinc
 from testlib.test import Test
+
+import typing as T
+from pathlib import Path
 
 bad_subnets = (
     "1.1.1",

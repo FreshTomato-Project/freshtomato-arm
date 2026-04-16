@@ -69,7 +69,9 @@ static bool setup_device(void) {
 
 	get_config_string(lookup_config(&config_tree, "Interface"), &iface);
 
-	if((write_fd = socket(PF_UNIX, SOCK_DGRAM, 0)) < 0) {
+	write_fd = socket(PF_UNIX, SOCK_DGRAM, 0);
+
+	if(write_fd < 0) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Could not open write %s: %s", device_info, strerror(errno));
 		event_exit();
 		return false;
@@ -87,7 +89,9 @@ static bool setup_device(void) {
 		return false;
 	}
 
-	if((data_fd = socket(PF_UNIX, SOCK_DGRAM, 0)) < 0) {
+	data_fd = socket(PF_UNIX, SOCK_DGRAM, 0);
+
+	if(data_fd < 0) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Could not open data %s: %s", device_info, strerror(errno));
 		event_exit();
 		return false;
@@ -117,7 +121,9 @@ static bool setup_device(void) {
 		return false;
 	}
 
-	if((listen_fd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
+	listen_fd = socket(PF_UNIX, SOCK_STREAM, 0);
+
+	if(listen_fd < 0) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Could not open %s: %s", device_info,
 		       strerror(errno));
 		return false;

@@ -180,9 +180,9 @@ static void close_device(void) {
 }
 
 static bool read_packet(vpn_packet_t *packet) {
-	ssize_t lenin;
+	ssize_t lenin = recv(device_fd, (void *)DATA(packet), MTU, 0);
 
-	if((lenin = recv(device_fd, (void *)DATA(packet), MTU, 0)) <= 0) {
+	if(lenin <= 0) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Error while reading from %s %s: %s", device_info,
 		       device, sockstrerror(sockerrno));
 		return false;

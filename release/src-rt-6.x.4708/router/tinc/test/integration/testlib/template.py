@@ -7,7 +7,6 @@ from string import Template
 from . import path
 from .notification import notifications
 
-
 _CMD_VARS = os.linesep.join([f"set {var}={val}" for var, val in path.env.items()])
 
 

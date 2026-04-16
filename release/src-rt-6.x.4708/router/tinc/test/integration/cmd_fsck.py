@@ -2,15 +2,15 @@
 
 """Test 'tinc fsck' command."""
 
-import os
-import sys
-import typing as T
-
 from testlib import check
 from testlib.const import RUN_ACCESS_CHECKS
 from testlib.log import log
 from testlib.proc import Tinc, Feature
 from testlib.util import read_text, read_lines, write_lines, append_line, write_text
+
+import os
+import sys
+import typing as T
 
 RUN_LEGACY_CHECKS = Feature.LEGACY_PROTOCOL in Tinc().features
 RUN_EXECUTABILITY_CHECKS = os.name != "nt"

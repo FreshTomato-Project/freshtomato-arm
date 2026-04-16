@@ -4,7 +4,7 @@ set -euo pipefail
 
 dir=$(realpath "$(dirname "$0")")
 
-logs="$GITHUB_WORKSPACE/sanitizer"
+logs="sanitizer"
 
 case "$SANITIZER" in
 undefined)
@@ -29,11 +29,11 @@ thread)
   ;;
 esac
 
-export CC='clang-12'
+export CC='clang'
 export CPPFLAGS='-DDEBUG'
 export CFLAGS="-O0 -g -fsanitize=$SANITIZER -fno-omit-frame-pointer -fno-common -fsanitize-blacklist=$dir/ignore.txt $flags"
 
-sudo bash .ci/test/run.sh "$@"
+.ci/test/run.sh "$@"
 
 # Check that the sanitizer has not created any log files.
 # If it has, fail the job to notify the developer.

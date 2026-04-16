@@ -2,16 +2,16 @@
 
 """Test FD device support."""
 
+from testlib import check
+from testlib.log import log
+from testlib.test import Test
+from testlib.proc import Script
+
 import array
 import socket
 import tempfile
 import threading
 import time
-
-from testlib import check
-from testlib.log import log
-from testlib.test import Test
-from testlib.proc import Script
 
 JUNK_FRAME = b"\xff" * 80
 
@@ -60,7 +60,7 @@ def test_device_fd(ctx: Test) -> None:
 
     log.info("create a UNIX socket to transfer FD")
     unix = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    unix_path = tempfile.mktemp()
+    unix_path = tempfile.mkstemp()[1] + ".socket"
     unix.bind(unix_path)
     unix.listen(1)
 

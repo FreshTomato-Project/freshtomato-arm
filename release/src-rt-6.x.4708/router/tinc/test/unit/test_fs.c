@@ -54,8 +54,8 @@ static int setup_path_unix(void **state) {
 	return 0;
 }
 
-const char tmp_template[] = "/tmp/tinc.test.fs.XXXXXX";
-char tmp[sizeof(tmp_template)];
+static const char tmp_template[] = "/tmp/tinc.test.fs.XXXXXX";
+static char tmp[sizeof(tmp_template)];
 
 static int setup_temp_dir(void **state) {
 	(void)state;
@@ -73,34 +73,26 @@ static int teardown_temp_dir(void **state) {
 	return 0;
 }
 
-static void test_makedir(tinc_dir_t dir, bool exists) {
+static void test_makedir(unsigned int dir, bool exists) {
 	char path[PATH_MAX];
 	char container[PATH_MAX] = {0};
 
-	switch(dir) {
-	case DIR_CONFDIR:
+	if(dir == DIR_CONFDIR) {
 		strcpy(path, tmp);
-		break;
-
-	case DIR_CONFBASE:
+	} else if(dir == DIR_CONFBASE) {
 		sprintf(path, "%s/conf", tmp);
 		strcpy(container, tmp);
-		break;
-
-	case DIR_CACHE:
+	} else if(dir == DIR_CACHE) {
 		sprintf(path, "%s/conf/cache", tmp);
 		sprintf(container, "%s/conf", tmp);
-		break;
-
-	case DIR_HOSTS:
+	} else if(dir == DIR_HOSTS) {
 		sprintf(path, "%s/conf/hosts", tmp);
 		sprintf(container, "%s/conf", tmp);
-		break;
-
-	case DIR_INVITATIONS:
+	} else if(dir == DIR_INVITATIONS) {
 		sprintf(path, "%s/conf/invitations", tmp);
 		sprintf(container, "%s/conf", tmp);
-		break;
+	} else {
+		abort();
 	}
 
 	struct stat st;
@@ -129,6 +121,10 @@ static void test_makedir(tinc_dir_t dir, bool exists) {
 	if(*container) {
 		DIR *d = opendir(container);
 		assert_non_null(d);
+
+		if (!d) {
+			abort();
+		}
 
 		struct dirent *ent;
 
@@ -202,7 +198,6 @@ static void test_fopenmask_new(void **state) {
 	struct stat st;
 	strcpy(tmp, tmp_template);
 
-	// mktemp() nags about safety and using better alternatives
 	int fd = mkstemp(tmp);
 	assert_int_not_equal(-1, fd);
 	close(fd);

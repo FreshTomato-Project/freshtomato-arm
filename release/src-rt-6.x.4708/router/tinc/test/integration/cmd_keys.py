@@ -3,16 +3,15 @@
 
 """Test key management commands."""
 
-import os
-import typing
-
-from testlib import check, util
 from testlib.log import log
 from testlib.const import RUN_ACCESS_CHECKS
 from testlib.feature import Feature
 from testlib.proc import Tinc
 from testlib.test import Test
+from testlib import check, util
 
+import os
+import typing
 
 TEST_DATA = b"foo bar baz"
 

@@ -2,12 +2,14 @@
 
 """Test basic SPTPS features."""
 
+from testlib.log import log
+from testlib.proc import Tinc, Script
+from testlib.test import Test
+from testlib import check, util, path
+
 import os
 import subprocess as subp
 import re
-
-from testlib import path, util, check
-from testlib.log import log
 
 port_re = re.compile(r"Listening on (\d+)\.\.\.")
 

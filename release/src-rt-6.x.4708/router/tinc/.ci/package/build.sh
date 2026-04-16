@@ -12,10 +12,10 @@ build_linux() {
 
   case "$ID" in
   debian | ubuntu)
-    bash .ci/package/deb/build.sh
+    .ci/package/deb/build.sh
     ;;
   almalinux | centos | fedora)
-    bash .ci/package/rpm/build.sh
+    .ci/package/rpm/build.sh
     ;;
   esac
 }
@@ -25,6 +25,6 @@ Linux)
   build_linux
   ;;
 MINGW*)
-  bash .ci/package/win/build.sh
+  .ci/package/win/build.sh
   ;;
 esac

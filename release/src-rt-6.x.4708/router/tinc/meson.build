@@ -1,7 +1,7 @@
 project('tinc', 'c',
   version: '1.1pre18',
   license: 'GPL-2.0-or-later',
-  meson_version: '>=0.51',
+  meson_version: '>=0.56',
   default_options: [
     'c_std=c11',
     'warning_level=3',
@@ -25,6 +25,7 @@ opt_static = get_option('static')
 opt_systemd = get_option('systemd')
 opt_tests = get_option('tests')
 opt_tunemu = get_option('tunemu')
+opt_vmnet = get_option('vmnet')
 opt_uml = get_option('uml')
 opt_vde = get_option('vde')
 opt_zlib = get_option('zlib')
@@ -68,6 +69,7 @@ if cc_name != 'msvc'
     '-Wmissing-noreturn',
     '-Wmissing-prototypes',
     '-Wno-embedded-directive',
+    '-Wno-ignored-attributes',
     '-Wold-style-definition',
     '-Wredundant-decls',
     '-Wreturn-type',

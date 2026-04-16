@@ -17,6 +17,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "../utils.h"
 #include "../system.h"
 
 #include <openssl/err.h>
@@ -186,7 +187,7 @@ bool digest_verify(digest_t *digest, const void *indata, size_t inlen, const voi
 	size_t len = digest->maclength;
 	unsigned char *outdata = alloca(len);
 
-	return digest_create(digest, indata, inlen, outdata) && !memcmp(cmpdata, outdata, digest->maclength);
+	return digest_create(digest, indata, inlen, outdata) && mem_eq(cmpdata, outdata, digest->maclength);
 }
 
 nid_t digest_get_nid(const digest_t *digest) {

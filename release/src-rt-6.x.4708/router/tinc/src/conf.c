@@ -257,6 +257,7 @@ config_t *parse_config_line(char *line, const char *fname, int lineno) {
 	value += len;
 	value += strspn(value, "\t ");
 
+	// NOLINTNEXTLINE
 	if(*value == '=') {
 		value++;
 		value += strspn(value, "\t ");
@@ -386,48 +387,49 @@ void read_config_options(splay_tree_t *config_tree, const char *prefix) {
 
 bool read_server_config(splay_tree_t *config_tree) {
 	char fname[PATH_MAX];
-	bool x;
 
 	read_config_options(config_tree, NULL);
 
 	snprintf(fname, sizeof(fname), "%s" SLASH "tinc.conf", confbase);
-	errno = 0;
-	x = read_config_file(config_tree, fname, true);
 
-	// We will try to read the conf files in the "conf.d" dir
-	if(x) {
-		char dname[PATH_MAX];
-		snprintf(dname, sizeof(dname), "%s" SLASH "conf.d", confbase);
-		DIR *dir = opendir(dname);
+	if(!read_config_file(config_tree, fname, true)) {
+		logger(DEBUG_ALWAYS, LOG_ERR, "Failed to read `%s': %s", fname, strerror(errno));
+		return false;
+	}
 
-		// If we can find this dir
-		if(dir) {
-			struct dirent *ep;
+	// We will try to read the conf files in the "conf.d" dir, if it exists
+	char dname[PATH_MAX];
+	snprintf(dname, sizeof(dname), "%s" SLASH "conf.d", confbase);
+	DIR *dir = opendir(dname);
 
-			// We list all the files in it
-			while(x && (ep = readdir(dir))) {
-				size_t l = strlen(ep->d_name);
+	if(!dir && errno == ENOENT) {
+		return true;
+	} else {
+		logger(DEBUG_ALWAYS, LOG_ERR, "Failed to read `%s': %s", dname, strerror(errno));
+		return false;
+	}
 
-				// And we try to read the ones that end with ".conf"
-				if(l > 5 && !strcmp(".conf", & ep->d_name[ l - 5 ])) {
-					if((size_t)snprintf(fname, sizeof(fname), "%s" SLASH "%s", dname, ep->d_name) >= sizeof(fname)) {
-						logger(DEBUG_ALWAYS, LOG_ERR, "Pathname too long: %s/%s", dname, ep->d_name);
-						return false;
-					}
+	// We list all the files in it
+	struct dirent *ep;
 
-					x = read_config_file(config_tree, fname, true);
-				}
+	while((ep = readdir(dir))) {
+		size_t l = strlen(ep->d_name);
+
+		// And we try to read the ones that end with ".conf"
+		if(l > 5 && !strcmp(".conf", & ep->d_name[ l - 5 ])) {
+			if((size_t)snprintf(fname, sizeof(fname), "%s" SLASH "%s", dname, ep->d_name) >= sizeof(fname)) {
+				logger(DEBUG_ALWAYS, LOG_ERR, "Pathname too long: %s/%s", dname, ep->d_name);
+				return false;
 			}
 
-			closedir(dir);
+			if(!read_config_file(config_tree, fname, true)) {
+				logger(DEBUG_ALWAYS, LOG_ERR, "Failed to read `%s': %s", fname, strerror(errno));
+				return false;
+			}
 		}
 	}
 
-	if(!x && errno) {
-		logger(DEBUG_ALWAYS, LOG_ERR, "Failed to read `%s': %s", fname, strerror(errno));
-	}
-
-	return x;
+	return true;
 }
 
 bool read_host_config(splay_tree_t *config_tree, const char *name, bool verbose) {

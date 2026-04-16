@@ -51,7 +51,9 @@ static int read_fd(int socket) {
 	msg.msg_control = cmsgbuf;
 	msg.msg_controllen = sizeof(cmsgbuf);
 
-	if((ret = recvmsg(socket, &msg, 0)) < 1) {
+	ret = recvmsg(socket, &msg, 0);
+
+	if(ret <= 0) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Could not read from unix socket (error %ld)!", (long)ret);
 		return -1;
 	}
@@ -95,12 +97,16 @@ static int receive_fd(struct unix_socket_addr socket_addr) {
 	int ret;
 	int result;
 
-	if((socketfd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
+	socketfd = socket(PF_UNIX, SOCK_STREAM, 0);
+
+	if(socketfd < 0) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Could not open stream socket (error %d)!", socketfd);
 		return -1;
 	}
 
-	if((ret = connect(socketfd, (struct sockaddr *) &socket_addr.addr, socket_addr.size)) < 0) {
+	ret = connect(socketfd, (struct sockaddr *) &socket_addr.addr, socket_addr.size);
+
+	if(ret < 0) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Could not connect to Unix socket (error %d)!", ret);
 		result = -1;
 		goto end;

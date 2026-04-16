@@ -186,7 +186,9 @@ static bool send_kex(sptps_t *s) {
 	randomize(s->mykex->nonce, ECDH_SIZE);
 
 	// Create a new ECDH public key.
-	if(!(s->ecdh = ecdh_generate_public(s->mykex->pubkey))) {
+	s->ecdh = ecdh_generate_public(s->mykex->pubkey);
+
+	if(!s) {
 		return error(s, EINVAL, "Failed to generate ECDH public key");
 	}
 
@@ -639,11 +641,13 @@ size_t sptps_receive_data(sptps_t *s, const void *vdata, size_t len) {
 		s->reclen = ntohs(s->reclen);
 
 		// If we have the length bytes, ensure our buffer can hold the whole request.
-		s->inbuf = realloc(s->inbuf, s->reclen + 19UL);
+		uint8_t *new_inbuf = realloc(s->inbuf, s->reclen + 19UL);
 
-		if(!s->inbuf) {
+		if(!new_inbuf) {
 			return error(s, errno, "%s", strerror(errno));
 		}
+
+		s->inbuf = new_inbuf;
 
 		// Exit early if we have no more data to process.
 		if(!len) {

@@ -2,6 +2,12 @@
 
 """Test supported and unsupported commandline flags."""
 
+from testlib.log import log
+from testlib.proc import Tinc, Script
+from testlib.test import Test
+from testlib.feature import SANDBOX_LEVEL
+from testlib import check, util, path
+
 import os
 import shutil
 import signal
@@ -9,11 +15,7 @@ import subprocess as subp
 import tempfile
 import time
 
-from testlib import check, util, path
-from testlib.log import log
-from testlib.proc import Tinc, Script
-from testlib.test import Test
-from testlib.feature import SANDBOX_LEVEL
+COOKIE = util.random_string(10)
 
 
 def init(ctx: Test) -> Tinc:
@@ -50,7 +52,6 @@ with Test("commandline flags") as context:
     )
 
     for code, flags in tincd_flags:
-        COOKIE = util.random_string(10)
         server = node.tincd(*flags, env={"COOKIE": COOKIE})
 
         if not code:
@@ -138,7 +139,7 @@ def test_relative_path(ctx: Test, chroot: bool) -> None:
 
         log.info("stopping tinc through '%s'", pidfile)
         foo.cmd("--pidfile", pidfile, "stop")
-        check.success(tincd.wait())
+        tincd.wait()
 
     # Leave behind as debugging aid if there's an exception
     shutil.rmtree(shortcut)

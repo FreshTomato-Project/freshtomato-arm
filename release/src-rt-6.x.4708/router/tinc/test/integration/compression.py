@@ -2,6 +2,13 @@
 
 """Test supported and unsupported compression levels."""
 
+from testlib import cmd, path, check, util
+from testlib.log import log
+from testlib.proc import Script, Tinc, Feature
+from testlib.test import Test
+from testlib.template import make_netns_config
+from testlib import external as ext
+
 import os
 import signal
 import sys
@@ -9,12 +16,6 @@ import multiprocessing.connection as mpc
 import subprocess as subp
 import time
 import typing as T
-
-from testlib import external as ext, cmd, path, check, util
-from testlib.log import log
-from testlib.proc import Script, Tinc, Feature
-from testlib.test import Test
-from testlib.template import make_netns_config
 
 IP_FOO = "192.168.1.1"
 IP_BAR = "192.168.1.2"

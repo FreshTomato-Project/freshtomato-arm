@@ -17,6 +17,7 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "../utils.h"
 #include "../system.h"
 
 #include "digest.h"
@@ -161,7 +162,7 @@ bool digest_verify(digest_t *digest, const void *indata, size_t inlen, const voi
 	size_t len = digest->maclength;
 	uint8_t *outdata = alloca(len);
 
-	return digest_create(digest, indata, inlen, outdata) && !memcmp(cmpdata, outdata, len);
+	return digest_create(digest, indata, inlen, outdata) && mem_eq(cmpdata, outdata, len);
 }
 
 nid_t digest_get_nid(const digest_t *digest) {

@@ -2,14 +2,14 @@
 
 """Test recent address cache."""
 
-import os
-import typing as T
-import shutil
-
 from testlib import check
 from testlib.log import log
 from testlib.proc import Tinc, Script
 from testlib.test import Test
+
+import os
+import typing as T
+import shutil
 
 
 def init(ctx: Test) -> T.Tuple[Tinc, Tinc]:

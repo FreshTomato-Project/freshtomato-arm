@@ -2,16 +2,16 @@
 
 """Test binding to interfaces and addresses."""
 
+from testlib.const import EXIT_SKIP
+from testlib.log import log
+from testlib.test import Test
+from testlib import check, util
+
 import json
 import socket
 import subprocess as subp
 import sys
 import typing as T
-
-from testlib import check, util
-from testlib.const import EXIT_SKIP
-from testlib.log import log
-from testlib.test import Test
 
 util.require_command("ss", "-nlup")
 util.require_command("ip", "--json", "addr")

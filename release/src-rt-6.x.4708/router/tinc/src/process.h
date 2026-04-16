@@ -26,6 +26,7 @@
 extern bool do_detach;
 extern bool use_logfile;
 extern bool use_syslog;
+extern char **g_argv;
 
 extern bool detach(void);
 

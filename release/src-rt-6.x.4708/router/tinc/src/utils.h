@@ -4,7 +4,7 @@
 /*
     utils.h -- header file for utils.c
     Copyright (C) 1999-2005 Ivo Timmermans
-                  2000-2013 Guus Sliepen <guus@tinc-vpn.org>
+                  2000-2026 Guus Sliepen <guus@tinc-vpn.org>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -76,5 +76,7 @@ char *replace_name(const char *name) ATTR_MALLOC;
 
 // NULL-safe wrapper around strcmp().
 extern bool string_eq(const char *first, const char *second);
+
+extern bool mem_eq(const void* s1, const void* s2, size_t n);
 
 #endif

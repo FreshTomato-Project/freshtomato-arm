@@ -196,7 +196,9 @@ void load_all_nodes(void) {
 					continue;
 				}
 
-				if((s2 = lookup_subnet(n, s))) {
+				s2 = lookup_subnet(n, s);
+
+				if(s2) {
 					s2->expires = -1;
 					free(s);
 				} else {
@@ -261,9 +263,9 @@ bool setup_myself_reloadable(void) {
 	get_config_string(lookup_config(&config_tree, "Proxy"), &proxy);
 
 	if(proxy) {
-		char *space;
+		char *space = strchr(proxy, ' ');
 
-		if((space = strchr(proxy, ' '))) {
+		if(space) {
 			*space++ = 0;
 		}
 
@@ -327,8 +329,12 @@ bool setup_myself_reloadable(void) {
 		case PROXY_HTTP:
 			proxyhost = space;
 
-			if(space && (space = strchr(space, ' '))) {
-				*space++ = 0, proxyport = space;
+			if(space) {
+				space = strchr(space, ' ');
+
+				if(space) {
+					*space++ = 0, proxyport = space;
+				}
 			}
 
 			if(!proxyhost || !*proxyhost || !proxyport || !*proxyport) {
@@ -339,12 +345,20 @@ bool setup_myself_reloadable(void) {
 				return false;
 			}
 
-			if(space && (space = strchr(space, ' '))) {
-				*space++ = 0, proxyuser = space;
+			if(space) {
+				space = strchr(space, ' ');
+
+				if(space) {
+					*space++ = 0, proxyuser = space;
+				}
 			}
 
-			if(space && (space = strchr(space, ' '))) {
-				*space++ = 0, proxypass = space;
+			if(space) {
+				space = strchr(space, ' ');
+
+				if(space) {
+					*space++ = 0, proxypass = space;
+				}
 			}
 
 			proxyhost = xstrdup(proxyhost);
@@ -758,7 +772,9 @@ static bool setup_myself(void) {
 	char *address = NULL;
 	bool port_specified = false;
 
-	if(!(name = get_name())) {
+	name = get_name();
+
+	if(!name) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Name for tinc daemon required!");
 		return false;
 	}

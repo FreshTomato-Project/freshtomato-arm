@@ -3,16 +3,14 @@
 
 #include "system.h"
 
-typedef enum {
-	DIR_CACHE       = 1 << 0,
-	DIR_CONFBASE    = 1 << 1,
-	DIR_CONFDIR     = 1 << 2,
-	DIR_HOSTS       = 1 << 3,
-	DIR_INVITATIONS = 1 << 4,
-} tinc_dir_t;
+static const unsigned int DIR_CACHE       = 1 << 0;
+static const unsigned int DIR_CONFBASE    = 1 << 1;
+static const unsigned int DIR_CONFDIR     = 1 << 2;
+static const unsigned int DIR_HOSTS       = 1 << 3;
+static const unsigned int DIR_INVITATIONS = 1 << 4;
 
 // Create one or multiple directories inside tincd configuration directory
-extern bool makedirs(tinc_dir_t dirs);
+extern bool makedirs(unsigned int dirs);
 
 // Open file. If it does not exist, create a new file with the specified access mode.
 extern FILE *fopenmask(const char *filename, const char *mode, mode_t perms) ATTR_DEALLOCATOR(fclose);

@@ -2,6 +2,15 @@
 
 """Test that tincd works through proxies."""
 
+from threading import Thread
+from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
+from testlib import check, cmd, path, util
+from testlib.proc import Tinc, Script
+from testlib.test import Test
+from testlib.util import random_string
+from testlib.log import log
+from testlib.feature import HAVE_SANDBOX
+
 import os
 import re
 import time
@@ -11,15 +20,6 @@ import logging
 import select
 import socket
 import struct
-
-from threading import Thread
-from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
-from testlib import check, cmd, path, util
-from testlib.proc import Tinc, Script
-from testlib.test import Test
-from testlib.util import random_string
-from testlib.log import log
-from testlib.feature import HAVE_SANDBOX
 
 USERNAME = random_string(8)
 PASSWORD = random_string(8)

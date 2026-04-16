@@ -20,7 +20,7 @@ static bool makedir(const char *path, mode_t mode) {
 	return true;
 }
 
-bool makedirs(tinc_dir_t dirs) {
+bool makedirs(unsigned int dirs) {
 	if(!dirs) {
 		return false;
 	}

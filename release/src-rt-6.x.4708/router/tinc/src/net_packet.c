@@ -51,9 +51,10 @@
 #include "net.h"
 #include "netutl.h"
 #include "protocol.h"
+#include "random.h"
 #include "route.h"
 #include "utils.h"
-#include "random.h"
+#include "xalloc.h"
 
 /* The minimum size of a probe is 14 bytes, but since we normally use CBC mode
    encryption, we can add a few extra random bytes without increasing the
@@ -236,30 +237,26 @@ static void udp_probe_h(node_t *n, vpn_packet_t *packet, length_t len) {
 	}
 }
 
+static length_t compress_packet_lz4(uint8_t *dest, length_t dest_len, const uint8_t *source, length_t len) {
 #ifdef HAVE_LZ4
-static length_t compress_packet_lz4(uint8_t *dest, const uint8_t *source, length_t len) {
 #ifdef HAVE_LZ4_BUILTIN
-	return LZ4_compress_fast_extState(&lz4_stream, (const char *) source, (char *) dest, len, MAXSIZE, 0);
+	return LZ4_compress_fast_extState(&lz4_stream, (const char *) source, (char *) dest, len, dest_len, 0);
 #else
 
 	/* @FIXME: Put this in a better place, and free() it too. */
 	if(lz4_state == NULL) {
-		lz4_state = malloc(LZ4_sizeofState());
+		lz4_state = xmalloc(LZ4_sizeofState());
 	}
 
-	if(lz4_state == NULL) {
-		logger(DEBUG_ALWAYS, LOG_ERR, "Failed to allocate lz4_state, error: %i", errno);
-		return 0;
-	}
-
-	return LZ4_compress_fast_extState(lz4_state, (const char *) source, (char *) dest, len, MAXSIZE, 0);
+	return LZ4_compress_fast_extState(lz4_state, (const char *) source, (char *) dest, len, dest_len, 0);
 #endif /* HAVE_LZ4_BUILTIN */
-}
 #endif /* HAVE_LZ4 */
+	return 0;
+}
 
+static length_t compress_packet_lzo(uint8_t *dest, length_t dest_len, const uint8_t *source, length_t len, compression_level_t level) {
 #ifdef HAVE_LZO
-static length_t compress_packet_lzo(uint8_t *dest, const uint8_t *source, length_t len, compression_level_t level) {
-	lzo_uint lzolen = MAXSIZE;
+	lzo_uint lzolen = dest_len;
 	int result;
 
 	if(level == COMPRESS_LZO_HI) {
@@ -270,27 +267,35 @@ static length_t compress_packet_lzo(uint8_t *dest, const uint8_t *source, length
 
 	if(result == LZO_E_OK) {
 		return lzolen;
-	} else {
-		return 0;
 	}
-}
-#endif
 
-static length_t compress_packet(uint8_t *dest, const uint8_t *source, length_t len, compression_level_t level) {
+#endif /* HAVE_LZO */
+
+	return 0;
+}
+
+static length_t compress_packet_zlib(uint8_t *dest, length_t dest_len, const uint8_t *source, length_t len, compression_level_t level) {
+#ifdef HAVE_ZLIB
+	unsigned long result_len = dest_len;
+
+	if(compress2(dest, &result_len, source, len, level) == Z_OK) {
+		return result_len;
+	}
+
+#endif /* HAVE_ZLIB */
+
+	return 0;
+}
+
+static length_t compress_packet(uint8_t *dest, length_t dest_len, const uint8_t *source, length_t len, compression_level_t level) {
 	switch(level) {
-#ifdef HAVE_LZ4
 
 	case COMPRESS_LZ4:
-		return compress_packet_lz4(dest, source, len);
-#endif
-
-#ifdef HAVE_LZO
+		return compress_packet_lz4(dest, dest_len, source, len);
 
 	case COMPRESS_LZO_HI:
 	case COMPRESS_LZO_LO:
-		return compress_packet_lzo(dest, source, len, level);
-#endif
-#ifdef HAVE_ZLIB
+		return compress_packet_lzo(dest, dest_len, source, len, level);
 
 	case COMPRESS_ZLIB_9:
 	case COMPRESS_ZLIB_8:
@@ -301,42 +306,39 @@ static length_t compress_packet(uint8_t *dest, const uint8_t *source, length_t l
 	case COMPRESS_ZLIB_3:
 	case COMPRESS_ZLIB_2:
 	case COMPRESS_ZLIB_1: {
-		unsigned long dest_len = MAXSIZE;
+		return compress_packet_zlib(dest, dest_len, source, len, level);
+	}
 
-		if(compress2(dest, &dest_len, source, len, level) == Z_OK) {
-			return dest_len;
+	case COMPRESS_NONE:
+		if(dest_len >= len) {
+			memcpy(dest, source, len);
+			return len;
 		} else {
 			return 0;
 		}
-	}
-
-#endif
-
-	case COMPRESS_NONE:
-		memcpy(dest, source, len);
-		return len;
 
 	default:
 		return 0;
 	}
 }
 
-static length_t uncompress_packet(uint8_t *dest, const uint8_t *source, length_t len, compression_level_t level) {
+static length_t uncompress_packet(uint8_t *dest, length_t dest_len, const uint8_t *source, length_t len, compression_level_t level) {
 	switch(level) {
 #ifdef HAVE_LZ4
 
 	case COMPRESS_LZ4:
-		return LZ4_decompress_safe((char *)source, (char *) dest, len, MAXSIZE);
+
+		return LZ4_decompress_safe((char *)source, (char *) dest, len, dest_len);
 
 #endif
 #ifdef HAVE_LZO
 
 	case COMPRESS_LZO_HI:
 	case COMPRESS_LZO_LO: {
-		lzo_uint dst_len = MAXSIZE;
+		lzo_uint lzo_len = dest_len;
 
-		if(lzo1x_decompress_safe(source, len, dest, &dst_len, NULL) == LZO_E_OK) {
-			return dst_len;
+		if(lzo1x_decompress_safe(source, len, dest, &lzo_len, NULL) == LZO_E_OK) {
+			return lzo_len;
 		} else {
 			return 0;
 		}
@@ -354,7 +356,6 @@ static length_t uncompress_packet(uint8_t *dest, const uint8_t *source, length_t
 	case COMPRESS_ZLIB_3:
 	case COMPRESS_ZLIB_2:
 	case COMPRESS_ZLIB_1: {
-		unsigned long destlen = MAXSIZE;
 		static z_stream stream;
 
 		if(stream.next_in) {
@@ -366,7 +367,7 @@ static length_t uncompress_packet(uint8_t *dest, const uint8_t *source, length_t
 		stream.next_in = source;
 		stream.avail_in = len;
 		stream.next_out = dest;
-		stream.avail_out = destlen;
+		stream.avail_out = dest_len;
 		stream.total_out = 0;
 
 		if(inflate(&stream, Z_FINISH) == Z_STREAM_END) {
@@ -379,8 +380,12 @@ static length_t uncompress_packet(uint8_t *dest, const uint8_t *source, length_t
 #endif
 
 	case COMPRESS_NONE:
-		memcpy(dest, source, len);
-		return len;
+		if(dest_len >= len) {
+			memcpy(dest, source, len);
+			return len;
+		} else {
+			return 0;
+		}
 
 	default:
 		return 0;
@@ -554,8 +559,9 @@ static bool receive_udppacket(node_t *n, vpn_packet_t *inpkt) {
 
 	if(n->incompression != COMPRESS_NONE) {
 		vpn_packet_t *outpkt = pkt[nextpkt++];
+		outpkt->len = uncompress_packet(DATA(outpkt), MAXSIZE - outpkt->offset, DATA(inpkt), inpkt->len, n->incompression);
 
-		if(!(outpkt->len = uncompress_packet(DATA(outpkt), DATA(inpkt), inpkt->len, n->incompression))) {
+		if(!outpkt->len) {
 			logger(DEBUG_TRAFFIC, LOG_ERR, "Error while uncompressing packet from %s (%s)",
 			       n->name, n->hostname);
 			return false;
@@ -701,7 +707,7 @@ static void send_sptps_packet(node_t *n, vpn_packet_t *origpkt) {
 
 	if(n->outcompression != COMPRESS_NONE) {
 		outpkt.offset = 0;
-		length_t len = compress_packet(DATA(&outpkt) + offset, DATA(origpkt) + offset, origpkt->len - offset, n->outcompression);
+		length_t len = compress_packet(DATA(&outpkt) + offset, MAXSIZE - offset, DATA(origpkt) + offset, origpkt->len - offset, n->outcompression);
 
 		if(!len) {
 			logger(DEBUG_TRAFFIC, LOG_ERR, "Error while compressing packet to %s (%s)", n->name, n->hostname);
@@ -855,8 +861,9 @@ static void send_udppacket(node_t *n, vpn_packet_t *origpkt) {
 
 	if(n->outcompression != COMPRESS_NONE) {
 		outpkt = pkt[nextpkt++];
+		outpkt->len = compress_packet(DATA(outpkt), MAXSIZE - outpkt->offset, DATA(inpkt), inpkt->len, n->outcompression);
 
-		if(!(outpkt->len = compress_packet(DATA(outpkt), DATA(inpkt), inpkt->len, n->outcompression))) {
+		if(!outpkt->len) {
 			logger(DEBUG_TRAFFIC, LOG_ERR, "Error while compressing packet to %s (%s)",
 			       n->name, n->hostname);
 			return;
@@ -1101,7 +1108,7 @@ bool receive_sptps_record(void *handle, uint8_t type, const void *data, uint16_t
 	int offset = (type & PKT_MAC) ? 0 : 14;
 
 	if(type & PKT_COMPRESSED) {
-		length_t ulen = uncompress_packet(DATA(&inpkt) + offset, (const uint8_t *)data, len, from->incompression);
+		length_t ulen = uncompress_packet(DATA(&inpkt) + offset, MAXSIZE - inpkt.offset, (const uint8_t *)data, len, from->incompression);
 
 		if(!ulen) {
 			return false;
@@ -1727,13 +1734,16 @@ static void handle_incoming_vpn_packet(listen_socket_t *ls, vpn_packet_t *pkt, s
 	if(!n) {
 		// It might be from a 1.1 node, which might have a source ID in the packet.
 		pkt->offset = 2 * sizeof(node_id_t);
-		from = lookup_node_id(SRCID(pkt));
 
-		if(from && from->status.sptps && !memcmp(DSTID(pkt), &nullid, sizeof(nullid))) {
-			if(sptps_verify_datagram(&from->sptps, DATA(pkt), pkt->len - 2 * sizeof(node_id_t))) {
-				n = from;
-			} else {
-				goto skip_harder;
+		if(pkt->len >= pkt->offset) {
+			from = lookup_node_id(SRCID(pkt));
+
+			if(from && from->status.sptps && !memcmp(DSTID(pkt), &nullid, sizeof(nullid))) {
+				if(sptps_verify_datagram(&from->sptps, DATA(pkt), pkt->len - 2 * sizeof(node_id_t))) {
+					n = from;
+				} else {
+					goto skip_harder;
+				}
 			}
 		}
 	}
@@ -1746,9 +1756,9 @@ static void handle_incoming_vpn_packet(listen_socket_t *ls, vpn_packet_t *pkt, s
 skip_harder:
 
 	if(!n) {
-		if(debug_level >= DEBUG_PROTOCOL) {
+		if(debug_level >= DEBUG_TRAFFIC) {
 			hostname = sockaddr2hostname(addr);
-			logger(DEBUG_PROTOCOL, LOG_WARNING, "Received UDP packet from unknown source %s", hostname);
+			logger(DEBUG_TRAFFIC, LOG_WARNING, "Received UDP packet from unknown source %s", hostname);
 			free(hostname);
 		}
 
@@ -1762,6 +1772,12 @@ skip_harder:
 
 		if(relay_enabled) {
 			pkt->offset = 2 * sizeof(node_id_t);
+
+			if(pkt->offset > pkt->len) {
+				logger(DEBUG_TRAFFIC, LOG_WARNING, "Got too short packet from %s (%s)", n->name, n->hostname);
+				return;
+			}
+
 			pkt->len -= pkt->offset;
 		}
 
@@ -1775,7 +1791,7 @@ skip_harder:
 		}
 
 		if(!from || !to) {
-			logger(DEBUG_PROTOCOL, LOG_WARNING, "Received UDP packet from %s (%s) with unknown source and/or destination ID", n->name, n->hostname);
+			logger(DEBUG_TRAFFIC, LOG_WARNING, "Received UDP packet from %s (%s) with unknown source and/or destination ID", n->name, n->hostname);
 			return;
 		}
 

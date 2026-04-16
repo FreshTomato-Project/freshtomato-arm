@@ -402,10 +402,12 @@ int reload_configuration(void) {
 		config_t *cfg = lookup_config(&config_tree, "Subnet");
 
 		while(cfg) {
-			subnet_t *subnet, *s2;
+			subnet_t *subnet;
 
 			if(get_config_subnet(cfg, &subnet)) {
-				if((s2 = lookup_subnet(myself, subnet))) {
+				subnet_t *s2 = lookup_subnet(myself, subnet);
+
+				if(s2) {
 					if(s2->expires == 1) {
 						s2->expires = 0;
 					}

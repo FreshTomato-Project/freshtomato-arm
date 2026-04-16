@@ -1,4 +1,4 @@
-image: netbsd/10.x
+image: netbsd/latest
 
 packages:
   - cmocka

@@ -1,7 +1,7 @@
 /*
     utils.c -- gathering of some stupid small functions
     Copyright (C) 1999-2005 Ivo Timmermans
-                  2000-2013 Guus Sliepen <guus@tinc-vpn.org>
+                  2000-2026 Guus Sliepen <guus@tinc-vpn.org>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -205,7 +205,9 @@ const char *winerror(int err) {
 		strncpy(buf, "(unable to format errormessage)", sizeof(buf));
 	};
 
-	if((ptr = strchr(buf, '\r'))) {
+	ptr = strchr(buf, '\r');
+
+	if(ptr) {
 		*ptr = '\0';
 	}
 
@@ -297,4 +299,16 @@ char *replace_name(const char *name) {
 bool string_eq(const char *first, const char *second) {
 	return !first == !second &&
 	       !(first && second && strcmp(first, second));
+}
+
+bool mem_eq(const void *s1, const void *s2, size_t n) {
+	uint8_t diff = 0;
+	const uint8_t *p1 = s1;
+	const uint8_t *p2 = s2;
+
+	for(size_t i = 0; i < n; i++) {
+		diff |= p1[i] ^ p2[i];
+	}
+
+	return diff == 0;
 }

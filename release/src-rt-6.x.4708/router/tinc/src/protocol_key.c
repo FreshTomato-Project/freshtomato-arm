@@ -150,9 +150,13 @@ static bool req_key_ext_h(connection_t *c, const char *request, node_t *from, no
 		/* This is a SPTPS data packet. */
 
 		char buf[MAX_STRING_SIZE];
-		size_t len;
+		size_t len = 0;
 
-		if(sscanf(request, "%*d %*s %*s %*d " MAX_STRING, buf) != 1 || !(len = b64decode_tinc(buf, buf, strlen(buf)))) {
+		if(sscanf(request, "%*d %*s %*s %*d " MAX_STRING, buf) == 1) {
+			len = b64decode_tinc(buf, buf, strlen(buf));
+		}
+
+		if(!len) {
 			logger(DEBUG_ALWAYS, LOG_ERR, "Got bad %s from %s (%s) to %s (%s): %s", "SPTPS_PACKET", from->name, from->hostname, to->name, to->hostname, "invalid SPTPS data");
 			return true;
 		}
@@ -213,7 +217,11 @@ static bool req_key_ext_h(connection_t *c, const char *request, node_t *from, no
 
 		char pubkey[MAX_STRING_SIZE];
 
-		if(sscanf(request, "%*d %*s %*s %*d " MAX_STRING, pubkey) != 1 || !(from->ecdsa = ecdsa_set_base64_public_key(pubkey))) {
+		if(sscanf(request, "%*d %*s %*s %*d " MAX_STRING, pubkey) == 1) {
+			from->ecdsa = ecdsa_set_base64_public_key(pubkey);
+		}
+
+		if(!from->ecdsa) {
 			logger(DEBUG_ALWAYS, LOG_ERR, "Got bad %s from %s (%s): %s", "ANS_PUBKEY", from->name, from->hostname, "invalid pubkey");
 			return true;
 		}
@@ -235,9 +243,13 @@ static bool req_key_ext_h(connection_t *c, const char *request, node_t *from, no
 		}
 
 		char buf[MAX_STRING_SIZE];
-		size_t len;
+		size_t len = 0;
 
-		if(sscanf(request, "%*d %*s %*s %*d " MAX_STRING, buf) != 1 || !(len = b64decode_tinc(buf, buf, strlen(buf)))) {
+		if(sscanf(request, "%*d %*s %*s %*d " MAX_STRING, buf) == 1) {
+			len = b64decode_tinc(buf, buf, strlen(buf));
+		}
+
+		if(!len) {
 			logger(DEBUG_ALWAYS, LOG_ERR, "Got bad %s from %s (%s): %s", "REQ_SPTPS_START", from->name, from->hostname, "invalid SPTPS data");
 			return true;
 		}

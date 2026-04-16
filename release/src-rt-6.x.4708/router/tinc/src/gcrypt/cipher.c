@@ -99,7 +99,9 @@ static bool cipher_open(cipher_t *cipher, cipher_algo_t algo, cipher_mode_t mode
 		return false;
 	}
 
-	if((err = gcry_cipher_open(&cipher->handle, algo, mode, 0))) {
+	err = gcry_cipher_open(&cipher->handle, algo, mode, 0);
+
+	if(err) {
 		logger(DEBUG_ALWAYS, LOG_DEBUG, "Unable to initialise cipher %d mode %d: %s", algo, mode, gcry_strerror(err));
 		return false;
 	}
@@ -237,13 +239,17 @@ bool cipher_encrypt(cipher_t *cipher, const void *indata, size_t inlen, void *ou
 		gcry_cipher_setiv(cipher->handle, cipher->key + cipher->keylen, cipher->blklen);
 	}
 
-	if((err = gcry_cipher_encrypt(cipher->handle, outdata, *outlen, indata, inlen))) {
+	err = gcry_cipher_encrypt(cipher->handle, outdata, *outlen, indata, inlen);
+
+	if(err) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Error while encrypting: %s", gcry_strerror(err));
 		return false;
 	}
 
 	if(cipher->padding) {
-		if((err = gcry_cipher_encrypt(cipher->handle, (char *)outdata + inlen, cipher->blklen, pad, cipher->blklen))) {
+		err = gcry_cipher_encrypt(cipher->handle, (char *)outdata + inlen, cipher->blklen, pad, cipher->blklen);
+
+		if(err) {
 			logger(DEBUG_ALWAYS, LOG_ERR, "Error while encrypting: %s", gcry_strerror(err));
 			return false;
 		}
@@ -262,7 +268,9 @@ bool cipher_decrypt(cipher_t *cipher, const void *indata, size_t inlen, void *ou
 		gcry_cipher_setiv(cipher->handle, cipher->key + cipher->keylen, cipher->blklen);
 	}
 
-	if((err = gcry_cipher_decrypt(cipher->handle, outdata, *outlen, indata, inlen))) {
+	err = gcry_cipher_decrypt(cipher->handle, outdata, *outlen, indata, inlen);
+
+	if(err) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Error while decrypting: %s", gcry_strerror(err));
 		return false;
 	}

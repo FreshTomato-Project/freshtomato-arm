@@ -10,4 +10,4 @@ flags=$(./.ci/conf.sh "$@")
 # shellcheck disable=SC2086
 meson setup "$dir" $flags
 
-ninja -C "$dir"
+meson compile -C "$dir"

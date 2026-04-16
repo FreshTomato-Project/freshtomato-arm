@@ -4,10 +4,10 @@
 # Zayed Al-Saidi <zayed.alsaidi@gmail.com>, 2026.
 msgid ""
 msgstr ""
-"Project-Id-Version: nano 8.4-pre1\n"
+"Project-Id-Version: nano 9.0-pre2\n"
 "Report-Msgid-Bugs-To: nano-devel@gnu.org\n"
-"POT-Creation-Date: 2026-02-04 09:04+0100\n"
-"PO-Revision-Date: 2026-02-01 21:22+0400\n"
+"POT-Creation-Date: 2026-04-08 17:05+0200\n"
+"PO-Revision-Date: 2026-03-30 07:16+0400\n"
 "Last-Translator: Zayed Al-Saidi <zayed.alsaidi@gmail.com>\n"
 "Language-Team: Arabic <(nothing)>\n"
 "Language: ar\n"
@@ -39,7 +39,7 @@ msgstr "(ضخم)"
 msgid "Search Wrapped"
 msgstr "التف البحث"
 
-#: src/browser.c:281 src/search.c:436
+#: src/browser.c:281 src/search.c:441
 msgid "This is the only occurrence"
 msgstr "هذا هو الظهور الوحيد"
 
@@ -53,13 +53,14 @@ msgstr "ابحث"
 msgid " [Backwards]"
 msgstr " [للخلف]"
 
-#: src/browser.c:322 src/browser.c:563 src/files.c:1163 src/files.c:1256
-#: src/files.c:2194 src/nano.c:321 src/search.c:114 src/search.c:294
-#: src/search.c:723 src/search.c:790 src/text.c:2621 src/text.c:2820
+#: src/browser.c:322 src/browser.c:563 src/files.c:1164 src/files.c:1257
+#: src/files.c:2195 src/nano.c:321 src/search.c:114 src/search.c:294
+#: src/search.c:731 src/search.c:798 src/text.c:2621 src/text.c:2820
+#: src/winio.c:103
 msgid "Cancelled"
 msgstr "أُلغي"
 
-#: src/browser.c:349 src/search.c:370
+#: src/browser.c:349 src/search.c:375
 msgid "No current search pattern"
 msgstr "لا يوجد نمط بحث حالي"
 
@@ -88,9 +89,9 @@ msgstr "لا يمكن الذهاب خارج %s"
 msgid "Can't move up a directory"
 msgstr "لا يمكن الانتقال لمجلد أعلى"
 
-#: src/browser.c:616 src/files.c:920 src/files.c:926 src/files.c:1829
-#: src/files.c:1844 src/history.c:263 src/history.c:291 src/history.c:400
-#: src/history.c:454 src/rcfile.c:926 src/rcfile.c:1712
+#: src/browser.c:616 src/files.c:921 src/files.c:927 src/files.c:1830
+#: src/files.c:1845 src/history.c:263 src/history.c:291 src/history.c:397
+#: src/history.c:451 src/rcfile.c:933 src/rcfile.c:1719
 #, c-format
 msgid "Error reading %s: %s"
 msgstr "خطأ أثناء قراءة %s: %s"
@@ -99,7 +100,7 @@ msgstr "خطأ أثناء قراءة %s: %s"
 msgid "Paste is ignored"
 msgstr "تُجوهل اللصق"
 
-#: src/browser.c:691 src/files.c:363
+#: src/browser.c:691 src/files.c:364
 msgid "The working directory has disappeared"
 msgstr "اختفى مجلد العمل"
 
@@ -118,112 +119,112 @@ msgstr "فشل magic_load()‎: %s"
 msgid "magic_file(%s) failed: %s"
 msgstr "فشل magic_file(%s)‎: %s"
 
-#: src/cut.c:172 src/cut.c:237 src/cut.c:571
+#: src/cut.c:175 src/cut.c:240 src/cut.c:574
 msgid "Nothing was cut"
 msgstr "لا شيء قُص"
 
-#: src/cut.c:621 src/cut.c:675
+#: src/cut.c:624 src/cut.c:678
 msgid "Copied nothing"
 msgstr "لا شيء نُسخ"
 
-#: src/cut.c:740
+#: src/cut.c:743
 msgid "Cutbuffer is empty"
 msgstr "مخزن القص فارغ"
 
-#: src/files.c:133
+#: src/files.c:134
 #, c-format
 msgid "Error deleting lock file %s: %s"
 msgstr "خطأ أثناء حذف ملف القفل %s: %s"
 
 #. TRANSLATORS: Keep the next seven messages at most 76 characters.
-#: src/files.c:162
+#: src/files.c:163
 msgid "Couldn't determine my identity for lock file"
 msgstr "تعذر تحديد هويتي لملف القفل"
 
-#: src/files.c:167
+#: src/files.c:168
 #, c-format
 msgid "Couldn't determine hostname: %s"
 msgstr "تعذر تحديد اسم المضيف: %s"
 
-#: src/files.c:183 src/files.c:226
+#: src/files.c:184 src/files.c:227
 #, c-format
 msgid "Error writing lock file %s: %s"
 msgstr "خطأ أثناء كتابة ملف القفل %s: %s"
 
-#: src/files.c:254
+#: src/files.c:255
 msgid "Someone else is also editing this file"
 msgstr "شخص آخر يحرر هذا الملف أيضاً"
 
-#: src/files.c:263
+#: src/files.c:264
 #, c-format
 msgid "Error opening lock file %s: %s"
 msgstr "خطأ أثناء فتح ملف القفل %s: %s"
 
-#: src/files.c:278
+#: src/files.c:279
 #, c-format
 msgid "Bad lock file is ignored: %s"
 msgstr "تُجوهل ملف قفل تالف: %s"
 
 #. TRANSLATORS: The second %s is the name of the user, the third that of the editor.
-#: src/files.c:299
+#: src/files.c:300
 #, c-format
 msgid "File %s is being edited by %s (with %s, PID %s); open anyway?"
 msgstr ""
 "الملف %s قيد التحرير بواسطة %s (باستخدام %s، PID %s)؛ أفتحه على أي حال؟"
 
 #. TRANSLATORS: Keep the next ten messages at most 76 characters.
-#: src/files.c:367
+#: src/files.c:368
 #, c-format
 msgid "Directory '%s' does not exist"
 msgstr "المجلد '%s' غير موجود"
 
-#: src/files.c:369
+#: src/files.c:370
 #, c-format
 msgid "Path '%s': %s"
 msgstr "المسار '%s': %s"
 
-#: src/files.c:371
+#: src/files.c:372
 #, c-format
 msgid "Path '%s' is not a directory"
 msgstr "المسار '%s' ليس مجلداً"
 
-#: src/files.c:373
+#: src/files.c:374
 #, c-format
 msgid "Path '%s' is not accessible"
 msgstr "المسار '%s' لا يمكن الوصول إليه"
 
-#: src/files.c:376
+#: src/files.c:377
 #, c-format
 msgid "Directory '%s' is not writable"
 msgstr "المجلد '%s' لا يمكن الكتابة فيه"
 
-#: src/files.c:403
+#: src/files.c:404
 #, c-format
 msgid "Can't read file from outside of %s"
 msgstr "لا يمكن قراءة ملف من خارج %s"
 
-#: src/files.c:413 src/rcfile.c:902
+#: src/files.c:414 src/rcfile.c:909
 #, c-format
 msgid "\"%s\" is a directory"
 msgstr "\"%s\" مجلد"
 
-#: src/files.c:418 src/rcfile.c:903
+#: src/files.c:419 src/rcfile.c:910
 #, c-format
 msgid "\"%s\" is a device file"
 msgstr "\"%s\" ملف جهاز"
 
-#: src/files.c:424
+#: src/files.c:425
 #, c-format
 msgid "\"%s\" is a FIFO"
 msgstr "\"%s\" هو FIFO"
 
-#: src/files.c:431
+#: src/files.c:432
 #, c-format
 msgid "%s is meant to be read-only"
 msgstr "%s مخصص للقراءة فقط"
 
 #. TRANSLATORS: First %s is file name, second %s is file format.
-#: src/files.c:543
+#: src/files.c:544
 #, c-format
 msgid "%s -- %zu line (%s)"
 msgid_plural "%s -- %zu lines (%s)"
@@ -234,19 +235,19 @@ msgstr[3] "%s -- %zu سطور (%s)"
 msgstr[4] "%s -- %zu سطرًا (%s)"
 msgstr[5] "%s -- %zu سطر (%s)"
 
-#: src/files.c:545 src/files.c:551 src/global.c:1112 src/winio.c:2056
+#: src/files.c:546 src/files.c:552 src/global.c:1132 src/winio.c:2062
 msgid "New Buffer"
 msgstr "مخزن جديد"
 
-#: src/files.c:546
+#: src/files.c:547
 msgid "DOS"
 msgstr "دوس"
 
-#: src/files.c:546
+#: src/files.c:547
 msgid "Mac"
 msgstr "ماك"
 
-#: src/files.c:549
+#: src/files.c:550
 #, c-format
 msgid "%s -- %zu line"
 msgid_plural "%s -- %zu lines"
@@ -257,21 +258,21 @@ msgstr[3] "%s -- %zu سطور"
 msgstr[4] "%s -- %zu سطرًا"
 msgstr[5] "%s -- %zu سطر"
 
-#: src/files.c:559
+#: src/files.c:560
 msgid "No more open file buffers"
 msgstr "لا توجد مخازن ملفات مفتوحة أخرى"
 
-#: src/files.c:786 src/files.c:918 src/files.c:1882
+#: src/files.c:787 src/files.c:919 src/files.c:1883
 msgid "Interrupted"
 msgstr "مُقاطع"
 
-#: src/files.c:832
+#: src/files.c:833
 #, c-format
 msgid "File '%s' is unwritable"
 msgstr "الملف '%s' غير قابل للكتابة"
 
 #. TRANSLATORS: Keep the next three messages at most 78 characters.
-#: src/files.c:838
+#: src/files.c:839
 #, c-format
 msgid "Read %zu line (converted from Mac format)"
 msgid_plural "Read %zu lines (converted from Mac format)"
@@ -282,7 +283,7 @@ msgstr[3] "قُرئ %zu أسطر (حُوّلت من تنسيق ماك)"
 msgstr[4] "قُرئ %zu سطرًا (حُوّلت من تنسيق ماك)"
 msgstr[5] "قُرئ %zu سطر (حُوّلت من تنسيق ماك)"
 
-#: src/files.c:842
+#: src/files.c:843
 #, c-format
 msgid "Read %zu line (converted from DOS format)"
 msgid_plural "Read %zu lines (converted from DOS format)"
@@ -293,7 +294,7 @@ msgstr[3] "قُرئ %zu أسطر (حُوّلت من تنسيق دوس)"
 msgstr[4] "قُرئ %zu سطرًا (حُوّلت من تنسيق دوس)"
 msgstr[5] "قُرئ %zu سطر (حُوّلت من تنسيق دوس)"
 
-#: src/files.c:847
+#: src/files.c:848
 #, c-format
 msgid "Read %zu line"
 msgid_plural "Read %zu lines"
@@ -304,176 +305,176 @@ msgstr[3] "قُرئ %zu أسطر"
 msgstr[4] "قُرئ %zu سطرًا"
 msgstr[5] "قُرئ %zu سطر"
 
-#: src/files.c:892
+#: src/files.c:893
 msgid "New File"
 msgstr "ملف جديد"
 
-#: src/files.c:895
+#: src/files.c:896
 #, c-format
 msgid "File \"%s\" not found"
 msgstr "الملف \"%s\" غير موجود"
 
-#: src/files.c:902
+#: src/files.c:903
 msgid "Reading from FIFO..."
 msgstr "يقرأ من FIFO..."
 
-#: src/files.c:930
+#: src/files.c:931
 msgid "Reading..."
 msgstr "يقرأ..."
 
-#: src/files.c:1037 src/text.c:2364 src/text.c:2629
+#: src/files.c:1038 src/text.c:2364 src/text.c:2629
 #, c-format
 msgid "Could not create pipe: %s"
 msgstr "تعذر إنشاء أنبوب: %s"
 
-#: src/files.c:1078 src/files.c:1122 src/text.c:2178 src/text.c:2444
+#: src/files.c:1079 src/files.c:1123 src/text.c:2178 src/text.c:2444
 #: src/text.c:2664
 #, c-format
 msgid "Could not fork: %s"
 msgstr "تعذر التفرع (fork): %s"
 
-#: src/files.c:1083
+#: src/files.c:1084
 msgid "Executing..."
 msgstr "ينفّذ..."
 
 #. TRANSLATORS: This one goes with Undid/Redid messages.
-#: src/files.c:1103 src/files.c:1153
+#: src/files.c:1104 src/files.c:1154
 msgid "filtering"
 msgstr "يصفي"
 
-#: src/files.c:1146
+#: src/files.c:1147
 #, c-format
 msgid "Failed to open pipe: %s"
 msgstr "فشل فتح الأنبوب: %s"
 
-#: src/files.c:1164
+#: src/files.c:1165
 #, c-format
 msgid "Error: %s"
 msgstr "خطأ: %s"
 
-#: src/files.c:1169
+#: src/files.c:1170
 msgid "Piping failed"
 msgstr "فشل الأنبوب"
 
 #. TRANSLATORS: The next six messages are prompts.
-#: src/files.c:1218
+#: src/files.c:1219
 msgid "Command to execute in new buffer"
 msgstr "الأمر المراد تنفيذه في مخزن مؤقت جديد"
 
-#: src/files.c:1221
+#: src/files.c:1222
 msgid "Command to execute"
 msgstr "الأمر المراد تنفيذه"
 
-#: src/files.c:1229
+#: src/files.c:1230
 #, c-format
 msgid "File to read unconverted into new buffer [from %s]"
 msgstr "الملف المراد قراءته دون تحويل في مخزن مؤقت جديد [من %s]"
 
-#: src/files.c:1232
+#: src/files.c:1233
 #, c-format
 msgid "File to read into new buffer [from %s]"
 msgstr "الملف المراد قراءته في مخزن مؤقت جديد [من %s]"
 
-#: src/files.c:1237
+#: src/files.c:1238
 #, c-format
 msgid "File to insert unconverted [from %s]"
 msgstr "الملف المراد إدراجه دون تحويل [من %s]"
 
-#: src/files.c:1240
+#: src/files.c:1241
 #, c-format
 msgid "File to insert [from %s]"
 msgstr "الملف المراد إدراجه [من %s]"
 
-#: src/files.c:1509
+#: src/files.c:1510
 #, c-format
 msgid "Invalid operating directory: %s\n"
 msgstr "دليل تشغيل غير صالح: %s\n"
 
-#: src/files.c:1558
+#: src/files.c:1559
 #, c-format
 msgid "Invalid backup directory: %s\n"
 msgstr "دليل نسخة احتياطية غير صالح: %s\n"
 
-#: src/files.c:1613
+#: src/files.c:1614
 msgid "Making backup..."
 msgstr "ينشئ نسخة احتياطية..."
 
-#: src/files.c:1645
+#: src/files.c:1646
 msgid "Too many existing backup files"
 msgstr "يوجد الكثير من ملفات النسخ الاحتياطي"
 
-#: src/files.c:1693
+#: src/files.c:1694
 msgid "Cannot read original file"
 msgstr "تعذرت قراءة الملف الأصلي"
 
-#: src/files.c:1725
+#: src/files.c:1726
 msgid "Cannot make regular backup"
 msgstr "تعذر إنشاء نسخة احتياطية عادية"
 
-#: src/files.c:1726
+#: src/files.c:1727
 msgid "Trying again in your home directory"
 msgstr "يحاول مجددًا في دليلك المنزلي"
 
-#: src/files.c:1738
+#: src/files.c:1739
 msgid "Cannot make backup"
 msgstr "تعذر إنشاء نسخة احتياطية"
 
 #. TRANSLATORS: Try to keep this message at most 76 characters.
-#: src/files.c:1749
+#: src/files.c:1750
 msgid "Cannot make backup; continue and save actual file? "
 msgstr "تعذر إنشاء نسخة احتياطية؛ هل تستمر وتحفظ الملف الفعلي؟ "
 
 #. TRANSLATORS: The %s is the reason of failure.
-#: src/files.c:1754
+#: src/files.c:1755
 #, c-format
 msgid "Cannot make backup: %s"
 msgstr "تعذر إنشاء نسخة احتياطية: %s"
 
-#: src/files.c:1790
+#: src/files.c:1791
 #, c-format
 msgid "Can't write outside of %s"
 msgstr "لا يمكن الكتابة خارج %s"
 
-#: src/files.c:1822 src/files.c:1884 src/files.c:1895 src/files.c:1916
-#: src/files.c:1933 src/files.c:1942 src/files.c:1970 src/files.c:1981
-#: src/files.c:1998 src/history.c:333 src/history.c:344 src/history.c:347
-#: src/history.c:471 src/history.c:485 src/history.c:499 src/history.c:505
+#: src/files.c:1823 src/files.c:1885 src/files.c:1896 src/files.c:1917
+#: src/files.c:1934 src/files.c:1943 src/files.c:1971 src/files.c:1982
+#: src/files.c:1999 src/history.c:330 src/history.c:341 src/history.c:344
+#: src/history.c:468 src/history.c:482 src/history.c:496 src/history.c:502
 #, c-format
 msgid "Error writing %s: %s"
 msgstr "خطأ أثناء كتابة %s: %s"
 
-#: src/files.c:1836 src/files.c:1848 src/text.c:2553 src/text.c:2565
+#: src/files.c:1837 src/files.c:1849 src/text.c:2553 src/text.c:2565
 #: src/text.c:2971
 #, c-format
 msgid "Error writing temp file: %s"
 msgstr "خطأ أثناء كتابة الملف المؤقت: %s"
 
-#: src/files.c:1855
+#: src/files.c:1856
 msgid "Writing to FIFO..."
 msgstr "يكتب إلى FIFO..."
 
-#: src/files.c:1902
+#: src/files.c:1903
 msgid "Writing..."
 msgstr "يكتب..."
 
-#: src/files.c:1958 src/files.c:1966
+#: src/files.c:1959 src/files.c:1967
 #, c-format
 msgid "Error reading temp file: %s"
 msgstr "خطأ أثناء قراءة الملف المؤقت: %s"
 
 #. TRANSLATORS: This warns for data loss when the disk is full.
-#: src/files.c:2005
+#: src/files.c:2006
 msgid "File on disk has been truncated!"
 msgstr "بُتر الملف على القرص!"
 
 #. TRANSLATORS: This is a suggestion to the user,
 #. * where "resume" means resuming from suspension.
 #. * Try to keep this at most 76 characters.
-#: src/files.c:2010
+#: src/files.c:2011
 msgid "Maybe ^T^Z, make room on disk, resume, then ^S^X"
 msgstr "جرب ^T^Z، وفر مساحة، استأنف، ثم ^S^X"
 
-#: src/files.c:2072
+#: src/files.c:2073
 #, c-format
 msgid "Wrote %zu line"
 msgid_plural "Wrote %zu lines"
@@ -484,946 +485,963 @@ msgstr[3] "كُتب %zu أسطر"
 msgstr[4] "كُتب %zu سطرًا"
 msgstr[5] "كُتب %zu سطر"
 
-#: src/files.c:2157
+#: src/files.c:2158
 msgid " [DOS Format]"
 msgstr " [تنسيق دوس]"
 
-#: src/files.c:2158
+#: src/files.c:2159
 msgid " [Mac Format]"
 msgstr " [تنسيق ماك]"
 
-#: src/files.c:2159
+#: src/files.c:2160
 msgid " [Backup]"
 msgstr " [نسخة احتياطية]"
 
 #. TRANSLATORS: The next six strings are prompts.
-#: src/files.c:2166
+#: src/files.c:2167
 msgid "Prepend Selection to File"
 msgstr "أضف التحديد إلى بداية الملف"
 
-#: src/files.c:2167
+#: src/files.c:2168
 msgid "Append Selection to File"
 msgstr "ألحق التحديد بنهاية الملف"
 
-#: src/files.c:2168
+#: src/files.c:2169
 msgid "Write Selection to File"
 msgstr "اكتب التحديد إلى الملف"
 
 #. TRANSLATORS: Next three prompts are analogous to the above three.
-#: src/files.c:2171
+#: src/files.c:2172
 msgid "Prepend to File"
 msgstr "أضف إلى بداية الملف"
 
-#: src/files.c:2171
+#: src/files.c:2172
 msgid "Append to File"
 msgstr "ألحق بالملف"
 
-#: src/files.c:2174
+#: src/files.c:2175
 msgid "Write to File"
 msgstr "اكتب إلى ملف"
 
 #. TRANSLATORS: Concisely say the screen is too small.
-#: src/files.c:2255 src/nano.c:1097 src/nano.c:1106
+#: src/files.c:2256 src/nano.c:1098 src/nano.c:1107
 msgid "Too tiny"
 msgstr "صغير جدًا"
 
 #. TRANSLATORS: Restricted mode forbids overwriting.
-#: src/files.c:2288
+#: src/files.c:2289
 msgid "File exists -- cannot overwrite"
 msgstr "الملف موجود -- لا يمكن الكتابة فوقه"
 
-#: src/files.c:2297
+#: src/files.c:2298
 msgid "Save file under DIFFERENT NAME? "
 msgstr "أحفظ الملف باسم مغاير؟ "
 
-#: src/files.c:2305
+#: src/files.c:2306
 #, c-format
 msgid "File \"%s\" exists; OVERWRITE? "
 msgstr "الملف \"%s\" موجود؛ أأكتب فوقه؟ "
 
-#: src/files.c:2329
+#: src/files.c:2330
 msgid "File on disk has changed"
 msgstr "تغير الملف الموجود على القرص"
 
 #. TRANSLATORS: Try to keep this at most 76 characters.
-#: src/files.c:2332
+#: src/files.c:2333
 msgid "File was modified since you opened it; continue saving? "
 msgstr "عدل الملف منذ أن فتحته؛ أأستمر في الحفظ؟ "
 
-#: src/files.c:2709
+#: src/files.c:2710
 msgid "(more)"
 msgstr "(المزيد)"
 
 #. TRANSLATORS: Try to keep the next two strings at most 10 characters.
-#: src/global.c:563
+#: src/global.c:573
 msgid "Exit"
 msgstr "اخرج"
 
-#: src/global.c:564
+#: src/global.c:574
 msgid "Close"
 msgstr "أغلق"
 
 #. TRANSLATORS: The next long series of strings are shortcut descriptions;
 #. * they are best kept shorter than 56 characters, but may be longer.
-#: src/global.c:572
+#: src/global.c:582
 msgid "Cancel the current function"
 msgstr "ألغِ الوظيفة الحالية"
 
-#: src/global.c:573
+#: src/global.c:583
 msgid "Display this help text"
 msgstr "اعرض نص المساعدة هذا"
 
-#: src/global.c:574
+#: src/global.c:584
 msgid "Close the current buffer / Exit from nano"
 msgstr "أغلق المخزن المؤقت الحالي / اخرج من نانو"
 
-#: src/global.c:576
+#: src/global.c:586
 msgid "Write the current buffer (or the marked region) to disk"
 msgstr "اكتب المخزن المؤقت الحالي (أو المنطقة المحددة) على القرص"
 
-#: src/global.c:578
+#: src/global.c:588
 msgid "Insert another file into current buffer (or into new buffer)"
 msgstr "أدرج ملفًا آخر في المخزن الحالي (أو في مخزن جديد)"
 
-#: src/global.c:580
+#: src/global.c:590
 msgid "Search forward for a string or a regular expression"
 msgstr "ابحث للأمام عن سلسلة نصية أو تعبير نمطي"
 
-#: src/global.c:582
+#: src/global.c:592
 msgid "Search backward for a string or a regular expression"
 msgstr "ابحث للخلف عن سلسلة نصية أو تعبير نمطي"
 
-#: src/global.c:584
+#: src/global.c:594
 msgid "Cut current line (or marked region) and store it in cutbuffer"
 msgstr "قص السطر الحالي (أو المنطقة المحددة) وخزنه في مخزن القص"
 
-#: src/global.c:586
+#: src/global.c:596
 msgid "Copy current line (or marked region) and store it in cutbuffer"
 msgstr "انسخ السطر الحالي (أو المنطقة المحددة) وخزنه في مخزن القص"
 
-#: src/global.c:588
+#: src/global.c:598
 msgid "Paste the contents of cutbuffer at current cursor position"
 msgstr "الصق محتويات مخزن القص عند موضع المؤشر الحالي"
 
-#: src/global.c:589
+#: src/global.c:599
 msgid "Display the position of the cursor"
 msgstr "اعرض موضع المؤشر"
 
-#: src/global.c:591
+#: src/global.c:601
 msgid "Invoke the spell checker, if available"
 msgstr "استدعِ مدقق الإملاء، إن توفر"
 
-#: src/global.c:593
+#: src/global.c:603
 msgid "Replace a string or a regular expression"
 msgstr "استبدل سلسلة نصية أو تعبيرًا نمطيًا"
 
-#: src/global.c:594
+#: src/global.c:604
 msgid "Go to line and column number"
 msgstr "اذهب إلى رقم السطر والعمود"
 
-#: src/global.c:596
+#: src/global.c:606
 msgid "Go to the matching bracket"
 msgstr "اذهب إلى القوس المطابق"
 
-#: src/global.c:597
+#: src/global.c:607
 msgid "Mark text starting from the cursor position"
 msgstr "ضع علامة على النص بدءًا من موضع المؤشر"
 
-#: src/global.c:598
+#: src/global.c:608
 msgid "Throw away the current line (or marked region)"
 msgstr "انبذ السطر الحالي (أو المنطقة المحددة)"
 
-#: src/global.c:599
+#: src/global.c:609
 msgid "Indent the current line (or marked lines)"
 msgstr "أزِح السطر الحالي للداخل (أو الأسطر المحددة)"
 
-#: src/global.c:600
+#: src/global.c:610
 msgid "Unindent the current line (or marked lines)"
 msgstr "أزِح السطر الحالي للخارج (أو الأسطر المحددة)"
 
-#: src/global.c:601
+#: src/global.c:611
 msgid "Undo the last operation"
 msgstr "تراجع عن العملية الأخيرة"
 
-#: src/global.c:602
+#: src/global.c:612
 msgid "Redo the last undone operation"
 msgstr "أعد تنفيذ العملية الأخيرة المتراجع عنها"
 
-#: src/global.c:604
+#: src/global.c:614
 msgid "Go back one character"
 msgstr "ارجع محرفًا واحدًا للخلف"
 
-#: src/global.c:605
+#: src/global.c:615
 msgid "Go forward one character"
 msgstr "تقدم محرفًا واحدًا للأمام"
 
-#: src/global.c:606
+#: src/global.c:616
 msgid "Go back one word"
 msgstr "ارجع كلمة واحدة للخلف"
 
-#: src/global.c:607
+#: src/global.c:617
 msgid "Go forward one word"
 msgstr "تقدم كلمة واحدة للأمام"
 
-#: src/global.c:608
+#: src/global.c:618
 msgid "Go to previous line"
 msgstr "اذهب إلى السطر السابق"
 
-#: src/global.c:609
+#: src/global.c:619
 msgid "Go to next line"
 msgstr "اذهب إلى السطر التالي"
 
-#: src/global.c:610
+#: src/global.c:620
 msgid "Go to beginning of current line"
 msgstr "اذهب إلى بداية السطر الحالي"
 
-#: src/global.c:611
+#: src/global.c:621
 msgid "Go to end of current line"
 msgstr "اذهب إلى نهاية السطر الحالي"
 
-#: src/global.c:612
+#: src/global.c:622
 msgid "Go to previous block of text"
 msgstr "اذهب إلى كتلة النص السابقة"
 
-#: src/global.c:613
+#: src/global.c:623
 msgid "Go to next block of text"
 msgstr "اذهب إلى كتلة النص التالية"
 
-#: src/global.c:616
+#: src/global.c:626
 msgid "Go to beginning of paragraph; then of previous paragraph"
 msgstr "اذهب إلى بداية الفقرة؛ ثم إلى الفقرة السابقة"
 
-#: src/global.c:618
+#: src/global.c:628
 msgid "Go just beyond end of paragraph; then of next paragraph"
 msgstr "اذهب إلى ما بعد نهاية الفقرة؛ ثم إلى الفقرة التالية"
 
-#: src/global.c:621
+#: src/global.c:631
 msgid "Go to first row in the viewport"
 msgstr "اذهب إلى الصف الأول في منفذ العرض"
 
-#: src/global.c:622
+#: src/global.c:632
 msgid "Go to last row in the viewport"
 msgstr "اذهب إلى الصف الأخير في منفذ العرض"
 
-#: src/global.c:623
+#: src/global.c:633
 msgid "Center the line where the cursor is"
 msgstr "وسط السطر حيث يوجد المؤشر"
 
-#: src/global.c:624
+#: src/global.c:634
 msgid "Push the cursor line to the center, then top, then bottom"
 msgstr "ادفع سطر المؤشر إلى الوسط، ثم الأعلى، ثم الأسفل"
 
-#: src/global.c:626
+#: src/global.c:636
 msgid "Go one screenful up"
 msgstr "اذهب شاشة كاملة للأعلى"
 
-#: src/global.c:627
+#: src/global.c:637
 msgid "Go one screenful down"
 msgstr "اذهب شاشة كاملة للأسفل"
 
-#: src/global.c:628
+#: src/global.c:638
 msgid "Go to the first line of the file"
 msgstr "اذهب إلى السطر الأول من الملف"
 
-#: src/global.c:629
+#: src/global.c:639
 msgid "Go to the last line of the file"
 msgstr "اذهب إلى السطر الأخير من الملف"
 
-#: src/global.c:632
+#: src/global.c:641
+msgid "Scroll the viewport a tabsize to the left"
+msgstr "مرر منطقة العرض بمقدار عرض علامة تبويب واحدة إلى اليسار"
+
+#: src/global.c:642
+msgid "Scroll the viewport a tabsize to the right"
+msgstr "مرر منطقة العرض بمقدار عرض علامة تبويب واحدة إلى اليمين"
+
+#: src/global.c:646
 msgid "Scroll up one line without moving the cursor textually"
 msgstr "مرر سطرًا واحدًا للأعلى دون تحريك المؤشر نصيًا"
 
-#: src/global.c:634
+#: src/global.c:648
 msgid "Scroll down one line without moving the cursor textually"
 msgstr "مرر سطرًا واحدًا للأسفل دون تحريك المؤشر نصيًا"
 
-#: src/global.c:637
+#: src/global.c:651
 msgid "Switch to the previous file buffer"
 msgstr "انتقل إلى ذاكرة الملف السابقة"
 
-#: src/global.c:638
+#: src/global.c:652
 msgid "Switch to the next file buffer"
 msgstr "انتقل إلى ذاكرة الملف التالية"
 
-#: src/global.c:640
+#: src/global.c:654
 msgid "Insert the next keystroke verbatim"
 msgstr "أدرج ضغطة المفتاح التالية حرفياً"
 
-#: src/global.c:641
+#: src/global.c:655
 msgid "Insert a tab at the cursor position (or indent marked lines)"
 msgstr "أدرج لسانًا عند موضع المؤشر (أو أزح الأسطر المحددة)"
 
-#: src/global.c:642
+#: src/global.c:656
 msgid "Insert a newline at the cursor position"
 msgstr "أدرج سطرًا جديدًا عند موضع المؤشر"
 
-#: src/global.c:643
+#: src/global.c:657
 msgid "Delete the character under the cursor"
 msgstr "احذف المحرف الواقع تحت المؤشر"
 
-#: src/global.c:645
+#: src/global.c:659
 msgid "Delete the character to the left of the cursor"
 msgstr "احذف المحرف الذي على يسار المؤشر"
 
-#: src/global.c:648
+#: src/global.c:662
 msgid "Delete backward from cursor to word start"
 msgstr "احذف للخلف من المؤشر إلى بداية الكلمة"
 
-#: src/global.c:650
+#: src/global.c:664
 msgid "Delete forward from cursor to next word start"
 msgstr "احذف للأمام من المؤشر إلى بداية الكلمة التالية"
 
-#: src/global.c:652
+#: src/global.c:666
 msgid "Cut from the cursor position to the end of the file"
 msgstr "قص من موضع المؤشر إلى نهاية الملف"
 
-#: src/global.c:655
+#: src/global.c:669
 msgid "Justify the current paragraph"
 msgstr "سوِّ الفقرة الحالية"
 
-#: src/global.c:656
+#: src/global.c:670
 msgid "Justify the entire file"
 msgstr "سوِّ الملف كاملاً"
 
-#: src/global.c:660
+#: src/global.c:674
 msgid "Count the number of lines, words, and characters"
 msgstr "احسب عدد الأسطر والكلمات والمحارف"
 
-#: src/global.c:661
+#: src/global.c:675
 msgid "Suspend the editor (return to the shell)"
 msgstr "علّق المحرر (العودة إلى الغلاف)"
 
-#: src/global.c:663
+#: src/global.c:677
 msgid "Refresh (redraw) the current screen"
 msgstr "حدّث (أعد رسم) الشاشة الحالية"
 
-#: src/global.c:665
+#: src/global.c:679
 msgid "Try and complete the current word"
 msgstr "حاول إكمال الكلمة الحالية"
 
-#: src/global.c:669
+#: src/global.c:683
 msgid "Comment/uncomment the current line (or marked lines)"
 msgstr "ضع/أزل علامة تعليق للسطر الحالي (أو الأسطر المحددة)"
 
-#: src/global.c:671
+#: src/global.c:685
 msgid "Save file without prompting"
 msgstr "احفظ الملف دون سؤال"
 
-#: src/global.c:672
+#: src/global.c:686
 msgid "Search next occurrence backward"
 msgstr "ابحث عن الظهور التالي للخلف"
 
-#: src/global.c:673
+#: src/global.c:687
 msgid "Search next occurrence forward"
 msgstr "ابحث عن الظهور التالي للأمام"
 
-#: src/global.c:675
+#: src/global.c:689
 msgid "Start/stop recording a macro"
 msgstr "ابدأ/أوقف تسجيل الماكرو"
 
-#: src/global.c:676
+#: src/global.c:690
 msgid "Run the last recorded macro"
 msgstr "شغّل آخر ماكرو مسجل"
 
-#: src/global.c:677
+#: src/global.c:691
 msgid "Place or remove an anchor at the current line"
 msgstr "ضع أو أزل مرساة عند السطر الحالي"
 
-#: src/global.c:678
+#: src/global.c:692
 msgid "Jump backward to the nearest anchor"
 msgstr "اقفز للخلف إلى أقرب مرساة"
 
-#: src/global.c:679
+#: src/global.c:693
 msgid "Jump forward to the nearest anchor"
 msgstr "اقفز للأمام إلى أقرب مرساة"
 
-#: src/global.c:681
+#: src/global.c:695
 msgid "Toggle the case sensitivity of the search"
 msgstr "بدّل حالة حساسية حالة الأحرف في البحث"
 
-#: src/global.c:682
+#: src/global.c:696
 msgid "Reverse the direction of the search"
 msgstr "اعكس اتجاه البحث"
 
-#: src/global.c:683
+#: src/global.c:697
 msgid "Toggle the use of regular expressions"
 msgstr "بدّل استخدام التعبيرات النمطية"
 
-#: src/global.c:685
+#: src/global.c:699
 msgid "Recall the previous search/replace string"
 msgstr "استدعِ سلسلة البحث/الاستبدال السابقة"
 
-#: src/global.c:686
+#: src/global.c:700
 msgid "Recall the next search/replace string"
 msgstr "استدعِ سلسلة البحث/الاستبدال التالية"
 
-#: src/global.c:689
+#: src/global.c:703
 msgid "Toggle the use of DOS format"
 msgstr "بدّل استخدام تنسيق دوس (DOS)"
 
-#: src/global.c:690
+#: src/global.c:704
 msgid "Toggle the use of Mac format"
 msgstr "بدّل استخدام تنسيق ماك (Mac)"
 
-#: src/global.c:691
+#: src/global.c:705
 msgid "Toggle appending"
 msgstr "بدّل الإلحاق"
 
-#: src/global.c:692
+#: src/global.c:706
 msgid "Toggle prepending"
 msgstr "بدّل التصدير"
 
-#: src/global.c:693
+#: src/global.c:707
 msgid "Toggle backing up of the original file"
 msgstr "بدّل النسخ الاحتياطي للملف الأصلي"
 
-#: src/global.c:694
+#: src/global.c:708
 msgid "Execute a function or an external command"
 msgstr "نفّذ دالة أو أمرًا خارجيًا"
 
-#: src/global.c:696
+#: src/global.c:710
 msgid "Pipe the current buffer (or marked region) to the command"
 msgstr "مرّر الذاكرة الحالية (أو المنطقة المحددة) إلى الأمر"
 
-#: src/global.c:698
+#: src/global.c:712
 msgid "Recall the previous command"
 msgstr "استدعِ الأمر السابق"
 
-#: src/global.c:699
+#: src/global.c:713
 msgid "Recall the next command"
 msgstr "استدعِ الأمر التالي"
 
-#: src/global.c:701
+#: src/global.c:715
 msgid "Do not convert from DOS/Mac format"
 msgstr "لا تحوّل من تنسيق دوس/ماك"
 
-#: src/global.c:704
+#: src/global.c:718
 msgid "Toggle the use of a new buffer"
 msgstr "بدّل استخدام ذاكرة جديدة"
 
-#: src/global.c:706
+#: src/global.c:720
 msgid "Close buffer without saving it"
 msgstr "أغلق الذاكرة دون حفظها"
 
-#: src/global.c:708
+#: src/global.c:722
 msgid "Go to file browser"
 msgstr "اذهب إلى متصفح الملفات"
 
-#: src/global.c:709
+#: src/global.c:723
 msgid "Exit from the file browser"
 msgstr "اخرج من متصفح الملفات"
 
-#: src/global.c:710
+#: src/global.c:724
 msgid "Go to the first file in the list"
 msgstr "اذهب إلى أول ملف في القائمة"
 
-#: src/global.c:711
+#: src/global.c:725
 msgid "Go to the last file in the list"
 msgstr "اذهب إلى آخر ملف في القائمة"
 
-#: src/global.c:712
+#: src/global.c:726
 msgid "Go to the previous file in the list"
 msgstr "اذهب إلى الملف السابق في القائمة"
 
-#: src/global.c:713
+#: src/global.c:727
 msgid "Go to the next file in the list"
 msgstr "اذهب إلى الملف التالي في القائمة"
 
-#: src/global.c:715
+#: src/global.c:729
 msgid "Go to lefthand column"
 msgstr "اذهب إلى العمود الأيسر"
 
-#: src/global.c:716
+#: src/global.c:730
 msgid "Go to righthand column"
 msgstr "اذهب إلى العمود الأيمن"
 
-#: src/global.c:717
+#: src/global.c:731
 msgid "Go to first row in this column"
 msgstr "اذهب إلى الصف الأول في هذا العمود"
 
-#: src/global.c:718
+#: src/global.c:732
 msgid "Go to last row in this column"
 msgstr "اذهب إلى الصف الأخير في هذا العمود"
 
-#: src/global.c:720
+#: src/global.c:734
 msgid "Search forward for a string"
 msgstr "ابحث للأمام عن سلسلة نصية"
 
-#: src/global.c:721
+#: src/global.c:735
 msgid "Search backward for a string"
 msgstr "ابحث للخلف عن سلسلة نصية"
 
-#: src/global.c:722
+#: src/global.c:736
 msgid "Refresh the file list"
 msgstr "حدّث قائمة الملفات"
 
-#: src/global.c:723
+#: src/global.c:737
 msgid "Go to directory"
 msgstr "اذهب إلى الدليل"
 
-#: src/global.c:726
+#: src/global.c:740
 msgid "Invoke the linter, if available"
 msgstr "استدعِ مدقق برمجي إن وُجدت"
 
-#: src/global.c:727
+#: src/global.c:741
 msgid "Go to previous linter msg"
 msgstr "اذهب إلى رسالة الفحص السابقة"
 
-#: src/global.c:728
+#: src/global.c:742
 msgid "Go to next linter msg"
 msgstr "اذهب إلى رسالة الفحص التالية"
 
-#: src/global.c:732
+#: src/global.c:746
 msgid "Invoke a program to format/arrange/manipulate the buffer"
 msgstr "استدعِ برنامجاً لتنسيق/ترتيب/معالجة الذاكرة الوسيطة"
 
 #. TRANSLATORS: Try to keep the next thirteen strings at most 10 characters.
-#: src/global.c:750
+#: src/global.c:764
 msgid "Help"
 msgstr "مساعدة"
 
-#: src/global.c:754 src/prompt.c:711
+#: src/global.c:768 src/prompt.c:711
 msgid "Cancel"
 msgstr "ألغِ"
 
-#: src/global.c:776
+#: src/global.c:790
 msgid "Write Out"
 msgstr "اكتب"
 
-#: src/global.c:784
+#: src/global.c:798
 msgid "Read File"
 msgstr "اِقرأ ملف"
 
-#: src/global.c:788 src/global.c:827
+#: src/global.c:802 src/global.c:841
 msgid "Justify"
 msgstr "ساوِ"
 
-#: src/global.c:794 src/global.c:886 src/global.c:1096
+#: src/global.c:808 src/global.c:900 src/global.c:1116
 msgid "Refresh"
 msgstr "حدّث"
 
-#: src/global.c:799 src/global.c:889
+#: src/global.c:813 src/global.c:903
 msgid "Where Is"
 msgstr "أين هو"
 
-#: src/global.c:802 src/global.c:863
+#: src/global.c:816 src/global.c:877
 msgid "Replace"
 msgstr "استبدل"
 
-#: src/global.c:815
+#: src/global.c:829
 msgid "Cut"
 msgstr "قص"
 
-#: src/global.c:818
+#: src/global.c:832
 msgid "Paste"
 msgstr "ألصق"
 
-#: src/global.c:823 src/global.c:1088
+#: src/global.c:837 src/global.c:1108
 msgid "Execute"
 msgstr "نفّذ"
 
 #. TRANSLATORS: This refers to the position of the cursor.
-#: src/global.c:833
+#: src/global.c:847
 msgid "Location"
 msgstr "الموقع"
 
-#: src/global.c:839 src/global.c:998 src/global.c:1138
+#: src/global.c:853 src/global.c:1018 src/global.c:1158
 msgid "Go To Line"
 msgstr "اذهب للسطر"
 
 #. TRANSLATORS: Try to keep the next ten strings at most 12 characters.
-#: src/global.c:845
+#: src/global.c:859
 msgid "Undo"
 msgstr "تراجع"
 
-#: src/global.c:847
+#: src/global.c:861
 msgid "Redo"
 msgstr "كرّر"
 
-#: src/global.c:850
+#: src/global.c:864
 msgid "Set Mark"
 msgstr "ضع علامة"
 
-#: src/global.c:852 src/global.c:1032
+#: src/global.c:866 src/global.c:1052
 msgid "Copy"
 msgstr "انسخ"
 
-#: src/global.c:856
+#: src/global.c:870
 msgid "Case Sens"
 msgstr "تحسس الحالة"
 
-#: src/global.c:858
+#: src/global.c:872
 msgid "Reg.exp."
 msgstr "تعبير نمطي"
 
-#: src/global.c:860
+#: src/global.c:874
 msgid "Backwards"
 msgstr "للخلف"
 
-#: src/global.c:865
+#: src/global.c:879
 msgid "No Replace"
 msgstr "بلا استبدال"
 
-#: src/global.c:869 src/global.c:874
+#: src/global.c:883 src/global.c:888
 msgid "Older"
 msgstr "أقدم"
 
-#: src/global.c:871 src/global.c:876
+#: src/global.c:885 src/global.c:890
 msgid "Newer"
 msgstr "أحدث"
 
 #. TRANSLATORS: Try to keep the next four strings at most 10 characters.
-#: src/global.c:883
+#: src/global.c:897
 msgid "Go To Dir"
 msgstr "إلى الدليل"
 
 #. TRANSLATORS: This starts a backward search.
-#: src/global.c:891 src/global.c:910
+#: src/global.c:905 src/global.c:924
 msgid "Where Was"
 msgstr "أين كان"
 
 #. TRANSLATORS: This refers to searching the preceding occurrence.
-#: src/global.c:894 src/global.c:914
+#: src/global.c:908 src/global.c:928
 msgid "Previous"
 msgstr "السابق"
 
-#: src/global.c:896 src/global.c:916
+#: src/global.c:910 src/global.c:930
 msgid "Next"
 msgstr "التالي"
 
-#: src/global.c:906
+#: src/global.c:920
 msgid "To Bracket"
 msgstr "إلى القوس"
 
 #. TRANSLATORS: This means move the cursor one character back.
-#: src/global.c:921 src/global.c:926
+#: src/global.c:935 src/global.c:940
 msgid "Back"
 msgstr "عودة"
 
-#: src/global.c:923 src/global.c:928
+#: src/global.c:937 src/global.c:942
 msgid "Forward"
 msgstr "أمام"
 
 #. TRANSLATORS: Try to keep the next four strings at most 12 characters.
-#: src/global.c:934
+#: src/global.c:948
 msgid "Prev Word"
 msgstr "الكلمة السابقة"
 
-#: src/global.c:936
+#: src/global.c:950
 msgid "Next Word"
 msgstr "الكلمة التالية"
 
 #. TRANSLATORS: These two mean: "to beginning of line", "to end of line".
-#: src/global.c:941
+#: src/global.c:954
 msgid "Home"
 msgstr "البداية"
 
-#: src/global.c:943
+#: src/global.c:956
 msgid "End"
 msgstr "النهاية"
 
+#. TRANSLATORS: Try to keep the next two strings at most 12 characters.
+#: src/global.c:960
+msgid "Scroll Left"
+msgstr "مرر لليسار"
+
+#: src/global.c:962
+msgid "Scroll Right"
+msgstr "مرر لليمين"
+
 #. TRANSLATORS: Try to keep the next two strings at most 10 characters.
-#: src/global.c:947
+#: src/global.c:967
 msgid "Prev Line"
 msgstr "السطر السابق"
 
-#: src/global.c:949
+#: src/global.c:969
 msgid "Next Line"
 msgstr "السطر التالي"
 
 #. TRANSLATORS: Try to keep the next four strings at most 12 characters.
-#: src/global.c:953
+#: src/global.c:973
 msgid "Scroll Up"
 msgstr "مرر للأعلى"
 
-#: src/global.c:955
+#: src/global.c:975
 msgid "Scroll Down"
 msgstr "مرر للأسفل"
 
-#: src/global.c:959
+#: src/global.c:979
 msgid "Prev Block"
 msgstr "الكتلة السابقة"
 
-#: src/global.c:961
+#: src/global.c:981
 msgid "Next Block"
 msgstr "الكتلة التالية"
 
 #. TRANSLATORS: Try to keep these two strings at most 16 characters.
-#: src/global.c:965
+#: src/global.c:985
 msgid "Begin of Paragr."
 msgstr "بداية الفقرة"
 
-#: src/global.c:967
+#: src/global.c:987
 msgid "End of Paragraph"
 msgstr "نهاية الفقرة"
 
-#: src/global.c:972 src/global.c:1204
+#: src/global.c:992 src/global.c:1224
 msgid "Top Row"
 msgstr "الصف العلوي"
 
-#: src/global.c:974 src/global.c:1206
+#: src/global.c:994 src/global.c:1226
 msgid "Bottom Row"
 msgstr "الصف السفلي"
 
 #. TRANSLATORS: Try to keep the next four strings at most 10 characters.
-#: src/global.c:979 src/global.c:1189
+#: src/global.c:999 src/global.c:1209
 msgid "Prev Page"
 msgstr "الصفحة السابقة"
 
-#: src/global.c:981 src/global.c:1191
+#: src/global.c:1001 src/global.c:1211
 msgid "Next Page"
 msgstr "الصفحة التالية"
 
-#: src/global.c:984
+#: src/global.c:1004
 msgid "First Line"
 msgstr "السطر الأول"
 
-#: src/global.c:986
+#: src/global.c:1006
 msgid "Last Line"
 msgstr "السطر الأخير"
 
 #. TRANSLATORS: Try to keep these two strings at most 15 characters.
-#: src/global.c:991
+#: src/global.c:1011
 msgid "Prev File"
 msgstr "الملف السابق"
 
-#: src/global.c:993
+#: src/global.c:1013
 msgid "Next File"
 msgstr "الملف التالي"
 
 #. TRANSLATORS: The next four strings are names of keyboard keys.
-#: src/global.c:1003
+#: src/global.c:1023
 msgid "Tab"
 msgstr "لسان"
 
-#: src/global.c:1005
+#: src/global.c:1025
 msgid "Enter"
 msgstr "إدخال"
 
-#: src/global.c:1008
+#: src/global.c:1028
 msgid "Backspace"
 msgstr "رجوع"
 
-#: src/global.c:1010
+#: src/global.c:1030
 msgid "Delete"
 msgstr "حذف"
 
 #. TRANSLATORS: The next two strings refer to deleting words.
-#: src/global.c:1015
+#: src/global.c:1035
 msgid "Chop Left"
 msgstr "قطع لليسار"
 
-#: src/global.c:1017
+#: src/global.c:1037
 msgid "Chop Right"
 msgstr "قطع لليمين"
 
-#: src/global.c:1019 src/global.c:1172
+#: src/global.c:1039 src/global.c:1192
 msgid "Cut Till End"
 msgstr "قص حتى النهاية"
 
-#: src/global.c:1024 src/global.c:1129
+#: src/global.c:1044 src/global.c:1149
 msgid "Full Justify"
 msgstr "ضبط كامل"
 
-#: src/global.c:1029
+#: src/global.c:1049
 msgid "Word Count"
 msgstr "عدد الكلمات"
 
-#: src/global.c:1036
+#: src/global.c:1056
 msgid "Verbatim"
 msgstr "حرفي"
 
-#: src/global.c:1043
+#: src/global.c:1063
 msgid "Indent"
 msgstr "إزاحة"
 
-#: src/global.c:1045
+#: src/global.c:1065
 msgid "Unindent"
 msgstr "إلغاء الإزاحة"
 
-#: src/global.c:1049
+#: src/global.c:1069
 msgid "Comment Lines"
 msgstr "تعليق الأسطر"
 
-#: src/global.c:1053
+#: src/global.c:1073
 msgid "Complete"
 msgstr "إكمال"
 
-#: src/global.c:1058
+#: src/global.c:1078
 msgid "Record"
 msgstr "تسجيل"
 
-#: src/global.c:1060
+#: src/global.c:1080
 msgid "Run Macro"
 msgstr "تشغيل ماكرو"
 
 #. TRANSLATORS: This refers to deleting a line or marked region.
-#: src/global.c:1064
+#: src/global.c:1084
 msgid "Zap"
 msgstr "مسح"
 
-#: src/global.c:1067
+#: src/global.c:1087
 msgid "Anchor"
 msgstr "مرساة"
 
-#: src/global.c:1069
+#: src/global.c:1089
 msgid "Up to anchor"
 msgstr "صعودا للمرساة"
 
-#: src/global.c:1071
+#: src/global.c:1091
 msgid "Down to anchor"
 msgstr "نزولا للمرساة"
 
 #. TRANSLATORS: Try to keep the next four strings at most 12 characters.
-#: src/global.c:1075 src/global.c:1121
+#: src/global.c:1095 src/global.c:1141
 msgid "Spell Check"
 msgstr "تدقيق إملائي"
 
-#: src/global.c:1079 src/global.c:1125
+#: src/global.c:1099 src/global.c:1145
 msgid "Linter"
 msgstr "مدقق برمجي"
 
-#: src/global.c:1083 src/global.c:1133
+#: src/global.c:1103 src/global.c:1153
 msgid "Formatter"
 msgstr "منسق"
 
-#: src/global.c:1091 src/global.c:1175
+#: src/global.c:1111 src/global.c:1195
 msgid "Suspend"
 msgstr "تعليق"
 
-#: src/global.c:1100
+#: src/global.c:1120
 msgid "Center"
 msgstr "توسيط"
 
-#: src/global.c:1102
+#: src/global.c:1122
 msgid "Cycle"
 msgstr "تدوير"
 
-#: src/global.c:1106
+#: src/global.c:1126
 msgid "Save"
 msgstr "حفظ"
 
-#: src/global.c:1116
+#: src/global.c:1136
 msgid "Pipe Text"
 msgstr "تمرير النص"
 
-#: src/global.c:1140
+#: src/global.c:1160
 msgid "Go To Text"
 msgstr "اذهب للنص"
 
-#: src/global.c:1145
+#: src/global.c:1165
 msgid "DOS Format"
 msgstr "تنسيق دوس"
 
-#: src/global.c:1147
+#: src/global.c:1167
 msgid "Mac Format"
 msgstr "تنسيق ماك"
 
-#: src/global.c:1155
+#: src/global.c:1175
 msgid "Append"
 msgstr "ألحق"
 
-#: src/global.c:1157
+#: src/global.c:1177
 msgid "Prepend"
 msgstr "قدّم"
 
-#: src/global.c:1160
+#: src/global.c:1180
 msgid "Backup File"
 msgstr "ملف احتياطي"
 
-#: src/global.c:1164
+#: src/global.c:1184
 msgid "No Conversion"
 msgstr "لا تحويل"
 
-#: src/global.c:1169
+#: src/global.c:1189
 msgid "Execute Command"
 msgstr "تنفيذ أمر"
 
-#: src/global.c:1179
+#: src/global.c:1199
 msgid "Discard buffer"
 msgstr "تجاهل المخبأ"
 
 #. TRANSLATORS: This invokes the file browser.
-#: src/global.c:1186
+#: src/global.c:1206
 msgid "Browse"
 msgstr "تصفح"
 
-#: src/global.c:1194
+#: src/global.c:1214
 msgid "First File"
 msgstr "الملف الأول"
 
-#: src/global.c:1196
+#: src/global.c:1216
 msgid "Last File"
 msgstr "الملف الأخير"
 
-#: src/global.c:1200
+#: src/global.c:1220
 msgid "Left Column"
 msgstr "العمود الأيسر"
 
-#: src/global.c:1202
+#: src/global.c:1222
 msgid "Right Column"
 msgstr "العمود الأيمن"
 
 #. TRANSLATORS: The next two strings may be up to 37 characters each.
-#: src/global.c:1213
+#: src/global.c:1233
 msgid "Previous Linter message"
 msgstr "رسالة المدقق السابقة"
 
-#: src/global.c:1215
+#: src/global.c:1235
 msgid "Next Linter message"
 msgstr "رسالة المدقق التالية"
 
 #. TRANSLATORS: The next thirteen strings are toggle descriptions;
 #. * they are best kept shorter than 40 characters, but may be longer.
-#: src/global.c:1609
+#: src/global.c:1629
 msgid "Hidden interface"
 msgstr "واجهة مخفية"
 
-#: src/global.c:1611
+#: src/global.c:1631
 msgid "Help mode"
 msgstr "وضع المساعدة"
 
-#: src/global.c:1613
+#: src/global.c:1633
 msgid "Constant cursor position display"
 msgstr "عرض مستمر لموضع المؤشر"
 
-#: src/global.c:1615
+#: src/global.c:1635
 msgid "Soft wrapping of overlong lines"
 msgstr "لف ناعم للأسطر الطويلة جداً"
 
-#: src/global.c:1617
+#: src/global.c:1637
 msgid "Line numbering"
 msgstr "ترقيم الأسطر"
 
-#: src/global.c:1619
+#: src/global.c:1639
 msgid "Whitespace display"
 msgstr "عرض المسافات البيضاء"
 
-#: src/global.c:1621
+#: src/global.c:1641
 msgid "Color syntax highlighting"
 msgstr "تمييز بناء الجملة الملون"
 
-#: src/global.c:1623
+#: src/global.c:1643
 msgid "Smart home key"
 msgstr "مفتاح البداية الذكي"
 
-#: src/global.c:1625
+#: src/global.c:1645
 msgid "Auto indent"
 msgstr "إزاحة آليّة"
 
-#: src/global.c:1627
+#: src/global.c:1647
 msgid "Cut to end"
 msgstr "قص حتى النهاية"
 
-#: src/global.c:1629
+#: src/global.c:1649
 msgid "Hard wrapping of overlong lines"
 msgstr "لف صلب للأسطر الطويلة جداً"
 
-#: src/global.c:1631
+#: src/global.c:1651
 msgid "Conversion of typed tabs to spaces"
 msgstr "تحويل الألسنة المكتوبة إلى مسافات"
 
-#: src/global.c:1633
+#: src/global.c:1653
 msgid "Mouse support"
 msgstr "دعم الفأرة"
 
@@ -1757,7 +1775,7 @@ msgstr ""
 msgid "enable/disable"
 msgstr "تمكين/تعطيل"
 
-#: src/help.c:585 src/nano.c:1667
+#: src/help.c:585 src/nano.c:1672
 msgid "^W = Ctrl+W    M-W = Alt+W"
 msgstr "^W = Ctrl+W    M-W = Alt+W"
 
@@ -1779,10 +1797,16 @@ msgstr ""
 "المسار %s ليس مجلداً ويجب أن يكون كذلك.\n"
 "لن يتمكن نانو من تحميل أو حفظ تاريخ البحث أو مواضع المؤشر.\n"
 
-#: src/history.c:340 src/history.c:477
+#: src/history.c:337 src/history.c:474
 #, c-format
 msgid "Cannot limit permissions on %s: %s"
 msgstr "لا يمكن تحديد الأذونات على %s: %s"
+
+#. TRANSLATORS: The %s is the name of an option.
+#: src/move.c:703 src/move.c:727
+#, c-format
+msgid "Not possible with '%s'"
+msgstr "غير ممكن مع '%s'"
 
 #: src/nano.c:201
 msgid "Key is invalid in view mode"
@@ -2176,169 +2200,173 @@ msgstr "إظهار شريط التغذية الراجعة في الأسفل"
 msgid "Hide all bars, use whole terminal"
 msgstr "إخفاء كل الأشرطة واستخدام كامل الطرفية"
 
-#: src/nano.c:656
+#: src/nano.c:655
+msgid "Scroll only the current line sideways"
+msgstr "مرر السطر الحالي فقط جانبيًا"
+
+#: src/nano.c:657
 msgid "Use better-known key bindings"
 msgstr "استخدام روابط مفاتيح أكثر شيوعًا"
 
-#: src/nano.c:666
+#: src/nano.c:667
 #, c-format
 msgid " GNU nano, version %s\n"
 msgstr " جنو نانو، الإصدار %s\n"
 
 #. TRANSLATORS: The %s is the year of the latest release.
-#: src/nano.c:670
+#: src/nano.c:671
 #, c-format
 msgid " (C) %s the Free Software Foundation and various contributors\n"
 msgstr " © %s مؤسسة البرمجيات الحرة ومساهمون متنوعون\n"
 
-#: src/nano.c:672
+#: src/nano.c:673
 #, c-format
 msgid " Compiled options:"
 msgstr " خيارات التجميع:"
 
-#: src/nano.c:807
+#: src/nano.c:808
 #, c-format
 msgid "Available syntaxes:\n"
 msgstr "الصيغ المتاحة:\n"
 
-#: src/nano.c:854
+#: src/nano.c:855
 msgid "Could not reconnect stdin to keyboard\n"
 msgstr "فشل إعادة ربط المدخل القياسي (stdin) بلوحة المفاتيح\n"
 
-#: src/nano.c:872
+#: src/nano.c:873
 #, c-format
 msgid "Reading data from keyboard; type ^D or ^D^D to finish.\n"
 msgstr "قراءة البيانات من لوحة المفاتيح؛ اكتب ^D أو ^D^D للإنهاء.\n"
 
-#: src/nano.c:882
+#: src/nano.c:883
 #, c-format
 msgid "Failed to open stdin: %s"
 msgstr "فشل فتح المدخل القياسي (stdin): %s"
 
-#: src/nano.c:964
+#: src/nano.c:965
 msgid "Received SIGHUP or SIGTERM\n"
 msgstr "استقبال SIGHUP أو SIGTERM\n"
 
-#: src/nano.c:971
+#: src/nano.c:972
 #, c-format
 msgid "Sorry! Nano crashed!  Code: %d.  Please report a bug.\n"
 msgstr "عذرًا! انهار نانو! الرمز: %d. يرجى الإبلاغ عن علة.\n"
 
-#: src/nano.c:987
+#: src/nano.c:988
 #, c-format
 msgid "Use \"fg\" to return to nano.\n"
 msgstr "استخدم \"fg\" للعودة إلى نانو.\n"
 
-#: src/nano.c:1130
+#: src/nano.c:1131
 msgid "Current syntax determines Tab"
 msgstr "الصيغة الحالية تحدد علامة الجدولة"
 
-#: src/nano.c:1158
+#: src/nano.c:1159
 msgid "enabled"
 msgstr "مفعل"
 
-#: src/nano.c:1158
+#: src/nano.c:1159
 msgid "disabled"
 msgstr "معطل"
 
 #. TRANSLATORS: This refers to a sequence of escape codes
 #. * (from the keyboard) that nano does not recognize.
-#: src/nano.c:1301
+#: src/nano.c:1302
 msgid "Unknown sequence"
 msgstr "تسلسل مجهول"
 
-#: src/nano.c:1304 src/rcfile.c:819
+#: src/nano.c:1305 src/rcfile.c:826
 #, c-format
 msgid "Unknown function: %s"
 msgstr "دالة مجهولة: %s"
 
-#: src/nano.c:1306
+#: src/nano.c:1307
 msgid "Missing }"
 msgstr "رمز } مفقود"
 
 #. TRANSLATORS: This refers to an unbound function key.
-#: src/nano.c:1311
+#: src/nano.c:1312
 #, c-format
 msgid "Unbound key: F%i"
 msgstr "مفتاح غير مربوط: F%i"
 
-#: src/nano.c:1314
+#: src/nano.c:1315
 msgid "Unbound key"
 msgstr "مفتاح غير مربوط"
 
-#: src/nano.c:1318
+#: src/nano.c:1319
 #, c-format
 msgid "Unbindable key: M-^%c"
 msgstr "مفتاح لا يقبل الربط: M-^%c"
 
-#: src/nano.c:1323 src/nano.c:1326 src/nano.c:1330 src/nano.c:1333
+#: src/nano.c:1324 src/nano.c:1327 src/nano.c:1331 src/nano.c:1334
 #, c-format
 msgid "Unbound key: %s%c"
 msgstr "مفتاح غير مربوط: %s%c"
 
-#: src/nano.c:1328
+#: src/nano.c:1329
 msgid "Unbindable key: ^["
 msgstr "مفتاح لا يقبل الربط: ^["
 
-#: src/nano.c:1468
+#: src/nano.c:1469
 msgid "Flawed paste"
 msgstr "لصق معيب"
 
-#: src/nano.c:1929 src/rcfile.c:1678
+#: src/nano.c:1937 src/rcfile.c:1685
 #, c-format
 msgid "Guide column \"%s\" is invalid"
 msgstr "دليل العمود \"%s\" غير صالح"
 
-#: src/nano.c:1975 src/rcfile.c:1683
+#: src/nano.c:1983 src/rcfile.c:1690
 #, c-format
 msgid "Requested tab size \"%s\" is invalid"
 msgstr "حجم الألسنة المطلوب \"%s\" غير صالح"
 
-#: src/nano.c:2079 src/rcfile.c:1628
+#: src/nano.c:2087 src/rcfile.c:1635
 #, c-format
 msgid "Requested fill size \"%s\" is invalid"
 msgstr "حجم الملء المطلوب \"%s\" غير صالح"
 
-#: src/nano.c:2151
+#: src/nano.c:2162
 #, c-format
 msgid "Type '%s -h' for a list of available options.\n"
 msgstr "اكتب '%s -h' لعرض قائمة الخيارات المتاحة.\n"
 
-#: src/nano.c:2353
+#: src/nano.c:2364
 #, c-format
 msgid "Bad quoting regex \"%s\": %s\n"
 msgstr "تعبير نمطي خاطئ للاقتباس \"%s\": %s\n"
 
-#: src/nano.c:2521
+#: src/nano.c:2532
 #, c-format
 msgid "Invalid search modifier '%c'"
 msgstr "معدل بحث غير صالح '%c'"
 
-#: src/nano.c:2532
+#: src/nano.c:2543
 msgid "Empty search string"
 msgstr "سلسلة بحث فارغة"
 
-#: src/nano.c:2541 src/search.c:801
+#: src/nano.c:2552 src/search.c:809
 msgid "Invalid line or column number"
 msgstr "رقم سطر أو عمود غير صالح"
 
-#: src/nano.c:2577
+#: src/nano.c:2588
 msgid "Invalid number\n"
 msgstr "رقم غير صالح\n"
 
-#: src/nano.c:2623
+#: src/nano.c:2634
 msgid "Standard input is not a terminal\n"
 msgstr "المدخل القياسي ليس طرفية\n"
 
-#: src/nano.c:2642
+#: src/nano.c:2653
 msgid "Can open just one file\n"
 msgstr "يمكن فتح ملف واحد فقط\n"
 
-#: src/nano.c:2660
+#: src/nano.c:2671
 msgid "Welcome to nano.  For basic help, type Ctrl+G."
 msgstr "مرحباً بك في نانو. للمساعدة الأساسية، اضغط Ctrl+G."
 
-#: src/nano.c:2699
+#: src/nano.c:2718
 msgid "Byte Order Mark"
 msgstr "علامة ترتيب البايت"
 
@@ -2369,213 +2397,213 @@ msgstr "لا"
 msgid "All"
 msgstr "الكل"
 
-#: src/rcfile.c:191
+#: src/rcfile.c:192
 #, c-format
 msgid "Mistakes in '%s'"
 msgstr "أخطاء في '%s'"
 
-#: src/rcfile.c:195
+#: src/rcfile.c:196
 msgid "Problems with history file"
 msgstr "مشكلات في ملف السجل"
 
-#: src/rcfile.c:199
+#: src/rcfile.c:200
 #, c-format
 msgid "Error in %s on line %zu: "
 msgstr "خطأ في %s في السطر %zu: "
 
-#: src/rcfile.c:566
+#: src/rcfile.c:573
 #, c-format
 msgid "Argument '%s' has an unterminated \""
 msgstr "المعطى '%s' يحوي علامة اقتباس \" غير منتهية"
 
-#: src/rcfile.c:587 src/rcfile.c:598
+#: src/rcfile.c:594 src/rcfile.c:605
 msgid "Regex strings must begin and end with a \" character"
 msgstr "يجب أن تبدأ وتنتهي سلاسل التعبير النمطي برمز \""
 
-#: src/rcfile.c:603
+#: src/rcfile.c:610
 msgid "Empty regex string"
 msgstr "سلسلة تعبير نمطي فارغة"
 
-#: src/rcfile.c:628 src/search.c:45
+#: src/rcfile.c:635 src/search.c:45
 #, c-format
 msgid "Bad regex \"%s\": %s"
 msgstr "تعبير نمطي سيء \"%s\": %s"
 
-#: src/rcfile.c:648
+#: src/rcfile.c:655
 msgid "Missing syntax name"
 msgstr "اسم بناء الجملة مفقود"
 
-#: src/rcfile.c:656
+#: src/rcfile.c:663
 msgid "Unpaired quote in syntax name"
 msgstr "اقتباس غير مقترن في اسم بناء الجملة"
 
-#: src/rcfile.c:668
+#: src/rcfile.c:675
 msgid "The \"none\" syntax is reserved"
 msgstr "بناء الجملة \"none\" محجوز"
 
-#: src/rcfile.c:699
+#: src/rcfile.c:706
 msgid "The \"default\" syntax does not accept extensions"
 msgstr "بناء الجملة المبدئي لا يقبل الامتدادات"
 
-#: src/rcfile.c:717
+#: src/rcfile.c:724
 #, c-format
 msgid "Syntax \"%s\" has no color commands"
 msgstr "بناء الجملة \"%s\" لا يملك أوامر ألوان"
 
-#: src/rcfile.c:750
+#: src/rcfile.c:757
 msgid "Missing key name"
 msgstr "اسم المفتاح مفقود"
 
-#: src/rcfile.c:767 src/rcfile.c:774
+#: src/rcfile.c:774 src/rcfile.c:781
 #, c-format
 msgid "Key name %s is invalid"
 msgstr "اسم المفتاح %s غير صالح"
 
-#: src/rcfile.c:783
+#: src/rcfile.c:790
 msgid "Must specify a function to bind the key to"
 msgstr "يجب تحديد وظيفة لربط المفتاح بها"
 
 #. TRANSLATORS: Do not translate the word "all".
-#: src/rcfile.c:794
+#: src/rcfile.c:801
 msgid "Must specify a menu (or \"all\") in which to bind/unbind the key"
 msgstr "يجب تحديد قائمة (أو \"all\") لربط أو فك ربط المفتاح فيها"
 
-#: src/rcfile.c:801
+#: src/rcfile.c:808
 #, c-format
 msgid "Unknown menu: %s"
 msgstr "قائمة مجهولة: %s"
 
-#: src/rcfile.c:858
+#: src/rcfile.c:865
 #, c-format
 msgid "Function '%s' does not exist in menu '%s'"
 msgstr "الوظيفة '%s' غير موجودة في القائمة '%s'"
 
-#: src/rcfile.c:869
+#: src/rcfile.c:876
 #, c-format
 msgid "Keystroke %s may not be rebound"
 msgstr "ضغط المفتاح %s لا يقبل إعادة الربط"
 
-#: src/rcfile.c:960 src/rcfile.c:1531
+#: src/rcfile.c:967 src/rcfile.c:1538
 #, c-format
 msgid "Command \"%s\" not understood"
 msgstr "الأمر \"%s\" غير مفهوم"
 
-#: src/rcfile.c:987
+#: src/rcfile.c:994
 msgid "Path is too long"
 msgstr "المسار طويل جداً"
 
-#: src/rcfile.c:1001
+#: src/rcfile.c:1008
 #, c-format
 msgid "Error expanding %s: %s"
 msgstr "خطأ أثناء تمديد %s: %s"
 
-#: src/rcfile.c:1071 src/rcfile.c:1082
+#: src/rcfile.c:1078 src/rcfile.c:1089
 #, c-format
 msgid "Color '%s' takes no prefix"
 msgstr "اللون '%s' لا يقبل بادئة"
 
-#: src/rcfile.c:1090
+#: src/rcfile.c:1097
 #, c-format
 msgid "Color \"%s\" not understood"
 msgstr "اللون \"%s\" غير مفهوم"
 
-#: src/rcfile.c:1106 src/rcfile.c:1117
+#: src/rcfile.c:1113 src/rcfile.c:1124
 msgid "An attribute requires a subsequent comma"
 msgstr "تتطلب السمة فاصلة لاحقة"
 
-#: src/rcfile.c:1161
+#: src/rcfile.c:1168
 msgid "Missing color name"
 msgstr "اسم اللون مفقود"
 
-#: src/rcfile.c:1172 src/rcfile.c:1272
+#: src/rcfile.c:1179 src/rcfile.c:1279
 #, c-format
 msgid "Missing regex string after '%s' command"
 msgstr "سلسلة التعبير النمطي مفقودة بعد الأمر '%s'"
 
-#: src/rcfile.c:1198
+#: src/rcfile.c:1205
 msgid "\"start=\" requires a corresponding \"end=\""
 msgstr "\"start=\" يتطلب \"end=\" مقابلة له"
 
-#: src/rcfile.c:1261 src/rcfile.c:1511
+#: src/rcfile.c:1268 src/rcfile.c:1518
 #, c-format
 msgid "A '%s' command requires a preceding 'syntax' command"
 msgstr "يتطلب الأمر '%s' أمر 'syntax' يسبقه"
 
-#: src/rcfile.c:1267
+#: src/rcfile.c:1274
 #, c-format
 msgid "The \"default\" syntax does not accept '%s' regexes"
 msgstr "تنسيق \"مبدئي\" لا يقبل تعابير '%s' النمطية"
 
-#: src/rcfile.c:1314
+#: src/rcfile.c:1321
 #, c-format
 msgid "Missing argument after '%s'"
 msgstr "معامل مفقود بعد '%s'"
 
-#: src/rcfile.c:1324
+#: src/rcfile.c:1331
 #, c-format
 msgid "Argument of '%s' lacks closing \""
 msgstr "معامل '%s' ينقصه إغلاق \""
 
-#: src/rcfile.c:1374
+#: src/rcfile.c:1381
 #, c-format
 msgid "No key is bound to function '%s' in menu '%s'.  Exiting.\n"
 msgstr "لا يوجد مفتاح مرتبط بالدالة '%s' في القائمة '%s'. يخرج الآن.\n"
 
-#: src/rcfile.c:1376
+#: src/rcfile.c:1383
 msgid ""
 "If needed, use nano with the -I option to adjust your nanorc settings.\n"
 msgstr "عند الحاجة، استخدم نانو مع خيار -I لضبط إعدادات nanorc الخاصة بك.\n"
 
-#: src/rcfile.c:1443
+#: src/rcfile.c:1450
 #, c-format
 msgid "Could not find syntax \"%s\" to extend"
 msgstr "تعذر العثور على التنسيق \"%s\" لتوسعته"
 
-#: src/rcfile.c:1500
+#: src/rcfile.c:1507
 #, c-format
 msgid "Command \"%s\" not allowed in included file"
 msgstr "الأمر \"%s\" غير مسموح به في الملف المُضمّن"
 
-#: src/rcfile.c:1543
+#: src/rcfile.c:1550
 msgid "Missing option"
 msgstr "خيار مفقود"
 
-#: src/rcfile.c:1557
+#: src/rcfile.c:1564
 #, c-format
 msgid "Unknown option: %s"
 msgstr "خيار مجهول: %s"
 
-#: src/rcfile.c:1572
+#: src/rcfile.c:1579
 #, c-format
 msgid "Cannot unset option \"%s\""
 msgstr "يتعذر إلغاء تعيين الخيار \"%s\""
 
-#: src/rcfile.c:1577
+#: src/rcfile.c:1584
 #, c-format
 msgid "Option \"%s\" requires an argument"
 msgstr "الخيار \"%s\" يتطلب معاملًا"
 
-#: src/rcfile.c:1589
+#: src/rcfile.c:1596
 msgid "Argument is not a valid multibyte string"
 msgstr "المعامل ليس سلسلة بايتات متعددة صالحة"
 
-#: src/rcfile.c:1636 src/rcfile.c:1654 src/rcfile.c:1659
+#: src/rcfile.c:1643 src/rcfile.c:1661 src/rcfile.c:1666
 msgid "Non-blank characters required"
 msgstr "يتطلب محارف غير فارغة"
 
-#: src/rcfile.c:1638
+#: src/rcfile.c:1645
 msgid "Even number of characters required"
 msgstr "يتطلب عددًا زوجيًا من المحارف"
 
-#: src/rcfile.c:1643
+#: src/rcfile.c:1650
 msgid "Two single-column characters required"
 msgstr "يتطلب محرفين من عمود واحد"
 
-#: src/rcfile.c:1734
+#: src/rcfile.c:1741
 msgid "Specified rcfile does not exist\n"
 msgstr "ملف rcfile المحدد غير موجود\n"
 
-#: src/rcfile.c:1753
+#: src/rcfile.c:1760
 msgid "I can't find my home directory!  Wah!"
 msgstr "تعذر العثور على المجلد المنزلي!"
 
@@ -2602,22 +2630,22 @@ msgstr " (للاستبدال)"
 msgid "Searching..."
 msgstr "يبحث الآن..."
 
-#: src/search.c:409
+#: src/search.c:414
 #, c-format
 msgid "\"%.*s%s\" not found"
 msgstr "\"%.*s%s\" غير موجود"
 
 #. TRANSLATORS: This is a prompt.
-#: src/search.c:598
+#: src/search.c:606
 msgid "Replace this instance?"
 msgstr "هل استبدل هذا الموضع؟"
 
 #. TRANSLATORS: This is a prompt.
-#: src/search.c:709
+#: src/search.c:717
 msgid "Replace with"
 msgstr "استبدل بـ"
 
-#: src/search.c:739
+#: src/search.c:747
 #, c-format
 msgid "Replaced %zd occurrence"
 msgid_plural "Replaced %zd occurrences"
@@ -2629,35 +2657,35 @@ msgstr[4] "استبدل %zd موضعًا"
 msgstr[5] "استبدل %zd موضع"
 
 #. TRANSLATORS: This is a prompt.
-#: src/search.c:778
+#: src/search.c:786
 msgid "Enter line number, column number"
 msgstr "أدخل رقم السطر، رقم العمود"
 
-#: src/search.c:956
+#: src/search.c:964
 msgid "Not a bracket"
 msgstr "ليس قوسًا"
 
-#: src/search.c:999
+#: src/search.c:1007
 msgid "No matching bracket"
 msgstr "لا يوجد قوس مطابق"
 
-#: src/search.c:1018
+#: src/search.c:1026
 msgid "Placed anchor"
 msgstr "وُضع المرتكز"
 
-#: src/search.c:1020
+#: src/search.c:1028
 msgid "Removed anchor"
 msgstr "أُزيل المرتكز"
 
-#: src/search.c:1039
+#: src/search.c:1047
 msgid "Jumped to anchor"
 msgstr "قُفز إلى المرتكز"
 
-#: src/search.c:1041
+#: src/search.c:1049
 msgid "This is the only anchor"
 msgstr "هذا هو المرتكز الوحيد"
 
-#: src/search.c:1043
+#: src/search.c:1051
 msgid "There are no anchors"
 msgstr "لا توجد مرتكزات"
 
@@ -2950,63 +2978,63 @@ msgstr "لا توجد مطابقات"
 msgid "Nano is out of memory!\n"
 msgstr "ذاكرة نانو نفدت!\n"
 
-#: src/winio.c:100
+#: src/winio.c:98
 msgid "Recording a macro..."
 msgstr "تسجيل ماكرو..."
 
-#: src/winio.c:104
+#: src/winio.c:108
 msgid "Stopped recording"
 msgstr "توقف التسجيل"
 
-#: src/winio.c:116
+#: src/winio.c:128
 msgid "Cannot run macro while recording"
 msgstr "لا يمكن تشغيل الماكرو أثناء التسجيل"
 
-#: src/winio.c:122
+#: src/winio.c:134
 msgid "Macro is empty"
 msgstr "الماكرو فارغ"
 
-#: src/winio.c:137
+#: src/winio.c:149
 msgid "Too much input at once\n"
 msgstr "مدخلات كثيرة جداً في آن واحد\n"
 
-#: src/winio.c:250
+#: src/winio.c:262
 msgid "Too many errors from stdin\n"
 msgstr "أخطاء كثيرة جداً من المدخل القياسي (stdin)\n"
 
 #. TRANSLATORS: This is shown while a six-digit hexadecimal
 #. * Unicode character code (%s) is being typed in.
-#: src/winio.c:1412
+#: src/winio.c:1424
 #, c-format
 msgid "Unicode Input: %s"
 msgstr "إدخال يونيكود: %s"
 
 #. TRANSLATORS: The next five are "labels" in the title bar.
-#: src/winio.c:2034
+#: src/winio.c:2040
 msgid "Linting --"
 msgstr "يدقق الشفرة --"
 
-#: src/winio.c:2040
+#: src/winio.c:2046
 msgid "DIR:"
 msgstr "المجلد:"
 
-#: src/winio.c:2061
+#: src/winio.c:2067
 msgid "View"
 msgstr "عرض"
 
-#: src/winio.c:2067 src/winio.c:2071
+#: src/winio.c:2073 src/winio.c:2077
 msgid "Modified"
 msgstr "معدل"
 
-#: src/winio.c:2069
+#: src/winio.c:2075
 msgid "Restricted"
 msgstr "مقيد"
 
-#: src/winio.c:2175
+#: src/winio.c:2181
 msgid "(nameless)"
 msgstr "(بلا اسم)"
 
-#: src/winio.c:2207
+#: src/winio.c:2213
 #, c-format
 msgid " (%zu line)"
 msgid_plural " (%zu lines)"
@@ -3017,7 +3045,7 @@ msgstr[3] " (%zu سطور)"
 msgstr[4] " (%zu سطرًا)"
 msgstr[5] " (%zu سطر)"
 
-#: src/winio.c:2209
+#: src/winio.c:2215
 #, c-format
 msgid " (%zu line, %s)"
 msgid_plural " (%zu lines, %s)"
@@ -3028,45 +3056,45 @@ msgstr[3] " (%zu سطور، %s)"
 msgstr[4] " (%zu سطرًا، %s)"
 msgstr[5] " (%zu سطر، %s)"
 
-#: src/winio.c:3517
+#: src/winio.c:3541
 #, c-format
 msgid "line %*zd/%zd (%2d%%), col %2zu/%2zu (%3d%%), char %*zu/%zu (%2d%%)"
 msgstr ""
 "السطر %*zd/%zd (%2d%%)، العمود %2zu/%2zu (%3d%%)، المحرف %*zu/%zu (%2d%%)"
 
-#: src/winio.c:3671
+#: src/winio.c:3695
 msgid "The nano text editor"
 msgstr "محرر النصوص نانو"
 
-#: src/winio.c:3672
+#: src/winio.c:3696
 msgid "version"
 msgstr "الإصدار"
 
-#: src/winio.c:3673
+#: src/winio.c:3697
 msgid "Brought to you by:"
 msgstr "قدمه لكم:"
 
-#: src/winio.c:3674
+#: src/winio.c:3698
 msgid "Special thanks to:"
 msgstr "شكر خاص لكل من:"
 
-#: src/winio.c:3675
+#: src/winio.c:3699
 msgid "The Free Software Foundation"
 msgstr "مؤسسة البرمجيات الحرة"
 
-#: src/winio.c:3676
+#: src/winio.c:3700
 msgid "the many translators and the TP"
 msgstr "المترجمون الكثر ومشروع الترجمة (TP)"
 
-#: src/winio.c:3677
+#: src/winio.c:3701
 msgid "For ncurses:"
 msgstr "لأجل ncurses:"
 
-#: src/winio.c:3678
+#: src/winio.c:3702
 msgid "and anyone else we forgot..."
 msgstr "وكل من نسينا ذكره..."
 
-#: src/winio.c:3679
+#: src/winio.c:3703
 msgid "Thank you for using nano!"
 msgstr "شكراً لاستخدامكم نانو!"
 

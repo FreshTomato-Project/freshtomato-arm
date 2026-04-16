@@ -152,10 +152,11 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/mbrtowc.m4 $(top_srcdir)/m4/mbsinit.m4 \
 	$(top_srcdir)/m4/mbsrtowcs.m4 $(top_srcdir)/m4/mbstate_t.m4 \
 	$(top_srcdir)/m4/mbtowc.m4 $(top_srcdir)/m4/memchr.m4 \
-	$(top_srcdir)/m4/mempcpy.m4 $(top_srcdir)/m4/memrchr.m4 \
-	$(top_srcdir)/m4/minmax.m4 $(top_srcdir)/m4/mkdir.m4 \
-	$(top_srcdir)/m4/mkstemps.m4 $(top_srcdir)/m4/mmap-anon.m4 \
-	$(top_srcdir)/m4/mode_t.m4 $(top_srcdir)/m4/msvc-inval.m4 \
+	$(top_srcdir)/m4/memeq.m4 $(top_srcdir)/m4/mempcpy.m4 \
+	$(top_srcdir)/m4/memrchr.m4 $(top_srcdir)/m4/minmax.m4 \
+	$(top_srcdir)/m4/mkdir.m4 $(top_srcdir)/m4/mkstemps.m4 \
+	$(top_srcdir)/m4/mmap-anon.m4 $(top_srcdir)/m4/mode_t.m4 \
+	$(top_srcdir)/m4/msvc-inval.m4 \
 	$(top_srcdir)/m4/msvc-nothrow.m4 $(top_srcdir)/m4/multiarch.m4 \
 	$(top_srcdir)/m4/musl.m4 $(top_srcdir)/m4/nl_langinfo.m4 \
 	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/nocrash.m4 \
@@ -181,14 +182,15 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/snprintf.m4 $(top_srcdir)/m4/ssize_t.m4 \
 	$(top_srcdir)/m4/stat-time.m4 $(top_srcdir)/m4/stat.m4 \
 	$(top_srcdir)/m4/stdarg.m4 $(top_srcdir)/m4/stdckdint_h.m4 \
-	$(top_srcdir)/m4/stddef_h.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/m4/stdint_h.m4 $(top_srcdir)/m4/stdio_h.m4 \
-	$(top_srcdir)/m4/stdlib_h.m4 $(top_srcdir)/m4/strcasecmp.m4 \
-	$(top_srcdir)/m4/strcasestr.m4 $(top_srcdir)/m4/strdup.m4 \
+	$(top_srcdir)/m4/stdcountof_h.m4 $(top_srcdir)/m4/stddef_h.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/m4/stdint_h.m4 \
+	$(top_srcdir)/m4/stdio_h.m4 $(top_srcdir)/m4/stdlib_h.m4 \
+	$(top_srcdir)/m4/strcasecmp.m4 $(top_srcdir)/m4/strcasestr.m4 \
+	$(top_srcdir)/m4/strdup.m4 $(top_srcdir)/m4/streq.m4 \
 	$(top_srcdir)/m4/strerror.m4 $(top_srcdir)/m4/string_h.m4 \
-	$(top_srcdir)/m4/stringeq.m4 $(top_srcdir)/m4/strings_h.m4 \
-	$(top_srcdir)/m4/strncasecmp.m4 $(top_srcdir)/m4/strncpy.m4 \
-	$(top_srcdir)/m4/strnlen.m4 $(top_srcdir)/m4/sys_cdefs_h.m4 \
+	$(top_srcdir)/m4/strings_h.m4 $(top_srcdir)/m4/strncasecmp.m4 \
+	$(top_srcdir)/m4/strncpy.m4 $(top_srcdir)/m4/strnlen.m4 \
+	$(top_srcdir)/m4/sys_cdefs_h.m4 \
 	$(top_srcdir)/m4/sys_random_h.m4 \
 	$(top_srcdir)/m4/sys_socket_h.m4 \
 	$(top_srcdir)/m4/sys_stat_h.m4 $(top_srcdir)/m4/sys_time_h.m4 \
@@ -269,6 +271,7 @@ CTAGS = @CTAGS@
 CURSES_LIB = @CURSES_LIB@
 CXX_HAS_CHAR8_TYPE = @CXX_HAS_CHAR8_TYPE@
 CXX_HAS_UCHAR_TYPES = @CXX_HAS_UCHAR_TYPES@
+CXX_HAVE_STDCOUNTOF_H = @CXX_HAVE_STDCOUNTOF_H@
 CXX_HAVE_UCHAR_H = @CXX_HAVE_UCHAR_H@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
@@ -608,6 +611,7 @@ GL_GNULIB_MDA_Y0 = @GL_GNULIB_MDA_Y0@
 GL_GNULIB_MDA_Y1 = @GL_GNULIB_MDA_Y1@
 GL_GNULIB_MDA_YN = @GL_GNULIB_MDA_YN@
 GL_GNULIB_MEMCHR = @GL_GNULIB_MEMCHR@
+GL_GNULIB_MEMEQ = @GL_GNULIB_MEMEQ@
 GL_GNULIB_MEMMEM = @GL_GNULIB_MEMMEM@
 GL_GNULIB_MEMPCPY = @GL_GNULIB_MEMPCPY@
 GL_GNULIB_MEMRCHR = @GL_GNULIB_MEMRCHR@
@@ -736,18 +740,19 @@ GL_GNULIB_STRCASECMP_L = @GL_GNULIB_STRCASECMP_L@
 GL_GNULIB_STRCASESTR = @GL_GNULIB_STRCASESTR@
 GL_GNULIB_STRCHRNUL = @GL_GNULIB_STRCHRNUL@
 GL_GNULIB_STRDUP = @GL_GNULIB_STRDUP@
+GL_GNULIB_STREQ = @GL_GNULIB_STREQ@
 GL_GNULIB_STRERROR = @GL_GNULIB_STRERROR@
 GL_GNULIB_STRERRORNAME_NP = @GL_GNULIB_STRERRORNAME_NP@
 GL_GNULIB_STRERROR_L = @GL_GNULIB_STRERROR_L@
 GL_GNULIB_STRERROR_R = @GL_GNULIB_STRERROR_R@
 GL_GNULIB_STRFTIME = @GL_GNULIB_STRFTIME@
-GL_GNULIB_STRINGEQ = @GL_GNULIB_STRINGEQ@
 GL_GNULIB_STRNCASECMP = @GL_GNULIB_STRNCASECMP@
 GL_GNULIB_STRNCASECMP_L = @GL_GNULIB_STRNCASECMP_L@
 GL_GNULIB_STRNCAT = @GL_GNULIB_STRNCAT@
 GL_GNULIB_STRNCPY = @GL_GNULIB_STRNCPY@
 GL_GNULIB_STRNDUP = @GL_GNULIB_STRNDUP@
 GL_GNULIB_STRNLEN = @GL_GNULIB_STRNLEN@
+GL_GNULIB_STRNUL = @GL_GNULIB_STRNUL@
 GL_GNULIB_STRPBRK = @GL_GNULIB_STRPBRK@
 GL_GNULIB_STRPTIME = @GL_GNULIB_STRPTIME@
 GL_GNULIB_STRSEP = @GL_GNULIB_STRSEP@
@@ -948,6 +953,7 @@ GL_GNULIB_UNSETENV = @GL_GNULIB_UNSETENV@
 GL_GNULIB_USLEEP = @GL_GNULIB_USLEEP@
 GL_GNULIB_UTIME = @GL_GNULIB_UTIME@
 GL_GNULIB_UTIMENSAT = @GL_GNULIB_UTIMENSAT@
+GL_GNULIB_VAPRINTF = @GL_GNULIB_VAPRINTF@
 GL_GNULIB_VASPRINTF = @GL_GNULIB_VASPRINTF@
 GL_GNULIB_VASZPRINTF = @GL_GNULIB_VASZPRINTF@
 GL_GNULIB_VDPRINTF = @GL_GNULIB_VDPRINTF@
@@ -1403,6 +1409,7 @@ HAVE_SLEEP = @HAVE_SLEEP@
 HAVE_SQRTF = @HAVE_SQRTF@
 HAVE_SQRTL = @HAVE_SQRTL@
 HAVE_STDCKDINT_H = @HAVE_STDCKDINT_H@
+HAVE_STDCOUNTOF_H = @HAVE_STDCOUNTOF_H@
 HAVE_STDINT_H = @HAVE_STDINT_H@
 HAVE_STPCPY = @HAVE_STPCPY@
 HAVE_STPNCPY = @HAVE_STPNCPY@
@@ -1602,6 +1609,7 @@ NEXT_AS_FIRST_DIRECTIVE_SCHED_H = @NEXT_AS_FIRST_DIRECTIVE_SCHED_H@
 NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H = @NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H@
 NEXT_AS_FIRST_DIRECTIVE_STDARG_H = @NEXT_AS_FIRST_DIRECTIVE_STDARG_H@
 NEXT_AS_FIRST_DIRECTIVE_STDCKDINT_H = @NEXT_AS_FIRST_DIRECTIVE_STDCKDINT_H@
+NEXT_AS_FIRST_DIRECTIVE_STDCOUNTOF_H = @NEXT_AS_FIRST_DIRECTIVE_STDCOUNTOF_H@
 NEXT_AS_FIRST_DIRECTIVE_STDDEF_H = @NEXT_AS_FIRST_DIRECTIVE_STDDEF_H@
 NEXT_AS_FIRST_DIRECTIVE_STDINT_H = @NEXT_AS_FIRST_DIRECTIVE_STDINT_H@
 NEXT_AS_FIRST_DIRECTIVE_STDIO_H = @NEXT_AS_FIRST_DIRECTIVE_STDIO_H@
@@ -1638,6 +1646,7 @@ NEXT_SCHED_H = @NEXT_SCHED_H@
 NEXT_SIGNAL_H = @NEXT_SIGNAL_H@
 NEXT_STDARG_H = @NEXT_STDARG_H@
 NEXT_STDCKDINT_H = @NEXT_STDCKDINT_H@
+NEXT_STDCOUNTOF_H = @NEXT_STDCOUNTOF_H@
 NEXT_STDDEF_H = @NEXT_STDDEF_H@
 NEXT_STDINT_H = @NEXT_STDINT_H@
 NEXT_STDIO_H = @NEXT_STDIO_H@
@@ -2076,6 +2085,7 @@ SIZE_T_SUFFIX = @SIZE_T_SUFFIX@
 SMALL_WCHAR_T = @SMALL_WCHAR_T@
 STDARG_H = @STDARG_H@
 STDCKDINT_H = @STDCKDINT_H@
+STDCOUNTOF_H = @STDCOUNTOF_H@
 STDDEF_H = @STDDEF_H@
 STDDEF_NOT_IDEMPOTENT = @STDDEF_NOT_IDEMPOTENT@
 STDINT_H = @STDINT_H@

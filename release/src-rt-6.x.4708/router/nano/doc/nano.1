@@ -16,7 +16,7 @@
 .\"   Documentation License along with this program.  If not, see
 .\"   <https://www.gnu.org/licenses/>.
 .\"
-.TH NANO 1 "version 8.7.1" "February 2026"
+.TH NANO 1 "version 9.0" "April 2026"
 
 .SH NAME
 nano \- Nano's ANOther text editor, inspired by Pico
@@ -27,12 +27,29 @@ nano \- Nano's ANOther text editor, inspired by Pico
 .sp
 .BR nano " [" \fIoptions "] [[" + [ crCR ]{ / | ? } \fIstring "] " \fIfile ]...
 
-.SH NOTICE
+.SH NOTICES
+Since version 9.0, all lines are scrolled horizontally together
+(when the cursor approaches the edge), by just the amount needed,
+instead of scrolling only the current line by a large step.
+If you prefer the old behavior, you can use \fB--solo\fR on the
+command line or \fBset solosidescroll\fR in your \fInanorc\fR.
+.sp
+Also since version 9.0, keystrokes \fBM-<\fR and \fBM->\fR have
+been reassigned to the `scrollleft` and `scrollright` functions.
+If you want those keystrokes to do what they did before version 9.0,
+add these two lines at the end of your \fInanorc\fR file:
+.sp
+.RS 4
+.B bind M\-< prevbuf main
+.br
+.B bind M\-> nextbuf main
+.RE
+.sp
 Since version 8.0, to be newcomer friendly, \fB^F\fR starts a forward search,
 \fB^B\fR starts a backward search, \fBM\-F\fR searches the next occurrence
 forward, and \fBM\-B\fR searches the next occurrence backward.  If you want
 those keystrokes to do what they did before version 8.0, add the following
-lines at the end of your \fInanorc\fR file:
+four lines at the end of your \fInanorc\fR file:
 .sp
 .RS 4
 .B bind ^F forward main
@@ -400,6 +417,14 @@ and disappears after 1.5 seconds or upon the next keystroke.
 With \fBM\-Z\fR the title bar plus status bar can be toggled.
 With \fBM\-X\fR the help lines.
 .TP
+.BR \-1 ", " \-\-solosidescroll
+When the cursor approaches the right edge of the edit window, scroll only the
+current line sideways by a large amount, instead of scrolling all visible lines
+sideways by just the amount needed to keep the cursor in view.
+This latter whole-window smooth sideways scrolling is the new default behavior.
+The single-line jerky sideways scrolling enabled by this option was the old
+behavior \(em the only behavior that \fBnano\fR knew.
+.TP
 .BR \-/ ", " \-\-modernbindings
 Use key bindings similar to the ones that most modern programs use:
 \fB^X\fR cuts, \fB^C\fR copies, \fB^V\fR pastes,
@@ -407,11 +432,11 @@ Use key bindings similar to the ones that most modern programs use:
 \fB^F\fR searches forward, \fB^G\fR searches next,
 \fB^S\fR saves, \fB^O\fR opens a file, \fB^Q\fR quits,
 and (when the terminal permits) \fB^H\fR shows help.
-Furthermore, \fB^A\fR sets the mark,
-\fB^R\fR makes replacements, \fB^D\fR searches previous,
+Furthermore, \fB^A\fR sets the mark, \fB^B\fR searches backward,
+\fB^D\fR searches previous, \fB^R\fR makes replacements,
 \fB^P\fR shows the position, \fB^T\fR goes to a line,
 \fB^W\fR writes out a file, and \fB^E\fR executes a command.
-Note that this overrides option \fB\-p\fR (\fB\-\-preserve\fR).
+Note that this option overrides option \fB\-p\fR (\fB\-\-preserve\fR).
 
 .SH TOGGLES
 Several of the above options can be switched on and off also while

@@ -175,6 +175,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module mbszero:
   # Code from module mbtowc:
   # Code from module memchr:
+  # Code from module memeq:
   # Code from module mempcpy:
   # Code from module memrchr:
   # Code from module minmax:
@@ -224,12 +225,12 @@ AC_DEFUN([gl_EARLY],
   # Code from module stat:
   # Code from module stat-time:
   # Code from module std-gnu11:
-  # Code from module stdarg:
   # Code from module stdarg-h:
   dnl Some compilers (e.g., AIX 5.3 cc) need to be in c99 mode
   dnl for the builtin va_copy to work.  gl_PROG_CC_C99 arranges for this.
   gl_PROG_CC_C99
   # Code from module stdckdint-h:
+  # Code from module stdcountof-h:
   # Code from module stddef-h:
   # Code from module stdint-h:
   # Code from module stdio-h:
@@ -241,15 +242,16 @@ AC_DEFUN([gl_EARLY],
   # Code from module strcasestr-simple:
   # Code from module strdup-posix:
   # Code from module streq:
+  # Code from module streq-opt:
   # Code from module strerror:
   # Code from module strerror-override:
   # Code from module string-h:
-  # Code from module stringeq:
   # Code from module strings-h:
   # Code from module strncasecmp:
   # Code from module strncpy:
   # Code from module strnlen:
   # Code from module strnlen1:
+  # Code from module strnul:
   # Code from module sys_random-h:
   # Code from module sys_stat-h:
   # Code from module sys_time-h:
@@ -298,7 +300,6 @@ AC_DEFUN([gl_EARLY],
   # Code from module vsnprintf:
   # Code from module vsnprintf-posix:
   # Code from module vsnzprintf:
-  # Code from module wchar:
   # Code from module wchar-h:
   # Code from module wcrtomb:
   # Code from module wctype:
@@ -829,6 +830,8 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_MEMCHR
   ])
   gl_STRING_MODULE_INDICATOR([memchr])
+  gl_FUNC_MEMEQ
+  gl_STRING_MODULE_INDICATOR([memeq])
   gl_FUNC_MEMPCPY
   gl_CONDITIONAL([GL_COND_OBJ_MEMPCPY],
                  [test $HAVE_MEMPCPY = 0 || test $REPLACE_MEMPCPY = 1])
@@ -987,6 +990,9 @@ AC_DEFUN([gl_INIT],
   gl_STDCKDINT_H
   gl_CONDITIONAL_HEADER([stdckdint.h])
   AC_PROG_MKDIR_P
+  gl_STDCOUNTOF_H
+  gl_CONDITIONAL_HEADER([stdcountof.h])
+  AC_PROG_MKDIR_P
   gl_STDDEF_H
   gl_STDDEF_H_REQUIRE_DEFAULTS
   gl_CONDITIONAL_HEADER([stddef.h])
@@ -1037,7 +1043,7 @@ AC_DEFUN([gl_INIT],
       ;;
   esac
   gl_CONDITIONAL([GL_COND_OBJ_STDIO_CONSOLESAFE], [test $USES_MSVCRT = 1])
-  AC_CHECK_FUNCS([vasprintf])
+  AC_CHECK_FUNCS_ONCE([vasprintf])
   gl_STDLIB_H
   gl_STDLIB_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
@@ -1060,6 +1066,8 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_STRDUP
   ])
   gl_STRING_MODULE_INDICATOR([strdup])
+  gl_FUNC_STREQ
+  gl_STRING_MODULE_INDICATOR([streq])
   gl_FUNC_STRERROR
   gl_CONDITIONAL([GL_COND_OBJ_STRERROR], [test $REPLACE_STRERROR = 1])
   gl_MODULE_INDICATOR([strerror])
@@ -1074,9 +1082,6 @@ AC_DEFUN([gl_INIT],
   gl_STRING_H
   gl_STRING_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
-  gl_FUNC_STREQ
-  gl_FUNC_MEMEQ
-  gl_STRING_MODULE_INDICATOR([stringeq])
   gl_STRINGS_H
   gl_STRINGS_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
@@ -1100,6 +1105,7 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_STRNLEN
   ])
   gl_STRING_MODULE_INDICATOR([strnlen])
+  gl_STRING_MODULE_INDICATOR([strnul])
   gl_SYS_RANDOM_H
   gl_SYS_RANDOM_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
@@ -1607,6 +1613,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/mbtowc.c
   lib/memchr.c
   lib/memchr.valgrind
+  lib/memeq.c
   lib/mempcpy.c
   lib/memrchr.c
   lib/minmax.h
@@ -1673,6 +1680,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/stat.c
   lib/stdarg.in.h
   lib/stdckdint.in.h
+  lib/stdcountof.in.h
   lib/stddef.in.h
   lib/stdint.in.h
   lib/stdio-consolesafe.c
@@ -1686,11 +1694,11 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/strcasecmp.c
   lib/strcasestr.c
   lib/strdup.c
-  lib/streq.h
+  lib/streq-opt.h
+  lib/streq.c
   lib/strerror-override.c
   lib/strerror-override.h
   lib/strerror.c
-  lib/string.c
   lib/string.in.h
   lib/strings.in.h
   lib/stripslash.c
@@ -1699,6 +1707,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/strnlen.c
   lib/strnlen1.c
   lib/strnlen1.h
+  lib/strnul.c
   lib/sys_random.in.h
   lib/sys_stat.in.h
   lib/sys_time.in.h
@@ -1895,6 +1904,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/mbstate_t.m4
   m4/mbtowc.m4
   m4/memchr.m4
+  m4/memeq.m4
   m4/mempcpy.m4
   m4/memrchr.m4
   m4/minmax.m4
@@ -1947,6 +1957,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/std-gnu11.m4
   m4/stdarg.m4
   m4/stdckdint_h.m4
+  m4/stdcountof_h.m4
   m4/stddef_h.m4
   m4/stdint.m4
   m4/stdint_h.m4
@@ -1955,9 +1966,9 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/strcasecmp.m4
   m4/strcasestr.m4
   m4/strdup.m4
+  m4/streq.m4
   m4/strerror.m4
   m4/string_h.m4
-  m4/stringeq.m4
   m4/strings_h.m4
   m4/strncasecmp.m4
   m4/strncpy.m4

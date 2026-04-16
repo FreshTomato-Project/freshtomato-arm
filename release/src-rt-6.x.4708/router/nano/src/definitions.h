@@ -143,6 +143,9 @@
 /* The default number of columns from end of line where wrapping occurs. */
 #define COLUMNS_FROM_EOL  8
 
+/* The number of columns the cursor should stay away from the edge. */
+#define CUSHION  3
+
 /* The default comment character when a syntax does not specify any. */
 #define GENERAL_COMMENT_CHARACTER  "#"
 
@@ -376,7 +379,8 @@ enum {
 	USE_MAGIC,
 	MINIBAR,
 	ZERO,
-	MODERN_BINDINGS
+	MODERN_BINDINGS,
+	SOLO_SIDESCROLL
 };
 
 /* Structure types. */
@@ -528,18 +532,18 @@ typedef struct undostruct {
 #endif /* !NANO_TINY */
 
 #ifdef ENABLE_HISTORIES
-typedef struct poshiststruct {
+typedef struct positionstruct {
 	char *filename;
 		/* The full path plus name of the file. */
 	ssize_t linenumber;
-		/* The line where the cursor was when we closed the file. */
+		/* The line where the cursor was when the file was closed. */
 	ssize_t columnnumber;
 		/* The column where the cursor was. */
 	char *anchors;
 		/* The line numbers where anchors were placed, in string form. */
-	struct poshiststruct *next;
-		/* The next item of position history. */
-} poshiststruct;
+	struct positionstruct *next;
+		/* The next item in the positions register. */
+} positionstruct;
 #endif
 
 typedef struct openfilestruct {
@@ -561,7 +565,9 @@ typedef struct openfilestruct {
 	size_t current_x;
 		/* The file's x-coordinate position. */
 	size_t placewewant;
-		/* The file's x position we would like. */
+		/* The preferred column for the cursor. */
+	size_t brink;
+		/* From which column the edit window is drawn (when panning). */
 	ssize_t cursor_row;
 		/* The row in the edit window that the cursor is on. */
 	struct stat *statinfo;

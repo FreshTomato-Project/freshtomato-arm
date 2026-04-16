@@ -73,6 +73,7 @@ void make_new_buffer(void)
 	openfile->current = openfile->filetop;
 	openfile->current_x = 0;
 	openfile->placewewant = 0;
+	openfile->brink = 0;
 	openfile->cursor_row = 0;
 
 	openfile->edittop = openfile->filetop;
@@ -578,7 +579,7 @@ void redecorate_after_switch(void)
 	/* If the switched-to buffer gave an error during opening, show the message
 	 * once; otherwise, indicate on the status bar which file we switched to. */
 	if (openfile->errormessage) {
-		statusline(ALERT, openfile->errormessage);
+		statusline(ALERT, "%s", openfile->errormessage);
 		free(openfile->errormessage);
 		openfile->errormessage = NULL;
 	} else
@@ -780,7 +781,7 @@ void read_file(FILE *f, int fd, const char *filename, bool undoable)
 
 	/* If there was a real error during the reading, let the user know. */
 	if (ferror(f) && errornumber != EINTR && errornumber != 0)
-		statusline(ALERT, strerror(errornumber));
+		statusline(ALERT, "%s", strerror(errornumber));
 
 	if (control_C_was_pressed)
 		statusline(ALERT, _("Interrupted"));

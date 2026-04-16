@@ -332,6 +332,11 @@ int findnextstr(const char *needle, bool whole_word_only, int modus,
 		spotlighted = TRUE;
 		light_from_col = xplustabs();
 		light_to_col = wideness(line->data, found_x + found_len);
+
+		/* When panning, ensure the end of the match will be visible too. */
+		if (united_sidescroll)
+			openfile->brink = get_page_start(light_to_col);
+
 		refresh_needed = TRUE;
 	}
 #endif
@@ -438,7 +443,7 @@ void go_looking(void)
 		not_found_msg(last_search);
 
 #ifdef TIMEIT
-	statusline(INFO, "Took: %.2f", (double)(clock() - start) / CLOCKS_PER_SEC);
+	statusline(NOTICE, "Took: %.2f", (double)(clock() - start) / CLOCKS_PER_SEC);
 #endif
 
 	edit_redraw(was_current, CENTERING);
@@ -590,7 +595,10 @@ ssize_t do_replace_loop(const char *needle, bool whole_word_only,
 			light_from_col = xplustabs();
 			light_to_col = wideness(openfile->current->data,
 										openfile->current_x + match_len);
-
+#ifndef NANO_TINY
+			if (united_sidescroll)
+				openfile->brink = get_page_start(light_to_col);
+#endif
 			/* Refresh the edit window, scrolling it if necessary. */
 			edit_refresh();
 

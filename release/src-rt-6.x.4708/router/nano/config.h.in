@@ -467,6 +467,9 @@
 /* Define to 1 when the gnulib module memchr should be tested. */
 #undef GNULIB_TEST_MEMCHR
 
+/* Define to 1 when the gnulib module memeq should be tested. */
+#undef GNULIB_TEST_MEMEQ
+
 /* Define to 1 when the gnulib module mempcpy should be tested. */
 #undef GNULIB_TEST_MEMPCPY
 
@@ -551,17 +554,20 @@
 /* Define to 1 when the gnulib module strdup should be tested. */
 #undef GNULIB_TEST_STRDUP
 
+/* Define to 1 when the gnulib module streq should be tested. */
+#undef GNULIB_TEST_STREQ
+
 /* Define to 1 when the gnulib module strerror should be tested. */
 #undef GNULIB_TEST_STRERROR
-
-/* Define to 1 when the gnulib module stringeq should be tested. */
-#undef GNULIB_TEST_STRINGEQ
 
 /* Define to 1 when the gnulib module strncpy should be tested. */
 #undef GNULIB_TEST_STRNCPY
 
 /* Define to 1 when the gnulib module strnlen should be tested. */
 #undef GNULIB_TEST_STRNLEN
+
+/* Define to 1 when the gnulib module strnul should be tested. */
+#undef GNULIB_TEST_STRNUL
 
 /* Define to 1 when the gnulib module utime should be tested. */
 #undef GNULIB_TEST_UTIME
@@ -1226,6 +1232,9 @@
 
 /* Define to 1 if you have the <stdckdint.h> header file. */
 #undef HAVE_STDCKDINT_H
+
+/* Define to 1 if you have the <stdcountof.h> header file. */
+#undef HAVE_STDCOUNTOF_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

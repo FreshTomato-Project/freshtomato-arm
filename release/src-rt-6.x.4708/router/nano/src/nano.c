@@ -2,7 +2,7 @@
  *   nano.c  --  This file is part of GNU nano.                           *
  *                                                                        *
  *   Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.    *
- *   Copyright (C) 2014-2025 Benno Schulenberg                            *
+ *   Copyright (C) 2014-2026 Benno Schulenberg                            *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -272,7 +272,7 @@ void close_and_go(void)
 #endif
 #ifdef ENABLE_HISTORIES
 	if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
-		update_poshistory();
+		update_positions_register();
 #endif
 #ifdef ENABLE_MULTIBUFFER
 	/* If there is another buffer, close this one; otherwise just terminate. */
@@ -652,6 +652,7 @@ void usage(void)
 	print_opt("-%", "--stateflags", N_("Show some states on the title bar"));
 	print_opt("-_", "--minibar", N_("Show a feedback bar at the bottom"));
 	print_opt("-0", "--zero", N_("Hide all bars, use whole terminal"));
+	print_opt("-1", "--solosidescroll", N_("Scroll only the current line sideways"));
 #endif
 	print_opt("-/", "--modernbindings", N_("Use better-known key bindings"));
 }
@@ -1336,11 +1337,11 @@ void unbound_key(int code)
 }
 
 #ifdef ENABLE_MOUSE
-/* Handle a mouse click on the edit window or the shortcut list. */
-int do_mouse(void)
+/* Handle a mouse click in the edit window or the help lines. */
+int process_click(void)
 {
 	int click_row, click_col;
-	int retval = get_mouseinput(&click_row, &click_col, TRUE);
+	int retval = get_mouseinput(&click_row, &click_col);  /* Handles shortcuts. */
 
 	/* If the click is wrong or already handled, we're done. */
 	if (retval != 0)
@@ -1552,6 +1553,10 @@ void inject(char *burst, size_t count)
 	openfile->placewewant = xplustabs();
 
 #ifndef NANO_TINY
+	/* When panning, and we have come near the edge of the viewport... */
+	if (united_sidescroll && openfile->placewewant > openfile->brink + editwincols - CUSHION - 1 )
+		refresh_needed = TRUE;
+
 	/* When softwrapping and the number of chunks in the current line changed,
 	 * or we were on the last row of the edit window and moved to a new chunk,
 	 * we need a full refresh. */
@@ -1602,7 +1607,7 @@ void process_a_keystroke(void)
 	if (input == KEY_MOUSE) {
 		/* If the user clicked on a shortcut, read in the key code that it was
 		 * converted into.  Else the click has been handled or was invalid. */
-		if (do_mouse() == 1)
+		if (process_click() == 1)
 			input = get_kbinput(midwin, BLIND);
 		else
 			return;
@@ -1669,18 +1674,6 @@ void process_a_keystroke(void)
 	} else if (meta_key)
 		give_a_hint = FALSE;
 
-	/* When not cutting or copying text, drop the cutbuffer the next time. */
-	if (function != cut_text && function != copy_text) {
-#ifndef NANO_TINY
-		if (function != zap_text)
-#endif
-			keep_cutbuffer = FALSE;
-	}
-
-#ifdef ENABLE_WORDCOMPLETION
-	if (function != complete_a_word)
-		pletion_line = NULL;
-#endif
 #ifdef ENABLE_NANORC
 	if (function == (functionptrtype)implant) {
 		implant(shortcut->expansion);
@@ -1694,7 +1687,21 @@ void process_a_keystroke(void)
 			keep_cutbuffer = FALSE;
 		return;
 	}
+#endif
 
+	/* When not cutting or copying text, drop the cutbuffer the next time. */
+	if (function != cut_text && function != copy_text) {
+#ifndef NANO_TINY
+		if (function != zap_text && function != record_macro && function != run_macro)
+#endif
+			keep_cutbuffer = FALSE;
+	}
+
+#ifdef ENABLE_WORDCOMPLETION
+	if (function != complete_a_word)
+		pletion_line = NULL;
+#endif
+#ifndef NANO_TINY
 	linestruct *was_current = openfile->current;
 	size_t was_x = openfile->current_x;
 
@@ -1836,6 +1843,7 @@ int main(int argc, char **argv)
 		{"stateflags", 0, NULL, '%'},
 		{"minibar", 0, NULL, '_'},
 		{"zero", 0, NULL, '0'},
+		{"solosidescroll", 0, NULL, '1'},
 #endif
 #ifdef HAVE_LIBMAGIC
 		{"magic", 0, NULL, '!'},
@@ -1882,7 +1890,7 @@ int main(int argc, char **argv)
 		SET(RESTRICTED);
 
 	while ((optchr = getopt_long(argc, argv, "ABC:DEFGHIJ:KLMNOPQ:RST:UVWX:Y:Z"
-				"abcdef:ghijklmno:pqr:s:tuvwxyz!@%_0/", long_options, NULL)) > 0) {
+				"abcdef:ghijklmno:pqr:s:tuvwxyz!@%_01/", long_options, NULL)) > 0) {
 		switch (optchr) {
 #ifndef NANO_TINY
 			case 'A':
@@ -2147,6 +2155,9 @@ int main(int argc, char **argv)
 			case '/':
 				SET(MODERN_BINDINGS);
 				break;
+			case '1':
+				SET(SOLO_SIDESCROLL);
+				break;
 			default:
 				printf(_("Type '%s -h' for a list of available options.\n"), argv[0]);
 				exit(1);
@@ -2318,7 +2329,7 @@ int main(int argc, char **argv)
 	if (ISSET(HISTORYLOG))
 		load_history();
 	if (ISSET(POSITIONLOG))
-		load_poshistory();
+		load_positions_register();
 #endif
 
 #ifndef NANO_TINY
@@ -2679,6 +2690,14 @@ int main(int argc, char **argv)
 			bottombars(MMAIN);
 
 #ifndef NANO_TINY
+		/* Do sideways scrolling only when the user didn't switch it off,
+		 * when not softwrapping, and the window is wide enough. */
+		if (united_sidescroll != (!ISSET(SOLO_SIDESCROLL) && !ISSET(SOFTWRAP) &&
+									editwincols > 2 * CUSHION + 2)) {
+			united_sidescroll = !united_sidescroll;
+			refresh_needed = TRUE;
+		}
+
 		if (ISSET(MINIBAR) && !ISSET(ZERO) && LINES > 1 && lastmessage < REMARK)
 			minibar();
 		else

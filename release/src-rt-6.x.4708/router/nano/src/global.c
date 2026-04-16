@@ -2,7 +2,7 @@
  *   global.c  --  This file is part of GNU nano.                         *
  *                                                                        *
  *   Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.    *
- *   Copyright (C) 2014-2025 Benno Schulenberg                            *
+ *   Copyright (C) 2014-2026 Benno Schulenberg                            *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -73,6 +73,8 @@ char *title = NULL;
 bool refresh_needed = FALSE;
 		/* Did a command mangle enough of the buffer that we should
 		 * repaint the screen? */
+bool united_sidescroll = TRUE;
+		/* Whether to scroll all lines sideways.  That is: whether to pan. */
 bool focusing = TRUE;
 		/* Whether an update of the edit window should center the cursor. */
 
@@ -383,6 +385,14 @@ int keycode_from_string(const char *keystring)
 		}
 		if (strcasecmp(keystring, "M-Space") == 0)
 			return (int)' ';
+		else if (strcasecmp(keystring, "M-Left") == 0)
+			return ALT_LEFT;
+		else if (strcasecmp(keystring, "M-Right") == 0)
+			return ALT_RIGHT;
+		else if (strcasecmp(keystring, "M-Up") == 0)
+			return ALT_UP;
+		else if (strcasecmp(keystring, "M-Down") == 0)
+			return ALT_DOWN;
 		else
 			return -1;
 #ifdef ENABLE_NANORC
@@ -627,6 +637,10 @@ void shortcut_init(void)
 	const char *nextpage_gist = N_("Go one screenful down");
 	const char *firstline_gist = N_("Go to the first line of the file");
 	const char *lastline_gist = N_("Go to the last line of the file");
+#ifndef NANO_TINY
+	const char *scrollleft_gist = N_("Scroll the viewport a tabsize to the left");
+	const char *scrollright_gist = N_("Scroll the viewport a tabsize to the right");
+#endif
 #if !defined(NANO_TINY) || defined(ENABLE_HELP)
 	const char *scrollup_gist =
 		N_("Scroll up one line without moving the cursor textually");
@@ -935,12 +949,18 @@ void shortcut_init(void)
 	add_to_funcs(to_next_word, MMAIN,
 			N_("Next Word"), WHENHELP(nextword_gist), TOGETHER);
 #endif
-
 	add_to_funcs(do_home, MMAIN,
 			/* TRANSLATORS: These two mean: "to beginning of line", "to end of line". */
 			N_("Home"), WHENHELP(home_gist), TOGETHER);
 	add_to_funcs(do_end, MMAIN,
-			N_("End"), WHENHELP(end_gist), BLANKAFTER);
+			N_("End"), WHENHELP(end_gist), TOGETHER);
+#ifndef NANO_TINY
+	add_to_funcs(do_scroll_left, MMAIN,
+			/* TRANSLATORS: Try to keep the next two strings at most 12 characters. */
+			N_("Scroll Left"), WHENHELP(scrollleft_gist), TOGETHER);
+	add_to_funcs(do_scroll_right, MMAIN,
+			N_("Scroll Right"), WHENHELP(scrollright_gist), BLANKAFTER);
+#endif
 
 	add_to_funcs(do_up, MMAIN|MBROWSER|MHELP,
 			/* TRANSLATORS: Try to keep the next two strings at most 10 characters. */
@@ -1429,9 +1449,7 @@ void shortcut_init(void)
 #endif
 #ifdef ENABLE_MULTIBUFFER
 	add_to_sclist(MMAIN, "M-,", 0, switch_to_prev_buffer, 0);
-	add_to_sclist(MMAIN, "M-<", 0, switch_to_prev_buffer, 0);
 	add_to_sclist(MMAIN, "M-.", 0, switch_to_next_buffer, 0);
-	add_to_sclist(MMAIN, "M->", 0, switch_to_next_buffer, 0);
 #endif
 	add_to_sclist(MMOST, "M-V", 0, do_verbatim_input, 0);
 #ifndef NANO_TINY
@@ -1448,6 +1466,8 @@ void shortcut_init(void)
 	add_to_sclist(MEXECUTE, "^J", 0, do_full_justify, 0);
 #endif
 #ifndef NANO_TINY
+	add_to_sclist(MMAIN, "M-<", 0, do_scroll_left, 0);
+	add_to_sclist(MMAIN, "M->", 0, do_scroll_right, 0);
 	add_to_sclist(MMAIN, "^L", 0, do_center, 0);
 	add_to_sclist(MMAIN, "M-%", 0, do_cycle, 0);
 	add_to_sclist((MMOST|MBROWSER|MHELP|MYESNO)&~MMAIN, "^L", 0, full_refresh, 0);

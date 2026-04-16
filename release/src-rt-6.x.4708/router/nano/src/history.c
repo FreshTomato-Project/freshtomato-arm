@@ -36,12 +36,12 @@
 
 static bool history_changed = FALSE;
 		/* Whether any of the history lists has changed. */
-static char *poshistname = NULL;
-		/* The name of the positions-history file. */
+static char *registername = NULL;
+		/* The name of the positions-register file. */
 static time_t latest_timestamp = 942927132;
-		/* The last time the positions-history file was written. */
-static poshiststruct *position_history = NULL;
-		/* The list of filenames with their last cursor positions. */
+		/* The last time the positions-register file was written. */
+static positionstruct *positions_register = NULL;
+		/* A list of recently opened files with their last cursor position. */
 
 /* Initialize the lists of historical search and replace strings
  * and the list of historical executed commands. */
@@ -208,7 +208,7 @@ bool have_statedir(void)
 		statedir = concatenate(homedir, "/.nano/");
 
 		if (stat(statedir, &dirinfo) == 0 && S_ISDIR(dirinfo.st_mode)) {
-			poshistname = concatenate(statedir, POSITION_HISTORY);
+			registername = concatenate(statedir, POSITION_HISTORY);
 			return TRUE;
 		}
 	}
@@ -227,7 +227,7 @@ bool have_statedir(void)
 	if (stat(statedir, &dirinfo) == -1) {
 		if (xdgdatadir == NULL) {
 			char *statepath = concatenate(homedir, "/.local");
-			mkdir(statepath, S_IRWXU | S_IRWXG | S_IRWXO);
+			mkdir(statepath, S_IRWXU);
 			free(statepath);
 			statepath = concatenate(homedir, "/.local/share");
 			mkdir(statepath, S_IRWXU);
@@ -248,49 +248,49 @@ bool have_statedir(void)
 		return FALSE;
 	}
 
-	poshistname = concatenate(statedir, POSITION_HISTORY);
+	registername = concatenate(statedir, POSITION_HISTORY);
 	return TRUE;
 }
 
 /* Load the histories for Search, Replace With, and Execute Command. */
 void load_history(void)
 {
-	char *histname = concatenate(statedir, SEARCH_HISTORY);
-	FILE *histfile = fopen(histname, "rb");
+	char *historyname = concatenate(statedir, SEARCH_HISTORY);
+	FILE *histories = fopen(historyname, "rb");
 
 	/* If reading an existing file failed, don't save history when we quit. */
-	if (histfile == NULL && errno != ENOENT) {
-		jot_error(N_("Error reading %s: %s"), histname, strerror(errno));
+	if (histories == NULL && errno != ENOENT) {
+		jot_error(N_("Error reading %s: %s"), historyname, strerror(errno));
 		UNSET(HISTORYLOG);
 	}
 
-	if (histfile == NULL) {
-		free(histname);
+	if (histories == NULL) {
+		free(historyname);
 		return;
 	}
 
-	linestruct **history = &search_history;
+	linestruct **list = &search_history;
 	char *stanza = NULL;
 	size_t dummy = 0;
 	ssize_t read;
 
 	/* Load the three history lists (first search, then replace, then execute)
 	 * from oldest entry to newest.  Between two lists there is an empty line. */
-	while ((read = getline(&stanza, &dummy, histfile)) > 0) {
+	while ((read = getline(&stanza, &dummy, histories)) > 0) {
 		stanza[--read] = '\0';
 		if (read > 0) {
 			recode_NUL_to_LF(stanza, read);
-			update_history(history, stanza, IGNORE_DUPLICATES);
-		} else if (history == &search_history)
-			history = &replace_history;
+			update_history(list, stanza, IGNORE_DUPLICATES);
+		} else if (list == &search_history)
+			list = &replace_history;
 		else
-			history = &execute_history;
+			list = &execute_history;
 	}
 
-	if (fclose(histfile) == EOF)
-		jot_error(N_("Error reading %s: %s"), histname, strerror(errno));
+	if (fclose(histories) == EOF)
+		jot_error(N_("Error reading %s: %s"), historyname, strerror(errno));
 
-	free(histname);
+	free(historyname);
 	free(stanza);
 
 	/* Reading in the lists has marked them as changed; undo this side effect. */
@@ -299,7 +299,7 @@ void load_history(void)
 
 /* Write the lines of a history list, starting at head, from oldest to newest,
  * to the given file.  Return TRUE if writing succeeded, and FALSE otherwise. */
-bool write_list(const linestruct *head, FILE *histfile)
+bool write_list(const linestruct *head, FILE *histories)
 {
 	const linestruct *item;
 
@@ -307,9 +307,9 @@ bool write_list(const linestruct *head, FILE *histfile)
 		/* Decode 0x0A bytes as embedded NULs. */
 		size_t length = recode_LF_to_NUL(item->data);
 
-		if (fwrite(item->data, 1, length, histfile) < length)
+		if (fwrite(item->data, 1, length, histories) < length)
 			return FALSE;
-		if (putc('\n', histfile) == EOF)
+		if (putc('\n', histories) == EOF)
 			return FALSE;
 	}
 
@@ -319,34 +319,31 @@ bool write_list(const linestruct *head, FILE *histfile)
 /* Save the histories for Search, Replace With, and Execute Command. */
 void save_history(void)
 {
-	char *histname;
-	FILE *histfile;
-
 	/* If the histories are unchanged, don't bother saving them. */
 	if (!history_changed)
 		return;
 
-	histname = concatenate(statedir, SEARCH_HISTORY);
-	histfile = fopen(histname, "wb");
+	char *historyname = concatenate(statedir, SEARCH_HISTORY);
+	FILE *histories = fopen(historyname, "wb");
 
-	if (histfile == NULL) {
-		jot_error(N_("Error writing %s: %s"), histname, strerror(errno));
-		free(histname);
+	if (histories == NULL) {
+		jot_error(N_("Error writing %s: %s"), historyname, strerror(errno));
+		free(historyname);
 		return;
 	}
 
 	/* Don't allow others to read or write the history file. */
-	if (chmod(histname, S_IRUSR | S_IWUSR) < 0)
-		jot_error(N_("Cannot limit permissions on %s: %s"), histname, strerror(errno));
+	if (chmod(historyname, S_IRUSR | S_IWUSR) < 0)
+		jot_error(N_("Cannot limit permissions on %s: %s"), historyname, strerror(errno));
 
-	if (!write_list(searchtop, histfile) || !write_list(replacetop, histfile) ||
-											!write_list(executetop, histfile))
-		jot_error(N_("Error writing %s: %s"), histname, strerror(errno));
+	if (!write_list(searchtop, histories) || !write_list(replacetop, histories) ||
+											!write_list(executetop, histories))
+		jot_error(N_("Error writing %s: %s"), historyname, strerror(errno));
 
-	if (fclose(histfile) == EOF)
-		jot_error(N_("Error writing %s: %s"), histname, strerror(errno));
+	if (fclose(histories) == EOF)
+		jot_error(N_("Error writing %s: %s"), historyname, strerror(errno));
 
-	free(histname);
+	free(historyname);
 }
 
 /* Return as a string... the line numbers of the lines with an anchor. */
@@ -390,22 +387,22 @@ void restore_anchors(char *string)
 #endif
 }
 
-/* Load the recorded cursor positions for files that were edited. */
-void load_poshistory(void)
+/* Load the recorded cursor positions for files that were opened. */
+void load_positions_register(void)
 {
-	FILE *histfile = fopen(poshistname, "rb");
+	FILE *registry = fopen(registername, "rb");
 
-	/* If reading an existing file failed, don't save history when we quit. */
-	if (histfile == NULL && errno != ENOENT) {
-		jot_error(N_("Error reading %s: %s"), poshistname, strerror(errno));
+	/* If reading an existing file failed, don't save the register when we quit. */
+	if (registry == NULL && errno != ENOENT) {
+		jot_error(N_("Error reading %s: %s"), registername, strerror(errno));
 		UNSET(POSITIONLOG);
 	}
 
-	if (histfile == NULL)
+	if (registry == NULL)
 		return;
 
-	poshiststruct *lastitem = NULL;
-	poshiststruct *newitem;
+	positionstruct *lastitem = NULL;
+	positionstruct *newitem;
 	char *stanza, *lineptr, *columnptr;
 	char *phrase = NULL;
 	struct stat fileinfo;
@@ -414,7 +411,7 @@ void load_poshistory(void)
 	ssize_t length;
 
 	/* Read and parse each line, and store the extracted data. */
-	while (count++ < 200 && (length = getline(&phrase, &dummy, histfile)) > 1) {
+	while (count++ < 200 && (length = getline(&phrase, &dummy, registry)) > 1) {
 		stanza = strchr(phrase, '/');
 		length -= (stanza ? stanza - phrase : 0);
 
@@ -434,7 +431,7 @@ void load_poshistory(void)
 		*(lineptr++) = '\0';
 
 		/* Create a new position record. */
-		newitem = nmalloc(sizeof(poshiststruct));
+		newitem = nmalloc(sizeof(positionstruct));
 		newitem->filename = copy_of(stanza);
 		newitem->linenumber = atoi(lineptr);
 		newitem->columnnumber = atoi(columnptr);
@@ -442,47 +439,47 @@ void load_poshistory(void)
 		newitem->next = NULL;
 
 		/* Add the record to the list. */
-		if (position_history == NULL)
-			position_history = newitem;
+		if (positions_register == NULL)
+			positions_register = newitem;
 		else
 			lastitem->next = newitem;
 
 		lastitem = newitem;
 	}
 
-	if (fclose(histfile) == EOF)
-		jot_error(N_("Error reading %s: %s"), poshistname, strerror(errno));
+	if (fclose(registry) == EOF)
+		jot_error(N_("Error reading %s: %s"), registername, strerror(errno));
 
 	free(phrase);
 
-	if (stat(poshistname, &fileinfo) == 0)
+	if (stat(registername, &fileinfo) == 0)
 		latest_timestamp = fileinfo.st_mtime;
 }
 
-/* Save the recorded cursor positions for files that were edited. */
-void save_poshistory(void)
+/* Save the recorded cursor positions for files that were opened. */
+void save_positions_register(void)
 {
-	FILE *histfile = fopen(poshistname, "wb");
+	FILE *registry = fopen(registername, "wb");
 	struct stat fileinfo;
-	poshiststruct *item;
+	positionstruct *item;
 	int count = 0;
 
-	if (histfile == NULL) {
-		jot_error(N_("Error writing %s: %s"), poshistname, strerror(errno));
+	if (registry == NULL) {
+		jot_error(N_("Error writing %s: %s"), registername, strerror(errno));
 		return;
 	}
 
-	/* Don't allow others to read or write the history file. */
-	if (chmod(poshistname, S_IRUSR | S_IWUSR) < 0)
-		jot_error(N_("Cannot limit permissions on %s: %s"), poshistname, strerror(errno));
+	/* Don't allow others to read or write the positions-register file. */
+	if (chmod(registername, S_IRUSR | S_IWUSR) < 0)
+		jot_error(N_("Cannot limit permissions on %s: %s"), registername, strerror(errno));
 
-	for (item = position_history; item != NULL && count++ < 200; item = item->next) {
+	for (item = positions_register; item != NULL && count++ < 200; item = item->next) {
 		char *path_and_place;
 		size_t length = (item->anchors == NULL) ? 0 : strlen(item->anchors);
 
 		/* First write the string of line numbers with anchors, if any. */
-		if (length && fwrite(item->anchors, 1, length, histfile) < length)
-			jot_error(N_("Error writing %s: %s"), poshistname, strerror(errno));
+		if (length && fwrite(item->anchors, 1, length, registry) < length)
+			jot_error(N_("Error writing %s: %s"), registername, strerror(errno));
 
 		/* Assume 20 decimal positions each for line and column number,
 		 * plus two spaces, plus the line feed, plus the null byte. */
@@ -495,47 +492,47 @@ void save_poshistory(void)
 		/* Restore the terminating newline. */
 		path_and_place[length - 1] = '\n';
 
-		if (fwrite(path_and_place, 1, length, histfile) < length)
-			jot_error(N_("Error writing %s: %s"), poshistname, strerror(errno));
+		if (fwrite(path_and_place, 1, length, registry) < length)
+			jot_error(N_("Error writing %s: %s"), registername, strerror(errno));
 
 		free(path_and_place);
 	}
 
-	if (fclose(histfile) == EOF)
-		jot_error(N_("Error writing %s: %s"), poshistname, strerror(errno));
+	if (fclose(registry) == EOF)
+		jot_error(N_("Error writing %s: %s"), registername, strerror(errno));
 
-	if (stat(poshistname, &fileinfo) == 0)
+	if (stat(registername, &fileinfo) == 0)
 		latest_timestamp = fileinfo.st_mtime;
 }
 
-/* Reload the position history file if it has been modified since last load. */
+/* Reload the positions-register file if it has been modified since last load. */
 void reload_positions_if_needed(void)
 {
-	poshiststruct *item, *nextone;
+	positionstruct *item, *nextone;
 	struct stat fileinfo;
 
-	if (stat(poshistname, &fileinfo) != 0 || fileinfo.st_mtime == latest_timestamp)
+	if (stat(registername, &fileinfo) != 0 || fileinfo.st_mtime == latest_timestamp)
 		return;
 
-	for (item = position_history; item != NULL; item = nextone) {
+	for (item = positions_register; item != NULL; item = nextone) {
 		nextone = item->next;
 		free(item->filename);
 		free(item->anchors);
 		free(item);
 	}
 
-	position_history = NULL;
+	positions_register = NULL;
 
-	load_poshistory();
+	load_positions_register();
 }
 
 /* Update the recorded last file positions with the current position in the
- * current buffer.  If no existing entry is found, add a new one at the end. */
-void update_poshistory(void)
+ * current buffer.  If no existing entry is found, add a new one at the top. */
+void update_positions_register(void)
 {
 	char *fullpath = get_full_path(openfile->filename);
-	poshiststruct *previous = NULL;
-	poshiststruct *item;
+	positionstruct *previous = NULL;
+	positionstruct *item;
 
 	if (fullpath == NULL)
 		return;
@@ -543,7 +540,7 @@ void update_poshistory(void)
 	reload_positions_if_needed();
 
 	/* Look for a matching filename in the list. */
-	for (item = position_history; item != NULL; item = item->next) {
+	for (item = positions_register; item != NULL; item = item->next) {
 		if (!strcmp(item->filename, fullpath))
 			break;
 		previous = item;
@@ -551,16 +548,16 @@ void update_poshistory(void)
 
 	/* If no match was found, make a new node; otherwise, unlink the match. */
 	if (item == NULL) {
-		item = nmalloc(sizeof(poshiststruct));
+		item = nmalloc(sizeof(positionstruct));
 		item->filename = copy_of(fullpath);
 		item->anchors = NULL;
 	} else if (previous)
 		previous->next = item->next;
 
 	/* Place the found or new node at the beginning, if not already there. */
-	if (item != position_history) {
-		item->next = position_history;
-		position_history = item;
+	if (item != positions_register) {
+		item->next = positions_register;
+		positions_register = item;
 	}
 
 	/* Record the last cursor position and any anchors. */
@@ -571,7 +568,7 @@ void update_poshistory(void)
 
 	free(fullpath);
 
-	save_poshistory();
+	save_positions_register();
 }
 
 /* Check whether the current filename matches an entry in the list of
@@ -579,14 +576,14 @@ void update_poshistory(void)
 void restore_cursor_position_if_any(void)
 {
 	char *fullpath = get_full_path(openfile->filename);
-	poshiststruct *item;
+	positionstruct *item;
 
 	if (fullpath == NULL)
 		return;
 
 	reload_positions_if_needed();
 
-	item = position_history;
+	item = positions_register;
 	while (item != NULL && strcmp(item->filename, fullpath) != 0)
 		item = item->next;
 

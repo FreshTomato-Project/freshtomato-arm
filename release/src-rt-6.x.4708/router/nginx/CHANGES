@@ -1,4 +1,21 @@
 
+Changes with nginx 1.29.8                                        07 Apr 2026
+
+    *) Feature: the "max_headers" directive.
+       Thanks to Maxim Dounin.
+
+    *) Feature: OpenSSL 4.0 compatibility.
+
+    *) Feature: now the "include" directive inside the "geo" block supports
+       wildcards.
+
+    *) Bugfix: in processing of HTTP 103 (Early Hints) responses from a
+       proxied backend.
+
+    *) Bugfix: the $request_port and $is_request_port variables were not
+       available in subrequests.
+
+
 Changes with nginx 1.29.7                                        24 Mar 2026
 
     *) Security: a buffer overflow might occur while handling a COPY or MOVE

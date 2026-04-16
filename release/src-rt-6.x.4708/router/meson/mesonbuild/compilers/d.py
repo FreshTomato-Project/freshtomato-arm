@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os.path
 import re
-import subprocess
 import typing as T
 
 from .. import mesonlib
@@ -372,10 +371,10 @@ class DmdLikeCompilerMixin(CompilerMixinBase):
 
         return clike_debug_args[is_debug] + ddebug_args
 
-    def _get_crt_args(self, crt_val: str, buildtype: str) -> T.List[str]:
+    def _get_crt_args(self, crt_val: str, env: Environment) -> T.List[str]:
         if not self.info.is_windows():
             return []
-        return self.mscrt_args[self.get_crt_val(crt_val, buildtype)]
+        return self.mscrt_args[self.get_crt_val(crt_val, env)]
 
     def get_soname_args(self, prefix: str, shlib_name: str, suffix: str, soversion: str,
                         darwin_versions: T.Tuple[str, str]) -> T.List[str]:
@@ -436,24 +435,14 @@ class DCompiler(Compiler):
                          full_version=full_version)
         self.arch = arch
 
-    def sanity_check(self, work_dir: str) -> None:
-        source_name = os.path.join(work_dir, 'sanity.d')
-        output_name = os.path.join(work_dir, 'dtest')
-        with open(source_name, 'w', encoding='utf-8') as ofile:
-            ofile.write('''void main() { }''')
+    def _sanity_check_source_code(self) -> str:
+        return 'void main() { }'
 
-        compile_cmdlist = self.exelist + self.get_output_args(output_name) + self._get_target_arch_args() + [source_name]
-
-        # If cross-compiling, we can't run the sanity check, only compile it.
-        if self.is_cross and not self.environment.has_exe_wrapper():
-            compile_cmdlist += self.get_compile_only_args()
-
-        pc = subprocess.Popen(compile_cmdlist, cwd=work_dir)
-        pc.wait()
-        if pc.returncode != 0:
-            raise EnvironmentException('D compiler %s cannot compile programs.' % self.name_string())
-
-        stdo, stde = self.run_sanity_check([output_name], work_dir)
+    def _sanity_check_compile_args(self, sourcename: str, binname: str
+                                   ) -> T.Tuple[T.List[str], T.List[str]]:
+        args, largs = super()._sanity_check_compile_args(sourcename, binname)
+        largs.extend(self._get_target_arch_args())
+        return args, largs
 
     def needs_static_linker(self) -> bool:
         return True
@@ -511,20 +500,8 @@ class DCompiler(Compiler):
         import_dir_arg = d_feature_args[self.id]['import_dir']
         if not import_dir_arg:
             raise EnvironmentException('D compiler %s does not support the "string import directories" feature.' % self.name_string())
-        # TODO: ImportDirs.to_string_list(), but we need both the project source
-        # root and project build root for that.
         for idir_obj in kwargs['import_dirs']:
-            basedir = idir_obj.get_curdir()
-            for idir in idir_obj.get_incdirs():
-                bldtreedir = os.path.join(basedir, idir)
-                # Avoid superfluous '/.' at the end of paths when d is '.'
-                if idir not in ('', '.'):
-                    expdir = bldtreedir
-                else:
-                    expdir = basedir
-                srctreedir = os.path.join(build_to_src, expdir)
-                res.append(f'{import_dir_arg}{srctreedir}')
-                res.append(f'{import_dir_arg}{bldtreedir}')
+            res.extend(f'{import_dir_arg}{i}' for i in idir_obj.rel_string_list(build_to_src))
 
         return res
 
@@ -550,10 +527,10 @@ class DCompiler(Compiler):
             return ['-m32']
         return []
 
-    def get_crt_compile_args(self, crt_val: str, buildtype: str) -> T.List[str]:
+    def get_crt_compile_args(self, crt_val: str, env: Environment) -> T.List[str]:
         return []
 
-    def get_crt_link_args(self, crt_val: str, buildtype: str) -> T.List[str]:
+    def get_crt_link_args(self, crt_val: str, env: Environment) -> T.List[str]:
         return []
 
     def _get_compile_extra_args(self, extra_args: T.Union[T.List[str], T.Callable[[CompileCheckMode], T.List[str]], None] = None) -> T.List[str]:
@@ -741,8 +718,8 @@ class LLVMDCompiler(DmdLikeCompilerMixin, DCompiler):
     def get_pic_args(self) -> T.List[str]:
         return ['-relocation-model=pic']
 
-    def get_crt_link_args(self, crt_val: str, buildtype: str) -> T.List[str]:
-        return self._get_crt_args(crt_val, buildtype)
+    def get_crt_link_args(self, crt_val: str, env: Environment) -> T.List[str]:
+        return self._get_crt_args(crt_val, env)
 
     def unix_args_to_native(self, args: T.List[str]) -> T.List[str]:
         return self._unix_args_to_native(args, self.info, self.linker.id)
@@ -826,8 +803,8 @@ class DmdDCompiler(DmdLikeCompilerMixin, DCompiler):
             return ['-m32']
         return []
 
-    def get_crt_compile_args(self, crt_val: str, buildtype: str) -> T.List[str]:
-        return self._get_crt_args(crt_val, buildtype)
+    def get_crt_compile_args(self, crt_val: str, env: Environment) -> T.List[str]:
+        return self._get_crt_args(crt_val, env)
 
     def unix_args_to_native(self, args: T.List[str]) -> T.List[str]:
         return self._unix_args_to_native(args, self.info, self.linker.id)

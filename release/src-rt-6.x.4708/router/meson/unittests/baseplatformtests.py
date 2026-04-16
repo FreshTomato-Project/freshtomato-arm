@@ -25,7 +25,7 @@ import mesonbuild.environment
 import mesonbuild.coredata
 import mesonbuild.modules.gnome
 from mesonbuild.mesonlib import (
-    is_cygwin, join_args, split_args, windows_proof_rmtree, python_command
+    is_windows, is_cygwin, join_args, split_args, windows_proof_rmtree, python_command
 )
 import mesonbuild.modules.pkgconfig
 
@@ -36,6 +36,21 @@ from run_tests import (
     run_mtest_inprocess, handle_meson_skip_test,
 )
 
+if T.TYPE_CHECKING:
+    from typing_extensions import TypeAlias, TypedDict
+
+    class CompDbEntry(TypedDict):
+
+        # `output` is not strictly required, but Ninja always generates it
+        # `arguments` is allowed, but Ninja never generates it
+
+        directory: str
+        command: str
+        file: str
+        output: str
+
+    CompDB: TypeAlias = T.List[CompDbEntry]
+
 
 # magic attribute used by unittest.result.TestResult._is_relevant_tb_level
 # This causes tracebacks to hide these internal implementation details,
@@ -45,6 +60,7 @@ __unittest = True
 class BasePlatformTests(TestCase):
     prefix = '/usr'
     libdir = 'lib'
+    _mktmpdir: T.Callable[[], str]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -94,6 +110,21 @@ class BasePlatformTests(TestCase):
         os.environ['COLUMNS'] = '80'
         os.environ['PYTHONIOENCODING'] = 'utf8'
 
+        # If set to 1, force unittests to put their working stuff in /tmp
+        # Many Windows virus scanners have issues with the files being in the
+        # tmp directory.
+        #
+        # Store as an attribute because this path is very hot.
+        # the use of `staticmethod()` here is required because of Python's
+        # Object model, which otherwise sees these as methods
+        if (is_windows() or is_cygwin()) and not os.environ.get('MESON_FORCE_UNITTEST_IN_TMP', '0') == '1':
+            def tmpdir() -> str:
+                return tempfile.mkdtemp(dir=os.getcwd())
+
+            cls._mktmpdir = staticmethod(tmpdir)
+        else:
+            cls._mktmpdir = staticmethod(tempfile.mkdtemp)
+
     @classmethod
     def tearDownClass(cls) -> None:
         super().tearDownClass()
@@ -105,7 +136,7 @@ class BasePlatformTests(TestCase):
         self.meson_cross_files = []
         self.new_builddir()
 
-    def change_builddir(self, newdir):
+    def change_builddir(self, newdir: str) -> None:
         self.builddir = newdir
         self.privatedir = os.path.join(self.builddir, 'meson-private')
         self.logdir = os.path.join(self.builddir, 'meson-logs')
@@ -117,10 +148,8 @@ class BasePlatformTests(TestCase):
         else:
             self.addCleanup(windows_proof_rmtree, self.builddir)
 
-    def new_builddir(self):
-        # Keep builddirs inside the source tree so that virus scanners
-        # don't complain
-        newdir = tempfile.mkdtemp(dir=os.getcwd())
+    def new_builddir(self) -> None:
+        newdir = self._mktmpdir()
         # In case the directory is inside a symlinked directory, find the real
         # path otherwise we might not find the srcdir from inside the builddir.
         newdir = os.path.realpath(newdir)
@@ -291,8 +320,9 @@ class BasePlatformTests(TestCase):
         if will_build:
             self.build()
 
-    def getconf(self, optname: str):
-        opts = self.introspect('--buildoptions')
+    def getconf(self, optname: str, opts=None):
+        if opts is None:
+            opts = self.introspect('--buildoptions')
         for x in opts:
             if x.get('name') == optname:
                 return x.get('value')
@@ -304,17 +334,17 @@ class BasePlatformTests(TestCase):
     def utime(self, f):
         os.utime(f)
 
-    def get_compdb(self):
+    def get_compdb(self) -> CompDB:
         if self.backend is not Backend.ninja:
             raise SkipTest(f'Compiler db not available with {self.backend.name} backend')
         try:
             with open(os.path.join(self.builddir, 'compile_commands.json'), encoding='utf-8') as ifile:
-                contents = json.load(ifile)
+                contents = T.cast('CompDB', json.load(ifile))
         except FileNotFoundError:
             raise SkipTest('Compiler db not found')
         # If Ninja is using .rsp files, generate them, read their contents, and
         # replace it as the command for all compile commands in the parsed json.
-        if len(contents) > 0 and contents[0]['command'].endswith('.rsp'):
+        if contents and contents[0]['command'].endswith('.rsp'):
             # Pretend to build so that the rsp files are generated
             self.build(extra_args=['-d', 'keeprsp', '-n'])
             for each in contents:

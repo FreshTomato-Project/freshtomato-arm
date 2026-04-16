@@ -51,7 +51,7 @@ else:
 
 ALL_STDS = ['c89', 'c9x', 'c90', 'c99', 'c1x', 'c11', 'c17', 'c18', 'c2x', 'c23', 'c2y']
 ALL_STDS += [f'gnu{std[1:]}' for std in ALL_STDS]
-ALL_STDS += ['iso9899:1990', 'iso9899:199409', 'iso9899:1999', 'iso9899:2011', 'iso9899:2017', 'iso9899:2018']
+ALL_STDS += ['iso9899:1990', 'iso9899:199409', 'iso9899:1999', 'iso9899:2011', 'iso9899:2017', 'iso9899:2018', 'iso9899:2024']
 
 
 class CCompiler(CLikeCompiler, Compiler):
@@ -74,9 +74,8 @@ class CCompiler(CLikeCompiler, Compiler):
     def get_no_stdinc_args(self) -> T.List[str]:
         return ['-nostdinc']
 
-    def sanity_check(self, work_dir: str) -> None:
-        code = 'int main(void) { int class=0; return class; }\n'
-        return self._sanity_check_impl(work_dir, 'sanitycheckc.c', code)
+    def _sanity_check_source_code(self) -> str:
+        return 'int main(void) { int class=0; return class; }\n'
 
     def has_header_symbol(self, hname: str, symbol: str, prefix: str, *,
                           extra_args: T.Union[None, T.List[str], T.Callable[['CompileCheckMode'], T.List[str]]] = None,
@@ -309,6 +308,14 @@ class NvidiaHPC_CCompiler(PGICompiler, CCompiler):
         std_opt.set_versions(cppstd_choices, gnu=True)
         return opts
 
+    def get_option_std_args(self, target: BuildTarget, subproject: T.Optional[str] = None) -> T.List[str]:
+        args: T.List[str] = []
+        std = self.get_compileropt_value('std', target, subproject)
+        assert isinstance(std, str)
+        if std != 'none':
+            args.append('-std=' + std)
+        return args
+
 
 class ElbrusCCompiler(ElbrusCompiler, CCompiler):
     def __init__(self, ccache: T.List[str], exelist: T.List[str], version: str, for_machine: MachineChoice,
@@ -331,6 +338,8 @@ class ElbrusCCompiler(ElbrusCompiler, CCompiler):
             stds += ['c90', 'c1x', 'gnu90', 'gnu1x', 'iso9899:2011']
         if version_compare(self.version, '>=1.26.00'):
             stds += ['c17', 'c18', 'iso9899:2017', 'iso9899:2018', 'gnu17', 'gnu18']
+        if version_compare(self.version, '>=1.28.00'):
+            stds += ['c2x', 'gnu2x', 'c23', 'iso9899:2024', 'gnu23']
         key = self.form_compileropt_key('std')
         std_opt = opts[key]
         assert isinstance(std_opt, options.UserStdOption), 'for mypy'

@@ -14,14 +14,13 @@ import typing as T
 
 from ... import arglist
 from ... import mesonlib
-from ... import mlog
 from mesonbuild.compilers.compilers import CompileCheckMode
 from ...options import OptionKey
-from mesonbuild.linkers.linkers import ClangClDynamicLinker
+from mesonbuild.linkers.linkers import ClangClDynamicLinker, MSVCDynamicLinker
 
 if T.TYPE_CHECKING:
     from ...build import BuildTarget
-    from ...dependencies import Dependency
+    from ...environment import Environment
     from .clike import CLikeCompiler as Compiler
 else:
     # This is a bit clever, for mypy we pretend that these mixins descend from
@@ -105,7 +104,7 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
         'everything': ['/Wall'],
     }
 
-    INVOKES_LINKER = False
+    USED_FOR_SEPARATE_LINKING_STEP = False
 
     def __init__(self, target: str):
         self.base_options = {OptionKey(o) for o in ['b_pch', 'b_ndebug', 'b_vscrt']} # FIXME add lto, pgo and the like
@@ -207,14 +206,23 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
         return []
 
     @classmethod
+    def include_arg_to_native(cls, opt: str, path: str) -> str:
+        # msvc does not have a concept of system header dirs.
+        return f'/I{path}'
+
+    @classmethod
     def unix_args_to_native(cls, args: T.List[str]) -> T.List[str]:
         result: T.List[str] = []
+        prev = None
         for i in args:
+            if prev:
+                i = cls.include_arg_to_native(prev, i)
+                prev = None
             # -mms-bitfields is specific to MinGW-GCC
             # -pthread is only valid for GCC
-            if i in {'-mms-bitfields', '-pthread'}:
+            elif i in {'-mms-bitfields', '-pthread'}:
                 continue
-            if i.startswith('-LIBPATH:'):
+            elif i.startswith('-LIBPATH:'):
                 i = '/LIBPATH:' + i[9:]
             elif i.startswith('-L'):
                 i = '/LIBPATH:' + i[2:]
@@ -227,21 +235,18 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
                     continue
                 else:
                     i = name + '.lib'
-            elif i.startswith('-isystem'):
-                # just use /I for -isystem system include path s
-                if i.startswith('-isystem='):
-                    i = '/I' + i[9:]
-                else:
-                    i = '/I' + i[8:]
-            elif i.startswith('-idirafter'):
-                # same as -isystem, but appends the path instead
-                if i.startswith('-idirafter='):
-                    i = '/I' + i[11:]
-                else:
-                    i = '/I' + i[10:]
-            # -pthread in link flags is only used on Linux
-            elif i == '-pthread':
+            elif i.startswith(('-iquote=', '-isystem=', '-idirafter=')):
+                opt, i = i.split('=',  1)
+                i = cls.include_arg_to_native(opt, i)
+            elif i in {'-iquote', '-isystem', '-idirafter'}:
+                prev = i
                 continue
+            elif i.startswith('-iquote'):
+                i = cls.include_arg_to_native('-iquote', i[7:])
+            elif i.startswith('-isystem'):
+                i = cls.include_arg_to_native('-isystem', i[8:])
+            elif i.startswith('-idirafter'):
+                i = cls.include_arg_to_native('-idirafter', i[10:])
             # cl.exe does not allow specifying both, so remove /utf-8 that we
             # added automatically in the case the user overrides it manually.
             elif (i.startswith('/source-charset:')
@@ -272,7 +277,9 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
     def get_include_args(self, path: str, is_system: bool) -> T.List[str]:
         if path == '':
             path = '.'
-        # msvc does not have a concept of system header dirs.
+        if is_system:
+            # fixed up by unix_args_to_native() for Microsoft cl.exe
+            return ['-isystem', path]
         return ['-I' + path]
 
     def compute_parameters_with_absolute_paths(self, parameter_list: T.List[str], build_dir: str) -> T.List[str]:
@@ -305,49 +312,13 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
             return vs64_instruction_set_args.get(instruction_set, None)
         return vs32_instruction_set_args.get(instruction_set, None)
 
-    def _calculate_toolset_version(self, version: int) -> T.Optional[str]:
-        if version < 1310:
-            return '7.0'
-        elif version < 1400:
-            return '7.1' # (Visual Studio 2003)
-        elif version < 1500:
-            return '8.0' # (Visual Studio 2005)
-        elif version < 1600:
-            return '9.0' # (Visual Studio 2008)
-        elif version < 1700:
-            return '10.0' # (Visual Studio 2010)
-        elif version < 1800:
-            return '11.0' # (Visual Studio 2012)
-        elif version < 1900:
-            return '12.0' # (Visual Studio 2013)
-        elif version < 1910:
-            return '14.0' # (Visual Studio 2015)
-        elif version < 1920:
-            return '14.1' # (Visual Studio 2017)
-        elif version < 1930:
-            return '14.2' # (Visual Studio 2019)
-        elif version < 1940:
-            return '14.3' # (Visual Studio 2022)
-        elif version < 1950:
-            return '14.4' # (Visual Studio current preview version, might not be final)
-        mlog.warning(f'Could not find toolset for version {self.version!r}')
-        return None
-
-    def get_toolset_version(self) -> T.Optional[str]:
-        # See boost/config/compiler/visualc.cpp for up to date mapping
-        try:
-            version = int(''.join(self.version.split('.')[0:2]))
-        except ValueError:
-            return None
-        return self._calculate_toolset_version(version)
-
     def get_default_include_dirs(self) -> T.List[str]:
         if 'INCLUDE' not in os.environ:
             return []
         return os.environ['INCLUDE'].split(os.pathsep)
 
-    def get_crt_compile_args(self, crt_val: str, buildtype: str) -> T.List[str]:
-        crt_val = self.get_crt_val(crt_val, buildtype)
+    def get_crt_compile_args(self, crt_val: str, env: Environment) -> T.List[str]:
+        crt_val = self.get_crt_val(crt_val, env)
         return self.crt_args[crt_val]
 
     def has_func_attribute(self, name: str) -> T.Tuple[bool, bool]:
@@ -388,6 +359,8 @@ class MSVCCompiler(VisualStudioLikeCompiler):
     def __init__(self, target: str):
         super().__init__(target)
 
+        self.base_options.update({OptionKey('b_lto'), OptionKey('b_lto_mode'), OptionKey('b_pgo')})
+
         # Visual Studio 2013 and earlier don't support the /utf-8 argument.
         # We want to remove it. We also want to make an explicit copy so we
         # don't mutate class constant state
@@ -427,11 +400,47 @@ class MSVCCompiler(VisualStudioLikeCompiler):
     def should_link_pch_object(self) -> bool:
         return True
 
+    def get_lto_compile_args(self, *, target: T.Optional[BuildTarget] = None, threads: int = 0,
+                             mode: str = 'default') -> T.List[str]:
+        args: T.List[str] = ['/GL']
+        if mode == 'thin':
+            args.append('/Gy')
+        return args
+
+    def get_lto_link_args(self, *, target: T.Optional[BuildTarget] = None, threads: int = 0,
+                          mode: str = 'default', thinlto_cache_dir: T.Optional[str] = None) -> T.List[str]:
+        args: T.List[str] = []
+        # LTO data generated by MSVC is only usable by link
+        if not isinstance(self.linker, MSVCDynamicLinker):
+            raise mesonlib.MesonException(f"MSVC's LTCG only works with link, not {self.linker.id}")
+        if mode == 'default':
+            args.append('/LTCG')
+        elif mode == 'thin':
+            args.append('/LTCG:INCREMENTAL')
+        return args
+
+    def get_profile_generate_args(self) -> T.List[str]:
+        if not isinstance(self.linker, MSVCDynamicLinker):
+            raise mesonlib.MesonException(f"MSVC's PGO only works with link, not {self.linker.id}")
+        return self.linker_to_compiler_args(['/GENPROFILE'])
+
+    def get_profile_use_args(self) -> T.List[str]:
+        if not isinstance(self.linker, MSVCDynamicLinker):
+            raise mesonlib.MesonException(f"MSVC's PGO only works with link, not {self.linker.id}")
+        return self.linker_to_compiler_args(['/USEPROFILE'])
+
 class ClangClCompiler(VisualStudioLikeCompiler):
 
     """Specific to Clang-CL."""
 
     id = 'clang-cl'
+
+    @classmethod
+    def include_arg_to_native(cls, opt: str, path: str) -> str:
+        # clang-cl does not seem to like a syntax like -iquote=...
+        # but unix_args_to_native() canonicalizes opt to not have
+        # a trailing equals sign
+        return f'/clang:{opt}{path}'
 
     def __init__(self, target: str):
         super().__init__(target)
@@ -454,20 +463,15 @@ class ClangClCompiler(VisualStudioLikeCompiler):
 
     def has_arguments(self, args: T.List[str], code: str, mode: CompileCheckMode) -> T.Tuple[bool, bool]:
         if mode != CompileCheckMode.LINK:
-            args = args + ['-Werror=unknown-argument', '-Werror=unknown-warning-option']
+            args = args + [
+                '-Werror=unknown-argument',
+                '-Werror=unknown-warning-option',
+                '-Werror=unused-command-line-argument',
+            ]
         return super().has_arguments(args, code, mode)
-
-    def get_toolset_version(self) -> T.Optional[str]:
-        # XXX: what is the right thing to do here?
-        return '14.1'
 
     def get_pch_base_name(self, header: str) -> str:
         return header
-
-    def get_include_args(self, path: str, is_system: bool) -> T.List[str]:
-        if path == '':
-            path = '.'
-        return ['/clang:-isystem' + path] if is_system else ['-I' + path]
 
     @classmethod
     def use_linker_args(cls, linker: str, version: str) -> T.List[str]:
@@ -480,18 +484,6 @@ class ClangClCompiler(VisualStudioLikeCompiler):
         # clang-cl forwards arguments span-wise with the /LINK flag
         # therefore -Wl will be received by lld-link or LINK and rejected
         return super().use_linker_args(self.linker.id, '') + super().linker_to_compiler_args([flag[4:] if flag.startswith('-Wl,') else flag for flag in args])
-
-    def get_dependency_compile_args(self, dep: 'Dependency') -> T.List[str]:
-        if dep.get_include_type() == 'system':
-            converted: T.List[str] = []
-            for i in dep.get_compile_args():
-                if i.startswith('-isystem'):
-                    converted += ['/clang:' + i]
-                else:
-                    converted += [i]
-            return converted
-        else:
-            return dep.get_compile_args()
 
     def openmp_link_flags(self) -> T.List[str]:
         # see https://github.com/mesonbuild/meson/issues/5298

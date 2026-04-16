@@ -13,6 +13,7 @@ from .. import build
 from .. import mesonlib
 from ..options import OptionKey
 from .. import mlog
+from ..interpreter.primitives import OptionString
 from ..interpreter.type_checking import CT_BUILD_BY_DEFAULT, CT_INPUT_KW, INSTALL_TAG_KW, OUTPUT_KW, INSTALL_DIR_KW, INSTALL_KW, NoneType, in_set_validator
 from ..interpreterbase import FeatureNew
 from ..interpreterbase.exceptions import InvalidArguments
@@ -27,12 +28,13 @@ if T.TYPE_CHECKING:
     from ..build import Target
     from ..interpreter import Interpreter
     from ..interpreterbase import TYPE_var
+    from ..programs import Program
 
     class MergeFile(TypedDict):
 
         input: T.List[T.Union[
             str, build.BuildTarget, build.CustomTarget, build.CustomTargetIndex,
-            build.ExtractedObjects, build.GeneratedList, ExternalProgram,
+            build.ExtractedObjects, build.GeneratedList, Program,
             mesonlib.File]]
         output: str
         build_by_default: bool
@@ -57,7 +59,7 @@ if T.TYPE_CHECKING:
 
         input: T.List[T.Union[
             str, build.BuildTarget, build.GeneratedTypes,
-            build.ExtractedObjects, ExternalProgram, mesonlib.File]]
+            build.ExtractedObjects, Program, mesonlib.File]]
         output: str
         build_by_default: bool
         install: bool
@@ -259,7 +261,7 @@ class I18nModule(ExtensionModule):
             'itstool_join': self.itstool_join,
             'xgettext': self.xgettext,
         })
-        self.tools: T.Dict[str, T.Optional[T.Union[ExternalProgram, build.Executable]]] = {
+        self.tools: T.Dict[str, T.Optional[Program]] = {
             'itstool': None,
             'msgfmt': None,
             'msginit': None,
@@ -308,7 +310,7 @@ class I18nModule(ExtensionModule):
         ddirs = self._get_data_dirs(state, kwargs['data_dirs'])
         datadirs = '--datadirs=' + ':'.join(ddirs) if ddirs else None
 
-        command: T.List[T.Union[str, build.BuildTargetTypes, ExternalProgram, mesonlib.File]] = []
+        command: T.List[T.Union[str, build.BuildTargetTypes, Program, mesonlib.File]] = []
         command.extend(state.environment.get_build_command())
         command.extend([
             '--internal', 'msgfmthelper',
@@ -415,8 +417,11 @@ class I18nModule(ExtensionModule):
         if not languages:
             languages = read_linguas(path.join(state.environment.source_dir, state.subdir))
         for l in languages:
-            po_file = mesonlib.File.from_source_file(state.environment.source_dir,
-                                                     state.subdir, l+'.po')
+            po_file = mesonlib.File.from_source_file(state.environment.source_dir, state.subdir, l+'.po')
+            mo_install_dir = path.join(install_dir, l, 'LC_MESSAGES')
+            if isinstance(install_dir, OptionString):
+                name = path.join(install_dir.optname, l, 'LC_MESSAGES')
+                mo_install_dir = OptionString(mo_install_dir, name)
             gmotarget = build.CustomTarget(
                 f'{packagename}-{l}.mo',
                 path.join(state.subdir, l, 'LC_MESSAGES'),
@@ -430,7 +435,7 @@ class I18nModule(ExtensionModule):
                 # What we really wanted to do, probably, is have a rename: kwarg, but that's not available
                 # to custom_targets. Crude hack: set the build target's subdir manually.
                 # Bonus: the build tree has something usable as an uninstalled bindtextdomain() target dir.
-                install_dir=[path.join(install_dir, l, 'LC_MESSAGES')],
+                install_dir=[mo_install_dir],
                 install_tag=['i18n'],
                 description='Building translation {}',
             )
@@ -487,7 +492,7 @@ class I18nModule(ExtensionModule):
         for target in mo_targets:
             mo_fnames.append(path.join(target.get_builddir(), target.get_outputs()[0]))
 
-        command: T.List[T.Union[str, build.BuildTargetTypes, ExternalProgram, mesonlib.File]] = []
+        command: T.List[T.Union[str, build.BuildTargetTypes, Program, mesonlib.File]] = []
         command.extend(state.environment.get_build_command())
 
         itstool_cmd = self.tools['itstool'].get_command()

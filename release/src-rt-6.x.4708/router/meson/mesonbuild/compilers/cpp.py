@@ -45,7 +45,8 @@ if T.TYPE_CHECKING:
 else:
     CompilerMixinBase = object
 
-ALL_STDS = ['c++98', 'c++0x', 'c++03', 'c++1y', 'c++1z', 'c++11', 'c++14', 'c++17', 'c++2a', 'c++20', 'c++23', 'c++26']
+ALL_STDS = ['c++98', 'c++0x', 'c++03', 'c++1y', 'c++1z', 'c++11', 'c++14', 'c++17']
+ALL_STDS += ['c++2a', 'c++2b', 'c++2c', 'c++20', 'c++23', 'c++26']
 ALL_STDS += [f'gnu{std[1:]}' for std in ALL_STDS]
 ALL_STDS += ['vc++11', 'vc++14', 'vc++17', 'vc++20', 'vc++latest', 'c++latest']
 
@@ -84,9 +85,11 @@ class CPPCompiler(CLikeCompiler, Compiler):
     def get_no_stdlib_link_args(self) -> T.List[str]:
         return ['-nostdlib++']
 
-    def sanity_check(self, work_dir: str) -> None:
-        code = 'class breakCCompiler;int main(void) { return 0; }\n'
-        return self._sanity_check_impl(work_dir, 'sanitycheckcpp.cc', code)
+    def get_cpp_modules_args(self) -> T.List[str]:
+        return []
+
+    def _sanity_check_source_code(self) -> str:
+        return 'class breakCCompiler;int main(void) { return 0; }\n'
 
     def get_compiler_check_args(self, mode: CompileCheckMode) -> T.List[str]:
         # -fpermissive allows non-conforming code to compile which is necessary
@@ -325,6 +328,10 @@ class ClangCPPCompiler(_StdCPPLibMixin, ClangCPPStds, ClangCompiler, CPPCompiler
             return ['-fpch-instantiate-templates'] + args
         return args
 
+    def get_cpp_modules_args(self) -> T.List[str]:
+        # Although -fmodules-ts is removed in LLVM 17, we keep this in for compatibility with old compilers.
+        return ['-fmodules', '-fmodules-ts']
+
 
 class ArmLtdClangCPPCompiler(ClangCPPCompiler):
 
@@ -540,6 +547,9 @@ class GnuCPPCompiler(_StdCPPLibMixin, GnuCPPStds, GnuCompiler, CPPCompiler):
     def get_pch_use_args(self, pch_dir: str, header: str) -> T.List[str]:
         return ['-fpch-preprocess', '-include', os.path.basename(header)]
 
+    def get_cpp_modules_args(self) -> T.List[str]:
+        return ['-fmodules', '-fmodules-ts']
+
 
 class PGICPPCompiler(PGICompiler, CPPCompiler):
     def __init__(self, ccache: T.List[str], exelist: T.List[str], version: str, for_machine: MachineChoice,
@@ -571,6 +581,14 @@ class NvidiaHPC_CPPCompiler(PGICompiler, CPPCompiler):
         assert isinstance(std_opt, options.UserStdOption), 'for mypy'
         std_opt.set_versions(cppstd_choices)
         return opts
+
+    def get_option_std_args(self, target: BuildTarget, subproject: T.Optional[str] = None) -> T.List[str]:
+        args: T.List[str] = []
+        std = self.get_compileropt_value('std', target, subproject)
+        assert isinstance(std, str)
+        if std != 'none':
+            args.append(self._find_best_cpp_std(std))
+        return args
 
 
 class ElbrusCPPCompiler(ElbrusCompiler, CPPCompiler):
@@ -613,6 +631,8 @@ class ElbrusCPPCompiler(ElbrusCompiler, CPPCompiler):
             cpp_stds += ['c++2a']
         if version_compare(self.version, '>=1.26.00'):
             cpp_stds += ['c++20']
+        if version_compare(self.version, '>=1.28.00'):
+            cpp_stds += ['c++2b', 'c++23']
 
         key = self.form_compileropt_key('std')
         std_opt = opts[key]
@@ -638,7 +658,7 @@ class ElbrusCPPCompiler(ElbrusCompiler, CPPCompiler):
         non_msvc_eh_options(eh, args)
 
         debugstl = self.get_compileropt_value('debugstl', target, subproject)
-        assert isinstance(debugstl, str)
+        assert isinstance(debugstl, bool)
         if debugstl:
             args.append('-D_GLIBCXX_DEBUG=1')
         return args
@@ -919,6 +939,9 @@ class VisualStudioCPPCompiler(CPP11AsCPP14Mixin, VisualStudioLikeCPPCompilerMixi
             del args[i]
         return args
 
+    def get_cpp_modules_args(self) -> T.List[str]:
+        return ['/interface']
+
 class ClangClCPPCompiler(CPP11AsCPP14Mixin, VisualStudioLikeCPPCompilerMixin, ClangClCompiler, CPPCompiler):
 
     id = 'clang-cl'
@@ -934,6 +957,10 @@ class ClangClCPPCompiler(CPP11AsCPP14Mixin, VisualStudioLikeCPPCompilerMixin, Cl
     def get_options(self) -> 'MutableKeyedOptionDictType':
         cpp_stds = ['none', 'c++11', 'vc++11', 'c++14', 'vc++14', 'c++17', 'vc++17', 'c++20', 'vc++20', 'c++latest']
         return self._get_options_impl(super().get_options(), cpp_stds)
+
+    def get_cpp_modules_args(self) -> T.List[str]:
+        # clang-cl does not support /interface.
+        return ['-fmodules', '-fmodules-ts']
 
 
 class IntelClCPPCompiler(VisualStudioLikeCPPCompilerMixin, IntelVisualStudioLikeCompiler, CPPCompiler):

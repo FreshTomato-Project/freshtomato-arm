@@ -393,7 +393,7 @@ def list_deps(coredata: cdata.CoreData, backend: backends.Backend) -> T.List[T.D
             'version': d.get_version(),
             'compile_args': d.get_compile_args(),
             'link_args': d.get_link_args(),
-            'include_directories': [i for idirs in d.get_include_dirs() for i in idirs.to_string_list(backend.source_dir, backend.build_dir)],
+            'include_directories': [i for idirs in d.get_include_dirs() for i in idirs.abs_string_list(backend.source_dir, backend.build_dir)],
             'sources': [f for s in d.get_sources() for f in _src_to_str(s)],
             'extra_files': [f for s in d.get_extra_files() for f in _src_to_str(s)],
             'dependencies': [e.name for e in d.ext_deps],
@@ -457,11 +457,13 @@ def list_projinfo(builddata: build.Build) -> T.Dict[str, T.Union[str, T.List[str
         'subproject_dir': builddata.subproject_dir,
     }
     subprojects = []
-    for k, v in builddata.subprojects.items():
+    for k, build_proj in builddata.projects.items():
+        if not k:
+            continue
         c: T.Dict[str, str] = {
             'name': k,
-            'version': v,
-            'descriptive_name': builddata.projects.get(k),
+            'version': build_proj.version,
+            'descriptive_name': build_proj.name,
         }
         subprojects.append(c)
     result['subprojects'] = subprojects

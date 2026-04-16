@@ -13,7 +13,7 @@ from .ast import IntrospectionInterpreter, BUILD_TARGET_FUNCTIONS, AstConditionL
 from .ast.interpreter import IntrospectionBuildTarget, IntrospectionDependency, _symbol
 from .interpreterbase import UnknownValue, TV_func
 from .interpreterbase.helpers import flatten
-from mesonbuild.mesonlib import MesonException, setup_vsenv, relpath
+from mesonbuild.mesonlib import MesonException, pathname_sort_key, relpath, setup_vsenv
 from . import mlog, environment
 from functools import wraps
 from .mparser import Token, ArrayNode, ArgumentNode, ArithmeticNode, AssignmentNode, BaseNode, StringNode, BooleanNode, DictNode, ElementaryNode, IdNode, FunctionNode, PlusAssignmentNode
@@ -756,7 +756,7 @@ class Rewriter:
                 new_kwarg_flag = True
                 old_extra_files = target.node.args.get_kwarg_or_default('extra_files', None)
                 target.node.args.kwargs = {k: v for k, v in target.node.args.kwargs.items() if not (isinstance(k, IdNode) and k.value == 'extra_files')}
-                new_extra_files_node = ArithmeticNode('add', old_extra_files, _symbol('+'), chosen)
+                new_extra_files_node = ArithmeticNode('+', old_extra_files, _symbol('+'), chosen)
 
             tgt_function.args.kwargs[extra_files_idnode] = new_extra_files_node
 
@@ -963,15 +963,6 @@ class Rewriter:
 
         # Sort files
         for i in to_sort_nodes:
-            def convert(text: str) -> T.Union[int, str]:
-                return int(text) if text.isdigit() else text.lower()
-
-            def alphanum_key(key: str) -> T.List[T.Union[int, str]]:
-                return [convert(c) for c in re.split('([0-9]+)', key)]
-
-            def path_sorter(key: str) -> T.List[T.Tuple[bool, T.List[T.Union[int, str]]]]:
-                return [(key.count('/') <= idx, alphanum_key(x)) for idx, x in enumerate(key.split('/'))]
-
             if isinstance(i, FunctionNode) and i.func_name.value in BUILD_TARGET_FUNCTIONS:
                 src_args = i.args.arguments[1:]
                 target_name = [i.args.arguments[0]]
@@ -980,7 +971,7 @@ class Rewriter:
                 target_name = []
             unknown: T.List[BaseNode] = [x for x in src_args if not isinstance(x, StringNode)]
             sources: T.List[StringNode] = [x for x in src_args if isinstance(x, StringNode)]
-            sources = sorted(sources, key=lambda x: path_sorter(x.value))
+            sources = sorted(sources, key=lambda x: pathname_sort_key(x.value))
             i.args.arguments = target_name + unknown + T.cast(T.List[BaseNode], sources)
 
     def process(self, cmd: T.Dict[str, T.Any]) -> None:

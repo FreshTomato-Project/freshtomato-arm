@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import textwrap
 import typing as T
 import functools
 import os
@@ -59,10 +60,12 @@ class FortranCompiler(CLikeCompiler, Compiler):
         largs = self.environment.coredata.get_external_link_args(self.for_machine, self.language)
         return cargs, largs
 
-    def sanity_check(self, work_dir: str) -> None:
-        source_name = 'sanitycheckf.f'
-        code = '      PROGRAM MAIN\n      PRINT *, "Fortran compilation is working."\n      END\n'
-        return self._sanity_check_impl(work_dir, source_name, code)
+    def _sanity_check_source_code(self) -> str:
+        return textwrap.dedent('''
+            PROGRAM MAIN
+                PRINT *, "Fortran compilation is working."
+            END
+            ''')
 
     def get_optimization_args(self, optimization_level: str) -> T.List[str]:
         return gnu_optimization_args[optimization_level]
@@ -110,7 +113,7 @@ class FortranCompiler(CLikeCompiler, Compiler):
     def has_multi_arguments(self, args: T.List[str]) -> T.Tuple[bool, bool]:
         return self._has_multi_arguments(args, 'stop; end program')
 
-    def has_multi_link_arguments(self, args: T.List[str]) -> T.Tuple[bool, bool]:
+    def has_multi_link_arguments(self, args: T.List[str], to_host_args: bool = True) -> T.Tuple[bool, bool]:
         return self._has_multi_link_arguments(args, 'stop; end program')
 
     def get_options(self) -> 'MutableKeyedOptionDictType':

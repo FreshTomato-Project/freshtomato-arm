@@ -16,7 +16,7 @@ from ..dependencies import Dependency, DependencyMethods, InternalDependency
 from ..interpreterbase.decorators import KwargInfo, ContainerTypeInfo, FeatureBroken, FeatureDeprecated
 from ..mesonlib import (File, FileMode, MachineChoice, has_path_sep, listify, stringlistify,
                         EnvironmentVariables)
-from ..programs import ExternalProgram
+from ..programs import Program, ExternalProgram
 
 # Helper definition for type checks that are `Optional[T]`
 NoneType: T.Type[None] = type(None)
@@ -285,9 +285,9 @@ DEPEND_FILES_KW: KwargInfo[T.List[T.Union[str, File]]] = KwargInfo(
     default=[],
 )
 
-COMMAND_KW: KwargInfo[T.List[T.Union[str, BuildTargetTypes, ExternalProgram, File]]] = KwargInfo(
+COMMAND_KW: KwargInfo[T.List[T.Union[str, BuildTargetTypes, Program, File]]] = KwargInfo(
     'command',
-    ContainerTypeInfo(list, (str, BuildTarget, CustomTarget, CustomTargetIndex, ExternalProgram, File), allow_empty=False),
+    ContainerTypeInfo(list, (str, BuildTarget, CustomTarget, CustomTargetIndex, Program, File), allow_empty=False),
     required=True,
     listify=True,
     default=[],
@@ -426,6 +426,9 @@ DEPENDENCIES_KW: KwargInfo[T.List[Dependency]] = KwargInfo(
     ContainerTypeInfo(list, (Dependency, InternalDependency)),
     listify=True,
     default=[],
+    extra_types={
+        BuildTarget: lambda arg: f'Tried to use a build_target "{T.cast("BuildTarget", arg).name}" as a dependency. This should be in `link_with` or `link_whole` instead.',
+    },
 )
 
 D_MODULE_VERSIONS_KW: KwargInfo[T.List[T.Union[str, int]]] = KwargInfo(
@@ -435,31 +438,42 @@ D_MODULE_VERSIONS_KW: KwargInfo[T.List[T.Union[str, int]]] = KwargInfo(
     default=[],
 )
 
-_link_with_error = '''can only be self-built targets, external dependencies (including libraries) must go in "dependencies".'''
+_LINK_WITH_ERROR = 'Dependency and external_library objects must go in the "dependencies" keyword argument'
+
+def _link_with_validator(values: T.List[T.Union[BothLibraries, SharedLibrary, StaticLibrary,
+                                                CustomTarget, CustomTargetIndex, Jar, Executable,
+                                                ]]
+                         ) -> T.Optional[str]:
+    for value in values:
+        if not value.is_linkable_target():
+            return f'Link target "{value!s}" is not linkable'
+    return None
 
 # Allow Dependency for the better error message? But then in other cases it will list this as one of the allowed types!
 LINK_WITH_KW: KwargInfo[T.List[T.Union[BothLibraries, SharedLibrary, StaticLibrary, CustomTarget, CustomTargetIndex, Jar, Executable]]] = KwargInfo(
     'link_with',
-    ContainerTypeInfo(list, (BothLibraries, SharedLibrary, StaticLibrary, CustomTarget, CustomTargetIndex, Jar, Executable, Dependency)),
+    ContainerTypeInfo(list, (BothLibraries, SharedLibrary, StaticLibrary, CustomTarget, CustomTargetIndex, Jar, Executable)),
     listify=True,
     default=[],
-    validator=lambda x: _link_with_error if any(isinstance(i, Dependency) for i in x) else None,
+    extra_types={Dependency: lambda _: _LINK_WITH_ERROR},
+    validator=_link_with_validator,
 )
 
-def link_whole_validator(values: T.List[T.Union[StaticLibrary, CustomTarget, CustomTargetIndex, Dependency]]) -> T.Optional[str]:
+def link_whole_validator(values: T.List[T.Union[StaticLibrary, CustomTarget, CustomTargetIndex]]) -> T.Optional[str]:
     for l in values:
         if isinstance(l, (CustomTarget, CustomTargetIndex)) and l.links_dynamically():
             return f'{type(l).__name__} returning a shared library is not allowed'
-        if isinstance(l, Dependency):
-            return _link_with_error
+        if not l.is_linkable_target():
+            return f'Link target "{l!s}" is not linkable'
     return None
 
 LINK_WHOLE_KW: KwargInfo[T.List[T.Union[BothLibraries, StaticLibrary, CustomTarget, CustomTargetIndex]]] = KwargInfo(
     'link_whole',
-    ContainerTypeInfo(list, (BothLibraries, StaticLibrary, CustomTarget, CustomTargetIndex, Dependency)),
+    ContainerTypeInfo(list, (BothLibraries, StaticLibrary, CustomTarget, CustomTargetIndex)),
     listify=True,
     default=[],
     validator=link_whole_validator,
+    extra_types={Dependency: lambda _: _LINK_WITH_ERROR}
 )
 
 DEPENDENCY_SOURCES_KW: KwargInfo[T.List[T.Union[str, File, GeneratedTypes]]] = KwargInfo(
@@ -497,7 +511,9 @@ def suite_convertor(suite: T.List[str]) -> T.List[str]:
     return suite
 
 TEST_KWS_NO_ARGS: T.List[KwargInfo] = [
-    KwargInfo('should_fail', bool, default=False),
+    KwargInfo('should_fail', (bool, NoneType), deprecated='1.11.0', deprecated_message='Use expected_fail instead of should_fail'),
+    KwargInfo('expected_fail', (bool, NoneType), since='1.11.0'),
+    KwargInfo('expected_exitcode', (int, NoneType), since='1.11.0'),
     KwargInfo('timeout', int, default=30),
     KwargInfo('workdir', (str, NoneType), default=None,
               validator=lambda x: 'must be an absolute path' if not os.path.isabs(x) else None),
@@ -514,7 +530,7 @@ TEST_KWS_NO_ARGS: T.List[KwargInfo] = [
 ]
 
 TEST_KWS: T.List[KwargInfo] = TEST_KWS_NO_ARGS + [
-    KwargInfo('args', ContainerTypeInfo(list, (str, File, BuildTarget, CustomTarget, CustomTargetIndex, ExternalProgram)),
+    KwargInfo('args', ContainerTypeInfo(list, (str, File, BuildTarget, CustomTarget, CustomTargetIndex, Program)),
               listify=True, default=[]),
 ]
 
@@ -595,10 +611,17 @@ def _extra_files_validator(args: T.List[T.Union[File, str]]) -> T.Optional[str]:
     return None
 
 
+def _bt_install_dir_deprecated(args: T.List[T.Union[str, bool]]) -> T.Iterator[FeatureCheckBase]:
+    if len(args) > 1:
+        yield FeatureDeprecated('passing more than one argument to install_dir', '1.11.0',
+                                'use the install_vala_* arguments instead')
+
+
 # Applies to all build_target like classes
 _ALL_TARGET_KWS: T.List[KwargInfo] = [
     OVERRIDE_OPTIONS_KW,
     KwargInfo('build_by_default', bool, default=True, since='0.38.0'),
+    DEPENDENCIES_KW,
     KwargInfo(
         'extra_files',
         ContainerTypeInfo(list, (str, File)),
@@ -606,6 +629,7 @@ _ALL_TARGET_KWS: T.List[KwargInfo] = [
         listify=True,
         validator=_extra_files_validator,
     ),
+    INCLUDE_DIRECTORIES.evolve(since_values={ContainerTypeInfo(list, str): '0.50.0'}),
     KwargInfo(
         'install',
         object,
@@ -614,7 +638,18 @@ _ALL_TARGET_KWS: T.List[KwargInfo] = [
         feature_validator=_target_install_feature_validator,
     ),
     INSTALL_MODE_KW,
+    INSTALL_TAG_KW,
+    KwargInfo(
+        'install_dir',
+        ContainerTypeInfo(list, (str, bool)),
+        default=[],
+        listify=True,
+        feature_validator=_bt_install_dir_deprecated,
+    ),
     KwargInfo('implicit_include_directories', bool, default=True, since='0.42.0'),
+    LINK_WITH_KW.evolve(
+        as_default=[('', ('1.11.0', "Replace an empty string with an empty array: `link_with : ''` -> `link_with : []`"))],
+    ),
     NATIVE_KW,
     KwargInfo('resources', ContainerTypeInfo(list, str), default=[], listify=True),
     KwargInfo(
@@ -709,12 +744,25 @@ _PCH_ARGS: KwargInfo[T.List[str]] = KwargInfo(
 )
 
 
+LINK_ARGS_KW: KwargInfo[T.List[str]] = KwargInfo(
+    'link_args',
+    ContainerTypeInfo(list, str),
+    default=[],
+    listify=True,
+    as_default=[('', ('1.10.1', "Replace an empty string with an empty array: `link_args : ''` -> `link_args : []`"))],
+)
+
+
 # Applies to all build_target classes except jar
 _BUILD_TARGET_KWS: T.List[KwargInfo] = [
     *_ALL_TARGET_KWS,
     *_LANGUAGE_KWS,
     BT_SOURCES_KW,
     INCLUDE_DIRECTORIES.evolve(name='d_import_dirs'),
+    LINK_ARGS_KW,
+    LINK_WHOLE_KW.evolve(
+        as_default=[('', ('1.11.0', "Replace an empty string with an empty array: `link_whole : ''` -> `link_whole : []`"))],
+    ),
     _NAME_PREFIX_KW,
     _NAME_PREFIX_KW.evolve(name='name_suffix', validator=_name_suffix_validator),
     RUST_CRATE_TYPE_KW,
@@ -749,12 +797,24 @@ _BUILD_TARGET_KWS: T.List[KwargInfo] = [
     KwargInfo(
         'link_language',
         (str, NoneType),
-        validator=in_set_validator(set(compilers.all_languages)),
+        # Yes, neither mypy no pyright can figure out that `set[literal[str]]``
+        # is a subset of `set[str]`
+        validator=in_set_validator(T.cast('T.Set[str]', compilers.all_languages)),
         since='0.51.0',
     ),
     KwargInfo('vala_gir', (str, NoneType)),
+    KwargInfo('install_vala_gir', (str, bool, NoneType), since='1.11.0'),
     KwargInfo('vala_header', (str, NoneType)),
+    KwargInfo('install_vala_header', (str, bool, NoneType), since='1.11.0'),
     KwargInfo('vala_vapi', (str, NoneType)),
+    KwargInfo(
+        'link_early_args',
+        (ContainerTypeInfo(list, str), NoneType),
+        listify=True,
+        default=[],
+        since='1.11.0',
+    ),
+    KwargInfo('install_vala_vapi', (str, bool, NoneType), since='1.11.0'),
 ]
 
 def _validate_win_subsystem(value: T.Optional[str]) -> T.Optional[str]:

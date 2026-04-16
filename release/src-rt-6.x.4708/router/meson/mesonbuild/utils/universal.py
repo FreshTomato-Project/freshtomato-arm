@@ -142,6 +142,7 @@ __all__ = [
     'lookbehind',
     'partition',
     'path_is_in_root',
+    'pathname_sort_key',
     'pickle_load',
     'Popen_safe',
     'Popen_safe_logged',
@@ -1129,7 +1130,7 @@ def determine_worker_count(varnames: T.Optional[T.List[str]] = None) -> int:
                 print(f'Invalid value in {varname}, using 1 thread.')
                 num_workers = 1
 
-    if num_workers == 0:
+    if num_workers <= 0:
         try:
             # Fails in some weird environments such as Debian
             # reproducible build.
@@ -1492,7 +1493,7 @@ def do_conf_str_meson(src: str, data: T.List[str], confdata: 'ConfigurationData'
             confdata_useless = False
             line = do_define_meson(regex, line, confdata, subproject)
         else:
-            if '#cmakedefine' in line:
+            if re.search(r'#\s*cmakedefine', line):
                 raise MesonException(f'Format error in {src}: saw "{line.strip()}" when format set to "meson"')
             line, missing = do_replacement_meson(regex, line, confdata)
             missing_variables.update(missing)
@@ -1519,8 +1520,10 @@ def do_conf_str_cmake(src: str, data: T.List[str], confdata: 'ConfigurationData'
     for line in data:
         stripped_line = line.lstrip()
         if len(stripped_line) >= 2 and stripped_line[0] == '#' and stripped_line[1:].lstrip().startswith(search_token):
+            if not stripped_line[1:].startswith(search_token):
+                from ..interpreterbase.decorators import FeatureNew
+                FeatureNew.single_use('whitespace between `#` and `cmakedefine`', '1.9.0', subproject)
             confdata_useless = False
-
             line = do_define_cmake(line, confdata, at_only, subproject)
         else:
             if '#mesondefine' in line:
@@ -1810,7 +1813,7 @@ def Popen_safe_logged(args: T.List[str], msg: str = 'Called', **kwargs: T.Any) -
     return p, o, e
 
 
-def iter_regexin_iter(regexiter: T.Iterable[str], initer: T.Iterable[str | programs.ExternalProgram]) -> T.Optional[str]:
+def iter_regexin_iter(regexiter: T.Iterable[str], initer: T.Iterable[str | programs.Program]) -> T.Optional[str]:
     '''
     Takes each regular expression in @regexiter and tries to search for it in
     every item in @initer. If there is a match, returns that match.
@@ -1826,7 +1829,7 @@ def iter_regexin_iter(regexiter: T.Iterable[str], initer: T.Iterable[str | progr
     return None
 
 
-def _substitute_values_check_errors(command: T.List[str | programs.ExternalProgram], values: T.Dict[str, T.Union[str, T.List[str]]]) -> None:
+def _substitute_values_check_errors(command: T.List[str | programs.Program], values: T.Dict[str, T.Union[str, T.List[str]]]) -> None:
     # Error checking
     inregex: T.List[str] = ['@INPUT([0-9]+)?@', '@PLAINNAME@', '@BASENAME@']
     outregex: T.List[str] = ['@OUTPUT([0-9]+)?@', '@OUTDIR@']
@@ -1866,7 +1869,7 @@ def _substitute_values_check_errors(command: T.List[str | programs.ExternalProgr
                 raise MesonException(m.format(match2.group(), len(values['@OUTPUT@'])))
 
 
-def substitute_values(command: T.List[str | programs.ExternalProgram], values: T.Dict[str, T.Union[str, T.List[str]]]) -> T.List[str | programs.ExternalProgram]:
+def substitute_values(command: T.List[str | programs.Program], values: T.Dict[str, T.Union[str, T.List[str]]]) -> T.List[str | programs.Program]:
     '''
     Substitute the template strings in the @values dict into the list of
     strings @command and return a new list. For a full list of the templates,
@@ -1879,60 +1882,56 @@ def substitute_values(command: T.List[str | programs.ExternalProgram], values: T
     The typing of this function is difficult, as only @OUTPUT@ and @INPUT@ can
     be lists, everything else is a string. However, TypeDict cannot represent
     this, as you can have optional keys, but not extra keys. We end up just
-    having to us asserts to convince type checkers that this is okay.
+    having to use asserts to convince type checkers that this is okay.
 
     https://github.com/python/mypy/issues/4617
     '''
 
-    def replace(m: T.Match[str]) -> str:
-        v = values[m.group(0)]
-        assert isinstance(v, str), 'for mypy'
-        return v
-
-    # Error checking
+    # Error checking and quick exit
     _substitute_values_check_errors(command, values)
+    if not values:
+        return list(command)
 
     # Substitution
-    outcmd: T.List[str | programs.ExternalProgram] = []
-    rx_keys = [re.escape(key) for key in values if key not in ('@INPUT@', '@OUTPUT@')]
-    value_rx = re.compile('|'.join(rx_keys)) if rx_keys else None
-    for vv in command:
-        more: T.Optional[str] = None
-        if not isinstance(vv, str):
-            outcmd.append(vv)
-        elif '@INPUT@' in vv:
-            inputs = values['@INPUT@']
-            if vv == '@INPUT@':
-                outcmd += inputs
-            elif len(inputs) == 1:
-                outcmd.append(vv.replace('@INPUT@', inputs[0]))
-            else:
+    rx_keys = [re.escape(key) for key in values]
+    value_rx = re.compile('|'.join(rx_keys))
+
+    def replace(m: T.Match[str]) -> str:
+        v = values[m.group(0)]
+        if isinstance(v, list):
+            if len(v) > 1 and m.group(0) == '@INPUT@':
                 raise MesonException("Command has '@INPUT@' as part of a "
                                      "string and more than one input file")
-        elif '@OUTPUT@' in vv:
-            outputs = values['@OUTPUT@']
-            if vv == '@OUTPUT@':
-                outcmd += outputs
-            elif len(outputs) == 1:
-                outcmd.append(vv.replace('@OUTPUT@', outputs[0]))
-            else:
+            if len(v) > 1 and m.group(0) == '@OUTPUT@':
                 raise MesonException("Command has '@OUTPUT@' as part of a "
                                      "string and more than one output file")
+            return v[0]
+        return v
 
-        # Append values that are exactly a template string.
-        # This is faster than a string replace.
+    outcmd: T.List[str | programs.Program] = []
+    for vv in command:
+        if not isinstance(vv, str):
+            outcmd.append(vv)
         elif vv in values:
-            o = values[vv]
-            assert isinstance(o, str), 'for mypy'
-            more = o
-        # Substitute everything else with replacement
-        elif value_rx:
-            more = value_rx.sub(replace, vv)
+            # Append values that are exactly a template string.
+            # This is faster than a string replace, and makes it
+            # possible to special case @INPUT@ and @OUTPUT@ too
+            if vv == '@INPUT@':
+                inputs = values['@INPUT@']
+                assert isinstance(inputs, list)
+                outcmd += inputs
+            elif vv == '@OUTPUT@':
+                outputs = values['@OUTPUT@']
+                assert isinstance(outputs, list)
+                outcmd += outputs
+            else:
+                o = values[vv]
+                assert isinstance(o, str), 'for mypy'
+                outcmd.append(o)
         else:
-            more = vv
-
-        if more is not None:
-            outcmd.append(more)
+            # Substitute everything else with replacement
+            assert values
+            outcmd.append(value_rx.sub(replace, vv))
 
     return outcmd
 
@@ -2582,3 +2581,17 @@ def lookahead(it_: T.Iterable[_T]) -> T.Iterator[T.Tuple[_T, T.Optional[_T]]]:
 
         if next_ is None:
             break
+
+
+def pathname_sort_key(key: str) -> tuple[tuple[bool, tuple[int | str, ...]], ...]:
+    '''Sort key for natural pathname sort, as defined in the Meson style guide.
+    Use as the key= argument to sort() or sorted().'''
+
+    def convert(text: str) -> int | str:
+        return int(text) if text.isdigit() else text.lower()
+
+    def alphanum_key(key: str) -> tuple[int | str, ...]:
+        return tuple(convert(c) for c in re.split('([0-9]+)', key))
+
+    return tuple((key.count('/') <= idx, alphanum_key(x))
+                 for idx, x in enumerate(key.split('/')))

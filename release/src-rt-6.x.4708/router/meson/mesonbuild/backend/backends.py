@@ -38,20 +38,20 @@ from ..options import OptionKey
 if T.TYPE_CHECKING:
     from .._typing import ImmutableListProtocol
     from ..arglist import CompilerArgs
-    from ..compilers import Compiler
+    from ..compilers.compilers import Compiler, Language
     from ..environment import Environment
     from ..interpreter import Test
     from ..linkers.linkers import StaticLinker
     from ..mesonlib import FileMode, FileOrString
     from ..options import ElementaryOptionValues
 
-    from typing_extensions import TypedDict, NotRequired
+    from typing_extensions import Literal, TypedDict, NotRequired
 
     _ALL_SOURCES_TYPE = T.List[T.Union[File, build.GeneratedTypes]]
 
     class TargetIntrospectionData(TypedDict):
 
-        language: str
+        language: T.Union[Language, Literal['unknown']]
         machine: NotRequired[str]
         compiler: T.List[str]
         parameters: T.List[str]
@@ -201,7 +201,8 @@ class TestSerialisation:
     is_parallel: bool
     cmd_args: T.List[str]
     env: mesonlib.EnvironmentVariables
-    should_fail: bool
+    expected_fail: bool
+    expected_exitcode: T.Optional[int]
     timeout: T.Optional[int]
     workdir: T.Optional[str]
     extra_paths: T.List[str]
@@ -262,6 +263,9 @@ def get_genvslite_backend(genvsname: str, build: T.Optional[build.Build] = None)
     if genvsname == 'vs2022':
         from . import vs2022backend
         return vs2022backend.Vs2022Backend(build, gen_lite = True)
+    if genvsname == 'vs2026':
+        from . import vs2026backend
+        return vs2026backend.Vs2026Backend(build, gen_lite = True)
     return None
 
 # This class contains the basic functionality that is needed by all backends.
@@ -535,7 +539,7 @@ class Backend:
         return result
 
     def get_executable_serialisation(
-            self, cmd: T.Sequence[T.Union[programs.ExternalProgram, build.BuildTarget, build.CustomTarget, File, str]],
+            self, cmd: T.Sequence[T.Union[programs.Program, build.BuildTargetTypes, File, str]],
             workdir: T.Optional[str] = None,
             extra_bdeps: T.Optional[T.List[build.BuildTarget]] = None,
             capture: T.Optional[str] = None,
@@ -548,13 +552,15 @@ class Backend:
 
         # XXX: cmd_args either need to be lowered to strings, or need to be checked for non-string arguments, right?
         exe, *raw_cmd_args = cmd
-        if isinstance(exe, programs.ExternalProgram):
+        if isinstance(exe, build.LocalProgram):
+            exe = exe.program
+        if isinstance(exe, programs.Program):
             exe_cmd = exe.get_command()
             exe_for_machine = exe.for_machine
         elif isinstance(exe, build.BuildTarget):
             exe_cmd = [self.get_target_filename_abs(exe)]
             exe_for_machine = exe.for_machine
-        elif isinstance(exe, build.CustomTarget):
+        elif isinstance(exe, (build.CustomTarget, build.CustomTargetIndex)):
             # The output of a custom target can either be directly runnable
             # or not, that is, a script, a native binary or a cross compiled
             # binary when exe wrapper is available and when it is not.
@@ -571,9 +577,11 @@ class Backend:
 
         cmd_args: T.List[str] = []
         for c in raw_cmd_args:
-            if isinstance(c, programs.ExternalProgram):
+            if isinstance(c, build.LocalProgram):
+                c = c.program
+            if isinstance(c, programs.Program):
                 cmd_args += c.get_command()
-            elif isinstance(c, (build.BuildTarget, build.CustomTarget)):
+            elif isinstance(c, (build.BuildTarget, build.CustomTarget, build.CustomTargetIndex)):
                 cmd_args.append(self.get_target_filename_abs(c))
             elif isinstance(c, mesonlib.File):
                 cmd_args.append(c.rel_to_builddir(self.environment.source_dir))
@@ -620,8 +628,8 @@ class Backend:
                                        exe_wrapper, workdir,
                                        extra_paths, capture, feed, tag, verbose, installdir_map)
 
-    def as_meson_exe_cmdline(self, exe: T.Union[str, mesonlib.File, build.BuildTarget, build.CustomTarget, programs.ExternalProgram],
-                             cmd_args: T.Sequence[T.Union[str, mesonlib.File, build.BuildTarget, build.CustomTarget, programs.ExternalProgram]],
+    def as_meson_exe_cmdline(self, exe: T.Union[str, mesonlib.File, build.BuildTargetTypes, programs.Program],
+                             cmd_args: T.Sequence[T.Union[str, mesonlib.File, build.BuildTargetTypes, programs.Program]],
                              workdir: T.Optional[str] = None,
                              extra_bdeps: T.Optional[T.List[build.BuildTarget]] = None,
                              capture: T.Optional[str] = None,
@@ -633,7 +641,7 @@ class Backend:
         '''
         Serialize an executable for running with a generator or a custom target
         '''
-        cmd: T.List[T.Union[str, mesonlib.File, build.BuildTarget, build.CustomTarget, programs.ExternalProgram]] = []
+        cmd: T.List[T.Union[str, mesonlib.File, build.BuildTargetTypes, programs.Program]] = []
         cmd.append(exe)
         cmd.extend(cmd_args)
         es = self.get_executable_serialisation(cmd, workdir, extra_bdeps, capture, feed, env, can_use_rsp_file, verbose=verbose)
@@ -693,8 +701,8 @@ class Backend:
                 ', '.join(reasons)
             )
 
-        if isinstance(exe, (programs.ExternalProgram,
-                            build.BuildTarget, build.CustomTarget)):
+        if isinstance(exe, (programs.Program,
+                            build.BuildTarget, build.CustomTarget, build.CustomTargetIndex)):
             basename = os.path.basename(exe.name)
         elif isinstance(exe, mesonlib.File):
             basename = os.path.basename(exe.fname)
@@ -736,7 +744,9 @@ class Backend:
         Otherwise, we query the target for the dynamic linker.
         '''
         if isinstance(target, build.StaticLibrary):
-            return self.build.static_linker[target.for_machine], []
+            static_linker = self.build.static_linker[target.for_machine]
+            assert static_linker is not None, "Compiler.needs_static_linker does not match backend logic"
+            return static_linker, []
         l, stdlib_args = target.get_clink_dynamic_linker_and_stdlibs()
         return l, stdlib_args
 
@@ -950,7 +960,7 @@ class Backend:
         commands += compiler.get_debug_args(debug)
 
         # Add compile args added using add_project_arguments()
-        commands += self.build.get_project_args(compiler, target.subproject, target.for_machine)
+        commands += self.build.get_project_args(compiler, target)
         # Add compile args added using add_global_arguments()
         # These override per-project arguments
         commands += self.build.get_global_args(compiler, target.for_machine)
@@ -1124,7 +1134,7 @@ class Backend:
         return results
 
     def determine_windows_extra_paths(
-            self, target: T.Union[build.BuildTargetTypes, programs.ExternalProgram, mesonlib.File, str],
+            self, target: T.Union[build.BuildTargetTypes, programs.Program, mesonlib.File, str],
             extra_bdeps: T.Sequence[build.BuildTargetTypes]) -> T.List[str]:
         """On Windows there is no such thing as an rpath.
 
@@ -1168,11 +1178,13 @@ class Backend:
         arr: T.List[TestSerialisation] = []
         for t in sorted(tests, key=lambda tst: -1 * tst.priority):
             exe = t.get_exe()
-            if isinstance(exe, programs.ExternalProgram):
+            if isinstance(exe, build.LocalProgram):
+                exe = exe.program
+            if isinstance(exe, programs.Program):
                 cmd = exe.get_command()
             else:
                 cmd = [os.path.join(self.environment.get_build_dir(), self.get_target_filename(exe))]
-            if isinstance(exe, (build.BuildTarget, programs.ExternalProgram)):
+            if isinstance(exe, (build.BuildTarget, programs.Program)):
                 test_for_machine = exe.for_machine
             else:
                 # E.g. an external verifier or simulator program run on a generated executable.
@@ -1181,8 +1193,11 @@ class Backend:
 
             # we allow passing compiled executables to tests, which may be cross built.
             # We need to consider these as well when considering whether the target is cross or not.
+            a: T.Union[str, File, build.Target, build.BuildTargetTypes, programs.Program]
             for a in t.cmd_args:
-                if isinstance(a, build.BuildTarget):
+                if isinstance(a, build.LocalProgram):
+                    a = a.program
+                if isinstance(a, (build.BuildTarget, programs.ExternalProgram)):
                     if a.for_machine is MachineChoice.HOST:
                         test_for_machine = MachineChoice.HOST
                         break
@@ -1205,6 +1220,8 @@ class Backend:
             if isinstance(exe, build.Target):
                 depends.add(exe)
             for a in t.cmd_args:
+                if isinstance(a, build.LocalProgram):
+                    a = a.program
                 if isinstance(a, build.Target):
                     depends.add(a)
                 elif isinstance(a, build.CustomTargetIndex):
@@ -1246,7 +1263,7 @@ class Backend:
             ts = TestSerialisation(t.get_name(), t.project_name, t.suite, cmd, is_cross,
                                    exe_wrapper, self.environment.need_exe_wrapper(),
                                    t.is_parallel, cmd_args, t_env,
-                                   t.should_fail, t.timeout, t.workdir,
+                                   t.expected_fail, t.expected_exitcode, t.timeout, t.workdir,
                                    extra_paths, t.protocol, t.priority,
                                    isinstance(exe, (build.Target, build.CustomTargetIndex)),
                                    isinstance(exe, build.Executable),
@@ -1344,8 +1361,10 @@ class Backend:
             if delta > 0.001:
                 raise MesonException(f'Clock skew detected. File {absf} has a time stamp {delta:.4f}s in the future.')
 
-    def build_target_to_cmd_array(self, bt: T.Union[build.BuildTarget, programs.ExternalProgram]) -> T.List[str]:
-        if isinstance(bt, build.BuildTarget):
+    def build_target_to_cmd_array(self, bt: T.Union[build.BuildTargetTypes, programs.Program]) -> T.List[str]:
+        if isinstance(bt, build.LocalProgram):
+            bt = bt.program
+        if isinstance(bt, (build.Target, build.CustomTargetIndex)):
             arr = [os.path.join(self.environment.get_build_dir(), self.get_target_filename(bt))]
         else:
             arr = bt.get_command()
@@ -1426,6 +1445,8 @@ class Backend:
         '''
         srcs: T.List[str] = []
         for i in target.get_sources():
+            if isinstance(i, build.LocalProgram):
+                i = i.program
             if isinstance(i, str):
                 fname = [os.path.join(self.build_to_src, target.subdir, i)]
             elif isinstance(i, build.BuildTarget):
@@ -1436,10 +1457,10 @@ class Backend:
                 fname = [os.path.join(self.get_target_private_dir(target), p) for p in i.get_outputs()]
             elif isinstance(i, build.ExtractedObjects):
                 fname = self.determine_ext_objs(i)
-            elif isinstance(i, programs.ExternalProgram):
+            elif isinstance(i, programs.Program):
                 assert i.found(), "This shouldn't be possible"
-                assert i.path is not None, 'for mypy'
-                fname = [i.path]
+                assert i.get_path() is not None, 'for mypy'
+                fname = [i.get_path()]
             else:
                 fname = [i.rel_to_builddir(self.build_to_src)]
             if target.absolute_paths:
@@ -1505,7 +1526,7 @@ class Backend:
 
     def eval_custom_target_command(
             self, target: build.CustomTarget, absolute_outputs: bool = False) -> \
-            T.Tuple[T.List[str], T.List[str], T.List[str | programs.ExternalProgram]]:
+            T.Tuple[T.List[str], T.List[str], T.List[str | programs.Program]]:
         # We want the outputs to be absolute only when using the VS backend
         # XXX: Maybe allow the vs backend to use relative paths too?
         source_root = self.build_to_src
@@ -1518,7 +1539,7 @@ class Backend:
         outputs = [os.path.join(outdir, i) for i in target.get_outputs()]
         inputs = self.get_custom_target_sources(target)
         # Evaluate the command list
-        cmd: T.List[str | programs.ExternalProgram] = []
+        cmd: T.List[str | programs.Program] = []
         for i in target.command:
             if isinstance(i, build.BuildTarget):
                 cmd += self.build_target_to_cmd_array(i)
@@ -1554,7 +1575,7 @@ class Backend:
                     if not target.absolute_paths:
                         pdir = self.get_target_private_dir(target)
                     i = i.replace('@PRIVATE_DIR@', pdir)
-            elif isinstance(i, programs.ExternalProgram):
+            elif isinstance(i, programs.Program):
                 # Let it pass and be extended elsewhere
                 pass
             else:
@@ -1686,14 +1707,15 @@ class Backend:
         for t in self.build.get_targets().values():
             if not t.should_install():
                 continue
-            outdirs, install_dir_names, custom_install_dir = t.get_install_dir()
+            outdirs = t.install_dir
+            install_dir_names = t.install_dir_names()
             # Sanity-check the outputs and install_dirs
             num_outdirs, num_out = len(outdirs), len(t.get_outputs())
             if num_outdirs not in {1, num_out}:
-                m = 'Target {!r} has {} outputs: {!r}, but only {} "install_dir"s were found.\n' \
+                m = 'Target {!r} has {} outputs: {!r}, but {} "install_dir"s were found: {!r}.\n' \
                     "Pass 'false' for outputs that should not be installed and 'true' for\n" \
                     'using the default installation directory for an output.'
-                raise MesonException(m.format(t.name, num_out, t.get_outputs(), num_outdirs))
+                raise MesonException(m.format(t.name, num_out, t.get_outputs(), num_outdirs, outdirs))
             assert len(t.install_tag) == num_out
             install_mode = t.get_custom_install_mode()
             # because mypy gets confused type narrowing in lists
@@ -1740,7 +1762,7 @@ class Backend:
                         # linking (separate from the shared library with all the
                         # code), we need to install that too (dll.a/.lib).
                         if t.get_import_filename():
-                            if custom_install_dir:
+                            if t.has_custom_install_dir:
                                 # If the DLL is installed into a custom directory,
                                 # install the import library into the same place so
                                 # it doesn't go into a surprising place
@@ -1833,7 +1855,7 @@ class Backend:
 
             for f in h.get_sources():
                 abspath = f.absolute_path(srcdir, builddir)
-                i = InstallDataBase(abspath, outdir, outdir_name, h.get_custom_install_mode(), h.subproject, tag='devel', follow_symlinks=h.follow_symlinks)
+                i = InstallDataBase(abspath, outdir, outdir_name, h.get_custom_install_mode(), h.subproject, tag=h.install_tag, follow_symlinks=h.follow_symlinks)
                 d.headers.append(i)
 
     def generate_man_install(self, d: InstallData) -> None:
@@ -1854,7 +1876,8 @@ class Backend:
                 srcabs = f.absolute_path(self.environment.get_source_dir(), self.environment.get_build_dir())
                 dstname = os.path.join(subdir, os.path.basename(fname))
                 dstabs = dstname.replace('{mandir}', manroot)
-                i = InstallDataBase(srcabs, dstabs, dstname, m.get_custom_install_mode(), m.subproject, tag='man')
+                tag = m.install_tag or 'man'
+                i = InstallDataBase(srcabs, dstabs, dstname, m.get_custom_install_mode(), m.subproject, tag=tag)
                 d.man.append(i)
 
     def generate_emptydir_install(self, d: InstallData) -> None:
@@ -1951,7 +1974,7 @@ class Backend:
                         compiler += [j]
                     elif isinstance(j, (build.BuildTarget, build.CustomTarget)):
                         compiler += j.get_outputs()
-                    elif isinstance(j, programs.ExternalProgram):
+                    elif isinstance(j, programs.Program):
                         compiler += j.get_command()
                     else:
                         raise RuntimeError(f'Type "{type(j).__name__}" is not supported in get_introspection_data. This is a bug')
@@ -1979,7 +2002,7 @@ class Backend:
                 # directory. We have to add in PATH the location of every DLL needed.
                 library_paths.update(self.determine_windows_extra_paths(t, []))
 
-            if t.get_install_dir()[2]:
+            if t.has_custom_install_dir:
                 # Do not update paths for target installed in non default location
                 continue
 

@@ -22,7 +22,7 @@ import os
 import typing as T
 
 if T.TYPE_CHECKING:
-    from .compilers import Compiler
+    from .compilers import Language, Compiler, CompilerDict
     from .asm import ASMCompiler
     from .c import CCompiler
     from .cpp import CPPCompiler
@@ -105,7 +105,7 @@ def compiler_from_language(env: 'Environment', lang: str, for_machine: MachineCh
     }
     return lang_map[lang](env, for_machine) if lang in lang_map else None
 
-def detect_compiler_for(env: 'Environment', lang: str, for_machine: MachineChoice, skip_sanity_check: bool, subproject: str) -> T.Optional[Compiler]:
+def detect_compiler_for(env: 'Environment', lang: Language, for_machine: MachineChoice, skip_sanity_check: bool, subproject: str) -> T.Optional[Compiler]:
     comp = compiler_from_language(env, lang, for_machine)
     if comp is None:
         return comp
@@ -275,7 +275,7 @@ def detect_static_linker(env: 'Environment', compiler: Compiler) -> StaticLinker
 # =========
 
 
-def _detect_c_or_cpp_compiler(env: 'Environment', lang: str, for_machine: MachineChoice, *, override_compiler: T.Optional[T.List[str]] = None) -> Compiler:
+def _detect_c_or_cpp_compiler(env: 'Environment', lang: str, for_machine: MachineChoice, *, override_compilers: T.Optional[T.List[T.List[str]]] = None) -> Compiler:
     """Shared implementation for finding the C or C++ compiler to use.
 
     the override_compiler option is provided to allow compilers which use
@@ -287,14 +287,12 @@ def _detect_c_or_cpp_compiler(env: 'Environment', lang: str, for_machine: Machin
     popen_exceptions: T.Dict[str, T.Union[Exception, str]] = {}
     compilers, ccache_exe = _get_compilers(env, lang, for_machine)
     ccache = ccache_exe.get_command() if (ccache_exe and ccache_exe.found()) else []
-    if override_compiler is not None:
-        compilers = [override_compiler]
+    if override_compilers is not None:
+        compilers = override_compilers
     cls: T.Union[T.Type[CCompiler], T.Type[CPPCompiler]]
     lnk: T.Union[T.Type[StaticLinker], T.Type[DynamicLinker]]
 
     for compiler in compilers:
-        if isinstance(compiler, str):
-            compiler = [compiler]
         compiler_name = os.path.basename(compiler[0])
 
         if any(os.path.basename(x) in {'cl', 'cl.exe', 'clang-cl', 'clang-cl.exe'} for x in compiler):
@@ -507,7 +505,9 @@ def _detect_c_or_cpp_compiler(env: 'Environment', lang: str, for_machine: Machin
             target = 'x86' if 'IA-32' in err else 'x86_64'
             cls = c.IntelLLVMClCCompiler if lang == 'c' else cpp.IntelLLVMClCPPCompiler
             env.add_lang_args(cls.language, cls, for_machine)
-            linker = linkers.XilinkDynamicLinker(env, for_machine, [], version=version)
+            linker = linker = guess_win_linker(
+                    env, ['link'], cls, version,
+                    for_machine)
             return cls(
                 compiler, version, for_machine, env, target,
                 linker=linker)
@@ -679,6 +679,12 @@ def detect_cuda_compiler(env: 'Environment', for_machine: MachineChoice) -> Comp
     popen_exceptions = {}
     compilers, ccache_exe = _get_compilers(env, 'cuda', for_machine)
     ccache = ccache_exe.get_command() if (ccache_exe and ccache_exe.found()) else []
+
+    try:
+        cpp_compiler = env.coredata.compilers[for_machine]['cpp']
+    except KeyError:
+        raise MesonException('Cuda requires a working C++ compiler for the same machine, but one could not be found')
+
     for compiler in compilers:
         arg = '--version'
         try:
@@ -699,10 +705,9 @@ def detect_cuda_compiler(env: 'Environment', for_machine: MachineChoice) -> Comp
         # instance, on Linux,
         #    - CUDA Toolkit 8.0.44 requires NVIDIA Driver 367.48
         #    - CUDA Toolkit 8.0.61 requires NVIDIA Driver 375.26
-        # Luckily, the "V" also makes it very simple to extract
-        # the full version:
-        version = out.strip().rsplit('V', maxsplit=1)[-1]
-        cpp_compiler = detect_cpp_compiler(env, for_machine)
+        # Split on the `V` to get the version, then strip additional lines after
+        # that.
+        version = out.strip().rsplit('V', maxsplit=1)[-1].split(maxsplit=1)[0]
         cls = CudaCompiler
         env.add_lang_args(cls.language, cls, for_machine)
         key = OptionKey('cuda_link_args', machine=for_machine)
@@ -715,7 +720,9 @@ def detect_cuda_compiler(env: 'Environment', for_machine: MachineChoice) -> Comp
             env.coredata.optstore.set_option(key, cls.to_host_flags_base(val, Phase.LINKER))
         linker = CudaLinker(compiler, env, for_machine, CudaCompiler.LINKER_PREFIX, [], version=CudaLinker.parse_version())
         return cls(ccache, compiler, version, for_machine, cpp_compiler, env, linker=linker)
-    raise EnvironmentException(f'Could not find suitable CUDA compiler: "{"; ".join([" ".join(c) for c in compilers])}"')
+
+    _handle_exceptions(popen_exceptions, compilers)
+    raise EnvironmentException(f'Unknown compiler {compilers}')
 
 def detect_fortran_compiler(env: 'Environment', for_machine: MachineChoice) -> Compiler:
     from . import fortran
@@ -796,7 +803,9 @@ def detect_fortran_compiler(env: 'Environment', for_machine: MachineChoice) -> C
                 target = 'x86' if 'IA-32' in err else 'x86_64'
                 cls = fortran.IntelLLVMClFortranCompiler
                 env.add_lang_args(cls.language, cls, for_machine)
-                linker = linkers.XilinkDynamicLinker(env, for_machine, [], version=version)
+                linker = guess_win_linker(
+                    env, ['link'], cls, version,
+                    for_machine)
                 return cls(
                     compiler, version, for_machine, env,
                     target, linker=linker)
@@ -1117,7 +1126,7 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
             if rust_target and rust_target.endswith('-msvc'):
                 try:
                     cc = _detect_c_or_cpp_compiler(env, 'c', for_machine,
-                                                   override_compiler=['clang-cl', 'cl'])
+                                                   override_compilers=[['cl'], ['clang-cl']])
                 except EnvironmentException:
                     popen_exceptions[join_args(compiler)] = \
                         EnvironmentException('No MSVC-compatible C compiler found for MSVC Rust target')
@@ -1171,7 +1180,7 @@ def detect_rust_compiler(env: 'Environment', for_machine: MachineChoice) -> Rust
                 # linking, on windows it will use lld-link or link.exe.
                 # we will simply ask for the C compiler that corresponds to
                 # it, and use that.
-                cc = _detect_c_or_cpp_compiler(env, 'c', for_machine, override_compiler=override)
+                cc = _detect_c_or_cpp_compiler(env, 'c', for_machine, override_compilers=[override])
                 linker = cc.linker
                 exelist = cc.get_linker_exelist()
 
@@ -1192,7 +1201,7 @@ def detect_d_compiler(env: 'Environment', for_machine: MachineChoice) -> Compile
 
     # Detect the target architecture, required for proper architecture handling on Windows.
     # MSVC compiler is required for correct platform detection.
-    c_compiler = {'c': detect_c_compiler(env, for_machine)}
+    c_compiler: CompilerDict = {'c': detect_c_compiler(env, for_machine)}
     is_msvc = isinstance(c_compiler['c'], c.VisualStudioCCompiler)
     if not is_msvc:
         c_compiler = {}

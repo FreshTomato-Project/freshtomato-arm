@@ -48,6 +48,7 @@ foreach qt : ['qt4', 'qt5', 'qt6']
   qtdep = dependency(qt, modules : qt_modules, main : true, private_headers: true, required : required, method : get_option('method'))
   if qtdep.found()
     qtmodule = import(qt)
+    assert(qtmodule.has_tools(tools: ['moc'], method: get_option('method'), version: '>=4'))
     if get_option('expect_lrelease')
       assert(qtmodule.has_tools(), 'You may be missing a devel package. (qttools5-dev-tools on Debian based systems)')
     else
@@ -177,5 +178,12 @@ foreach qt : ['qt4', 'qt5', 'qt6']
     accept_versions = ['>=@0@'.format(qtdep.version()), '<@0@'.format(qtdep.version()[0].to_int() + 1)]
     dependency(qt, modules: qt_modules, version: accept_versions, method : get_option('method'))
 
+    # check that QT_DEBUG is correctly defined depending on whether this is a debug build
+    if get_option('debug')
+      assert_source = 'assert_qt_debug.cpp'
+    else
+      assert_source = 'assert_qt_no_debug.cpp'
+    endif
+    executable(qt + 'assert_debug', sources: [ assert_source ], dependencies: [ qtdep ])
   endif
 endforeach

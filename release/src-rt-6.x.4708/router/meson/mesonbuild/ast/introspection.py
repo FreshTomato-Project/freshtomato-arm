@@ -20,6 +20,7 @@ from .interpreter import AstInterpreter, IntrospectionBuildTarget, Introspection
 
 if T.TYPE_CHECKING:
     from ..build import BuildTarget, BuildTargetKeywordArguments
+    from ..compilers.compilers import Language
     from ..interpreterbase import TYPE_var
     from .visitor import AstVisitor
 
@@ -36,6 +37,8 @@ class IntrospectionHelper:
         self.cross_file = [cross_file] if cross_file is not None else []
         self.native_file: T.List[str] = []
         self.cmd_line_options: T.Dict[OptionKey, str] = {}
+        self.builtin_keys: T.Set[OptionKey] = set()
+        self.d_keys: T.Set[OptionKey] = set()
         self.projectoptions: T.List[str] = []
 
     def __eq__(self, other: object) -> bool:
@@ -134,10 +137,9 @@ class IntrospectionInterpreter(AstInterpreter):
         self._add_languages(proj_langs, True, MachineChoice.BUILD)
 
     def do_subproject(self, dirname: SubProject) -> None:
-        subproject_dir_abs = os.path.join(self.environment.get_source_dir(), self.subproject_dir)
-        subpr = os.path.join(subproject_dir_abs, dirname)
+        subdir = os.path.join(self.environment.source_dir, self.subproject_dir, dirname)
         try:
-            subi = IntrospectionInterpreter(subpr, '', self.backend, cross_file=self.cross_file, subproject=dirname, subproject_dir=self.subproject_dir, env=self.environment, visitors=self.visitors)
+            subi = IntrospectionInterpreter(self.source_root, subdir, self.backend, cross_file=self.cross_file, subproject=dirname, subproject_dir=self.subproject_dir, env=self.environment, visitors=self.visitors)
             subi.analyze()
             subi.project_data['name'] = dirname
             self.project_data['subprojects'] += [subi.project_data]
@@ -159,15 +161,15 @@ class IntrospectionInterpreter(AstInterpreter):
         return UnknownValue()
 
     def _add_languages(self, raw_langs: T.List[TYPE_var], required: T.Union[bool, UnknownValue], for_machine: MachineChoice) -> None:
-        langs: T.List[str] = []
+        langs: T.List[Language] = []
         for l in self.flatten_args(raw_langs):
+            # we need to call .lower() here because `project('foo', 'CpP')` is valid.
             if isinstance(l, str):
-                langs.append(l)
+                langs.append(T.cast('Language', l.lower()))
             elif isinstance(l, StringNode):
-                langs.append(l.value)
+                langs.append(T.cast('Language', l.value.lower()))
 
         for lang in sorted(langs, key=compilers.sort_clink):
-            lang = lang.lower()
             if lang not in self.coredata.compilers[for_machine]:
                 try:
                     comp = detect_compiler_for(self.environment, lang, for_machine, True, self.subproject)

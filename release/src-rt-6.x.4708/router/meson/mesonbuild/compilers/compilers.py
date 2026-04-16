@@ -17,13 +17,16 @@ from .. import mesonlib
 from .. import options
 from ..mesonlib import (
     HoldableObject,
-    EnvironmentException, MesonException,
+    EnvironmentException, MesonBugException, MesonException,
     Popen_safe_logged, LibType, TemporaryDirectoryWinProof,
 )
 from ..options import OptionKey
 from ..arglist import CompilerArgs
 
 if T.TYPE_CHECKING:
+    from typing_extensions import Literal, TypeAlias
+
+    from .. import build
     from .. import coredata
     from ..build import BuildTarget, DFeatures
     from ..options import MutableKeyedOptionDictType
@@ -34,7 +37,12 @@ if T.TYPE_CHECKING:
     from ..mesonlib import MachineChoice
     from ..dependencies import Dependency
 
-    CompilerType = T.TypeVar('CompilerType', bound='Compiler')
+    # See the comment on `lang_suffixes` if modifying this list.
+    Language = Literal[
+        'c', 'cpp', 'cuda', 'fortran', 'd', 'objc', 'objcpp', 'rust', 'vala',
+        'cs', 'swift', 'java', 'cython', 'nasm', 'masm', 'linearasm'
+    ]
+    CompilerDict: TypeAlias = T.Dict[Language, 'Compiler']
 
 _T = T.TypeVar('_T')
 
@@ -49,7 +57,10 @@ lib_suffixes = {'a', 'lib', 'dll', 'dll.a', 'dylib', 'so', 'js'}
 # Mapping of language to suffixes of files that should always be in that language
 # This means we can't include .h headers here since they could be C, C++, ObjC, etc.
 # First suffix is the language's default.
-lang_suffixes: T.Mapping[str, T.Tuple[str, ...]] = {
+
+# Don't forget to update the Language if adding new keys, as well as
+# docs/yaml/functions/project.yaml
+lang_suffixes: T.Mapping[Language, T.Tuple[str, ...]] = {
     'c': ('c',),
     'cpp': ('cpp', 'cppm', 'cc', 'cp', 'cxx', 'c++', 'hh', 'hp', 'hpp', 'ipp', 'hxx', 'h++', 'ino', 'ixx', 'CPP', 'C', 'HPP', 'H'),
     'cuda': ('cu',),
@@ -73,7 +84,7 @@ lang_suffixes: T.Mapping[str, T.Tuple[str, ...]] = {
 compiler_suffixes: T.Mapping[str, T.Tuple[str, ...]] = {
     'msvc': ('c', 'cc', 'cxx', 'cpp', 'obj', 'lib', 'def'),
 }
-all_languages = lang_suffixes.keys()
+all_languages: mesonlib.OrderedSet[Language] = mesonlib.OrderedSet(sorted(lang_suffixes))
 c_cpp_suffixes = {'h'}
 cpp_suffixes = set(lang_suffixes['cpp']) | c_cpp_suffixes
 c_suffixes = set(lang_suffixes['c']) | c_cpp_suffixes
@@ -332,10 +343,8 @@ def get_base_compile_args(target: 'BuildTarget', compiler: 'Compiler', env: 'Env
     try:
         crt_val = env.coredata.get_option_for_target(target, 'b_vscrt')
         assert isinstance(crt_val, str)
-        buildtype = env.coredata.get_option_for_target(target, 'buildtype')
-        assert isinstance(buildtype, str)
         try:
-            args += compiler.get_crt_compile_args(crt_val, buildtype)
+            args += compiler.get_crt_compile_args(crt_val, env)
         except AttributeError:
             pass
     except KeyError:
@@ -358,7 +367,7 @@ def get_base_link_args(target: 'BuildTarget',
                 thinlto_cache_dir = get_option_value_for_target(env, target, OptionKey('b_thinlto_cache_dir'), '')
                 if thinlto_cache_dir == '':
                     thinlto_cache_dir = os.path.join(build_dir, 'meson-private', 'thinlto-cache')
-                    os.mkdir(thinlto_cache_dir)
+                    os.makedirs(thinlto_cache_dir, exist_ok=True)
             num_threads = get_option_value_for_target(env, target, OptionKey('b_lto_threads'), 0)
             lto_mode = get_option_value_for_target(env, target, OptionKey('b_lto_mode'), 'default')
             args.extend(linker.get_lto_link_args(
@@ -379,7 +388,7 @@ def get_base_link_args(target: 'BuildTarget',
         # We consider that if there are no sanitizer arguments returned, then
         # the language doesn't support them.
         if sanitizer_args:
-            if not linker.has_multi_link_arguments(sanitizer_args)[0]:
+            if not linker.has_multi_link_arguments(sanitizer_args, False)[0]:
                 raise MesonException(f'Linker {linker.name_string()} does not support sanitizer arguments {sanitizer_args}')
             args.extend(sanitizer_args)
     except KeyError:
@@ -422,10 +431,8 @@ def get_base_link_args(target: 'BuildTarget',
     try:
         crt_val = env.coredata.get_option_for_target(target, 'b_vscrt')
         assert isinstance(crt_val, str)
-        buildtype = env.coredata.get_option_for_target(target, 'buildtype')
-        assert isinstance(buildtype, str)
         try:
-            crtargs = linker.get_crt_link_args(crt_val, buildtype)
+            crtargs = linker.get_crt_link_args(crt_val, env)
             assert isinstance(crtargs, list)
             args += crtargs
         except AttributeError:
@@ -470,9 +477,15 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
     internal_libs: T.List[str] = []
 
     LINKER_PREFIX: T.Union[None, str, T.List[str]] = None
-    INVOKES_LINKER = True
 
-    language: str
+    # If the compiler is used to fire a separate linking step, environment
+    # variables like CFLAGS have to be passed to the linking step as well.
+    # They do not have to be passed if the linker is invoked directly (such
+    # as for Visual Studio's LINK.EXE) or if the compilation and linking
+    # steps are one and the same (such as for Rust).
+    USED_FOR_SEPARATE_LINKING_STEP = True
+
+    language: Language
     id: str
     warn_args: T.Dict[str, T.List[str]]
     mode = 'COMPILER'
@@ -546,7 +559,7 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
             details += ['"%s"' % (self.full_version)]
         return '(%s)' % (' '.join(details))
 
-    def get_language(self) -> str:
+    def get_language(self) -> Language:
         return self.language
 
     @classmethod
@@ -628,6 +641,9 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         This currently means C, C++, Fortran.
         """
         return []
+
+    def gen_export_dynamic_link_args(self) -> T.List[str]:
+        raise MesonException('Language %s does not support export_dynamic.' % self.get_display_language())
 
     def make_option_name(self, key: OptionKey) -> str:
         return f'{self.language}_{key.name}'
@@ -792,8 +808,10 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
             'Language {} does not support has_multi_arguments.'.format(
                 self.get_display_language()))
 
-    def has_multi_link_arguments(self, args: T.List[str]) -> T.Tuple[bool, bool]:
+    def has_multi_link_arguments(self, args: T.List[str], to_host_args: bool = True) -> T.Tuple[bool, bool]:
         """Checks if the linker has all of the arguments.
+
+        to_host_args is False if the arguments were returned by this same Compiler object.
 
         :returns:
             A tuple of (bool, bool). The first value is whether the check
@@ -941,6 +959,9 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
 
     def get_link_debugfile_args(self, targetfile: str) -> T.List[str]:
         return self.linker.get_debugfile_args(targetfile)
+
+    def get_std_link_args(self, env: Environment, is_thin: bool) -> T.List[str]:
+        raise MesonBugException("get_std_link_args() not implemented; if needs_static_linker() is False it needs to be")
 
     def get_std_shared_lib_link_args(self) -> T.List[str]:
         return self.linker.get_std_shared_lib_args()
@@ -1096,8 +1117,19 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
             prefix, shlib_name, suffix, soversion,
             darwin_versions)
 
+    def get_build_link_args(self, target: BuildTarget, build: build.Build) -> T.List[str]:
+        # Link args added using add_global_link_arguments() override
+        # per-project link arguments.  Link args added from the env (LDFLAGS)
+        # override all the defaults but not the per-target link args.
+        return build.get_project_link_args(self, target) \
+            + build.get_global_link_args(self, self.for_machine) \
+            + self.environment.coredata.get_external_link_args(self.for_machine, self.get_language())
+
     def get_target_link_args(self, target: 'BuildTarget') -> T.List[str]:
         return target.link_args
+
+    def get_target_link_early_args(self, target: 'BuildTarget') -> T.List[str]:
+        return target.link_early_args
 
     def get_dependency_compile_args(self, dep: 'Dependency') -> T.List[str]:
         return dep.get_compile_args()
@@ -1128,7 +1160,7 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         """
         return []
 
-    def get_crt_val(self, crt_val: str, buildtype: str) -> str:
+    def get_crt_val(self, crt_val: str, env: Environment) -> str:
         if crt_val in options.MSCRT_VALS:
             return crt_val
         assert crt_val in {'from_buildtype', 'static_from_buildtype'}
@@ -1140,6 +1172,7 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
             rel = 'mt'
 
         # Match what build type flags used to do.
+        buildtype = env.coredata.optstore.get_value_for('buildtype')
         if buildtype == 'plain':
             return 'none'
         elif buildtype == 'debug':
@@ -1150,10 +1183,10 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
             assert buildtype == 'custom'
             raise EnvironmentException('Requested C runtime based on buildtype, but buildtype is "custom".')
 
-    def get_crt_compile_args(self, crt_val: str, buildtype: str) -> T.List[str]:
+    def get_crt_compile_args(self, crt_val: str, env: Environment) -> T.List[str]:
         raise EnvironmentException('This compiler does not support Windows CRT selection')
 
-    def get_crt_link_args(self, crt_val: str, buildtype: str) -> T.List[str]:
+    def get_crt_link_args(self, crt_val: str, env: Environment) -> T.List[str]:
         raise EnvironmentException('This compiler does not support Windows CRT selection')
 
     def get_compile_only_args(self) -> T.List[str]:
@@ -1226,7 +1259,6 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
     def name_string(self) -> str:
         return ' '.join(self.exelist)
 
-    @abc.abstractmethod
     def sanity_check(self, work_dir: str) -> None:
         """Check that this compiler actually works.
 
@@ -1235,24 +1267,152 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         main(): return 0
         ```
         is good enough here.
+
+        :param work_dir: A directory to put temporary artifacts
+        :raises mesonlib.EnvironmentException: If building the binary fails
+        :raises mesonlib.EnvironmentException: If running the binary is attempted and fails
+        """
+        sourcename, transpiled, binname = self._sanity_check_filenames()
+
+        with open(os.path.join(work_dir, sourcename), 'w', encoding='utf-8') as f:
+            f.write(self._sanity_check_source_code())
+
+        if transpiled:
+            cmdlist, linker_args = self._sanity_check_compile_args(sourcename, transpiled)
+            cmdlist.extend(linker_args)
+            pc, stdo, stde = mesonlib.Popen_safe(cmdlist, cwd=work_dir)
+            mlog.debug('Sanity check transpiler command line:', mesonlib.join_args(cmdlist))
+            mlog.debug('Sanity check transpiler stdout:')
+            mlog.debug(stdo)
+            mlog.debug('-----\nSanity check transpiler stderr:')
+            mlog.debug(stde)
+            mlog.debug('-----')
+            if pc.returncode != 0:
+                raise mesonlib.EnvironmentException(f'Compiler {self.name_string()} cannot transpile programs.')
+
+            comp_lang = SUFFIX_TO_LANG[transpiled.rsplit('.', maxsplit=1)[1]]
+            comp = self.environment.coredata.compilers[self.for_machine].get(comp_lang)
+            if not comp:
+                raise mesonlib.MesonBugException(f'Need a {comp_lang} compiler for {self.language} compiler test, but one doesnt exist')
+
+            cmdlist, linker_args = self._transpiled_sanity_check_compile_args(comp, transpiled, binname)
+
+            mlog.debug('checking compilation of transpiled source:')
+        else:
+            cmdlist, linker_args = self._sanity_check_compile_args(sourcename, binname)
+
+        cmdlist.extend(linker_args)
+        pc, stdo, stde = mesonlib.Popen_safe(cmdlist, cwd=work_dir)
+        mlog.debug('Sanity check compiler command line:', mesonlib.join_args(cmdlist))
+        mlog.debug('Sanity check compile stdout:')
+        mlog.debug(stdo)
+        mlog.debug('-----\nSanity check compile stderr:')
+        mlog.debug(stde)
+        mlog.debug('-----')
+        if pc.returncode != 0:
+            raise mesonlib.EnvironmentException(f'Compiler {self.name_string()} cannot compile programs.')
+
+        self._run_sanity_check([os.path.join(work_dir, binname)], work_dir)
+
+    def _sanity_check_filenames(self) -> T.Tuple[str, T.Optional[str], str]:
+        """Generate the name of the source and binary file for the sanity check.
+
+        The returned names should be just the names of the files with
+        extensions, but no paths.
+
+        The return value consists of a source name, a transpiled source name (if
+        there is one), and the final binary name.
+
+        :return: A tuple of (sourcename, transpiled, binaryname)
+        """
+        default_ext = lang_suffixes[self.language][0]
+        template = f'sanity_check_for_{self.language}'
+        sourcename = f'{template}.{default_ext}'
+        cross_or_not = "_cross" if self.is_cross else ""
+        binaryname = f'{template}{cross_or_not}.exe'
+        return sourcename, None, binaryname
+
+    def _transpiled_sanity_check_compile_args(
+            self, compiler: Compiler, sourcename: str, binname: str
+            ) -> T.Tuple[T.List[str], T.List[str]]:
+        """Get arguments to run compiler for sanity check.
+
+        By default this will just return the compile arguments for the compiler in question.
+
+        Linker arguments are separated from compiler arguments because some
+        compilers do not allow linker and compiler arguments to be mixed together
+
+        Overriding this is useful when needing to change the kind of output
+        produced, or adding extra arguments.
+
+        :param compiler: The :class:`Compiler` that is used for compiling the transpiled sources
+        :param sourcename: the name of the source file to generate
+        :param binname: the name of the binary file to generate
+        :return: a tuple of arguments, the first is the executable and compiler
+            arguments, the second is linker arguments
+        """
+        return compiler._sanity_check_compile_args(sourcename, binname)
+
+    def _sanity_check_compile_args(self, sourcename: str, binname: str
+                                   ) -> T.Tuple[T.List[str], T.List[str]]:
+        """Get arguments to run compiler for sanity check.
+
+        Linker arguments are separated from compiler arguments because some
+        compilers do not allow linker and compiler arguments to be mixed together
+
+        :param sourcename: the name of the source file to generate
+        :param binname: the name of the binary file to generate
+        :return: a tuple of arguments, the first is the executable and compiler
+            arguments, the second is linker arguments
+        """
+        return self.exelist_no_ccache + self.get_always_args() + self.get_output_args(binname) + [sourcename], []
+
+    @abc.abstractmethod
+    def _sanity_check_source_code(self) -> str:
+        """Get the source code to run for a sanity check
+
+        :return: A string to be written into a file and ran.
         """
 
-    def run_sanity_check(self, cmdlist: T.List[str], work_dir: str, use_exe_wrapper_for_cross: bool = True) -> T.Tuple[str, str]:
-        # Run sanity check
-        if self.is_cross and use_exe_wrapper_for_cross:
-            if not self.environment.has_exe_wrapper():
-                # Can't check if the binaries run so we have to assume they do
-                return ('', '')
-            cmdlist = self.environment.exe_wrapper.get_command() + cmdlist
-        mlog.debug('Running test binary command: ', mesonlib.join_args(cmdlist))
+    def _sanity_check_run_with_exe_wrapper(self, command: T.List[str]) -> T.List[str]:
+        """Wrap the binary to run in the test with the exe_wrapper if necessary
+
+        Languages that do no want to use an exe_wrapper (or always want to use
+        some kind of wrapper) should override this method
+
+        :param command: The string list of commands to run
+        :return: The list of commands wrapped by the exe_wrapper if it is needed, otherwise the original commands
+        """
+        if self.is_cross and self.environment.has_exe_wrapper():
+            assert self.environment.exe_wrapper is not None, 'for mypy'
+            return self.environment.exe_wrapper.get_command() + command
+        return command
+
+    def _run_sanity_check(self, cmdlist: T.List[str], work_dir: str) -> None:
+        """Run a sanity test binary
+
+        :param cmdlist: A list of strings to pass to :func:`subprocess.run` or equivalent to run the test
+        :param work_dir: A directory to place temporary artifacts
+        :raises mesonlib.EnvironmentException: If the binary cannot be run or if it returns a non-zero exit code
+        """
+        # Can't check binaries, so we have to assume they work
+        if self.is_cross and not self.environment.has_exe_wrapper():
+            mlog.debug('Cannot run cross check')
+            return
+
+        cmdlist = self._sanity_check_run_with_exe_wrapper(cmdlist)
+        mlog.debug('Sanity check built target output for', self.for_machine, self.language, 'compiler')
+        mlog.debug(' -- Running test binary command: ', mesonlib.join_args(cmdlist))
         try:
             pe, stdo, stde = Popen_safe_logged(cmdlist, 'Sanity check', cwd=work_dir)
+            mlog.debug(' -- stdout:\n', stdo)
+            mlog.debug(' -- stderr:\n', stde)
+            mlog.debug(' -- returncode:', pe.returncode)
         except Exception as e:
             raise mesonlib.EnvironmentException(f'Could not invoke sanity check executable: {e!s}.')
 
         if pe.returncode != 0:
             raise mesonlib.EnvironmentException(f'Executables created by {self.language} compiler {self.name_string()} are not runnable.')
-        return stdo, stde
 
     def split_shlib_to_parts(self, fname: str) -> T.Tuple[T.Optional[str], str]:
         return None, fname
@@ -1284,6 +1444,9 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         return []
 
     def get_werror_args(self) -> T.List[str]:
+        return []
+
+    def get_cpp_modules_args(self) -> T.List[str]:
         return []
 
     @abc.abstractmethod

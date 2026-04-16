@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2012-2022 The Meson development team
-# Copyright © 2023 Intel Corporation
+# Copyright © 2023-2025 Intel Corporation
 
 from __future__ import annotations
 
@@ -1489,7 +1489,7 @@ class VisualStudioLikeLinkerMixin(DynamicLinkerBase):
     def gen_vs_module_defs_args(self, defsfile: str) -> T.List[str]:
         # With MSVC, DLLs only export symbols that are explicitly exported,
         # so if a module defs file is specified, we use that to export symbols
-        return ['/DEF:' + defsfile]
+        return self._apply_prefix(['/DEF:' + defsfile])
 
     def get_soname_args(self, prefix: str, shlib_name: str, suffix: str,
                         soversion: str, darwin_versions: T.Tuple[str, str]
@@ -1531,6 +1531,9 @@ class MSVCDynamicLinker(VisualStudioLikeLinkerMixin, DynamicLinker):
 
     def fatal_warnings(self) -> T.List[str]:
         return ['-WX']
+
+    def get_lto_args(self) -> T.List[str]:
+        return ['/LTCG']
 
 
 class ClangClDynamicLinker(VisualStudioLikeLinkerMixin, DynamicLinker):
@@ -1764,7 +1767,7 @@ class CudaLinker(PosixDynamicLinkerMixin, DynamicLinker):
         # Built on Sun_Sep_30_21:09:22_CDT_2018
         # Cuda compilation tools, release 10.0, V10.0.166
         # we need the most verbose version output. Luckily starting with V
-        return out.strip().rsplit('V', maxsplit=1)[-1]
+        return out.strip().rsplit('V', maxsplit=1)[-1].split(maxsplit=1)[0]
 
     def get_accepts_rsp(self) -> bool:
         # nvcc does not support response files

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from .base import ExternalDependency, DependencyException, DependencyTypeName
-from ..mesonlib import is_windows, MesonException, PerMachine, MachineChoice
+from ..mesonlib import is_windows, MesonException, PerMachine
 from ..cmake import CMakeExecutor, CMakeTraceParser, CMakeException, CMakeToolchain, CMakeExecScope, check_cmake_args, resolve_cmake_trace_targets, cmake_is_debug
 from .. import mlog
 import importlib.resources
@@ -17,6 +17,7 @@ import textwrap
 import typing as T
 
 if T.TYPE_CHECKING:
+    from ..compilers.compilers import Language
     from ..cmake import CMakeTarget
     from ..environment import Environment
     from ..envconfig import MachineInfo
@@ -38,6 +39,8 @@ class CMakeDependency(ExternalDependency):
     # CMake generators to try (empty for no generator)
     class_cmake_generators = ['', 'Ninja', 'Unix Makefiles', 'Visual Studio 10 2010']
     class_working_generator: T.Optional[str] = None
+
+    type_name = DependencyTypeName('cmake')
 
     def _gen_exception(self, msg: str) -> DependencyException:
         return DependencyException(f'Dependency {self.name} not found: {msg}')
@@ -70,27 +73,26 @@ class CMakeDependency(ExternalDependency):
         # one module
         return module
 
-    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs, language: T.Optional[str] = None, force_use_global_compilers: bool = False) -> None:
+    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs, force_use_global_compilers: bool = False) -> None:
+        super().__init__(name, environment, kwargs)
+        self.is_libtool = False
+
         # Gather a list of all languages to support
-        self.language_list: T.List[str] = []
+        self.language_list: T.List[Language]
+        language = kwargs.get('language')
         if language is None or force_use_global_compilers:
-            for_machine = kwargs.get('native', MachineChoice.HOST)
-            compilers = environment.coredata.compilers[for_machine]
-            candidates = ['c', 'cpp', 'fortran', 'objc', 'objcxx']
-            self.language_list += [x for x in candidates if x in compilers]
+            compilers = environment.coredata.compilers[self.for_machine]
+            candidates: T.List[Language] = ['c', 'cpp', 'fortran', 'objc', 'objcpp']
+            self.language_list = [x for x in candidates if x in compilers]
         else:
-            self.language_list += [language]
+            self.language_list = [language]
 
         # Add additional languages if required
         if 'fortran' in self.language_list:
-            self.language_list += ['c']
+            self.language_list.append('c')
 
         # Ensure that the list is unique
         self.language_list = list(set(self.language_list))
-
-        super().__init__(DependencyTypeName('cmake'), environment, kwargs, language=language)
-        self.name = name
-        self.is_libtool = False
 
         # Where all CMake "build dirs" are located
         self.cmake_root_dir = environment.scratch_dir
@@ -607,10 +609,6 @@ class CMakeDependency(ExternalDependency):
         build_dir = self._setup_cmake_dir(cmake_file)
         return self.cmakebin.call(args, build_dir, env=env)
 
-    @staticmethod
-    def log_tried() -> str:
-        return 'cmake'
-
     def log_details(self) -> str:
         modules = [self._original_module_name(x) for x in self.found_modules]
         modules = sorted(set(modules))
@@ -641,22 +639,6 @@ class CMakeDependency(ExternalDependency):
         if default_value is not None:
             return default_value
         raise DependencyException(f'Could not get cmake variable and no default provided for {self!r}')
-
-
-class CMakeDependencyFactory:
-
-    def __init__(self, name: T.Optional[str] = None, modules: T.Optional[T.List[str]] = None):
-        self.name = name
-        self.modules = modules
-
-    def __call__(self, name: str, env: Environment, kwargs: DependencyObjectKWs, language: T.Optional[str] = None, force_use_global_compilers: bool = False) -> CMakeDependency:
-        if self.modules:
-            kwargs['modules'] = self.modules
-        return CMakeDependency(self.name or name, env, kwargs, language, force_use_global_compilers)
-
-    @staticmethod
-    def log_tried() -> str:
-        return CMakeDependency.log_tried()
 
 
 def sort_link_args(args: T.List[str]) -> T.List[str]:

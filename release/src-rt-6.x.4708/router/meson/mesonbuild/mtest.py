@@ -90,6 +90,9 @@ def is_windows() -> bool:
 def is_cygwin() -> bool:
     return sys.platform == 'cygwin'
 
+def is_os2() -> bool:
+    return platform.system().lower() == 'os/2'
+
 UNIWIDTH_MAPPING = {'F': 2, 'H': 1, 'W': 2, 'Na': 1, 'N': 1, 'A': 1}
 def uniwidth(s: str) -> int:
     result = 0
@@ -552,12 +555,13 @@ class ConsoleLogger(TestLogger):
         self.test_count = 0
         self.started_tests = 0
         self.spinner_index = 0
-        try:
-            self.cols, _ = os.get_terminal_size(1)
-            self.is_tty = True
-        except OSError:
-            self.cols = 80
-            self.is_tty = False
+        self.is_tty = os.isatty(1)
+        self.cols = 80
+        if self.is_tty:
+            try:
+                self.cols, _ = os.get_terminal_size(1)
+            except (OSError, AttributeError):
+                self.is_tty = False
 
         self.output_start = dashes(self.SCISSORS, self.HLINE, self.cols - 2)
         self.output_end = dashes('', self.HLINE, self.cols - 2)
@@ -977,7 +981,8 @@ class TestRun:
         self.additional_error = ''
         self.cmd: T.Optional[T.List[str]] = None
         self.env = test_env
-        self.should_fail = test.should_fail
+        self.expected_fail = test.expected_fail
+        self.expected_exitcode = test.expected_exitcode
         self.project = test.project_name
         self.junit: T.Optional[et.ElementTree] = None
         self.is_parallel = is_parallel
@@ -1037,7 +1042,7 @@ class TestRun:
         if self.needs_parsing and self.console_mode is ConsoleUser.INTERACTIVE:
             self.res = TestResult.IGNORED
         assert isinstance(self.res, TestResult)
-        if self.should_fail and self.res in (TestResult.OK, TestResult.FAIL):
+        if self.expected_fail and self.res in (TestResult.OK, TestResult.FAIL):
             self.res = TestResult.UNEXPECTEDPASS if self.res is TestResult.OK else TestResult.EXPECTEDFAIL
         if self.stdo and not self.stdo.endswith('\n'):
             self.stdo += '\n'
@@ -1093,12 +1098,14 @@ class TestRunExitCode(TestRun):
     def complete(self) -> None:
         if self.res != TestResult.RUNNING:
             pass
+        elif self.returncode == (self.expected_exitcode or 0):
+            self.res = TestResult.OK
         elif self.returncode == GNU_SKIP_RETURNCODE:
             self.res = TestResult.SKIP
         elif self.returncode == GNU_ERROR_RETURNCODE:
             self.res = TestResult.ERROR
         else:
-            self.res = TestResult.FAIL if bool(self.returncode) else TestResult.OK
+            self.res = TestResult.FAIL
         super().complete()
 
 TestRun.PROTOCOL_TO_CLASS[TestProtocol.EXITCODE] = TestRunExitCode
@@ -1274,7 +1281,7 @@ async def read_decode(reader: asyncio.StreamReader,
             await queue.put(None)
 
 def run_with_mono(fname: str) -> bool:
-    return fname.endswith('.exe') and not (is_windows() or is_cygwin())
+    return fname.endswith('.exe') and not (is_windows() or is_cygwin() or is_os2())
 
 def check_testdata(objs: T.List[TestSerialisation]) -> T.List[TestSerialisation]:
     if not isinstance(objs, list):
@@ -1604,7 +1611,7 @@ class SingleTestRunner:
                                                  stderr=stderr,
                                                  env=env,
                                                  cwd=cwd,
-                                                 preexec_fn=preexec_fn if not is_windows() else None)
+                                                 preexec_fn=preexec_fn if not (is_windows() or is_os2()) else None)
         return TestSubprocess(p, stdout=stdout, stderr=stderr,
                               postwait_fn=postwait_fn if not is_windows() else None)
 

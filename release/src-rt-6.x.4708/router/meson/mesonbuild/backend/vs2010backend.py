@@ -28,6 +28,7 @@ from .. import coredata
 
 if T.TYPE_CHECKING:
     from ..arglist import CompilerArgs
+    from ..compilers.compilers import Language
 
     Project = T.Tuple[str, Path, str, MachineChoice]
 
@@ -381,10 +382,7 @@ class Vs2010Backend(backends.Backend):
                     all_deps[gendep.target.get_id()] = gendep.target
                 else:
                     generator = gendep.get_generator()
-                    gen_exe = generator.get_exe()
-                    if isinstance(gen_exe, build.Executable):
-                        all_deps[gen_exe.get_id()] = gen_exe
-                    for d in itertools.chain(generator.depends, gendep.depends):
+                    for d in itertools.chain(generator.depends, gendep.depends, gendep.extra_depends):
                         if isinstance(d, build.CustomTargetIndex):
                             all_deps[d.get_id()] = d.target
                         elif isinstance(d, build.Target):
@@ -1012,7 +1010,7 @@ class Vs2010Backend(backends.Backend):
         replace_if_different(ofname, ofname_tmp)
 
     # Returns:  (target_args,file_args), (target_defines,file_defines), (target_inc_dirs,file_inc_dirs)
-    def get_args_defines_and_inc_dirs(self, target, compiler, generated_files_include_dirs, proj_to_src_root, proj_to_src_dir, build_args):
+    def get_args_defines_and_inc_dirs(self, target: build.BuildTarget, compiler: compilers.Compiler, generated_files_include_dirs, proj_to_src_root, proj_to_src_dir, build_args):
         # Arguments, include dirs, defines for all files in the current target
         target_args = []
         target_defines = []
@@ -1022,13 +1020,14 @@ class Vs2010Backend(backends.Backend):
         #
         # file_args is also later split out into defines and include_dirs in
         # case someone passed those in there
-        file_args: T.Dict[str, CompilerArgs] = {l: c.compiler_args() for l, c in target.compilers.items()}
+        file_args: T.Dict[Language, CompilerArgs] = {l: c.compiler_args() for l, c in target.compilers.items()}
         file_defines = {l: [] for l in target.compilers}
         file_inc_dirs = {l: [] for l in target.compilers}
         # The order in which these compile args are added must match
         # generate_single_compile() and generate_basic_compiler_args()
         for l, comp in target.compilers.items():
             if l in file_args:
+                file_args[l] += comp.get_always_args()
                 file_args[l] += compilers.get_base_compile_args(
                     target, comp, self.environment)
                 file_args[l] += comp.get_option_compile_args(
@@ -1037,9 +1036,9 @@ class Vs2010Backend(backends.Backend):
                     target, target.subproject)
 
         # Add compile args added using add_project_arguments()
-        for l, args in self.build.projects_args[target.for_machine].get(target.subproject, {}).items():
-            if l in file_args:
-                file_args[l] += args
+        for l, comp in target.compilers.items():
+            file_args[l] += self.build.get_project_args(comp, target)
+
         # Add compile args added using add_global_arguments()
         # These override per-project arguments
         for l, args in self.build.global_args[target.for_machine].items():
@@ -1071,8 +1070,8 @@ class Vs2010Backend(backends.Backend):
             # need them to be looked in first.
             for d in reversed(target.get_include_dirs()):
                 # reversed is used to keep order of includes
-                for i in reversed(d.get_incdirs()):
-                    curdir = os.path.join(d.get_curdir(), i)
+                for i in reversed(d.incdirs):
+                    curdir = os.path.join(d.curdir, i)
                     try:
                         # Add source subdir first so that the build subdir overrides it
                         args.append('-I' + os.path.join(proj_to_src_root, curdir))  # src dir
@@ -1080,8 +1079,8 @@ class Vs2010Backend(backends.Backend):
                     except ValueError:
                         # Include is on different drive
                         args.append('-I' + os.path.normpath(curdir))
-                for i in d.get_extra_build_dirs():
-                    curdir = os.path.join(d.get_curdir(), i)
+                for i in d.extra_build_dirs:
+                    curdir = os.path.join(d.curdir, i)
                     args.append('-I' + self.relpath(curdir, target.subdir))  # build dir
         # Add per-target compile args, f.ex, `c_args : ['/DFOO']`. We set these
         # near the end since these are supposed to override everything else.
@@ -1305,7 +1304,7 @@ class Vs2010Backend(backends.Backend):
             self,
             root: ET.Element,
             type_config: ET.Element,
-            target,
+            target: build.BuildTarget,
             platform: str,
             subsystem,
             build_args,
@@ -1323,8 +1322,20 @@ class Vs2010Backend(backends.Backend):
         # FIXME: Should the following just be set in create_basic_project(), even if
         # irrelevant for current target?
 
-        # FIXME: Meson's LTO support needs to be integrated here
-        ET.SubElement(type_config, 'WholeProgramOptimization').text = 'false'
+        lto = self.get_target_option(target, 'b_lto')
+        pgo = self.get_target_option(target, 'b_pgo')
+
+        if lto:
+            if pgo == 'off':
+                ET.SubElement(type_config, 'WholeProgramOptimization').text = 'true'
+            elif pgo == 'generate':
+                ET.SubElement(type_config, 'WholeProgramOptimization').text = 'PGInstrument'
+            elif pgo == 'use':
+                ET.SubElement(type_config, 'WholeProgramOptimization').text = 'PGOptimize'
+        else:
+            if pgo != 'off':
+                raise MesonException("b_pgo requires b_lto on MSVC.")
+
         # Let VS auto-set the RTC level
         ET.SubElement(type_config, 'BasicRuntimeChecks').text = 'Default'
         # Incremental linking increases code size
@@ -1338,7 +1349,7 @@ class Vs2010Backend(backends.Backend):
             ET.SubElement(clconf, 'OpenMPSupport').text = 'true'
         # CRT type; debug or release
         vscrt_type = self.get_target_option(target, 'b_vscrt')
-        vscrt_val = compiler.get_crt_val(vscrt_type, self.buildtype)
+        vscrt_val = compiler.get_crt_val(vscrt_type, self.environment)
         if vscrt_val == 'mdd':
             ET.SubElement(type_config, 'UseDebugLibraries').text = 'true'
             ET.SubElement(clconf, 'RuntimeLibrary').text = 'MultiThreadedDebugDLL'
@@ -1438,16 +1449,7 @@ class Vs2010Backend(backends.Backend):
         if not isinstance(target, build.StaticLibrary):
             if isinstance(target, build.SharedModule):
                 extra_link_args += compiler.get_std_shared_module_link_args(target)
-            # Add link args added using add_project_link_arguments()
-            extra_link_args += self.build.get_project_link_args(compiler, target.subproject, target.for_machine)
-            # Add link args added using add_global_link_arguments()
-            # These override per-project link arguments
-            extra_link_args += self.build.get_global_link_args(compiler, target.for_machine)
-            # Link args added from the env: LDFLAGS, or the cross file. We want
-            # these to override all the defaults but not the per-target link
-            # args.
-            extra_link_args += self.environment.coredata.get_external_link_args(
-                target.for_machine, compiler.get_language())
+            extra_link_args += compiler.get_build_link_args(target, self.build)
             # Only non-static built targets need link args and link dependencies
             extra_link_args += target.link_args
             # External deps must be last because target link libraries may depend on them.
@@ -1603,6 +1605,10 @@ class Vs2010Backend(backends.Backend):
         subsystem = 'Windows'
         self.handled_target_deps[target.get_id()] = []
 
+        # vs backend does not support link_early_args
+        if isinstance(target, build.BuildTarget) and not isinstance(target, build.StaticLibrary) and target.link_early_args:
+            raise MesonException(f'Visual Studio backend does not support link_early_args for {target.get_basename()}')
+
         if self.gen_lite:
             if not isinstance(target, build.BuildTarget):
                 # Since we're going to delegate all building to the one true meson build command, we don't need
@@ -1696,7 +1702,7 @@ class Vs2010Backend(backends.Backend):
 
         pch_sources: T.Dict[str, T.Tuple[str, T.Optional[str], str, T.Optional[str]]] = {}
         if self.target_uses_pch(target):
-            for lang in ['c', 'cpp']:
+            for lang in T.cast('T.Tuple[Language]', ('c', 'cpp')):
                 pch = target.pch[lang]
                 if not pch:
                     continue
@@ -2153,10 +2159,7 @@ class Vs2010Backend(backends.Backend):
         compiler = self._get_cl_compiler(target)
         link_args = compiler.compiler_args()
         if not isinstance(target, build.StaticLibrary):
-            link_args += self.build.get_project_link_args(compiler, target.subproject, target.for_machine)
-            link_args += self.build.get_global_link_args(compiler, target.for_machine)
-            link_args += self.environment.coredata.get_external_link_args(
-                target.for_machine, compiler.get_language())
+            link_args += compiler.get_build_link_args(target, self.build)
             link_args += target.link_args
 
         for arg in reversed(link_args):

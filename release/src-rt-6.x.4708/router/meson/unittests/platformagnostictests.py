@@ -22,7 +22,7 @@ from mesonbuild.optinterpreter import OptionInterpreter, OptionException
 from mesonbuild.options import OptionStore
 from run_tests import Backend
 
-@skipIf(is_ci() and not is_linux(), "Run only on fast platforms")
+@skipIf(IS_CI and not is_linux(), "Run only on fast platforms")
 class PlatformAgnosticTests(BasePlatformTests):
     '''
     Tests that does not need to run on all platforms during CI
@@ -207,8 +207,8 @@ class PlatformAgnosticTests(BasePlatformTests):
     def test_validate_dirs(self):
         testdir = os.path.join(self.common_test_dir, '1 trivial')
 
-        # Using parent as builddir should fail
-        self.builddir = os.path.dirname(self.builddir)
+        # Using parent as source directory should fail
+        self.builddir = os.path.dirname(os.getcwd())
         with self.assertRaises(subprocess.CalledProcessError) as cm:
             self.init(testdir)
         self.assertIn('cannot be a parent of source directory', cm.exception.stdout)
@@ -561,10 +561,84 @@ class PlatformAgnosticTests(BasePlatformTests):
 
         self._run(self.mtest_command + ['runner-with-exedep'])
 
+    def test_buildtype_debug_optimization_override(self) -> None:
+        """Explicitly setting debug or optimization should override buildtype."""
+        testdir = os.path.join(self.common_test_dir, '1 trivial')
+
+        for extra_args in [['--debug', '--buildtype=release'],
+                           ['-Ddebug=true', '--buildtype=release'],
+                           ['-Ddebug=true', '-Dbuildtype=release'],
+                           ['--debug', '-Dbuildtype=release']]:
+            with self.subTest(extra_args=extra_args):
+                self.new_builddir()
+                self.init(testdir, extra_args=extra_args)
+                opts = self.introspect('--buildoptions')
+                self.assertEqual(self.getconf('buildtype', opts), 'release')
+                self.assertEqual(self.getconf('debug', opts), True)
+                self.assertEqual(self.getconf('optimization', opts), '3')
+
+        for extra_args in [['--optimization=3', '--buildtype=debug'],
+                           ['-Doptimization=3', '--buildtype=debug'],
+                           ['-Doptimization=3', '-Dbuildtype=debug'],
+                           ['--optimization=3', '-Dbuildtype=debug']]:
+            with self.subTest(extra_args=extra_args):
+                self.new_builddir()
+                self.init(testdir, extra_args=extra_args)
+                opts = self.introspect('--buildoptions')
+                self.assertEqual(self.getconf('buildtype', opts), 'debug')
+                self.assertEqual(self.getconf('debug', opts), True)
+                self.assertEqual(self.getconf('optimization', opts), '3')
+
     def test_setup_mixed_long_short_options(self) -> None:
         """Mixing unity and unity_size as long and short options should work."""
         testdir = self.copy_srcdir(os.path.join(self.common_test_dir, '1 trivial'))
         self.init(testdir, extra_args=['-Dunity=on', '--unity-size=123'])
+
+    def test_minit_executable_with_matching_source(self) -> None:
+        """meson init --executable bar with bar.c present must not create a spurious project-name.c"""
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, 'bar.c').write_text('int main() {}', encoding='utf-8')
+            self._run(self.meson_command + ['init', '--name', 'foo', '--executable', 'bar', '--language', 'c'], workdir=d)
+            files = {p.name for p in Path(d).iterdir()}
+            self.assertIn('meson.build', files)
+            self.assertNotIn('foo.c', files, 'spurious foo.c was created')
+            meson_build = Path(d, 'meson.build').read_text(encoding='utf-8')
+            self.assertNotIn("'foo.c'", meson_build, 'spurious foo.c listed in meson.build')
+            self.assertIn("'bar.c'", meson_build, 'existing bar.c not listed in meson.build')
+
+    def test_minit_multi_file_keeps_existing_sources(self) -> None:
+        """meson init without --executable must create a new source file alongside existing ones"""
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, 'bar.c').write_text('int bar() {}', encoding='utf-8')
+            Path(d, 'foo.c').write_text('int main() {}', encoding='utf-8')
+            self._run(self.meson_command + ['init', '--name', 'foo', '--language', 'c'], workdir=d)
+            files = {p.name for p in Path(d).iterdir()}
+            self.assertIn('meson.build', files)
+            meson_build = Path(d, 'meson.build').read_text(encoding='utf-8')
+            self.assertIn("'foo.c'", meson_build, 'existing foo.c not listed in meson.build')
+            self.assertIn("'bar.c'", meson_build, 'existing bar.c not listed in meson.build')
+
+    def test_minit_wrong_name_creates_sample(self) -> None:
+        """meson init in an empty directory must create a sample source file"""
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, 'bar.c').write_text('int main() {}', encoding='utf-8')
+            self._run(self.meson_command + ['init', '--name', 'foo', '--language', 'c'], workdir=d)
+            files = {p.name for p in Path(d).iterdir()}
+            self.assertIn('meson.build', files)
+            self.assertIn('foo.c', files)
+            meson_build = Path(d, 'meson.build').read_text(encoding='utf-8')
+            self.assertIn("'foo.c'", meson_build, 'created foo.c not listed in meson.build')
+            self.assertNotIn("'bar.c'", meson_build, 'existing bar.c listed in meson.build')
+
+    def test_minit_empty_dir_creates_sample(self) -> None:
+        """meson init in an empty directory must create a sample source file"""
+        with tempfile.TemporaryDirectory() as d:
+            self._run(self.meson_command + ['init', '--name', 'foo', '--language', 'c'], workdir=d)
+            files = {p.name for p in Path(d).iterdir()}
+            self.assertIn('meson.build', files)
+            self.assertIn('foo.c', files)
+            meson_build = Path(d, 'meson.build').read_text(encoding='utf-8')
+            self.assertIn("'foo.c'", meson_build, 'created foo.c not listed in meson.build')
 
     def test_readonly_sourcedir(self) -> None:
         """Test building with read-only source directory."""

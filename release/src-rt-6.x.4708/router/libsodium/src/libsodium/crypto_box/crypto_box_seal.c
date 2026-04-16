@@ -1,6 +1,7 @@
 
 #include <string.h>
 
+#include "core.h"
 #include "crypto_box.h"
 #include "crypto_generichash.h"
 #include "private/common.h"
@@ -29,6 +30,9 @@ crypto_box_seal(unsigned char *c, const unsigned char *m,
     unsigned char esk[crypto_box_SECRETKEYBYTES];
     int           ret;
 
+    if (mlen > crypto_box_MESSAGEBYTES_MAX) {
+        sodium_misuse(); /* LCOV_EXCL_LINE */
+    }
     if (crypto_box_keypair(epk, esk) != 0) {
         return -1; /* LCOV_EXCL_LINE */
     }

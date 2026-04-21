@@ -1342,7 +1342,10 @@ nettle: nettle/stamp-h1
 nettle-clean:
 	-@$(MAKE) -C nettle clean
 	@rm -f nettle/stamp-h1
-	@rm -rf nettle/include nettle/lib nettle/bin nettle/share
+	@rm -rf nettle/include nettle/bin nettle/share
+ifneq ($(TCONFIG_BCMARM),y)
+	@rm -rf nettle/lib
+endif
 
 dnsmasq:
 	@$(SEP)

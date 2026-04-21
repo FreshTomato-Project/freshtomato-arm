@@ -5,6 +5,137 @@ FreshTomato-ARM Changelog
 
 
 
+2026.2          2026.04.24
+---------------------------
+
+- Note: Many fixes and improvements (for ex.: mwwatchdog), updating is strongly recommended!
+
+- tinc: update to 1.1pre18-6707f23 (2026-04-06)
+- nginx: update to 1.30.0
+- iperf: update to 3.21
+- libexif: update to 0.6.26
+- libsodium: update to 1.0.22
+- libxml2: update to 2.15.3
+- nano: update to 9.0
+- meson: update to 1.11.0
+- libpng: update to 1.6.58
+- libcap-ng: update to 0.9.3
+- sqlite: update to 3.53.0
+- openssl: update to 3.0.20
+- libubox: update to 8156338 (2026-03-16) snapshot
+- libcurl: update to 8.19.0
+- libid3tag: update to 0.16.4
+- conntrack-tools: update to 1.4.9
+- libnetfilter_conntrack: update to 1.1.1
+- xl2tpd: update to 1.3.20
+- zlib: update to 1.3.2
+- udpxy: update to 1.0-25.2
+- nettle: update to 4.0
+- wireguard-tools: update to 1.0.20260223
+- dnsmasq: update to 2.93test9
+- openvpn: update to 2.7.1
+- libiconv: update to 1.19
+- tor: update to 0.4.9.6
+- expat: update to 2.7.5
+- libjpeg-turbo: update to 3.1.4.1
+- ebtables: fix from the upstream
+- rom: update CA bundle to 2026-03-19
+- GUI: Random Password improvement
+- GUI: Status: Logs: add clear search icon to syslog filter input
+- build: move OVPN_CLIENT_COUNT, OVPN_SERVER_COUNT and WG_INTERFACE_COUNT to libshared
+- httpd: fix web_read_x() return semantics
+- httpd: upgrade.c: harden firmware upgrade path (wi_upgrade/wo_flash)
+- httpd: config.c: flush filesystem before serving reboot page
+- httpd: config.c: fix wi_restore() POST handling and temp file usage
+- httpd: nocat.c: fix unsafe boundary handling in wi_uploadsplash()
+- httpd: webio.c: improve web_read() error and EOF handling
+- httpd: bwm.c: fix missing error handling in wi_statsrestore()
+- httpd: upgrade.c: fix mkstemp() misuse in wi_upgrade()
+- httpd: httpd.c: harden skip_header() length handling
+- httpd: fix fd handling in wo_backup()
+- httpd: tomato.c: harden _execute_command() temp file handling
+- httpd: webio.c: add output limit to _web_putfile()
+- httpd: httpd.c: harden do_file() file handling
+- httpd: tomato.c: define OVPN/WG variable types at compile time via preprocessor
+- httpd: misc.c: add a special mode to the asp_psup() function to return the status for all defined services at once
+- httpd: ddns.c: fix XSS, null deref, and timestamp escaping
+- httpd: log.c: fix memory leak, XSS, path traversal, and grep injection
+- libshared: files.c: fix partial write handling in f_write()
+- libshared: shutils.c: improve readability in _eval()
+- libshared: defaults.c: generate OVPN/WG entries at compile time via preprocessor
+- libshared: default.c: fix wgX_tunchk names
+- implement link state persistence in robocfg
+- porthealth: fix for nvram variable and defaults
+- mwwatchdog: rewrite findHost, remove timeout(), add IPv6 support
+- mwwatchdog/OpenVPN/wireguard: avoid adding temporary routes from mwwatchdog used for WAN checking to OpenVPN/wireguard in PBR mode
+- mwwatchdog: fix DNS filtering, timeout behaviour and cktracert RESULT variable
+- update advanced-adblock-v2.asp and adblock-v2 script to latest version
+- dnscrypt-proxy: update download url and resolvers csv file
+- DDNS: mdu.c: improve get_option() to ensure robust configuration analysis
+- OpenVPN: disable compression in builds
+- usb_modeswitch: add ZTE MF833U1
+- usb_modeswitch: add Huawei E5785
+- openssl-1.1: add fix for: CVE-2026-28387, CVE-2026-28388, CVE-2026-28389, CVE-2026-28390
+- OpenVPN: change how ovpn variables are retrieved from nvram; iterate over OVPN_CLIENT_COUNT/OVPN_SERVER_COUNT in nvram.c; iterate over MAX_BRIDGE_ID in asp scripts
+- OpenVPN/wireguard: add dedicated IP to check the tunnel
+- others: adblock-v2: exclude wireguard endpoints
+- others: adblock-v2: fix server addresses for OpenVPN
+- others: Makefile: clean scripts also for ARM branch
+- wireguard: increase allowed Poll Interval to 99 seconds
+- wireguard: change how wg variables are retrieved from nvram; iterate over WG_INTERFACE_COUNT in nvram.c
+- rc: add NVRAM variable migration for renamed OpenVPN settings on firmware upgrade
+- rc: convert OpenVPN vpnsX_plan to bitmask and migrate legacy variables
+- rc: suspend multi-wan-watchdog during PPP connection setup
+- rc: network.c: fix lan_ifname memory leak in start_lan()
+- rc: openvpn.c: fix IP to check in watchdog
+- rc: openvpn.c: change log level to ERROR in some places
+- rc: openvpn.c: write_ovpn_dnsmasq_config(): num -> cur in a few missed places
+- rc: openvpn.c: write_ovpn_dnsmasq_config(): fix .conf sscanf pattern, replace strtok with strtok_r, fix interface number validation
+- rc: openvpn.c: harden watchdog script and interface state checks
+- rc: openvpn.c: simplify code, use strlcpy() instead of strnpcy(), do not clear the buffer unless necessary
+- rc: openvpn.c: fix CCD client entries being silently truncated for server instances
+- rc: usb.c: leftover nvram change from usb_xhci to usb_usb3
+- rc: wireguard.c: add custom message to run_cmd in shell start script
+- rc: wireguard.c: refactor routing control and improve robustness
+- rc: wireguard.c: replace_in_file(): change log levels
+- rc: wireguard.c: add_domain(): check for empty domain, normalize dnsmasq wildcard format, change log levels
+- rc: wireguard.c: improve update_dnsmasq_ipset() performance and robustness
+- rc: wireguard.c: harden watchdog script and interface state checks
+- rc: wireguard.c: Insert firewall rules instead of appending. Also add a prerouting rule in case DMZ is being used
+- rc: wireguard.c: start_wireguard(), stop_wireguard(): fix port/fwmark init after fork, fix fwmark scope, fix firewall teardown order, simplify function signatures
+- rc: wireguard.c: start_wireguard(): fix unchecked strdup return value for peers
+- rc: wireguard.c: wg_route_peer_allowed_ips(): fix unchecked strdup return values, fix misleading loop guard, remove redundant NULL checks
+- rc: wireguard.c: wg_set_iface_addr(): fix unchecked strdup return value, fix misleading loop guard, remove redundant NULL checks
+- rc: wireguard.c: wg_build_routing(): fix silent fopen failure, memory leak, strdup return value unchecked, remove unused parameter, add rules counter logging
+- rc: wireguard.c: write_wg_dnsmasq_config(): fix sscanf pattern matching all files, replace strtok with strtok_r, fix interface number validation
+- rc: wireguard.c: wg_quick_iface(): fix fd leak and execution after fopen failure
+- rc: wireguard.c: replace_in_file(): fix temp file path construction
+- rc: wireguard.c: add_domain(): fix capacity corruption on realloc failure, add sentinel, improve error handling
+- rc: wireguard.c: update_dnsmasq_ipset(): fix bugs and improve robustness
+- www: VLAN/ethernet: add ethernet-icon.js, update to advanced-vlan.asp and status-overview.asp
+- www: add svg icon to 'Continue' button for Advanced themes
+- www: advanced-misc.asp: one version for ARM and MIPS branch
+- www: advanced-vlan.asp: clear tagged ports when trunk override is disabled (incl. active edit)
+- www: advanced-vlan.asp: simplify trunk enforcement logic
+- www: advanced-vlan.asp: restore trunk VLAN enforcement in GUI
+- www: advanced-wlanvifs.asp: one version for ARM/MIPS branch
+- www: advanced-wlanvifs.asp: update notes in Security form
+- www: advanced-themes: fix padding for select and checkbox
+- www: ethernet-icon.js: minimize size
+- www: tomato.js: add case 'display' to handle span rendering
+- www: tools-survey.asp: fix WiFi survey graph X-axis labels not visible in Firefox
+- www: tools-survey.asp: add support for Advanced themes, other fixes
+- www: tools-survey.asp - upgrade to v2.01
+- www: vpn-wireguard.asp: iterate over MAX_BRIDGE_ID for bridges
+- www: vpn-wireguard.asp: simplify variable creation
+- www: vpn-wireguard.asp: add a warning to Scripts tab
+- www: vpn-wireguard.asp: update note for Poll Interval
+- www: vpn-client.asp: update note for Poll Interval
+- www: vpn-[client|wireguard].asp: limit the Routing Policy table to 60 entries
+- www: vpn-server.asp: fix broken "Generate DH Params", "Generate client config", and "Generate static key" buttons
+- www: wireless.js: fix condition in refreshChannels()
+
+
 2026.1          2026.02.15
 ---------------------------
 

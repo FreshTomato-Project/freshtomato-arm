@@ -20,6 +20,11 @@
  */
 
 #include "vmlinux.h"
+
+#ifndef CAP_OPT_NOAUDIT
+#define CAP_OPT_NOAUDIT 2
+#endif
+
 #include <bpf/bpf_core_read.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
@@ -59,10 +64,14 @@
  * capability checks are emitted.
  *
  * For traced tasks, the program builds cap_event records with task identity,
- * syscall context, namespace inode, and stack id; tracks per-capability
- * statistics; and streams finalized events to userspace through a ring
- * buffer. Fork/exit tracepoints keep the PID filter in sync so children are
- * traced and exits are pruned.
+ * syscall context, namespace inode, the CAP_OPT_* flags passed to
+ * cap_capable(), and stack id; tracks per-capability statistics; and
+ * streams finalized events to userspace through a ring buffer. The cap_opts
+ * field carries the CAP_OPT_* flags so userspace can correlate known
+ * advisory call sites without treating CAP_OPT_NOAUDIT as a standalone
+ * filter. CAP_OPT_NOAUDIT means "do not audit" and is only a confirming
+ * signal alongside syscall and capability matching. Fork/exit tracepoints
+ * keep the PID filter in sync so children are traced and exits are pruned.
  */
 
 #ifndef PERF_MAX_STACK_DEPTH
@@ -108,6 +117,7 @@ struct cap_event {
 	char comm[TASK_COMM_LEN];
 	__u64 stack_id;
 	__u32 targ_ns_inum;
+	__u32 cap_opts;
 };
 
 struct cap_stats {
@@ -437,7 +447,8 @@ cleanup:
  * allow normal execution to continue.
  */
 static __always_inline int handle_capable(struct pt_regs *ctx, int cap,
-					  struct user_namespace *targ_ns)
+					  struct user_namespace *targ_ns,
+					  unsigned int cap_opts)
 {
 	struct cap_event ev = { 0 };
 	__u32 pid;
@@ -450,6 +461,7 @@ static __always_inline int handle_capable(struct pt_regs *ctx, int cap,
 	record_stats(cap);
 	/* Collect task identity, syscall, and stack trace information. */
 	fill_event_common(&ev, ctx, cap);
+	ev.cap_opts = (__u32)cap_opts;
 
 	if (targ_ns) {
 		struct ns_common *ns;
@@ -466,14 +478,15 @@ static __always_inline int handle_capable(struct pt_regs *ctx, int cap,
 /*
  * trace_cap_capable - entry probe for cap_capable().
  *
- * Delegates to handle_capable(). Arguments mirror the kernel helper but are
- * unused here beyond the capability number and namespace pointer. Returns 0.
+ * Delegates to handle_capable(). Arguments mirror the kernel helper and the
+ * capability number, namespace pointer, and opts value are recorded for the
+ * in-flight event. Returns 0.
  */
 SEC("kprobe/cap_capable")
 int BPF_KPROBE(trace_cap_capable, const struct cred *cred,
 	       struct user_namespace *targ_ns, int cap, unsigned int opts)
 {
-	return handle_capable(ctx, cap, targ_ns);
+	return handle_capable(ctx, cap, targ_ns, opts);
 }
 
 /*
@@ -506,7 +519,7 @@ int BPF_KRETPROBE(trace_cap_capable_ret, int ret)
 SEC("kprobe/ns_capable")
 int BPF_KPROBE(trace_ns_capable, struct user_namespace *ns, int cap)
 {
-	return handle_capable(ctx, cap, ns);
+	return handle_capable(ctx, cap, ns, 0);
 }
 
 /*
@@ -530,7 +543,7 @@ int BPF_KRETPROBE(trace_ns_capable_ret, int ret)
 SEC("kprobe/ns_capable_noaudit")
 int BPF_KPROBE(trace_ns_capable_noaudit, struct user_namespace *ns, int cap)
 {
-	return handle_capable(ctx, cap, ns);
+	return handle_capable(ctx, cap, ns, 0);
 }
 
 /*
@@ -553,7 +566,7 @@ int BPF_KRETPROBE(trace_ns_capable_noaudit_ret, int ret)
 SEC("kprobe/capable")
 int BPF_KPROBE(trace_capable, int cap)
 {
-	return handle_capable(ctx, cap, NULL);
+	return handle_capable(ctx, cap, NULL, 0);
 }
 
 /*

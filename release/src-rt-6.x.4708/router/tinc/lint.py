@@ -36,7 +36,7 @@ linters = (
     ],
     ["shfmt", "-d" if DRY else "-w", "-i", "2", "-s", "."],
     ["black", "--check" if DRY else ".", "."],
-    ["pylint", "."],
+    ["pylint", "--disable", "wrong-import-order,unused-import", "."],
     ["mypy", "--exclude", "build", "."],
     ["shellcheck", "-x", *glob(".ci/**/*.sh", recursive=True)],
     ["markflow", "--line-length", "80", "--check" if DRY else "--verbose", ".", ".ci"],

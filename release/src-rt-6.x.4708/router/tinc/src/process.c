@@ -32,8 +32,6 @@
 /* If zero, don't detach from the terminal. */
 bool do_detach = true;
 
-extern char **g_argv;
-
 /* If nonzero, use syslog instead of stderr in no-detach mode. */
 bool use_syslog = false;
 

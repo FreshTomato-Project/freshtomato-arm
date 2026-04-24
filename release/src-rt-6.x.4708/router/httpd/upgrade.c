@@ -18,11 +18,46 @@
 #include <sys/wait.h>
 #include <typedefs.h>
 #include <sys/reboot.h>
+#include <dirent.h>
 
 /* Maximum firmware image size: 64MB. Rejects absurdly large uploads
  * before allocating memory or touching flash.
  */
 #define FIRMWARE_MAX_SIZE (64 * 1024 * 1024)
+
+
+void copy_css_files(void)
+{
+	DIR *d;
+	struct dirent *de;
+	char src[128];
+	const char *name;
+	int len;
+
+	if ((d = opendir("/www")) == NULL)
+		return;
+
+	while ((de = readdir(d)) != NULL) {
+		name = de->d_name;
+
+		if (de->d_type == DT_DIR)
+			continue;
+
+		snprintf(src, sizeof(src), "/www/%s", name);
+
+		if (de->d_type == DT_UNKNOWN) {
+			struct stat st;
+			if ((stat(src, &st) != 0) || (!S_ISREG(st.st_mode)))
+				continue;
+		}
+
+		len = strlen(name);
+		if (len > 4 && strcmp(name + len - 4, ".css") == 0) {
+			eval("cp", src, "/tmp");
+		}
+	}
+	closedir(d);
+}
 
 void prepare_upgrade(void)
 {
@@ -50,22 +85,24 @@ void wi_upgrade(char *url, int len, char *boundary)
 	FILE *f = NULL;
 	char fifo[] = "/tmp/flashXXXXXX";
 	uint8 buf[1024];
-	char *tmp;
 	pid_t pid = -1;
-	int fd = -1, m;
+	int fd = -1, m, retries = 100;
+	int status;
 	unsigned int reset;
 	const char *error = "Error reading file";
+	int complete = 1;
 #ifdef TCONFIG_BCMARM
 	char *args[] = { "mtd-write2", fifo, "linux", NULL };
 #else
 	char *args[] = { "mtd-write", "-w", "-i", fifo, "-d", "linux", NULL };
 #endif
 
+	/* validate session */
 	check_id(url);
-	reset = (strcmp(webcgi_safeget("_reset", "0"), "1") == 0);
-	memset(buf, 0, sizeof(buf)); /* reset */
 
-	/* skip the rest of the header */
+	reset = (strcmp(webcgi_safeget("_reset", "0"), "1") == 0);
+
+	/* Skip HTTP headers */
 	if (!skip_header(&len))
 		goto ERROR;
 
@@ -79,69 +116,90 @@ void wi_upgrade(char *url, int len, char *boundary)
 		goto ERROR;
 	}
 
-	if ((tmp = malloc(len)) == NULL) {
-		error = "Not enough memory";
-		goto ERROR;
-	}
-	free(tmp);
+	/*
+	 * avoid large malloc just to test memory availability.
+	 * Instead, rely on streaming and enforce a reasonable upper bound if needed.
+	 */
 
-	/* -- anything after here ends in a reboot -- */
-
+	/* from this point forward, system will reboot */
 	rboot = 1;
 
+	/* ignore signals during upgrade */
 	signal(SIGTERM, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 
+	/* stop services and prepare system */
 	prepare_upgrade();
 
-	/* copy web assets to /tmp for use during reboot page */
-	eval("cp", "/www/reboot.asp", "/tmp");
-	eval("cp", "/www/favicon.ico", "/tmp");
+	/* copy required UI assets to tmpfs (survive upgrade process) */
+	eval("cp", "/www/reboot.asp", "/www/favicon.ico", "/www/tomatousb_bg.png", "/tmp");
 	eval("cp", "/www/asus-bg.png", "/tmp");
-	eval("cp", "/www/tomatousb_bg.png", "/tmp");
+	copy_css_files();
 
 	led(LED_DIAG, 1);
 
-	/* mkstemp creates and opens a unique temp file; unlink it immediately
-	 * so the name is free for mkfifo. fd is kept open to prevent name reuse
-	 * by another process (mitigates TOCTOU race on the fifo path).
+	/*
+	 * create unique temporary path.
+	 * mkstemp creates a file - we immediately unlink it and reuse path for FIFO.
 	 */
-	fd = mkstemp(fifo); /* NOTE: operator precedence - assign fd first, then check */
-	if (fd < 0) {
-		error = "Unable to create temp file";
+	if ((fd = mkstemp(fifo)) < 0) {
+		error = "Unable to create file";
 		goto ERROR2;
 	}
 	close(fd);
 	fd = -1;
 	unlink(fifo);
 
-	/* create fifo at the now-free unique path */
+	/* create FIFO for streaming firmware to mtd-write */
 	if (mkfifo(fifo, S_IRWXU) < 0) {
 		error = "Unable to create fifo";
 		goto ERROR2;
 	}
 
-	/* start mtd-write with the fifo */
+	/*
+	 * start flashing process asynchronously.
+	 * mtd-write will open FIFO for reading.
+	 */
 	if (_eval(args, ">/tmp/.mtd-write", 0, &pid) != 0) {
 		error = "Unable to start flash program";
 		goto ERROR2;
 	}
 
-	/* open fifo for write */
-	if ((f = fopen(fifo, "w")) == NULL) {
-		error = "Unable to start pipe for mtd-write";
+	/*
+	 * open FIFO for writing.
+	 * this can block until reader is ready, so retry with timeout.
+	 */
+	while (retries-- > 0) {
+		f = fopen(fifo, "w");
+		if (f)
+			break;
+
+		usleep(10000); /* 10ms */
+	}
+
+	if (!f) {
+		error = "Unable to open fifo";
 		goto ERROR2;
 	}
 
-	/* this will actually write the boundary, but since mtd-write uses trx length... */
+	/*
+	 * stream POST body directly into FIFO.
+	 * note: boundary is included, but mtd-write uses trx length.
+	 */
 	while (len > 0) {
-		if ((m = web_read(buf, MIN((unsigned int)len, sizeof(buf)))) <= 0)
+		m = web_read(buf, MIN((unsigned int)len, sizeof(buf)));
+
+		if (m <= 0) {
+			complete = 0;
 			goto ERROR2;
+		}
 
 		len -= m;
+
 		if (safe_fwrite(buf, 1, m, f) != m) {
+			complete = 0;
 			error = "Error writing to pipe";
 			goto ERROR2;
 		}
@@ -150,16 +208,27 @@ void wi_upgrade(char *url, int len, char *boundary)
 	error = NULL;
 
 ERROR2:
+	/* close FIFO stream */
 	if (f)
 		fclose(f);
 
-	if (fd != -1)
-		close(fd);
+	/* wait for flashing process */
+	if (pid != -1) {
+		while (waitpid(pid, &status, 0) < 0) {
+			if (errno != EINTR)
+				break;
+		}
 
-	if (pid != -1)
-		waitpid(pid, &m, 0);
+		/* if transfer completed but flashing failed, propagate error */
+		if (error == NULL) {
+			if (!complete)
+				error = "Incomplete upload";
+			else if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+				error = "Flash failed";
+		}
+	}
 
-	/* clear nvram? */
+	/* optional NVRAM erase after successful flash */
 	if (error == NULL && reset) {
 		set_action(ACT_IDLE);
 #ifdef TCONFIG_BCMARM
@@ -168,30 +237,34 @@ ERROR2:
 		eval("mtd-erase", "-d", "nvram");
 #endif
 	}
+
 	set_action(ACT_REBOOT);
 
-	/* display info on reboot page given by mtd-write (takes priority over regular error) */
+	/* mtd-write output takes precedence over generic error */
 	if (resmsg_fread("/tmp/.mtd-write"))
 		error = NULL;
 
 ERROR:
-	/* erase flash file and free memory */
+	/* cleanup FIFO */
 	if (fifo[0])
 		unlink(fifo);
 
+	/* report error to GUI */
 	if (error)
 		resmsg_set(error);
 
 	if (reset)
 		webcgi_set("resreset", "1");
 
+	/* consume any remaining POST data */
 	web_eat(len);
 }
 
 void wo_flash(char *url)
 {
 	if (rboot) {
-		sleep(1);
+		set_action(ACT_REBOOT);
+		sync();
 		parse_asp("/tmp/reboot.asp");
 		web_close();
 
@@ -202,8 +275,6 @@ void wo_flash(char *url)
 
 		sleep(2);
 
-		sync();
-		//kill(1, SIGTERM);
 		reboot(RB_AUTOBOOT);
 
 		exit(0);

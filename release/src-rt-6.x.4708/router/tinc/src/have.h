@@ -63,7 +63,7 @@
 #endif
 #endif
 
-#if defined(HAVE_ATTR_MALLOC_WITH_ARG)
+#if defined(HAVE_ATTR_MALLOC_WITH_ARG) && !defined(__clang__)
 #define ATTR_DEALLOCATOR(dealloc) __attribute__((__malloc__(dealloc)))
 #else
 #define ATTR_DEALLOCATOR(dealloc)

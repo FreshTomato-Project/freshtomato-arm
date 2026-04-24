@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import functools
 import typing as T
 import os
 import re
 
 from ..envconfig import detect_cpu_family
 from ..mesonlib import Popen_safe
-from .base import DependencyException, DependencyMethods, detect_compiler, SystemDependency
+from .base import DependencyCandidate, DependencyException, DependencyMethods, detect_compiler, SystemDependency
 from .configtool import ConfigToolDependency
 from .detect import packages
 from .factory import factory_methods
@@ -19,29 +18,27 @@ from .pkgconfig import PkgConfigDependency
 if T.TYPE_CHECKING:
     from .factory import DependencyGenerator
     from ..environment import Environment
-    from ..mesonlib import MachineChoice
     from .base import DependencyObjectKWs
 
 
 @factory_methods({DependencyMethods.PKGCONFIG, DependencyMethods.CONFIG_TOOL, DependencyMethods.SYSTEM})
 def mpi_factory(env: 'Environment',
-                for_machine: 'MachineChoice',
                 kwargs: DependencyObjectKWs,
                 methods: T.List[DependencyMethods]) -> T.List['DependencyGenerator']:
-    language = kwargs.get('language')
-    if language is None:
-        language = 'c'
+    language = kwargs.get('language') or 'c'
     if language not in {'c', 'cpp', 'fortran'}:
         # OpenMPI doesn't work without any other languages
         return []
+
+    for_machine = kwargs['native']
 
     candidates: T.List['DependencyGenerator'] = []
     compiler = detect_compiler('mpi', env, for_machine, language)
     if not compiler:
         return []
-    compiler_is_intel = compiler.get_id() in {'intel', 'intel-cl'}
+    compiler_is_intel = compiler.get_id().startswith('intel')
 
-    if DependencyMethods.CONFIG_TOOL in methods:
+    if DependencyMethods.CONFIG_TOOL in methods and not env.machines[for_machine].is_windows():
         nwargs = kwargs.copy()
 
         # We try the environment variables for the tools first, but then
@@ -58,15 +55,26 @@ def mpi_factory(env: 'Environment',
         tool_names = [t for t in tool_names if t]  # remove empty environment variables
 
         if compiler_is_intel:
+            # The oneAPI compilers have different wrappers
+            is_llvm_based = 'llvm' in compiler.id
             if env.machines[for_machine].is_windows():
                 nwargs['returncode_value'] = 3
 
             if language == 'c':
-                tool_names.append('mpiicc')
+                if is_llvm_based:
+                    tool_names.append('mpiicx')
+                else:
+                    tool_names.append('mpiicc')
             elif language == 'cpp':
-                tool_names.append('mpiicpc')
+                if is_llvm_based:
+                    tool_names.append('mpiicpx')
+                else:
+                    tool_names.append('mpiicpc')
             elif language == 'fortran':
-                tool_names.append('mpiifort')
+                if is_llvm_based:
+                    tool_names.append('mpiifx')
+                else:
+                    tool_names.append('mpiifort')
 
         # even with intel compilers, mpicc has to be considered
         if language == 'c':
@@ -77,12 +85,14 @@ def mpi_factory(env: 'Environment',
             tool_names.extend(['mpifort', 'mpif90', 'mpif77'])
 
         nwargs['tools'] = tool_names
-        candidates.append(functools.partial(
-            MPIConfigToolDependency, tool_names[0], env, nwargs, language=language))
+        candidates.append(DependencyCandidate.from_dependency(
+            tool_names[0], MPIConfigToolDependency, (env, nwargs)))
 
     if DependencyMethods.SYSTEM in methods and env.machines[for_machine].is_windows():
-        candidates.append(functools.partial(
-            MSMPIDependency, 'msmpi', env, kwargs, language=language))
+        candidates.append(DependencyCandidate.from_dependency(
+            'msmpi', MSMPIDependency, (env, kwargs)))
+        candidates.append(DependencyCandidate.from_dependency(
+            'impi', IMPIDependency, (env, kwargs)))
 
     # Only OpenMPI has pkg-config, and it doesn't work with the intel compilers
     # for MPI, environment variables and commands like mpicc should have priority
@@ -94,8 +104,8 @@ def mpi_factory(env: 'Environment',
             pkg_name = 'ompi-cxx'
         elif language == 'fortran':
             pkg_name = 'ompi-fort'
-        candidates.append(functools.partial(
-            PkgConfigDependency, pkg_name, env, kwargs, language=language))
+        candidates.append(DependencyCandidate.from_dependency(
+            pkg_name, PkgConfigDependency, (env, kwargs)))
 
     return candidates
 
@@ -105,17 +115,23 @@ packages['mpi'] = mpi_factory
 class MPIConfigToolDependency(ConfigToolDependency):
     """Wrapper around mpicc, Intel's mpiicc and friends."""
 
-    def __init__(self, name: str, env: 'Environment', kwargs: DependencyObjectKWs,
-                 language: T.Optional[str] = None):
-        super().__init__(name, env, kwargs, language=language)
+    def __init__(self, name: str, env: 'Environment', kwargs: DependencyObjectKWs):
+        super().__init__(name, env, kwargs)
         if not self.is_found:
             return
 
-        # --showme for OpenMPI, -compile_info/-link_info for MPICH and IntelMPI
-        for comp, link in [('--showme:compile', '--showme:link'), ('-compile_info', '-link_info'), ('-show', None)]:
+        for comp, link in [
+            ('--showme:compile', '--showme:link'),  # for OpenMPI
+            ('-show-compile-info', '-show-link-info'),  # for MPICH and Intel MPI
+            ('-compile_info', '-link_info'),  # for older MPICH and Intel MPI
+            ('-show', None),
+        ]:
             try:
-                c_args = self.get_config_value([comp], 'compile_args')
-                l_args = self.get_config_value([link], 'link_args') if link is not None else c_args
+                # Set required=True to ensure that the next set of options is
+                # tried when the current ones fail, even if the dependency is
+                # not required
+                c_args = self.get_config_value([comp], 'compile_args', required=True)
+                l_args = self.get_config_value([link], 'link_args', required=True) if link is not None else c_args
             except DependencyException:
                 continue
             else:
@@ -215,11 +231,10 @@ class MSMPIDependency(SystemDependency):
 
     """The Microsoft MPI."""
 
-    def __init__(self, name: str, env: 'Environment', kwargs: DependencyObjectKWs,
-                 language: T.Optional[str] = None):
-        super().__init__(name, env, kwargs, language=language)
+    def __init__(self, name: str, env: 'Environment', kwargs: DependencyObjectKWs):
+        super().__init__(name, env, kwargs)
         # MSMPI only supports the C API
-        if language not in {'c', 'fortran', None}:
+        if self.language not in {'c', 'fortran', None}:
             self.is_found = False
             return
         # MSMPI is only for windows, obviously
@@ -245,3 +260,50 @@ class MSMPIDependency(SystemDependency):
         self.compile_args = ['-I' + incdir, '-I' + os.path.join(incdir, post)]
         if self.language == 'fortran':
             self.link_args.append('-l' + os.path.join(libdir, 'msmpifec'))
+
+
+class IMPIDependency(SystemDependency):
+
+    """Intel(R) MPI for Windows."""
+
+    def __init__(self, name: str, env: Environment, kwargs: DependencyObjectKWs):
+        super().__init__(name, env, kwargs)
+        # only for windows
+        if not self.env.machines[self.for_machine].is_windows():
+            return
+        # only for x86_64
+        if self.env.machines[self.for_machine].cpu_family != 'x86_64':
+            return
+
+        rootdir = os.environ.get('I_MPI_ROOT')
+        if rootdir is None:
+            self.is_found = False
+            return
+
+        incdir = os.path.join(rootdir, 'include')
+        libdir = os.path.join(rootdir, 'lib')
+
+        debug = env.coredata.optstore.get_value_for('debug')
+        assert isinstance(debug, bool)
+        libdir_post = 'debug' if debug else 'release'
+        for subdirs in (['mpi', libdir_post], [libdir_post]):
+            libdir_buildtype = os.path.join(libdir, *subdirs)
+            if os.path.isdir(libdir_buildtype):
+                libdir = libdir_buildtype
+                break
+
+        found_header = os.path.isfile(os.path.join(incdir, 'mpi.h'))
+        found_library = os.path.isfile(os.path.join(libdir, 'impi.lib'))
+        if not found_header or not found_library:
+            self.is_found = False
+            return
+
+        self.is_found = True
+        self.compile_args = ['-I' + incdir]
+        self.link_args = ['-l' + os.path.join(libdir, 'impi')]
+        if self.language == 'cpp':
+            # Some installations do not have the MPI C++ bindings library
+            if not os.path.isfile(os.path.join(libdir, 'impicxx.lib')):
+                self.is_found = False
+                return
+            self.link_args = ['-l' + os.path.join(libdir, 'impicxx')]

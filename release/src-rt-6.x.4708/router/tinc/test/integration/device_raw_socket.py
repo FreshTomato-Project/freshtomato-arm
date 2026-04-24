@@ -2,18 +2,25 @@
 
 """Test raw socket device support."""
 
-import sys
-import subprocess as subp
-
-from testlib import check, util
 from testlib.log import log
 from testlib.const import EXIT_SKIP
 from testlib.proc import Script
 from testlib.test import Test
 from testlib.external import veth_add, move_dev, ping
+from testlib import check, util
+
+import sys
+import subprocess as subp
+import socket
 
 util.require_root()
 util.require_command("ip", "link")
+
+try:
+    s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_IP)
+except PermissionError:
+    log.info("This test requires raw socket privileges")
+    sys.exit(77)
 
 FAKE_DEV = "cqhqdr7knaLzYeMSdy"
 
@@ -35,7 +42,11 @@ def test_device_raw_socket(ctx: Test) -> None:
 
     log.info("create a veth pair")
     dev0, dev1 = util.random_string(10), util.random_string(10)
-    veth_add(dev0, dev1)
+    try:
+        veth_add(dev0, dev1)
+    except subp.CalledProcessError:
+        log.info("This test requires network privileges")
+        sys.exit(77)
 
     log.info("configure the veth pair")
     move_dev(dev1, dev1, f"{IP_NETNS}/30")

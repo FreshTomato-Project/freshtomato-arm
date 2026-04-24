@@ -469,6 +469,8 @@ int check_source(struct dns_header *header, size_t plen, unsigned char *pseudohe
      {
        GETSHORT(code, p);
        GETSHORT(len, p);
+       if (i + 4 + len > rdlen)
+	 break; /* malformed: option body extends beyond RDATA */
        if (code == EDNS0_OPTION_CLIENT_SUBNET)
 	 {
 	   if (peer)

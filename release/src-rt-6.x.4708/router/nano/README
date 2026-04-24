@@ -15,7 +15,7 @@ Appearance
     In rough ASCII graphics, this is what nano's screen looks like:
 
    ____________________________________________________________________
-  |  GNU nano 8.7.1                filename                  Modified  |
+  |  GNU nano 9.0                  filename                  Modified  |
    --------------------------------------------------------------------
   | This is the text window, displaying the contents of a 'buffer',    |
   | the contents of the file you are editing.                          |
@@ -52,8 +52,8 @@ Origin
     Nowadays, nano wants to be a generally useful editor with sensible
     defaults (linewise scrolling, no automatic line breaking).
 
-    The nano editor is an official GNU package.  For more information on
-    GNU and the Free Software Foundation, please see https://www.gnu.org/.
+    The nano editor is an official GNU package.  For more information
+    on GNU and the Free Software Foundation, see https://www.gnu.org/.
 
 License
 
@@ -81,7 +81,9 @@ How to compile and install nano
     You will need the header files of ncurses installed for ./configure
     to succeed -- get them from libncurses-dev (Debian) or ncurses-devel
     (Fedora) or a similarly named package.  Use --prefix with ./configure
-    to override the default installation directory of /usr/local.
+    to override the default installation directory of /usr/local.  And
+    use --sysconfdir=/etc when you want your self-compiled nano to read
+    the /etc/nanorc file.
 
     After installation you may want to copy the doc/sample.nanorc file
     to your home directory, rename it to ".nanorc", and then edit it

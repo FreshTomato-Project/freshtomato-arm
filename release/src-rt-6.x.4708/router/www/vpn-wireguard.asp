@@ -20,15 +20,15 @@
 <script src="interfaces.js?rel=<% version(); %>"></script>
 <script src="qrcode.js?rel=<% version(); %>"></script>
 <script src="html5-qrcode.js?rel=<% version(); %>"></script>
+
 <script>
 
-
-//	<% nvram("wan_ipaddr,wan_hostname,wan_domain,lan_ifname,lan_ipaddr,lan_netmask,wg_adns,wg0_enable,wg0_poll,wg0_tchk,wg0_tunchk,wg0_sleep,wg0_file,wg0_ip,wg0_fwmark,wg0_mtu,wg0_preup,wg0_postup,wg0_predown,wg0_postdown,wg0_aip,wg0_dns,wg0_peer_dns,wg0_ka,wg0_port,wg0_key,wg0_endpoint,wg0_com,wg0_lan,wg0_rgw,wg0_peers,wg0_route,wg0_firewall,wg0_nat,wg0_fw,wg0_rgwr,wg0_routing_val,wg0_prio,wg1_enable,wg1_poll,wg1_tchk,wg1_tunchk,wg1_sleep,wg1_file,wg1_ip,wg1_fwmark,wg1_mtu,wg1_preup,wg1_postup,wg1_predown,wg1_postdown,wg1_aip,wg1_dns,wg1_peer_dns,wg1_ka,wg1_port,wg1_key,wg1_endpoint,wg1_com,wg1_lan,wg1_rgw,wg1_peers,wg1_route,wg1_firewall,wg1_nat,wg1_fw,wg1_rgwr,wg1_routing_val,wg1_prio,wg2_enable,wg2_poll,wg2_tchk,wg2_tunchk,wg2_sleep,wg2_file,wg2_ip,wg2_fwmark,wg2_mtu,wg2_preup,wg2_postup,wg2_predown,wg2_postdown,wg2_aip,wg2_dns,wg2_peer_dns,wg2_ka,wg2_port,wg2_key,wg2_endpoint,wg2_com,wg2_lan,wg2_rgw,wg2_peers,wg2_route,wg2_firewall,wg2_nat,wg2_fw,wg2_rgwr,wg2_routing_val,wg2_prio"); %>
-
+//	<% nvram("wan_ipaddr,wan_hostname,wan_domain,lan_ifname,lan_ipaddr,lan_netmask,wg_adns,wg_enable,wg_poll,wg_tchk,wg_tunchk,wg_sleep,wg_file,wg_ip,wg_fwmark,wg_mtu,wg_preup,wg_postup,wg_predown,wg_postdown,wg_aip,wg_dns,wg_peer_dns,wg_ka,wg_port,wg_key,wg_endpoint,wg_com,wg_lan,wg_rgw,wg_peers,wg_route,wg_firewall,wg_nat,wg_fw,wg_rgwr,wg_routing_val,wg_prio"); %>
 
 var cprefix = 'vpn_wireguard';
 var changed = 0, i;
 var serviceType = 'wireguard';
+var script_warn = 'Although a snapshot mechanism is applied during startup, introducing custom routing while WireGuard is running and then saving the configuration may corrupt the routing table!';
 for (i = 0; i < WG_INTERFACE_COUNT; i++) serviceLastUp.push('0');
 
 function RouteGrid() {return this;}
@@ -1982,16 +1982,12 @@ function save(nomsg) {
 		nvram[t+'_rgwr'] = E('_'+t+'_rgwr').value;
 		nvram[t+'_com'] = E('_'+t+'_com').value;
 
-		/* set properly value of Push LANX to peers: bit 0 = LAN0, bit 1 = LAN1, bit 2 = LAN2, bit 3 = LAN3 */
+		/* set properly value of Push LANX to peers: bit 0 = LAN0, bit 1 = LAN1, etc. */
 		fom[t+'_lan'].value = 0; /* init with 0 and check */
-		if (fom['_f_'+t+'_lan0'].checked)
-			fom[t+'_lan'].value |= 1;
-		if (fom['_f_'+t+'_lan1'].checked)
-			fom[t+'_lan'].value |= 2;
-		if (fom['_f_'+t+'_lan2'].checked)
-			fom[t+'_lan'].value |= 4;
-		if (fom['_f_'+t+'_lan3'].checked)
-			fom[t+'_lan'].value |= 8;
+		for (var j = 0; j <= MAX_BRIDGE_ID; j++) {
+			if (fom['_f_'+t+'_lan'+j].checked)
+				fom[t+'_lan'].value |= (1 << j);
+		}
 
 		if (E('_f_'+t+'_adns').checked)
 			fom.wg_adns.value += i+',';
@@ -2174,17 +2170,17 @@ function init() {
 			/* peers params tab start */
 			W('<div id="'+t+'-wg-peersp">');
 			W('<div class="section-title">Peers Parameters <span style="font-size:0.7em">(used only to generate peer config files)<\/span><\/div>');
-			createFieldTable('', [
+			var f = [
 				{ title: 'Router behind NAT', name: t+'_ka', type: 'text', maxlen: 2, size: 4, suffix: '&nbsp;<small>configures keepalive interval from this router towards the defined peers (0=disable/no NAT, 10-99s range, 25 is a common setting)<\/small>', value: nvram[t+'_ka'] },
 				{ title: 'Endpoint', name: 'f_'+t+'_endpoint', type: 'select', options: [['0','FQDN'],['1','WAN IP'],['2','Custom Endpoint']], value: nvram[t+'_endpoint'][0] || 0, suffix: '&nbsp;<input type="text" name="f_'+t+'_custom_endpoint" value="'+(nvram[t+'_endpoint'].split('|', 2)[1] || '')+'" onchange="verifyFields(this, 1)" id="_f_'+t+'_custom_endpoint" maxlength="64" size="46">' },
 				{ title: 'Allowed IPs', name: t+'_aip', type: 'text', placeholder: 'CIDR format / comma separated', maxlen: 128, size: 64, value: nvram[t+'_aip'] },
-				{ title: 'DNS Servers for Peers', name: t+'_peer_dns', type: 'text', maxlen: 128, size: 64, placeholder: 'comma separated', value: nvram[t+'_peer_dns'] },
-				{ title: 'Push LAN0 (br0) to peers', name: 'f_'+t+'_lan0', type: 'checkbox', value: (nvram[t+'_lan'] & 0x01) },
-				{ title: 'Push LAN1 (br1) to peers', name: 'f_'+t+'_lan1', type: 'checkbox', value: (nvram[t+'_lan'] & 0x02) },
-				{ title: 'Push LAN2 (br2) to peers', name: 'f_'+t+'_lan2', type: 'checkbox', value: (nvram[t+'_lan'] & 0x04) },
-				{ title: 'Push LAN3 (br3) to peers', name: 'f_'+t+'_lan3', type: 'checkbox', value: (nvram[t+'_lan'] & 0x08) },
-				{ title: 'Forward all peer traffic', name: 'f_'+t+'_rgw', type: 'checkbox', value: nvram[t+'_rgw'] == 1 }
-			]);
+				{ title: 'DNS Servers for Peers', name: t+'_peer_dns', type: 'text', maxlen: 128, size: 64, placeholder: 'comma separated', value: nvram[t+'_peer_dns'] }
+			];
+			for (var j = 0; j <= MAX_BRIDGE_ID; j++) {
+				f.push({ title: 'Push LAN'+j+' (br'+j+') to peers', name: 'f_'+t+'_lan'+j, type: 'checkbox', value: (nvram[t+'_lan'] & (1 << j)) });
+			}
+			f.push({ title: 'Forward all peer traffic', name: 'f_'+t+'_rgw', type: 'checkbox', value: nvram[t+'_rgw'] == 1 });
+			createFieldTable('', f);
 			W('<br><\/div>');
 			/* peers params tab stop */
 
@@ -2236,10 +2232,10 @@ function init() {
 			W('<div id="'+t+'-wg-scripts">');
 			W('<div class="section-title">Custom Interface Scripts<\/div>');
 			createFieldTable('', [
-				{ title: 'Pre-Up Script', name: t+'_preup', type: 'textarea', value: nvram[t+'_preup'] },
-				{ title: 'Post-Up Script', name: t+'_postup', type: 'textarea', value: nvram[t+'_postup'] },
-				{ title: 'Pre-Down Script', name: t+'_predown', type: 'textarea', value: nvram[t+'_predown'] },
-				{ title: 'Post-Down Script', name: t+'_postdown', type: 'textarea', value: nvram[t+'_postdown'] }
+				{ title: 'Pre-Up Script', name: t+'_preup', type: 'textarea', placeholder: script_warn, value: nvram[t+'_preup'] },
+				{ title: 'Post-Up Script', name: t+'_postup', type: 'textarea', placeholder: script_warn, value: nvram[t+'_postup'] },
+				{ title: 'Pre-Down Script', name: t+'_predown', type: 'textarea', placeholder: script_warn, value: nvram[t+'_predown'] },
+				{ title: 'Post-Down Script', name: t+'_postdown', type: 'textarea', placeholder: script_warn, value: nvram[t+'_postdown'] }
 			]);
 			W('<\/div>');
 			/* scripts tab stop */
@@ -2282,7 +2278,6 @@ function init() {
 <div class="section-title">Notes</div>
 <div class="section" id="sesdiv_notes">
 	<ul>
-		<li><b>Do not change (and save)</b> the settings when wireguard <b>is running</b> - you may end up with a downed firewall or broken routing table!</li>
 		<li>For help, click the link in the upper right corner to the dedicated wiki page.</li>
 	</ul>
 </div>

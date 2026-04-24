@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2009-2019, 2021-2025 D. R. Commander.  All Rights Reserved.
+ * Copyright (C) 2009-2019, 2021-2026 D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -94,13 +94,13 @@ static int tjErrorLine = -1, tjErrorCode = -1;
   (IS_CROPPED(cr) ? (cr.h != 0 ? cr.h : TJSCALED(height, sf) - cr.y) : \
                     TJSCALED(height, sf))
 
-static int stopOnWarning = 0, bottomUp = 0, noRealloc = 1, fastUpsample = 0,
-  fastDCT = 0, optimize = 0, progressive = 0, maxMemory = 0, maxPixels = 0,
-  maxScans = 0, arithmetic = 0, lossless = 0, restartIntervalBlocks = 0,
-  restartIntervalRows = 0;
-static int precision = 8, sampleSize, compOnly = 0, decompOnly = 0, doYUV = 0,
-  quiet = 0, doTile = 0, pf = TJPF_BGR, yuvAlign = 1, doWrite = 1;
+static int stopOnWarning = 0, bottomUp = 0, noRealloc = 1, precision = 8,
+  fastUpsample = 0, fastDCT = 0, optimize = 0, progressive = 0, maxScans = 0,
+  arithmetic = 0, lossless = 0, restartIntervalBlocks = 0,
+  restartIntervalRows = 0, maxMemory = 0, maxPixels = 0;
 static char *ext = "ppm";
+static int sampleSize, compOnly = 0, decompOnly = 0, doWrite = 1,
+  pf = TJPF_BGR, quiet = 0, doTile = 0, doYUV = 0, yuvAlign = 1;
 static const char *pixFormatStr[TJ_NUMPF] = {
   "RGB", "BGR", "RGBX", "BGRX", "XBGR", "XRGB", "GRAY", "", "", "", "", "CMYK"
 };
@@ -178,14 +178,12 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
                   int tilew, int tileh)
 {
   char tempStr[1024], sizeStr[24] = "\0", qualStr[16] = "\0";
-  FILE *file = NULL;
   tjhandle handle = NULL;
-  int i, row, col, iter = 0, dstBufAlloc = 0, retval = 0;
+  int i, x, y, iter = 0, dstBufAlloc = 0, retval = 0;
   double elapsed, elapsedDecode;
   int ps = tjPixelSize[pf];
   int scaledw, scaledh, pitch;
-  int ntilesw = (w + tilew - 1) / tilew, ntilesh = (h + tileh - 1) / tileh;
-  unsigned char *dstPtr, *dstPtr2, *yuvBuf = NULL;
+  unsigned char *rowPtr, *colPtr, *yuvBuf = NULL;
 
   if (lossless) sf = TJUNSCALED;
 
@@ -270,12 +268,12 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
     int tile = 0;
     double start = getTime();
 
-    for (row = 0, dstPtr = dstBuf; row < ntilesh;
-         row++, dstPtr += (size_t)pitch * tileh * sampleSize) {
-      for (col = 0, dstPtr2 = dstPtr; col < ntilesw;
-           col++, tile++, dstPtr2 += ps * tilew * sampleSize) {
-        int width = doTile ? min(tilew, w - col * tilew) : scaledw;
-        int height = doTile ? min(tileh, h - row * tileh) : scaledh;
+    for (y = 0, rowPtr = dstBuf; y < h;
+         y += tileh, rowPtr += (size_t)pitch * tileh * sampleSize) {
+      for (x = 0, colPtr = rowPtr; x < w;
+           x += tilew, tile++, colPtr += ps * tilew * sampleSize) {
+        int width = doTile ? min(tilew, w - x) : scaledw;
+        int height = doTile ? min(tileh, h - y) : scaledh;
 
         if (doYUV) {
           double startDecode;
@@ -284,22 +282,22 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
                                   yuvBuf, yuvAlign) == -1)
             THROW_TJ();
           startDecode = getTime();
-          if (tj3DecodeYUV8(handle, yuvBuf, yuvAlign, dstPtr2, width, pitch,
+          if (tj3DecodeYUV8(handle, yuvBuf, yuvAlign, colPtr, width, pitch,
                             height, pf) == -1)
             THROW_TJ();
           if (iter >= 0) elapsedDecode += getTime() - startDecode;
         } else {
           if (precision <= 8) {
             if (tj3Decompress8(handle, jpegBufs[tile], jpegSizes[tile],
-                               dstPtr2, pitch, pf) == -1)
+                               colPtr, pitch, pf) == -1)
               THROW_TJ();
           } else if (precision <= 12) {
             if (tj3Decompress12(handle, jpegBufs[tile], jpegSizes[tile],
-                                (short *)dstPtr2, pitch, pf) == -1)
+                                (short *)colPtr, pitch, pf) == -1)
               THROW_TJ();
           } else {
             if (tj3Decompress16(handle, jpegBufs[tile], jpegSizes[tile],
-                                (unsigned short *)dstPtr2, pitch, pf) == -1)
+                                (unsigned short *)colPtr, pitch, pf) == -1)
               THROW_TJ();
           }
         }
@@ -313,7 +311,7 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
       iter = 0;
       elapsed = elapsedDecode = 0.;
     }
-  }
+  }  /* while (1) */
   if (doYUV) elapsed -= elapsedDecode;
 
   if (quiet) {
@@ -367,7 +365,6 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
   }
 
 bailout:
-  if (file) fclose(file);
   tj3Destroy(handle);
   if (dstBufAlloc) free(dstBuf);
   free(yuvBuf);
@@ -380,10 +377,10 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
 {
   char tempStr[1024], tempStr2[80];
   FILE *file = NULL;
-  unsigned char **jpegBufs = NULL, *yuvBuf = NULL, *srcPtr, *srcPtr2;
+  unsigned char **jpegBufs = NULL, *yuvBuf = NULL, *rowPtr, *colPtr;
   void *tmpBuf = NULL;
   double start, elapsed, elapsedEncode;
-  int row, col, i, tilew = w, tileh = h, retval = 0;
+  int x, y, i, tilew = w, tileh = h, retval = 0;
   int iter;
   size_t totalJpegSize = 0, *jpegBufSizes = NULL, *jpegSizes = NULL,
     yuvSize = 0;
@@ -495,18 +492,18 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
 
       totalJpegSize = 0;
       start = getTime();
-      for (row = 0, srcPtr = srcBuf; row < ntilesh;
-           row++, srcPtr += pitch * tileh * sampleSize) {
-        for (col = 0, srcPtr2 = srcPtr; col < ntilesw;
-             col++, tile++, srcPtr2 += ps * tilew * sampleSize) {
-          int width = min(tilew, w - col * tilew);
-          int height = min(tileh, h - row * tileh);
+      for (y = 0, rowPtr = srcBuf; y < h;
+           y += tileh, rowPtr += pitch * tileh * sampleSize) {
+        for (x = 0, colPtr = rowPtr; x < w;
+             x += tilew, tile++, colPtr += ps * tilew * sampleSize) {
+          int width = min(tilew, w - x);
+          int height = min(tileh, h - y);
 
           if (noRealloc) jpegSizes[tile] = jpegBufSizes[tile];
           if (doYUV) {
             double startEncode = getTime();
 
-            if (tj3EncodeYUV8(handle, srcPtr2, width, pitch, height, pf,
+            if (tj3EncodeYUV8(handle, colPtr, width, pitch, height, pf,
                               yuvBuf, yuvAlign) == -1)
               THROW_TJ();
             if (iter >= 0) elapsedEncode += getTime() - startEncode;
@@ -515,15 +512,15 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
               THROW_TJ();
           } else {
             if (precision <= 8) {
-              if (tj3Compress8(handle, srcPtr2, width, pitch, height, pf,
+              if (tj3Compress8(handle, colPtr, width, pitch, height, pf,
                                &jpegBufs[tile], &jpegSizes[tile]) == -1)
                 THROW_TJ();
             } else if (precision <= 12) {
-              if (tj3Compress12(handle, (short *)srcPtr2, width, pitch, height,
+              if (tj3Compress12(handle, (short *)colPtr, width, pitch, height,
                                 pf, &jpegBufs[tile], &jpegSizes[tile]) == -1)
                 THROW_TJ();
             } else {
-              if (tj3Compress16(handle, (unsigned short *)srcPtr2, width,
+              if (tj3Compress16(handle, (unsigned short *)colPtr, width,
                                 pitch, height, pf, &jpegBufs[tile],
                                 &jpegSizes[tile]) == -1)
                 THROW_TJ();
@@ -540,7 +537,7 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
         iter = 0;
         elapsed = elapsedEncode = 0.;
       }
-    }
+    }  /* while (1) */
     if (doYUV) elapsed -= elapsedEncode;
 
     if (quiet == 1) printf("%-5d  %-5d   ", tilew, tileh);
@@ -615,7 +612,7 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
     }
 
     if (tilew == w && tileh == h) break;
-  }
+  }  /* for (tilew, tileh) */
 
 bailout:
   if (file) fclose(file);
@@ -640,7 +637,7 @@ static int decompTest(char *fileName)
   size_t *jpegBufSizes = NULL, *jpegSizes = NULL, srcSize, totalJpegSize;
   tjtransform *t = NULL;
   double start, elapsed;
-  int ps = tjPixelSize[pf], tile, row, col, i, iter, retval = 0, decompsrc = 0,
+  int ps = tjPixelSize[pf], tile, x, y, i, iter, retval = 0, decompsrc = 0,
     doTransform = 0;
   char *temp = NULL, tempStr[80], tempStr2[80];
   /* Original image */
@@ -707,7 +704,7 @@ static int decompTest(char *fileName)
     THROW_TJ();
 
   lossless = tj3Get(handle, TJPARAM_LOSSLESS);
-  sampleSize = (precision <= 8 ? sizeof(unsigned char) : sizeof(short));
+  sampleSize = (precision <= 8 ? 1 : 2);
   cs = tj3Get(handle, TJPARAM_COLORSPACE);
   if (w < 1 || h < 1)
     THROW("reading JPEG header", "Invalid image dimensions");
@@ -807,12 +804,12 @@ static int decompTest(char *fileName)
       tntilesw = (tw + ttilew - 1) / ttilew;
       tntilesh = (th + ttileh - 1) / ttileh;
 
-      for (row = 0, tile = 0; row < tntilesh; row++) {
-        for (col = 0; col < tntilesw; col++, tile++) {
-          t[tile].r.w = min(ttilew, tw - col * ttilew);
-          t[tile].r.h = min(ttileh, th - row * ttileh);
-          t[tile].r.x = col * ttilew;
-          t[tile].r.y = row * ttileh;
+      for (y = 0, tile = 0; y < th; y += ttileh) {
+        for (x = 0; x < tw; x += ttilew, tile++) {
+          t[tile].r.w = min(ttilew, tw - x);
+          t[tile].r.h = min(ttileh, th - y);
+          t[tile].r.x = x;
+          t[tile].r.y = y;
           t[tile].op = xformOp;
           t[tile].options = xformOpt | TJXOPT_TRIM;
           t[tile].customFilter = customFilter;
@@ -831,8 +828,7 @@ static int decompTest(char *fileName)
       elapsed = 0.;
       while (1) {
         start = getTime();
-        if (noRealloc && (doTile || xformOp != TJXOP_NONE || xformOpt != 0 ||
-                          customFilter)) {
+        if (noRealloc && doTransform) {
           for (tile = 0; tile < tntilesw * tntilesh; tile++)
             jpegSizes[tile] = jpegBufSizes[tile];
         }
@@ -873,7 +869,7 @@ static int decompTest(char *fileName)
         printf("                  Output bit stream:  %f Megabits/sec\n",
                (double)totalJpegSize * 8. / 1000000. / elapsed);
       }
-    } else {
+    } else {  /* if (doTransform) */
       if (quiet == 1) printf("N/A     N/A     ");
       tj3Free(jpegBufs[0]);
       jpegBufs[0] = NULL;
@@ -898,7 +894,7 @@ static int decompTest(char *fileName)
     free(jpegSizes);  jpegSizes = NULL;
 
     if (tilew == w && tileh == h) break;
-  }
+  }  /* for (tilew, tileh) */
 
 bailout:
   if (file) fclose(file);
@@ -1332,7 +1328,7 @@ int main(int argc, char *argv[])
     printf("ERROR: -lossless and -yuv are incompatible\n");
     retval = -1;  goto bailout;
   }
-  sampleSize = (precision <= 8 ? sizeof(unsigned char) : sizeof(short));
+  sampleSize = (precision <= 8 ? 1 : 2);
 
   if ((sf.num != 1 || sf.denom != 1) && doTile) {
     printf("Disabling tiled compression/decompression tests, because those tests do not\n");
@@ -1354,12 +1350,6 @@ int main(int argc, char *argv[])
       printf("ERROR: -crop and -yuv are incompatible\n");
       retval = -1;  goto bailout;
     }
-  }
-
-  if (!noRealloc && doTile) {
-    printf("Disabling tiled compression/decompression tests, because those tests do not\n");
-    printf("work when dynamic JPEG buffer allocation is enabled.\n\n");
-    doTile = 0;  xformOpt &= (~TJXOPT_CROP);
   }
 
   if (!decompOnly) {

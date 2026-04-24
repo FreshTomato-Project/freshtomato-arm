@@ -28,6 +28,7 @@
 #include "protocol.h"
 #include "control_common.h"
 #include "crypto.h"
+#include "device.h"
 #include "ecdsagen.h"
 #include "fsck.h"
 #include "info.h"
@@ -254,8 +255,12 @@ static bool parse_options(int argc, char **argv) {
 		}
 	}
 
-	if(!netname && (netname = getenv("NETNAME"))) {
-		netname = xstrdup(netname);
+	if(!netname) {
+		char *env_value = getenv("NETNAME");
+
+		if(env_value) {
+			netname = xstrdup(env_value);
+		}
 	}
 
 	/* netname "." is special: a "top-level name" */
@@ -355,7 +360,9 @@ static bool ed25519_keygen(bool ask) {
 
 	fprintf(stderr, "Generating Ed25519 key pair:\n");
 
-	if(!(key = ecdsa_generate())) {
+	key = ecdsa_generate();
+
+	if(!key) {
 		fprintf(stderr, "Error during key generation!\n");
 		return false;
 	} else {
@@ -430,7 +437,9 @@ static bool rsa_keygen(int bits, bool ask) {
 
 	fprintf(stderr, "Generating %d bits keys:\n", bits);
 
-	if(!(key = rsa_generate(bits, 0x10001))) {
+	key = rsa_generate(bits, 0x10001);
+
+	if(!key) {
 		fprintf(stderr, "Error during key generation!\n");
 		return false;
 	} else {
@@ -908,8 +917,9 @@ static int cmd_start(int argc, char *argv[]) {
 	char *slash = strrchr(program_name, '/');
 
 #ifdef HAVE_WINDOWS
+	c = strrchr(program_name, '\\');
 
-	if((c = strrchr(program_name, '\\')) > slash) {
+	if(c > slash) {
 		slash = c;
 	}
 
@@ -1603,6 +1613,7 @@ char *get_my_name(bool verbose) {
 		value = buf + len;
 		value += strspn(value, "\t ");
 
+		// NOLINTNEXTLINE
 		if(*value == '=') {
 			value++;
 			value += strspn(value, "\t ");
@@ -1643,6 +1654,7 @@ static ecdsa_t *get_pubkey(FILE *f) {
 		value = buf + len;
 		value += strspn(value, "\t ");
 
+		// NOLINTNEXTLINE
 		if(*value == '=') {
 			value++;
 			value += strspn(value, "\t ");
@@ -1998,6 +2010,7 @@ static int cmd_config(int argc, char *argv[]) {
 		bvalue = buf2 + len;
 		bvalue += strspn(bvalue, "\t ");
 
+		// NOLINTNEXTLINE
 		if(*bvalue == '=') {
 			bvalue++;
 			bvalue += strspn(bvalue, "\t ");
@@ -2144,7 +2157,7 @@ static bool try_bind(int port) {
 	for(aip = ai; aip; aip = aip->ai_next) {
 		int fd = socket(ai->ai_family, SOCK_STREAM, IPPROTO_TCP);
 
-		if(!fd) {
+		if(fd == -1) {
 			success = false;
 			break;
 		}
@@ -2936,6 +2949,7 @@ static int cmd_verify(int argc, char *argv[]) {
 	xasprintf(&trailer, " %s %ld", signer, t);
 	size_t trailer_len = strlen(trailer);
 
+	// NOLINTNEXTLINE
 	data = xrealloc(data, len + trailer_len);
 	memcpy(data + len, trailer, trailer_len);
 	free(trailer);
@@ -2955,8 +2969,9 @@ static int cmd_verify(int argc, char *argv[]) {
 	ecdsa_t *key = get_pubkey(fp);
 
 	if(!key) {
-		rewind(fp);
-		key = ecdsa_read_pem_public_key(fp);
+		if(fseek(fp, 0, SEEK_SET) == 0) {
+			key = ecdsa_read_pem_public_key(fp);
+		}
 	}
 
 	if(!key) {
@@ -3084,7 +3099,7 @@ static char *complete_config(const char *text, int state) {
 	}
 
 	while(variables[i].name) {
-		char *dot = strchr(text, '.');
+		const char *dot = strchr(text, '.');
 
 		if(dot) {
 			if((variables[i].type & VAR_HOST) && !strncasecmp(variables[i].name, dot + 1, strlen(dot + 1))) {
@@ -3234,6 +3249,7 @@ static int cmd_shell(int argc, char *argv[]) {
 		char *p = line + strspn(line, " \t\n");
 		char *next = strtok(p, " \t\n");
 
+		// NOLINTNEXTLINE
 		while(p && *p) {
 			if(nargc >= maxargs) {
 				maxargs *= 2;

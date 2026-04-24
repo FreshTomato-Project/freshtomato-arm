@@ -207,7 +207,7 @@ Thanks to Martin Schobert for auditing tinc and reporting the vulnerability.
 
 # Version 1.1pre6              February 20 2013
 
-* Fixed tincd exitting immediately on Windows.
+* Fixed tincd exiting immediately on Windows.
 * Detect PMTU increases.
 * Fixed crashes when using a SOCKS5 proxy.
 * Fixed control connection when using a proxy.

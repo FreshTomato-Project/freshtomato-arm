@@ -22,7 +22,6 @@ sys.path.append(r'$SRC_ROOT')
 from testlib.proc import Tinc
 from testlib.event import Notification
 from testlib.log import new_logger
-from testlib.const import MPC_FAMILY
 
 this = Tinc('$NODE_NAME')
 log = new_logger(this.name)
@@ -39,7 +38,7 @@ def notify_test(args: T.Dict[str, T.Any] = {}, error: T.Optional[Exception] = No
 
     for retry in range(1, 10):
         try:
-            with mpc.Client($NOTIFICATIONS_ADDR, family=MPC_FAMILY, authkey=$AUTH_KEY) as conn:
+            with mpc.Client($NOTIFICATIONS_ADDR, authkey=$AUTH_KEY) as conn:
                 conn.send(evt)
             log.debug(f'sent notification')
             break

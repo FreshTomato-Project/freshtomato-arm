@@ -105,8 +105,6 @@ u32 rand32(void)
 
 u64 rand64(void)
 {
-  static int outleft = 0;
-
   if (outleft < 2)
     {
       if (!++in[0]) if (!++in[1]) if (!++in[2]) ++in[3];
@@ -581,6 +579,7 @@ void prettyprint_time(char *buf, unsigned int t)
   else
     {
       unsigned int x, p = 0;
+      buf[0] = '\0';
        if ((x = t/86400))
 	p += sprintf(&buf[p], "%ud", x);
        if ((x = (t/3600)%24))
@@ -991,7 +990,7 @@ int expand_workspace_real(const char *func, unsigned int line, unsigned char ***
   if (!(p = whine_realloc_real("expand_workspace", func, line, *wkspc, new * sizeof(unsigned char *))))
     return 0;
 
-  memset(p+old, 0, new-old);
+  memset(p+old, 0, (new-old) * sizeof(unsigned char *));
   
   *wkspc = p;
   *szp = new;

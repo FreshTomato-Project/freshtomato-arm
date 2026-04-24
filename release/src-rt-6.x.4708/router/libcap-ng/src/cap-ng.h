@@ -1,5 +1,5 @@
 /* libcap-ng.h --
- * Copyright 2009,2013,2020-23 Red Hat Inc.
+ * Copyright 2009,2013,2020-26 Red Hat Inc.
  * All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -25,6 +25,7 @@
 #define LIBCAP_NG_HEADER
 
 #include <stdint.h>
+#include <stddef.h>
 #include <linux/capability.h>
 #include <unistd.h>
 
@@ -55,7 +56,9 @@ typedef enum {	CAPNG_FAIL=-1, CAPNG_NONE, CAPNG_PARTIAL,
 typedef enum {  CAPNG_PRINT_STDOUT, CAPNG_PRINT_BUFFER } capng_print_t;
 typedef enum {  CAPNG_NO_FLAG=0, CAPNG_DROP_SUPP_GRP=1,
 		CAPNG_CLEAR_BOUNDING=2, CAPNG_INIT_SUPP_GRP=4,
-		CAPNG_CLEAR_AMBIENT=8 } capng_flags_t;
+		CAPNG_CLEAR_AMBIENT=8,
+		CAPNG_APPLY_STAGED_GROUPS=16,
+		CAPNG_APPLY_BOUNDING=32 } capng_flags_t;
 
 #define CAPNG_UNSET_ROOTID -1
 #define CAPNG_SUPPORTS_AMBIENT 1
@@ -73,6 +76,7 @@ int capng_updatev(capng_act_t action, capng_type_t type,
 int capng_apply(capng_select_t set) __wur;
 int capng_lock(void) __wur;
 int capng_change_id(int uid, int gid, capng_flags_t flag) __wur;
+int capng_stage_additional_groups(const gid_t *gids, size_t count) __wur;
 
 // These functions are used for file based capabilities
 int capng_get_rootid(void);

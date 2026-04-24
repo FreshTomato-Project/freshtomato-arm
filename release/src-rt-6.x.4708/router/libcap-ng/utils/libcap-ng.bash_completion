@@ -1,0 +1,94 @@
+_pscap()
+{
+	local cur prev
+	local opts="-a -p --tree"
+
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+	case "$prev" in
+	-p)
+		COMPREPLY=( $(compgen -W "$(ps -eo pid= 2>/dev/null)" \
+			-- "$cur") )
+		return 0
+		;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+	fi
+}
+
+_netcap()
+{
+	local cur prev
+	local opts="--advanced --interface --list-interfaces --json --no-color"
+
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+	case "$prev" in
+	--interface)
+		COMPREPLY=( $(compgen -W "$(command ls /sys/class/net \
+			2>/dev/null)" -- "$cur") )
+		return 0
+		;;
+	esac
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+	fi
+}
+
+_filecap()
+{
+	local cur prev
+	local opts="-a -d"
+
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+		return 0
+	fi
+
+	case "$prev" in
+	-a|-d)
+		return 0
+		;;
+	esac
+
+	if [[ "$cur" == /* ]]; then
+		COMPREPLY=( $(compgen -d -- "$cur") $(compgen -f -- "$cur") )
+	fi
+}
+
+_cap_audit()
+{
+	local cur prev
+	local opts="-h --help -v --verbose -j --json -y --yaml --"
+
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+	if [[ "$prev" == "--" ]]; then
+		COMPREPLY=( $(compgen -c -- "$cur") )
+		return 0
+	fi
+
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+	else
+		COMPREPLY=( $(compgen -c -- "$cur") )
+	fi
+}
+
+complete -F _pscap pscap
+complete -F _netcap netcap
+complete -F _filecap filecap
+complete -F _cap_audit cap-audit

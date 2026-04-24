@@ -2,13 +2,13 @@
 
 """Create two network namespaces and run ping between them."""
 
-import typing as T
-
-from testlib import external as ext, util, template, cmd
 from testlib.log import log
 from testlib.proc import Tinc, Script
 from testlib.test import Test
 from testlib.external import ping
+from testlib import external as ext, util, template, cmd
+
+import typing as T
 
 util.require_root()
 util.require_command("ip", "netns", "list")

@@ -1,6 +1,6 @@
 --- openssl-3.0/Configurations/10-main.conf
 +++ openssl-3.0/Configurations/10-main.conf
-@@ -704,7 +704,7 @@
+@@ -705,7 +705,7 @@
      },
      "linux-latomic" => {
          inherit_from     => [ "linux-generic32" ],

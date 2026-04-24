@@ -84,38 +84,39 @@ static void pv_mul_y_h(polyval_t *);h
 /* =====
  * Endianness conversion for big-endian platforms
  */
-#ifdef WORDS_BIG_ENDIAN
+#ifdef WORDS_BIGENDIAN
 #ifdef __GNUC__
 #define bswap64(x) __builtin_bswap64(x)
 #define bswap32(x) __builtin_bswap32(x)
 #else
 /* The (compiler should optimize these into a decent bswap instruction) */
 static inline uint64_t
-bswap64(uint64_t v)
+bswap64(uint64_t value)
 {
   return
     ((value & 0xFF00000000000000) >> 56) |
-    ((value & 0x00FF000000000000) >> 48) |
-    ((value & 0x0000FF0000000000) >> 40) |
-    ((value & 0x000000FF00000000) >> 32) |
-    ((value & 0x00000000FF000000) >> 24) |
-    ((value & 0x0000000000FF0000) >> 16) |
-    ((value & 0x000000000000FF00) >> 8) |
-    ((value & 0x00000000000000FF));
+    ((value & 0x00FF000000000000) >> 40) |
+    ((value & 0x0000FF0000000000) >> 24) |
+    ((value & 0x000000FF00000000) >> 8) |
+    ((value & 0x00000000FF000000) << 8) |
+    ((value & 0x0000000000FF0000) << 24) |
+    ((value & 0x000000000000FF00) << 40) |
+    ((value & 0x00000000000000FF) << 56);
 }
-static inline uint64_t
-bswap32(uint64_t v)
+
+static inline uint32_t
+bswap32(uint32_t value)
 {
   return
     ((value & 0xFF000000) >> 24) |
-    ((value & 0x00FF0000) >> 16) |
-    ((value & 0x0000FF00) >> 8) |
-    ((value & 0x000000FF));
+    ((value & 0x00FF0000) >> 8) |
+    ((value & 0x0000FF00) << 8) |
+    ((value & 0x000000FF) << 24);
 }
 #endif
 #endif
 
-#ifdef WORDS_BIG_ENDIAN
+#ifdef WORDS_BIGENDIAN
 #define convert_byte_order64(x) bswap64(x)
 #define convert_byte_order32(x) bswap32(x)
 #else

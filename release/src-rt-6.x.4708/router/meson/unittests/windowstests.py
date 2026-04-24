@@ -285,11 +285,11 @@ class WindowsTests(BasePlatformTests):
     def _check_ld(self, name: str, lang: str, expected: str) -> None:
         if not shutil.which(name):
             raise SkipTest(f'Could not find {name}.')
-        envvars = [mesonbuild.envconfig.ENV_VAR_PROG_MAP[f'{lang}_ld']]
+        envvars = mesonbuild.envconfig.ENV_VAR_PROG_MAP[f'{lang}_ld'].copy()
 
         # Also test a deprecated variable if there is one.
         if f'{lang}_ld' in mesonbuild.envconfig.DEPRECATED_ENV_PROG_MAP:
-            envvars.append(
+            envvars.extend(
                 mesonbuild.envconfig.DEPRECATED_ENV_PROG_MAP[f'{lang}_ld'])
 
         for envvar in envvars:
@@ -338,7 +338,7 @@ class WindowsTests(BasePlatformTests):
         try:
             import pefile
         except ImportError:
-            if is_ci():
+            if IS_CI:
                 raise
             raise SkipTest('pefile module not found')
         testdir = os.path.join(self.common_test_dir, '6 linkshared')
@@ -361,22 +361,18 @@ class WindowsTests(BasePlatformTests):
                 # Verify that a valid checksum was written by all other compilers
                 self.assertTrue(pe.verify_checksum(), msg=msg)
 
+    @skip_if_not_base_option('b_vscrt')
     def test_qt5dependency_vscrt(self):
         '''
         Test that qt5 dependencies use the debug module suffix when b_vscrt is
         set to 'mdd'
         '''
-        # Verify that the `b_vscrt` option is available
-        env = get_fake_env()
-        cc = detect_c_compiler(env, MachineChoice.HOST)
-        if OptionKey('b_vscrt') not in cc.base_options:
-            raise SkipTest('Compiler does not support setting the VS CRT')
         # Verify that qmake is for Qt5
         if not shutil.which('qmake-qt5'):
-            if not shutil.which('qmake') and not is_ci():
+            if not IS_CI and not shutil.which('qmake'):
                 raise SkipTest('QMake not found')
             output = subprocess.getoutput('qmake --version')
-            if 'Qt version 5' not in output and not is_ci():
+            if not IS_CI and 'Qt version 5' not in output:
                 raise SkipTest('Qmake found, but it is not for Qt 5.')
         # Setup with /MDd
         testdir = os.path.join(self.framework_test_dir, '4 qt')
@@ -388,15 +384,13 @@ class WindowsTests(BasePlatformTests):
             m = re.search('build qt5core.exe: cpp_LINKER.*Qt5Cored.lib', contents)
         self.assertIsNotNone(m, msg=contents)
 
+    @skip_if_not_base_option('b_vscrt')
     def test_compiler_checks_vscrt(self):
         '''
         Test that the correct VS CRT is used when running compiler checks
         '''
-        # Verify that the `b_vscrt` option is available
         env = get_fake_env()
         cc = detect_c_compiler(env, MachineChoice.HOST)
-        if OptionKey('b_vscrt') not in cc.base_options:
-            raise SkipTest('Compiler does not support setting the VS CRT')
 
         MSVCRT_MAP = {
             '/MD': '-fms-runtime-lib=dll',

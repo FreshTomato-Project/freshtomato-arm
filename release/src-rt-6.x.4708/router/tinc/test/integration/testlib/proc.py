@@ -1,5 +1,11 @@
 """Classes for working with compiled instances of tinc and tincd binaries."""
 
+from . import check, path
+from .log import log
+from .script import TincScript, Script, ScriptType
+from .template import make_script, make_cmd_wrap
+from .util import random_string, random_port
+
 import os
 import random
 import tempfile
@@ -7,12 +13,6 @@ import typing as T
 import subprocess as subp
 from enum import Enum
 from platform import system
-
-from . import check, path
-from .log import log
-from .script import TincScript, Script, ScriptType
-from .template import make_script, make_cmd_wrap
-from .util import random_string, random_port
 
 # Does the OS support all addresses in 127.0.0.0/8 without additional configuration?
 _FULL_LOCALHOST_SUBNET = system() in ("Linux", "Windows")
@@ -55,6 +55,7 @@ class Feature(Enum):
     READLINE = "readline"
     SANDBOX = "sandbox"
     TUNEMU = "tunemu"
+    VMNET = "vmnet"
     UML = "uml"
     VDE = "vde"
     WATCHDOG = "watchdog"

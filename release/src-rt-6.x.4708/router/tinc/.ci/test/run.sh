@@ -20,15 +20,15 @@ run_tests() {
   header "Cleaning up leftovers from previous runs"
 
   for name in tinc tincd; do
-    sudo pkill -TERM -x "$name" || true
-    sudo pkill -KILL -x "$name" || true
+    pkill -TERM -x "$name" || true
+    pkill -KILL -x "$name" || true
   done
 
   if [ "$(id -u)" != 0 ]; then
-    sudo chown -R "${USER:-$(whoami)}" . || true
+    chown -R "${USER:-$(whoami)}" . || true
   fi
 
-  mkdir -p sanitizer /tmp/logs
+  mkdir -p sanitizer logs
 
   header "Running test flavor $flavor"
 
@@ -49,14 +49,10 @@ run_tests() {
   code=0
   meson test -C "$flavor" --timeout-multiplier $timeout --verbose || code=$?
 
-  sudo tar -c -z -f "/tmp/logs/tests.$flavor.tar.gz" "$flavor" sanitizer/ || true
+  tar -c -z -f "logs/tests.$flavor.tar.gz" "$flavor" sanitizer/ || true
 
   return $code
 }
-
-case "$(uname -s)" in
-MINGW* | Darwin) sudo() { "$@"; } ;;
-esac
 
 flavor=$1
 shift
@@ -70,13 +66,6 @@ nolegacy)
   ;;
 gcrypt)
   run_tests gcrypt -Dcrypto=gcrypt "$@"
-  ;;
-openssl3)
-  if [ -d /opt/ssl3 ]; then
-    run_tests openssl3 -Dpkg_config_path=/opt/ssl3/lib64/pkgconfig "$@"
-  else
-    echo >&2 "OpenSSL 3 not installed, skipping test"
-  fi
   ;;
 *)
   bail "unknown test flavor $1"

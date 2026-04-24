@@ -2,7 +2,7 @@
  *   move.c  --  This file is part of GNU nano.                           *
  *                                                                        *
  *   Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.    *
- *   Copyright (C) 2014-2018, 2020, 2024 Benno Schulenberg                *
+ *   Copyright (C) 2014-2018, 2020, 2024, 2026 Benno Schulenberg          *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -691,3 +691,61 @@ void do_right(void)
 
 	edit_redraw(was_current, FLOWING);
 }
+
+#ifndef NANO_TINY
+/* Scroll the viewport horizontally to the left. */
+void do_scroll_left(void)
+{
+	size_t frame_x;
+
+	if (ISSET(SOFTWRAP) || ISSET(SOLO_SIDESCROLL)) {
+		/* TRANSLATORS: The %s is the name of an option. */
+		statusline(AHEM, _("Not possible with '%s'"), ISSET(SOFTWRAP) ? "--softwrap" : "--solo");
+		return;
+	}
+
+	openfile->brink -= (openfile->brink < tabsize) ? openfile->brink : (tabsize < 2) ? 2 : tabsize;
+
+	frame_x = actual_x(openfile->current->data, openfile->brink + editwincols - CUSHION - 1);
+
+	if (openfile->current_x > frame_x) {
+		openfile->current_x = frame_x;
+		openfile->placewewant = xplustabs();
+	}
+
+	refresh_needed = TRUE;
+}
+
+/* Scroll the viewport horizontally to the right. */
+void do_scroll_right(void)
+{
+	size_t sill = openfile->edittop->lineno + editwinrows;
+	linestruct *line = openfile->current;
+	size_t frame_x;
+
+	if (ISSET(SOFTWRAP) || ISSET(SOLO_SIDESCROLL)) {
+		statusline(AHEM, _("Not possible with '%s'"), ISSET(SOFTWRAP) ? "--softwrap" : "--solo");
+		return;
+	}
+
+	openfile->brink += (tabsize < 2) ? 2 : tabsize;
+
+	/* If the current line does not allow further scrolling, seek
+	 * in the viewport an earlier or later line that does allow it. */
+	while (line != openfile->edittop && breadth(line->data) < openfile->brink + CUSHION)
+		line = line->prev;
+	while (line->lineno < sill && breadth(line->data) < openfile->brink + CUSHION && line->next)
+		line = line->next;
+	if (line->lineno < sill && breadth(line->data) >= openfile->brink + CUSHION)
+		openfile->current = line;
+
+	frame_x = actual_x(openfile->current->data, openfile->brink + CUSHION);
+
+	if (openfile->current_x < frame_x) {
+		openfile->current_x = frame_x;
+		openfile->placewewant = xplustabs();
+	}
+
+	refresh_needed = TRUE;
+}
+#endif /* !NANO_TINY */

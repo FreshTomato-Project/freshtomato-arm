@@ -2,14 +2,14 @@
 
 """Test that all tincd scripts execute in correct order and contain expected env vars."""
 
-import os
-import typing as T
-
 from testlib import check, path
 from testlib.log import log
 from testlib.proc import Tinc, Script, ScriptType, TincScript
 from testlib.test import Test
 from testlib.util import random_string
+
+import os
+import typing as T
 
 SUBNET_SERVER = ("10.0.0.1", "fec0::/64")
 SUBNET_CLIENT = ("10.0.0.2", "fec0::/64#5")

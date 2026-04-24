@@ -1,3 +1,14 @@
+2025-05-31  Bruno Haible  <bruno@clisp.org>
+
+	Switch to automake 1.18.
+	* autogen.sh: Update comment.
+	* Makefile.devel (ACLOCAL): Use binary from automake 1.18.
+
+2025-04-18  Collin Funk  <collin.funk1@gmail.com>  (tiny change)
+
+	Switch to automake 1.17, part 3.
+	* autogen.sh (ACLOCAL): Use Automake 1.17.
+
 2024-12-14  Bruno Haible  <bruno@clisp.org>
 
 	Switch to automake 1.17.

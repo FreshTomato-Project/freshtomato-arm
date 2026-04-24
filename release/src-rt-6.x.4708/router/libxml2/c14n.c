@@ -1022,16 +1022,13 @@ xmlC14NFixupBaseAttr(xmlC14NCtxPtr ctx, xmlAttrPtr xml_base_attr)
             to ensure that we are forced to go "up" all the time */
             tmp_str_len = xmlStrlen(tmp_str);
             if(tmp_str_len > 1 && tmp_str[tmp_str_len - 2] == '.') {
-                tmp_str2 = xmlStrcat(tmp_str, BAD_CAST "/");
-                if(tmp_str2 == NULL) {
-                    xmlFree(tmp_str);
+                tmp_str = xmlStrcat(tmp_str, BAD_CAST "/");
+                if(tmp_str == NULL) {
                     xmlFree(res);
 
                     xmlC14NErrMemory(ctx);
                     return (NULL);
                 }
-
-                tmp_str = tmp_str2;
             }
 
             /* build uri */
@@ -1173,7 +1170,7 @@ xmlC14NProcessAttrsAxis(xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)
              * visible!
              */
             tmp = cur->parent;
-            while (tmp != NULL) {
+            while (tmp != NULL && tmp->type == XML_ELEMENT_NODE) {
                 attr = tmp->properties;
                 while (attr != NULL) {
                     if (xmlC14NIsXmlAttr(attr) != 0) {

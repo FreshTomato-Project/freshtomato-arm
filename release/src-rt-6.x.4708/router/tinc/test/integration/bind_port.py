@@ -3,15 +3,15 @@
 
 """Test binding to ports on localhost."""
 
-import socket
-import sys
-import typing as T
-
-from testlib import check, util
 from testlib.const import EXIT_SKIP
 from testlib.log import log
 from testlib.proc import Script
 from testlib.test import Test
+from testlib import check, util
+
+import socket
+import sys
+import typing as T
 
 # Call to close opened port
 Closer = T.Callable[[], None]

@@ -2,15 +2,15 @@
 
 """Test device configuration variables."""
 
-import os
-import platform
-import typing as T
-
 from testlib import check
 from testlib.feature import Feature
 from testlib.log import log
 from testlib.proc import Script
 from testlib.test import Test
+
+import os
+import platform
+import typing as T
 
 system = platform.system()
 
@@ -27,6 +27,9 @@ def unknown_device_types(
 
     if Feature.TUNEMU not in features:
         yield "tunemu"
+
+    if Feature.VMNET not in features:
+        yield "vmnet"
 
     if system != "Darwin":
         if not system.endswith("BSD"):

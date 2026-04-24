@@ -26,6 +26,7 @@
 #include "crypto.h"
 #include "ecdsa.h"
 #include "meta.h"
+#include "process.h"
 #include "protocol.h"
 #include "sptps.h"
 #include "utils.h"
@@ -552,9 +553,9 @@ static int run_test(int argc, char *argv[]) {
 		return 1;
 	}
 
-	ecdsa_t *mykey = NULL;
+	ecdsa_t *mykey = ecdsa_read_pem_private_key(fp);
 
-	if(!(mykey = ecdsa_read_pem_private_key(fp))) {
+	if(!mykey) {
 		return 1;
 	}
 
@@ -568,9 +569,9 @@ static int run_test(int argc, char *argv[]) {
 		return 1;
 	}
 
-	ecdsa_t *hiskey = NULL;
+	ecdsa_t *hiskey = ecdsa_read_pem_public_key(fp);
 
-	if(!(hiskey = ecdsa_read_pem_public_key(fp))) {
+	if(!hiskey) {
 		ecdsa_free(mykey);
 		return 1;
 	}

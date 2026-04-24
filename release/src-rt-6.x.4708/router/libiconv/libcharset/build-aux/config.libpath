@@ -2,7 +2,7 @@
 # Output a system dependent set of variables, describing how to set the
 # run time search path of shared libraries in an executable at run time.
 #
-#   Copyright 1996-2024 Free Software Foundation, Inc.
+#   Copyright 1996-2026 Free Software Foundation, Inc.
 #   Taken from GNU libtool, 2003
 #   Originally by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
 #
@@ -58,7 +58,7 @@ Send patches and bug reports to <bug-gnulib@gnu.org>."
 func_version ()
 {
   echo "config.libpath (GNU gnulib, module relocatable-prog)"
-  echo "Copyright (C) 2024 Free Software Foundation, Inc.
+  echo "Copyright (C) 2026 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law."
@@ -162,21 +162,8 @@ case $host_os in
   interix[3-9]*)
     shlibpath_var=LD_LIBRARY_PATH
     ;;
-  irix5* | irix6* | nonstopux*)
-    case $host_os in
-      irix5* | nonstopux*)
-        shlibsuff=
-        ;;
-      *)
-        case $LD in # libtool.m4 will add one of these switches to LD
-          *-32|*"-32 ") shlibsuff= ;;
-          *-n32|*"-n32 ") shlibsuff=N32 ;;
-          *-64|*"-64 ") shlibsuff=64 ;;
-          *) shlibsuff= ;;
-        esac
-        ;;
-    esac
-    shlibpath_var=LD_LIBRARY${shlibsuff}_PATH
+  nonstopux*)
+    shlibpath_var=LD_LIBRARY_PATH
     ;;
   linux*oldld* | linux*aout* | linux*coff*)
     ;;

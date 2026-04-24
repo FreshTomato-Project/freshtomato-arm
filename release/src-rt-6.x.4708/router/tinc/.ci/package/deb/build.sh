@@ -15,7 +15,7 @@ find_tag() {
 
 export DEBIAN_FRONTEND=noninteractive
 
-apt-get install -y devscripts git-buildpackage dh-make
+apt install -y devscripts git-buildpackage dh-make
 
 export USER=${USER:-$(whoami)}
 export EMAIL=ci@tinc-vpn.org

@@ -2,6 +2,7 @@
 
 //	<% ddnsx(); %>
 
+//	<% jsdefaults(); %>
 
 if (typeof stats === 'undefined' || stats.length == 0) stats = { };
 stats.dns = [<% dns(); %>];
@@ -26,71 +27,8 @@ isup.notice_jffs = '<% notice("jffs"); %>';
 isup.time = '<% time(); %>';
 isup.ntp = '<% ntp(); %>';
 
-isup.telnetd = parseInt('<% psup("telnetd"); %>');
-
-isup.miniupnpd = parseInt('<% psup("miniupnpd"); %>');
-
-isup.dnsmasq = parseInt('<% psup("dnsmasq"); %>');
-
 /* it should be done in a different way, but for now it's ok */
 isup.qos = <% nv("qos_enable"); %>;
 isup.bwl = <% nv("bwl_enable"); %>;
 
-/* OPENVPN-BEGIN */
-/* BCMARM-BEGIN */
-var OVPN_CLIENT_COUNT = 3;
-isup.vpnclient3 = parseInt('<% psup("vpnclient3"); %>');
-/* BCMARM-END */
-/* BCMARM-NO-BEGIN */
-var OVPN_CLIENT_COUNT = 2;
-/* BCMARM-NO-END */
-isup.vpnclient1 = parseInt('<% psup("vpnclient1"); %>');
-isup.vpnclient2 = parseInt('<% psup("vpnclient2"); %>');
-
-var OVPN_SERVER_COUNT = 2;
-isup.vpnserver1 = parseInt('<% psup("vpnserver1"); %>');
-isup.vpnserver2 = parseInt('<% psup("vpnserver2"); %>');
-/* OPENVPN-END */
-
-/* PPTPD-BEGIN */
-isup.pptpclient = parseInt('<% psup("pptpclient"); %>');
-isup.pptpd = parseInt('<% psup("pptpd"); %>');
-/* PPTPD-END */
-
-/* WIREGUARD-BEGIN */
-var WG_INTERFACE_COUNT = 3;
-isup.wireguard0 = parseInt('<% wgstat("wg0"); %>');
-isup.wireguard1 = parseInt('<% wgstat("wg1"); %>');
-isup.wireguard2 = parseInt('<% wgstat("wg2"); %>');
-/* WIREGUARD-END */
-
-/* NGINX-BEGIN */
-isup.nginx = parseInt('<% psup("nginx"); %>');
-isup.mysqld = parseInt('<% psup("mysqld"); %>');
-/* NGINX-END */
-
-isup.dropbear = parseInt('<% psup("dropbear"); %>');
-
-/* MEDIA-SRV-BEGIN */
-isup.minidlna = parseInt('<% psup("minidlna"); %>');
-/* MEDIA-SRV-END */
-
-/* TINC-BEGIN */
-isup.tincd = parseInt('<% psup("tincd"); %>');
-/* TINC-END */
-
-/* BT-BEGIN */
-isup.transmission = parseInt('<% psup("transmission-da"); %>');
-/* BT-END */
-
-/* SAMBA-BEGIN */
-isup.samba = parseInt('<% psup("smbd"); %>');
-/* SAMBA-END */
-
-/* FTP-BEGIN */
-isup.ftpd = parseInt('<% psup("vsftpd"); %>');
-/* FTP-END */
-
-/* TOR-BEGIN */
-isup.tor = parseInt('<% psup("tor"); %>');
-/* TOR-END */
+//	<% psup("all"); %>

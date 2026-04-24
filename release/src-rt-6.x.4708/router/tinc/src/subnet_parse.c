@@ -200,7 +200,7 @@ int subnet_compare(const subnet_t *a, const subnet_t *b) {
 		return subnet_compare_ipv6(a, b);
 
 	default:
-		logger(DEBUG_ALWAYS, LOG_ERR, "subnet_compare() was called with unknown subnet type %d, exitting!", a->type);
+		logger(DEBUG_ALWAYS, LOG_ERR, "subnet_compare() was called with unknown subnet type %d, exiting!", a->type);
 		exit(1);
 	}
 

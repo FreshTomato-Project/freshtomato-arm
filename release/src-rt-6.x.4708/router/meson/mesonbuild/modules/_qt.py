@@ -15,7 +15,7 @@ from .. import build
 from .. import options
 from .. import mlog
 from ..dependencies import DependencyMethods, find_external_dependency, Dependency, ExternalLibrary, InternalDependency
-from ..mesonlib import MesonException, File, FileMode, version_compare, Popen_safe
+from ..mesonlib import MachineChoice, MesonException, File, FileMode, version_compare, Popen_safe
 from ..interpreter import extract_required_kwarg
 from ..interpreter.type_checking import DEPENDENCY_METHOD_KW, INSTALL_DIR_KW, INSTALL_KW, NoneType
 from ..interpreterbase import ContainerTypeInfo, FeatureDeprecated, KwargInfo, noPosargs, FeatureNew, typed_kwargs, typed_pos_args
@@ -28,7 +28,7 @@ if T.TYPE_CHECKING:
     from ..interpreter import Interpreter
     from ..interpreter import kwargs
     from ..mesonlib import FileOrString
-    from ..programs import ExternalProgram
+    from ..programs import CommandList, Program
     from typing_extensions import Literal
 
     QtDependencyType = T.Union[QtPkgConfigDependency, QmakeQtDependency]
@@ -86,6 +86,7 @@ if T.TYPE_CHECKING:
 
         method: DependencyMethods
         tools: T.List[Literal['moc', 'uic', 'rcc', 'lrelease', 'qmlcachegen', 'qmltyperegistrar']]
+        version: T.List[str]
 
     class CompileTranslationsKwArgs(TypedDict):
 
@@ -209,7 +210,7 @@ class QtBaseModule(ExtensionModule):
         self.qt_version = qt_version
         # It is important that this list does not change order as the order of
         # the returned ExternalPrograms will change as well
-        self.tools: T.Dict[str, T.Union[ExternalProgram, build.Executable]] = {
+        self.tools: T.Dict[str, Program] = {
             tool: NonExistingExternalProgram(tool) for tool in self._set_of_qt_tools
         }
         self.methods.update({
@@ -251,7 +252,7 @@ class QtBaseModule(ExtensionModule):
                 arg = ['-v']
 
             # Ensure that the version of qt and each tool are the same
-            def get_version(p: T.Union[ExternalProgram, build.Executable]) -> str:
+            def get_version(p: Program) -> str:
                 _, out, err = Popen_safe(p.get_command() + arg)
                 if name == 'lrelease' or not qt_dep.version.startswith('4'):
                     care = out
@@ -265,12 +266,12 @@ class QtBaseModule(ExtensionModule):
             if p.found():
                 self.tools[name] = p
 
-    def _detect_tools(self, state: ModuleState, method: DependencyMethods, required: bool = True) -> None:
+    def _detect_tools(self, state: ModuleState, method: DependencyMethods, required: bool = True, version: T.List[str] = None) -> None:
         if self._tools_detected:
             return
         self._tools_detected = True
         mlog.log(f'Detecting Qt{self.qt_version} tools')
-        kwargs: DependencyObjectKWs = {'required': required, 'modules': ['Core'], 'method': method}
+        kwargs: DependencyObjectKWs = {'required': required, 'modules': ['Core'], 'method': method, 'native': MachineChoice.HOST, 'version': version}
         # Just pick one to make mypy happy
         qt = T.cast('QtPkgConfigDependency', find_external_dependency(f'qt{self.qt_version}', state.environment, kwargs))
         if qt.found():
@@ -372,6 +373,7 @@ class QtBaseModule(ExtensionModule):
                   default=['moc', 'uic', 'rcc', 'lrelease'],
                   validator=_list_in_set_validator(_set_of_qt_tools),
                   since='1.6.0'),
+        KwargInfo('version', ContainerTypeInfo(list, str), listify=True, default=[], since='1.11'),
     )
     def has_tools(self, state: ModuleState, args: T.Tuple, kwargs: HasToolKwArgs) -> bool:
         method = kwargs['method']
@@ -382,7 +384,7 @@ class QtBaseModule(ExtensionModule):
         if disabled:
             mlog.log('qt.has_tools skipped: feature', mlog.bold(feature), 'disabled')
             return False
-        self._detect_tools(state, method, required=False)
+        self._detect_tools(state, method, required=False, version=kwargs['version'])
         for tool in kwargs['tools']:
             assert tool in self._set_of_qt_tools, f'tools must be in {self._set_of_qt_tools}'
             if not self.tools[tool].found():
@@ -441,17 +443,18 @@ class QtBaseModule(ExtensionModule):
 
         # If a name was set generate a single .cpp file from all of the qrc
         # files, otherwise generate one .cpp file per qrc file.
+        cmd: CommandList
         if name:
             qrc_deps: T.List[File] = []
             for s in sources:
                 qrc_deps.extend(self._parse_qrc_deps(state, s))
-
+            cmd = [self.tools['rcc'], '-name', name, '-o', '@OUTPUT@', *extra_args, '@INPUT@', *DEPFILE_ARGS]
             res_target = build.CustomTarget(
                 name,
                 state.subdir,
                 state.subproject,
                 state.environment,
-                self.tools['rcc'].get_command() + ['-name', name, '-o', '@OUTPUT@'] + extra_args + ['@INPUT@'] + DEPFILE_ARGS,
+                cmd,
                 sources,
                 [f'{name}.cpp'],
                 depend_files=qrc_deps,
@@ -467,12 +470,13 @@ class QtBaseModule(ExtensionModule):
                 else:
                     basename = os.path.basename(rcc_file.fname)
                 name = f'qt{self.qt_version}-{basename.replace(".", "_")}'
+                cmd = [self.tools['rcc'], '-name', '@BASENAME@', '-o', '@OUTPUT@', *extra_args, '@INPUT@', *DEPFILE_ARGS]
                 res_target = build.CustomTarget(
                     name,
                     state.subdir,
                     state.subproject,
                     state.environment,
-                    self.tools['rcc'].get_command() + ['-name', '@BASENAME@', '-o', '@OUTPUT@'] + extra_args + ['@INPUT@'] + DEPFILE_ARGS,
+                    cmd,
                     [rcc_file],
                     [f'{name}.cpp'],
                     depend_files=qrc_deps,
@@ -568,11 +572,15 @@ class QtBaseModule(ExtensionModule):
 
         inc = state.get_include_args(include_dirs=kwargs['include_directories'])
         compile_args: T.List[str] = []
+        sources: T.List[T.Union[build.BuildTarget, build.CustomTarget, build.CustomTargetIndex]] = []
         for dep in kwargs['dependencies']:
-            compile_args.extend(a for a in dep.get_all_compile_args() if a.startswith(('-I', '-D')))
+            compile_args.extend(a for a in dep.get_all_compile_args() if a.startswith(('-I', '-F', '-D')))
             if isinstance(dep, InternalDependency):
                 for incl in dep.include_directories:
-                    compile_args.extend(f'-I{i}' for i in incl.to_string_list(self.interpreter.source_root, self.interpreter.environment.build_dir))
+                    compile_args.extend(f'-I{i}' for i in incl.abs_string_list(self.interpreter.source_root, self.interpreter.environment.build_dir))
+                for src in dep.sources:
+                    if isinstance(src, (build.CustomTarget, build.BuildTarget, build.CustomTargetIndex)):
+                        sources.append(src)
 
         output: T.List[build.GeneratedList] = []
 
@@ -593,6 +601,7 @@ class QtBaseModule(ExtensionModule):
             moc_gen = build.Generator(
                 state.environment,
                 self.tools['moc'], arguments, header_gen_output,
+                depends=sources,
                 depfile='moc_@BASENAME@.cpp.d',
                 name=f'Qt{self.qt_version} moc header')
             output.append(moc_gen.process_files(kwargs['headers'], state.subdir, preserve_path_from))
@@ -727,7 +736,7 @@ class QtBaseModule(ExtensionModule):
                 ts = os.path.basename(ts)
             else:
                 outdir = state.subdir
-            cmd: T.List[T.Union[ExternalProgram, build.Executable, str]] = [self.tools['lrelease'], '@INPUT@', '-qm', '@OUTPUT@']
+            cmd: CommandList = [self.tools['lrelease'], '@INPUT@', '-qm', '@OUTPUT@']
             lrelease_target = build.CustomTarget(
                 f'qt{self.qt_version}-compile-{ts}',
                 outdir,
@@ -867,12 +876,13 @@ class QtBaseModule(ExtensionModule):
                     input_args.append(f'@INPUT{input_counter}@')
                 input_counter += 1
 
+        cmd: CommandList = [self.tools['moc'], '--collect-json', '-o', '@OUTPUT@', *input_args]
         return build.CustomTarget(
             f'moc_collect_json_{target_name}',
             state.subdir,
             state.subproject,
             state.environment,
-            self.tools['moc'].get_command() + ['--collect-json', '-o', '@OUTPUT@'] + input_args,
+            cmd,
             moc_json,
             [f'{target_name}_json_collect.json'],
             description=f'Collecting json type information for {target_name}',
@@ -912,12 +922,15 @@ class QtBaseModule(ExtensionModule):
             ressource_path = os.path.join('/', kwargs['module_prefix'], source_basename)
             cachegen_inputs.append(ressource_path)
 
+        cmd: CommandList = \
+            [self.tools['qmlcachegen'], '-o', '@OUTPUT@', '--resource-name', f'qmlcache_{target_name}',
+             *kwargs['extra_args'], '--resource=@INPUT@', *cachegen_inputs]
         cacheloader_target = build.CustomTarget(
             f'cacheloader_{target_name}',
             state.subdir,
             state.subproject,
             state.environment,
-            self.tools['qmlcachegen'].get_command() + ['-o', '@OUTPUT@'] + ['--resource-name', f'qmlcache_{target_name}'] + kwargs['extra_args'] + ['--resource=@INPUT@'] + cachegen_inputs,
+            cmd,
             [kwargs['qml_qrc']],
             #output name format matters here
             [f'{target_name}_qmlcache_loader.cpp'],
@@ -945,14 +958,14 @@ class QtBaseModule(ExtensionModule):
         install_dir: T.List[T.Union[str, Literal[False]]] = [False]
         install_tag: T.List[T.Union[str, None]] = [None]
 
-        cmd = self.tools['qmltyperegistrar'].get_command() + [
+        cmd: CommandList = [
+            self.tools['qmltyperegistrar'],
             '--import-name', import_name,
             '--major-version', major_version,
             '--minor-version', minor_version,
             '-o', '@OUTPUT0@',
+            *kwargs['extra_args'],
         ]
-
-        cmd.extend(kwargs['extra_args'])
 
         if namespace:
             cmd.extend(['--namespace', namespace])

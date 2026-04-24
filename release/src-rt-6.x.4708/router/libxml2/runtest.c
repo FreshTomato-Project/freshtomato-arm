@@ -28,6 +28,10 @@
   #include <unistd.h>
 #endif
 
+#ifdef LIBXML_ZLIB_ENABLED
+#include <zlib.h>
+#endif
+
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h>
 #include <libxml/tree.h>
@@ -2745,6 +2749,141 @@ streamProcessTest(const char *filename, const char *result, const char *err,
     return(0);
 }
 
+#ifdef __linux__
+
+/**
+ * Parse a file using the reader for Fd and checks that the corresponding fd is
+ * correctly closed and there's no memory leak
+ *
+ * @param filename  the file to parse
+ * @param result  the file with expected result
+ * @param err  the file with error messages
+ * @returns 0 in case of success, an error code otherwise
+ */
+static int
+xmlReaderForFdTest(const char *filename, const char *result ATTRIBUTE_UNUSED,
+                   const char *err ATTRIBUTE_UNUSED, int options ATTRIBUTE_UNUSED) {
+    xmlTextReaderPtr reader;
+    int fd = 0;
+    int ret;
+
+    fd = open(filename, O_RDONLY, 0);
+    if (fd == -1) {
+        fprintf(stderr, "Error opening test file %s\n", filename);
+        return 1;
+    }
+
+    reader = xmlReaderForFd(fd, filename, NULL, 0);
+    if (reader) {
+        xmlFreeTextReader(reader);
+    } else {
+        fprintf(stderr, "Error creating reader for file %s\n", filename);
+        ret = 1;
+    }
+
+    /* Ensure that no new fd was created and never closed */
+    ret = fcntl(fd + 1, F_GETFD);
+    if (ret != -1) {
+        fprintf(stderr, "File descriptor %d was not closed correctly %s\n", fd + 1, filename);
+    } else {
+        ret = 0;
+    }
+
+    /* Ensure that the manual open fd is still open */
+    ret = fcntl(fd, F_GETFD);
+    if (ret != 0) {
+        fprintf(stderr, "File descriptor %d was early closed correctly %s\n", fd, filename);
+    }
+
+    close(fd);
+
+    /* Check if we close the fd correctly */
+    ret = fcntl(fd, F_GETFD);
+    if (ret != -1) {
+        fprintf(stderr, "File descriptor %d was not closed correctly %s\n", fd, filename);
+    } else {
+        ret = 0;
+    }
+
+    return(ret);
+}
+
+#if defined(LIBXML_ZLIB_ENABLED) && defined(LIBXML_OUTPUT_ENABLED)
+static int
+xmllintGzWrite(void *ctxt, const char *buf, int len) {
+    return gzwrite(ctxt, buf, len);
+}
+
+static int
+xmllintGzClose(void *ctxt) {
+    if (gzclose(ctxt) != Z_OK)
+        return -1;
+
+    return 0;
+}
+
+/**
+ * Parse a file using the reader for Fd and checks that the corresponding fd is
+ * correctly closed and there's no memory leak
+ *
+ * @param filename  the file to parse
+ * @param result  the file with expected result
+ * @param err  the file with error messages
+ * @returns 0 in case of success, an error code otherwise
+ */
+static int
+xmlReaderForFdGzTest(const char *filename, const char *result ATTRIBUTE_UNUSED,
+                     const char *err ATTRIBUTE_UNUSED, int options ATTRIBUTE_UNUSED) {
+    /** Gzip the file and test again to verify the zipper branch */
+    char tmp[500] = {0};
+    gzFile gz = NULL;
+    xmlSaveCtxtPtr ctxt = NULL;
+    xmlDocPtr doc = NULL;
+    int ret = 0;
+
+    if (snprintf(tmp, 499, "%s.gz", baseFilename(filename)) >= 499) {
+        tmp[499] = 0;
+    }
+
+    gz = gzopen(tmp, "wb9");
+    if (gz == NULL) {
+        fprintf(stderr, "Error creating gz file %s\n", tmp);
+        return 1;
+    }
+
+    doc = xmlReadFile(filename, NULL, 0);
+    if (doc == NULL) {
+        fprintf(stderr, "Error reading test doc %s\n", filename);
+        gzclose(gz);
+        return 1;
+    }
+    ctxt = xmlSaveToIO(xmllintGzWrite, xmllintGzClose, gz, NULL, 0);
+    if (ctxt == NULL) {
+        fprintf(stderr, "Error creating save contxt %s\n", tmp);
+        xmlFreeDoc(doc);
+        gzclose(gz);
+        return 1;
+    }
+
+    if (xmlSaveDoc(ctxt, doc) < 0) {
+        fprintf(stderr, "Error saving file %s\n", tmp);
+        xmlSaveClose(ctxt);
+        xmlFreeDoc(doc);
+        return 1;
+    }
+
+    xmlSaveClose(ctxt);
+    xmlFreeDoc(doc);
+
+    ret = xmlReaderForFdTest(tmp, NULL, NULL, 0);
+    unlink(tmp);
+
+    return(ret);
+}
+#endif
+
+#endif
+
 /**
  * Parse a file using the reader API and check for errors.
  *
@@ -3480,9 +3619,6 @@ schemasOneTest(const char *sch,
         testErrorsSize = parseErrorsSize;
         testErrors[parseErrorsSize] = 0;
 
-        if (schemas == NULL)
-            goto done;
-
         ctxt = xmlSchemaNewValidCtxt(schemas);
         xmlSchemaSetValidStructuredErrors(ctxt, testStructuredErrorHandler,
                                           NULL);
@@ -3493,6 +3629,7 @@ schemasOneTest(const char *sch,
             doc = xmlReadFile(filename, NULL, options);
             if (doc == NULL) {
                 fprintf(stderr, "failed to parse instance %s for %s\n", filename, sch);
+                xmlSchemaFreeValidCtxt(ctxt);
                 return(-1);
             }
             validResult = xmlSchemaValidateDoc(ctxt, doc);
@@ -3512,9 +3649,9 @@ schemasOneTest(const char *sch,
 
         xmlSchemaFreeValidCtxt(ctxt);
 
-done:
         if (compareFileMem(err, testErrors, testErrorsSize)) {
-            fprintf(stderr, "Error for %s on %s failed\n", filename, sch);
+            fprintf(stderr, "Error for %s on %s failed in round %d: %s\n",
+                filename, sch, i, testErrors);
             ret = 1;
         }
     }
@@ -3603,14 +3740,57 @@ schemasTest(const char *filename,
 	}
 
         nb_tests++;
-        ret = schemasOneTest(filename, instance, err, options, schemas);
-        if (ret != 0)
-            res = ret;
+        if (schemas == NULL) {
+            /* schema load failed, verify the error message*/
+            if (compareFileMem(err, testErrors, testErrorsSize)) {
+                fprintf(stderr, "Error for %s failed\n", filename);
+                res = 1;
+            }
+        } else {
+            ret = schemasOneTest(filename, instance, err, options, schemas);
+            if (ret != 0)
+                res = ret;
+        }
     }
     globfree(&globbuf);
     xmlSchemaFree(schemas);
 
     return(res);
+}
+
+/**
+ * Validate an XML instance using XSI-based dynamic schema assembly.
+ * The validation context is created with a NULL schema, so the schema
+ * is discovered from xsi:schemaLocation in the instance document.
+ *
+ * @param filename  the XML instance file
+ * @param result  unused
+ * @param err  unused
+ * @param options  parser options
+ * @returns 0 in case of success, an error code otherwise
+ */
+static int
+schemasXsiTest(const char *filename,
+               const char *resul ATTRIBUTE_UNUSED,
+               const char *errr ATTRIBUTE_UNUSED,
+               int options) {
+    const char *base = baseFilename(filename);
+    int len, ret;
+    char err[500];
+    char prefix[500];
+
+    len = strlen(base);
+    if ((len > 499) || (len < 5))
+        return(-1);
+    memcpy(prefix, base, len - 4); /* remove .xml */
+    prefix[len - 4] = 0;
+
+    ret = snprintf(err, 499, "result/schemas/%s_0.err", prefix);
+    if (ret >= 499)
+        err[499] = 0;
+
+    nb_tests++;
+    return(schemasOneTest(filename, filename, err, options, NULL));
 }
 #endif /* LIBXML_SCHEMAS_ENABLED */
 
@@ -5093,6 +5273,57 @@ automataTest(const char *filename, const char *result,
 #endif /* LIBXML_REGEXP_ENABLED */
 
 /************************************************************************
+ *                                                                      *
+ *                      xmlCopy Tests                                   *
+ *                                                                      *
+ ************************************************************************/
+static int
+xmlCopyEntityTest(const char *filename ATTRIBUTE_UNUSED,
+                  const char *result ATTRIBUTE_UNUSED,
+                  const char *err ATTRIBUTE_UNUSED,
+                  int options ATTRIBUTE_UNUSED) {
+
+    int ret = 0;
+    xmlDocPtr doc = NULL;
+    xmlDocPtr copy = NULL;
+    xmlChar *before = NULL;
+    xmlChar *after = NULL;
+    const char *xml =
+        "<!DOCTYPE x [<!ENTITY e \"AAAA\">]>"
+        "<r ID=\"&e;_suffix\"/>";
+
+    doc = xmlReadMemory(xml, (int)strlen(xml), "doc.xml", NULL, 0);
+    if (!doc) {
+        fprintf(stderr, "xmlReadMemory failed\n");
+        ret = 1;
+        goto done;
+    }
+    copy = xmlCopyDoc(doc, 1);
+    if (!copy) {
+        fprintf(stderr, "xmlCopyDoc failed\n");
+        ret = 1;
+        goto done;
+    }
+
+    before = xmlGetProp(xmlDocGetRootElement(doc), BAD_CAST "ID");
+    after = xmlGetProp(xmlDocGetRootElement(copy), BAD_CAST "ID");
+
+    if (xmlStrcmp(before, after) != 0) {
+        fprintf(stderr, "RESET Attribute value changed after copy!\n");
+        ret = 1;
+    }
+
+done:
+    xmlFree(before);
+    xmlFree(after);
+    xmlFreeDoc(doc);
+    xmlFreeDoc(copy);
+
+    return ret;
+}
+
+
+/************************************************************************
  *									*
  *			Tests Descriptions				*
  *									*
@@ -5261,6 +5492,9 @@ testDesc testDescriptions[] = {
     { "Schemas regression tests" ,
       schemasTest, "./test/schemas/*_*.xsd", NULL, NULL, NULL,
       0 },
+    { "Schemas XSI assembly tests" ,
+      schemasXsiTest, "./test/schemas/any1_0.xml", "result/schemas/",  NULL, NULL,
+      0 },
 #endif
 #ifdef LIBXML_RELAXNG_ENABLED
     { "Relax-NG regression tests" ,
@@ -5317,6 +5551,18 @@ testDesc testDescriptions[] = {
       automataTest, "./test/automata/*", "result/automata/", "", NULL,
       0 },
 #endif
+
+#if defined(LIBXML_READER_ENABLED) && defined(__linux__)
+    { "xmlReaderForFd memory leak tests",
+      xmlReaderForFdTest, "./test/slashdot.xml", NULL, NULL, NULL, 0 },
+#if defined(LIBXML_OUTPUT_ENABLED) && defined(LIBXML_ZLIB_ENABLED)
+    { "xmlReaderForFdGz memory leak tests",
+      xmlReaderForFdGzTest, "./test/slashdot.xml", NULL, NULL, NULL, 0 },
+#endif
+#endif
+
+    { "xmlCopyEntity children test" , xmlCopyEntityTest, NULL, NULL, NULL, NULL, 0 },
+
     {NULL, NULL, NULL, NULL, NULL, NULL, 0}
 };
 

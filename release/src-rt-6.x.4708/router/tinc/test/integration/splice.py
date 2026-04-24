@@ -2,15 +2,15 @@
 
 """Test splicing connection between tinc peers."""
 
-import os
-import subprocess as subp
-import typing as T
-
 from testlib import check, cmd, path
 from testlib.log import log
 from testlib.proc import Tinc, Script
 from testlib.test import Test
 from testlib.feature import SANDBOX_LEVEL
+
+import os
+import subprocess as subp
+import typing as T
 
 
 def init(ctx: Test, *options: str) -> T.Tuple[Tinc, Tinc]:

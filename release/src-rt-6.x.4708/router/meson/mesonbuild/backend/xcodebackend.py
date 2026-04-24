@@ -1315,6 +1315,10 @@ class XCodeBackend(backends.Backend):
 
                 generator_id += 1
 
+            # xcode backend does not support link_early_args
+            if isinstance(t, build.BuildTarget) and not isinstance(t, build.StaticLibrary) and t.link_early_args:
+                raise MesonException(f'XCode backend does not support link_early_args for {t.get_basename()}')
+
             ntarget_dict.add_item('name', tname)
             ntarget_dict.add_item('productName', tname)
             ntarget_dict.add_item('productReference', self.target_filemap[tname], tname)
@@ -1653,12 +1657,7 @@ class XCodeBackend(backends.Backend):
             is_swift = self.is_swift_target(target)
             langs = set()
             for d in target.include_dirs:
-                for sd in d.incdirs:
-                    cd = os.path.join(d.curdir, sd)
-                    headerdirs.append(os.path.join(self.environment.get_source_dir(), cd))
-                    headerdirs.append(os.path.join(self.environment.get_build_dir(), cd))
-                for extra in d.extra_build_dirs:
-                    headerdirs.append(os.path.join(self.environment.get_build_dir(), extra))
+                headerdirs.extend(d.abs_string_list(self.environment.get_source_dir(), self.environment.get_build_dir()))
             # Swift can import declarations from C-based code using bridging headers.
             # There can only be one header, and it must be included as a source file.
             for i in target.get_sources():
@@ -1693,8 +1692,7 @@ class XCodeBackend(backends.Backend):
             else:
                 linker, stdlib_args = self.determine_linker_and_stdlib_args(target)
             if not isinstance(target, build.StaticLibrary):
-                ldargs += self.build.get_project_link_args(linker, target.subproject, target.for_machine)
-                ldargs += self.build.get_global_link_args(linker, target.for_machine)
+                ldargs += linker.get_build_link_args(target, self.build)
             cargs = []
             for dep in target.get_external_deps():
                 cargs += dep.get_compile_args()
@@ -1746,7 +1744,7 @@ class XCodeBackend(backends.Backend):
                 std_args = compiler.get_option_compile_args(target, target.subproject)
                 std_args += compiler.get_option_std_args(target, target.subproject)
                 # Add compile args added using add_project_arguments()
-                pargs = self.build.projects_args[target.for_machine].get(target.subproject, {}).get(lang, [])
+                pargs = self.build.get_project_args(compiler, target)
                 # Add compile args added using add_global_arguments()
                 # These override per-project arguments
                 gargs = self.build.global_args[target.for_machine].get(lang, [])

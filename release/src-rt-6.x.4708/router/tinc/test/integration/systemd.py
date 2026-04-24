@@ -2,17 +2,17 @@
 
 """Test systemd integration."""
 
-import os
-import socket
-import tempfile
-import time
-
 from testlib import check, path
 from testlib.log import log
 from testlib.feature import Feature
 from testlib.const import MAXSOCKETS
 from testlib.proc import Tinc, Script
 from testlib.test import Test
+
+import os
+import socket
+import tempfile
+import time
 
 
 def tincd_start_socket(foo: Tinc, pass_pid: bool) -> int:
@@ -77,7 +77,7 @@ def recv_until(sock: socket.socket, want: bytes) -> None:
 def test_watchdog(foo: Tinc) -> None:
     """Test systemd watchdog."""
 
-    address = tempfile.mktemp()
+    address = tempfile.mkstemp()[1] + ".socket"
     foo_log = foo.sub("log")
 
     log.info("watchdog is disabled if no env vars are passed")

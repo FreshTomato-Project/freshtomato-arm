@@ -43,9 +43,11 @@ if T.TYPE_CHECKING:
     from .._typing import ImmutableListProtocol
     from ..build import ExtractedObjects, LibTypes
     from ..linkers.linkers import DynamicLinker, StaticLinker
+    from ..compilers.compilers import Language
     from ..compilers.cs import CsCompiler
     from ..compilers.fortran import FortranCompiler
     from ..compilers.rust import RustCompiler
+    from ..compilers.swift import SwiftCompiler
     from ..mesonlib import FileOrString
     from .backends import TargetIntrospectionData
 
@@ -1094,7 +1096,6 @@ class NinjaBackend(backends.Backend):
         if is_compile_target:
             # Skip the link stage for this special type of target
             return
-        linker, stdlib_args = self.determine_linker_and_stdlib_args(target)
 
         if not isinstance(target, build.StaticLibrary):
             final_obj_list = obj_list
@@ -1105,10 +1106,13 @@ class NinjaBackend(backends.Backend):
 
         self.generate_dependency_scan_target(target, compiled_sources, source2object, fortran_order_deps)
 
+        if isinstance(target, build.SharedLibrary):
+            self.generate_shsym(target)
         if target.uses_rust():
             self.generate_rust_target(target, outname, final_obj_list, fortran_order_deps)
             return
 
+        linker, stdlib_args = self.determine_linker_and_stdlib_args(target)
         elem = self.generate_link(target, outname, final_obj_list, linker, pch_objects, stdlib_args=stdlib_args)
         self.add_build(elem)
         #In AIX, we archive shared libraries. If the instance is a shared library, we add a command to archive the shared library
@@ -1125,8 +1129,9 @@ class NinjaBackend(backends.Backend):
             return True
         if 'cpp' not in target.compilers:
             return False
-        if '-fmodules-ts' in target.extra_args['cpp']:
-            return True
+        for arg in target.compilers['cpp'].get_cpp_modules_args():
+            if arg in target.extra_args['cpp']:
+                return True
         # Currently only the preview version of Visual Studio is supported.
         cpp = target.compilers['cpp']
         if cpp.get_id() != 'msvc':
@@ -1232,10 +1237,12 @@ class NinjaBackend(backends.Backend):
         deps += self.get_target_depend_files(target)
         if target.build_always_stale:
             deps.append('PHONY')
-        if target.depfile is None:
-            rulename = 'CUSTOM_COMMAND'
-        else:
+        if target.depfile_type == 'gcc':
             rulename = 'CUSTOM_COMMAND_DEP'
+        elif target.depfile_type == 'msvc':
+            rulename = 'CUSTOM_COMMAND_MSVC_DEP'
+        else:
+            rulename = 'CUSTOM_COMMAND'
         elem = NinjaBuildElement(self.all_outputs, ofilenames, rulename, srcs)
         elem.add_dep(deps)
         for d in target.extra_depends:
@@ -1400,12 +1407,16 @@ class NinjaBackend(backends.Backend):
         self.generate_static_link_rules()
         self.generate_dynamic_link_rules()
         self.add_rule_comment(NinjaComment('Other rules'))
+
         # Ninja errors out if you have deps = gcc but no depfile, so we must
         # have two rules for custom commands.
         self.add_rule(NinjaRule('CUSTOM_COMMAND', ['$COMMAND'], [], '$DESC',
                                 extra='restat = 1'))
         self.add_rule(NinjaRule('CUSTOM_COMMAND_DEP', ['$COMMAND'], [], '$DESC',
                                 deps='gcc', depfile='$DEPFILE',
+                                extra='restat = 1'))
+        self.add_rule(NinjaRule('CUSTOM_COMMAND_MSVC_DEP', ['$COMMAND'], [], '$DESC',
+                                deps='msvc',
                                 extra='restat = 1'))
         self.add_rule(NinjaRule('COPY_FILE', self.environment.get_build_command() + ['--internal', 'copy'],
                                 ['$in', '$out'], 'Copying $in to $out'))
@@ -1582,20 +1593,18 @@ class NinjaBackend(backends.Backend):
 
         self.create_target_source_introspection(target, compiler, commands, rel_srcs, generated_rel_srcs)
 
-    def determine_java_compile_args(self, target, compiler) -> T.List[str]:
-        args = []
+    def determine_java_compile_args(self, target: build.Jar, compiler: Compiler) -> T.List[str]:
         args = self.generate_basic_compiler_args(target, compiler)
         args += target.get_java_args()
         args += compiler.get_output_args(self.get_target_private_dir(target))
         args += target.get_classpath_args()
         curdir = target.get_subdir()
-        sourcepath = os.path.join(self.build_to_src, curdir) + os.pathsep
-        sourcepath += os.path.normpath(curdir) + os.pathsep
+        sourcepaths = [os.path.join(self.build_to_src, curdir)]
+        sourcepaths.append(os.path.normpath(curdir))
         for i in target.include_dirs:
-            for idir in i.get_incdirs():
-                sourcepath += os.path.join(self.build_to_src, i.curdir, idir) + os.pathsep
-        args += ['-sourcepath', sourcepath]
-        return args
+            sourcepaths.extend(i.abs_string_list(self.source_dir, self.build_dir))
+        args += ['-sourcepath', os.pathsep.join(sourcepaths)]
+        return list(args)
 
     def generate_java_compile(self, srcs, target, compiler, args) -> str:
         deps = [os.path.join(self.get_target_dir(l), l.get_filename()) for l in target.link_targets]
@@ -1783,11 +1792,6 @@ class NinjaBackend(backends.Backend):
                 # Without this, it will write it inside c_out_dir
                 args += ['--vapi', os.path.join('..', target.vala_vapi)]
                 valac_outputs.append(vapiname)
-            # Install header and vapi to default locations if user requests this
-            if len(target.install_dir) > 1 and target.install_dir[1] is True:
-                target.install_dir[1] = self.environment.get_includedir()
-            if len(target.install_dir) > 2 and target.install_dir[2] is True:
-                target.install_dir[2] = os.path.join(self.environment.get_datadir(), 'vala', 'vapi')
             # Generate GIR if requested
             if target.vala_gir is not None:
                 girname = os.path.join(self.get_target_dir(target), target.vala_gir)
@@ -1796,9 +1800,6 @@ class NinjaBackend(backends.Backend):
                 shared_target = target.get('shared')
                 if isinstance(shared_target, build.SharedLibrary):
                     args += ['--shared-library', shared_target.get_filename()]
-                # Install GIR to default location if requested by user
-                if len(target.install_dir) > 3 and target.install_dir[3] is True:
-                    target.install_dir[3] = os.path.join(self.environment.get_datadir(), 'gir-1.0')
         # Detect gresources and add --gresources/--gresourcesdir arguments for each
         gres_dirs = []
         for gensrc in other_src[1].values():
@@ -1846,7 +1847,7 @@ class NinjaBackend(backends.Backend):
         args += cython.get_option_compile_args(target, target.subproject)
         args += cython.get_option_std_args(target, target.subproject)
         args += self.build.get_global_args(cython, target.for_machine)
-        args += self.build.get_project_args(cython, target.subproject, target.for_machine)
+        args += self.build.get_project_args(cython, target)
         args += target.get_extra_args('cython')
 
         ext = self.get_target_option(target, OptionKey('cython_language', machine=target.for_machine))
@@ -1939,7 +1940,7 @@ class NinjaBackend(backends.Backend):
                                 from_subproject: bool, proc_macro_dylib_path: T.Optional[str],
                                 deps: T.List[RustDep]) -> None:
         raw_edition: T.Optional[str] = mesonlib.first(reversed(args), lambda x: x.startswith('--edition'))
-        edition: RUST_EDITIONS = '2015' if not raw_edition else raw_edition.split('=')[-1]
+        edition: RUST_EDITIONS = '2015' if not raw_edition else raw_edition.split('=', 1)[-1]
 
         cfg: T.List[str] = []
         arg_itr: T.Iterator[str] = iter(args)
@@ -2053,6 +2054,12 @@ class NinjaBackend(backends.Backend):
             args.extend(rustc.get_linker_always_args())
             args += compilers.get_base_link_args(target, rustc, self.environment)
 
+        args += self.get_target_type_link_args(target, rustc)
+
+        if target.rust_crate_type in {'bin', 'dylib', 'cdylib'}:
+            args += rustc.get_build_link_args(target, self.build)
+            args += rustc.get_target_link_args(target)
+
         args += self.generate_basic_compiler_args(target, rustc)
         args += ['--crate-name', self._get_rust_crate_name(target.name)]
         if depfile:
@@ -2092,6 +2099,8 @@ class NinjaBackend(backends.Backend):
             args.append(f'-Clink-arg={o}')
             deps.append(o)
 
+        deps.extend([self.get_dependency_filename(t) for t in target.link_depends])
+
         linkdirs = mesonlib.OrderedSet()
         external_deps = target.external_deps.copy()
         target_deps = target.get_dependencies()
@@ -2102,7 +2111,7 @@ class NinjaBackend(backends.Backend):
             # information on whether this is a direct dependency (which
             # might use -Clink-arg= below) or an indirect one, so always
             # add to linkdirs.
-            linkdirs.add(d.subdir)
+            linkdirs.add(self.get_target_dir(d))
             deps.append(self.get_dependency_filename(d))
             if isinstance(d, build.StaticLibrary):
                 external_deps.extend(d.external_deps)
@@ -2199,6 +2208,9 @@ class NinjaBackend(backends.Backend):
             # want libstd as a shared dep
             has_rust_shared_deps = True
 
+        # Add link args specific to this BuildTarget type that must not be overridden by dependencies
+        args += self.get_target_type_link_args_post_dependencies(target, rustc)
+
         if has_rust_shared_deps:
             args += ['-C', 'prefer-dynamic']
         if has_shared_deps or has_rust_shared_deps:
@@ -2244,8 +2256,6 @@ class NinjaBackend(backends.Backend):
         element.add_item('ARGS', args)
         element.add_item('targetdep', depfile)
         self.add_build(element)
-        if isinstance(target, build.SharedLibrary):
-            self.generate_shsym(target)
         self.create_target_source_introspection(target, rustc, args, [main_rust_file], [])
 
         if target.doctests:
@@ -2294,20 +2304,17 @@ class NinjaBackend(backends.Backend):
             result.append(self.get_target_filename(l))
         return result
 
-    def split_swift_generated_sources(self, target):
+    def split_swift_generated_sources(self, target: build.BuildTarget) -> T.List[str]:
         all_srcs = self.get_target_generated_sources(target)
-        srcs = []
-        others = []
+        srcs: T.List[str] = []
         for i in all_srcs:
             if i.endswith('.swift'):
                 srcs.append(i)
-            else:
-                others.append(i)
-        return srcs, others
+        return srcs
 
-    def generate_swift_target(self, target) -> None:
+    def generate_swift_target(self, target: build.BuildTarget) -> None:
         module_name = target.swift_module_name
-        swiftc = target.compilers['swift']
+        swiftc = T.cast('SwiftCompiler', target.compilers['swift'])
         abssrc = []
         relsrc = []
         abs_headers = []
@@ -2343,7 +2350,7 @@ class NinjaBackend(backends.Backend):
         compile_args = self.generate_basic_compiler_args(target, swiftc)
         compile_args += swiftc.get_module_args(module_name)
         compile_args += swiftc.get_cxx_interoperability_args(target)
-        compile_args += self.build.get_project_args(swiftc, target.subproject, target.for_machine)
+        compile_args += self.build.get_project_args(swiftc, target)
         compile_args += self.build.get_global_args(swiftc, target.for_machine)
         if isinstance(target, (build.StaticLibrary, build.SharedLibrary)):
             # swiftc treats modules with a single source file, and the main.swift file in multi-source file modules
@@ -2353,18 +2360,11 @@ class NinjaBackend(backends.Backend):
             if len(abssrc) == 1 and os.path.basename(abssrc[0]) != 'main.swift':
                 compile_args += swiftc.get_library_args()
         for i in reversed(target.get_include_dirs()):
-            basedir = i.get_curdir()
-            for d in i.get_incdirs():
-                if d not in ('', '.'):
-                    expdir = os.path.join(basedir, d)
-                else:
-                    expdir = basedir
-                srctreedir = os.path.normpath(os.path.join(self.environment.get_build_dir(), self.build_to_src, expdir))
-                sargs = swiftc.get_include_args(srctreedir, False)
-                compile_args += sargs
+            for path in i.abs_string_list(self.source_dir, self.build_dir):
+                compile_args.extend(swiftc.get_include_args(path, False))
         compile_args += target.get_extra_args('swift')
         link_args = swiftc.get_output_args(os.path.join(self.environment.get_build_dir(), self.get_target_filename(target)))
-        link_args += self.build.get_project_link_args(swiftc, target.subproject, target.for_machine)
+        link_args += self.build.get_project_link_args(swiftc, target)
         link_args += self.build.get_global_link_args(swiftc, target.for_machine)
         rundir = self.get_target_private_dir(target)
         out_module_name = self.swift_module_file_name(target)
@@ -2380,7 +2380,7 @@ class NinjaBackend(backends.Backend):
             if reldir == '':
                 reldir = '.'
             link_args += ['-L', os.path.normpath(os.path.join(self.environment.get_build_dir(), reldir))]
-        (rel_generated, _) = self.split_swift_generated_sources(target)
+        rel_generated = self.split_swift_generated_sources(target)
         abs_generated = [os.path.join(self.environment.get_build_dir(), x) for x in rel_generated]
         # We need absolute paths because swiftc needs to be invoked in a subdir
         # and this is the easiest way about it.
@@ -2811,6 +2811,10 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
         exe = generator.get_exe()
         infilelist = genlist.get_inputs()
         extra_dependencies = self.get_target_depend_files(genlist)
+        for d in genlist.extra_depends:
+            # Add a dependency on all the outputs of this target
+            for output in d.get_outputs():
+                extra_dependencies.append(os.path.join(self.get_target_dir(d), output))
         for curfile in infilelist:
             infilename = curfile.rel_to_builddir(self.build_to_src, self.get_target_private_dir(target))
             base_args = generator.get_arglist(infilename)
@@ -2857,8 +2861,6 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
                 reason = f' (wrapped by meson {reason})'
             elem.add_item('DESC', f'Generating {what}{reason}')
 
-            if isinstance(exe, build.BuildTarget):
-                elem.add_dep(self.get_target_filename(exe))
             elem.add_item('COMMAND', cmdlist)
             self.add_build(elem)
 
@@ -3037,13 +3039,9 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
         return (rel_obj, rel_src)
 
     @lru_cache(maxsize=None)
-    def generate_inc_dir(self, compiler: 'Compiler', d: str, basedir: str, is_system: bool) -> \
-            T.Tuple['ImmutableListProtocol[str]', 'ImmutableListProtocol[str]']:
-        # Avoid superfluous '/.' at the end of paths when d is '.'
-        if d not in ('', '.'):
-            expdir = os.path.normpath(os.path.join(basedir, d))
-        else:
-            expdir = basedir
+    def generate_inc_dir(self, compiler: 'Compiler', d: str, basedir: str, is_system: bool
+                         ) -> T.Tuple[ImmutableListProtocol[str], ImmutableListProtocol[str]]:
+        expdir = os.path.normpath(os.path.join(basedir, d))
         srctreedir = os.path.normpath(os.path.join(self.build_to_src, expdir))
         sargs = compiler.get_include_args(srctreedir, is_system)
         # There may be include dirs where a build directory has not been
@@ -3095,16 +3093,35 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
         # external deps and must maintain the order in which they are specified.
         # Hence, we must reverse the list so that the order is preserved.
         for i in reversed(target.get_include_dirs()):
-            basedir = i.get_curdir()
-            # We should iterate include dirs in reversed orders because
-            # -Ipath will add to begin of array. And without reverse
-            # flags will be added in reversed order.
-            for d in reversed(i.get_incdirs()):
-                # Add source subdir first so that the build subdir overrides it
-                (compile_obj, includeargs) = self.generate_inc_dir(compiler, d, basedir, i.is_system)
-                commands += compile_obj
-                commands += includeargs
-            for d in i.get_extra_build_dirs():
+            basedir = i.curdir
+            # Each directory must be added to CompilerArgs individually
+            # via a separate ``commands +=`` call, in reversed order.
+            #
+            # CompilerArgs.__iadd__ prepends ``-I`` args (which are in
+            # CLikeCompilerArgs.prepend_prefixes) but appends ``-isystem``
+            # args (which are not).  When adding one directory at a time
+            # in reversed order, this produces the correct result for
+            # both flag types:
+            #
+            # - For ``-I`` (prepended): each flag is inserted at the
+            #   front, so reversed iteration produces the original
+            #   order — first-listed directory appears first on the
+            #   command line and is searched first.
+            #
+            # - For ``-isystem`` (appended): each flag is added at the
+            #   back, so reversed iteration produces a reversed sequence
+            #   on the command line — *last*-listed directory appears
+            #   first and is searched first.
+            #
+            # Adding all directories in a single ``commands +=`` call
+            # would break ``-isystem`` ordering: the whole list would be
+            # appended at once in the original (unreversed) order, making
+            # the *first*-listed directory appear first instead of last.
+            for d in reversed(i.incdirs):
+                sargs, bargs = self.generate_inc_dir(compiler, d, basedir, i.is_system)
+                commands += sargs
+                commands += bargs
+            for d in i.extra_build_dirs:
                 commands += compiler.get_include_args(d, i.is_system)
         # Add per-target compile args, f.ex, `c_args : ['-DFOO']`. We set these
         # near the end since these are supposed to override everything else.
@@ -3135,12 +3152,12 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
     # Returns a dictionary, mapping from each compiler src type (e.g. 'c', 'cpp', etc.) to a list of compiler arg strings
     # used for that respective src type.
     # Currently used for the purpose of populating VisualStudio intellisense fields but possibly useful in other scenarios.
-    def generate_common_compile_args_per_src_type(self, target: build.BuildTarget) -> dict[str, list[str]]:
+    def generate_common_compile_args_per_src_type(self, target: build.BuildTarget) -> T.Dict[Language, T.List[str]]:
         src_type_to_args = {}
 
         use_pch = self.target_uses_pch(target)
 
-        for src_type_str in target.compilers.keys():
+        for src_type_str in target.compilers:
             compiler = target.compilers[src_type_str]
             commands = self._generate_single_compile_base_args(target, compiler)
 
@@ -3471,7 +3488,7 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
     def generate_pch(self, target: build.BuildTarget, header_deps=None):
         header_deps = header_deps if header_deps is not None else []
         pch_objects = []
-        for lang in ['c', 'cpp']:
+        for lang in T.cast('T.Tuple[Language, ...]', ('c', 'cpp')):
             pch = target.pch[lang]
             if not pch:
                 continue
@@ -3553,8 +3570,8 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
                 commands += linker.get_std_shared_lib_link_args()
             # All shared libraries are PIC
             commands += linker.get_pic_args()
+            # Add -Wl,-soname arguments on Linux, -install_name on OS X
             if not isinstance(target, build.SharedModule) or target.force_soname:
-                # Add -Wl,-soname arguments on Linux, -install_name on OS X
                 commands += linker.get_soname_args(
                     target.prefix, target.name, target.suffix,
                     target.soversion, target.darwin_versions)
@@ -3726,13 +3743,11 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
             linker_base = 'STATIC'
         else:
             linker_base = linker.get_language() # Fixme.
-        if isinstance(target, build.SharedLibrary):
-            self.generate_shsym(target)
-            if self.environment.machines[target.for_machine].is_os2():
-                target_file = self.get_target_filename(target)
-                import_name = self.get_import_filename(target)
-                elem = NinjaBuildElement(self.all_outputs, import_name, 'IMPORTLIB', target_file)
-                self.add_build(elem)
+        if isinstance(target, build.SharedLibrary) and self.environment.machines[target.for_machine].is_os2():
+            target_file = self.get_target_filename(target)
+            import_name = self.get_import_filename(target)
+            elem = NinjaBuildElement(self.all_outputs, import_name, 'IMPORTLIB', target_file)
+            self.add_build(elem)
         crstr = self.get_rule_suffix(target.for_machine)
         linker_rule = linker_base + '_LINKER' + crstr
         # Create an empty commands list, and start adding link arguments from
@@ -3775,14 +3790,7 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
             commands += self.get_link_whole_args(linker, target)
 
         if not isinstance(target, build.StaticLibrary):
-            # Add link args added using add_project_link_arguments()
-            commands += self.build.get_project_link_args(linker, target.subproject, target.for_machine)
-            # Add link args added using add_global_link_arguments()
-            # These override per-project link arguments
-            commands += self.build.get_global_link_args(linker, target.for_machine)
-            # Link args added from the env: LDFLAGS. We want these to override
-            # all the defaults but not the per-target link args.
-            commands += self.environment.coredata.get_external_link_args(target.for_machine, linker.get_language())
+            commands += linker.get_build_link_args(target, self.build)
 
         # Now we will add libraries and library paths from various sources
 
@@ -3862,15 +3870,19 @@ https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47485'''))
                 raise MesonException(f'Tried to link the target named \'{target.name}\' with a MIL archive without LTO enabled! This causes the compiler to ignore the archive.')
 
         # Compiler args must be included in TI C28x linker commands.
+        compile_args = []
         if linker.get_id() in {'c2000', 'c6000', 'ti'}:
-            compile_args = []
             for for_machine in MachineChoice:
                 clist = self.environment.coredata.compilers[for_machine]
                 for langname, compiler in clist.items():
                     if langname in {'c', 'cpp'} and compiler.get_id() in {'c2000', 'c6000', 'ti'}:
                         compile_args += self.generate_basic_compiler_args(target, compiler)
-            elem.add_item('ARGS', compile_args)
 
+        # Add early arguments before any object files or libraries
+        if not isinstance(target, build.StaticLibrary):
+            compile_args += linker.get_target_link_early_args(target)
+        if compile_args:
+            elem.add_item('ARGS', compile_args)
         elem.add_item('LINK_ARGS', commands)
         self.create_target_linker_introspection(target, linker, commands)
         return elem

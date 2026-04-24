@@ -216,14 +216,14 @@ sub fixDyn
 
 	fixDynDep("minidlna", "libz.so.1");
 	fixDynDep("minidlna", "libstdc.so.6");
-	fixDynDep("minidlna", "libiconv.so.2.7.0");
+	fixDynDep("minidlna", "libiconv.so.2.7.1");
 	fixDynDep("minidlna", "libjpeg.so.8.3.2");
 	fixDynDep("minidlna", "libogg.so.0");
 	fixDynDep("minidlna", "libvorbis.so.0");
 	fixDynDep("minidlna", "libid3tag.so.0.16.4");
 	fixDynDep("minidlna", "libexif.so.12");
 	fixDynDep("minidlna", "libFLAC.so.14.0.0");
-	fixDynDep("minidlna", "libsqlite3.so.3.51.3");
+	fixDynDep("minidlna", "libsqlite3.so.3.53.0");
 	fixDynDep("mysql", "libz.so.1");
 	fixDynDep("mysqld", "libz.so.1");
 	fixDynDep("mysqldump", "libz.so.1");
@@ -286,11 +286,11 @@ sub fixDyn
 		fixDynDep("php-cgi", "libxml2.so.2.13.7");
 	}
 	else {
-		fixDynDep("php-cgi", "libxml2.so.16.1.2");
+		fixDynDep("php-cgi", "libxml2.so.16.1.3");
 	}
-	fixDynDep("php-cgi", "libpng16.so.16.55.0");
-	fixDynDep("php-cgi", "libiconv.so.2.7.0");
-	fixDynDep("php-cgi", "libsqlite3.so.3.51.3");
+	fixDynDep("php-cgi", "libpng16.so.16.58.0");
+	fixDynDep("php-cgi", "libiconv.so.2.7.1");
+	fixDynDep("php-cgi", "libsqlite3.so.3.53.0");
 	if ($openssldir eq "openssl-3.0") {
 		fixDynDep("php-cgi", "libcurl.so.4.8.0");
 	}
@@ -307,11 +307,11 @@ sub fixDyn
 		fixDynDep("php-cli", "libxml2.so.2.13.7");
 	}
 	else {
-		fixDynDep("php-cli", "libxml2.so.16.1.2");
+		fixDynDep("php-cli", "libxml2.so.16.1.3");
 	}
-	fixDynDep("php-cli", "libpng16.so.16.55.0");
-	fixDynDep("php-cli", "libiconv.so.2.7.0");
-	fixDynDep("php-cli", "libsqlite3.so.3.51.3");
+	fixDynDep("php-cli", "libpng16.so.16.58.0");
+	fixDynDep("php-cli", "libiconv.so.2.7.1");
+	fixDynDep("php-cli", "libsqlite3.so.3.53.0");
 	if ($openssldir eq "openssl-3.0") {
 		fixDynDep("php-cli", "libcurl.so.4.8.0");
 	}
@@ -328,11 +328,11 @@ sub fixDyn
 		fixDynDep("php-fpm", "libxml2.so.2.13.7");
 	}
 	else {
-		fixDynDep("php-fpm", "libxml2.so.16.1.2");
+		fixDynDep("php-fpm", "libxml2.so.16.1.3");
 	}
-	fixDynDep("php-fpm", "libpng16.so.16.55.0");
-	fixDynDep("php-fpm", "libiconv.so.2.7.0");
-	fixDynDep("php-fpm", "libsqlite3.so.3.51.3");
+	fixDynDep("php-fpm", "libpng16.so.16.58.0");
+	fixDynDep("php-fpm", "libiconv.so.2.7.1");
+	fixDynDep("php-fpm", "libsqlite3.so.3.53.0");
 	if ($openssldir eq "openssl-3.0") {
 		fixDynDep("php-fpm", "libcurl.so.4.8.0");
 	}
@@ -372,7 +372,7 @@ sub fixDyn
 	fixDynDep("ebtables-legacy-restore", "libebtc.so.0.0.0");
 
 # samba3
-	fixDynDep("samba_multicall", "libiconv.so.2.7.0");
+	fixDynDep("samba_multicall", "libiconv.so.2.7.1");
 
 # tor
 	fixDynDep("tor", "libevent-2.1.so.7");
@@ -402,7 +402,7 @@ sub fixDyn
 # avahi
 	fixDynDep("avahi-daemon", "libavahi-core.so.7.1.0");
 	fixDynDep("avahi-daemon", "libavahi-common.so.3.5.4");
-	fixDynDep("avahi-daemon", "libexpat.so.1.11.2");
+	fixDynDep("avahi-daemon", "libexpat.so.1.11.3");
 	fixDynDep("avahi-daemon", "libdaemon.so.0.5.0");
 
 	fixDynDep("xtables-legacy-multi", "libxtables.so");
@@ -422,7 +422,7 @@ sub fixDyn
 	fixDynDep("irqbalance", "libglib-2.0.so.0.7400.7");
 
 	fixDynDep("libipset.so.11.1.0", "libmnl.so.0.2.0");
-	fixDynDep("libglib-2.0.so.0.7400.7", "libiconv.so.2.7.0");
+	fixDynDep("libglib-2.0.so.0.7400.7", "libiconv.so.2.7.1");
 	fixDynDep("libglib-2.0.so.0.7400.7", "libpcre2-8.so.0.15.0");
 	fixDynDep("libglib-2.0.so.0.7400.7", "libpcre2-posix.so.3.0.7");
 
@@ -730,7 +730,7 @@ if ($is_arm ne "y") { # MIPS only (ARM - bigger)
 	genSO("${root}/usr/lib/libavformat.so.54", "${router}/ffmpeg/libavformat/libavformat.a", "${stripshared}", "-L${router}/ffmpeg/libavutil -L${router}/ffmpeg/libavcodec -L${router}/zlib");
 }
 
-genSO("${root}/usr/lib/libexpat.so.1.11.2", "${router}/expat/static/libexpat.a", "${stripshared}");
+genSO("${root}/usr/lib/libexpat.so.1.11.3", "${router}/expat/static/libexpat.a", "${stripshared}");
 genSO("${root}/usr/lib/libavutil.so.51", "${router}/ffmpeg/libavutil/libavutil.a", "${stripshared}", "-L${router}/zlib");
 genSO("${root}/usr/lib/libzebra.so", "${router}/zebra/lib/libzebra.a", "${stripshared}");
 genSO("${root}/usr/lib/libnfnetlink.so.0.2.0", "${router}/libnfnetlink/src/.libs/libnfnetlink.a", "${stripshared}");
@@ -750,13 +750,13 @@ else {
 	genSO("${root}/usr/lib/libcurl.so.4.8.0", "${router}/${libcurldir}/staged/usr/lib/libcurl.a", "${stripshared}", "-L${router}/zlib -L${router}/${openssldir} -L${router}/wolfssl/staged/usr/lib");
 }
 genSO("${root}/usr/lib/libevent-2.1.so.7", "${router}/libevent/.libs/libevent.a", "${stripshared}");
-genSO("${root}/usr/lib/libiconv.so.2.7.0", "${router}/libiconv/lib/.libs/libiconv.a", "${stripshared}");
-genSO("${root}/usr/lib/libpng16.so.16.55.0", "${router}/libpng/staged/usr/lib/libpng16.a", "${stripshared}", "-L${router}/zlib");
+genSO("${root}/usr/lib/libiconv.so.2.7.1", "${router}/libiconv/lib/.libs/libiconv.a", "${stripshared}");
+genSO("${root}/usr/lib/libpng16.so.16.58.0", "${router}/libpng/staged/usr/lib/libpng16.a", "${stripshared}", "-L${router}/zlib");
 if ($is_arm ne "y") { # MIPS
 	genSO("${root}/usr/lib/libxml2.so.2.13.7", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
 }
 else {
-	genSO("${root}/usr/lib/libxml2.so.16.1.2", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
+	genSO("${root}/usr/lib/libxml2.so.16.1.3", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
 }
 genSO("${root}/usr/lib/libpcre.so.1.2.13", "${router}/pcre/.libs/libpcre.a", "${stripshared}");
 genSO("${root}/usr/lib/libpcre2-8.so.0.15.0", "${router}/pcre2/staged/usr/lib/libpcre2-8.a", "${stripshared}");

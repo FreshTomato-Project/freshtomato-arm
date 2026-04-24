@@ -1,6 +1,6 @@
 /*
- * Copyright (C)2011-2012, 2014-2015, 2017-2018, 2022-2024 D. R. Commander.
- *                                                         All Rights Reserved.
+ * Copyright (C) 2011-2012, 2014-2015, 2017-2018, 2022-2024, 2026
+ *           D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,22 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * This program demonstrates how to use the TurboJPEG Java API to approximate
- * the functionality of the IJG's cjpeg program.  cjpeg features that are not
- * covered:
- *
- * - GIF and Targa input file formats [legacy feature]
- * - Separate quality settings for luminance and chrominance
- * - The floating-point DCT method [legacy feature]
- * - Input image smoothing
- * - Progress reporting
- * - Debug output
- * - Forcing baseline-compatible quantization tables
- * - Specifying arbitrary quantization tables
- * - Specifying arbitrary sampling factors
- * - Scan scripts
- */
+// This program demonstrates how to use the TurboJPEG Java API to approximate
+// the functionality of the IJG's cjpeg program.  cjpeg features that are not
+// covered:
+//
+// - GIF and Targa input file formats [legacy feature]
+// - Separate quality settings for luminance and chrominance
+// - The floating-point DCT method [legacy feature]
+// - Input image smoothing
+// - Progress reporting
+// - Debug output
+// - Forcing baseline-compatible quantization tables
+// - Specifying arbitrary quantization tables
+// - Specifying arbitrary sampling factors
+// - Scan scripts
 
 import java.io.*;
 import java.util.*;
@@ -137,9 +135,6 @@ final class TJComp {
 
   public static void main(String[] argv) {
     int exitStatus = 0;
-    TJCompressor tjc = null;
-    FileInputStream fis = null;
-    FileOutputStream fos = null;
 
     try {
       int i;
@@ -250,67 +245,66 @@ final class TJComp {
       if (losslessPSV == -1 && precision != 8 && precision != 12)
         usage();
 
-      tjc = new TJCompressor();
+      try (TJCompressor tjc = new TJCompressor()) {
 
-      tjc.set(TJ.PARAM_QUALITY, quality);
-      tjc.set(TJ.PARAM_SUBSAMP, subsamp);
-      tjc.set(TJ.PARAM_PRECISION, precision);
-      if (fastDCT >= 0)
-        tjc.set(TJ.PARAM_FASTDCT, fastDCT);
-      if (optimize >= 0)
-        tjc.set(TJ.PARAM_OPTIMIZE, optimize);
-      if (progressive >= 0)
-        tjc.set(TJ.PARAM_PROGRESSIVE, progressive);
-      if (arithmetic >= 0)
-        tjc.set(TJ.PARAM_ARITHMETIC, arithmetic);
-      if (losslessPSV >= 1 && losslessPSV <= 7) {
-        tjc.set(TJ.PARAM_LOSSLESS, 1);
-        tjc.set(TJ.PARAM_LOSSLESSPSV, losslessPSV);
-        if (losslessPt >= 0)
-          tjc.set(TJ.PARAM_LOSSLESSPT, losslessPt);
-      }
-      if (restartIntervalBlocks >= 0)
-        tjc.set(TJ.PARAM_RESTARTBLOCKS, restartIntervalBlocks);
-      if (restartIntervalRows >= 0)
-        tjc.set(TJ.PARAM_RESTARTROWS, restartIntervalRows);
-      if (maxMemory >= 0)
-        tjc.set(TJ.PARAM_MAXMEMORY, maxMemory);
+        tjc.set(TJ.PARAM_QUALITY, quality);
+        tjc.set(TJ.PARAM_SUBSAMP, subsamp);
+        tjc.set(TJ.PARAM_PRECISION, precision);
+        if (fastDCT >= 0)
+          tjc.set(TJ.PARAM_FASTDCT, fastDCT);
+        if (optimize >= 0)
+          tjc.set(TJ.PARAM_OPTIMIZE, optimize);
+        if (progressive >= 0)
+          tjc.set(TJ.PARAM_PROGRESSIVE, progressive);
+        if (arithmetic >= 0)
+          tjc.set(TJ.PARAM_ARITHMETIC, arithmetic);
+        if (losslessPSV >= 1 && losslessPSV <= 7) {
+          tjc.set(TJ.PARAM_LOSSLESS, 1);
+          tjc.set(TJ.PARAM_LOSSLESSPSV, losslessPSV);
+          if (losslessPt >= 0)
+            tjc.set(TJ.PARAM_LOSSLESSPT, losslessPt);
+        }
+        if (restartIntervalBlocks >= 0)
+          tjc.set(TJ.PARAM_RESTARTBLOCKS, restartIntervalBlocks);
+        if (restartIntervalRows >= 0)
+          tjc.set(TJ.PARAM_RESTARTROWS, restartIntervalRows);
+        if (maxMemory >= 0)
+          tjc.set(TJ.PARAM_MAXMEMORY, maxMemory);
 
-      tjc.loadSourceImage(argv[i], 1, pixelFormat);
-      pixelFormat = tjc.getPixelFormat();
+        tjc.loadSourceImage(argv[i], 1, pixelFormat);
+        pixelFormat = tjc.getPixelFormat();
 
-      if (pixelFormat == TJ.PF_GRAY && colorspace < 0)
-        colorspace = TJ.CS_GRAY;
-      if (colorspace >= 0)
-        tjc.set(TJ.PARAM_COLORSPACE, colorspace);
+        if (pixelFormat == TJ.PF_GRAY && colorspace < 0)
+          colorspace = TJ.CS_GRAY;
+        if (colorspace >= 0)
+          tjc.set(TJ.PARAM_COLORSPACE, colorspace);
 
-      if (iccFilename != null) {
-        File iccFile = new File(iccFilename);
-        fis = new FileInputStream(iccFile);
-        int iccSize = fis.available();
-        if (iccSize < 1)
-          throw new Exception("ICC profile contains no data");
-        iccBuf = new byte[iccSize];
-        fis.read(iccBuf);
-        fis.close();  fis = null;
-        tjc.setICCProfile(iccBuf);
-      }
+        if (iccFilename != null) {
+          File iccFile = new File(iccFilename);
+          try (FileInputStream fis = new FileInputStream(iccFile)) {
+            int iccSize = fis.available();
+            if (iccSize < 1)
+              throw new Exception("ICC profile contains no data");
+            iccBuf = new byte[iccSize];
+            fis.read(iccBuf);
+          }
+          tjc.setICCProfile(iccBuf);
+        }
 
-      jpegBuf = tjc.compress();
+        jpegBuf = tjc.compress();
 
-      File outFile = new File(argv[++i]);
-      fos = new FileOutputStream(outFile);
-      fos.write(jpegBuf, 0, tjc.getCompressedSize());
+        File outFile = new File(argv[++i]);
+        try (FileOutputStream fos = new FileOutputStream(outFile)) {
+          fos.write(jpegBuf, 0, tjc.getCompressedSize());
+        }
+
+      }  // try (tjc)
+
     } catch (Exception e) {
       e.printStackTrace();
       exitStatus = -1;
     }
 
-    try {
-      if (fis != null) fis.close();
-      if (fos != null) fos.close();
-      if (tjc != null) tjc.close();
-    } catch (Exception e) {}
     System.exit(exitStatus);
   }
 };

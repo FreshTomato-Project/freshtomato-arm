@@ -397,7 +397,7 @@ exif_entry_fix (ExifEntry *e)
 		/*
 		 * If the first 8 bytes are empty and real data starts
 		 * afterwards, let's assume ASCII and claim the 8 first
-		 * bytes for the format specifyer.
+		 * bytes for the format specifier.
 		 */
 		for (i = 0; (i < e->size) && !e->data[i]; i++);
 		if (!i) for ( ; (i < e->size) && (e->data[i] == ' '); i++);
@@ -1414,7 +1414,7 @@ exif_entry_get_value (ExifEntry *e, char *val, unsigned int maxlen)
 
 		/* Warning! The texts are converted from UTF16 to UTF8 */
 		/* FIXME: use iconv to convert into the locale encoding */
-		exif_convert_utf16_to_utf8(val, utf16, maxlen);
+		exif_convert_utf16_to_utf8(val, maxlen, utf16, e->size+3);
 		exif_mem_free(e->priv->mem, utf16);
 		break;
 	}

@@ -1,6 +1,6 @@
 #!/bin/sh
 # install-reloc - install a program including a relocating wrapper
-# Copyright (C) 2003-2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2026 Free Software Foundation, Inc.
 # Written by Bruno Haible <bruno@clisp.org>, 2003.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -77,7 +77,7 @@ Send patches and bug reports to <bug-gnulib@gnu.org>."
 func_version ()
 {
   echo "install-reloc (GNU gnulib, module relocatable-prog-wrapper)"
-  echo "Copyright (C) 2024 Free Software Foundation, Inc.
+  echo "Copyright (C) 2026 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law."
@@ -304,7 +304,7 @@ func_create_wrapper ()
                -o "$destprog.wrapper$exeext"
   rc=$?
   # Clean up object files left over in the current directory by the native C
-  # compilers on Solaris, HP-UX, OSF/1, IRIX.
+  # compilers on Solaris, HP-UX.
   rm -f relocwrapper.o \
         progname.o \
         progreloc.o \

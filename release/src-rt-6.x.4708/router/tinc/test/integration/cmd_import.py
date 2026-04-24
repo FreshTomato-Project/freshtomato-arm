@@ -2,13 +2,13 @@
 
 """Test import/export error conditions."""
 
-import os
-
 from testlib import check, cmd, util
 from testlib.log import log
 from testlib.const import RUN_ACCESS_CHECKS
 from testlib.proc import Tinc
 from testlib.test import Test
+
+import os
 
 SEPARATOR = f"#{'-' * 63}#"
 

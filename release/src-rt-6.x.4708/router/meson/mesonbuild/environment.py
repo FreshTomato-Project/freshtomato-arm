@@ -33,7 +33,7 @@ from . import compilers
 from mesonbuild import envconfig
 
 if T.TYPE_CHECKING:
-    from .compilers import Compiler
+    from .compilers.compilers import Compiler, CompilerDict, Language
     from .options import OptionDict, ElementaryOptionValues
     from .wrap.wrap import Resolver
 
@@ -375,13 +375,15 @@ class Environment:
         opts = itertools.chain(envconfig.DEPRECATED_ENV_PROG_MAP.items(),
                                envconfig.ENV_VAR_PROG_MAP.items())
 
-        for (name, evar), for_machine in itertools.product(opts, MachineChoice):
-            p_env = _get_env_var(for_machine, self.is_cross_build(), evar)
-            if p_env is not None:
-                if os.path.exists(p_env):
-                    self.binaries[for_machine].binaries.setdefault(name, [p_env])
-                else:
-                    self.binaries[for_machine].binaries.setdefault(name, mesonlib.split_args(p_env))
+        for (name, evars), for_machine in itertools.product(opts, MachineChoice):
+            for evar in evars:
+                p_env = _get_env_var(for_machine, self.is_cross_build(), evar)
+                if p_env is not None:
+                    if os.path.exists(p_env):
+                        self.binaries[for_machine].binaries.setdefault(name, [p_env])
+                    else:
+                        self.binaries[for_machine].binaries.setdefault(name, mesonlib.split_args(p_env))
+                    break
 
     def _set_default_properties_from_env(self) -> None:
         """Properties which can also be set from the environment."""
@@ -576,7 +578,7 @@ class Environment:
             env.prepend('PATH', list(extra_paths))
         return env
 
-    def add_lang_args(self, lang: str, comp: T.Type['Compiler'],
+    def add_lang_args(self, lang: Language, comp: T.Type['Compiler'],
                       for_machine: MachineChoice) -> None:
         """Add global language arguments that are needed before compiler/linker detection."""
         description = f'Extra arguments passed to the {lang}'
@@ -609,7 +611,7 @@ class Environment:
         self.coredata.optstore.add_compiler_option(lang, argkey, cargs)
         self.coredata.optstore.add_compiler_option(lang, largkey, largs)
 
-        if comp.INVOKES_LINKER and comp_args_from_envvar:
+        if comp.USED_FOR_SEPARATE_LINKING_STEP and comp_args_from_envvar:
             # If the compiler acts as a linker driver, and we're using the
             # environment variable flags for both the compiler and linker
             # arguments, then put the compiler flags in the linker flags as well.
@@ -617,7 +619,7 @@ class Environment:
             # autotools compatibility.
             largs.extend_value(comp_options)
 
-    def update_build_machine(self, compilers: T.Optional[T.Dict[str, Compiler]] = None) -> None:
+    def update_build_machine(self, compilers: T.Optional[CompilerDict] = None) -> None:
         """Redetect the build machine and update the machine definitions
 
         :compilers: An optional dictionary of compilers to use instead of the coredata dict.

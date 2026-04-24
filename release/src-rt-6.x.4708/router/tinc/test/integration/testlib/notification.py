@@ -9,7 +9,6 @@ import typing as T
 
 from .log import log
 from .event import Notification
-from .const import MPC_FAMILY
 
 
 def _get_key(name, script) -> str:
@@ -78,7 +77,7 @@ class NotificationServer:
             os.kill(0, signal.SIGTERM)
 
     def _listen(self) -> None:
-        with mp.Listener(family=MPC_FAMILY, authkey=self.authkey) as listener:
+        with mp.Listener(authkey=self.authkey) as listener:
             assert not isinstance(listener.address, tuple)
             self.address = listener.address
             self._ready.set()

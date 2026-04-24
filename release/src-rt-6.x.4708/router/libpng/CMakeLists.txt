@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.14...4.2)
 
 set(PNGLIB_MAJOR 1)
 set(PNGLIB_MINOR 6)
-set(PNGLIB_REVISION 55)
+set(PNGLIB_REVISION 58)
 set(PNGLIB_SUBREVISION 0)
 #set(PNGLIB_SUBREVISION "git")
 set(PNGLIB_VERSION ${PNGLIB_MAJOR}.${PNGLIB_MINOR}.${PNGLIB_REVISION})
@@ -87,7 +87,7 @@ endif()
 option(PNG_TESTS "Build the libpng tests" ON)
 
 # Same as above, but for the third-party tools.
-# Although these tools are targetted at development environments only,
+# Although these tools are targeted at development environments only,
 # the users are allowed to override the option to build by default.
 if(ANDROID OR IOS)
   option(PNG_TOOLS "Build the libpng tools" OFF)
@@ -624,6 +624,9 @@ set(pngvalid_sources
 set(pngstest_sources
     contrib/libtests/pngstest.c
 )
+set(pnggetset_sources
+    contrib/libtests/pnggetset.c
+)
 set(pngunknown_sources
     contrib/libtests/pngunknown.c
 )
@@ -772,6 +775,8 @@ if(PNG_TESTS AND PNG_SHARED)
 
   set(PNGTEST_PNG "${CMAKE_CURRENT_SOURCE_DIR}/pngtest.png")
 
+  # pngtest tests:
+  # Basic read/write roundtrip using the sequential API.
   add_executable(pngtest ${pngtest_sources})
   target_link_libraries(pngtest
                         PRIVATE png_shared)
@@ -784,6 +789,18 @@ if(PNG_TESTS AND PNG_SHARED)
                COMMAND pngtest
                FILES "${TEST_PNG3_PNGS}")
 
+  # pnggetset test:
+  # Getter-to-setter roundtrips for various chunk types.
+  add_executable(pnggetset ${pnggetset_sources})
+  target_link_libraries(pnggetset
+                        PRIVATE png_shared)
+
+  png_add_test(NAME pnggetset
+               COMMAND pnggetset)
+
+  # pngvalid tests:
+  # Internal validation of standard and progressive reading,
+  # transforms, and gamma handling.
   add_executable(pngvalid ${pngvalid_sources})
   target_link_libraries(pngvalid
                         PRIVATE png_shared)
@@ -831,6 +848,9 @@ if(PNG_TESTS AND PNG_SHARED)
                COMMAND pngvalid
                OPTIONS --transform)
 
+  # pngstest tests:
+  # Format conversions through the simplified API,
+  # by gamma type and alpha type.
   add_executable(pngstest ${pngstest_sources})
   target_link_libraries(pngstest
                         PRIVATE png_shared)
@@ -887,13 +907,48 @@ if(PNG_TESTS AND PNG_SHARED)
     endforeach()
   endforeach()
 
-  # Regression test:
+  # Large-stride test:
   # Use stride_extra > 32767 to trigger row_bytes > 65535 for linear images.
   png_add_test(NAME pngstest-large-stride
                COMMAND pngstest
                OPTIONS --stride-extra 33000 --tmpfile "large-stride-" --log
                FILES "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-alpha-16-linear.png")
 
+  # Negative-stride test:
+  # Bottom-up layout through all read/write paths.
+  png_add_test(NAME pngstest-negative-stride
+               COMMAND pngstest
+               OPTIONS --negative-stride --tmpfile "negative-stride-" --log
+               FILES "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/gray-1.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/gray-16-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-8-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-16-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/palette-8-tRNS.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/gray-alpha-8-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/gray-alpha-16-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-alpha-8-1.8.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-alpha-8-sRGB.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-alpha-16-linear.png")
+
+  # Negative-stride-extra test:
+  # Bottom-up layout with non-aligned padding.
+  png_add_test(NAME pngstest-negative-stride-extra
+               COMMAND pngstest
+               OPTIONS --negative-stride --stride-extra 7
+                       --tmpfile "negative-stride-extra-" --log
+               FILES "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/gray-1.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/gray-16-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-8-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-16-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/palette-8-tRNS.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/gray-alpha-8-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/gray-alpha-16-linear.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-alpha-8-1.8.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-alpha-8-sRGB.png"
+                     "${CMAKE_CURRENT_SOURCE_DIR}/contrib/testpngs/rgb-alpha-16-linear.png")
+
+  # pngunknown tests:
+  # Unknown chunk handling under various read policies.
   add_executable(pngunknown ${pngunknown_sources})
   target_link_libraries(pngunknown
                         PRIVATE png_shared)
@@ -928,6 +983,8 @@ if(PNG_TESTS AND PNG_SHARED)
                OPTIONS --strict vpAg=if-safe
                FILES "${PNGTEST_PNG}")
 
+  # pngimage tests:
+  # Image read validation against the pngsuite corpus.
   add_executable(pngimage ${pngimage_sources})
   target_link_libraries(pngimage
                         PRIVATE png_shared)
@@ -967,7 +1024,7 @@ function(create_symlink DEST_FILE)
     message(FATAL_ERROR "create_symlink: Missing arguments: FILE or TARGET")
   endif()
   if(_SYM_FILE AND _SYM_TARGET)
-    message(FATAL_ERROR "create_symlink: Mutually-exlusive arguments:"
+    message(FATAL_ERROR "create_symlink: Mutually-exclusive arguments:"
                         "FILE (${_SYM_FILE}) and TARGET (${_SYM_TARGET})")
   endif()
 

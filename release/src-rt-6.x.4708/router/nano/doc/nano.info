@@ -11,20 +11,20 @@ File: nano.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The GNU nano text editor
 ************************
 
-This manual documents GNU ‘nano’, version 8.7.1.
+This manual documents GNU ‘nano’, version 9.0.
 
 * Menu:
 
 * Introduction::
 * Invoking::
-* Editor Basics::
-* The Help Viewer::
-* The File Browser::
-* Command-line Options::
-* Feature Toggles::
-* Nanorc Files::
-* Pico Compatibility::
-* Building and its Options::
+* Editor basics::
+* The help viewer::
+* The file browser::
+* Command-line options::
+* Feature toggles::
+* Nanorc files::
+* Pico compatibility::
+* Building and its options::
 
 
 File: nano.info,  Node: Introduction,  Next: Invoking,  Prev: Top,  Up: Top
@@ -41,7 +41,7 @@ support.
    The original goal for ‘nano’ was to be a complete bug-for-bug
 emulation of Pico.  But currently the goal is to be as compatible as is
 reasonable while offering a superset of Pico’s functionality.  *Note
-Pico Compatibility:: for more details on how ‘nano’ and Pico differ.
+Pico compatibility:: for more details on how ‘nano’ and Pico differ.
 
    Since version 4.0, ‘nano’ no longer hard-wraps overlong lines by
 default.  It also by default uses linewise scrolling, and by default
@@ -55,6 +55,17 @@ searches the next occurrence backward.  If you want those keystrokes to
 do what they did before version 8.0, see the rebindings in the sample
 nanorc file.
 
+   Since version 9.0, all lines are scrolled horizontally together (when
+the cursor approaches the edge), by just the amount needed, instead of
+scrolling only the current line by a large step.  If you prefer the old
+behavior, you can use ‘--solo’ on the command line or ‘set
+solosidescroll’ in your nanorc.
+
+   Also since version 9.0, keystrokes ‘M-<’ and ‘M->’ have been
+reassigned to the ‘scrollleft’ and ‘scrollright’ functions.  If you want
+those keystrokes to do what they did before version 9.0, see the
+rebindings in the sample nanorc file.
+
    Please report bugs via <https://savannah.gnu.org/bugs/?group=nano>.
 
    Questions about using nano you can ask at <help-nano@gnu.org>.
@@ -62,7 +73,7 @@ nanorc file.
    For background information see <https://nano-editor.org/>.
 
 
-File: nano.info,  Node: Invoking,  Next: Editor Basics,  Prev: Introduction,  Up: Top
+File: nano.info,  Node: Invoking,  Next: Editor basics,  Prev: Introduction,  Up: Top
 
 2 Invoking
 **********
@@ -72,7 +83,7 @@ The usual way to invoke ‘nano’ is:
      nano [FILE]
 
    But it is also possible to specify one or more options (*note
-Command-line Options::), and to edit several files in a row.
+Command-line options::), and to edit several files in a row.
 
    The cursor can be put on a specific line of a file by adding the line
 number with a plus sign before the filename, and even in a specific
@@ -91,7 +102,7 @@ synopsis thus is:
      nano [OPTION]... [[+LINE[,COLUMN]|+[crCR]{/|?}STRING] FILE]...
 
    Normally, however, you set your preferred options in a ‘nanorc’ file
-(*note Nanorc Files::).  And when using ‘set positionlog’ (making ‘nano’
+(*note Nanorc files::).  And when using ‘set positionlog’ (making ‘nano’
 remember the cursor position when you close a file), you will rarely
 need to specify a line number.
 
@@ -100,28 +111,28 @@ will read data from standard input.  This means you can pipe the output
 of a command straight into a buffer, and then edit it.
 
 
-File: nano.info,  Node: Editor Basics,  Next: The Help Viewer,  Prev: Invoking,  Up: Top
+File: nano.info,  Node: Editor basics,  Next: The help viewer,  Prev: Invoking,  Up: Top
 
-3 Editor Basics
+3 Editor basics
 ***************
 
 * Menu:
 
-* Screen Layout::
-* Entering Text::
+* Screen layout::
+* Entering text::
 * Commands::
-* The Cutbuffer::
-* The Mark::
-* Search and Replace::
-* Using the Mouse::
+* The cutbuffer::
+* The mark::
+* Searching and replacing::
+* Using the mouse::
 * Anchors::
+* Macros::
 * Exit status::
-* Limitations::
 
 
-File: nano.info,  Node: Screen Layout,  Next: Entering Text,  Up: Editor Basics
+File: nano.info,  Node: Screen layout,  Next: Entering text,  Up: Editor basics
 
-3.1 Screen Layout
+3.1 Screen layout
 =================
 
 The default screen of ‘nano’ consists of four areas.  From top to bottom
@@ -145,9 +156,9 @@ input (search strings, filenames, etc.)  is input on the status bar.
 essential functions of the editor.
 
 
-File: nano.info,  Node: Entering Text,  Next: Commands,  Prev: Screen Layout,  Up: Editor Basics
+File: nano.info,  Node: Entering text,  Next: Commands,  Prev: Screen layout,  Up: Editor basics
 
-3.2 Entering Text
+3.2 Entering text
 =================
 
 ‘nano’ is a "modeless" editor.  This means that all keystrokes, with the
@@ -174,7 +185,7 @@ enters this keystroke verbatim into the buffer, allowing the user to
 insert literal control codes (except ‘^J’) or escape sequences.
 
 
-File: nano.info,  Node: Commands,  Next: The Cutbuffer,  Prev: Entering Text,  Up: Editor Basics
+File: nano.info,  Node: Commands,  Next: The cutbuffer,  Prev: Entering text,  Up: Editor basics
 
 3.3 Commands
 ============
@@ -195,9 +206,9 @@ the desired key, and a meta-key sequence by pressing the Esc key once
 and then pressing the desired key.
 
 
-File: nano.info,  Node: The Cutbuffer,  Next: The Mark,  Prev: Commands,  Up: Editor Basics
+File: nano.info,  Node: The cutbuffer,  Next: The mark,  Prev: Commands,  Up: Editor basics
 
-3.4 The Cutbuffer
+3.4 The cutbuffer
 =================
 
 Text can be cut from a file a whole line at a time with ‘^K’.  The cut
@@ -212,9 +223,9 @@ position with ‘^U’.
 with ‘M-6’.
 
 
-File: nano.info,  Node: The Mark,  Next: Search and Replace,  Prev: The Cutbuffer,  Up: Editor Basics
+File: nano.info,  Node: The mark,  Next: Searching and replacing,  Prev: The cutbuffer,  Up: Editor basics
 
-3.5 The Mark
+3.5 The mark
 ============
 
 Text can be selected by first ’setting the Mark’ with ‘^6’ or ‘M-A’ and
@@ -233,18 +244,18 @@ movement where ‘Shift’ isn’t held.
 If needed, it can be toggled off manually with another ‘^6’ or ‘M-A’.
 
 
-File: nano.info,  Node: Search and Replace,  Next: Using the Mouse,  Prev: The Mark,  Up: Editor Basics
+File: nano.info,  Node: Searching and replacing,  Next: Using the mouse,  Prev: The mark,  Up: Editor basics
 
-3.6 Search and Replace
-======================
+3.6 Searching and replacing
+===========================
 
-With the Search command (‘^F’ or ‘^W’) one can search the current buffer
+With the Search command (‘^F’ or ‘^W’) you can search the current buffer
 for the occurrence of any string.  The default search mode is forward,
 case-insensitive, and for literal strings.  But one can search backwards
 by toggling ‘M-B’, search case sensitively with ‘M-C’, and interpret
 regular expressions in the search string with ‘M-R’.
 
-   With the Replacement command (‘M-R’ or ‘^\’) one can replace a given
+   With the Replace command (‘M-R’ or ‘^\’) you can replace a given
 string (or regular expression) with another string.  When a regular
 expression contains fragments between parentheses, the replacement
 string can refer back to these fragments via ‘\1’ to ‘\9’.
@@ -264,9 +275,9 @@ multiple lines.  And neither a search string nor a replacement string
 can contain a newline (LF).
 
 
-File: nano.info,  Node: Using the Mouse,  Next: Anchors,  Prev: Search and Replace,  Up: Editor Basics
+File: nano.info,  Node: Using the mouse,  Next: Anchors,  Prev: Searching and replacing,  Up: Editor basics
 
-3.7 Using the Mouse
+3.7 Using the mouse
 ===================
 
 When mouse support has been configured and enabled, a single mouse click
@@ -280,7 +291,7 @@ during those actions.
 is running.
 
 
-File: nano.info,  Node: Anchors,  Next: Exit status,  Prev: Using the Mouse,  Up: Editor Basics
+File: nano.info,  Node: Anchors,  Next: Macros,  Prev: Using the mouse,  Up: Editor basics
 
 3.8 Anchors
 ===========
@@ -303,29 +314,40 @@ saved when the file is closed, and restored when the file is reopened.
 and are always visualized (on the right-hand side) in the mini bar.
 
 
-File: nano.info,  Node: Exit status,  Next: Limitations,  Prev: Anchors,  Up: Editor Basics
+File: nano.info,  Node: Macros,  Next: Exit status,  Prev: Anchors,  Up: Editor basics
 
-3.9 Exit status
-===============
+3.9 Macros
+==========
+
+To record a series of keystrokes that you need to perform many times,
+start the recording with ‘M-:’, carefully type the series of keystrokes,
+and then stop the recording by using ‘M-:’ again.  The recorded result
+is called a keyboard macro.  You can replay this macro with ‘M-;’, as
+many times as needed.
+
+   When you type ‘M-:’ (recordmacro) by mistake, then type ‘M-:’ again
+right away, to cancel the recording.  An existing macro is then not
+overwritten.
+
+   Note: the recording and playback of keyboard macros works correctly
+only on a terminal emulator, not on a Linux console (VT), because the
+latter does not by default distinguish modified from unmodified cursor
+keys.
+
+
+File: nano.info,  Node: Exit status,  Prev: Macros,  Up: Editor basics
+
+3.10 Exit status
+================
 
 The exit status is ‘0’ when ‘nano’ finished normally, ‘1’ when an
 invalid option or option argument was given, and ‘2’ when the last open
 buffer was discarded (with ‘^O^Q’ or ‘^X^Q’).
 
 
-File: nano.info,  Node: Limitations,  Prev: Exit status,  Up: Editor Basics
+File: nano.info,  Node: The help viewer,  Next: The file browser,  Prev: Editor basics,  Up: Top
 
-3.10 Limitations
-================
-
-The recording and playback of keyboard macros works correctly only on a
-terminal emulator, not on a Linux console (VT), because the latter does
-not by default distinguish modified from unmodified arrow keys.
-
-
-File: nano.info,  Node: The Help Viewer,  Next: The File Browser,  Prev: Editor Basics,  Up: Top
-
-4 The Help Viewer
+4 The help viewer
 *****************
 
 The built-in help in ‘nano’ is available by pressing ‘^G’.  It is fairly
@@ -334,13 +356,13 @@ available keystrokes.  Navigation is via the ‘^Y’ (Page Up) and ‘^V’
 (Page Down) keys.  ‘^X’ exits from the help viewer.
 
 
-File: nano.info,  Node: The File Browser,  Next: Command-line Options,  Prev: The Help Viewer,  Up: Top
+File: nano.info,  Node: The file browser,  Next: Command-line options,  Prev: The help viewer,  Up: Top
 
-5 The File Browser
+5 The file browser
 ******************
 
 When in the Read-File (‘^R’) or Write-Out menu (‘^O’), pressing ‘^T’
-invokes the file browser.  Here, one can navigate directories in a
+invokes the file browser.  Here, you can navigate directories in a
 graphical manner in order to find the desired file.
 
    Basic movement in the file browser is accomplished with the arrow and
@@ -353,9 +375,9 @@ object is a file, this filename and path are copied to the status bar,
 and the file browser exits.
 
 
-File: nano.info,  Node: Command-line Options,  Next: Feature Toggles,  Prev: The File Browser,  Up: Top
+File: nano.info,  Node: Command-line options,  Next: Feature toggles,  Prev: The file browser,  Up: Top
 
-6 Command-line Options
+6 Command-line options
 **********************
 
 ‘nano’ accepts the following options from the command line:
@@ -507,7 +529,7 @@ File: nano.info,  Node: Command-line Options,  Next: Feature Toggles,  Prev: The
 ‘-Y NAME’
 ‘--syntax=NAME’
      Specify the syntax to be used for highlighting.  *Note Syntax
-     Highlighting:: for more info.
+     highlighting:: for more info.
 
 ‘-Z’
 ‘--zap’
@@ -728,16 +750,27 @@ File: nano.info,  Node: Command-line Options,  Next: Feature Toggles,  Prev: The
      next keystroke.  With ‘M-Z’ the title bar plus status bar can be
      toggled.  With ‘M-X’ the help lines.
 
+‘-1’
+‘--solosidescroll’
+     When the cursor approaches the right edge of the edit window,
+     scroll only the current line sideways by a large amount, instead of
+     scrolling all visible lines sideways by just the amount needed to
+     keep the cursor in view.  This latter whole-window smooth sideways
+     scrolling is the new default behavior.  The single-line jerky
+     sideways scrolling enabled by this option was the old behavior —
+     the only behavior that ‘nano’ knew.
+
 ‘-/’
 ‘--modernbindings’
      Use key bindings similar to the ones that most modern programs use:
      ‘^X’ cuts, ‘^C’ copies, ‘^V’ pastes, ‘^Z’ undoes, ‘^Y’ redoes, ‘^F’
      searches forward, ‘^G’ searches next, ‘^S’ saves, ‘^O’ opens a
      file, ‘^Q’ quits, and (when the terminal permits) ‘^H’ shows help.
-     Furthermore, ‘^A’ sets the mark, ‘^R’ makes replacements, ‘^D’
-     searches previous, ‘^P’ shows the position, ‘^T’ goes to a line,
-     ‘^W’ writes out a file, and ‘^E’ executes a command.  Note that
-     this overrides option ‘-p’ (‘--preserve’).
+     Furthermore, ‘^A’ sets the mark, ‘^B’ searches backward, ‘^D’
+     searches previous, ‘^R’ makes replacements, ‘^P’ shows the
+     position, ‘^T’ goes to a line, ‘^W’ writes out a file, and ‘^E’
+     executes a command.  Note that this option overrides option ‘-p’
+     (‘--preserve’).
 
 
    Suspension is enabled by default, reachable via ‘^T^Z’.  (If you want
@@ -745,9 +778,9 @@ a plain ‘^Z’ to suspend nano, add ‘bind ^Z suspend main’ to your
 nanorc.)
 
 
-File: nano.info,  Node: Feature Toggles,  Next: Nanorc Files,  Prev: Command-line Options,  Up: Top
+File: nano.info,  Node: Feature toggles,  Next: Nanorc files,  Prev: Command-line options,  Up: Top
 
-7 Feature Toggles
+7 Feature toggles
 *****************
 
 Toggles allow you to change certain aspects of the editor while you are
@@ -792,7 +825,7 @@ for more details).  The following global toggles are available:
 
 ‘Syntax Coloring’
      ‘M-Y’ toggles syntax coloring, when your nanorc defines syntaxes
-     (*note Syntax Highlighting::).
+     (*note Syntax highlighting::).
 
 ‘Hidden Interface’
      ‘M-Z’ toggles the ‘-0’ (‘--zero’) command-line option, but without
@@ -801,9 +834,9 @@ for more details).  The following global toggles are available:
      help lines.  The latter are toggled with ‘M-X’.
 
 
-File: nano.info,  Node: Nanorc Files,  Next: Pico Compatibility,  Prev: Feature Toggles,  Up: Top
+File: nano.info,  Node: Nanorc files,  Next: Pico compatibility,  Prev: Feature toggles,  Up: Top
 
-8 Nanorc Files
+8 Nanorc files
 **************
 
 Nanorc files can be used to configure ‘nano’ to your liking without
@@ -816,8 +849,8 @@ the above files and reads just the specified settings file.
 
    A nanorc file can contain ‘set’ and ‘unset’ commands for various
 options (*note Settings::).  It can also contain commands that define
-syntax highlighting (*note Syntax Highlighting::) and commands that
-rebind keys (*note Rebinding Keys::).  Each command should be on a
+syntax highlighting (*note Syntax highlighting::) and commands that
+rebind keys (*note Rebinding keys::).  Each command should be on a
 separate line, and all commands should be written in lowercase.
 
    Options that do not take an argument are unset by default.  So using
@@ -833,11 +866,11 @@ The last double quote on the line will be seen as the closing quote.
 * Menu:
 
 * Settings::
-* Syntax Highlighting::
-* Rebinding Keys::
+* Syntax highlighting::
+* Rebinding keys::
 
 
-File: nano.info,  Node: Settings,  Next: Syntax Highlighting,  Up: Nanorc Files
+File: nano.info,  Node: Settings,  Next: Syntax highlighting,  Up: Nanorc files
 
 8.1 Settings
 ============
@@ -1135,6 +1168,15 @@ The supported settings in a nanorc file are:
      instead of rudely at the screen’s edge, by using also ‘set
      atblanks’.)
 
+‘set solosidescroll’
+     When the cursor approaches the right edge of the edit window,
+     scroll only the current line sideways by a large amount, instead of
+     scrolling all visible lines sideways by just the amount needed to
+     keep the cursor in view.  This latter whole-window smooth sideways
+     scrolling is the new default behavior.  The single-line jerky
+     sideways scrolling enabled by this option was the old behavior —
+     the only behavior that ‘nano’ knew.
+
 ‘set speller "PROGRAM [ARGUMENT ...]"’
      Use the given program to do spell checking and correcting.  *Note
      --speller:: for details.
@@ -1209,9 +1251,9 @@ The supported settings in a nanorc file are:
      toggled.  With ‘M-X’ the help lines.
 
 
-File: nano.info,  Node: Syntax Highlighting,  Next: Rebinding Keys,  Prev: Settings,  Up: Nanorc Files
+File: nano.info,  Node: Syntax highlighting,  Next: Rebinding keys,  Prev: Settings,  Up: Nanorc files
 
-8.2 Syntax Highlighting
+8.2 Syntax highlighting
 =======================
 
 Coloring the different syntactic elements of a file is done via regular
@@ -1354,9 +1396,9 @@ following commands in a nanorc file:
      (which normally are not writable).
 
 
-File: nano.info,  Node: Rebinding Keys,  Prev: Syntax Highlighting,  Up: Nanorc Files
+File: nano.info,  Node: Rebinding keys,  Prev: Syntax highlighting,  Up: Nanorc files
 
-8.3 Rebinding Keys
+8.3 Rebinding keys
 ==================
 
 Key bindings can be changed via the following three commands in a nanorc
@@ -1395,8 +1437,8 @@ braced name is unfitting.
           (@, ], \, ^, _), or the word "Space".  Example: ‘^C’.
 
      ‘M-X’
-          where X is any ASCII character except [, or the word "Space".
-          Example: ‘M-8’.
+          where X is any ASCII character (except [), or the word
+          "Space", "Left", "Right", "Up", or "Down".  Example: ‘M-8’.
 
      ‘Sh-M-X’
           where X is a Latin letter.  Example: ‘Sh-M-U’.  By default,
@@ -1415,10 +1457,10 @@ braced name is unfitting.
    Rebinding ‘^M’ (Enter) or ‘^I’ (Tab) is probably not a good idea.
 Rebinding ‘^[’ (Esc) is not possible, because its keycode is the starter
 byte of Meta keystrokes and escape sequences.  Rebinding any of the
-dedicated cursor-moving keys (the arrows, Home, End, PageUp and
-PageDown) is not possible.  On some terminals it’s not possible to
-rebind ‘^H’ (unless ‘--raw’ is used) because its keycode is identical to
-that of the Backspace key.
+dedicated cursor-moving keys (Home, End, PageUp, PageDown, and the
+arrows) is not possible.  On some terminals it’s not possible to rebind
+‘^H’ (unless ‘--raw’ is used) because its keycode is identical to that
+of the Backspace key.
 
 
    Valid names for the ‘function’ to be bound are:
@@ -1565,17 +1607,27 @@ that of the Backspace key.
 ‘down’
      Goes one line down (in the editor or browser).
 
+‘scrollleft’
+     Scrolls the viewport a tabsize to the left, when possible.  (This
+     function is bound by default to ‘M-<’.)
+
+‘scrollright’
+     Scrolls the viewport a tabsize to the right.  When needed to keep
+     the cursor visible, it is moved to a longer line in the viewport.
+     If there is no sufficiently longer line, no scroll is made.  (This
+     function is bound by default to ‘M->’.)
+
 ‘scrollup’
      Scrolls the viewport up one row (meaning that the text slides down)
      while keeping the cursor in the same text position, if possible.
-     (This function is bound by default to ‘Alt+Up’.  If ‘Alt+Up’ does
+     (This function is bound by default to ‘M-Up’.  If ‘Alt+Up’ does
      nothing on your Linux console, see the FAQ:
      <https://nano-editor.org/dist/latest/faq.html#4.1>.)
 
 ‘scrolldown’
      Scrolls the viewport down one row (meaning that the text slides up)
      while keeping the cursor in the same text position, if possible.
-     (This function is bound by default to ‘Alt+Down’.)
+     (This function is bound by default to ‘M-Down’.)
 
 ‘center’
      Scrolls the line with the cursor to the middle of the viewport.
@@ -1659,7 +1711,7 @@ that of the Backspace key.
 ‘verbatim’
      Inserts the next keystroke verbatim into the file, or begins
      Unicode input when a hexadecimal digit is typed (*note Entering
-     Text:: for details).
+     text:: for details).
 
 ‘tab’
      Inserts a tab at the current cursor location.
@@ -1871,9 +1923,9 @@ that of the Backspace key.
      all menus where the specified ‘key’ exists.
 
 
-File: nano.info,  Node: Pico Compatibility,  Next: Building and its Options,  Prev: Nanorc Files,  Up: Top
+File: nano.info,  Node: Pico compatibility,  Next: Building and its options,  Prev: Nanorc files,  Up: Top
 
-9 Pico Compatibility
+9 Pico compatibility
 ********************
 
 ‘nano’ emulates Pico quite closely, but there are some differences
@@ -1960,14 +2012,14 @@ between the two editors:
      Many options which alter the functionality of the program can be
      "toggled" on or off using Meta key sequences, meaning the program
      does not have to be restarted to turn a particular feature on or
-     off.  *Note Feature Toggles:: for a list of options that can be
+     off.  *Note Feature toggles:: for a list of options that can be
      toggled.  Or see the list at the end of the main internal help text
      (‘^G’) instead.
 
 
-File: nano.info,  Node: Building and its Options,  Prev: Pico Compatibility,  Up: Top
+File: nano.info,  Node: Building and its options,  Prev: Pico compatibility,  Up: Top
 
-10 Building and its Options
+10 Building and its options
 ***************************
 
 Building ‘nano’ from source is straightforward if you are familiar with
@@ -2040,7 +2092,7 @@ compiling programs with autoconf support:
      Exclude support for reading the nanorc files at startup.  With such
      support, you can store custom settings in a system-wide and a
      per-user nanorc file rather than having to pass command-line
-     options to get the desired behavior.  *Note Nanorc Files:: for more
+     options to get the desired behavior.  *Note Nanorc files:: for more
      info.  Disabling this also eliminates the ‘-I’ command-line option,
      which inhibits the reading of nanorc files.
 
@@ -2102,33 +2154,33 @@ compiling programs with autoconf support:
 
 Tag Table:
 Node: Top199
-Node: Introduction581
-Node: Invoking2143
-Node: Editor Basics3743
-Node: Screen Layout4045
-Node: Entering Text5133
-Node: Commands6368
-Node: The Cutbuffer7165
-Node: The Mark7730
-Node: Search and Replace8698
-Node: Using the Mouse10117
-Node: Anchors10727
-Node: Exit status11662
-Node: Limitations11999
-Node: The Help Viewer12322
-Node: The File Browser12746
-Node: Command-line Options13637
-Ref: --speller23515
-Node: Feature Toggles29051
-Node: Nanorc Files31123
-Node: Settings32676
-Ref: set keycolor37635
-Ref: set matchbrackets39800
-Ref: Whitespace48063
-Node: Syntax Highlighting49241
-Node: Rebinding Keys56980
-Node: Pico Compatibility73520
-Node: Building and its Options78063
+Node: Introduction579
+Node: Invoking2714
+Node: Editor basics4314
+Node: Screen layout4616
+Node: Entering text5704
+Node: Commands6939
+Node: The cutbuffer7736
+Node: The mark8301
+Node: Searching and replacing9274
+Node: Using the mouse10704
+Node: Anchors11319
+Node: Macros12249
+Node: Exit status13061
+Node: The help viewer13379
+Node: The file browser13803
+Node: Command-line options14694
+Ref: --speller24572
+Node: Feature toggles30648
+Node: Nanorc files32720
+Node: Settings34273
+Ref: set keycolor39232
+Ref: set matchbrackets41397
+Ref: Whitespace50153
+Node: Syntax highlighting51331
+Node: Rebinding keys59070
+Node: Pico compatibility76064
+Node: Building and its options80607
 
 End Tag Table
 

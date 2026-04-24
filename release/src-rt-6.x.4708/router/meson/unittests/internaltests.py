@@ -30,6 +30,8 @@ from mesonbuild import coredata
 from mesonbuild.compilers.c import ClangCCompiler, GnuCCompiler
 from mesonbuild.compilers.cpp import VisualStudioCPPCompiler
 from mesonbuild.compilers.d import DmdDCompiler
+from mesonbuild.compilers.detect import detect_c_compiler
+from mesonbuild.compilers.mixins.visualstudio import MSVCCompiler, ClangClCompiler
 from mesonbuild.linkers import linkers
 from mesonbuild.interpreterbase import typed_pos_args, InvalidArguments, ObjectHolder
 from mesonbuild.interpreterbase import typed_pos_args, InvalidArguments, typed_kwargs, ContainerTypeInfo, KwargInfo
@@ -236,6 +238,38 @@ class InternalTests(unittest.TestCase):
         self.assertEqual(a.to_native(copy=True), ['/nologo', '/showIncludes', '/Zc:__cplusplus', '/validate-charset-'])
 
 
+    def test_msvc_unix_args_to_native(self):
+        # joined
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-isystemfoo']), ['/Ifoo'])
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-idirafterfoo']), ['/Ifoo'])
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-iquotefoo']), ['/Ifoo'])
+
+        # with = separator
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-isystem=foo']), ['/Ifoo'])
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-idirafter=foo']), ['/Ifoo'])
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-iquote=foo']), ['/Ifoo'])
+
+        # as separate argument
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-isystem', 'foo']), ['/Ifoo'])
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-idirafter', 'foo']), ['/Ifoo'])
+        self.assertEqual(MSVCCompiler.unix_args_to_native(['-iquote', 'foo']), ['/Ifoo'])
+
+    def test_clangcl_unix_args_to_native(self):
+        # joined
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-isystemfoo']), ['/clang:-isystemfoo'])
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-idirafterfoo']), ['/clang:-idirafterfoo'])
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-iquotefoo']), ['/clang:-iquotefoo'])
+
+        # with = separator
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-isystem=foo']), ['/clang:-isystemfoo'])
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-idirafter=foo']), ['/clang:-idirafterfoo'])
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-iquote=foo']), ['/clang:-iquotefoo'])
+
+        # as separate argument
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-isystem', 'foo']), ['/clang:-isystemfoo'])
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-idirafter', 'foo']), ['/clang:-idirafterfoo'])
+        self.assertEqual(ClangClCompiler.unix_args_to_native(['-iquote', 'foo']), ['/clang:-iquotefoo'])
+
     def test_compiler_args_class_gnuld(self):
         ## Test --start/end-group
         env = get_fake_env()
@@ -324,6 +358,9 @@ class InternalTests(unittest.TestCase):
         # Check substitutions
         cmd = ['some', 'ordinary', 'strings']
         self.assertEqual(substfunc(cmd, d), cmd)
+        cmd = ['@INPUT@ @OUTPUT@']
+        self.assertEqual(substfunc(cmd, d),
+                         [f'{inputs[0]} {outputs[0]}'])
         cmd = ['@INPUT@.out', '@OUTPUT@', 'strings']
         self.assertEqual(substfunc(cmd, d),
                          [inputs[0] + '.out'] + outputs + cmd[2:])
@@ -669,7 +706,7 @@ class InternalTests(unittest.TestCase):
 
             with mock.patch.object(PkgConfigInterface, 'instance') as instance_method:
                 instance_method.return_value = FakeInstance(env, MachineChoice.HOST, silent=True)
-                kwargs = {'required': True, 'silent': True}
+                kwargs = {'required': True, 'silent': True, 'native': MachineChoice.HOST}
                 foo_dep = PkgConfigDependency('foo', env, kwargs)
                 self.assertEqual(foo_dep.get_link_args(),
                                  [(p1 / 'libfoo.a').as_posix(), (p2 / 'libbar.a').as_posix()])
@@ -831,29 +868,6 @@ class InternalTests(unittest.TestCase):
                     self.assertTrue(o(ver_a, ver_b), f'{ver_a} {name} {ver_b}')
                 for o, name in [(operator.lt, 'lt'), (operator.le, 'le'), (operator.eq, 'eq')]:
                     self.assertFalse(o(ver_a, ver_b), f'{ver_a} {name} {ver_b}')
-
-    def test_msvc_toolset_version(self):
-        '''
-        Ensure that the toolset version returns the correct value for this MSVC
-        '''
-        env = get_fake_env()
-        cc = detect_c_compiler(env, MachineChoice.HOST)
-        if cc.get_argument_syntax() != 'msvc':
-            raise unittest.SkipTest('Test only applies to MSVC-like compilers')
-        toolset_ver = cc.get_toolset_version()
-        self.assertIsNotNone(toolset_ver)
-        # Visual Studio 2015 and older versions do not define VCToolsVersion
-        # TODO: ICL doesn't set this in the VSC2015 profile either
-        if cc.id == 'msvc' and int(''.join(cc.version.split('.')[0:2])) < 1910:
-            return
-        if 'VCToolsVersion' in os.environ:
-            vctools_ver = os.environ['VCToolsVersion']
-        else:
-            self.assertIn('VCINSTALLDIR', os.environ)
-            # See https://devblogs.microsoft.com/cppblog/finding-the-visual-c-compiler-tools-in-visual-studio-2017/
-            vctools_ver = (Path(os.environ['VCINSTALLDIR']) / 'Auxiliary' / 'Build' / 'Microsoft.VCToolsVersion.default.txt').read_text(encoding='utf-8')
-        self.assertTrue(vctools_ver.startswith(toolset_ver),
-                        msg=f'{vctools_ver!r} does not start with {toolset_ver!r}')
 
     def test_split_args(self):
         split_args = mesonbuild.mesonlib.split_args
@@ -1040,14 +1054,14 @@ class InternalTests(unittest.TestCase):
                     'test_dep',
                     methods=[b.DependencyMethods.PKGCONFIG, b.DependencyMethods.CMAKE]
                 )
-                actual = [m() for m in f(env, MachineChoice.HOST, {'required': False})]
+                actual = [m() for m in f(env, {'required': False, 'native': MachineChoice.HOST})]
                 self.assertListEqual([m.type_name for m in actual], ['pkgconfig', 'cmake'])
 
                 f = F.DependencyFactory(
                     'test_dep',
                     methods=[b.DependencyMethods.CMAKE, b.DependencyMethods.PKGCONFIG]
                 )
-                actual = [m() for m in f(env, MachineChoice.HOST, {'required': False})]
+                actual = [m() for m in f(env, {'required': False, 'native': MachineChoice.HOST})]
                 self.assertListEqual([m.type_name for m in actual], ['cmake', 'pkgconfig'])
 
     def test_validate_json(self) -> None:
@@ -1060,7 +1074,7 @@ class InternalTests(unittest.TestCase):
                 from jsonschema import validate, ValidationError as JsonSchemaFailure
                 fast = False
             except:
-                if is_ci():
+                if IS_CI:
                     raise
                 raise unittest.SkipTest('neither Python fastjsonschema nor jsonschema module not found.')
 

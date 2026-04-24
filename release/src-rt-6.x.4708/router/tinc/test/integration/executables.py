@@ -2,10 +2,10 @@
 
 """Basic sanity checks on compiled executables."""
 
-from subprocess import run, PIPE
-
 from testlib import path, check
 from testlib.log import log
+
+from subprocess import run, PIPE
 
 for exe in (
     path.TINC_PATH,

@@ -2,7 +2,7 @@
 # Output a system dependent compiler option for putting a relocatable library
 # search path into an executable.
 #
-#   Copyright 2003-2024 Free Software Foundation, Inc.
+#   Copyright 2003-2026 Free Software Foundation, Inc.
 #   Written by Bruno Haible <bruno@clisp.org>, 2003.
 #
 #   This program is free software: you can redistribute it and/or modify
@@ -58,7 +58,7 @@ Send patches and bug reports to <bug-gnulib@gnu.org>."
 func_version ()
 {
   echo "reloc-ldflags (GNU gnulib, relocatable-prog)"
-  echo "Copyright (C) 2024 Free Software Foundation, Inc.
+  echo "Copyright (C) 2026 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law."
@@ -134,8 +134,7 @@ case "$host_os" in
     ;;
 esac
 if test -n "$origin_token"; then
-  # We are not on AIX, HP-UX, or IRIX. Therefore the -rpath options are
-  # cumulative.
+  # We are not on AIX or HP-UX. Therefore the -rpath options are cumulative.
   rpath_options=
   saved_IFS="$IFS"; IFS=":"
   for dir in $library_path_value; do

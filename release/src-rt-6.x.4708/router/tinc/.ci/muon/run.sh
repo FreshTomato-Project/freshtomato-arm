@@ -1,58 +1,27 @@
-#!/bin/bash
+#!/bin/sh
 
-# Fetch and build
-#   muon (a C reimplementation of the meson build system),
-#   samurai (a C reimplementation of the ninja build tool),
-# and then use both to build tinc.
+set -eux
 
-set -euo pipefail
+dir="${1:-build_muon}"
 
-git_samurai=https://github.com/michaelforney/samurai
-git_muon=https://git.sr.ht/~lattis/muon
-prefix=/opt/tinc_muon
+if muon version >/dev/null; then
+  MUON=muon
+elif muon-meson version >/dev/null; then
+  MUON=muon-meson
+else
+  echo 'Muon not found' >&2
+  exit 1
+fi
 
-header() {
-  echo >&2 '################################################################################'
-  echo >&2 "# $*"
-  echo >&2 '################################################################################'
-}
+if samu --version >/dev/null; then
+  SAMU=samu
+elif ninja --version >/dev/null; then
+  SAMU=ninja
+else
+  echo 'Neither samu nor ninja found' >&2
+  exit 1
+fi
 
-header 'Try to make sure Python is missing'
-python --version && exit 1
-python3 --version && exit 1
-
-header 'Fetch and build samurai'
-
-git clone --depth=1 $git_samurai ~/samurai
-pushd ~/samurai
-make -j"$(nproc)"
-make install
-popd
-
-header 'Fetch and build muon'
-
-git clone --depth=1 $git_muon ~/muon
-pushd ~/muon
-./bootstrap.sh build
-./build/muon setup build
-samu -C build
-./build/muon -C build install
-popd
-
-header 'Setup build directory'
-muon setup -D prefix=$prefix -D systemd=disabled build_muon
-samu -C build_muon
-
-header 'Install tinc'
-muon -C build_muon install
-
-header 'Run smoke tests'
-$prefix/sbin/tinc --version
-$prefix/sbin/tincd --version
-$prefix/sbin/tinc -c /tmp/muon_node <<EOF
-init muon
-set DeviceType dummy
-set Address localhost
-set Port 0
-start
-EOF
+$MUON setup "$dir"
+$SAMU -C "$dir"
+"$dir"/src/tinc --version

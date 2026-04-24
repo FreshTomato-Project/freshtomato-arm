@@ -26,10 +26,11 @@ set(EFFECTIVE_CXX_FLAGS
 message(STATUS "C++ Compiler flags = ${EFFECTIVE_CXX_FLAGS}")
 
 add_executable(cjpeg_fuzzer${FUZZER_SUFFIX} cjpeg.cc ../src/cdjpeg.c
-  ../src/rdbmp.c ../src/rdgif.c ../src/rdppm.c ../src/rdswitch.c
+  ../src/rdbmp.c ../src/rdgif.c ../src/wrapper/rdppm-8.c
+  ../src/wrapper/rdppm-12.c ../src/wrapper/rdppm-16.c ../src/rdswitch.c
   ../src/rdtarga.c)
 set_property(TARGET cjpeg_fuzzer${FUZZER_SUFFIX} PROPERTY COMPILE_FLAGS
-  ${COMPILE_FLAGS})
+  ${CDJPEG_COMPILE_FLAGS})
 target_link_libraries(cjpeg_fuzzer${FUZZER_SUFFIX} ${FUZZ_LIBRARY} jpeg-static)
 install(TARGETS cjpeg_fuzzer${FUZZER_SUFFIX}
   RUNTIME DESTINATION ${FUZZ_BINDIR} COMPONENT bin)
@@ -58,6 +59,12 @@ add_fuzz_target(compress16_lossless compress16_lossless.cc)
 # in order to preserve the corpora from Google's OSS-Fuzz target for
 # libjpeg-turbo, which this target replaces.
 add_fuzz_target(libjpeg_turbo decompress.cc)
+
+add_executable(decompress_libjpeg_fuzzer${FUZZER_SUFFIX} decompress_libjpeg.cc)
+target_link_libraries(decompress_libjpeg_fuzzer${FUZZER_SUFFIX} ${FUZZ_LIBRARY}
+  jpeg-static)
+install(TARGETS decompress_libjpeg_fuzzer${FUZZER_SUFFIX}
+  RUNTIME DESTINATION ${FUZZ_BINDIR} COMPONENT bin)
 
 add_fuzz_target(decompress_yuv decompress_yuv.cc)
 

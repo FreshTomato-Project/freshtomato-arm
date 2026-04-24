@@ -1,3 +1,21 @@
+0.9.3
+- In cap-audit, split capability analysis across init and runtime phases
+- If vm_sockets.h and others are not available, remove "netcap --advanced"
+- Add netcap --list-interfaces & --interface to restrict output to 1 interface
+- Put bash completions in /usr/share/bash-completion/completions/
+- capng_change_id now detects it added setpcap and drops only if it added it
+- Add capng_stage_additional_groups and its support in capng_change_id
+- Add CAPNG_APPLY_BOUNDING flag to capng_change_id to direct it to apply changes
+- filecap: add path-to-fd consistency check in capability write path
+
+0.9.2
+- Added netcap --advanced option for attack surface discovery and inventory
+- Added acct name to pscap --tree output
+- Code cleanups and deep review of all functions for correctness
+- Add colorized output to netcap --advanced
+- Improve correctness of cap-audit captures
+- Update man pages
+
 0.9.1
 - Deprecate captest
 - In cap-audit, if tested app uses file system based capabilities, drop setpcap

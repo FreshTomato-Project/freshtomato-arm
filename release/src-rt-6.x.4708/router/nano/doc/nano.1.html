@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed Feb  4 08:01:22 2026 -->
+<!-- CreationDate: Wed Apr  8 15:02:17 2026 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -22,7 +22,7 @@
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
-<a href="#NOTICE">NOTICE</a><br>
+<a href="#NOTICES">NOTICES</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#EDITING">EDITING</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
@@ -60,10 +60,29 @@ Nano&rsquo;s ANOther text editor, inspired by Pico</p>
 [[<b>+</b>[<b>crCR</b>]{<b>/</b>|<b>?</b>}<i>string</i>]
 <i>file</i>]...</p>
 
-<h2>NOTICE
-<a name="NOTICE"></a>
+<h2>NOTICES
+<a name="NOTICES"></a>
 </h2>
 
+
+<p style="margin-left:11%; margin-top: 1em">Since version
+9.0, all lines are scrolled horizontally together (when the
+cursor approaches the edge), by just the amount needed,
+instead of scrolling only the current line by a large step.
+If you prefer the old behavior, you can use <b>--solo</b> on
+the command line or <b>set solosidescroll</b> in your
+<i>nanorc</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also since
+version 9.0, keystrokes <b>M-&lt;</b> and <b>M-&gt;</b> have
+been reassigned to the &rsquo;scrollleft&rsquo; and
+&rsquo;scrollright&rsquo; functions. If you want those
+keystrokes to do what they did before version 9.0, add these
+two lines at the end of your <i>nanorc</i> file:</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>bind M-&lt;
+prevbuf main <br>
+bind M-&gt; nextbuf main</b></p>
 
 <p style="margin-left:11%; margin-top: 1em">Since version
 8.0, to be newcomer friendly, <b>^F</b> starts a forward
@@ -71,7 +90,8 @@ search, <b>^B</b> starts a backward search, <b>M-F</b>
 searches the next occurrence forward, and <b>M-B</b>
 searches the next occurrence backward. If you want those
 keystrokes to do what they did before version 8.0, add the
-following lines at the end of your <i>nanorc</i> file:</p>
+following four lines at the end of your <i>nanorc</i>
+file:</p>
 
 <p style="margin-left:17%; margin-top: 1em"><b>bind ^F
 forward main <br>
@@ -639,6 +659,18 @@ upon the next keystroke. With <b>M-Z</b> the title bar plus
 status bar can be toggled. With <b>M-X</b> the help
 lines.</p>
 
+<p style="margin-left:11%;"><b>-1</b>,
+<b>--solosidescroll</b></p>
+
+<p style="margin-left:22%;">When the cursor approaches the
+right edge of the edit window, scroll only the current line
+sideways by a large amount, instead of scrolling all visible
+lines sideways by just the amount needed to keep the cursor
+in view. This latter whole-window smooth sideways scrolling
+is the new default behavior. The single-line jerky sideways
+scrolling enabled by this option was the old behavior
+&mdash; the only behavior that <b>nano</b> knew.</p>
+
 <p style="margin-left:11%;"><b>-/</b>,
 <b>--modernbindings</b></p>
 
@@ -648,12 +680,12 @@ ones that most modern programs use: <b>^X</b> cuts,
 <b>^Y</b> redoes, <b>^F</b> searches forward, <b>^G</b>
 searches next, <b>^S</b> saves, <b>^O</b> opens a file,
 <b>^Q</b> quits, and (when the terminal permits) <b>^H</b>
-shows help. Furthermore, <b>^A</b> sets the mark, <b>^R</b>
-makes replacements, <b>^D</b> searches previous, <b>^P</b>
-shows the position, <b>^T</b> goes to a line, <b>^W</b>
-writes out a file, and <b>^E</b> executes a command. Note
-that this overrides option <b>-p</b>
-(<b>--preserve</b>).</p>
+shows help. Furthermore, <b>^A</b> sets the mark, <b>^B</b>
+searches backward, <b>^D</b> searches previous, <b>^R</b>
+makes replacements, <b>^P</b> shows the position, <b>^T</b>
+goes to a line, <b>^W</b> writes out a file, and <b>^E</b>
+executes a command. Note that this option overrides option
+<b>-p</b> (<b>--preserve</b>).</p>
 
 <h2>TOGGLES
 <a name="TOGGLES"></a>

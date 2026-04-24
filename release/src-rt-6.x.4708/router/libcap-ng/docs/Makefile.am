@@ -27,9 +27,9 @@ EXTRA_DIST = $(man_MANS)
 man_MANS = capng_clear.3 capng_fill.3 capng_setpid.3 \
 	capng_get_caps_process.3 capng_update.3 capng_updatev.3 \
 	capng_apply.3 capng_lock.3 capng_change_id.3 capng_get_caps_fd.3 \
+	capng_stage_additional_groups.3 \
 	capng_apply_caps_fd.3 capng_have_capabilities.3 \
 	capng_get_rootid.3 capng_set_rootid.3 capng_have_capability.3 \
 	capng_print_caps_numeric.3 capng_print_caps_text.3 \
 	capng_name_to_capability.3  capng_capability_to_name.3 \
 	capng_save_state.3 capng_restore_state.3 libdrop_ambient.7
-

@@ -2,14 +2,14 @@
 
 """Test tinc protocol security."""
 
-import asyncio
-import typing as T
-
 from testlib import check
 from testlib.log import log
 from testlib.proc import Tinc, Script
 from testlib.test import Test
 from testlib.feature import SANDBOX_LEVEL
+
+import asyncio
+import typing as T
 
 TIMEOUT = 2
 
@@ -124,7 +124,7 @@ async def run_tests(ctx: Test) -> None:
     )
 
 
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
 
 with Test("security") as context:
     loop.run_until_complete(run_tests(context))

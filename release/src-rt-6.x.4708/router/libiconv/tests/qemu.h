@@ -1,5 +1,5 @@
 /* Determine whether the current process is running under QEMU.
-   Copyright (C) 2021-2024 Free Software Foundation, Inc.
+   Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -65,7 +65,7 @@ is_running_under_qemu_user (void)
       if (n > 0)
         {
           buf[n] = '\0';
-# if defined __hppa__
+# if defined __hppa
           if (strstr (buf, "QEMU") != NULL)
             return true;
 # endif
@@ -79,11 +79,11 @@ is_running_under_qemu_user (void)
               || strcasestr (buf, "aarch64") != NULL)
             return true;
 # endif
-# if !defined __sparc__
+# if !defined __sparc
           if (strcasestr (buf, "SPARC") != NULL)
             return true;
 # endif
-# if !defined __powerpc__
+# if !defined _ARCH_PPC
           if (strstr (buf, "POWER") != NULL)
             return true;
 # endif

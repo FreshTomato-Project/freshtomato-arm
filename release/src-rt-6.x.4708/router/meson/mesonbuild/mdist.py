@@ -23,7 +23,7 @@ from pathlib import Path
 from mesonbuild.environment import Environment
 from mesonbuild.tooldetect import detect_ninja
 from mesonbuild.mesonlib import (GIT, MesonException, RealPathAction, get_meson_command, quiet_git,
-                                 windows_proof_rmtree, setup_vsenv)
+                                 windows_proof_rmtree, setup_vsenv, determine_worker_count)
 from .options import OptionKey
 from mesonbuild.msetup import add_arguments as msetup_argparse
 from mesonbuild.wrap import wrap
@@ -32,6 +32,7 @@ from .scripts.meson_exe import run_exe
 
 if T.TYPE_CHECKING:
     from ._typing import ImmutableListProtocol
+    from .interpreterbase.baseobjects import SubProject
     from .mesonlib import ExecutableSerialisation
 
 archive_choices = ['bztar', 'gztar', 'xztar', 'zip']
@@ -57,6 +58,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help='Include source code of subprojects that have been used for the build.')
     parser.add_argument('--no-tests', action='store_true',
                         help='Do not build and test generated packages.')
+    parser.add_argument('-j', '--num-processes', default=determine_worker_count(), type=int,
+                        help='How many parallel processes to use (e.g. for compilation and testing).')
 
 
 def create_hash(fname: str) -> None:
@@ -124,7 +127,7 @@ class Dist(metaclass=abc.ABCMeta):
     src_root: str
     bld_root: str
     dist_scripts: T.List[ExecutableSerialisation]
-    subprojects: T.Dict[str, str]
+    subprojects: T.Dict[SubProject, str]
     options: argparse.Namespace
 
     def __post_init__(self) -> None:
@@ -325,7 +328,7 @@ def run_dist_steps(meson_command: T.List[str], unpacked_src_dir: str, builddir: 
         return 1
     return 0
 
-def check_dist(packagename: str, _meson_command: ImmutableListProtocol[str], extra_meson_args: T.List[str], bld_root: str, privdir: str) -> int:
+def check_dist(packagename: str, _meson_command: ImmutableListProtocol[str], extra_meson_args: T.List[str], bld_root: str, privdir: str, num_processes: int = 1) -> int:
     print(f'Testing distribution package {packagename}')
     unpackdir = os.path.join(privdir, 'dist-unpack')
     builddir = os.path.join(privdir, 'dist-build')
@@ -334,7 +337,7 @@ def check_dist(packagename: str, _meson_command: ImmutableListProtocol[str], ext
         if os.path.exists(p):
             windows_proof_rmtree(p)
         os.mkdir(p)
-    ninja_args = detect_ninja()
+    ninja_args = detect_ninja() + [f'-j{num_processes}']
     shutil.unpack_archive(packagename, unpackdir)
     unpacked_files = glob(os.path.join(unpackdir, '*'))
     assert len(unpacked_files) == 1
@@ -388,13 +391,14 @@ def run(options: argparse.Namespace) -> int:
 
     archives = determine_archives_to_generate(options)
 
-    subprojects = {}
+    subprojects: T.Dict[SubProject, str] = {}
     extra_meson_args = []
     if options.include_subprojects:
         subproject_dir = os.path.join(src_root, b.subproject_dir)
-        for sub in b.subprojects:
-            directory = wrap.get_directory(subproject_dir, sub)
-            subprojects[sub] = os.path.join(b.subproject_dir, directory)
+        for sub in b.projects:
+            if sub:
+                directory = wrap.get_directory(subproject_dir, sub)
+                subprojects[sub] = os.path.join(b.subproject_dir, directory)
         extra_meson_args.append('-Dwrap_mode=nodownload')
 
     cls: T.Type[Dist]
@@ -417,7 +421,7 @@ def run(options: argparse.Namespace) -> int:
     rc = 0
     if not options.no_tests:
         # Check only one.
-        rc = check_dist(names[0], get_meson_command(), extra_meson_args, bld_root, priv_dir)
+        rc = check_dist(names[0], get_meson_command(), extra_meson_args, bld_root, priv_dir, options.num_processes)
     if rc == 0:
         for name in names:
             create_hash(name)

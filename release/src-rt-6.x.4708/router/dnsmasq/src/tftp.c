@@ -545,8 +545,13 @@ static struct tftp_file *check_tftp_fileperm(char *packet, ssize_t *len, char *p
   int fd = -1;
 
   /* trick to ban moving out of the subtree */
-  if (prefix && strstr(namebuff, "/../"))
-    goto perm;
+  if (prefix)
+    {
+      char *suspect = strstr(namebuff, "/..");
+
+      if (suspect && (suspect[3] == '/' || suspect[3] == 0))
+        goto perm;
+    }
   
   if ((fd = open(namebuff, O_RDONLY)) == -1)
     {

@@ -11,9 +11,9 @@ from .. import mlog, options
 from ..mesonlib import first, MesonException, version_compare
 from .compilers import Compiler, clike_debug_args
 
-
 if T.TYPE_CHECKING:
     from .. import build
+    from ..compilers.compilers import Language
     from ..options import MutableKeyedOptionDictType
     from ..dependencies import Dependency
     from ..environment import Environment
@@ -138,7 +138,7 @@ class SwiftCompiler(Compiler):
             args += ['-swift-version', std]
 
         # Pass C compiler -std=... arg to swiftc
-        c_langs = ['objc', 'c']
+        c_langs: T.List[Language] = ['objc', 'c']
         if target.uses_swift_cpp_interop():
             c_langs = ['objcpp', 'cpp', *c_langs]
 
@@ -175,22 +175,25 @@ class SwiftCompiler(Compiler):
 
         return parameter_list
 
-    def sanity_check(self, work_dir: str) -> None:
-        src = 'swifttest.swift'
-        source_name = os.path.join(work_dir, src)
-        output_name = os.path.join(work_dir, 'swifttest')
-        extra_flags: T.List[str] = []
-        extra_flags += self.environment.coredata.get_external_args(self.for_machine, self.language)
+    def _sanity_check_compile_args(self, sourcename: str, binname: str
+                                   ) -> T.Tuple[T.List[str], T.List[str]]:
+        args = self.exelist.copy()
+        largs: T.List[str] = []
+
+        # TODO: I can't test this, but it doesn't seem right
         if self.is_cross:
-            extra_flags += self.get_compile_only_args()
+            args.extend(self.get_compile_only_args())
         else:
-            extra_flags += self.environment.coredata.get_external_link_args(self.for_machine, self.language)
-        with open(source_name, 'w', encoding='utf-8') as ofile:
-            ofile.write('''print("Swift compilation is working.")
-''')
-        pc = subprocess.Popen(self.exelist + extra_flags + ['-emit-executable', '-o', output_name, src], cwd=work_dir)
-        pc.wait()
-        self.run_sanity_check([output_name], work_dir)
+            largs.extend(self.environment.coredata.get_external_link_args(self.for_machine, self.language))
+        args.extend(self.get_output_args(binname))
+        args.append(sourcename)
+
+        largs.extend(self.get_std_exe_link_args())
+
+        return args, largs
+
+    def _sanity_check_source_code(self) -> str:
+        return 'print("Swift compilation is working.")'
 
     def get_debug_args(self, is_debug: bool) -> T.List[str]:
         return clike_debug_args[is_debug]

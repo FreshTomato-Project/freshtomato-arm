@@ -3,12 +3,14 @@
 %define _bindir  @CMAKE_INSTALL_FULL_BINDIR@
 %define _datarootdir  @CMAKE_INSTALL_FULL_DATAROOTDIR@
 %define _includedir  @CMAKE_INSTALL_FULL_INCLUDEDIR@
-%define _javadir  @CMAKE_INSTALL_FULL_JAVADIR@
 %define _mandir  @CMAKE_INSTALL_FULL_MANDIR@
 %define _enable_static  @ENABLE_STATIC@
 %define _enable_shared  @ENABLE_SHARED@
 %define _with_turbojpeg  @WITH_TURBOJPEG@
 %define _with_java  @WITH_JAVA@
+%if "%{_with_java}" == "1"
+%define _javadir  @CMAKE_INSTALL_FULL_JAVADIR@
+%endif
 
 %if "%{?__isa_bits:1}" == "1"
 %define _bits  %{__isa_bits}
@@ -30,14 +32,19 @@
 #-->%if 1
 %if "%{_bits}" == "64"
 %define _libdir  %{_exec_prefix}/lib64
+%define _rellibdir  lib64
 %else
 %if "%{_prefix}" == "/opt/libjpeg-turbo"
 %define _libdir  %{_exec_prefix}/lib32
+%define _rellibdir  lib32
 %endif
 %endif
 #-->%else
 %define _libdir  @CMAKE_INSTALL_FULL_LIBDIR@
+%define _rellibdir  @CMAKE_INSTALL_LIBDIR@
 #-->%endif
+
+%define __requires_exclude_from  ^%{_libdir}/cmake/@CMAKE_PROJECT_NAME@/.*$
 
 Summary: A SIMD-accelerated JPEG codec that provides both the libjpeg and TurboJPEG APIs
 Name: @PKGNAME@
@@ -89,9 +96,9 @@ reference implementation of the JPEG standard.
 #-->  -DCMAKE_INSTALL_BINDIR=%{_bindir} \
 #-->  -DCMAKE_INSTALL_DATAROOTDIR=%{_datarootdir} \
 #-->  -DCMAKE_INSTALL_DOCDIR=%{_docdir} \
-#-->  -DCMAKE_INSTALL_INCLUDEDIR=%{_includedir} \
+#-->  -DCMAKE_INSTALL_INCLUDEDIR=@CMAKE_INSTALL_INCLUDEDIR@ \
 #-->  -DCMAKE_INSTALL_JAVADIR=%{_javadir} \
-#-->  -DCMAKE_INSTALL_LIBDIR=%{_libdir} \
+#-->  -DCMAKE_INSTALL_LIBDIR=%{_rellibdir} \
 #-->  -DCMAKE_INSTALL_MANDIR=%{_mandir} \
 #-->  -DCMAKE_INSTALL_PREFIX=%{_prefix} \
 #-->  -DCMAKE_POSITION_INDEPENDENT_CODE=@CMAKE_POSITION_INDEPENDENT_CODE@ \
@@ -194,7 +201,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libjpeg.pc
 %dir %{_libdir}/cmake
 %dir %{_libdir}/cmake/@CMAKE_PROJECT_NAME@
-%{_libdir}/cmake/@CMAKE_PROJECT_NAME@
+%{_libdir}/cmake/@CMAKE_PROJECT_NAME@/*
 %if "%{_with_turbojpeg}" == "1"
 	%if "%{_enable_shared}" == "1" || "%{_with_java}" == "1"
 		%{_libdir}/libturbojpeg.so.@TURBOJPEG_SO_VERSION@

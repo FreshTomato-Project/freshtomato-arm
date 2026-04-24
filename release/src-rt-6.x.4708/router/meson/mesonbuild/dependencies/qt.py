@@ -22,7 +22,7 @@ from .. import mlog
 from .. import mesonlib
 
 if T.TYPE_CHECKING:
-    from ..compilers import Compiler
+    from ..compilers.compilers import Compiler
     from ..envconfig import MachineInfo
     from ..environment import Environment
     from ..dependencies import MissingCompiler
@@ -97,8 +97,8 @@ def _get_modules_lib_suffix(version: str, info: 'MachineInfo', is_debug: bool) -
 
 
 class QtExtraFrameworkDependency(ExtraFrameworkDependency):
-    def __init__(self, name: str, env: 'Environment', kwargs: DependencyObjectKWs, qvars: T.Dict[str, str], language: T.Optional[str] = None):
-        super().__init__(name, env, kwargs, language=language)
+    def __init__(self, name: str, env: 'Environment', kwargs: DependencyObjectKWs, qvars: T.Dict[str, str]):
+        super().__init__(name, env, kwargs)
         self.mod_name = name[2:]
         self.qt_extra_include_directory = qvars['QT_INSTALL_HEADERS']
 
@@ -167,6 +167,9 @@ class _QtBase:
     def log_details(self) -> str:
         return f'modules: {", ".join(sorted(self.requested_modules))}'
 
+    def _get_common_defines(self) -> T.List[str]:
+        is_debug = self.env.coredata.optstore.get_value_for('debug')
+        return ['-DQT_DEBUG' if is_debug else '-DQT_NO_DEBUG']
 
 class QtPkgConfigDependency(_QtBase, PkgConfigDependency, metaclass=abc.ABCMeta):
 
@@ -185,7 +188,7 @@ class QtPkgConfigDependency(_QtBase, PkgConfigDependency, metaclass=abc.ABCMeta)
             self.link_args = []
 
         for m in self.requested_modules:
-            mod = PkgConfigDependency(self.qtpkgname + m, self.env, kwargs, language=self.language)
+            mod = PkgConfigDependency(self.qtpkgname + m, self.env, kwargs)
             if not mod.found():
                 self.is_found = False
                 return
@@ -225,6 +228,8 @@ class QtPkgConfigDependency(_QtBase, PkgConfigDependency, metaclass=abc.ABCMeta)
                 self.bindir = os.path.join(prefix, 'bin')
 
         self.libexecdir = self.get_pkgconfig_host_libexecs(self)
+
+        self.compile_args += self._get_common_defines()
 
     @staticmethod
     @abc.abstractmethod
@@ -268,6 +273,8 @@ class QmakeQtDependency(_QtBase, ConfigToolDependency, metaclass=abc.ABCMeta):
         ConfigToolDependency.__init__(self, name, env, kwargs)
         if not self.found():
             return
+
+        self.compile_args += self._get_common_defines()
 
         # Query library path, header path, and binary path
         stdo = self.get_config_value(['-query'], 'args')
@@ -357,11 +364,12 @@ class QmakeQtDependency(_QtBase, ConfigToolDependency, metaclass=abc.ABCMeta):
         fw_kwargs = kwargs.copy()
         fw_kwargs.pop('method')
         fw_kwargs['paths'] = [libdir]
+        fw_kwargs['language'] = self.language
 
         for m in modules:
             fname = 'Qt' + m
             mlog.debug('Looking for qt framework ' + fname)
-            fwdep = QtExtraFrameworkDependency(fname, self.env, fw_kwargs, qvars, language=self.language)
+            fwdep = QtExtraFrameworkDependency(fname, self.env, fw_kwargs, qvars)
             if fwdep.found():
                 self.compile_args.append('-F' + libdir)
                 self.compile_args += fwdep.get_compile_args(with_private_headers=self.private_headers,
@@ -467,20 +475,20 @@ class Qt6PkgConfigDependency(Qt6WinMainMixin, QtPkgConfigDependency):
 packages['qt4'] = qt4_factory = DependencyFactory(
     'qt4',
     [DependencyMethods.PKGCONFIG, DependencyMethods.CONFIG_TOOL],
-    pkgconfig_class=Qt4PkgConfigDependency,
-    configtool_class=Qt4ConfigToolDependency,
+    pkgconfig=Qt4PkgConfigDependency,
+    configtool=Qt4ConfigToolDependency,
 )
 
 packages['qt5'] = qt5_factory = DependencyFactory(
     'qt5',
     [DependencyMethods.PKGCONFIG, DependencyMethods.CONFIG_TOOL],
-    pkgconfig_class=Qt5PkgConfigDependency,
-    configtool_class=Qt5ConfigToolDependency,
+    pkgconfig=Qt5PkgConfigDependency,
+    configtool=Qt5ConfigToolDependency,
 )
 
 packages['qt6'] = qt6_factory = DependencyFactory(
     'qt6',
     [DependencyMethods.PKGCONFIG, DependencyMethods.CONFIG_TOOL],
-    pkgconfig_class=Qt6PkgConfigDependency,
-    configtool_class=Qt6ConfigToolDependency,
+    pkgconfig=Qt6PkgConfigDependency,
+    configtool=Qt6ConfigToolDependency,
 )

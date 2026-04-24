@@ -30,7 +30,7 @@ define([AC_INIT_NOTICE],
 ])
 
 AC_REVISION($Revision: 1.3 $)dnl
-AC_INIT([libcap-ng],[0.9.1])
+AC_INIT([libcap-ng],[0.9.3])
 AC_PREREQ([2.50])dnl
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -153,12 +153,48 @@ AC_CHECK_HEADERS(sys/xattr.h, [], [
 	AC_CHECK_HEADERS(attr/xattr.h, [], [AC_MSG_WARN(attr/xattr.h not found, disabling file system capabilities.)])
 	])
 AC_CHECK_HEADERS(linux/securebits.h, [], [])
+AC_CHECK_HEADERS(linux/inet_diag.h linux/netlink.h linux/sock_diag.h
+	linux/vm_sockets.h, [], [])
+AC_CHECK_HEADERS(linux/vm_sockets_diag.h, [], [])
 AC_CHECK_HEADERS(pthread.h,
 	[AC_SEARCH_LIBS(pthread_atfork, pthread)],
 	[AC_MSG_WARN(pthread.h not found, disabling pthread_atfork.)])
 AC_CHECK_HEADERS(sys/vfs.h, [
 	AC_CHECK_HEADERS(linux/magic.h, [], [AC_MSG_WARN(linux/magic.h is required in order to verify procfs.)])
 	], [AC_MSG_WARN(sys/vfs.h is required in order to verify procfs.)])
+
+build_netcap_advanced=yes
+netcap_advanced_missing=""
+for netcap_hdr in \
+	linux/inet_diag.h:$ac_cv_header_linux_inet_diag_h \
+	linux/netlink.h:$ac_cv_header_linux_netlink_h \
+	linux/sock_diag.h:$ac_cv_header_linux_sock_diag_h \
+	linux/vm_sockets.h:$ac_cv_header_linux_vm_sockets_h; do
+	netcap_name=${netcap_hdr%%:*}
+	netcap_have=${netcap_hdr#*:}
+	AS_IF([test "x$netcap_have" != xyes], [
+		build_netcap_advanced=no
+		AS_IF([test "x$netcap_advanced_missing" = x], [
+			netcap_advanced_missing="$netcap_name"
+		], [
+			netcap_advanced_missing="$netcap_advanced_missing, $netcap_name"
+		])
+	])
+done
+
+AS_IF([test "x$build_netcap_advanced" = xyes], [
+	AC_DEFINE([HAVE_NETCAP_ADVANCED], [1],
+		[Define to 1 if netcap advanced mode can be built.])
+	netcap_advanced_status="enabled"
+	AC_MSG_NOTICE([netcap advanced mode enabled])
+], [
+	netcap_advanced_status="disabled (missing headers: $netcap_advanced_missing)"
+	AC_MSG_WARN([netcap advanced mode disabled; missing headers: $netcap_advanced_missing])
+])
+AC_SUBST([NETCAP_ADVANCED_ENABLED], [$build_netcap_advanced])
+AC_SUBST([NETCAP_ADVANCED_STATUS], [$netcap_advanced_status])
+AM_CONDITIONAL([BUILD_NETCAP_ADVANCED],
+	[test "x$build_netcap_advanced" = xyes])
 
 AC_ARG_WITH([capability_header],
         [AS_HELP_STRING([--with-capability_header=path : path to capability.h])],
@@ -264,6 +300,16 @@ bindings/Makefile
 bindings/python3/Makefile bindings/src/Makefile
 bindings/python3/test/Makefile bindings/test/Makefile utils/Makefile
 utils/cap-audit/Makefile m4/Makefile docs/Makefile])
+AC_CONFIG_COMMANDS([utils/netcap.8], [
+	if test "x$NETCAP_ADVANCED_ENABLED" = xyes; then
+		sed '/^.\\" BEGIN_ADVANCED$/d; /^.\\" END_ADVANCED$/d' \
+			"$srcdir/utils/netcap.8.in" > utils/netcap.8
+	else
+		sed '/^.\\" BEGIN_ADVANCED$/,/^.\\" END_ADVANCED$/d' \
+			"$srcdir/utils/netcap.8.in" > utils/netcap.8
+	fi
+], [NETCAP_ADVANCED_ENABLED="$NETCAP_ADVANCED_ENABLED"
+	srcdir="$srcdir"])
 AC_OUTPUT
 
 echo .
@@ -277,4 +323,5 @@ echo "
   Compiler flags:
 `echo $CFLAGS | fmt -w 50 | sed 's,^,                          ,'`
   __attr_dealloc_free support:  $DEALLOC
+  netcap advanced mode:  $netcap_advanced_status
   "

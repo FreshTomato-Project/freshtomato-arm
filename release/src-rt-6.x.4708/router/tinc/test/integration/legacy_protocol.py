@@ -2,12 +2,12 @@
 
 """Test legacy protocol support (tinc 1.0)."""
 
-import typing as T
-
 from testlib import check, cmd
 from testlib.log import log
 from testlib.proc import Tinc, Script
 from testlib.test import Test
+
+import typing as T
 
 TIMEOUT = 2
 

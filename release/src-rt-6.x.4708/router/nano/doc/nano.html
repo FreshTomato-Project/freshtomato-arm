@@ -53,7 +53,7 @@ ul.no-bullet {list-style: none}
 
 <div class="top" id="Top">
 <span id="SEC_Top"></span>
-<p>This manual documents GNU <code>nano</code>, version 8.7.1.
+<p>This manual documents GNU <code>nano</code>, version 9.0.
 </p>
 
 
@@ -61,14 +61,14 @@ ul.no-bullet {list-style: none}
 <ul class="section-toc">
 <li><a href="#Introduction" accesskey="1">Introduction</a></li>
 <li><a href="#Invoking" accesskey="2">Invoking</a></li>
-<li><a href="#Editor-Basics" accesskey="3">Editor Basics</a></li>
-<li><a href="#The-Help-Viewer" accesskey="4">The Help Viewer</a></li>
-<li><a href="#The-File-Browser" accesskey="5">The File Browser</a></li>
-<li><a href="#Command_002dline-Options" accesskey="6">Command-line Options</a></li>
-<li><a href="#Feature-Toggles" accesskey="7">Feature Toggles</a></li>
-<li><a href="#Nanorc-Files" accesskey="8">Nanorc Files</a></li>
-<li><a href="#Pico-Compatibility" accesskey="9">Pico Compatibility</a></li>
-<li><a href="#Building-and-its-Options">Building and its Options</a></li>
+<li><a href="#Editor-basics" accesskey="3">Editor basics</a></li>
+<li><a href="#The-help-viewer" accesskey="4">The help viewer</a></li>
+<li><a href="#The-file-browser" accesskey="5">The file browser</a></li>
+<li><a href="#Command_002dline-options" accesskey="6">Command-line options</a></li>
+<li><a href="#Feature-toggles" accesskey="7">Feature toggles</a></li>
+<li><a href="#Nanorc-files" accesskey="8">Nanorc files</a></li>
+<li><a href="#Pico-compatibility" accesskey="9">Pico compatibility</a></li>
+<li><a href="#Building-and-its-options">Building and its options</a></li>
 </ul>
 <hr>
 <div class="chapter" id="Introduction">
@@ -83,7 +83,7 @@ internationalization support.
 <p>The original goal for <code>nano</code> was to be a complete bug-for-bug
 emulation of Pico.  But currently the goal is to be as compatible
 as is reasonable while offering a superset of Pico&rsquo;s functionality.
-See <a href="#Pico-Compatibility">Pico Compatibility</a> for more details on how <code>nano</code> and
+See <a href="#Pico-compatibility">Pico compatibility</a> for more details on how <code>nano</code> and
 Pico differ.
 </p>
 <p>Since version 4.0, <code>nano</code> no longer hard-wraps overlong
@@ -99,6 +99,17 @@ a backward search, <kbd>M-F</kbd> searches the next occurrence forward,
 and <kbd>M-B</kbd> searches the next occurrence backward.  If you want
 those keystrokes to do what they did before version 8.0, see the
 rebindings in the sample nanorc file.
+</p>
+<p>Since version 9.0, all lines are scrolled horizontally together
+(when the cursor approaches the edge), by just the amount needed,
+instead of scrolling only the current line by a large step.
+If you prefer the old behavior, you can use <code>--solo</code> on the
+command line or <code>set solosidescroll</code> in your nanorc.
+</p>
+<p>Also since version 9.0, keystrokes <kbd>M-&lt;</kbd> and <kbd>M-&gt;</kbd> have been
+reassigned to the <code>scrollleft</code> and <code>scrollright</code> functions.
+If you want those keystrokes to do what they did before version 9.0,
+see the rebindings in the sample nanorc file.
 </p>
 <p>Please report bugs via <a href="https://savannah.gnu.org/bugs/?group=nano">https://savannah.gnu.org/bugs/?group=nano</a>.
 </p>
@@ -118,7 +129,7 @@ rebindings in the sample nanorc file.
 <pre class="example"><code>nano [FILE]</code>
 </pre></div>
 
-<p>But it is also possible to specify one or more options (see <a href="#Command_002dline-Options">Command-line Options</a>),
+<p>But it is also possible to specify one or more options (see <a href="#Command_002dline-options">Command-line options</a>),
 and to edit several files in a row.
 </p>
 <p>The cursor can be put on a specific line of a file by adding
@@ -140,7 +151,7 @@ A more complete command synopsis thus is:
 </pre></div>
 
 <p>Normally, however, you set your preferred options in a <samp>nanorc</samp>
-file (see <a href="#Nanorc-Files">Nanorc Files</a>).  And when using <code>set positionlog</code>
+file (see <a href="#Nanorc-files">Nanorc files</a>).  And when using <code>set positionlog</code>
 (making <code>nano</code> remember the cursor position when you close a file),
 you will rarely need to specify a line number.
 </p>
@@ -151,25 +162,25 @@ a command straight into a buffer, and then edit it.
 
 <hr>
 </div>
-<div class="chapter" id="Editor-Basics">
-<span id="Editor-Basics-1"></span><h2 class="chapter">3 Editor Basics</h2>
+<div class="chapter" id="Editor-basics">
+<span id="Editor-basics-1"></span><h2 class="chapter">3 Editor basics</h2>
 
 
 <ul class="section-toc">
-<li><a href="#Screen-Layout" accesskey="1">Screen Layout</a></li>
-<li><a href="#Entering-Text" accesskey="2">Entering Text</a></li>
+<li><a href="#Screen-layout" accesskey="1">Screen layout</a></li>
+<li><a href="#Entering-text" accesskey="2">Entering text</a></li>
 <li><a href="#Commands" accesskey="3">Commands</a></li>
-<li><a href="#The-Cutbuffer" accesskey="4">The Cutbuffer</a></li>
-<li><a href="#The-Mark" accesskey="5">The Mark</a></li>
-<li><a href="#Search-and-Replace" accesskey="6">Search and Replace</a></li>
-<li><a href="#Using-the-Mouse" accesskey="7">Using the Mouse</a></li>
+<li><a href="#The-cutbuffer" accesskey="4">The cutbuffer</a></li>
+<li><a href="#The-mark" accesskey="5">The mark</a></li>
+<li><a href="#Searching-and-replacing" accesskey="6">Searching and replacing</a></li>
+<li><a href="#Using-the-mouse" accesskey="7">Using the mouse</a></li>
 <li><a href="#Anchors" accesskey="8">Anchors</a></li>
-<li><a href="#Exit-status" accesskey="9">Exit status</a></li>
-<li><a href="#Limitations">Limitations</a></li>
+<li><a href="#Macros" accesskey="9">Macros</a></li>
+<li><a href="#Exit-status">Exit status</a></li>
 </ul>
 <hr>
-<div class="section" id="Screen-Layout">
-<span id="Screen-Layout-1"></span><h3 class="section">3.1 Screen Layout</h3>
+<div class="section" id="Screen-layout">
+<span id="Screen-layout-1"></span><h3 class="section">3.1 Screen layout</h3>
 
 <p>The default screen of <code>nano</code> consists of four areas.
 From top to bottom these are: the title bar, the edit window,
@@ -193,8 +204,8 @@ essential functions of the editor.
 </p>
 <hr>
 </div>
-<div class="section" id="Entering-Text">
-<span id="Entering-Text-1"></span><h3 class="section">3.2 Entering Text</h3>
+<div class="section" id="Entering-text">
+<span id="Entering-text-1"></span><h3 class="section">3.2 Entering text</h3>
 
 <p><code>nano</code> is a &quot;modeless&quot; editor.  This means that all keystrokes,
 with the exception of Control and Meta sequences, enter text into the
@@ -245,8 +256,8 @@ and then pressing the desired key.
 </p>
 <hr>
 </div>
-<div class="section" id="The-Cutbuffer">
-<span id="The-Cutbuffer-1"></span><h3 class="section">3.4 The Cutbuffer</h3>
+<div class="section" id="The-cutbuffer">
+<span id="The-cutbuffer-1"></span><h3 class="section">3.4 The cutbuffer</h3>
 
 <p>Text can be cut from a file a whole line at a time with <kbd>^K</kbd>.
 The cut line is stored in the cutbuffer.  Consecutive strokes of <kbd>^K</kbd>
@@ -261,8 +272,8 @@ with <kbd>M-6</kbd>.
 </p>
 <hr>
 </div>
-<div class="section" id="The-Mark">
-<span id="The-Mark-1"></span><h3 class="section">3.5 The Mark</h3>
+<div class="section" id="The-mark">
+<span id="The-mark-1"></span><h3 class="section">3.5 The mark</h3>
 
 <p>Text can be selected by first &rsquo;setting the Mark&rsquo; with <kbd>^6</kbd>
 or <kbd>M-A</kbd> and then moving the cursor to the other end of the portion
@@ -281,17 +292,17 @@ If needed, it can be toggled off manually with another <kbd>^6</kbd> or <kbd>M-A
 </p>
 <hr>
 </div>
-<div class="section" id="Search-and-Replace">
-<span id="Search-and-Replace-1"></span><h3 class="section">3.6 Search and Replace</h3>
+<div class="section" id="Searching-and-replacing">
+<span id="Searching-and-replacing-1"></span><h3 class="section">3.6 Searching and replacing</h3>
 
-<p>With the Search command (<kbd>^F</kbd> or <kbd>^W</kbd>) one can search the
+<p>With the Search command (<kbd>^F</kbd> or <kbd>^W</kbd>) you can search the
 current buffer for the occurrence of any string.  The default search
 mode is forward, case-insensitive, and for literal strings.  But one
 can search backwards by toggling <kbd>M-B</kbd>, search case sensitively
 with <kbd>M-C</kbd>, and interpret regular expressions in the search string
 with <kbd>M-R</kbd>.
 </p>
-<p>With the Replacement command (<kbd>M-R</kbd> or <kbd>^\</kbd>) one can replace
+<p>With the Replace command (<kbd>M-R</kbd> or <kbd>^\</kbd>) you can replace
 a given string (or regular expression) with another string.
 When a regular expression contains fragments between parentheses,
 the replacement string can refer back to these fragments via
@@ -313,8 +324,8 @@ can contain a newline (LF).
 </p>
 <hr>
 </div>
-<div class="section" id="Using-the-Mouse">
-<span id="Using-the-Mouse-1"></span><h3 class="section">3.7 Using the Mouse</h3>
+<div class="section" id="Using-the-mouse">
+<span id="Using-the-mouse-1"></span><h3 class="section">3.7 Using the mouse</h3>
 
 <p>When mouse support has been configured and enabled, a single mouse click
 places the cursor at the indicated position.  Clicking a second time in
@@ -350,29 +361,39 @@ and are always visualized (on the right-hand side) in the mini bar.
 </p>
 <hr>
 </div>
+<div class="section" id="Macros">
+<span id="Macros-1"></span><h3 class="section">3.9 Macros</h3>
+
+<p>To record a series of keystrokes that you need to perform many times,
+start the recording with <kbd>M-:</kbd>, carefully type the series of keystrokes,
+and then stop the recording by using <kbd>M-:</kbd> again.  The recorded result
+is called a keyboard macro.  You can replay this macro with <kbd>M-;</kbd>,
+as many times as needed.
+</p>
+<p>When you type <kbd>M-:</kbd> (recordmacro) by mistake, then type <kbd>M-:</kbd>
+again right away, to cancel the recording.  An existing macro is then
+not overwritten.
+</p>
+<p>Note: the recording and playback of keyboard macros works correctly only
+on a terminal emulator, not on a Linux console (VT), because the latter
+does not by default distinguish modified from unmodified cursor keys.
+</p>
+<hr>
+</div>
 <div class="section" id="Exit-status">
-<span id="Exit-status-1"></span><h3 class="section">3.9 Exit status</h3>
+<span id="Exit-status-1"></span><h3 class="section">3.10 Exit status</h3>
 
 <p>The exit status is <code>0</code> when <code>nano</code> finished normally,
 <code>1</code> when an invalid option or option argument was given,
 and <code>2</code> when the last open buffer was discarded
 (with <kbd>^O^Q</kbd> or <kbd>^X^Q</kbd>).
 </p>
-<hr>
-</div>
-<div class="section" id="Limitations">
-<span id="Limitations-1"></span><h3 class="section">3.10 Limitations</h3>
-
-<p>The recording and playback of keyboard macros works correctly only on a
-terminal emulator, not on a Linux console (VT), because the latter does
-not by default distinguish modified from unmodified arrow keys.
-</p>
 
 <hr>
 </div>
 </div>
-<div class="chapter" id="The-Help-Viewer">
-<span id="The-Help-Viewer-1"></span><h2 class="chapter">4 The Help Viewer</h2>
+<div class="chapter" id="The-help-viewer">
+<span id="The-help-viewer-1"></span><h2 class="chapter">4 The help viewer</h2>
 
 <p>The built-in help in <code>nano</code> is available by pressing <kbd>^G</kbd>.
 It is fairly self-explanatory.  It documents the various parts of the
@@ -382,12 +403,12 @@ and <kbd>^V</kbd> (Page Down) keys.  <kbd>^X</kbd> exits from the help viewer.
 
 <hr>
 </div>
-<div class="chapter" id="The-File-Browser">
-<span id="The-File-Browser-1"></span><h2 class="chapter">5 The File Browser</h2>
+<div class="chapter" id="The-file-browser">
+<span id="The-file-browser-1"></span><h2 class="chapter">5 The file browser</h2>
 
 <p>When in the Read-File (<kbd>^R</kbd>) or Write-Out menu (<kbd>^O</kbd>),
 pressing <kbd>^T</kbd> invokes the file browser.
-Here, one can navigate directories in a graphical manner in order to
+Here, you can navigate directories in a graphical manner in order to
 find the desired file.
 </p>
 <p>Basic movement in the file browser is accomplished with the arrow and
@@ -403,8 +424,8 @@ browser exits.
 
 <hr>
 </div>
-<div class="chapter" id="Command_002dline-Options">
-<span id="Command_002dline-Options-1"></span><h2 class="chapter">6 Command-line Options</h2>
+<div class="chapter" id="Command_002dline-options">
+<span id="Command_002dline-options-1"></span><h2 class="chapter">6 Command-line options</h2>
 
 <p><code>nano</code> accepts the following options from the command line:
 </p>
@@ -578,7 +599,7 @@ probably want to omit <samp>-W</samp> (<samp>--wordbounds</samp>).
 <dt><span><samp>-Y <var>name</var></samp></span></dt>
 <dt><span><samp>--syntax=<var>name</var></samp></span></dt>
 <dd><p>Specify the syntax to be used for highlighting.
-See <a href="#Syntax-Highlighting">Syntax Highlighting</a> for more info.
+See <a href="#Syntax-highlighting">Syntax highlighting</a> for more info.
 </p>
 </dd>
 <dt><span><samp>-Z</samp></span></dt>
@@ -830,6 +851,16 @@ With <kbd>M-Z</kbd> the title bar plus status bar can be toggled.
 With <kbd>M-X</kbd> the help lines.
 </p>
 </dd>
+<dt><span><samp>-1</samp></span></dt>
+<dt><span><samp>--solosidescroll</samp></span></dt>
+<dd><p>When the cursor approaches the right edge of the edit window, scroll only the
+current line sideways by a large amount, instead of scrolling all visible lines
+sideways by just the amount needed to keep the cursor in view.
+This latter whole-window smooth sideways scrolling is the new default behavior.
+The single-line jerky sideways scrolling enabled by this option was the old
+behavior &mdash; the only behavior that <code>nano</code> knew.
+</p>
+</dd>
 <dt><span><samp>-/</samp></span></dt>
 <dt><span><samp>--modernbindings</samp></span></dt>
 <dd><p>Use key bindings similar to the ones that most modern programs use:
@@ -838,11 +869,11 @@ With <kbd>M-X</kbd> the help lines.
 <kbd>^F</kbd> searches forward, <kbd>^G</kbd> searches next,
 <kbd>^S</kbd> saves, <kbd>^O</kbd> opens a file, <kbd>^Q</kbd> quits,
 and (when the terminal permits) <kbd>^H</kbd> shows help.
-Furthermore, <kbd>^A</kbd> sets the mark,
-<kbd>^R</kbd> makes replacements, <kbd>^D</kbd> searches previous,
+Furthermore, <kbd>^A</kbd> sets the mark, <kbd>^B</kbd> searches backward,
+<kbd>^D</kbd> searches previous, <kbd>^R</kbd> makes replacements,
 <kbd>^P</kbd> shows the position, <kbd>^T</kbd> goes to a line,
 <kbd>^W</kbd> writes out a file, and <kbd>^E</kbd> executes a command.
-Note that this overrides option <samp>-p</samp> (<samp>--preserve</samp>).
+Note that this option overrides option <samp>-p</samp> (<samp>--preserve</samp>).
 </p>
 </dd>
 </dl>
@@ -855,8 +886,8 @@ Note that this overrides option <samp>-p</samp> (<samp>--preserve</samp>).
 
 <hr>
 </div>
-<div class="chapter" id="Feature-Toggles">
-<span id="Feature-Toggles-1"></span><h2 class="chapter">7 Feature Toggles</h2>
+<div class="chapter" id="Feature-toggles">
+<span id="Feature-toggles-1"></span><h2 class="chapter">7 Feature toggles</h2>
 
 <p>Toggles allow you to change certain aspects of the editor while you are
 editing, aspects that you would normally specify via command-line options
@@ -912,7 +943,7 @@ for more details).  The following global toggles are available:
 </dd>
 <dt><span><code>Syntax Coloring</code></span></dt>
 <dd><p><kbd>M-Y</kbd> toggles syntax coloring, when your nanorc defines syntaxes
-(see <a href="#Syntax-Highlighting">Syntax Highlighting</a>).
+(see <a href="#Syntax-highlighting">Syntax highlighting</a>).
 </p>
 </dd>
 <dt><span><code>Hidden Interface</code></span></dt>
@@ -927,8 +958,8 @@ not the help lines.  The latter are toggled with <kbd>M-X</kbd>.
 
 <hr>
 </div>
-<div class="chapter" id="Nanorc-Files">
-<span id="Nanorc-Files-1"></span><h2 class="chapter">8 Nanorc Files</h2>
+<div class="chapter" id="Nanorc-files">
+<span id="Nanorc-files-1"></span><h2 class="chapter">8 Nanorc files</h2>
 
 <p>Nanorc files can be used to configure <code>nano</code> to your liking
 without using command-line options.  During startup <code>nano</code>
@@ -941,8 +972,8 @@ above files and reads just the specified settings file.
 </p>
 <p>A nanorc file can contain <code>set</code> and <code>unset</code> commands for
 various options (see <a href="#Settings">Settings</a>).  It can also contain commands that
-define syntax highlighting (see <a href="#Syntax-Highlighting">Syntax Highlighting</a>) and commands
-that rebind keys (<a href="#Rebinding-Keys">Rebinding Keys</a>).  Each command should be on a
+define syntax highlighting (see <a href="#Syntax-highlighting">Syntax highlighting</a>) and commands
+that rebind keys (<a href="#Rebinding-keys">Rebinding keys</a>).  Each command should be on a
 separate line, and all commands should be written in lowercase.
 </p>
 <p>Options that do not take an argument are unset by default.  So using
@@ -958,8 +989,8 @@ The last double quote on the line will be seen as the closing quote.
 
 <ul class="section-toc">
 <li><a href="#Settings" accesskey="1">Settings</a></li>
-<li><a href="#Syntax-Highlighting" accesskey="2">Syntax Highlighting</a></li>
-<li><a href="#Rebinding-Keys" accesskey="3">Rebinding Keys</a></li>
+<li><a href="#Syntax-highlighting" accesskey="2">Syntax highlighting</a></li>
+<li><a href="#Rebinding-keys" accesskey="3">Rebinding keys</a></li>
 </ul>
 <hr>
 <div class="section" id="Settings">
@@ -1309,6 +1340,15 @@ already at that position, it jumps to the true beginning of the line.
 the screen&rsquo;s edge, by using also <code>set atblanks</code>.)
 </p>
 </dd>
+<dt><span><code>set solosidescroll</code></span></dt>
+<dd><p>When the cursor approaches the right edge of the edit window, scroll only the
+current line sideways by a large amount, instead of scrolling all visible lines
+sideways by just the amount needed to keep the cursor in view.
+This latter whole-window smooth sideways scrolling is the new default behavior.
+The single-line jerky sideways scrolling enabled by this option was the old
+behavior &mdash; the only behavior that <code>nano</code> knew.
+</p>
+</dd>
 <dt><span><code>set speller &quot;<var>program</var> [<var>argument</var> &hellip;]&quot;</code></span></dt>
 <dd><p>Use the given program to do spell checking and correcting.
 See <a href="#g_t_002d_002dspeller"><samp>--speller</samp></a> for details.
@@ -1401,8 +1441,8 @@ With <kbd>M-X</kbd> the help lines.
 
 <hr>
 </div>
-<div class="section" id="Syntax-Highlighting">
-<span id="Syntax-Highlighting-1"></span><h3 class="section">8.2 Syntax Highlighting</h3>
+<div class="section" id="Syntax-highlighting">
+<span id="Syntax-highlighting-1"></span><h3 class="section">8.2 Syntax highlighting</h3>
 
 <p>Coloring the different syntactic elements of a file
 is done via regular expressions (see the <code>color</code> command below).
@@ -1573,8 +1613,8 @@ in one of the system-installed files (which normally are not writable).
 
 <hr>
 </div>
-<div class="section" id="Rebinding-Keys">
-<span id="Rebinding-Keys-1"></span><h3 class="section">8.3 Rebinding Keys</h3>
+<div class="section" id="Rebinding-keys">
+<span id="Rebinding-keys-1"></span><h3 class="section">8.3 Rebinding keys</h3>
 
 <p>Key bindings can be changed via the following three commands in a
 nanorc file:
@@ -1623,7 +1663,8 @@ Example: <code>^C</code>.
 </p>
 </dd>
 <dt><span><code>M-<var>X</var></code></span></dt>
-<dd><p>where <var>X</var> is any ASCII character except [, or the word &quot;Space&quot;.
+<dd><p>where <var>X</var> is any ASCII character (except [),
+or the word &quot;Space&quot;, &quot;Left&quot;, &quot;Right&quot;, &quot;Up&quot;, or &quot;Down&quot;.
 Example: <code>M-8</code>.
 </p>
 </dd>
@@ -1650,8 +1691,8 @@ with Shift.)
 <p>Rebinding <code>^M</code> (Enter) or <code>^I</code> (Tab) is probably not a good idea.
 Rebinding <code>^[</code> (Esc) is not possible, because its keycode
 is the starter byte of Meta keystrokes and escape sequences.
-Rebinding any of the dedicated cursor-moving keys (the arrows, Home, End,
-PageUp and PageDown) is not possible.
+Rebinding any of the dedicated cursor-moving keys (Home, End,
+PageUp, PageDown, and the arrows) is not possible.
 On some terminals it&rsquo;s not possible to rebind <code>^H</code> (unless <code>--raw</code>
 is used) because its keycode is identical to that of the Backspace key.
 </p>
@@ -1831,10 +1872,22 @@ to a full word found elsewhere in the current buffer.
 <dd><p>Goes one line down (in the editor or browser).
 </p>
 </dd>
+<dt><span><code>scrollleft</code></span></dt>
+<dd><p>Scrolls the viewport a tabsize to the left, when possible.
+(This function is bound by default to <kbd>M-&lt;</kbd>.)
+</p>
+</dd>
+<dt><span><code>scrollright</code></span></dt>
+<dd><p>Scrolls the viewport a tabsize to the right.  When needed to keep
+the cursor visible, it is moved to a longer line in the viewport.
+If there is no sufficiently longer line, no scroll is made.
+(This function is bound by default to <kbd>M-&gt;</kbd>.)
+</p>
+</dd>
 <dt><span><code>scrollup</code></span></dt>
 <dd><p>Scrolls the viewport up one row (meaning that the text slides down)
 while keeping the cursor in the same text position, if possible.
-(This function is bound by default to <kbd>Alt+Up</kbd>.
+(This function is bound by default to <kbd>M-Up</kbd>.
 If <kbd>Alt+Up</kbd> does nothing on your Linux console, see the FAQ:
 <a href="https://nano-editor.org/dist/latest/faq.html#4.1">https://nano-editor.org/dist/latest/faq.html#4.1</a>.)
 </p>
@@ -1842,7 +1895,7 @@ If <kbd>Alt+Up</kbd> does nothing on your Linux console, see the FAQ:
 <dt><span><code>scrolldown</code></span></dt>
 <dd><p>Scrolls the viewport down one row (meaning that the text slides up)
 while keeping the cursor in the same text position, if possible.
-(This function is bound by default to <kbd>Alt+Down</kbd>.)
+(This function is bound by default to <kbd>M-Down</kbd>.)
 </p>
 </dd>
 <dt><span><code>center</code></span></dt>
@@ -1946,7 +1999,7 @@ number of lines forward or backward.
 </dd>
 <dt><span><code>verbatim</code></span></dt>
 <dd><p>Inserts the next keystroke verbatim into the file, or begins Unicode input
-when a hexadecimal digit is typed (see <a href="#Entering-Text">Entering Text</a> for details).
+when a hexadecimal digit is typed (see <a href="#Entering-text">Entering text</a> for details).
 </p>
 </dd>
 <dt><span><code>tab</code></span></dt>
@@ -2221,8 +2274,8 @@ it means all menus where the specified <code>key</code> exists.
 <hr>
 </div>
 </div>
-<div class="chapter" id="Pico-Compatibility">
-<span id="Pico-Compatibility-1"></span><h2 class="chapter">9 Pico Compatibility</h2>
+<div class="chapter" id="Pico-compatibility">
+<span id="Pico-compatibility-1"></span><h2 class="chapter">9 Pico compatibility</h2>
 
 <p><code>nano</code> emulates Pico quite closely, but there
 are some differences between the two editors:
@@ -2319,7 +2372,7 @@ browser is just a file browser, not a file manager.
 <dd><p>Many options which alter the functionality of the program can be
 &quot;toggled&quot; on or off using Meta key sequences, meaning the program does
 not have to be restarted to turn a particular feature on or off.
-See <a href="#Feature-Toggles">Feature Toggles</a> for a list of options that can be toggled.
+See <a href="#Feature-toggles">Feature toggles</a> for a list of options that can be toggled.
 Or see the list at the end of the main internal help text (<kbd>^G</kbd>) instead.
 </p>
 </dd>
@@ -2328,8 +2381,8 @@ Or see the list at the end of the main internal help text (<kbd>^G</kbd>) instea
 
 <hr>
 </div>
-<div class="chapter" id="Building-and-its-Options">
-<span id="Building-and-its-Options-1"></span><h2 class="chapter">10 Building and its Options</h2>
+<div class="chapter" id="Building-and-its-options">
+<span id="Building-and-its-options-1"></span><h2 class="chapter">10 Building and its options</h2>
 
 <p>Building <code>nano</code> from source is straightforward if you are
 familiar with compiling programs with autoconf support:
@@ -2416,7 +2469,7 @@ which causes a file to be read into a separate buffer by default.
 <dd><p>Exclude support for reading the nanorc files at startup.  With such
 support, you can store custom settings in a system-wide and a per-user
 nanorc file rather than having to pass command-line options to get
-the desired behavior.  See <a href="#Nanorc-Files">Nanorc Files</a> for more info.
+the desired behavior.  See <a href="#Nanorc-files">Nanorc files</a> for more info.
 Disabling this also eliminates the <samp>-I</samp> command-line option,
 which inhibits the reading of nanorc files.
 </p>

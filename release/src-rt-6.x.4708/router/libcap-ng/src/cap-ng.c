@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdio_ext.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <sys/prctl.h>
 #include <pwd.h>
 #include <grp.h>
@@ -63,12 +64,6 @@ unsigned int last_cap hidden = 0;
  */
 #ifdef PR_CAPBSET_DROP
 static int HAVE_PR_CAPBSET_DROP = 0;
-#endif
-#ifdef PR_SET_SECUREBITS
-static int HAVE_PR_SET_SECUREBITS = 0;
-#endif
-#ifdef PR_SET_NO_NEW_PRIVS
-static int HAVE_PR_SET_NO_NEW_PRIVS = 0;
 #endif
 #ifdef PR_CAP_AMBIENT
 static int HAVE_PR_CAP_AMBIENT = 0;
@@ -185,6 +180,9 @@ struct cap_ng
 	__le32 rootid;
 	__u32 bounds[VFS_CAP_U32];
 	__u32 ambient[VFS_CAP_U32];
+	unsigned char bounds_state_changed;
+	gid_t *add_groups;
+	size_t add_group_cnt;
 };
 
 // Global variables with per thread uniqueness
@@ -193,13 +191,130 @@ static __thread struct cap_ng m =	{ 1, 1,
 					{ {0, 0, 0} },
 					CAPNG_NEW, CAPNG_UNSET_ROOTID,
 					{0, 0},
-					{0, 0} };
+					{0, 0},
+					0,
+					NULL, 0 };
+
+static void clear_staged_additional_groups(struct cap_ng *c)
+{
+	free(c->add_groups);
+	c->add_groups = NULL;
+	c->add_group_cnt = 0;
+}
+
+static inline void mark_bounding_set_changed(struct cap_ng *c)
+{
+	c->bounds_state_changed = 1;
+}
+
+static inline void clear_bounding_set_changed(struct cap_ng *c)
+{
+	c->bounds_state_changed = 0;
+}
+
+static int copy_staged_additional_groups(struct cap_ng *dst,
+					 const struct cap_ng *src)
+{
+	size_t len;
+
+	dst->add_groups = NULL;
+	dst->add_group_cnt = 0;
+	if (src->add_group_cnt == 0)
+		return 0;
+
+	len = src->add_group_cnt * sizeof(gid_t);
+	dst->add_groups = malloc(len);
+	if (dst->add_groups == NULL)
+		return -1;
+
+	memcpy(dst->add_groups, src->add_groups, len);
+	dst->add_group_cnt = src->add_group_cnt;
+	return 0;
+}
+
+static int gid_in_list(const gid_t *gids, size_t count, gid_t gid)
+{
+	size_t i;
+
+	for (i = 0; i < count; i++) {
+		if (gids[i] == gid)
+			return 1;
+	}
+	return 0;
+}
+
+static int get_additional_groups(const struct passwd *pw, gid_t gid,
+				 gid_t **gids, size_t *count)
+{
+	gid_t *list;
+	int ngroups = 1;
+	int rc;
+
+	*gids = NULL;
+	*count = 0;
+
+	list = malloc(sizeof(gid_t));
+	if (list == NULL)
+		return -1;
+
+	rc = getgrouplist(pw->pw_name, gid, list, &ngroups);
+	if (rc == -1) {
+		gid_t *tmp;
+
+		tmp = realloc(list, sizeof(gid_t) * ngroups);
+		if (tmp == NULL) {
+			free(list);
+			return -1;
+		}
+		list = tmp;
+		rc = getgrouplist(pw->pw_name, gid, list, &ngroups);
+	}
+	if (rc == -1) {
+		free(list);
+		return -1;
+	}
+
+	*gids = list;
+	*count = ngroups;
+	return 0;
+}
+
+static int merge_additional_groups(const gid_t *base, size_t base_cnt,
+		const gid_t *extra, size_t extra_cnt, gid_t **merged,
+		size_t *merged_cnt)
+{
+	gid_t *list;
+	size_t i, count = 0, total = base_cnt + extra_cnt;
+
+	*merged = NULL;
+	*merged_cnt = 0;
+	if (total == 0)
+		return 0;
+
+	list = malloc(sizeof(gid_t) * total);
+	if (list == NULL)
+		return -1;
+
+	for (i = 0; i < base_cnt; i++) {
+		if (gid_in_list(list, count, base[i]) == 0)
+			list[count++] = base[i];
+	}
+	for (i = 0; i < extra_cnt; i++) {
+		if (gid_in_list(list, count, extra[i]) == 0)
+			list[count++] = extra[i];
+	}
+
+	*merged = list;
+	*merged_cnt = count;
+	return 0;
+}
 
 /*
  * Reset the state so that init gets called to erase everything
  */
 static void deinit(void)
 {
+	clear_staged_additional_groups(&m);
 	m.state = CAPNG_NEW;
 }
 
@@ -209,17 +324,23 @@ static inline int test_cap(unsigned int cap)
 	return prctl(PR_CAPBSET_READ, cap) >= 0;
 }
 
-// The maximum cap value is determined by VFS_CAP_U32
-#define MAX_CAP_VALUE (VFS_CAP_U32 * sizeof(__le32) * 8)
+// The capability storage is fixed by VFS_CAP_U32
+#define MAX_CAP_BITS (VFS_CAP_U32 * sizeof(__le32) * 8)
+#define MAX_CAP_VALUE (MAX_CAP_BITS - 1)
 
 static void init_lib(void) __attribute__ ((constructor));
 static void init_lib(void)
 {
-       // This is so dynamic libraries don't re-init
-       static unsigned int run_once = 0;
-       if (run_once)
-               return;
-       run_once = 1;
+	/* This is so that dynamic or static libraries don't re-init */
+	static unsigned int run_once;
+
+	if (__atomic_load_n(&run_once, __ATOMIC_ACQUIRE) == 2)
+		return;
+	if (!__sync_bool_compare_and_swap(&run_once, 0, 1)) {
+		while (__atomic_load_n(&run_once, __ATOMIC_ACQUIRE) != 2)
+			;
+		return;
+	}
 
 #ifdef HAVE_PTHREAD_H
 	pthread_atfork(NULL, NULL, deinit);
@@ -249,12 +370,14 @@ static void init_lib(void)
 fail:
 			close(fd);
 		}
+		if (last_cap >= MAX_CAP_BITS)
+			last_cap = MAX_CAP_VALUE;
 		// Run a binary search over capabilities
 		if (last_cap == 0) {
-			// starting with last_cap=MAX_CAP_VALUE means we always know
+			// starting with last_cap=MAX_CAP_BITS means we always know
 			// that cap1 is invalid after the first iteration
-			last_cap = MAX_CAP_VALUE;
-			unsigned int cap0 = 0, cap1 = MAX_CAP_VALUE;
+			last_cap = MAX_CAP_BITS;
+			unsigned int cap0 = 0, cap1 = MAX_CAP_BITS;
 
 			while (cap0 < last_cap) {
 				if (test_cap(last_cap))
@@ -270,27 +393,16 @@ fail:
 #ifdef PR_CAPBSET_DROP
 	errno = 0;
 	prctl(PR_CAPBSET_READ, 0, 0, 0, 0);
-	if (!errno)
+	if (errno != EINVAL)
 		HAVE_PR_CAPBSET_DROP = 1;
-#endif
-#ifdef PR_SET_SECUREBITS
-	errno = 0;
-	prctl(PR_GET_SECUREBITS, 0, 0, 0, 0);
-	if (!errno)
-		HAVE_PR_SET_SECUREBITS = 1;
-#endif
-#ifdef PR_SET_NO_NEW_PRIVS
-	errno = 0;
-	prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0);
-	if (!errno)
-		HAVE_PR_SET_NO_NEW_PRIVS = 1;
 #endif
 #ifdef PR_CAP_AMBIENT
 	errno = 0;
-	prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, 0, 0, 0);
-	if (!errno)
+	prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, CAP_CHOWN, 0, 0);
+	if (errno != EINVAL)
 		HAVE_PR_CAP_AMBIENT = 1;
 #endif
+	__atomic_store_n(&run_once, 2, __ATOMIC_RELEASE);
 }
 
 static void init(void)
@@ -340,8 +452,10 @@ void capng_clear(capng_select_t set)
 		memset(&m.data, 0, sizeof(cap_data_t));
 #ifdef PR_CAPBSET_DROP
 if (HAVE_PR_CAPBSET_DROP) {
-	if (set & CAPNG_SELECT_BOUNDS)
+	if (set & CAPNG_SELECT_BOUNDS) {
 		memset(m.bounds, 0, sizeof(m.bounds));
+		mark_bounding_set_changed(&m);
+	}
 }
 #endif
 #ifdef PR_CAP_AMBIENT
@@ -380,6 +494,7 @@ if (HAVE_PR_CAPBSET_DROP) {
 		unsigned i;
 		for (i=0; i<sizeof(m.bounds)/sizeof(__u32); i++)
 			m.bounds[i] = 0xFFFFFFFFU;
+		mark_bounding_set_changed(&m);
 	}
 }
 #endif
@@ -422,16 +537,47 @@ int capng_set_rootid(int rootid)
 	if (m.state == CAPNG_ERROR)
 		return -1;
 
-	if (rootid < 0)
+	if (rootid < 0 && rootid != CAPNG_UNSET_ROOTID)
 		return -1;
 
 	m.rootid = rootid;
-	m.vfs_cap_ver = 3;
+	if (rootid == CAPNG_UNSET_ROOTID)
+		m.vfs_cap_ver = 2;
+	else
+		m.vfs_cap_ver = 3;
 
 	return 0;
 #else
 	return -1;
 #endif
+}
+
+int capng_stage_additional_groups(const gid_t *gids, size_t count)
+{
+	gid_t *list = NULL;
+
+	if (count && gids == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+	if (count > NGROUPS_MAX) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (count) {
+		size_t len = count * sizeof(gid_t);
+
+		list = malloc(len);
+		if (list == NULL)
+			return -1;
+		memcpy(list, gids, len);
+	}
+
+	clear_staged_additional_groups(&m);
+	m.add_groups = list;
+	m.add_group_cnt = count;
+	return 0;
 }
 
 #ifdef PR_CAPBSET_DROP
@@ -453,9 +599,12 @@ static int get_bounding_set(void)
 		while (fgets(buf, sizeof(buf), f)) {
 			if (strncmp(buf, "CapB", 4))
 				continue;
-			sscanf(buf, "CapBnd:  %08x%08x",
+			int num = sscanf(buf, "CapBnd:  %08x%08x",
 			       &m.bounds[1], &m.bounds[0]);
 			fclose(f);
+			if (num != 2)
+				return -1;
+			clear_bounding_set_changed(&m);
 			return 0;
 		}
 		// Didn't find bounding set, fall through and try prctl way
@@ -475,6 +624,7 @@ static int get_bounding_set(void)
 		i++;
 	} while (cap_valid(i));
 
+	clear_bounding_set_changed(&m);
 	return 0;
 }
 #endif
@@ -498,9 +648,11 @@ static int get_ambient_set(void)
 		while (fgets(buf, sizeof(buf), f)) {
 			if (strncmp(buf, "CapA", 4))
 				continue;
-			sscanf(buf, "CapAmb:  %08x%08x",
+			int num = sscanf(buf, "CapAmb:  %08x%08x",
 			       &m.ambient[1], &m.ambient[0]);
 			fclose(f);
+			if (num != 2)
+				return -1;
 			return 0;
 		}
 		fclose(f);
@@ -746,6 +898,8 @@ int capng_update(capng_act_t action, capng_type_t type, unsigned int capability)
 		if (CAPNG_AMBIENT & type)
 			update_ambient_set(action, capability, idx);
 	}
+	if (CAPNG_BOUNDING_SET & type)
+		mark_bounding_set_changed(&m);
 
 	m.state = CAPNG_UPDATED;
 	return 0;
@@ -789,6 +943,10 @@ int capng_apply(capng_select_t set)
 	// Before updating, we expect that the data is initialized to something
 	if (m.state < CAPNG_INIT)
 		return -1;
+	if (set == 0) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	if (set & CAPNG_SELECT_BOUNDS) {
 #ifdef PR_CAPBSET_DROP
@@ -809,11 +967,12 @@ if (HAVE_PR_CAPBSET_DROP) {
 				    }
 				}
 			}
-			m.state = CAPNG_APPLIED;
 			if (get_bounding_set() < 0) {
 				rc = -3;
 				goto try_caps;
 			}
+			clear_bounding_set_changed(&m);
+			m.state = CAPNG_APPLIED;
 		} else {
 			memcpy(&m, &state, sizeof(m)); /* restore state */
 			rc = -4;
@@ -963,45 +1122,95 @@ int capng_apply_caps_fd(int fd)
 }
 
 // Change uids keeping/removing only certain capabilities
-// flag to drop supp groups
 int capng_change_id(int uid, int gid, capng_flags_t flag)
 {
-	int rc, ret, need_setgid, need_setuid;
+	enum {
+		TMP_SETPCAP_E = 1 << 0,
+		TMP_SETPCAP_P = 1 << 1,
+		TMP_SETUID_E  = 1 << 2,
+		TMP_SETUID_P  = 1 << 3,
+		TMP_SETGID_E  = 1 << 4,
+		TMP_SETGID_P  = 1 << 5,
+	};
+	unsigned int tmp_caps = 0;
+	int rc, ret;
+	struct passwd *pw = NULL;
+	gid_t *gids = NULL, *merged = NULL;
+	size_t gid_cnt = 0, merged_cnt = 0;
 
 	// Before updating, we expect that the data is initialized to something
-	if (m.state < CAPNG_INIT)
-		return -1;
+	if (m.state < CAPNG_INIT) {
+		ret = -1;
+		goto out;
+	}
+	// Validate mutually exclusive staged-group combinations up front.
+	if ((flag & CAPNG_APPLY_STAGED_GROUPS) &&
+			(flag & CAPNG_DROP_SUPP_GRP)) {
+		ret = -12;
+		goto out;
+	}
+	// Validate mutually exclusive bounding-set operations up front.
+	if ((flag & CAPNG_APPLY_BOUNDING) &&
+			(flag & CAPNG_CLEAR_BOUNDING)) {
+		ret = -17;
+		goto out;
+	}
+	// Staged application only makes sense when a list was staged earlier.
+	if ((flag & CAPNG_APPLY_STAGED_GROUPS) && m.add_group_cnt == 0) {
+		ret = -13;
+		goto out;
+	}
 
-	// Check the current capabilities
+	// Make sure the temporary transition caps we may need are present.
 #ifdef PR_CAPBSET_DROP
 if (HAVE_PR_CAPBSET_DROP) {
 	// If newer kernel, we need setpcap to change the bounding set
-	if (capng_have_capability(CAPNG_EFFECTIVE, CAP_SETPCAP) == 0 &&
-					flag & CAPNG_CLEAR_BOUNDING)
-		capng_update(CAPNG_ADD,
-				CAPNG_EFFECTIVE|CAPNG_PERMITTED, CAP_SETPCAP);
+	if ((flag & CAPNG_CLEAR_BOUNDING) ||
+			((flag & CAPNG_APPLY_BOUNDING) &&
+			m.bounds_state_changed)) {
+		if (capng_have_capability(CAPNG_EFFECTIVE,
+					CAP_SETPCAP) == 0) {
+			tmp_caps |= TMP_SETPCAP_E;
+			capng_update(CAPNG_ADD, CAPNG_EFFECTIVE,
+					CAP_SETPCAP);
+		}
+		if (capng_have_capability(CAPNG_PERMITTED,
+					CAP_SETPCAP) == 0) {
+			tmp_caps |= TMP_SETPCAP_P;
+			capng_update(CAPNG_ADD, CAPNG_PERMITTED,
+					CAP_SETPCAP);
+		}
+	}
 }
 #endif
-	if (gid == -1 || capng_have_capability(CAPNG_EFFECTIVE, CAP_SETGID))
-		need_setgid = 0;
-	else {
-		need_setgid = 1;
-		capng_update(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED,
-				CAP_SETGID);
+	if (gid != -1) {
+		if (capng_have_capability(CAPNG_EFFECTIVE, CAP_SETGID) == 0) {
+			tmp_caps |= TMP_SETGID_E;
+			capng_update(CAPNG_ADD, CAPNG_EFFECTIVE, CAP_SETGID);
+		}
+		if (capng_have_capability(CAPNG_PERMITTED, CAP_SETGID) == 0) {
+			tmp_caps |= TMP_SETGID_P;
+			capng_update(CAPNG_ADD, CAPNG_PERMITTED, CAP_SETGID);
+		}
 	}
-	if (uid == -1 || capng_have_capability(CAPNG_EFFECTIVE, CAP_SETUID))
-		need_setuid = 0;
-	else {
-		need_setuid = 1;
-		capng_update(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED,
-				CAP_SETUID);
+	if (uid != -1) {
+		if (capng_have_capability(CAPNG_EFFECTIVE, CAP_SETUID) == 0) {
+			tmp_caps |= TMP_SETUID_E;
+			capng_update(CAPNG_ADD, CAPNG_EFFECTIVE, CAP_SETUID);
+		}
+		if (capng_have_capability(CAPNG_PERMITTED, CAP_SETUID) == 0) {
+			tmp_caps |= TMP_SETUID_P;
+			capng_update(CAPNG_ADD, CAPNG_PERMITTED, CAP_SETUID);
+		}
 	}
 
-	// Tell system we want to keep caps across uid change
-	if (prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0))
-		return -2;
+	// Enable keepcaps before changing credentials so final caps survive.
+	if (prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) < 0) {
+		ret = -2;
+		goto out;
+	}
 
-	// Change to the temp capabilities
+	// Apply the temporary working set before touching ids or groups.
 	rc = capng_apply(CAPNG_SELECT_CAPS);
 	if (rc < 0) {
 		ret = -3;
@@ -1021,8 +1230,17 @@ if (HAVE_PR_CAPBSET_DROP) {
 			goto err_out;
 		}
 	}
+	// Apply a caller-prepared bounding set only when it is explicitly dirty.
+	if ((flag & CAPNG_APPLY_BOUNDING) && m.bounds_state_changed) {
+		rc = capng_apply(CAPNG_SELECT_BOUNDS);
+		if (rc) {
+			ret = -8;
+			goto err_out;
+		}
+	}
 
-	// Change gid
+	// Change gid before supplemental groups so kernel permission checks
+	// see the target primary group.
 	if (gid != -1) {
 		rc = setresgid(gid, gid, gid);
 		if (rc) {
@@ -1031,28 +1249,60 @@ if (HAVE_PR_CAPBSET_DROP) {
 		}
 	}
 
-	// See if we need to init supplemental groups
+	// Resolve the passwd entry once when natural group setup is requested.
 	if ((flag & CAPNG_INIT_SUPP_GRP) && uid != -1) {
-		struct passwd *pw = getpwuid(uid);
+		pw = getpwuid(uid);
 		if (pw == NULL) {
 			ret = -10;
 			goto err_out;
 		}
-		if (gid != -1) {
-			if (initgroups(pw->pw_name, gid)) {
-				ret = -5;
+	}
+
+	// There are four supplemental/additional group modes:
+	// init+staged merge, init only, drop only, or staged only.
+	if ((flag & CAPNG_INIT_SUPP_GRP) &&
+			(flag & CAPNG_APPLY_STAGED_GROUPS)) {
+		if (uid != -1) {
+			gid_t base_gid = gid != -1 ? (gid_t)gid : pw->pw_gid;
+
+			// Build the natural target account group list first.
+			rc = get_additional_groups(pw, base_gid, &gids,
+						   &gid_cnt);
+			if (rc) {
+				ret = -15;
 				goto err_out;
 			}
-		} else if (initgroups(pw->pw_name, pw->pw_gid)) {
+		}
+		// Then append staged gids without duplicates and apply the result.
+		rc = merge_additional_groups(gids, gid_cnt, m.add_groups,
+					m.add_group_cnt, &merged,
+					&merged_cnt);
+		if (rc) {
+			ret = -16;
+			goto err_out;
+		}
+		if (setgroups(merged_cnt, merged)) {
+			ret = -14;
+			goto err_out;
+		}
+	} else if ((flag & CAPNG_INIT_SUPP_GRP) && uid != -1) {
+		gid_t base_gid = gid != -1 ? (gid_t)gid : pw->pw_gid;
+
+		// Preserve the long-standing initgroups-only behavior.
+		if (initgroups(pw->pw_name, base_gid)) {
 			ret = -5;
 			goto err_out;
 		}
-	}
-
-	// See if we need to unload supplemental groups
-	if ((flag & CAPNG_DROP_SUPP_GRP) && gid != -1) {
+	} else if ((flag & CAPNG_DROP_SUPP_GRP) && gid != -1) {
+		// Drop all supplemental groups for the target identity.
 		if (setgroups(0, NULL)) {
-			ret = -5;
+			ret = -11;
+			goto err_out;
+		}
+	} else if (flag & CAPNG_APPLY_STAGED_GROUPS) {
+		// Apply exactly the caller-staged gid list.
+		if (setgroups(m.add_group_cnt, m.add_groups)) {
+			ret = -14;
 			goto err_out;
 		}
 	}
@@ -1066,57 +1316,65 @@ if (HAVE_PR_CAPBSET_DROP) {
 		}
 	}
 
-	// Tell it we are done keeping capabilities
+	// Credential changes are complete, so disable keepcaps again.
 	rc = prctl(PR_SET_KEEPCAPS, 0, 0, 0, 0);
-	if (rc)
-		return -7;
+	if (rc < 0) {
+		ret = -7;
+		goto out;
+	}
 
 	// Now throw away CAP_SETPCAP so no more changes
-	if (need_setgid)
-		capng_update(CAPNG_DROP, CAPNG_EFFECTIVE|CAPNG_PERMITTED,
-				CAP_SETGID);
-	if (need_setuid)
-		capng_update(CAPNG_DROP, CAPNG_EFFECTIVE|CAPNG_PERMITTED,
-				CAP_SETUID);
+	if (tmp_caps & TMP_SETGID_E)
+		capng_update(CAPNG_DROP, CAPNG_EFFECTIVE, CAP_SETGID);
+	if (tmp_caps & TMP_SETGID_P)
+		capng_update(CAPNG_DROP, CAPNG_PERMITTED, CAP_SETGID);
+	if (tmp_caps & TMP_SETUID_E)
+		capng_update(CAPNG_DROP, CAPNG_EFFECTIVE, CAP_SETUID);
+	if (tmp_caps & TMP_SETUID_P)
+		capng_update(CAPNG_DROP, CAPNG_PERMITTED, CAP_SETUID);
 
-	// Now drop setpcap & apply
-	capng_update(CAPNG_DROP, CAPNG_EFFECTIVE|CAPNG_PERMITTED,
-				CAP_SETPCAP);
+	// Drop any temporary transition caps and install the final sets.
+	if (tmp_caps & TMP_SETPCAP_E)
+		capng_update(CAPNG_DROP, CAPNG_EFFECTIVE, CAP_SETPCAP);
+	if (tmp_caps & TMP_SETPCAP_P)
+		capng_update(CAPNG_DROP, CAPNG_PERMITTED, CAP_SETPCAP);
 	rc = capng_apply(CAPNG_SELECT_CAPS|CAPNG_SELECT_AMBIENT);
-	if (rc < 0)
-		return -9;
+	if (rc < 0) {
+		ret = -9;
+		goto out;
+	}
 
-	// Done
-	m.state = CAPNG_UPDATED;
-	return 0;
+	ret = 0;
+	goto out;
 
 err_out:
 	prctl(PR_SET_KEEPCAPS, 0, 0, 0, 0);
+out:
+	// Staged gids are one-shot state, so always clear them before return.
+	free(gids);
+	free(merged);
+	clear_staged_additional_groups(&m);
 	return ret;
 }
 
 int capng_lock(void)
 {
+	int rc = 0;
+
 	// If either fail, return -1 since something is not right
 #ifdef PR_SET_SECUREBITS
-if (HAVE_PR_SET_SECUREBITS) {
-	int rc = prctl(PR_SET_SECUREBITS,
+	if (prctl(PR_SET_SECUREBITS,
 			1 << SECURE_NOROOT |
 			1 << SECURE_NOROOT_LOCKED |
 			1 << SECURE_NO_SETUID_FIXUP |
-			1 << SECURE_NO_SETUID_FIXUP_LOCKED, 0, 0, 0);
+			1 << SECURE_NO_SETUID_FIXUP_LOCKED, 0, 0, 0) < 0)
+		rc = -1;
+#endif
 #ifdef PR_SET_NO_NEW_PRIVS
-if (HAVE_PR_SET_NO_NEW_PRIVS) {
-	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0))
-		return -1;
-}
+	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0)
+		rc += -2;
 #endif
-	if (rc)
-		return -1;
-}
-#endif
-
-	return 0;
+	return rc;
 }
 
 // -1 - error, 0 - no caps, 1 partial caps, 2 full caps
@@ -1178,8 +1436,8 @@ if (HAVE_PR_CAPBSET_DROP) {
 		else
 			return CAPNG_PARTIAL;
 	}
-} else
-	empty = 1;
+} else if (set & CAPNG_SELECT_BOUNDS)
+	empty = 1; // Only report empty if they asked about it
 #endif
 #ifdef PR_CAP_AMBIENT
 if (HAVE_PR_CAP_AMBIENT) {
@@ -1197,8 +1455,8 @@ if (HAVE_PR_CAP_AMBIENT) {
 		else
 			return CAPNG_PARTIAL;
 	}
-} else
-	empty = 1;
+} else if (set & CAPNG_SELECT_AMBIENT)
+	empty = 1; // Only report empty if they asked about it
 #endif
 	if (empty == 1 && full == 0)
 		return CAPNG_NONE;
@@ -1211,7 +1469,8 @@ if (HAVE_PR_CAP_AMBIENT) {
 // -1 - error, 0 - no caps, 1 partial caps, 2 full caps
 capng_results_t capng_have_permitted_capabilities(void)
 {
-	int empty = 0, full = 0;
+	int empty = 0;
+	int lower_full = 0;
 
 	// First, try to init with current set
 	if (m.state < CAPNG_INIT) {
@@ -1226,16 +1485,14 @@ capng_results_t capng_have_permitted_capabilities(void)
 	if (m.data.v3[0].permitted == 0)
 		empty = 1;
 	else if (m.data.v3[0].permitted == 0xFFFFFFFFU)
-		full = 1;
+		lower_full = 1;
 	else
 		return CAPNG_PARTIAL;
 
 	// At this point, lower 32 bits are either full or empty
-	if ((m.data.v3[1].permitted & UPPER_MASK) == 0 && !full)
+	if ((m.data.v3[1].permitted & UPPER_MASK) == 0 && !lower_full)
 		empty = 1;
-	else if ((m.data.v3[1].permitted & UPPER_MASK) == UPPER_MASK && !empty)
-		full = 1;
-	else
+	else if ((m.data.v3[1].permitted & UPPER_MASK) != UPPER_MASK || empty)
 		return CAPNG_PARTIAL;
 
 	// Partial is already handled, it's either empty or full now
@@ -1447,43 +1704,69 @@ if (HAVE_PR_CAP_AMBIENT) {
 
 char *capng_print_caps_text(capng_print_t where, capng_type_t which)
 {
-	unsigned int i, once = 0, cnt = 0;
+	unsigned int i, cnt = 0;
+	size_t total = 1;
+	int found = 0;
 	char *ptr = NULL;
 
 	if (m.state < CAPNG_INIT)
 		return ptr;
 
+	if (where == CAPNG_PRINT_BUFFER) {
+		for (i=0; i<=last_cap; i++) {
+			if (capng_have_capability(which, i)) {
+				const char *n = capng_capability_to_name(i);
+				size_t len;
+
+				if (n == NULL)
+					n = "unknown";
+				len = strlen(n);
+				total += len;
+				if (found)
+					total += 2;
+				found = 1;
+			}
+		}
+		ptr = malloc(found ? total : sizeof("none"));
+		if (ptr == NULL)
+			return ptr;
+		*ptr = 0;
+		found = 0;
+	}
+
 	for (i=0; i<=last_cap; i++) {
 		if (capng_have_capability(which, i)) {
 			const char *n = capng_capability_to_name(i);
+			size_t len;
+
 			if (n == NULL)
 				n = "unknown";
+			len = strlen(n);
 			if (where == CAPNG_PRINT_STDOUT) {
-				if (once == 0) {
+				if (found == 0)
 					printf("%s", n);
-					once++;
-				} else
+				else
 					printf(", %s", n);
 			} else if (where == CAPNG_PRINT_BUFFER) {
-				int len;
-				if (once == 0) {
-					ptr = malloc(last_cap*20);
-					if (ptr == NULL)
-						return ptr;
-					len = sprintf(ptr+cnt, "%s", n);
-					once++;
-				} else
-					len = sprintf(ptr+cnt, ", %s", n);
-				if (len > 0)
-					cnt+=len;
+				if (ptr == NULL)
+					return NULL;
+				if (found) {
+					ptr[cnt++] = ',';
+					ptr[cnt++] = ' ';
+				}
+				memcpy(ptr + cnt, n, len + 1);
+				cnt += len;
 			}
+			found = 1;
 		}
 	}
-	if (once == 0) {
+	if (found == 0) {
 		if (where == CAPNG_PRINT_STDOUT)
 			printf("none");
+		else if (where == CAPNG_PRINT_BUFFER && ptr)
+			strcpy(ptr, "none");
 		else
-			ptr = strdup("none");
+			return NULL;
 	}
 	return ptr;
 }
@@ -1491,19 +1774,28 @@ char *capng_print_caps_text(capng_print_t where, capng_type_t which)
 void *capng_save_state(void)
 {
 	void *ptr = malloc(sizeof(m));
-	if (ptr)
+	if (ptr) {
 		memcpy(ptr, &m, sizeof(m));
+		if (copy_staged_additional_groups(ptr, &m)) {
+			free(ptr);
+			ptr = NULL;
+		}
+	}
 	return ptr;
 }
 
 void capng_restore_state(void **state)
 {
 	if (state) {
-		void *ptr = *state;
-		if (ptr)
+		struct cap_ng *ptr = *state;
+		if (ptr) {
+			clear_staged_additional_groups(&m);
 			memcpy(&m, ptr, sizeof(m));
+			if (copy_staged_additional_groups(&m, ptr))
+				m.state = CAPNG_ERROR;
+			clear_staged_additional_groups(ptr);
+		}
 		free(ptr);
 		*state = NULL;
 	}
 }
-

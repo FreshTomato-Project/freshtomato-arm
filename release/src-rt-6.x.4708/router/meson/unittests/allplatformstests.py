@@ -523,14 +523,13 @@ class AllPlatformTests(BasePlatformTests):
         fixed_string = mtest.replace_unencodable_xml_chars(invalid_string)
         self.assertEqual(fixed_string, valid_string)
 
+    @skipIfNoExecutable('xmllint')
     def test_replace_unencodable_xml_chars_unit(self):
         '''
         Test that unencodable xml chars are replaced with their
         printable representation
         https://github.com/mesonbuild/meson/issues/9894
         '''
-        if not shutil.which('xmllint'):
-            raise SkipTest('xmllint not installed')
         testdir = os.path.join(self.unit_test_dir, '111 replace unencodable xml chars')
         self.init(testdir)
         tests_command_output = self.run_tests()
@@ -791,10 +790,8 @@ class AllPlatformTests(BasePlatformTests):
             line_number += 1
         self.assertEqual(i, 100001)
 
-
+    @skipIfNoExecutable('valgrind')
     def test_testsetups(self):
-        if not shutil.which('valgrind'):
-            raise SkipTest('Valgrind not installed.')
         testdir = os.path.join(self.unit_test_dir, '2 testsetups')
         self.init(testdir)
         self.build()
@@ -1013,15 +1010,11 @@ class AllPlatformTests(BasePlatformTests):
         self.build(target=('barprog' + exe_suffix))
         self.assertPathExists(exe2)
 
+    @skip_if_not_language('cython')
     def test_build_generated_pyx_directly(self):
         # Check that the transpile stage also includes
         # dependencies for the compilation stage as dependencies
         testdir = os.path.join("test cases/cython", '2 generated sources')
-        env = get_fake_env(testdir, self.builddir, self.prefix)
-        try:
-            detect_compiler_for(env, "cython", MachineChoice.HOST, True, '')
-        except EnvironmentException:
-            raise SkipTest("Cython is not installed")
         self.init(testdir)
         # Need to get the full target name of the pyx.c target
         # (which is unfortunately not provided by introspection :( )
@@ -1153,7 +1146,7 @@ class AllPlatformTests(BasePlatformTests):
                         ecc = compiler_from_language(env, lang, MachineChoice.HOST)
                     except EnvironmentException:
                         # always raise in ci, we expect to have a valid ObjC and ObjC++ compiler of some kind
-                        if is_ci():
+                        if IS_CI:
                             self.fail(f'Could not find a compiler for {lang}')
                         if sys.version_info < (3, 11):
                             continue
@@ -1193,7 +1186,7 @@ class AllPlatformTests(BasePlatformTests):
                     cc = compiler_from_language(env, lang, MachineChoice.HOST)
                 except EnvironmentException:
                     # always raise in ci, we expect to have a valid ObjC and ObjC++ compiler of some kind
-                    if is_ci():
+                    if IS_CI:
                         self.fail(f'Could not find a compiler for {lang}')
                     if sys.version_info < (3, 11):
                         continue
@@ -1266,7 +1259,7 @@ class AllPlatformTests(BasePlatformTests):
                     wcc = compiler_from_language(env, lang, MachineChoice.HOST)
                 except EnvironmentException:
                     # always raise in ci, we expect to have a valid ObjC and ObjC++ compiler of some kind
-                    if is_ci():
+                    if IS_CI:
                         self.fail(f'Could not find a compiler for {lang}')
                     if sys.version_info < (3, 11):
                         continue
@@ -1541,9 +1534,8 @@ class AllPlatformTests(BasePlatformTests):
             for src in t['target_sources']:
                 self.assertTrue(expected.issubset(set(src['parameters'])), f'Incorrect values for {t["name"]}')
 
+    @skipIfNoExecutable('git')
     def test_dist_git(self):
-        if not shutil.which('git'):
-            raise SkipTest('Git not found')
         if self.backend is not Backend.ninja:
             raise SkipTest('Dist is only supported with Ninja')
 
@@ -1592,9 +1584,8 @@ class AllPlatformTests(BasePlatformTests):
             # fails sometimes.
             pass
 
+    @skipIfNoExecutable('git')
     def test_dist_git_script(self):
-        if not shutil.which('git'):
-            raise SkipTest('Git not found')
         if self.backend is not Backend.ninja:
             raise SkipTest('Dist is only supported with Ninja')
 
@@ -2156,7 +2147,7 @@ class AllPlatformTests(BasePlatformTests):
         # Find foo dependency
         os.environ['PKG_CONFIG_LIBDIR'] = self.privatedir
         env = get_fake_env(testdir, self.builddir, self.prefix)
-        kwargs = {'required': True, 'silent': True}
+        kwargs = {'required': True, 'silent': True, 'native': MachineChoice.HOST}
         foo_dep = PkgConfigDependency('libanswer', env, kwargs)
         # Ensure link_args are properly quoted
         libdir = PurePath(prefix) / PurePath(libdir)
@@ -2320,7 +2311,7 @@ class AllPlatformTests(BasePlatformTests):
     # Call this method before file operations in appropriate places
     # to make things work.
     def mac_ci_delay(self):
-        if is_osx() and is_ci():
+        if IS_CI and is_osx():
             import time
             time.sleep(1)
 
@@ -2508,9 +2499,9 @@ class AllPlatformTests(BasePlatformTests):
         if ninja is None:
             raise SkipTest('This test currently requires ninja. Fix this once "meson build" works.')
 
-        langs = ['c']
+        langs = []
         env = get_fake_env()
-        for l in ['cpp', 'cs', 'cuda', 'd', 'fortran', 'java', 'objc', 'objcpp', 'rust', 'vala']:
+        for l in ['c', 'cpp', 'cs', 'cuda', 'd', 'fortran', 'java', 'objc', 'objcpp', 'rust', 'vala']:
             try:
                 comp = detect_compiler_for(env, l, MachineChoice.HOST, True, '')
                 with tempfile.TemporaryDirectory() as d:
@@ -2566,22 +2557,6 @@ class AllPlatformTests(BasePlatformTests):
                           workdir=tmpdir)
                 self._run(self.setup_command + ['--backend=ninja', 'builddir'], workdir=tmpdir)
                 self._run(ninja, workdir=os.path.join(tmpdir, 'builddir'))
-
-            # Check for whether we're doing source collection by repeating
-            # with a bogus file we should pick up (and then fail to compile).
-            with tempfile.TemporaryDirectory() as tmpdir:
-                suffix = lang_suffixes[lang][0]
-                # Assume that this is a good enough string to error out
-                # in all languages.
-                with open(os.path.join(tmpdir, 'bar.' + suffix), 'w', encoding='utf-8') as f:
-                    f.write('error bar')
-                self._run(self.meson_command + ['init', '--language', lang, '--type', target_type],
-                        workdir=tmpdir)
-                self._run(self.setup_command + ['--backend=ninja', 'builddir'],
-                        workdir=tmpdir)
-                with self.assertRaises(subprocess.CalledProcessError):
-                    self._run(ninja,
-                            workdir=os.path.join(tmpdir, 'builddir'))
 
             # test directory with existing code file
             if lang in {'c', 'cpp', 'd'}:
@@ -3126,7 +3101,7 @@ class AllPlatformTests(BasePlatformTests):
         python_build_config = {
             'schema_version': '1.0',
             'base_interpreter': sys.executable,
-            'base_prefix': '/usr',
+            'base_prefix': sys.base_prefix,
             'platform': sysconfig.get_platform(),
             'language': {
                 'version': sysconfig.get_python_version(),
@@ -3193,37 +3168,54 @@ class AllPlatformTests(BasePlatformTests):
                 if with_pkgconfig:
                     libpc = sysconfig.get_config_var('LIBPC')
                     if libpc is None:
-                        continue
+                        raise SkipTest('pkg-config subtest skipped because of no LIBPC')
                     python_build_config['c_api']['pkgconfig_path'] = libpc
                 # Old Ubuntu versions have incorrect LIBDIR, skip testing non-pkgconfig variant there.
                 elif not os.path.exists(python_build_config['libpython']['dynamic']):
-                    continue
+                    raise SkipTest('non-pkgconfig subtest skipped because of wrong LIBDIR')
 
                 with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as python_build_config_file:
                     json.dump(python_build_config, fp=python_build_config_file)
-                with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as cross_file:
-                    cross_file.write(
-                        textwrap.dedent(f'''
-                            [binaries]
-                            pkg-config = 'pkg-config'
+                for build_config_via_cross in (False, True):
+                    for sys_root in (None, sys.base_prefix):
+                        with self.subTest(build_config_via_cross=build_config_via_cross, sys_root=sys_root):
+                            # fd.o pkg-config does not handle sys_root correctly
+                            if sys_root is not None and with_pkgconfig and shutil.which('pkgconf') is None:
+                                raise SkipTest('sys_root subtest skipped because of fd.o pkg-config')
 
-                            [built-in options]
-                            python.build_config = '{python_build_config_file.name}'
-                        '''.strip())
-                    )
-                    cross_file.flush()
+                            with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as cross_file:
+                                cross_file.write(
+                                    textwrap.dedent(f'''
+                                        [binaries]
+                                        pkg-config = 'pkg-config'
+                                    ''')
+                                )
+                                if build_config_via_cross:
+                                    cross_file.write(
+                                        textwrap.dedent(f'''
+                                            [built-in options]
+                                            python.build_config = '{python_build_config_file.name}'
+                                        ''')
+                                    )
+                                if sys_root is not None:
+                                    cross_file.write(
+                                        textwrap.dedent(f'''
+                                            [properties]
+                                            sys_root = '{sys_root}'
+                                        ''')
+                                    )
+                                cross_file.flush()
 
-                for extra_args in (
-                    ['--python.build-config', python_build_config_file.name],
-                    ['--cross-file', cross_file.name],
-                ):
-                    with self.subTest(extra_args=extra_args):
-                        self.init(testdir, extra_args=extra_args)
-                        self.build()
-                        with open(intro_installed_file) as f:
-                            intro_installed = json.load(f)
-                        self.assertEqual(sorted(expected_files), sorted(intro_installed))
-                        self.wipe()
+                            extra_args = ['--cross-file', cross_file.name]
+                            if not build_config_via_cross:
+                                extra_args += ['--python.build-config', python_build_config_file.name]
+
+                            self.init(testdir, extra_args=extra_args)
+                            self.build()
+                            with open(intro_installed_file) as f:
+                                intro_installed = json.load(f)
+                            self.assertEqual(sorted(expected_files), sorted(intro_installed))
+                            self.wipe()
 
     def __reconfigure(self):
         # Set an older version to force a reconfigure from scratch
@@ -3438,13 +3430,11 @@ class AllPlatformTests(BasePlatformTests):
                 os.unlink(includefile)
 
     @skipIfNoExecutable('clang-tidy')
+    @skipIfNoExecutable('c++')
+    @skipIf(is_osx(), 'Apple ships a broken clang-tidy that chokes on -pipe.')
     def test_clang_tidy(self):
         if self.backend is not Backend.ninja:
             raise SkipTest(f'Clang-tidy is for now only supported on Ninja, not {self.backend.name}')
-        if shutil.which('c++') is None:
-            raise SkipTest('Clang-tidy breaks when ccache is used and "c++" not in path.')
-        if is_osx():
-            raise SkipTest('Apple ships a broken clang-tidy that chokes on -pipe.')
         testdir = os.path.join(self.unit_test_dir, '68 clang-tidy')
         dummydir = os.path.join(testdir, 'dummydir.h')
         self.init(testdir, override_envvars={'CXX': 'c++'})
@@ -3453,13 +3443,11 @@ class AllPlatformTests(BasePlatformTests):
         self.assertNotIn(dummydir, out)
 
     @skipIfNoExecutable('clang-tidy')
+    @skipIfNoExecutable('c++')
+    @skipIf(is_osx(), 'Apple ships a broken clang-tidy that chokes on -pipe.')
     def test_clang_tidy_fix(self):
         if self.backend is not Backend.ninja:
             raise SkipTest(f'Clang-tidy is for now only supported on Ninja, not {self.backend.name}')
-        if shutil.which('c++') is None:
-            raise SkipTest('Clang-tidy breaks when ccache is used and "c++" not in path.')
-        if is_osx():
-            raise SkipTest('Apple ships a broken clang-tidy that chokes on -pipe.')
         testdir = os.path.join(self.unit_test_dir, '68 clang-tidy')
 
         # Ensure that test project is in git even when running meson from tarball.
@@ -4759,11 +4747,10 @@ class AllPlatformTests(BasePlatformTests):
         result = subprocess.run(cmd, encoding='utf-8')
         self.assertEqual(result.returncode, 42)
 
+    @skipIfNoExecutable('clang-format')
     def test_clang_format_check(self):
         if self.backend is not Backend.ninja:
             raise SkipTest(f'Skipping clang-format tests with {self.backend.name} backend')
-        if not shutil.which('clang-format'):
-            raise SkipTest('clang-format not found')
 
         testdir = os.path.join(self.unit_test_dir, '93 clangformat')
         newdir = os.path.join(self.builddir, 'testdir')
@@ -4807,10 +4794,7 @@ class AllPlatformTests(BasePlatformTests):
                 matches += 1
         self.assertEqual(matches, 1)
 
-    # This test no longer really makes sense. Linker flags are set in options
-    # when it is set up. Changing the compiler after the fact does not really
-    # make sense and is not supported.
-    def DISABLED_test_env_flags_to_linker(self) -> None:
+    def test_env_flags_to_linker(self) -> None:
         # Compilers that act as drivers should add their compiler flags to the
         # linker, those that do not shouldn't
         with mock.patch.dict(os.environ, {'CFLAGS': '-DCFLAG', 'LDFLAGS': '-flto'}):
@@ -4818,22 +4802,15 @@ class AllPlatformTests(BasePlatformTests):
 
             # Get the compiler so we know which compiler class to mock.
             cc =  detect_compiler_for(env, 'c', MachineChoice.HOST, True, '')
-            cc_type = type(cc)
 
-            # The compiler either invokes the linker or doesn't. Act accordingly.
-            with mock.patch.object(cc_type, 'INVOKES_LINKER', True):
-                env.coredata.get_external_link_args.cache_clear()
-                cc =  detect_compiler_for(env, 'c', MachineChoice.HOST, True, '')
+            # C does have a separate linking step. It can be done through the compiler
+            # driver or not; act accordingly.
+            if cc.USED_FOR_SEPARATE_LINKING_STEP:
                 link_args = env.coredata.get_external_link_args(cc.for_machine, cc.language)
                 self.assertEqual(sorted(link_args), sorted(['-DCFLAG', '-flto']))
-
-
-            ## And one that doesn't
-            #with mock.patch.object(cc_type, 'INVOKES_LINKER', False):
-            #    env.coredata.get_external_link_args.cache_clear()
-            #    cc =  detect_compiler_for(env, 'c', MachineChoice.HOST, True, '')
-            #    link_args = env.coredata.get_external_link_args(cc.for_machine, cc.language)
-            #    self.assertEqual(sorted(link_args), sorted(['-flto']))
+            else:
+                link_args = env.coredata.get_external_link_args(cc.for_machine, cc.language)
+                self.assertEqual(sorted(link_args), sorted(['-flto']))
 
     def test_install_tag(self) -> None:
         testdir = os.path.join(self.unit_test_dir, '98 install all targets')
@@ -5274,7 +5251,7 @@ class AllPlatformTests(BasePlatformTests):
                     self.assertEqual(res[data_type][file], details)
 
     @skip_if_not_language('rust')
-    @unittest.skipIf(not shutil.which('rustdoc'), 'Test requires rustdoc')
+    @skipIfNoExecutable('rustdoc')
     def test_rustdoc(self) -> None:
         if self.backend is not Backend.ninja:
             raise unittest.SkipTest('Rust is only supported with ninja currently')
@@ -5292,7 +5269,7 @@ class AllPlatformTests(BasePlatformTests):
             pass
 
     @skip_if_not_language('rust')
-    @unittest.skipIf(not shutil.which('clippy-driver'), 'Test requires clippy-driver')
+    @skipIfNoExecutable('clippy-driver')
     def test_rust_clippy(self) -> None:
         if self.backend is not Backend.ninja:
             raise unittest.SkipTest('Rust is only supported with ninja currently')
@@ -5310,7 +5287,7 @@ class AllPlatformTests(BasePlatformTests):
                         'error: use of a disallowed/placeholder name `foo`' in cm.exception.stdout)
 
     @skip_if_not_language('rust')
-    @unittest.skipIf(not shutil.which('clippy-driver'), 'Test requires clippy-driver')
+    @skipIfNoExecutable('clippy-driver')
     def test_rust_clippy_as_rustc(self) -> None:
         if self.backend is not Backend.ninja:
             raise unittest.SkipTest('Rust is only supported with ninja currently')
@@ -5449,6 +5426,20 @@ class AllPlatformTests(BasePlatformTests):
             self.assertNotEqual(olddata, newdata)
             olddata = newdata
             oldmtime = newmtime
+
+    def test_link_language_promotion(self):
+        if self.backend is Backend.vs:
+            raise SkipTest('target introspection is lacking linker details')
+        testdir = os.path.join(self.unit_test_dir, '134 promote link_language')
+        self.init(testdir)
+        cintrospection = self.introspect('--compilers')
+        clinker = cintrospection['host']['c']['linker_exelist']
+
+        tintrospection = self.introspect('--targets')
+        consumer = next(t for t in tintrospection if t['name'] == 'consumer')
+        linker_src = next(s for s in consumer['target_sources'] if 'linker' in s)
+
+        self.assertEqual(clinker, linker_src['linker'])
 
     def __test_multi_stds(self, test_c: bool = True, test_objc: bool = False) -> None:
         assert test_c or test_objc, 'must test something'
@@ -5621,3 +5612,29 @@ class AllPlatformTests(BasePlatformTests):
         output = entry['output']
 
         self.build(output, extra_args=['-j1'])
+
+    def test_run_command_output(self):
+        '''
+        Test that run_command will output to stdout/stderr if `check: false`.
+        '''
+        testdir = os.path.join(self.common_test_dir, '33 run program')
+
+        # inprocess=False uses BasePlatformTests::_run, which by default
+        # redirects all stderr to stdout, so we look for the expected stderr
+        # in the merged stdout.
+        # inprocess=True captures stderr and stdout separately, but doesn't
+        # return stderr (only printing it on failure) so unless we change the
+        # function signature we can't get at the stderr output
+        out = self.init(testdir, inprocess=False)
+        # No output at all
+        self.assertTrue('stdout|capture:false,console:false' not in out)
+        self.assertTrue('stderr|capture:false,console:false' not in out)
+        # Output not captured, but printed
+        self.assertTrue('stdout|capture:false,console:true' in out)
+        self.assertTrue('stderr|capture:false,console:true' in out)
+        # Output captured, but not printed
+        self.assertTrue('stdout|capture:true,console:false' not in out)
+        self.assertTrue('stderr|capture:true,console:false' not in out)
+        # Output captured and printed
+        self.assertTrue('stdout|capture:true,console:true' in out)
+        self.assertTrue('stderr|capture:true,console:true' in out)

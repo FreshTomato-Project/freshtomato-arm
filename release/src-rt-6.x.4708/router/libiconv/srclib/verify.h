@@ -1,6 +1,6 @@
 /* Compile-time assert-like macros.
 
-   Copyright (C) 2005-2006, 2009-2024 Free Software Foundation, Inc.
+   Copyright (C) 2005-2006, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -157,9 +157,10 @@
 #define _GL_CONCAT0(x, y) x##y
 
 /* _GL_COUNTER is an integer, preferably one that changes each time we
-   use it.  Use __COUNTER__ if it works, falling back on __LINE__
-   otherwise.  __LINE__ isn't perfect, but it's better than a
-   constant.  */
+   use it.  Use __COUNTER__ if it works (it does so with most compilers,
+   see <https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3457.htm>),
+   falling back on __LINE__ otherwise.  __LINE__ isn't perfect, but it's
+   better than a constant.  */
 #if defined __COUNTER__ && __COUNTER__ != __COUNTER__
 # define _GL_COUNTER __COUNTER__
 #else
@@ -255,6 +256,11 @@ template <int w>
 #  endif
 # endif
 /* Define static_assert if needed.  */
+# if defined __cplusplus && defined __clang__ && __clang_major__ < 9
+/* clang++ before commit 5c739665a8721228cf6143fd4ef95870a59f55ae had a
+   two-arguments static_assert but not the one-argument static_assert.  */
+#  undef static_assert
+# endif
 # if (!defined static_assert \
       && __STDC_VERSION__ < 202311 \
       && (!defined __cplusplus \

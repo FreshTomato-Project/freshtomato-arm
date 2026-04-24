@@ -96,10 +96,15 @@ bool send_id(connection_t *c) {
 	int minor = 0;
 
 	if(experimental) {
-		if(c->outgoing && !ecdsa_active(c->ecdsa) && !(c->ecdsa = read_ecdsa_public_key(&c->config_tree, c->name))) {
-			minor = 1;
-		} else {
-			minor = myself->connection->protocol_minor;
+		minor = myself->connection->protocol_minor;
+
+		if(c->outgoing && !ecdsa_active(c->ecdsa)) {
+			c->ecdsa = read_ecdsa_public_key(&c->config_tree, c->name);
+
+			// We don't know the ECDSA key of the peer, try to connect to RSA and then upgrade
+			if(!c->ecdsa) {
+				minor = 1;
+			}
 		}
 	}
 
@@ -260,6 +265,7 @@ static bool receive_invitation_sptps(void *handle, uint8_t type, const void *dat
 	char *name = buf + len;
 	name += strspn(name, " \t");
 
+	// NOLINTNEXTLINE
 	if(*name == '=') {
 		name++;
 		name += strspn(name, " \t");
@@ -278,7 +284,11 @@ static bool receive_invitation_sptps(void *handle, uint8_t type, const void *dat
 	c->name = xstrdup(name);
 
 	// Send the node the contents of the invitation file
-	rewind(f);
+	if(fseek(f, 0, SEEK_SET) != 0) {
+		logger(DEBUG_ALWAYS, LOG_ERR, "Could not read invitation file %s\n", cookie);
+		fclose(f);
+	}
+
 	size_t result;
 
 	while((result = fread(buf, 1, sizeof(buf), f))) {
@@ -898,7 +908,11 @@ static bool upgrade_h(connection_t *c, const char *request) {
 		return false;
 	}
 
-	if(ecdsa_active(c->ecdsa) || (c->ecdsa = read_ecdsa_public_key(&c->config_tree, c->name))) {
+	if(!ecdsa_active(c->ecdsa)) {
+		c->ecdsa = read_ecdsa_public_key(&c->config_tree, c->name);
+	}
+
+	if(c->ecdsa) {
 		char *knownkey = ecdsa_get_base64_public_key(c->ecdsa);
 		bool different = strcmp(knownkey, pubkey);
 		free(knownkey);

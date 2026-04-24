@@ -132,8 +132,11 @@ static const char *xifs_once(void)
 void asp_jsdefaults(int argc, char **argv)
 {
 	/* global javascript variables */
-	web_printf("\nMAX_BRIDGE_ID = %d;\nMAX_VLAN_ID = %d;\nMAXWAN_NUM = %d;\nMAX_PORT_ID = %d\n",
-	           (BRIDGE_COUNT - 1), (TOMATO_VLANNUM - 1), MWAN_MAX, MAX_PORT_ID);
+	web_printf("\nMAX_BRIDGE_ID = %d;\nMAX_VLAN_ID = %d;\nMAXWAN_NUM = %d;\nMAX_PORT_ID = %d;\n"
+	            "OVPN_CLIENT_COUNT = %d;\nOVPN_SERVER_COUNT = %d;\nWG_INTERFACE_COUNT = %d;\n",
+	           (BRIDGE_COUNT - 1), (TOMATO_VLANNUM - 1), MWAN_MAX, MAX_PORT_ID,
+	           OVPN_CLIENT_COUNT, OVPN_SERVER_COUNT, WG_INTERFACE_COUNT
+	           );
 
 	web_puts(xifs_once());
 }
@@ -141,14 +144,16 @@ void asp_jsdefaults(int argc, char **argv)
 static const char *chk_wan_vars[]  = { "wan_", "dr_wan_" };
 static const char *skip_wan_vars[] = { "wan_dhcp_pass", "wan_domain", "wan_hostname", "wan_speed", "wan_wins" };
 
-static const char *chk_lan_vars[]  = { "lan_", "dhcpd_", "udpxy_lan", "upnp_lan", "multicast_lan", "dr_lan_", "bwl_lan_", "dhcp_lease", "dnsmasq_pxelan", "vpns1_plan", "vpns2_plan" };
+static const char *chk_lan_vars[]  = { "lan_", "dhcpd_", "udpxy_lan", "upnp_lan", "multicast_lan", "dr_lan_", "bwl_lan_", "dhcp_lease", "dnsmasq_pxelan" };
 static const char *skip_lan_vars[] = { "lan_hwaddr", "lan_hwnames", "lan_dhcp", "lan_gateway", "lan_state", "lan_desc", "lan_invert", "lan_access", "dhcpd_static", "dhcpd_slt", "dhcpd_dmdns", "dhcpd_lmax", "dhcpd_gwmode" };
 
 /* <% nvram("x,y,z"); %> ---> nvram = {'x': '1','y': '2','z': '3'};
  *
  * special cases:
  *   "wan_", "dr_wan_"
- *   "lan_", "dhcpd_", "udpxy_lan", "upnp_lan", "multicast_lan", "dr_lan_", "bwl_lan_", "dhcp_lease", "dnsmasq_pxelan", "vpns1_plan", "vpns2_plan"
+ *   "lan_", "dhcpd_", "udpxy_lan", "upnp_lan", "multicast_lan", "dr_lan_", "bwl_lan_", "dhcp_lease", "dnsmasq_pxelan"
+ *   "vpnc_", "vpns_"
+ *   "wg_"
  * - these variables only need the basic value entered in the nvram call in .asp scripts, without additional wanX/lanX
  *
  * WARNING! When you add another lan/wan related variable to nvram/asp files, and this is not so obvious,
@@ -173,9 +178,53 @@ void asp_nvram(int argc, char **argv)
 	while ((k = strsep(&p, ",")) != NULL) {
 		if (*k == 0)
 			continue;
+
 		if (strcmp(k, "wl_unit") == 0)
 			continue;
 
+#ifdef TCONFIG_OPENVPN
+		if (strncmp(k, "vpnc_", 5) == 0) {
+			if (strncmp(k, "vpnc_eas", 8) == 0)
+				goto list;
+
+			for (i = 1; i <= OVPN_CLIENT_COUNT; i++) {
+				snprintf(buf, sizeof(buf), "vpnc%u%s", i, k + 4);
+				web_printf("\t'%s': '", buf);
+				web_putj_utf8(nvram_safe_get(buf));
+				web_puts("',\n");
+			}
+			continue;
+		}
+		if (strncmp(k, "vpns_", 5) == 0) {
+			if ((strncmp(k, "vpns_eas", 8) == 0) || (strncmp(k, "vpns_dns", 8) == 0))
+				goto list;
+
+			for (i = 1; i <= OVPN_SERVER_COUNT; i++) {
+				snprintf(buf, sizeof(buf), "vpns%u%s", i, k + 4);
+				web_printf("\t'%s': '", buf);
+				web_putj_utf8(nvram_safe_get(buf));
+				web_puts("',\n");
+			}
+			continue;
+		}
+#endif
+#ifdef TCONFIG_WIREGUARD
+		if (strncmp(k, "wg_", 3) == 0) {
+			if (strncmp(k, "wg_adns", 7) == 0)
+				goto list;
+
+			for (i = 0; i < WG_INTERFACE_COUNT; i++) {
+				snprintf(buf, sizeof(buf), "wg%u%s", i, k + 2);
+				web_printf("\t'%s': '", buf);
+				web_putj_utf8(nvram_safe_get(buf));
+				web_puts("',\n");
+			}
+			continue;
+		}
+#endif
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+list:
+#endif
 		web_printf("\t'%s': '", k);
 		web_putj_utf8(nvram_safe_get(k));
 		web_puts("',\n");
@@ -187,7 +236,6 @@ void asp_nvram(int argc, char **argv)
 
 			for (i = 2; i <= (MWAN_MAX < 4 ? 4 : MWAN_MAX); i++) {
 			//for (i = 2; i <= MWAN_MAX; i++) { /* TODO: fix all .asp scripts (iteration by MAXWAN_NUM) to enable this */
-				memset(buf, 0, sizeof(buf));
 				if (strncmp(k, "wan_", 4) == 0)
 					snprintf(buf, sizeof(buf), "wan%u%s", i, k + 3);
 				else if (strncmp(k, "dr_wan_", 7) == 0)
@@ -208,7 +256,6 @@ void asp_nvram(int argc, char **argv)
 
 			for (i = 1; i < (BRIDGE_COUNT < 4 ? 4 : BRIDGE_COUNT); i++) {
 			//for (i = 1; i < BRIDGE_COUNT; i++) { /* TODO: fix all .asp scripts (iteration by MAX_BRIDGE_ID) to enable this */
-				memset(buf, 0, sizeof(buf));
 				if (strncmp(k, "lan_", 4) == 0)
 					snprintf(buf, sizeof(buf), "lan%u%s", i, k + 3);
 				else if (strncmp(k, "udpxy_lan", 9) == 0)
@@ -227,10 +274,6 @@ void asp_nvram(int argc, char **argv)
 					snprintf(buf, sizeof(buf), "dhcp%u%s", i, k + 4);
 				else if (strncmp(k, "dnsmasq_pxelan", 14) == 0)
 					snprintf(buf, sizeof(buf), "dnsmasq_pxelan%u", i);
-				else if (strncmp(k, "vpns1_plan", 16) == 0)
-					snprintf(buf, sizeof(buf), "vpns1_plan%u", i);
-				else if (strncmp(k, "vpns2_plan", 16) == 0)
-					snprintf(buf, sizeof(buf), "vpns2_plan%u", i);
 				else
 					continue;
 

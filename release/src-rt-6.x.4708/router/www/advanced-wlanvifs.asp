@@ -1,18 +1,11 @@
 <!DOCTYPE html>
 <!--
-	Tomato GUI
-	Copyright (C) 2006-2007 Jonathan Zarate
-	http://www.polarcloud.com/tomato/
+	FreshTomato GUI
+	Copyright (C) 2018 - 2026 pedro
+	https://freshtomato.org/
 
-	Virtual Wireless Interfaces web interface & extensions
-	Copyright (C) 2012 Augusto Bott
-	http://code.google.com/p/tomato-sdhc-vlan/
-	Some portions Copyright (C) Jean-Yves Avenard
-	mailto:jean-yves@avenard.org
-
-	For use with Tomato Firmware only.
+	For use with FreshTomato Firmware only.
 	No part of this file may be used without permission.
-	LAN Access admin module by Augusto Bott
 -->
 <html lang="en-GB">
 <head>
@@ -26,9 +19,11 @@
 <script src="interfaces.js?rel=<% version(); %>"></script>
 <script src="wireless.js?rel=<% version(); %>"></script>
 <script src="wireless.jsx?_http_id=<% nv(http_id); %>"></script>
+<!-- BCMARM-BEGIN -->
 <script>
 var lastjiffiestotal = 0, lastjiffiesidle = 0, lastjiffiesusage = 100;
 </script>
+<!-- BCMARM-END -->
 <script src="status-data.jsx?_http_id=<% nv(http_id); %>"></script>
 
 <script>
@@ -479,7 +474,9 @@ REMOVE-END */
 	var lan3_ifnames = nvram['lan3_ifnames'];
 	var wl0_vifs = nvram['wl0_vifs'];
 	var wl1_vifs = nvram['wl1_vifs'];
+/* BCMARM-BEGIN */
 	var wl2_vifs = nvram['wl2_vifs'];
+/* BCMARM-END */
 
 	for (var vidx = 0; vidx < vifs_deleted.length; ++vidx) {
 		var u = vifs_deleted[vidx];
@@ -496,8 +493,10 @@ REMOVE-END */
 			wl0_vifs = wl0_vifs.replace('wl'+u, '');
 		if (typeof(wl1_vifs) != 'undefined')
 			wl1_vifs = wl1_vifs.replace('wl'+u, '');
+/* BCMARM-BEGIN */
 		if (typeof(wl2_vifs) != 'undefined')
 			wl2_vifs = wl2_vifs.replace('wl'+u, '');
+/* BCMARM-END */
 
 		s += 'nvram unset wl'+u+'_wme\n';
 		s += 'nvram unset wl'+u+'_bss_maxassoc\n';
@@ -514,8 +513,10 @@ REMOVE-END */
 			s += 'nvram set wl0_vifs="'+wl0_vifs+'"\n';
 		if (typeof(wl1_vifs) != 'undefined')
 			s += 'nvram set wl1_vifs="'+wl1_vifs+'"\n';
+/* BCMARM-BEGIN */
 		if (typeof(wl2_vifs) != 'undefined')
 			s += 'nvram set wl2_vifs="'+wl2_vifs+'"\n';
+/* BCMARM-END */
 	}
 	post_pre_submit_form(s);
 }
@@ -529,6 +530,8 @@ function error_pre_submit_form() {
 	footermsg.innerHTML = '<tt>'+escapeText(cmdresult)+'<\/tt>';
 	footermsg.style.display = 'inline';
 
+	cmd = null;
+
 	cmdresult = '';
 }
 
@@ -538,10 +541,12 @@ function post_pre_submit_form(s) {
 
 	cmd = new XmlHttp();
 	cmd.onCompleted = function(text, xml) {
+		cmd = null;
 		form.submit(E('t_fom'), 1);
 	}
 	cmd.onError = function(x) {
 		cmdresult = 'ERROR: '+x;
+		cmd = null;
 		error_pre_submit_form();
 	}
 
@@ -859,7 +864,12 @@ REMOVE-END */
 				case 'nac-mixed':
 				case 'ac-only':
 /* BCMWL6-END */
+/* RTNPLUS-BEGIN */
 					if ((nphy || acphy) && (a.value == 'tkip') && (sm2.indexOf('wpa') != -1)) {
+/* RTNPLUS-END */
+/* RTNPLUS-NO-BEGIN */
+					if (nphy && (a.value == 'tkip') && (sm2.indexOf('wpa') != -1)) {
+/* RTNPLUS-NO-END */
 						ferror.set(a, 'TKIP encryption is not supported with WPA / WPA2 in N and/or AC mode.', quiet || !ok);
 						ok = 0;
 					}
@@ -944,7 +954,12 @@ REMOVE-END */
 		}
 
 		/* range */
+/* RTNPLUS-BEGIN */
 		a = [['_wpa_gtk_rekey', 0, 2592000], ['_radius_port', 1, 65535]];
+/* RTNPLUS-END */
+/* RTNPLUS-NO-BEGIN */
+		a = [['_wpa_gtk_rekey', 60, 7200], ['_radius_port', 1, 65535]];
+/* RTNPLUS-NO-END */
 		for (i = a.length - 1; i >= 0; --i) {
 			v = a[i];
 			if ((wl_vis[vidx]['_wl'+v[0]]) && (!v_range('_wl'+u+v[0], quiet || !ok, v[1], v[2])))
@@ -1180,7 +1195,12 @@ REMOVE-END */
 					E('_wl'+u+'_gmode').value = 0;
 					break;
 				case 'g-only':
+/* RTNPLUS-BEGIN */
 					E('_wl'+u+'_gmode').value = 2;
+/* RTNPLUS-END */
+/* RTNPLUS-NO-BEGIN */
+					E('_wl'+u+'_gmode').value = 4;
+/* RTNPLUS-NO-END */
 /* BCMWL6-BEGIN */
 					E('_wl'+u+'_bss_opmode_cap_reqd').value = 1; /* client must advertise ERP / 11g cap. to be able to join */
 /* BCMWL6-END */
@@ -1545,12 +1565,19 @@ function init() {
 					null,
 					{ title: '<a href="basic-wfilter.asp" class="new_window">Wireless Filter<\/a>', name: 'f_wl'+u+'_macmode', type: 'select', options: [['disabled','Disable filter on that interface'],['deny','Block clients from the list on that interface'],['allow','Permit only clients from the list on that interface']], value: nvram['wl'+u+'_macmode'] },
 					null,
-					{ title: 'Security', name: 'wl'+u+'_security_mode', type: 'select', options: [['disabled','Disabled'],['wep','WEP'],['wpa_personal','WPA Personal'],['wpa_enterprise','WPA Enterprise'],['wpa2_personal','WPA2 Personal'],['wpa2_enterprise','WPA2 Enterprise'],['wpaX_personal','WPA / WPA2 Personal'],['wpaX_enterprise','WPA / WPA2 Enterprise'],['radius','Radius']], value: nvram['wl'+u+'_security_mode'] },
+					{ title: 'Security', name: 'wl'+u+'_security_mode', type: 'select',
+						options: [['disabled','Disabled'],['wep','WEP (legacy)'],['wpa_personal','WPA Personal (deprecated)'],['wpa_enterprise','WPA Enterprise (deprecated)'],['wpa2_personal','WPA2 Personal'],['wpa2_enterprise','WPA2 Enterprise'],['wpaX_personal','WPA / WPA2 Personal (deprecated)'],['wpaX_enterprise','WPA / WPA2 Enterprise (deprecated)'],['radius','Radius']],
+						value: nvram['wl'+u+'_security_mode'] },
 					{ title: 'Encryption', indent: 2, name: 'wl'+u+'_crypto', type: 'select', options: [['tkip','TKIP'],['aes','AES'],['tkip+aes','TKIP / AES']], value: nvram['wl'+u+'_crypto'] },
-					{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_wpa_psk', type: 'password', maxlen: 64, size: 66, peekaboo: 1,
-						suffix: ' <input type="button" id="_f_wl'+u+'_psk_random1" value="Random" onclick="random_psk(\'_wl'+u+'_wpa_psk\')">', value: nvram['wl'+u+'_wpa_psk'] },
-					{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_radius_key', type: 'password', maxlen: 80, size: 32, peekaboo: 1, suffix: ' <input type="button" id="_f_wl'+u+'_psk_random2" value="Random" onclick="random_psk(\'_wl'+u+'_radius_key\')">', value: nvram['wl'+u+'_radius_key'] },
+					{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_wpa_psk', type: 'password', maxlen: 63, size: 34, peekaboo: 1, placeholder: ' < case sensitive >',
+						suffix: ' <select id="_f_wl'+u+'_psk_random1" onchange="random_psk(\'_wl'+u+'_wpa_psk\', \'_f_wl'+u+'_psk_random1\')" style="width:auto"><option value="default" style="color:grey" selected>Random<\/option><option value="clear">Clear<\/option><option value="8">8 chars<\/option><option value="10">10 chars<\/option><option value="12">12 chars<\/option><option value="14">14 chars<\/option><option value="16">16 chars<\/option><option value="18">18 chars<\/option><option value="24">24 chars<\/option><option value="32">32 chars<\/option><option value="48">48 chars<\/option><option value="63">63 chars<\/option><\/select>', value: nvram['wl'+u+'_wpa_psk'] },
+					{ title: 'Shared Key', indent: 2, name: 'wl'+u+'_radius_key', type: 'password', maxlen: 80, size: 32, peekaboo: 1, placeholder: ' < case sensitive >', suffix: ' <select id="_f_wl'+u+'_psk_random2" onchange="random_psk(\'_wl'+u+'_radius_key\', \'_f_wl'+u+'_psk_random2\')" style="width:auto"><option value="default" style="color:grey" selected>Random<\/option><option value="clear">Clear<\/option><option value="8">8 chars<\/option><option value="10">10 chars<\/option><option value="12">12 chars<\/option><option value="16">16 chars<\/option><option value="24">24 chars<\/option><option value="32">32 chars<\/option><option value="48">48 chars<\/option><option value="63">63 chars<\/option><\/select>', value: nvram['wl'+u+'_radius_key'] },
+/* RTNPLUS-BEGIN */
 					{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey', type: 'text', maxlen: 7, size: 9, suffix: '&nbsp; <small>seconds<\/small>', value: (nvram['wl'+u+'_wpa_gtk_rekey'] || '3600') },
+/* RTNPLUS-END */
+/* RTNPLUS-NO-BEGIN */
+					{ title: 'Group Key Renewal', indent: 2, name: 'wl'+u+'_wpa_gtk_rekey', type: 'text', maxlen: 4, size: 6, suffix: '&nbsp; <small>seconds<\/small>', value: (nvram['wl'+u+'_wpa_gtk_rekey'] || '3600') },
+/* RTNPLUS-NO-END */
 					{ title: 'Radius Server', indent: 2, multi: [
 						{ name: 'wl'+u+'_radius_ipaddr', type: 'text', maxlen: 15, size: 17, value: nvram['wl'+u+'_radius_ipaddr'] },
 						{ name: 'wl'+u+'_radius_port', type: 'text', maxlen: 5, size: 7, prefix: ' : ', value: (nvram['wl'+u+'_radius_port'] || '1812') } ] },

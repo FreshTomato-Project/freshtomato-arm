@@ -30,7 +30,9 @@ static const char *winerror(int err) {
 		strncpy(buf, "(unable to format errormessage)", sizeof(buf));
 	};
 
-	if((ptr = strchr(buf, '\r'))) {
+	ptr = strchr(buf, '\r');
+
+	if(ptr) {
 		*ptr = '\0';
 	}
 

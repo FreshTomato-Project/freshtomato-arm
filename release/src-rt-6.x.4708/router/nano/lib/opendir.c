@@ -111,7 +111,7 @@ opendir (const char *dir_name)
   {
     char *p;
 
-    p = dir_name_mask + strlen (dir_name_mask);
+    p = strnul (dir_name_mask);
     if (p > dir_name_mask && !ISSLASH (p[-1]))
       *p++ = '\\';
     *p++ = '*';

@@ -88,6 +88,7 @@ typedef struct {
     int                        rcvbuf;
     int                        sndbuf;
     int                        type;
+    int                        protocol;
 #if (NGX_HAVE_SETFIB)
     int                        setfib;
 #endif
@@ -197,6 +198,8 @@ typedef struct {
     ngx_bufs_t                  large_client_header_buffers;
 
     ngx_msec_t                  client_header_timeout;
+
+    ngx_uint_t                  max_headers;
 
     ngx_flag_t                  ignore_invalid_headers;
     ngx_flag_t                  merge_slashes;

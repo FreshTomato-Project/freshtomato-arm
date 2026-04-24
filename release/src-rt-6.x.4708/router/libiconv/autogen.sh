@@ -4,11 +4,11 @@
 # also regenerates all aclocal.m4, config.h.in, Makefile.in, configure files
 # with new versions of autoconf or automake.
 #
-# This script requires autoconf-2.63..2.72 and automake-1.11..1.17 in the PATH.
+# This script requires autoconf-2.63..2.72 and automake-1.11..1.18 in the PATH.
 # It also requires
 #   - the gperf program.
 
-# Copyright (C) 2003-2024 Free Software Foundation, Inc.
+# Copyright (C) 2003-2025 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,6 +105,7 @@ for file in \
   fcntl-o.m4 \
   host-cpu-c-abi.m4 \
   lib-ld.m4 \
+  libdl.m4 \
   relocatable.m4 \
   relocatable-lib.m4 \
   visibility.m4 \

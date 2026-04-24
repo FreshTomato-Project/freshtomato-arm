@@ -5,7 +5,7 @@
  * Copyright (C) 1994-1996, Thomas G. Lane.
  * libjpeg-turbo Modifications:
  * Copyright (C) 2013, Linaro Limited.
- * Copyright (C) 2014-2015, 2017, 2019, 2022, 2024, D. R. Commander.
+ * Copyright (C) 2014-2015, 2017, 2019, 2022, 2024, 2026, D. R. Commander.
  * For conditions of distribution and use, see the accompanying README.ijg
  * file.
  *
@@ -228,7 +228,7 @@ write_bmp_header(j_decompress_ptr cinfo, bmp_dest_ptr dest)
    array[offset + 2] = (char)(((value) >> 16) & 0xFF), \
    array[offset + 3] = (char)(((value) >> 24) & 0xFF))
 
-  long headersize, bfSize;
+  size_t headersize, bfSize;
   int bits_per_pixel, cmap_entries;
 
   /* Compute colormap size and total file size */
@@ -253,7 +253,7 @@ write_bmp_header(j_decompress_ptr cinfo, bmp_dest_ptr dest)
   }
   /* File size */
   headersize = 14 + 40 + cmap_entries * 4; /* Header and colormap */
-  bfSize = headersize + (long)dest->row_width * (long)cinfo->output_height;
+  bfSize = headersize + (size_t)dest->row_width * (size_t)cinfo->output_height;
 
   /* Set unused fields of header to 0 */
   memset(bmpfileheader, 0, sizeof(bmpfileheader));
@@ -368,11 +368,15 @@ write_colormap(j_decompress_ptr cinfo, bmp_dest_ptr dest, int map_colors,
 
   if (colormap != NULL) {
     if (cinfo->out_color_components == 3) {
+      register int rindex = rgb_red[cinfo->out_color_space];
+      register int gindex = rgb_green[cinfo->out_color_space];
+      register int bindex = rgb_blue[cinfo->out_color_space];
+
       /* Normal case with RGB colormap */
       for (i = 0; i < num_colors; i++) {
-        putc(colormap[2][i], outfile);
-        putc(colormap[1][i], outfile);
-        putc(colormap[0][i], outfile);
+        putc(colormap[bindex][i], outfile);
+        putc(colormap[gindex][i], outfile);
+        putc(colormap[rindex][i], outfile);
         if (map_entry_size == 4)
           putc(0, outfile);
       }
@@ -508,6 +512,9 @@ jinit_write_bmp(j_decompress_ptr cinfo, boolean is_os2,
   }
 
   /* Calculate output image dimensions so we can allocate space */
+  if (cinfo->image_width > JPEG_MAX_DIMENSION ||
+      cinfo->image_height > JPEG_MAX_DIMENSION)
+    ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, JPEG_MAX_DIMENSION);
   jpeg_calc_output_dimensions(cinfo);
 
   /* Determine width of rows in the BMP file (padded to 4-byte boundary). */

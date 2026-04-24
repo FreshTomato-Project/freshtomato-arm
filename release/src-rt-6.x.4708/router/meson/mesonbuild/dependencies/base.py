@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 import copy
+import dataclasses
 import os
 import collections
 import itertools
@@ -21,9 +22,9 @@ from ..options import OptionKey
 #from ..interpreterbase import FeatureDeprecated, FeatureNew
 
 if T.TYPE_CHECKING:
-    from typing_extensions import Literal, TypedDict, TypeAlias
+    from typing_extensions import Literal, Required, Self, TypedDict, TypeAlias
 
-    from ..compilers.compilers import Compiler
+    from ..compilers.compilers import Language, Compiler
     from ..environment import Environment
     from ..interpreterbase import FeatureCheckBase
     from ..build import (
@@ -47,11 +48,11 @@ if T.TYPE_CHECKING:
         cmake_package_version: str
         components: T.List[str]
         include_type: IncludeType
-        language: T.Optional[str]
+        language: T.Optional[Language]
         main: bool
         method: DependencyMethods
         modules: T.List[str]
-        native: MachineChoice
+        native: Required[MachineChoice]
         optional_modules: T.List[str]
         private_headers: bool
         required: bool
@@ -73,6 +74,8 @@ else:
     _MissingCompilerBase = object
 
 
+DepType = T.TypeVar('DepType', bound='ExternalDependency', covariant=True)
+
 class DependencyException(MesonException):
     '''Exceptions raised while trying to find dependencies'''
 
@@ -93,8 +96,8 @@ class MissingCompiler(_MissingCompilerBase):
         def get_output_args(self, outputname: str) -> T.List[str]:
             return []
 
-        def sanity_check(self, work_dir: str) -> None:
-            return None
+        def _sanity_check_source_code(self) -> str:
+            return ''
 
     def __getattr__(self, item: str) -> T.Any:
         if item.startswith('__'):
@@ -129,15 +132,16 @@ DependencyTypeName = T.NewType('DependencyTypeName', str)
 
 class Dependency(HoldableObject):
 
-    def __init__(self, type_name: DependencyTypeName, kwargs: DependencyObjectKWs) -> None:
+    type_name: DependencyTypeName
+
+    def __init__(self, kwargs: DependencyObjectKWs) -> None:
         # This allows two Dependencies to be compared even after being copied.
         # The purpose is to allow the name to be changed, but still have a proper comparison
         self._id = uuid.uuid4().int
         self.name = f'dep{self._id}'
         self.version:  T.Optional[str] = None
-        self.language: T.Optional[str] = None # None means C-like
+        self.language: T.Optional[Language] = kwargs.get('language') # None means C-like
         self.is_found = False
-        self.type_name = type_name
         self.compile_args: T.List[str] = []
         self.link_args:    T.List[str] = []
         # Raw -L and -l arguments without manual library searching
@@ -202,7 +206,7 @@ class Dependency(HoldableObject):
         return list(itertools.chain(self.get_compile_args(),
                                     *(d.get_all_compile_args() for d in self.ext_deps)))
 
-    def get_link_args(self, language: T.Optional[str] = None, raw: bool = False) -> T.List[str]:
+    def get_link_args(self, language: T.Optional[Language] = None, raw: bool = False) -> T.List[str]:
         if raw and self.raw_link_args is not None:
             return self.raw_link_args
         return self.link_args
@@ -298,29 +302,34 @@ class Dependency(HoldableObject):
         return self
 
 class InternalDependency(Dependency):
-    def __init__(self, version: str, incdirs: T.List['IncludeDirs'], compile_args: T.List[str],
-                 link_args: T.List[str],
-                 libraries: T.List[LibTypes],
-                 whole_libraries: T.List[T.Union[StaticLibrary, CustomTarget, CustomTargetIndex]],
-                 sources: T.Sequence[T.Union[mesonlib.File, GeneratedTypes, StructuredSources]],
-                 extra_files: T.Sequence[mesonlib.File],
-                 ext_deps: T.List[Dependency], variables: T.Dict[str, str],
-                 d_module_versions: T.List[T.Union[str, int]], d_import_dirs: T.List['IncludeDirs'],
-                 objects: T.List['ExtractedObjects'],
+
+    type_name = DependencyTypeName('internal')
+
+    def __init__(self, version: str, incdirs: T.Optional[T.List['IncludeDirs']] = None,
+                 compile_args: T.Optional[T.List[str]] = None,
+                 link_args: T.Optional[T.List[str]] = None,
+                 libraries: T.Optional[T.List[LibTypes]] = None,
+                 whole_libraries: T.Optional[T.List[T.Union[StaticLibrary, CustomTarget, CustomTargetIndex]]] = None,
+                 sources: T.Optional[T.Sequence[T.Union[mesonlib.File, GeneratedTypes, StructuredSources]]] = None,
+                 extra_files: T.Optional[T.Sequence[mesonlib.File]] = None,
+                 ext_deps: T.Optional[T.List[Dependency]] = None, variables: T.Optional[T.Dict[str, str]] = None,
+                 d_module_versions: T.Optional[T.List[T.Union[str, int]]] = None,
+                 d_import_dirs: T.Optional[T.List['IncludeDirs']] = None,
+                 objects: T.Optional[T.List['ExtractedObjects']] = None,
                  name: T.Optional[str] = None):
-        super().__init__(DependencyTypeName('internal'), {})
+        super().__init__({'native': MachineChoice.HOST})  # TODO: does the native key actually matter
         self.version = version
         self.is_found = True
-        self.include_directories = incdirs
-        self.compile_args = compile_args
-        self.link_args = link_args
-        self.libraries = libraries
-        self.whole_libraries = whole_libraries
-        self.sources = list(sources)
-        self.extra_files = list(extra_files)
-        self.ext_deps = ext_deps
-        self.variables = variables
-        self.objects = objects
+        self.include_directories = incdirs or []
+        self.compile_args = compile_args or []
+        self.link_args = link_args or []
+        self.libraries = libraries or []
+        self.whole_libraries = whole_libraries or []
+        self.sources = list(sources or [])
+        self.extra_files = list(extra_files or [])
+        self.ext_deps = ext_deps or []
+        self.variables = variables or {}
+        self.objects = objects or []
         if d_module_versions:
             self.d_features['versions'] = d_module_versions
         if d_import_dirs:
@@ -352,7 +361,7 @@ class InternalDependency(Dependency):
     def get_partial_dependency(self, *, compile_args: bool = False,
                                link_args: bool = False, links: bool = False,
                                includes: bool = False, sources: bool = False,
-                               extra_files: bool = False) -> InternalDependency:
+                               extra_files: bool = False) -> Self:
         final_compile_args = self.compile_args.copy() if compile_args else []
         final_link_args = self.link_args.copy() if link_args else []
         final_libraries = self.libraries.copy() if links else []
@@ -363,7 +372,7 @@ class InternalDependency(Dependency):
         final_deps = [d.get_partial_dependency(
             compile_args=compile_args, link_args=link_args, links=links,
             includes=includes, sources=sources) for d in self.ext_deps]
-        return InternalDependency(
+        return type(self)(
             self.version, final_includes, final_compile_args,
             final_link_args, final_libraries, final_whole_libraries,
             final_sources, final_extra_files, final_deps, self.variables, [], [], [], self.name)
@@ -412,12 +421,11 @@ class InternalDependency(Dependency):
         return new_dep
 
 class ExternalDependency(Dependency):
-    def __init__(self, type_name: DependencyTypeName, environment: 'Environment', kwargs: DependencyObjectKWs, language: T.Optional[str] = None):
-        Dependency.__init__(self, type_name, kwargs)
+    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs):
+        Dependency.__init__(self, kwargs)
         self.env = environment
-        self.name = type_name # default
+        self.name = name
         self.is_found = False
-        self.language = language
         self.version_reqs = kwargs.get('version', [])
         self.required = kwargs.get('required', True)
         self.silent = kwargs.get('silent', False)
@@ -427,7 +435,7 @@ class ExternalDependency(Dependency):
         self.static = static
         self.libtype = LibType.STATIC if self.static else LibType.PREFER_SHARED
         # Is this dependency to be run on the build platform?
-        self.for_machine = kwargs.get('native', MachineChoice.HOST)
+        self.for_machine = kwargs['native']
         self.clib_compiler = detect_compiler(self.name, environment, self.for_machine, self.language)
 
     def get_compiler(self) -> T.Union['MissingCompiler', 'Compiler']:
@@ -457,22 +465,22 @@ class ExternalDependency(Dependency):
     def log_info(self) -> str:
         return ''
 
-    @staticmethod
-    def log_tried() -> str:
-        return ''
-
     # Check if dependency version meets the requirements
     def _check_version(self) -> None:
         if not self.is_found:
             return
 
         if self.version_reqs:
+            for_msg = ['for', mlog.bold(self.for_machine.get_lower_case_name()), 'machine']
+
             # an unknown version can never satisfy any requirement
             if not self.version:
                 self.is_found = False
                 found_msg: mlog.TV_LoggableList = []
-                found_msg += ['Dependency', mlog.bold(self.name), 'found:']
-                found_msg += [str(mlog.red('NO')) + '.', 'Unknown version, but need:', self.version_reqs]
+                found_msg.extend(['Dependency', mlog.bold(self.name)])
+                found_msg.extend(for_msg)
+                found_msg.append('found:')
+                found_msg.extend([str(mlog.red('NO')) + '.', 'Unknown version, but need:', self.version_reqs])
                 mlog.log(*found_msg)
 
                 if self.required:
@@ -483,7 +491,9 @@ class ExternalDependency(Dependency):
                 (self.is_found, not_found, found) = \
                     version_compare_many(self.version, self.version_reqs)
                 if not self.is_found:
-                    found_msg = ['Dependency', mlog.bold(self.name), 'found:']
+                    found_msg = ['Dependency', mlog.bold(self.name)]
+                    found_msg.extend(for_msg)
+                    found_msg.append('found:')
                     found_msg += [str(mlog.red('NO')) + '.',
                                   'Found', mlog.normal_cyan(self.version), 'but need:',
                                   mlog.bold(', '.join([f"'{e}'" for e in not_found]))]
@@ -499,8 +509,11 @@ class ExternalDependency(Dependency):
 
 
 class NotFoundDependency(Dependency):
+
+    type_name = DependencyTypeName('not-found')
+
     def __init__(self, name: str, environment: 'Environment') -> None:
-        super().__init__(DependencyTypeName('not-found'), {})
+        super().__init__({'native': MachineChoice.HOST})  # TODO: does this actually matter?
         self.env = environment
         self.name = name
         self.is_found = False
@@ -514,11 +527,12 @@ class NotFoundDependency(Dependency):
 
 
 class ExternalLibrary(ExternalDependency):
+
+    type_name = DependencyTypeName('library')
+
     def __init__(self, name: str, link_args: T.List[str], environment: 'Environment',
-                 language: str, silent: bool = False) -> None:
-        super().__init__(DependencyTypeName('library'), environment, {}, language=language)
-        self.name = name
-        self.language = language
+                 language: Language, for_machine: MachineChoice, silent: bool = False) -> None:
+        super().__init__(name, environment, {'language': language, 'native': for_machine})
         self.is_found = False
         if link_args:
             self.is_found = True
@@ -529,7 +543,7 @@ class ExternalLibrary(ExternalDependency):
             else:
                 mlog.log('Library', mlog.bold(name), 'found:', mlog.red('NO'))
 
-    def get_link_args(self, language: T.Optional[str] = None, raw: bool = False) -> T.List[str]:
+    def get_link_args(self, language: T.Optional[Language] = None, raw: bool = False) -> T.List[str]:
         '''
         External libraries detected using a compiler must only be used with
         compatible code. For instance, Vala libraries (.vapi files) cannot be
@@ -635,7 +649,7 @@ def process_method_kw(possible: T.Iterable[DependencyMethods], kwargs: Dependenc
     return methods
 
 def detect_compiler(name: str, env: 'Environment', for_machine: MachineChoice,
-                    language: T.Optional[str]) -> T.Union['MissingCompiler', 'Compiler']:
+                    language: T.Optional[Language]) -> T.Union['MissingCompiler', 'Compiler']:
     """Given a language and environment find the compiler used."""
     compilers = env.coredata.compilers[for_machine]
 
@@ -648,7 +662,10 @@ def detect_compiler(name: str, env: 'Environment', for_machine: MachineChoice,
             raise DependencyException(m.format(language.capitalize()))
         return compilers[language]
     else:
-        for lang in clib_langs:
+        # https://github.com/python/mypy/issues/18826
+        # However, we need to support versions of mypy that cannot deduce the
+        # tuple.
+        for lang in T.cast('T.Tuple[Language, ...]', clib_langs):
             try:
                 return compilers[lang]
             except KeyError:
@@ -660,25 +677,44 @@ class SystemDependency(ExternalDependency):
 
     """Dependency base for System type dependencies."""
 
-    def __init__(self, name: str, env: 'Environment', kwargs: DependencyObjectKWs,
-                 language: T.Optional[str] = None) -> None:
-        super().__init__(DependencyTypeName('system'), env, kwargs, language=language)
-        self.name = name
-
-    @staticmethod
-    def log_tried() -> str:
-        return 'system'
+    type_name = DependencyTypeName('system')
 
 
 class BuiltinDependency(ExternalDependency):
 
     """Dependency base for Builtin type dependencies."""
 
-    def __init__(self, name: str, env: 'Environment', kwargs: DependencyObjectKWs,
-                 language: T.Optional[str] = None) -> None:
-        super().__init__(DependencyTypeName('builtin'), env, kwargs, language=language)
-        self.name = name
+    type_name = DependencyTypeName('builtin')
 
-    @staticmethod
-    def log_tried() -> str:
-        return 'builtin'
+
+@dataclasses.dataclass
+class DependencyCandidate(T.Generic[DepType]):
+
+    callable: T.Union[T.Type[DepType], T.Callable[[str, Environment, DependencyObjectKWs], DepType]]
+    name: str
+    method: str
+    modules: T.Optional[T.List[str]] = None
+    arguments: T.Optional[T.Tuple[Environment, DependencyObjectKWs]] = dataclasses.field(default=None)
+
+    def __call__(self) -> DepType:
+        if self.arguments is None:
+            raise mesonlib.MesonBugException('Attempted to instantiate a candidate before setting its arguments')
+        env, kwargs = self.arguments
+        if self.modules is not None:
+            kwargs['modules'] = self.modules.copy()
+        return self.callable(self.name, env, kwargs)
+
+    @classmethod
+    def from_dependency(cls, name: str, dep: T.Type[DepType],
+                        args: T.Optional[T.Tuple[Environment, DependencyObjectKWs]] = None,
+                        modules: T.Optional[T.List[str]] = None,
+                        ) -> DependencyCandidate[DepType]:
+        tried = str(dep.type_name)
+
+        # fixup the cases where type_name and log tried don't match
+        if tried in {'extraframeworks', 'appleframeworks'}:
+            tried = 'framework'
+        elif tried == 'pkgconfig':
+            tried = 'pkg-config'
+
+        return cls(dep, name, tried, modules, arguments=args)

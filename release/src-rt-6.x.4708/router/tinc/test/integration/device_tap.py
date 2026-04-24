@@ -2,13 +2,13 @@
 
 """Test TAP device support."""
 
-import typing as T
-
-from testlib import check, util, cmd
 from testlib.log import log
 from testlib.proc import Script, Tinc
 from testlib.test import Test
 from testlib.external import netns_add, netns_exec, ping
+from testlib import check, util, cmd
+
+import typing as T
 
 util.require_root()
 util.require_command("ip", "netns", "list")

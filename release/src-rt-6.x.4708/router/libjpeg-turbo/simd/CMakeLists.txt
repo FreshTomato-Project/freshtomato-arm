@@ -321,7 +321,7 @@ else()
   set(DEFAULT_NEON_INTRINSICS 0)
 endif()
 option(NEON_INTRINSICS
-  "Because GCC (as of this writing) and some older versions of Clang do not have a full or optimal set of Neon intrinsics, for performance reasons, the default when building libjpeg-turbo with those compilers is to continue using the older GAS implementation of the Neon SIMD extensions for certain algorithms.  Setting this option forces the full Neon intrinsics implementation to be used with all compilers.  Unsetting this option forces the hybrid GAS/intrinsics implementation to be used with all compilers."
+  "Because GCC (as of this writing) and some older versions of Clang do not have a full or optimal set of Neon intrinsics, for performance reasons, the default when building ${CMAKE_PROJECT_NAME} with those compilers is to continue using the older GAS implementation of the Neon SIMD extensions for certain algorithms.  Setting this option forces the full Neon intrinsics implementation to be used with all compilers.  Unsetting this option forces the hybrid GAS/intrinsics implementation to be used with all compilers."
   ${DEFAULT_NEON_INTRINSICS})
 if(NOT NEON_INTRINSICS)
   enable_language(ASM)
@@ -388,6 +388,20 @@ if(NOT NEON_INTRINSICS)
   message(STATUS "CMAKE_ASM_FLAGS = ${EFFECTIVE_ASM_FLAGS}")
 
   set(SIMD_SOURCES ${SIMD_SOURCES} arm/aarch${BITS}/jsimd_neon.S)
+endif()
+
+if(UNIX AND BITS EQUAL 32)
+  include(CheckSymbolExists)
+  check_symbol_exists(getauxval sys/auxv.h HAVE_GETAUXVAL)
+  if(HAVE_GETAUXVAL)
+    set_source_files_properties(arm/aarch${BITS}/jsimd.c PROPERTIES
+      COMPILE_DEFINITIONS HAVE_GETAUXVAL)
+  endif()
+  check_symbol_exists(elf_aux_info sys/auxv.h HAVE_ELF_AUX_INFO)
+  if(HAVE_ELF_AUX_INFO)
+    set_source_files_properties(arm/aarch${BITS}/jsimd.c PROPERTIES
+      COMPILE_DEFINITIONS HAVE_ELF_AUX_INFO)
+  endif()
 endif()
 
 add_library(simd OBJECT ${SIMD_SOURCES} arm/aarch${BITS}/jsimd.c)
@@ -523,6 +537,20 @@ set(SIMD_SOURCES powerpc/jccolor-altivec.c powerpc/jcgray-altivec.c
 set_source_files_properties(${SIMD_SOURCES} PROPERTIES
   COMPILE_FLAGS -maltivec)
 
+if(UNIX)
+  include(CheckSymbolExists)
+  check_symbol_exists(getauxval sys/auxv.h HAVE_GETAUXVAL)
+  if(HAVE_GETAUXVAL)
+    set_source_files_properties(powerpc/jsimd.c PROPERTIES
+      COMPILE_DEFINITIONS HAVE_GETAUXVAL)
+  endif()
+  check_symbol_exists(elf_aux_info sys/auxv.h HAVE_ELF_AUX_INFO)
+  if(HAVE_ELF_AUX_INFO)
+    set_source_files_properties(powerpc/jsimd.c PROPERTIES
+      COMPILE_DEFINITIONS HAVE_ELF_AUX_INFO)
+  endif()
+endif()
+
 add_library(simd OBJECT ${SIMD_SOURCES} powerpc/jsimd.c)
 
 if(CMAKE_POSITION_INDEPENDENT_CODE OR ENABLE_SHARED)
@@ -539,3 +567,8 @@ else()
 simd_fail("SIMD extensions not available for this CPU (${CMAKE_SYSTEM_PROCESSOR})")
 
 endif() # CPU_TYPE
+
+if(WITH_SIMD AND ENABLE_STATIC)
+  add_executable(simdcoverage simdcoverage.c)
+  target_link_libraries(simdcoverage jpeg-static)
+endif()

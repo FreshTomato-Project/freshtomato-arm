@@ -2037,9 +2037,15 @@ static void log6_opts(int nest, unsigned int xid, void *start_opts, void *end_op
 	}
       else if (type == OPTION6_STATUS_CODE)
 	{
-	  int len = sprintf(daemon->namebuff, "%u ", opt6_uint(opt, 0, 2));
-	  memcpy(daemon->namebuff + len, opt6_ptr(opt, 2), opt6_len(opt)-2);
-	  daemon->namebuff[len + opt6_len(opt) - 2] = 0;
+	  if (opt6_len(opt) >= 2)
+	    {
+	      int slen = opt6_len(opt) - 2;
+	      int len = sprintf(daemon->namebuff, "%u ", opt6_uint(opt, 0, 2));
+	      if (slen > (MAXDNAME * 2) - len - 1)
+		slen = (MAXDNAME * 2) - len - 1;
+	      memcpy(daemon->namebuff + len, opt6_ptr(opt, 2), slen);
+	      daemon->namebuff[len + slen] = 0;
+	    }
 	  optname = "status";
 	}
       else

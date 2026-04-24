@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright 2013-2025 The Meson development team
+# Copyright 2013-2026 The Meson development team
 # Copyright © 2023-2025 Intel Corporation
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ import typing as T
 
 if T.TYPE_CHECKING:
     from . import dependencies
-    from .compilers.compilers import Compiler, CompileResult, RunResult, CompileCheckMode
+    from .compilers.compilers import Compiler, CompilerDict, CompileResult, RunResult, CompileCheckMode, Language
     from .dependencies.detect import TV_DepID
     from .mesonlib import FileOrString
     from .cmake.traceparser import CMakeCacheEntry
@@ -44,7 +44,7 @@ if T.TYPE_CHECKING:
 #
 # Pip requires that RCs are named like this: '0.1.0.rc1'
 # But the corresponding Git tag needs to be '0.1.0rc1'
-version = '1.10.2'
+version = '1.11.0'
 
 # The next stable version when we are in dev. This is used to allow projects to
 # require meson version >=1.2.0 when using 1.1.99. FeatureNew won't warn when
@@ -231,7 +231,7 @@ class CoreData:
         self.target_guids: T.Dict[str, str] = {}
         self.version = version
         self.cross_files = self.__load_config_files(cmd_options, scratch_dir, 'cross')
-        self.compilers: PerMachine[T.Dict[str, Compiler]] = PerMachine(OrderedDict(), OrderedDict())
+        self.compilers: PerMachine[CompilerDict] = PerMachine(OrderedDict(), OrderedDict())
         self.optstore = options.OptionStore(self.is_cross_build())
 
         # Stores the (name, hash) of the options file, The name will be either
@@ -356,7 +356,10 @@ class CoreData:
         option_object, value = self.optstore.get_option_and_value_for(newkey)
         override = target.get_override(newkey.name)
         if override is not None:
-            return option_object.validate_value(override)
+            try:
+                return option_object.validate_value(override)
+            except MesonException as e:
+                raise MesonException(f'In override_options for {target}: {e!s}')
         return value
 
     def set_from_configure_command(self, options: SharedCMDOptions) -> bool:
@@ -415,7 +418,7 @@ class CoreData:
             return False
         return len(self.cross_files) > 0
 
-    def add_compiler_options(self, c_options: MutableKeyedOptionDictType, lang: str, for_machine: MachineChoice,
+    def add_compiler_options(self, c_options: MutableKeyedOptionDictType, lang: Language, for_machine: MachineChoice,
                              subproject: str) -> None:
         for k, o in c_options.items():
             assert k.subproject is None and k.machine is for_machine
@@ -429,7 +432,7 @@ class CoreData:
             else:
                 self.optstore.add_compiler_option(lang, k, o)
 
-    def process_compiler_options(self, lang: str, comp: Compiler, subproject: str) -> None:
+    def process_compiler_options(self, lang: Language, comp: Compiler, subproject: str) -> None:
         self.add_compiler_options(comp.get_options(), lang, comp.for_machine, subproject)
 
         for key in [OptionKey(f'{lang}_args'), OptionKey(f'{lang}_link_args')]:

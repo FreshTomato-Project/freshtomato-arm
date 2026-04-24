@@ -50,7 +50,7 @@ uint32_t modulo(uint32_t hash, size_t n);
 			} \
 			if(++i == n) i = 0; \
 		} \
-		/* We always pick the last slot. It's unfair. But thats life */ \
+		/* We always pick the last slot. */ \
 		memcpy(&hash->keys[i], key, sizeof(t)); \
 		hash->values[i] = value; \
 	} \

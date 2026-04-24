@@ -22,6 +22,8 @@
 #include "splay_tree.h"
 #include "xalloc.h"
 
+// NOLINTBEGIN(bugprone-assignment-in-if-condition)
+
 /* Splay operation */
 
 static splay_node_t *splay_top_down(splay_tree_t *tree, const void *data, int *result) {
@@ -637,3 +639,5 @@ void splay_foreach_node(const splay_tree_t *tree, splay_action_t action) {
 		action(node);
 	}
 }
+
+// NOLINTEND(bugprone-assignment-in-if-condition)

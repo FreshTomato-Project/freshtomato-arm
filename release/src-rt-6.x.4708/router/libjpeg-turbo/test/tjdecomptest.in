@@ -24,6 +24,9 @@ IMGDIR=@CMAKE_SOURCE_DIR@/testimages
 OUTDIR=`mktemp -d /tmp/__tjdecomptest_output.XXXXXX`
 EXEDIR=@CMAKE_BINARY_DIR@
 JAVA="@Java_JAVA_EXECUTABLE@"
+if [ -z "$JAVA" ]; then
+	JAVA=java
+fi
 JAVAARGS="-cp $EXEDIR/java/turbojpeg.jar -Djava.library.path=$EXEDIR"
 TJDECOMP=$EXEDIR/tjdecomp
 JAVAARG=
@@ -43,7 +46,7 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-exec >$EXEDIR/test/tjdecomptest$JAVAARG.log
+exec >$EXEDIR/test/tjdecomptest$JAVAARG.log 2>&1
 
 echo "EXEDIR: $EXEDIR"
 echo "IMGDIR: $IMGDIR"

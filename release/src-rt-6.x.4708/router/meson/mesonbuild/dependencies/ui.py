@@ -15,9 +15,9 @@ from .. import mesonlib
 from ..mesonlib import (
     Popen_safe, version_compare_many
 )
-from ..envconfig import detect_cpu_family
 
-from .base import DependencyException, DependencyMethods, DependencyTypeName, SystemDependency
+from .base import DependencyCandidate, DependencyException, DependencyMethods, DependencyTypeName, SystemDependency
+from .cmake import CMakeDependency
 from .configtool import ConfigToolDependency
 from .detect import packages
 from .factory import DependencyFactory
@@ -57,8 +57,9 @@ class GnuStepDependency(ConfigToolDependency):
     tools = ['gnustep-config']
     tool_name = 'gnustep-config'
 
-    def __init__(self, environment: 'Environment', kwargs: DependencyObjectKWs) -> None:
-        super().__init__('gnustep', environment, kwargs, language='objc')
+    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs) -> None:
+        kwargs['language'] = 'objc'
+        super().__init__(name, environment, kwargs)
         if not self.is_found:
             return
         self.modules = kwargs.get('modules', [])
@@ -149,8 +150,11 @@ class WxDependency(ConfigToolDependency):
     tools = ['wx-config-3.0', 'wx-config-3.1', 'wx-config', 'wx-config-gtk3']
     tool_name = 'wx-config'
 
-    def __init__(self, environment: 'Environment', kwargs: DependencyObjectKWs):
-        super().__init__('WxWidgets', environment, kwargs, language='cpp')
+    # name is intentionally ignored to maintain existing capitalization,
+    # but is needed for polymorphism
+    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs):
+        kwargs['language'] = 'cpp'
+        super().__init__('WxWidgets', environment, kwargs)
         if not self.is_found:
             return
         self.requested_modules = kwargs.get('modules', [])
@@ -175,8 +179,8 @@ packages['wxwidgets'] = WxDependency
 
 class VulkanDependencySystem(SystemDependency):
 
-    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs, language: T.Optional[str] = None) -> None:
-        super().__init__(name, environment, kwargs, language=language)
+    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs) -> None:
+        super().__init__(name, environment, kwargs)
 
         self.vulkan_sdk = os.environ.get('VULKAN_SDK', os.environ.get('VK_SDK_PATH'))
         if self.vulkan_sdk and not os.path.isabs(self.vulkan_sdk):
@@ -190,10 +194,34 @@ class VulkanDependencySystem(SystemDependency):
             inc_dir = 'include'
             if self.env.machines[self.for_machine].is_windows():
                 lib_name = 'vulkan-1'
-                lib_dir = 'Lib32'
+                lib_dir = ''
                 inc_dir = 'Include'
-                if detect_cpu_family(self.env.coredata.compilers.host) == 'x86_64':
-                    lib_dir = 'Lib'
+                build_cpu = self.env.machines.build.cpu_family
+                host_cpu = self.env.machines.host.cpu_family
+                if build_cpu == 'x86_64':
+                    if host_cpu == build_cpu:
+                        lib_dir = 'Lib'
+                    elif host_cpu == 'aarch64':
+                        lib_dir = 'Lib-ARM64'
+                    elif host_cpu == 'x86':
+                        lib_dir = 'Lib32'
+                elif build_cpu == 'aarch64':
+                    if host_cpu == build_cpu:
+                        lib_dir = 'Lib'
+                    elif host_cpu == 'x86_64':
+                        lib_dir = 'Lib-x64'
+                    elif host_cpu == 'x86':
+                        lib_dir = 'Lib32'
+                elif build_cpu == 'x86':
+                    if host_cpu == build_cpu:
+                        lib_dir = 'Lib32'
+                    if host_cpu == 'aarch64':
+                        lib_dir = 'Lib-ARM64'
+                    elif host_cpu == 'x86_64':
+                        lib_dir = 'Lib'
+
+                if lib_dir == '':
+                    raise DependencyException(f'Target architecture \'{host_cpu}\' is not supported for this Vulkan SDK.')
 
             # make sure header and lib are valid
             inc_path = os.path.join(self.vulkan_sdk, inc_dir)
@@ -247,18 +275,18 @@ class VulkanDependencySystem(SystemDependency):
 packages['gl'] = gl_factory = DependencyFactory(
     'gl',
     [DependencyMethods.PKGCONFIG, DependencyMethods.SYSTEM],
-    system_class=GLDependencySystem,
+    system=GLDependencySystem,
 )
 
 packages['sdl2'] = sdl2_factory = DependencyFactory(
     'sdl2',
     [DependencyMethods.PKGCONFIG, DependencyMethods.CONFIG_TOOL, DependencyMethods.EXTRAFRAMEWORK, DependencyMethods.CMAKE],
-    configtool_class=SDL2DependencyConfigTool,
-    cmake_name='SDL2',
+    configtool=SDL2DependencyConfigTool,
+    cmake=DependencyCandidate.from_dependency('SDL2', CMakeDependency),
 )
 
 packages['vulkan'] = vulkan_factory = DependencyFactory(
     'vulkan',
     [DependencyMethods.PKGCONFIG, DependencyMethods.SYSTEM],
-    system_class=VulkanDependencySystem,
+    system=VulkanDependencySystem,
 )

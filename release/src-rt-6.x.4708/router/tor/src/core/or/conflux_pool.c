@@ -1961,7 +1961,7 @@ conflux_process_linked(circuit_t *circ, crypt_path_t *layer_hint,
   /* Make sure the cell nonce matches the one on the circuit that was
    * previously set by the CONFLUX_LINK cell. */
   if (tor_memneq(link->nonce, circ->conflux_pending_nonce,
-                 sizeof(*link->nonce))) {
+                 sizeof(link->nonce))) {
     log_fn(LOG_PROTOCOL_WARN, LD_CIRC,
            "Received CONFLUX_LINKED but circuit nonce doesn't match "
            "cell nonce. Closing circuit.");

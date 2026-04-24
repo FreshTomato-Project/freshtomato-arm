@@ -5,9 +5,10 @@
 
 from __future__ import annotations
 import dataclasses
+import os.path
 import typing as T
 
-from .. import build, mesonlib
+from .. import build, dependencies, mesonlib, mlog
 from ..options import OptionKey
 from ..build import IncludeDirs
 from ..interpreterbase.decorators import noKwargs, noPosargs
@@ -15,10 +16,12 @@ from ..mesonlib import relpath, HoldableObject, MachineChoice
 from ..programs import ExternalProgram
 
 if T.TYPE_CHECKING:
+    from ..compilers.compilers import Language
+    from ..dependencies.base import DependencyObjectKWs
     from ..interpreter import Interpreter
     from ..interpreter.interpreter import ProgramVersionFunc
     from ..interpreterbase import TYPE_var, TYPE_kwargs
-    from ..programs import OverrideProgram
+    from ..programs import Program
     from ..dependencies import Dependency
     from ..options import ElementaryOptionValues
 
@@ -36,6 +39,7 @@ class ModuleState:
         self.source_root = interpreter.environment.get_source_dir()
         self.build_to_src = relpath(interpreter.environment.get_source_dir(),
                                     interpreter.environment.get_build_dir())
+        self.subproject_dir = interpreter.subproject_dir
         self.subproject = interpreter.subproject
         self.subdir = interpreter.subdir
         self.root_subdir = interpreter.root_subdir
@@ -46,18 +50,16 @@ class ModuleState:
         # The backend object is under-used right now, but we will need it:
         # https://github.com/mesonbuild/meson/issues/1419
         self.backend = interpreter.backend
+        self.dependency_overrides = interpreter.build.dependency_overrides
         self.targets = interpreter.build.targets
         self.data = interpreter.build.data
         self.headers = interpreter.build.get_headers()
         self.man = interpreter.build.get_man()
         self.global_args = interpreter.build.global_args.host
-        self.project_args = interpreter.build.projects_args.host.get(interpreter.subproject, {})
+        self.project_args = interpreter.current_build_project().project_args.host
         self.current_node = interpreter.current_node
 
-    def get_include_args(self, include_dirs: T.Iterable[T.Union[str, build.IncludeDirs]], prefix: str = '-I') -> T.List[str]:
-        if not include_dirs:
-            return []
-
+    def get_include_args(self, include_dirs: T.Iterable[T.Union[str, build.IncludeDirs]], implicit: bool = False, prefix: str = '-I') -> T.List[str]:
         srcdir = self.environment.get_source_dir()
         builddir = self.environment.get_build_dir()
 
@@ -66,23 +68,27 @@ class ModuleState:
             if isinstance(dirs, str):
                 dirs_str += [f'{prefix}{dirs}']
             else:
-                dirs_str.extend([f'{prefix}{i}' for i in dirs.to_string_list(srcdir, builddir)])
-                dirs_str.extend([f'{prefix}{i}' for i in dirs.get_extra_build_dirs()])
+                dirs_str.extend([f'{prefix}{i}' for i in dirs.abs_string_list(srcdir, builddir)])
 
+        if implicit:
+            build_cur_dir = os.path.normpath(os.path.join(builddir, self.subdir))
+            dirs_str.append(f'{prefix}{build_cur_dir}')
+            source_cur_dir = os.path.normpath(os.path.join(srcdir, self.subdir))
+            dirs_str.append(f'{prefix}{source_cur_dir}')
         return dirs_str
 
     def find_program(self, prog: T.Union[mesonlib.FileOrString, T.List[mesonlib.FileOrString]],
                      required: bool = True,
                      version_func: T.Optional[ProgramVersionFunc] = None,
                      wanted: T.Union[str, T.List[str]] = '', silent: bool = False,
-                     for_machine: MachineChoice = MachineChoice.HOST) -> T.Union[ExternalProgram, build.OverrideExecutable, OverrideProgram]:
+                     for_machine: MachineChoice = MachineChoice.HOST) -> Program:
         if not isinstance(prog, list):
             prog = [prog]
         return self._interpreter.find_program_impl(prog, required=required, version_func=version_func,
                                                    wanted=wanted, silent=silent, for_machine=for_machine)
 
     def find_tool(self, name: str, depname: str, varname: str, required: bool = True,
-                  wanted: T.Optional[str] = None, native: bool = True) -> T.Union[build.OverrideExecutable, ExternalProgram, 'OverrideProgram']:
+                  wanted: T.Optional[str] = None, native: bool = True) -> Program:
         # Look in overrides in case it's built as subproject
         progobj = self._interpreter.program_from_overrides([name], [])
         if progobj is not None:
@@ -108,8 +114,29 @@ class ModuleState:
         # Normal program lookup
         return self.find_program(name, required=required, wanted=wanted)
 
+    def override_dependency(self, depname: str, dep: Dependency, static: T.Optional[bool] = None,
+                            for_machine: MachineChoice = MachineChoice.HOST) -> None:
+        kwargs: DependencyObjectKWs = {'native': for_machine}
+        if static is not None:
+            kwargs['static'] = static
+        identifier = dependencies.get_dep_identifier(depname, kwargs)
+        override = self.dependency_overrides[for_machine].get(identifier)
+        if override:
+            m = 'Tried to override dependency {!r} which has already been resolved or overridden at {}'
+            location = mlog.get_error_location_string(override.node.filename, override.node.lineno)
+            raise mesonlib.MesonException(m.format(depname, location))
+        self.dependency_overrides[for_machine][identifier] = \
+            build.DependencyOverride(dep, self._interpreter.current_node)
+
+    def overridden_dependency(self, depname: str, for_machine: MachineChoice = MachineChoice.HOST) -> Dependency:
+        identifier = dependencies.get_dep_identifier(depname, {'native': for_machine})
+        try:
+            return self.dependency_overrides[for_machine][identifier].dep
+        except KeyError:
+            raise mesonlib.MesonException(f'dependency "{depname}" was not overridden for the {for_machine}')
+
     def dependency(self, depname: str, native: bool = False, required: bool = True,
-                   wanted: T.Optional[str] = None) -> 'Dependency':
+                   wanted: T.Optional[T.Union[str, T.List[str]]] = None) -> 'Dependency':
         kwargs: T.Dict[str, object] = {'native': native, 'required': required}
         if wanted:
             kwargs['version'] = wanted
@@ -118,7 +145,7 @@ class ModuleState:
         # implementations of meson functions anyway.
         return self._interpreter.func_dependency(self.current_node, [depname], kwargs) # type: ignore
 
-    def test(self, args: T.Tuple[str, T.Union[build.Executable, build.Jar, 'ExternalProgram', mesonlib.File]],
+    def test(self, args: T.Tuple[str, T.Union[build.Executable, build.Jar, Program, mesonlib.File]],
              workdir: T.Optional[str] = None,
              env: T.Union[T.List[str], T.Dict[str, str], str] = None,
              depends: T.List[T.Union[build.CustomTarget, build.BuildTarget]] = None) -> None:
@@ -155,7 +182,7 @@ class ModuleState:
             else:
                 yield self._interpreter.build_incdir_object([d])
 
-    def add_language(self, lang: str, for_machine: MachineChoice) -> None:
+    def add_language(self, lang: Language, for_machine: MachineChoice) -> None:
         self._interpreter.add_languages([lang], True, for_machine)
 
 class ModuleObject(HoldableObject):

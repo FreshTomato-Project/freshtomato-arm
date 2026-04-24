@@ -48,13 +48,14 @@ static inline void *xzalloc(size_t n) {
 }
 
 static inline void *xrealloc(void *p, size_t n) {
-	p = realloc(p, n);
+	// NOLINTNEXTLINE
+	void *new_p = realloc(p, n);
 
-	if(!p) {
+	if(!new_p) {
 		abort();
 	}
 
-	return p;
+	return new_p;
 }
 
 static inline char *xstrdup(const char *s) ATTR_MALLOC ATTR_NONNULL;

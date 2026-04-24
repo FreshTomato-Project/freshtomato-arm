@@ -2,15 +2,15 @@
 
 """Test invite/join error conditions."""
 
-import os
-import shutil
-import socket
-
-from testlib import check, util
 from testlib.log import log
 from testlib.const import RUN_ACCESS_CHECKS
 from testlib.proc import Tinc, Script
 from testlib.test import Test
+from testlib import check, util
+
+import os
+import shutil
+import socket
 
 FAKE_INVITE = "localhost:65535/pVOZMJGm3MqTvTu0UnhMGb2cfuqygiu79MdnERnGYdga5v8C"
 

@@ -1342,7 +1342,10 @@ nettle: nettle/stamp-h1
 nettle-clean:
 	-@$(MAKE) -C nettle clean
 	@rm -f nettle/stamp-h1
-	@rm -rf nettle/include nettle/lib nettle/bin nettle/share
+	@rm -rf nettle/include nettle/bin nettle/share
+ifneq ($(TCONFIG_BCMARM),y)
+	@rm -rf nettle/lib
+endif
 
 dnsmasq:
 	@$(SEP)
@@ -1879,11 +1882,11 @@ sqlite: sqlite/Makefile
 
 sqlite-install:
 ifeq ($(or $(TCONFIG_NGINX),$(TCONFIG_MEDIA_SERVER)),y)
-	install -D sqlite/staged/usr/lib/libsqlite3.so.3.51.3 $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.51.3
-	$(STRIP) $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.51.3
+	install -D sqlite/staged/usr/lib/libsqlite3.so.3.53.0 $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.53.0
+	$(STRIP) $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.53.0
 	cd $(INSTALLDIR)/sqlite/usr/lib/ && \
-		ln -sf libsqlite3.so.3.51.3 libsqlite3.so.0 && \
-		ln -sf libsqlite3.so.3.51.3 libsqlite3.so
+		ln -sf libsqlite3.so.3.53.0 libsqlite3.so.0 && \
+		ln -sf libsqlite3.so.3.53.0 libsqlite3.so
 endif
 	@true
 
@@ -2487,9 +2490,9 @@ libxml2: libxml2/static/Makefile libxml2/build/Makefile
 
 libxml2-install:
 ifeq ($(TCONFIG_BCMARM),y)
-	install -D libxml2/staged/usr/lib/libxml2.so.16.1.2 $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.16.1.2
-	$(STRIP) $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.16.1.2
-	cd $(INSTALLDIR)/libxml2/usr/lib && ln -sf libxml2.so.16.1.2 libxml2.so.16 && ln -sf libxml2.so.16.1.2 libxml2.so
+	install -D libxml2/staged/usr/lib/libxml2.so.16.1.3 $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.16.1.3
+	$(STRIP) $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.16.1.3
+	cd $(INSTALLDIR)/libxml2/usr/lib && ln -sf libxml2.so.16.1.3 libxml2.so.16 && ln -sf libxml2.so.16.1.3 libxml2.so
 else
 	install -D libxml2/staged/usr/lib/libxml2.so.2.13.7 $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.2.13.7
 	$(STRIP) $(INSTALLDIR)/libxml2/usr/lib/libxml2.so.2.13.7
@@ -2528,9 +2531,9 @@ libpng: libpng/build/Makefile
 	@$(MAKE) -C libpng/build DESTDIR=$(TOP)/libpng/staged install
 
 libpng-install:
-	install -D libpng/build/libpng16.so.16.55.0 $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.55.0
-	$(STRIP) $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.55.0
-	cd $(INSTALLDIR)/libpng/usr/lib && ln -sf libpng16.so.16.55.0 libpng16.so && ln -sf libpng16.so.16.55.0 libpng16.so.16
+	install -D libpng/build/libpng16.so.16.58.0 $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.58.0
+	$(STRIP) $(INSTALLDIR)/libpng/usr/lib/libpng16.so.16.58.0
+	cd $(INSTALLDIR)/libpng/usr/lib && ln -sf libpng16.so.16.58.0 libpng16.so && ln -sf libpng16.so.16.58.0 libpng16.so.16
 
 libpng-clean:
 	@rm -rf libpng/build
@@ -3143,11 +3146,11 @@ libiconv-clean:
 
 libiconv-install:
 	install -d $(INSTALLDIR)/libiconv/usr/lib
-	install libiconv/lib/.libs/libiconv.so.2.7.0 $(INSTALLDIR)/libiconv/usr/lib/libiconv.so.2.7.0
-	$(STRIP) -s $(INSTALLDIR)/libiconv/usr/lib/libiconv.so.2.7.0
+	install libiconv/lib/.libs/libiconv.so.2.7.1 $(INSTALLDIR)/libiconv/usr/lib/libiconv.so.2.7.1
+	$(STRIP) -s $(INSTALLDIR)/libiconv/usr/lib/libiconv.so.2.7.1
 	cd $(INSTALLDIR)/libiconv/usr/lib/ && \
-		ln -sf libiconv.so.2.7.0 libiconv.so.2 && \
-		ln -sf libiconv.so.2.7.0 libiconv.so
+		ln -sf libiconv.so.2.7.1 libiconv.so.2 && \
+		ln -sf libiconv.so.2.7.1 libiconv.so
 
 transmission/build/Makefile:
 	@rm -rf transmission/build && mkdir -p transmission/build
@@ -3874,8 +3877,8 @@ expat: expat/static/Makefile expat/build/Makefile
 	@$(MAKE) -C expat/build DESTDIR=$(TOP)/expat/staged install
 
 expat-install:
-	install -D expat/build/libexpat.so.1.11.2 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.11.2
-	cd $(INSTALLDIR)/expat/usr/lib && $(STRIP) libexpat.so.1.11.2 && ln -sf libexpat.so.1.11.2 libexpat.so.1
+	install -D expat/build/libexpat.so.1.11.3 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.11.3
+	cd $(INSTALLDIR)/expat/usr/lib && $(STRIP) libexpat.so.1.11.3 && ln -sf libexpat.so.1.11.3 libexpat.so.1
 
 expat-clean:
 	@rm -rf expat/static

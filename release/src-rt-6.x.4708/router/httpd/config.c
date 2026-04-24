@@ -75,8 +75,21 @@ void wo_backup(char *url)
 	char msg[64];
 	int fd;
 
+	/* create secure temporary file */
 	if ((fd = mkstemp(file)) < 0)
 		exit(1);
+
+	/*
+	 * ensure fd is not inherited across exec (extra safety)
+	 * even though we close it below, this protects against future changes.
+	 */
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+
+	/*
+	 * close immediately - we only need the filename.
+	 * prevents descriptor leak into _eval() child.
+	 */
+	close(fd);
 
 	args[2] = file;
 	snprintf(msg, sizeof(msg), ">%s.msg", file);
@@ -91,21 +104,22 @@ void wo_backup(char *url)
 		parse_asp("error.asp");
 	}
 
-	close(fd);
+	/* cleanup */
 	unlink(file);
 	unlink(msg + 1);
 }
 
 void wi_restore(char *url, int len, char *boundary)
 {
-	char *buf;
+	char *buf = NULL;
 	const char *error = "Error reading file";
 	int n, fd;
 	static char *args[] = { "nvram", "restore", NULL, NULL };
 	char file[] = "/tmp/restoreXXXXXX";
 	char msg[64];
+	int total = 0;
 
-	buf = NULL;
+	/* validate session */
 	check_id(url);
 
 	if ((fd = mkstemp(file)) < 0) {
@@ -115,31 +129,60 @@ void wi_restore(char *url, int len, char *boundary)
 	args[2] = file;
 	snprintf(msg, sizeof(msg), ">%s.msg", file);
 
+	/* skip HTTP headers (not multipart headers!) */
 	if (!skip_header(&len))
 		goto ERROR;
 
+	/* basic sanity check for payload size */
 	if ((len < 64) || (len > (NVRAM_SPACE * 2))) {
 		error = "Invalid file";
 		goto ERROR;
 	}
 
+	/* allocate buffer for incoming data */
 	if ((buf = malloc(len)) == NULL) {
 		error = "Not enough memory";
 		goto ERROR;
 	}
 
-	n = web_read(buf, len);
-	len -= n;
+	/* read full POST body (web_read() may return partial data) */
+	while (total < len) {
+		n = web_read(buf + total, len - total);
+		if (n <= 0) {
+			error = "Error reading file";
+			goto ERROR;
+		}
+		total += n;
+	}
 
-	if (f_write(file, buf, n, 0, 0600) != n) {
+	/*
+	 * write data directly using mkstemp() file descriptor.
+	 * this avoids:
+	 *  - double open()
+	 *  - TOCTOU race window
+	 *  - file descriptor leaks
+	 */
+	if (write(fd, buf, total) != total) {
 		error = "Error writing temporary file";
 		goto ERROR;
 	}
 
+	/* ensure data is flushed to disk */
+	fsync(fd);
+
+	/* close file descriptor early */
+	close(fd);
+	fd = -1;
+
 	rboot = 1;
 
+	/* stop services and prepare system for restore */
 	prepare_upgrade();
 
+	/*
+	 * execute: nvram restore <file>
+	 * output redirected to msg file.
+	 */
 	if (_eval(args, msg, 0, NULL) != 0)
 		resmsg_fread(msg + 1);
 
@@ -147,26 +190,36 @@ void wi_restore(char *url, int len, char *boundary)
 	nvram_commit();
 #endif
 
-	close(fd);
+	/* remove temporary message file */
 	unlink(msg + 1);
 
 	error = NULL;
 
 ERROR:
+	/* cleanup file descriptor if still open */
+	if (fd >= 0)
+		close(fd);
+
+	/* free allocated buffer */
 	free(buf);
 
+	/* remove temporary restore file */
 	if (file[0])
 		unlink(file);
 
+	/* set error message for GUI if needed */
 	if (error)
 		resmsg_set(error);
 
+	/* consume any remaining unread POST data to keep connection in consistent state */
 	web_eat(len);
 }
 
 void wo_restore(char *url)
 {
 	if (rboot) {
+		set_action(ACT_REBOOT);
+		sync();
 		parse_asp("reboot.asp");
 		web_close();
 
@@ -177,9 +230,6 @@ void wo_restore(char *url)
 
 		sleep(2);
 
-		set_action(ACT_REBOOT);
-		sync();
-		//kill(1, SIGTERM);
 		reboot(RB_AUTOBOOT);
 
 		exit(0);

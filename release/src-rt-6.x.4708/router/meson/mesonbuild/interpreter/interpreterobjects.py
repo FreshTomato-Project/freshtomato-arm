@@ -4,6 +4,8 @@ import shlex
 import subprocess
 import copy
 import textwrap
+import threading
+import sys
 
 from pathlib import Path, PurePath
 
@@ -23,8 +25,8 @@ from ..interpreterbase import (
                                flatten, resolve_second_level_holders, InterpreterException, InvalidArguments, InvalidCode)
 from ..interpreter.type_checking import NoneType, ENV_KW, ENV_SEPARATOR_KW, PKGCONFIG_DEFINE_KW
 from ..dependencies import Dependency, ExternalLibrary, InternalDependency
-from ..programs import ExternalProgram
-from ..mesonlib import HoldableObject, listify, Popen_safe
+from ..programs import ExternalProgram, Program
+from ..mesonlib import HoldableObject, listify
 
 import typing as T
 
@@ -223,7 +225,7 @@ class FeatureOptionHolder(ObjectHolder[options.UserFeatureOption]):
 class RunProcess(MesonInterpreterObject):
 
     def __init__(self,
-                 cmd: ExternalProgram,
+                 cmd: Program,
                  args: T.List[str],
                  env: mesonlib.EnvironmentVariables,
                  source_dir: str,
@@ -232,15 +234,15 @@ class RunProcess(MesonInterpreterObject):
                  mesonintrospect: T.List[str],
                  in_builddir: bool = False,
                  check: bool = False,
-                 capture: bool = True) -> None:
+                 capture: bool = True,
+                 console: bool = False) -> None:
         super().__init__()
-        if not isinstance(cmd, ExternalProgram):
-            raise AssertionError('BUG: RunProcess must be passed an ExternalProgram')
         self.capture = capture
+        self.console = console
         self.returncode, self.stdout, self.stderr = self.run_command(cmd, args, env, source_dir, build_dir, subdir, mesonintrospect, in_builddir, check)
 
     def run_command(self,
-                    cmd: ExternalProgram,
+                    cmd: Program,
                     args: T.List[str],
                     env: mesonlib.EnvironmentVariables,
                     source_dir: str,
@@ -262,26 +264,60 @@ class RunProcess(MesonInterpreterObject):
         child_env = os.environ.copy()
         child_env.update(menv)
         child_env = env.get_env(child_env)
-        stdout = subprocess.PIPE if self.capture else subprocess.DEVNULL
+
+        def proc_output_thread(pipe: T.IO, capture_list: T.List, io_obj: T.TextIO) -> None:
+            while True:
+                line = pipe.readline()
+                if not line:
+                    break
+                if self.console:
+                    io_obj.write(line.decode('utf-8', errors='replace'))
+                    io_obj.flush()
+                if self.capture:
+                    capture_list.append(line)
+            pipe.close()
+
+        stdin: T.Union[T.TextIO, int] = sys.stdin if self.console else subprocess.DEVNULL
+        stdout = subprocess.PIPE
+        stderr = subprocess.PIPE
+
         mlog.debug('Running command:', mesonlib.join_args(command_array))
         try:
-            p, o, e = Popen_safe(command_array, stdout=stdout, env=child_env, cwd=cwd)
-            if self.capture:
-                mlog.debug('--- stdout ---')
-                mlog.debug(o)
-            else:
-                o = ''
-                mlog.debug('--- stdout disabled ---')
-            mlog.debug('--- stderr ---')
-            mlog.debug(e)
-            mlog.debug('')
-
-            if check and p.returncode != 0:
-                raise InterpreterException('Command `{}` failed with status {}.'.format(mesonlib.join_args(command_array), p.returncode))
-
-            return p.returncode, o, e
+            p = subprocess.Popen(command_array, stdin=stdin, stdout=stdout, stderr=stderr, env=child_env, cwd=cwd)
         except FileNotFoundError:
             raise InterpreterException('Could not execute command `%s`.' % mesonlib.join_args(command_array))
+
+        o_list: T.List = []
+        e_list: T.List = []
+        stdout_thread = threading.Thread(
+            target=proc_output_thread,
+            kwargs={'pipe': p.stdout, 'capture_list': o_list, 'io_obj': sys.stdout}, daemon=True)
+        stderr_thread = threading.Thread(
+            target=proc_output_thread,
+            kwargs={'pipe': p.stderr, 'capture_list': e_list, 'io_obj': sys.stderr}, daemon=True)
+        for t in (stdout_thread, stderr_thread):
+            t.start()
+
+        p.wait()
+        for t in (stdout_thread, stderr_thread):
+            t.join()
+
+        o = b''.join(o_list).decode('utf-8', errors='replace').replace('\r\n', '\n')
+        e = b''.join(e_list).decode('utf-8', errors='replace').replace('\r\n', '\n')
+
+        if self.capture:
+            mlog.debug('--- stdout ---')
+            mlog.debug(o)
+            mlog.debug('--- stderr ---')
+            mlog.debug(e)
+        else:
+            mlog.debug('--- capture output disabled ---')
+        mlog.debug('')
+
+        if check and p.returncode != 0:
+            raise InterpreterException('Command `{}` failed with status {}.'.format(mesonlib.join_args(command_array), p.returncode))
+
+        return p.returncode, o, e
 
     @noPosargs
     @noKwargs
@@ -633,10 +669,10 @@ class DependencyHolder(ObjectHolder[Dependency]):
             raise InterpreterException('as_shared method is only supported on declare_dependency() objects')
         return self.held_object.get_as_shared(kwargs['recursive'])
 
-_EXTPROG = T.TypeVar('_EXTPROG', bound=ExternalProgram)
+_PROG = T.TypeVar('_PROG', bound=Program)
 
-class _ExternalProgramHolder(ObjectHolder[_EXTPROG]):
-    def __init__(self, ep: _EXTPROG, interpreter: 'Interpreter') -> None:
+class ProgramHolder(ObjectHolder[_PROG]):
+    def __init__(self, ep: _PROG, interpreter: 'Interpreter') -> None:
         super().__init__(ep, interpreter)
 
     @noPosargs
@@ -647,15 +683,15 @@ class _ExternalProgramHolder(ObjectHolder[_EXTPROG]):
 
     @noPosargs
     @noKwargs
-    @FeatureDeprecated('ExternalProgram.path', '0.55.0',
-                       'use ExternalProgram.full_path() instead')
+    @FeatureDeprecated('Program.path', '0.55.0',
+                       'use Program.full_path() instead')
     @InterpreterObject.method('path')
     def path_method(self, args: T.List[TYPE_var], kwargs: TYPE_kwargs) -> str:
         return self._full_path()
 
     @noPosargs
     @noKwargs
-    @FeatureNew('ExternalProgram.full_path', '0.55.0')
+    @FeatureNew('Program.full_path', '0.55.0')
     @InterpreterObject.method('full_path')
     def full_path_method(self, args: T.List[TYPE_var], kwargs: TYPE_kwargs) -> str:
         return self._full_path()
@@ -663,26 +699,34 @@ class _ExternalProgramHolder(ObjectHolder[_EXTPROG]):
     def _full_path(self) -> str:
         if not self.found():
             raise InterpreterException('Unable to get the path of a not-found external program')
+        if not self.held_object.runnable():
+            assert isinstance(self.held_object, build.LocalProgram) and \
+                isinstance(self.held_object.program, (build.BuildTarget, build.CustomTargetIndex))
+            return self.interpreter.backend.get_target_filename_abs(self.held_object.program)
         path = self.held_object.get_path()
         assert path is not None
         return path
 
     @noPosargs
     @noKwargs
-    @FeatureNew('ExternalProgram.cmd_array', '1.10.0')
+    @FeatureNew('Program.cmd_array', '1.10.0')
     @InterpreterObject.method('cmd_array')
     def cmd_array_method(self, args: T.List[TYPE_var], kwargs: TYPE_kwargs) -> T.List[str]:
         if not self.found():
             raise InterpreterException('Unable to get the path of a not-found external program')
+        if not self.held_object.runnable():
+            return [self._full_path()]
         cmd = self.held_object.get_command()
         assert cmd is not None
         return cmd
 
     @noPosargs
     @noKwargs
-    @FeatureNew('ExternalProgram.version', '0.62.0')
+    @FeatureNew('Program.version', '0.62.0')
     @InterpreterObject.method('version')
     def version_method(self, args: T.List[TYPE_var], kwargs: TYPE_kwargs) -> str:
+        if isinstance(self.held_object, build.LocalProgram) and isinstance(self.held_object.program, build.Executable):
+            FeatureNew.single_use('Program.version with an executable', '1.9.0', subproject=self.subproject, location=self.current_node)
         if not self.found():
             raise InterpreterException('Unable to get the version of a not-found external program')
         try:
@@ -693,8 +737,6 @@ class _ExternalProgramHolder(ObjectHolder[_EXTPROG]):
     def found(self) -> bool:
         return self.held_object.found()
 
-class ExternalProgramHolder(_ExternalProgramHolder[ExternalProgram]):
-    pass
 
 class ExternalLibraryHolder(ObjectHolder[ExternalLibrary]):
     def __init__(self, el: ExternalLibrary, interpreter: 'Interpreter'):
@@ -816,7 +858,7 @@ class Test(MesonInterpreterObject):
                  is_parallel: bool,
                  cmd_args: T.List[T.Union[str, mesonlib.File, build.Target, ExternalProgram]],
                  env: mesonlib.EnvironmentVariables,
-                 should_fail: bool, timeout: int, workdir: T.Optional[str], protocol: str,
+                 expected_fail: bool, expected_exitcode: int, timeout: int, workdir: T.Optional[str], protocol: str,
                  priority: int, verbose: bool):
         super().__init__()
         self.name = name
@@ -827,7 +869,8 @@ class Test(MesonInterpreterObject):
         self.is_parallel = is_parallel
         self.cmd_args = cmd_args
         self.env = env
-        self.should_fail = should_fail
+        self.expected_fail = expected_fail
+        self.expected_exitcode = expected_exitcode
         self.timeout = timeout
         self.workdir = workdir
         self.protocol = TestProtocol.from_str(protocol)
@@ -955,9 +998,8 @@ class BuildTargetHolder(ObjectHolder[_BuildTarget]):
     @noPosargs
     @noKwargs
     @InterpreterObject.method('found')
+    @FeatureNew('BuildTarget.found', '0.59.0')
     def found_method(self, args: T.List[TYPE_var], kwargs: TYPE_kwargs) -> bool:
-        if not (isinstance(self.held_object, build.Executable) and self.held_object.was_returned_by_find_program):
-            FeatureNew.single_use('BuildTarget.found', '0.59.0', subproject=self.held_object.subproject)
         return True
 
     @noPosargs
@@ -1201,11 +1243,3 @@ class StructuredSourcesHolder(ObjectHolder[build.StructuredSources]):
 
     def __init__(self, sources: build.StructuredSources, interp: 'Interpreter'):
         super().__init__(sources, interp)
-
-class OverrideExecutableHolder(BuildTargetHolder[build.OverrideExecutable]):
-    @noPosargs
-    @noKwargs
-    @FeatureNew('OverrideExecutable.version', '1.9.0')
-    @InterpreterObject.method('version')
-    def version_method(self, args: T.List[TYPE_var], kwargs: TYPE_kwargs) -> str:
-        return self.held_object.get_version(self.interpreter)

@@ -27,6 +27,7 @@
 #include "ecdsa.h"
 #include "ecdsagen.h"
 #include "meta.h"
+#include "process.h"
 #include "protocol.h"
 #include "sptps.h"
 #include "random.h"
@@ -46,6 +47,7 @@ bool send_meta(struct connection_t *c, const void *msg, size_t len) {
 	(void)len;
 	return false;
 }
+
 bool do_detach = false;
 struct timeval now;
 
@@ -81,11 +83,11 @@ static void receive_data(sptps_t *sptps) {
 	}
 }
 
-struct timespec start;
-struct timespec end;
-double elapsed;
-double rate;
-unsigned int count;
+static struct timespec start;
+static struct timespec end;
+static double elapsed;
+static double rate;
+static unsigned int count;
 
 static void clock_start(void) {
 	count = 0;

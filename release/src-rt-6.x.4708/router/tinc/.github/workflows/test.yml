@@ -20,36 +20,38 @@ jobs:
       matrix:
         arch:
           - armhf
-          - mipsel
           - mingw
 
     container:
-      image: debian:stable
+      image: debian:stable-slim
       options: --privileged
+      env:
+        CI: 1
+        HOST: ${{ matrix.arch }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v6
 
       - name: Install deps
-        run: HOST=${{ matrix.arch }} sh .ci/deps.sh
+        run: .ci/deps.sh
 
       - name: Prepare the system
-        run: HOST=${{ matrix.arch }} sh .ci/test/prepare.sh
+        run: .ci/test/prepare.sh
 
       - name: Run tests with default settings
-        run: sudo -u build CI=1 HOST=${{ matrix.arch }} sh .ci/test/run.sh default
+        run: .ci/test/run.sh default
 
       - name: Run tests without legacy protocol
-        run: sudo -u build CI=1 HOST=${{ matrix.arch }} sh .ci/test/run.sh nolegacy
+        run: .ci/test/run.sh nolegacy
         if: always()
 
       - name: Run tests with libgcrypt
-        run: sudo -u build CI=1 HOST=${{ matrix.arch }} sh .ci/test/run.sh gcrypt
+        run: .ci/test/run.sh gcrypt
         if: always()
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tests_cross_${{ matrix.arch }}
           path: /tmp/logs/tests.*.tar.gz
@@ -59,41 +61,48 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     container:
-      image: debian:stable-slim
+      image: alpine:latest
       env:
         CI: 1
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v6
 
       - name: Install dependencies
-        run: SKIP_OPENSSL3=1 SKIP_MESON=1 .ci/deps.sh libpkgconf-dev
+        run: SKIP_MESON=1 .ci/deps.sh muon
 
       - name: Compatibility with muon
-        run: ./.ci/muon/run.sh
+        run: .ci/muon/run.sh
 
   analysis:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    container:
+      image: debian:stable-slim
+      options: --privileged
+      env:
+        CI: 1
+
     steps:
-      - name: Checkout tinc
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+      - name: Install Git
+        run: apt update; apt install -y --no-install-recommends git
+
+      - name: Checkout code
+        uses: actions/checkout@v6
 
       - name: Install dependencies
-        run: sudo SKIP_OPENSSL3=1 .ci/deps.sh autoconf automake iperf3
+        run: .ci/deps.sh autoconf automake iperf3 clang-19
 
       - name: Compatibility with older versions of tinc
-        run: sudo ./.ci/compat/run.sh
+        run: .ci/compat/run.sh
         if: always()
 
       - name: Install tools
         run: |
-          sudo apt-get install -y astyle clang-tidy-$CLANG shellcheck shfmt black pylint mypy
-          sudo update-alternatives --install /usr/bin/clang-tidy     clang-tidy     /usr/bin/clang-tidy-$CLANG     100
-          sudo update-alternatives --install /usr/bin/run-clang-tidy run-clang-tidy /usr/bin/run-clang-tidy-$CLANG 100
+          apt install --no-install-recommends -y astyle clang-tidy-$CLANG shellcheck shfmt black pylint mypy python3-venv
+          update-alternatives --install /usr/bin/clang-tidy     clang-tidy     /usr/bin/clang-tidy-$CLANG     100
+          update-alternatives --install /usr/bin/run-clang-tidy run-clang-tidy /usr/bin/run-clang-tidy-$CLANG 100
           python3 -m venv /tmp/venv
           . /tmp/venv/bin/activate
           pip3 install markflow
@@ -108,13 +117,13 @@ jobs:
         if: always()
 
       - name: Check warnings (clang)
-        run: bash .ci/warn/run.sh
+        run: .ci/warn/run.sh
         env:
           CC: clang-19
         if: always()
 
       - name: Check warnings (gcc)
-        run: bash .ci/warn/run.sh
+        run: .ci/warn/run.sh
         env:
           CC: gcc-14
         if: always()
@@ -128,12 +137,12 @@ jobs:
         if: always()
 
       - name: Archive test results
-        run: sudo tar -caf tests.tar.gz /usr/local/etc
+        run: tar -caf tests.tar.gz /usr/local/etc
         continue-on-error: true
         if: always()
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tests_compat
           path: tests.tar.gz
@@ -149,36 +158,36 @@ jobs:
           - address
           - thread
           - undefined
-    env:
-      SANITIZER: "${{ matrix.sanitizer }}"
+    container:
+      image: debian:stable-slim
+      env:
+        CI: 1
+        SANITIZER: "${{ matrix.sanitizer }}"
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v6
 
       - name: Install deps
-        run: |
-          sudo sh .ci/deps.sh iputils-arping
-          sudo pip3 install --upgrade cryptography
+        run: .ci/deps.sh clang libclang-rt-dev
 
-      - name: Run tests with OpenSSL 3
-        run: bash .ci/sanitizers/run.sh openssl3
-        if: always()
+      - name: Prepare the system
+        run: .ci/test/prepare.sh
 
       - name: Sanitize tests with default settings
-        run: bash .ci/sanitizers/run.sh default
+        run: .ci/sanitizers/run.sh default
         if: always()
 
       - name: Sanitize tests without legacy protocol
-        run: bash .ci/sanitizers/run.sh nolegacy
+        run: .ci/sanitizers/run.sh nolegacy
         if: always()
 
       - name: Run tests with libgcrypt
-        run: bash .ci/sanitizers/run.sh gcrypt
+        run: .ci/sanitizers/run.sh gcrypt
         if: always()
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tests_sanitizer_${{ matrix.sanitizer }}
           path: /tmp/logs/tests.*.tar.gz
@@ -196,9 +205,9 @@ jobs:
           - almalinux:latest
           - fedora:latest
           - fedora:rawhide
-          - debian:oldstable
-          - debian:stable
-          - debian:testing
+          - debian:oldstable-slim
+          - debian:stable-slim
+          - debian:testing-slim
           - ubuntu:latest
           - ubuntu:rolling
     container:
@@ -208,46 +217,43 @@ jobs:
         CI: 1
     steps:
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v6
 
       - name: Install deps
-        run: sh .ci/deps.sh
+        run: .ci/deps.sh
 
       - name: Assign name for test results artifact
         run: echo ARTIFACT="$(echo '${{ matrix.os }}' | sed 's|[:/]|_|g')" >>"$GITHUB_ENV"
 
       - name: Create a non-privileged user
-        run: sh .ci/test/prepare.sh
-
-      - name: Run tests with OpenSSL 3
-        run: sudo -u build CI=1 sh .ci/test/run.sh openssl3
+        run: .ci/test/prepare.sh
 
       - name: Run tests with default settings
-        run: sudo -u build CI=1 sh .ci/test/run.sh default
+        run: .ci/test/run.sh default
         if: always()
 
       - name: Run tests without legacy protocol
-        run: sudo -u build CI=1 sh .ci/test/run.sh nolegacy
+        run: .ci/test/run.sh nolegacy
         if: always()
 
       - name: Run tests with libgcrypt
-        run: sudo -u build CI=1 sh .ci/test/run.sh gcrypt
+        run: .ci/test/run.sh gcrypt
         if: always()
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tests_${{ env.ARTIFACT }}
           path: /tmp/logs/tests.*.tar.gz
         if: always()
 
       - name: Build package
-        run: sh .ci/package/build.sh
+        run: .ci/package/build.sh
         if: github.ref == 'refs/heads/1.1' || startsWith(github.ref, 'refs/tags/release-')
         continue-on-error: true
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pkg-${{ env.ARTIFACT }}
           path: |
@@ -268,7 +274,7 @@ jobs:
         run: mkdir -p /tmp/artifacts
 
       - name: Download packages
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v8
         with:
           path: /tmp/artifacts
 
@@ -292,29 +298,29 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
 
   macos:
-    runs-on: macos-15
+    runs-on: macos-latest
     timeout-minutes: 20
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v6
 
       - name: Install build deps
-        run: sh .ci/deps.sh
+        run: .ci/deps.sh
 
       - name: Run tests with default settings
-        run: sh .ci/test/run.sh default
+        run: CFLAGS=-I/opt/homebrew/include .ci/test/run.sh default
 
       - name: Run tests without legacy protocol
-        run: sh .ci/test/run.sh nolegacy
+        run: CFLAGS=-I/opt/homebrew/include .ci/test/run.sh nolegacy
         if: always()
 
       - name: Run tests with libgcrypt
-        run: sh .ci/test/run.sh gcrypt
+        run: CFLAGS=-I/opt/homebrew/include .ci/test/run.sh gcrypt
         if: always()
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tests_macos
           path: /tmp/logs/tests.*.tar.gz
@@ -348,20 +354,20 @@ jobs:
             procps
 
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v6
 
       - name: Run tests with default settings
         shell: msys2 {0}
-        run: sh .ci/test/run.sh default
+        run: .ci/test/run.sh default
 
       - name: Create installer
         shell: msys2 {0}
-        run: sh .ci/package/build.sh
+        run: .ci/package/build.sh
         if: github.ref == 'refs/heads/1.1' || startsWith(github.ref, 'refs/tags/release-')
         continue-on-error: true
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pkg-windows
           path: .ci/package/win/tinc-*.exe
@@ -369,16 +375,16 @@ jobs:
 
       - name: Run tests without legacy protocol
         shell: msys2 {0}
-        run: sh .ci/test/run.sh nolegacy
+        run: .ci/test/run.sh nolegacy
         if: always()
 
       - name: Run tests with libgcrypt
         shell: msys2 {0}
-        run: sh .ci/test/run.sh gcrypt
+        run: .ci/test/run.sh gcrypt
         if: always()
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tests_windows
           path: /tmp/logs/tests.*.tar.gz
@@ -405,7 +411,7 @@ jobs:
         run: pip3 install meson
 
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v6
 
       - name: Activate dev environment
         uses: ilammy/msvc-dev-cmd@v1

@@ -317,7 +317,7 @@ unsigned char *skip_name(unsigned char *ansp, struct dns_header *header, size_t 
       else if (label_type == 0x40)
 	{
 	  /* Extended label type */
-	  unsigned int count;
+	  unsigned int count, llen;
 	  
 	  if (!CHECK_LEN(header, ansp, plen, 2))
 	    return NULL;
@@ -328,9 +328,12 @@ unsigned char *skip_name(unsigned char *ansp, struct dns_header *header, size_t 
 	  count = *(ansp++); /* Bits in bitstring */
 	  
 	  if (count == 0) /* count == 0 means 256 bits */
-	    ansp += 32;
+	    llen = 32;
 	  else
-	    ansp += ((count-1)>>3)+1;
+	    llen = ((count-1)>>3)+1;
+
+	  if (!ADD_RDLEN(header, ansp, plen, llen))
+	    return NULL;
 	}
       else
 	{ /* label type == 0 Bottom six bits is length */

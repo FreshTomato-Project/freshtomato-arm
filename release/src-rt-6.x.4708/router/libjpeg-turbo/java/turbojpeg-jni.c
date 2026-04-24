@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2011-2025 D. R. Commander.  All Rights Reserved.
+ * Copyright (C) 2011-2026 D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -93,11 +93,32 @@
 
 #define PAD(v, p)  ((v + (p) - 1) & (~((p) - 1)))
 
+/* javac -h doesn't generate a JNI header for the TJTransform class, because it
+ * contains no native methods.  Make sure this value matches TJTransform.NUMOP.
+ */
+#define org_libjpegturbo_turbojpeg_TJTransform_NUMOP  8
+
+/* Sanity check to ensure that the JNI library is built against a matching
+ * version of the TurboJPEG C API.  We also perform range checks to guard
+ * against run-time mismatches.
+ */
+#if (org_libjpegturbo_turbojpeg_TJ_NUMSAMP != TJ_NUMSAMP || \
+     org_libjpegturbo_turbojpeg_TJ_NUMPF != TJ_NUMPF || \
+     org_libjpegturbo_turbojpeg_TJ_NUMCS != TJ_NUMCS || \
+     org_libjpegturbo_turbojpeg_TJTransform_NUMOP != TJ_NUMXOP)
+#error Mismatch between Java and C API
+#endif
+
 /* TurboJPEG 1.2.x: TJ.bufSize() */
 JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJ_bufSize
   (JNIEnv *env, jclass cls, jint width, jint height, jint jpegSubsamp)
 {
-  size_t retval = tj3JPEGBufSize(width, height, jpegSubsamp);
+  size_t retval = 0;
+
+  if (jpegSubsamp >= org_libjpegturbo_turbojpeg_TJ_NUMSAMP)
+    THROW_ARG("Invalid argument");
+
+  retval = tj3JPEGBufSize(width, height, jpegSubsamp);
 
   if (retval == 0) THROW_ARG(tj3GetErrorStr(NULL));
   if (retval > (size_t)INT_MAX)
@@ -111,7 +132,12 @@ bailout:
 JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJ_bufSizeYUV__IIII
   (JNIEnv *env, jclass cls, jint width, jint align, jint height, jint subsamp)
 {
-  size_t retval = tj3YUVBufSize(width, align, height, subsamp);
+  size_t retval = 0;
+
+  if (subsamp >= org_libjpegturbo_turbojpeg_TJ_NUMSAMP)
+    THROW_ARG("Invalid argument");
+
+  retval = tj3YUVBufSize(width, align, height, subsamp);
 
   if (retval == 0) THROW_ARG(tj3GetErrorStr(NULL));
   if (retval > (size_t)INT_MAX)
@@ -126,7 +152,12 @@ JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJ_planeSizeYUV__IIIII
   (JNIEnv *env, jclass cls, jint componentID, jint width, jint stride,
    jint height, jint subsamp)
 {
-  size_t retval = tj3YUVPlaneSize(componentID, width, stride, height, subsamp);
+  size_t retval = 0;
+
+  if (subsamp >= org_libjpegturbo_turbojpeg_TJ_NUMSAMP)
+    THROW_ARG("Invalid argument");
+
+  retval = tj3YUVPlaneSize(componentID, width, stride, height, subsamp);
 
   if (retval == 0) THROW_ARG(tj3GetErrorStr(NULL));
   if (retval > (size_t)INT_MAX)
@@ -140,7 +171,12 @@ bailout:
 JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJ_planeWidth__III
   (JNIEnv *env, jclass cls, jint componentID, jint width, jint subsamp)
 {
-  jint retval = (jint)tj3YUVPlaneWidth(componentID, width, subsamp);
+  jint retval = 0;
+
+  if (subsamp >= org_libjpegturbo_turbojpeg_TJ_NUMSAMP)
+    THROW_ARG("Invalid argument");
+
+  retval = (jint)tj3YUVPlaneWidth(componentID, width, subsamp);
 
   if (retval == 0) THROW_ARG(tj3GetErrorStr(NULL));
 
@@ -152,7 +188,12 @@ bailout:
 JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJ_planeHeight__III
   (JNIEnv *env, jclass cls, jint componentID, jint height, jint subsamp)
 {
-  jint retval = (jint)tj3YUVPlaneHeight(componentID, height, subsamp);
+  jint retval = 0;
+
+  if (subsamp >= org_libjpegturbo_turbojpeg_TJ_NUMSAMP)
+    THROW_ARG("Invalid argument");
+
+  retval = (jint)tj3YUVPlaneHeight(componentID, height, subsamp);
 
   if (retval == 0) THROW_ARG(tj3GetErrorStr(NULL));
 
@@ -187,6 +228,12 @@ JNIEXPORT void JNICALL Java_org_libjpegturbo_turbojpeg_TJCompressor_set
 
   GET_HANDLE();
 
+  if ((param == org_libjpegturbo_turbojpeg_TJ_PARAM_SUBSAMP &&
+       value >= org_libjpegturbo_turbojpeg_TJ_NUMSAMP) ||
+      (param == org_libjpegturbo_turbojpeg_TJ_PARAM_COLORSPACE &&
+       value >= org_libjpegturbo_turbojpeg_TJ_NUMCS))
+    THROW_ARG("Parameter value out of range");
+
   if (tj3Set(handle, param, value) == -1)
     THROW_TJ();
 
@@ -199,13 +246,20 @@ JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJCompressor_get
   (JNIEnv *env, jobject obj, jint param)
 {
   tjhandle handle = 0;
+  jint retval = -1;
 
   GET_HANDLE();
 
-  return tj3Get(handle, param);
+  retval = tj3Get(handle, param);
+
+  if ((param == org_libjpegturbo_turbojpeg_TJ_PARAM_SUBSAMP &&
+       retval >= org_libjpegturbo_turbojpeg_TJ_NUMSAMP) ||
+      (param == org_libjpegturbo_turbojpeg_TJ_PARAM_COLORSPACE &&
+       retval >= org_libjpegturbo_turbojpeg_TJ_NUMCS))
+    THROW_ARG("Mismatch between Java and C API");
 
 bailout:
-  return -1;
+  return retval;
 }
 
 /* TurboJPEG 3.1.x: TJCompressor.setICCProfile() */
@@ -257,12 +311,10 @@ static jint TJCompressor_compress
   if (pf < 0 || pf >= org_libjpegturbo_turbojpeg_TJ_NUMPF || width < 1 ||
       height < 1 || pitch < 0)
     THROW_ARG("Invalid argument in compress*()");
-  if (org_libjpegturbo_turbojpeg_TJ_NUMPF != TJ_NUMPF)
-    THROW_ARG("Mismatch between Java and C API");
 
   actualPitch = (pitch == 0) ? width * tjPixelSize[pf] : pitch;
   if (((unsigned long long)y + height - 1ULL) * actualPitch + (x + width) *
-      tjPixelSize[pf] > (unsigned long long)((unsigned int)-1))
+      tjPixelSize[pf] > (unsigned long long)INT_MAX)
     THROW_ARG("Image is too large");
   arraySize = (y + height - 1) * actualPitch + (x + width) * tjPixelSize[pf];
   if ((*env)->GetArrayLength(env, src) * srcElementSize < arraySize)
@@ -373,9 +425,6 @@ JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJCompressor_compressFrom
 
   GET_HANDLE();
 
-  if (org_libjpegturbo_turbojpeg_TJ_NUMSAMP != TJ_NUMSAMP)
-    THROW_ARG("Mismatch between Java and C API");
-
   if ((subsamp = tj3Get(handle, TJPARAM_SUBSAMP)) == TJSAMP_UNKNOWN)
     THROW_ARG("TJPARAM_SUBSAMP must be specified");
   nc = subsamp == TJSAMP_GRAY ? 1 : 3;
@@ -462,9 +511,6 @@ static void TJCompressor_encodeYUV8
   if (pf < 0 || pf >= org_libjpegturbo_turbojpeg_TJ_NUMPF || width < 1 ||
       height < 1 || pitch < 0)
     THROW_ARG("Invalid argument in encodeYUV8()");
-  if (org_libjpegturbo_turbojpeg_TJ_NUMPF != TJ_NUMPF ||
-      org_libjpegturbo_turbojpeg_TJ_NUMSAMP != TJ_NUMSAMP)
-    THROW_ARG("Mismatch between Java and C API");
 
   if ((subsamp = tj3Get(handle, TJPARAM_SUBSAMP)) == TJSAMP_UNKNOWN)
     THROW_ARG("TJPARAM_SUBSAMP must be specified");
@@ -478,7 +524,7 @@ static void TJCompressor_encodeYUV8
 
   actualPitch = (pitch == 0) ? width * tjPixelSize[pf] : pitch;
   if (((unsigned long long)y + height - 1ULL) * actualPitch + (x + width) *
-      tjPixelSize[pf] > (unsigned long long)((unsigned int)-1))
+      tjPixelSize[pf] > (unsigned long long)INT_MAX)
     THROW_ARG("Image is too large");
   arraySize = (y + height - 1) * actualPitch + (x + width) * tjPixelSize[pf];
   if ((*env)->GetArrayLength(env, src) * srcElementSize < arraySize)
@@ -664,6 +710,12 @@ JNIEXPORT void JNICALL Java_org_libjpegturbo_turbojpeg_TJDecompressor_decompress
     THROW_TJ();
   }
 
+  if (tj3Get(handle, TJPARAM_SUBSAMP) >=
+      org_libjpegturbo_turbojpeg_TJ_NUMSAMP ||
+      tj3Get(handle, TJPARAM_COLORSPACE) >=
+      org_libjpegturbo_turbojpeg_TJ_NUMCS)
+    THROW_ARG("Mismatch between Java and C API");
+
 bailout:
   SAFE_RELEASE(src, jpegBuf);
 }
@@ -775,8 +827,6 @@ static void TJDecompressor_decompress
 
   if (pf < 0 || pf >= org_libjpegturbo_turbojpeg_TJ_NUMPF)
     THROW_ARG("Invalid argument in decompress*()");
-  if (org_libjpegturbo_turbojpeg_TJ_NUMPF != TJ_NUMPF)
-    THROW_ARG("Mismatch between Java and C API");
 
   if ((*env)->GetArrayLength(env, src) < jpegSize)
     THROW_ARG("Source buffer is not large enough");
@@ -820,8 +870,7 @@ static void TJDecompressor_decompress
 
   actualPitch = (pitch == 0) ? scaledWidth * tjPixelSize[pf] : pitch;
   if (((unsigned long long)y + scaledHeight - 1ULL) * actualPitch +
-      (x + scaledWidth) * tjPixelSize[pf] >
-      (unsigned long long)((unsigned int)-1))
+      (x + scaledWidth) * tjPixelSize[pf] > (unsigned long long)INT_MAX)
     THROW_ARG("Image is too large");
   arraySize = (y + scaledHeight - 1) * actualPitch +
               (x + scaledWidth) * tjPixelSize[pf];
@@ -1026,9 +1075,6 @@ static void TJDecompressor_decodeYUV8
 
   if (pf < 0 || pf >= org_libjpegturbo_turbojpeg_TJ_NUMPF)
     THROW_ARG("Invalid argument in decodeYUV8()");
-  if (org_libjpegturbo_turbojpeg_TJ_NUMPF != TJ_NUMPF ||
-      org_libjpegturbo_turbojpeg_TJ_NUMSAMP != TJ_NUMSAMP)
-    THROW_ARG("Mismatch between Java and C API");
 
   if ((subsamp = tj3Get(handle, TJPARAM_SUBSAMP)) == TJSAMP_UNKNOWN)
     THROW_ARG("TJPARAM_SUBSAMP must be specified");
@@ -1042,7 +1088,7 @@ static void TJDecompressor_decodeYUV8
 
   actualPitch = (pitch == 0) ? width * tjPixelSize[pf] : pitch;
   if (((unsigned long long)y + height - 1ULL) * actualPitch + (x + width) *
-      tjPixelSize[pf] > (unsigned long long)((unsigned int)-1))
+      tjPixelSize[pf] > (unsigned long long)INT_MAX)
     THROW_ARG("Image is too large");
   arraySize = (y + height - 1) * actualPitch + (x + width) * tjPixelSize[pf];
   if ((*env)->GetArrayLength(env, dst) * dstElementSize < arraySize)
@@ -1220,7 +1266,7 @@ bailout:
   return -1;
 }
 
-/* TurboJPEG 3.1.x: TJTransformed.bufSize() */
+/* TurboJPEG 3.1.x: TJTransformer.bufSize() */
 JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJTransformer_bufSize
   (JNIEnv *env, jobject obj, jobject tobj)
 {
@@ -1310,6 +1356,9 @@ JNIEXPORT jintArray JNICALL Java_org_libjpegturbo_turbojpeg_TJTransformer_transf
     BAILIF0(_cls = (*env)->GetObjectClass(env, tobj));
     BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "op", "I"));
     t[i].op = (*env)->GetIntField(env, tobj, _fid);
+    if (t[i].op >= org_libjpegturbo_turbojpeg_TJTransform_NUMOP)
+      THROW("Invalid transform operation",
+            "org/libjpegturbo/turbojpeg/TJException");
     BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "options", "I"));
     t[i].options = (*env)->GetIntField(env, tobj, _fid);
     BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "x", "I"));
@@ -1421,9 +1470,10 @@ JNIEXPORT jobject JNICALL Java_org_libjpegturbo_turbojpeg_TJCompressor_loadSourc
   (*env)->ReleaseStringUTFChars(env, jfilename, filename);
   filename = NULL;
 
-  if ((unsigned long long)width * (unsigned long long)height *
-      (unsigned long long)tjPixelSize[pixelFormat] >
-      (unsigned long long)((unsigned int)-1))
+  if (pixelFormat >= org_libjpegturbo_turbojpeg_TJ_NUMPF)
+    THROW_ARG("Mismatch between Java and C API");
+  if (PAD((unsigned long long)width * tjPixelSize[pixelFormat], align) *
+      height > (unsigned long long)INT_MAX)
     THROW_ARG("Image is too large");
 
   cls = (*env)->GetObjectClass(env, obj);
@@ -1474,14 +1524,10 @@ JNIEXPORT void JNICALL Java_org_libjpegturbo_turbojpeg_TJDecompressor_saveImage
       jbuffer == NULL || x < 0 || y < 0 || width < 1 || pitch < 0 ||
       height < 1 || pf < 0 || pf >= org_libjpegturbo_turbojpeg_TJ_NUMPF)
     THROW_ARG("Invalid argument in saveImage()");
-  if (org_libjpegturbo_turbojpeg_TJ_NUMPF != TJ_NUMPF)
-    THROW_ARG("Mismatch between Java and C API");
 
-  if ((unsigned long long)width * (unsigned long long)height *
-      (unsigned long long)tjPixelSize[pf] >
-      (unsigned long long)((unsigned int)-1))
-    THROW_ARG("Image is too large");
   actualPitch = (pitch == 0) ? width * tjPixelSize[pf] : pitch;
+  if ((unsigned long long)actualPitch * height > (unsigned long long)INT_MAX)
+    THROW_ARG("Image is too large");
   arraySize = actualPitch * height;
   if ((*env)->GetArrayLength(env, jbuffer) < arraySize)
     THROW_ARG("Source buffer is not large enough");

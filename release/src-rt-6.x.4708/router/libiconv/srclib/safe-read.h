@@ -1,5 +1,5 @@
 /* An interface to read() that retries after interrupts.
-   Copyright (C) 2002, 2006, 2009-2024 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2006, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -23,7 +23,7 @@
        SA_RESTART.
      - The process receives a signal for which a signal handler was installed
        with signal() and for which no call to siginterrupt(sig,0) was done,
-       on some platforms: AIX, HP-UX, IRIX, OSF/1, Solaris.
+       on some platforms: AIX, HP-UX, Solaris.
 
    This module provides a wrapper around read() that handles EINTR.  */
 

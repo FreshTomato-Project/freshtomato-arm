@@ -44,7 +44,7 @@ bool add_subnet_h(connection_t *c, const char *request) {
 	char subnetstr[MAX_STRING_SIZE];
 	char name[MAX_STRING_SIZE];
 	node_t *owner;
-	subnet_t s = {0}, *new, *old;
+	subnet_t s = {0}, *new;
 
 	if(sscanf(request, "%*d %*x " MAX_STRING " " MAX_STRING, name, subnetstr) != 2) {
 		logger(DEBUG_ALWAYS, LOG_ERR, "Got bad %s from %s (%s)", "ADD_SUBNET", c->name,
@@ -123,7 +123,8 @@ bool add_subnet_h(connection_t *c, const char *request) {
 
 	/* If everything is correct, add the subnet to the list of the owner */
 
-	*(new = new_subnet()) = s;
+	new = new_subnet();
+	*new = s;
 	subnet_add(owner, new);
 
 	if(owner->status.reachable) {
@@ -138,8 +139,12 @@ bool add_subnet_h(connection_t *c, const char *request) {
 
 	/* Fast handoff of roaming MAC addresses */
 
-	if(s.type == SUBNET_MAC && owner != myself && (old = lookup_subnet(myself, &s)) && old->expires) {
-		old->expires = 1;
+	if(s.type == SUBNET_MAC && owner != myself) {
+		subnet_t *old = lookup_subnet(myself, &s);
+
+		if(old && old->expires) {
+			old->expires = 1;
+		}
 	}
 
 	return true;

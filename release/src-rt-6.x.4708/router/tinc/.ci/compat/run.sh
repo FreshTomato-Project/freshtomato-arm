@@ -96,8 +96,9 @@ test_network() {
 
   header "Sending data between $from and $to"
 
-  ip netns exec "$from" \
-    iperf3 --time 1 --client "${addr[$to]}"
+  # Try twice in case tinc hasn't finished PMTU discovery yet
+  ip netns exec "$from" iperf3 --time 1 --client "${addr[$to]}" ||
+    ip netns exec "$from" iperf3 --time 1 --client "${addr[$to]}"
 }
 
 test_sign_verify() {
@@ -138,6 +139,11 @@ latest() {
 tinc11() {
   /opt/tinc11/sbin/tinc -c $etc/tinc11 "$@"
 }
+
+if [ -n "$CI" ]; then
+  # Workaround for ip netns exec messing with /sys mount in containers
+  mount -t sysfs --make-private sysfs $(mktemp -d)
+fi
 
 header 'Creating branches'
 

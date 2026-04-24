@@ -1,4 +1,4 @@
-.TH CAP-AUDIT "8" "Jan 2026" "Red Hat" "System Administration Utilities"
+.TH CAP-AUDIT "8" "March 2026" "Red Hat" "System Administration Utilities"
 .SH NAME
 cap-audit \- discover the minimal capability set for a program
 .SH SYNOPSIS
@@ -21,6 +21,9 @@ presents deployment snippets showing how to grant the minimal set.
 Runtime tracing requires root or the CAP_BPF, CAP_PERFMON, and CAP_SYS_PTRACE capabilities, along with kernel BTF data in
 \fI/sys/kernel/btf/vmlinux\fP.
 .SH OPTIONS
+.TP
+.BR -h , " --help"
+Show a help message and exit.
 .TP
 .BR -v , " --verbose"
 Print each capability check as it occurs.
@@ -46,7 +49,10 @@ while setting up tracing or executing the target command.
 
 .nf
 .B cap-audit /usr/sbin/sshd -D
-.if
+.fi
+
+.PP
+\fBEXPERIMENTAL:\fP cap-audit output is experimental, but very close.
 
 .SH FILES
 .I /sys/kernel/btf/vmlinux

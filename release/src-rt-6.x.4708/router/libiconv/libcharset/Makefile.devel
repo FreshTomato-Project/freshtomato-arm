@@ -5,7 +5,7 @@ SHELL = /bin/sh
 MAKE = make
 AUTOCONF = autoconf
 AUTOHEADER = autoheader
-ACLOCAL = aclocal-1.16
+ACLOCAL = aclocal-1.18
 CP = cp
 RM = rm -f
 

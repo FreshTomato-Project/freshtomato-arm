@@ -1,4 +1,5 @@
 #include "../system.h"
+#include "../utils.h"
 #include "../xalloc.h"
 
 #include "chacha.h"
@@ -88,7 +89,7 @@ bool chacha_poly1305_decrypt(chacha_poly1305_ctx_t *ctx, uint64_t seqnr, const v
 
 	poly1305_auth(expected_tag, indata, inlen, poly_key);
 
-	if(memcmp(expected_tag, tag, POLY1305_TAGLEN)) {
+	if(!mem_eq(expected_tag, tag, POLY1305_TAGLEN)) {
 		return false;
 	}
 

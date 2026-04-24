@@ -371,7 +371,7 @@ void precalc_multicolorinfo(void)
 	}
 
 #ifdef TIMEPRECALC
-	statusline(INFO, "Precalculation: %.1f ms", 1000 * (double)(clock() - start) / CLOCKS_PER_SEC);
+	statusline(NOTICE, "Precalculation: %.1f ms", 1000 * (double)(clock() - start) / CLOCKS_PER_SEC);
 	napms(1200);
 #endif
 }

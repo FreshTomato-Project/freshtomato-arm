@@ -2,12 +2,12 @@
 
 """Test sign/verify commands."""
 
-import os
-import tempfile
-
-from testlib import util, cmd, check
 from testlib.proc import Tinc
 from testlib.test import Test
+from testlib import util, cmd, check
+
+import os
+import tempfile
 
 PRIV_KEY = """
 -----BEGIN ED25519 PRIVATE KEY-----
@@ -30,9 +30,9 @@ hello there\n\
     "utf-8"
 )
 
-RAW_DATA = tempfile.mktemp()
+raw_fd, raw_path = tempfile.mkstemp()
 
-with open(RAW_DATA, "wb") as raw_file:
+with os.fdopen(raw_fd, "wb") as raw_file:
     raw_file.write(util.random_string(64).encode("utf-8"))
 
 
@@ -55,19 +55,19 @@ def test_sign_errors(foo: Tinc) -> None:
     check.is_in("Could not open", err)
 
     os.truncate(foo.sub("ed25519_key.priv"), 0)
-    _, err = foo.cmd("sign", RAW_DATA, code=1)
+    _, err = foo.cmd("sign", raw_path, code=1)
     check.is_in("Could not read private key from", err)
 
     os.remove(foo.sub("ed25519_key.priv"))
-    _, err = foo.cmd("sign", RAW_DATA, code=1)
+    _, err = foo.cmd("sign", raw_path, code=1)
     check.is_in("Could not open", err)
 
 
 def test_verify(foo: Tinc) -> None:
     """Test `verify` of data known to work."""
 
-    signed_file = tempfile.mktemp()
-    with open(signed_file, "wb") as f:
+    fd, path = tempfile.mkstemp()
+    with os.fdopen(fd, "wb") as f:
         f.write(SIGNED_BYTES)
 
     foo.name = "foo"
@@ -77,13 +77,13 @@ def test_verify(foo: Tinc) -> None:
 
     for name in ".", foo.name:
         foo.cmd("verify", name, stdin=SIGNED_BYTES)
-        foo.cmd("verify", name, signed_file)
+        foo.cmd("verify", name, path)
 
     if os.name != "nt":
         foo.cmd("verify", "*", stdin=SIGNED_BYTES)
-        foo.cmd("verify", "*", signed_file)
+        foo.cmd("verify", "*", path)
 
-    os.remove(signed_file)
+    os.remove(path)
 
 
 def test_verify_errors(foo: Tinc) -> None:
@@ -131,30 +131,30 @@ def test_verify_errors(foo: Tinc) -> None:
 def test_sign_verify(foo: Tinc, bar: Tinc) -> None:
     """Test `sign` and pass its result to `verify`."""
 
-    signed, _ = foo.cmd("sign", RAW_DATA, stdin=b"")
+    signed, _ = foo.cmd("sign", raw_path, stdin=b"")
     assert isinstance(signed, bytes)
 
-    signed_file = tempfile.mktemp()
-    with open(signed_file, "wb") as f:
+    fd, path = tempfile.mkstemp()
+    with os.fdopen(fd, "wb") as f:
         f.write(signed)
 
     for name in ".", foo.name:
-        foo.cmd("verify", name, signed_file)
+        foo.cmd("verify", name, path)
         foo.cmd("verify", name, stdin=signed)
 
     if os.name != "nt":
-        foo.cmd("verify", "*", signed_file)
+        foo.cmd("verify", "*", path)
         foo.cmd("verify", "*", stdin=signed)
 
-    os.remove(signed_file)
+    os.remove(path)
 
     cmd.exchange(foo, bar)
 
     if os.name != "nt":
-        signed, _ = foo.cmd("sign", RAW_DATA)
+        signed, _ = foo.cmd("sign", raw_path)
         bar.cmd("verify", "*", stdin=signed)
 
-    signed, _ = bar.cmd("sign", RAW_DATA)
+    signed, _ = bar.cmd("sign", raw_path)
     foo.cmd("verify", bar.name, stdin=signed)
 
 

@@ -156,31 +156,42 @@ int web_write(const char *buffer, int len)
 int web_read(void *buffer, int len)
 {
 	int r;
+
 	if (len <= 0)
 		return 0;
 
-	while ((r = fread(buffer, 1, len, connfp)) == 0) {
-		if (errno != EINTR) return -1;
-	}
+	for (;;) {
+		r = fread(buffer, 1, len, connfp);
 
-	return r;
+		if (r > 0)
+			return r;
+
+		if (r == 0) {
+			if (feof(connfp))
+				return 0; /* EOF */
+
+			if (errno == EINTR)
+				continue;
+
+			return -1; /* real error */
+		}
+	}
 }
 
 int web_read_x(void *buffer, int len)
 {
-	int n, t = 0;
+	int n, total = 0;
 
-	while (len > 0) {
-		n = web_read(buffer, len);
+	while (total < len) {
+		n = web_read((char *)buffer + total, len - total);
+
 		if (n <= 0)
-			return len;
+			return -1; /* error or EOF */
 
-		buffer += n;
-		len -= n;
-		t += n;
+		total += n;
 	}
 
-	return t;
+	return total; /* == len on success */
 }
 
 int web_eat(int max)
@@ -238,9 +249,16 @@ static void _web_putfile(FILE *f, wofilter_t wof)
 {
 	char buf[2048];
 	int nr;
+	int total = 0;
+	int max = 10 * 1024 * 1024; /* 10MB limit */
 
 	while ((nr = fread(buf, 1, sizeof(buf) - 1, f)) > 0) {
+		/* enforce output limit */
+		if (total + nr > max)
+			nr = max - total;
+
 		buf[nr] = 0;
+
 		switch (wof) {
 		case WOF_JAVASCRIPT:
 			web_putj_utf8(buf);
@@ -252,6 +270,11 @@ static void _web_putfile(FILE *f, wofilter_t wof)
 			web_puts(buf);
 			break;
 		}
+
+		total += nr;
+
+		if (total >= max)
+			break;
 	}
 }
 
@@ -259,24 +282,24 @@ int web_putfile(const char *fname, wofilter_t wof)
 {
 	FILE *f;
 
-	if ((f = fopen(fname, "r")) != NULL) {
-		_web_putfile(f, wof);
-		fclose(f);
-		return 1;
-	}
+	if ((f = fopen(fname, "r")) == NULL)
+		return 0;
 
-	return 0;
+	_web_putfile(f, wof);
+	fclose(f);
+
+	return 1;
 }
 
 int web_pipecmd(const char *cmd, wofilter_t wof)
 {
 	FILE *f;
 
-	if ((f = popen(cmd, "r")) != NULL) {
-		_web_putfile(f, wof);
-		pclose(f);
-		return 1;
-	}
+	if ((f = popen(cmd, "r")) == NULL)
+		return 0;
 
-	return 0;
+	_web_putfile(f, wof);
+	pclose(f);
+
+	return 1;
 }

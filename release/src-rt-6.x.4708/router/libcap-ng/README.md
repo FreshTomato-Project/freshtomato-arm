@@ -176,7 +176,19 @@ make
 make install
 ```
 
-If you want python bindings, add that option to the configure command. The cap-audit program has to be specifically enabled and defaults to not being built. There is also a spec file to use if you are on a rpm based distribution. To do that, run "make dist" instead of make in the above instructions. Then use the resulting tar file with the spec file.
+If you want python bindings, add that option to the configure command. The
+`netcap --advanced` feature also depends on newer Linux kernel headers,
+including `linux/vm_sockets.h`. When those headers are not available, such as
+on older build roots, `configure` will automatically opt out of advanced mode
+and report that in its output while still building the rest of libcap-ng. The
+cap-audit program has to be specifically enabled and defaults to not being
+built. There is also a spec file to use if you are on a rpm based
+distribution. To do that, run "make dist" instead of make in the above
+instructions. Then use the resulting tar file with the spec file.
+
+When advanced mode is available, `netcap --advanced --list-interfaces` prints
+the current network namespace interface names. Add `--json` to get a
+machine-readable list of names.
 
 NOTE: to distributions
 ----------------------
@@ -279,10 +291,12 @@ ATTEMPTED BUT DENIED:
 ----------------------------------------------------------------------
   dac_override (#1)
     Attempts: 2 (all denied)
+    Syscalls: readlink, faccessat2
     Impact: Application may have reduced functionality
 
   bpf (#39)
-    Attempts: 1 (all denied)
+    Attempts: 2 (all denied)
+    Syscalls: prctl
     Impact: Application may have reduced functionality
 
 SUMMARY:
@@ -353,4 +367,3 @@ Reporting
 ---------
 Report any bugs in this package to:
 https://github.com/stevegrubb/libcap-ng/issue
-

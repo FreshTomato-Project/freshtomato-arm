@@ -1,6 +1,6 @@
 /*
- * Copyright (C)2011-2012, 2014-2015, 2017-2018, 2022-2024 D. R. Commander.
- *                                                         All Rights Reserved.
+ * Copyright (C) 2011-2012, 2014-2015, 2017-2018, 2022-2024, 2026
+ *           D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,19 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * This program demonstrates how to use the TurboJPEG C API to approximate the
- * functionality of the IJG's jpegtran program.  jpegtran features that are not
- * covered:
- *
- * - Scan scripts
- * - Expanding the input image when cropping
- * - Wiping a region of the input image
- * - Dropping another JPEG image into the input image
- * - Progress reporting
- * - Treating warnings as non-fatal [limitation of the TurboJPEG Java API]
- * - Debug output
- */
+// This program demonstrates how to use the TurboJPEG Java API to approximate
+// the functionality of the IJG's jpegtran program.  jpegtran features that are
+// not covered:
+//
+// - Scan scripts
+// - Expanding the input image when cropping
+// - Wiping a region of the input image
+// - Dropping another JPEG image into the input image
+// - Progress reporting
+// - Treating warnings as non-fatal [limitation of the TurboJPEG Java API]
+// - Debug output
 
 import java.io.*;
 import java.util.*;
@@ -61,10 +59,6 @@ final class TJTran {
 
 
   static void usage() {
-    int i;
-    TJScalingFactor[] scalingFactors = TJ.getScalingFactors();
-    int numScalingFactors = scalingFactors.length;
-
     System.out.println("\nUSAGE: java [Java options] " + CLASS_NAME +
                        " [options] <JPEG input image> <JPEG output image>\n");
 
@@ -143,9 +137,6 @@ final class TJTran {
 
   public static void main(String[] argv) {
     int exitStatus = 0;
-    TJTransformer tjt = null;
-    FileInputStream fis = null;
-    FileOutputStream fos = null;
 
     try {
 
@@ -157,7 +148,7 @@ final class TJTran {
       xform[0] = new TJTransform();
       String iccFilename = null;
       byte[] srcBuf, iccBuf;
-      int width, height, iccSize = 0;
+      int iccSize = 0;
       byte[][] dstBuf;
 
       for (i = 0; i < argv.length; i++) {
@@ -271,97 +262,92 @@ final class TJTran {
         else if (saveMarkers == 4) saveMarkers = 0;
       }
 
-      tjt = new TJTransformer();
+      try (TJTransformer tjt = new TJTransformer()) {
 
-      if (optimize >= 0)
-        tjt.set(TJ.PARAM_OPTIMIZE, optimize);
-      if (maxScans >= 0)
-        tjt.set(TJ.PARAM_SCANLIMIT, maxScans);
-      if (restartIntervalBlocks >= 0)
-        tjt.set(TJ.PARAM_RESTARTBLOCKS, restartIntervalBlocks);
-      if (restartIntervalRows >= 0)
-        tjt.set(TJ.PARAM_RESTARTROWS, restartIntervalRows);
-      if (maxMemory >= 0)
-        tjt.set(TJ.PARAM_MAXMEMORY, maxMemory);
-      tjt.set(TJ.PARAM_SAVEMARKERS, saveMarkers);
+        if (optimize >= 0)
+          tjt.set(TJ.PARAM_OPTIMIZE, optimize);
+        if (maxScans >= 0)
+          tjt.set(TJ.PARAM_SCANLIMIT, maxScans);
+        if (restartIntervalBlocks >= 0)
+          tjt.set(TJ.PARAM_RESTARTBLOCKS, restartIntervalBlocks);
+        if (restartIntervalRows >= 0)
+          tjt.set(TJ.PARAM_RESTARTROWS, restartIntervalRows);
+        if (maxMemory >= 0)
+          tjt.set(TJ.PARAM_MAXMEMORY, maxMemory);
+        tjt.set(TJ.PARAM_SAVEMARKERS, saveMarkers);
 
-      File inFile = new File(argv[i++]);
-      fis = new FileInputStream(inFile);
-      int srcSize = fis.available();
-      if (srcSize < 1)
-        throw new Exception("Input file contains no data");
-      srcBuf = new byte[srcSize];
-      fis.read(srcBuf);
-      fis.close();  fis = null;
+        File inFile = new File(argv[i++]);
+        int srcSize;
+        try (FileInputStream fis = new FileInputStream(inFile)) {
+          srcSize = fis.available();
+          if (srcSize < 1)
+            throw new Exception("Input file contains no data");
+          srcBuf = new byte[srcSize];
+          fis.read(srcBuf);
+        }
 
-      tjt.setSourceImage(srcBuf, srcSize);
-      subsamp = tjt.get(TJ.PARAM_SUBSAMP);
-      if ((xform[0].options & TJTransform.OPT_GRAY) != 0)
-        subsamp = TJ.SAMP_GRAY;
-      if (xform[0].op == TJTransform.OP_TRANSPOSE ||
-          xform[0].op == TJTransform.OP_TRANSVERSE ||
-          xform[0].op == TJTransform.OP_ROT90 ||
-          xform[0].op == TJTransform.OP_ROT270) {
-        width = tjt.get(TJ.PARAM_JPEGHEIGHT);
-        height = tjt.get(TJ.PARAM_JPEGWIDTH);
-        if (subsamp == TJ.SAMP_422)
-          subsamp = TJ.SAMP_440;
-        else if (subsamp == TJ.SAMP_440)
-          subsamp = TJ.SAMP_422;
-        else if (subsamp == TJ.SAMP_411)
-          subsamp = TJ.SAMP_441;
-        else if (subsamp == TJ.SAMP_441)
-          subsamp = TJ.SAMP_411;
-      } else {
-        width = tjt.get(TJ.PARAM_JPEGWIDTH);
-        height = tjt.get(TJ.PARAM_JPEGHEIGHT);
-      }
+        tjt.setSourceImage(srcBuf, srcSize);
+        subsamp = tjt.get(TJ.PARAM_SUBSAMP);
+        if ((xform[0].options & TJTransform.OPT_GRAY) != 0)
+          subsamp = TJ.SAMP_GRAY;
+        if (xform[0].op == TJTransform.OP_TRANSPOSE ||
+            xform[0].op == TJTransform.OP_TRANSVERSE ||
+            xform[0].op == TJTransform.OP_ROT90 ||
+            xform[0].op == TJTransform.OP_ROT270) {
+          if (subsamp == TJ.SAMP_422)
+            subsamp = TJ.SAMP_440;
+          else if (subsamp == TJ.SAMP_440)
+            subsamp = TJ.SAMP_422;
+          else if (subsamp == TJ.SAMP_411)
+            subsamp = TJ.SAMP_441;
+          else if (subsamp == TJ.SAMP_441)
+            subsamp = TJ.SAMP_411;
+        }
 
-      if (progressive >= 0)
-        tjt.set(TJ.PARAM_PROGRESSIVE, progressive);
-      if (arithmetic >= 0)
-        tjt.set(TJ.PARAM_ARITHMETIC, arithmetic);
+        if (progressive >= 0)
+          tjt.set(TJ.PARAM_PROGRESSIVE, progressive);
+        if (arithmetic >= 0)
+          tjt.set(TJ.PARAM_ARITHMETIC, arithmetic);
 
-      if (isCropped(xform[0])) {
-        int xAdjust, yAdjust;
+        if (isCropped(xform[0])) {
+          int xAdjust, yAdjust;
 
-        if (subsamp == TJ.SAMP_UNKNOWN)
-          throw new Exception("Could not determine subsampling level of input image");
-        xAdjust = xform[0].x % TJ.getMCUWidth(subsamp);
-        yAdjust = xform[0].y % TJ.getMCUHeight(subsamp);
-        xform[0].x -= xAdjust;
-        xform[0].width += xAdjust;
-        xform[0].y -= yAdjust;
-        xform[0].height += yAdjust;
-      }
+          if (subsamp == TJ.SAMP_UNKNOWN)
+            throw new Exception("Could not determine subsampling level of input image");
+          xAdjust = xform[0].x % TJ.getMCUWidth(subsamp);
+          yAdjust = xform[0].y % TJ.getMCUHeight(subsamp);
+          xform[0].x -= xAdjust;
+          xform[0].width += xAdjust;
+          xform[0].y -= yAdjust;
+          xform[0].height += yAdjust;
+        }
 
-      if (iccFilename != null) {
-        File iccFile = new File(iccFilename);
-        fis = new FileInputStream(iccFile);
-        iccSize = fis.available();
-        if (iccSize < 1)
-          throw new Exception("ICC profile contains no data");
-        iccBuf = new byte[iccSize];
-        fis.read(iccBuf);
-        fis.close();  fis = null;
-        tjt.setICCProfile(iccBuf);
-      }
+        if (iccFilename != null) {
+          File iccFile = new File(iccFilename);
+          try (FileInputStream fis = new FileInputStream(iccFile)) {
+            iccSize = fis.available();
+            if (iccSize < 1)
+              throw new Exception("ICC profile contains no data");
+            iccBuf = new byte[iccSize];
+            fis.read(iccBuf);
+          }
+          tjt.setICCProfile(iccBuf);
+        }
 
-      TJDecompressor[] tjd = tjt.transform(xform);
+        TJDecompressor[] tjd = tjt.transform(xform);
 
-      File outFile = new File(argv[i]);
-      fos = new FileOutputStream(outFile);
-      fos.write(tjd[0].getJPEGBuf(), 0, tjd[0].getJPEGSize());
+        File outFile = new File(argv[i]);
+        try (FileOutputStream fos = new FileOutputStream(outFile)) {
+          fos.write(tjd[0].getJPEGBuf(), 0, tjd[0].getJPEGSize());
+        }
+
+      }  // try (tjt)
+
     } catch (Exception e) {
       e.printStackTrace();
       exitStatus = -1;
     }
 
-    try {
-      if (fis != null) fis.close();
-      if (tjt != null) tjt.close();
-      if (fos != null) fos.close();
-    } catch (Exception e) {}
     System.exit(exitStatus);
   }
 };

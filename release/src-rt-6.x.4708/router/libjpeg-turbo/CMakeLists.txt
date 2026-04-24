@@ -14,8 +14,8 @@ if(CMAKE_C_FLAGS_RELWITHDEBINFO)
 endif()
 
 project(libjpeg-turbo C)
-set(VERSION 3.1.3)
-set(COPYRIGHT_YEAR "1991-2025")
+set(VERSION 3.1.4.1)
+set(COPYRIGHT_YEAR "1991-2026")
 string(REPLACE "." ";" VERSION_TRIPLET ${VERSION})
 list(GET VERSION_TRIPLET 0 VERSION_MAJOR)
 list(GET VERSION_TRIPLET 1 VERSION_MINOR)
@@ -67,7 +67,7 @@ endif()
 # build system to suit their specific needs.  Please do not file bug reports,
 # feature requests, or pull requests regarding this.
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  message(FATAL_ERROR "The libjpeg-turbo build system cannot be integrated into another build system using add_subdirectory().  Use ExternalProject_Add() instead.")
+  message(FATAL_ERROR "The ${CMAKE_PROJECT_NAME} build system cannot be integrated into another build system using add_subdirectory().  Use ExternalProject_Add() instead.")
 endif()
 
 # CMake 3.14 and later sets CMAKE_MACOSX_BUNDLE to TRUE by default when
@@ -109,7 +109,7 @@ string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} CMAKE_SYSTEM_PROCESSOR_LC)
 set(COUNT 1)
 foreach(ARCH ${CMAKE_OSX_ARCHITECTURES})
   if(COUNT GREATER 1)
-    message(FATAL_ERROR "libjpeg-turbo contains assembly code, so it cannot be built with multiple values in CMAKE_OSX_ARCHITECTURES.")
+    message(FATAL_ERROR "${CMAKE_PROJECT_NAME} contains assembly code, so it cannot be built with multiple values in CMAKE_OSX_ARCHITECTURES.")
   endif()
   math(EXPR COUNT "${COUNT}+1")
 endforeach()
@@ -213,6 +213,13 @@ if(UNIX)
   list(APPEND DIRLIST "MANDIR")
 endif()
 foreach(dir ${DIRLIST})
+  # CMAKE_INSTALL_BINDIR, CMAKE_INSTALL_DOCDIR, CMAKE_INSTALL_INCLUDEDIR,
+  # CMAKE_INSTALL_LIBDIR, and CMAKE_INSTALL_MANDIR cannot be blank, because
+  # either CMake will fail to configure the build, or install() will attempt to
+  # install files to the root directory.
+  if(NOT dir STREQUAL "DATAROOTDIR" AND NOT CMAKE_INSTALL_${dir})
+    message(FATAL_ERROR "CMAKE_INSTALL_${dir} cannot be blank")
+  endif()
   report_directory(${dir})
 endforeach()
 
@@ -249,7 +256,7 @@ if(CMAKE_C_COMPILER_ABI MATCHES "ELF X32")
   set(WITH_JAVA 0)
 else()
   option(WITH_JAVA
-    "Build Java wrapper for the TurboJPEG API library (implies ENABLE_SHARED=1)"
+    "Build TurboJPEG Java API and JNI wrapper for the TurboJPEG API library (implies ENABLE_SHARED=1 and WITH_TURBOJPEG=1)"
     FALSE)
   boolean_number(WITH_JAVA)
 endif()
@@ -289,6 +296,7 @@ endmacro()
 
 if(WITH_JAVA)
   set(ENABLE_SHARED 1)
+  set(WITH_TURBOJPEG 1)
 endif()
 
 # Explicitly setting CMAKE_POSITION_INDEPENDENT_CODE=FALSE disables PIC for all
@@ -324,7 +332,7 @@ endif()
 report_option(WITH_ARITH_ENC "Arithmetic encoding support")
 
 report_option(WITH_TURBOJPEG "TurboJPEG API library")
-report_option(WITH_JAVA "TurboJPEG Java wrapper")
+report_option(WITH_JAVA "TurboJPEG Java API")
 report_option(WITH_TOOLS "Command-line tools")
 report_option(WITH_TESTS "Regression tests")
 
@@ -854,6 +862,20 @@ if(ENABLE_STATIC)
   if(WITH_TESTS)
     add_executable(example-static src/example.c)
     target_link_libraries(example-static jpeg-static)
+
+    include(CheckFunctionExists)
+    check_function_exists(fmemopen HAVE_FMEMOPEN)
+    if(HAVE_FMEMOPEN)
+      add_executable(bmpsizetest-static src/bmpsizetest.c
+        src/rdbmp.c src/wrbmp.c
+        src/rdgif.c src/wrapper/wrgif-8.c src/wrapper/wrgif-12.c
+        src/wrapper/rdppm-8.c src/wrapper/rdppm-12.c src/wrapper/rdppm-16.c
+        src/wrapper/wrppm-8.c src/wrapper/wrppm-12.c src/wrapper/wrppm-16.c
+        src/rdtarga.c src/wrtarga.c)
+      set_property(TARGET bmpsizetest-static PROPERTY COMPILE_FLAGS
+        ${CDJPEG_COMPILE_FLAGS})
+      target_link_libraries(bmpsizetest-static jpeg-static)
+    endif()
   endif()
 endif()
 
@@ -869,6 +891,7 @@ endif()
 ###############################################################################
 
 if(WITH_FUZZ)
+  add_definitions(-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
   add_subdirectory(fuzz)
 endif()
 
@@ -887,158 +910,56 @@ endif()
 enable_testing()
 
 if(WITH_JAVA)
-  add_test(TJUnitTest
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest)
-  add_test(TJUnitTest-yuv
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest-yuv
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -yuv)
-  add_test(TJUnitTest-yuv-nopad
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest-yuv-nopad
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -yuv -noyuvpad)
-  add_test(TJUnitTest-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest-lossless
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -lossless)
-  add_test(TJUnitTest-bi
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest-bi
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -bi)
-  add_test(TJUnitTest-bi-yuv
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest-bi-yuv
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -bi -yuv)
-  add_test(TJUnitTest-bi-yuv-nopad
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest-bi-yuv-nopad
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -bi -yuv -noyuvpad)
-  add_test(TJUnitTest-bi-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest-bi-lossless
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -bi -lossless)
-  add_test(TJUnitTest-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest-bmp
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -bmp)
-  add_test(TJUnitTest12
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+  add_test(NAME TJUnitTest12
+    COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
       -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
       TJUnitTest -precision 12)
-  add_test(TJUnitTest12-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 12 -lossless)
-  add_test(TJUnitTest12-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 12 -bmp)
-  add_test(TJUnitTest2-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 2)
-  add_test(TJUnitTest2-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 2 -bmp)
-  add_test(TJUnitTest3-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 3)
-  add_test(TJUnitTest3-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 3 -bmp)
-  add_test(TJUnitTest4-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 4)
-  add_test(TJUnitTest4-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 4 -bmp)
-  add_test(TJUnitTest5-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 5)
-  add_test(TJUnitTest5-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 5 -bmp)
-  add_test(TJUnitTest6-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 6)
-  add_test(TJUnitTest6-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 6 -bmp)
-  add_test(TJUnitTest7-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 7)
-  add_test(TJUnitTest7-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 7 -bmp)
-  add_test(TJUnitTest9-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 9)
-  add_test(TJUnitTest9-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 9 -bmp)
-  add_test(TJUnitTest10-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 10)
-  add_test(TJUnitTest10-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 10 -bmp)
-  add_test(TJUnitTest11-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 11)
-  add_test(TJUnitTest11-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 11 -bmp)
-  add_test(TJUnitTest13-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 13)
-  add_test(TJUnitTest13-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 13 -bmp)
-  add_test(TJUnitTest14-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 14)
-  add_test(TJUnitTest14-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 14 -bmp)
-  add_test(TJUnitTest15-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 15)
-  add_test(TJUnitTest15-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 15 -bmp)
-  add_test(TJUnitTest16-lossless
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 16)
-  add_test(TJUnitTest16-bmp
-    ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
-      -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
-      TJUnitTest -precision 16 -bmp)
+  foreach(sample_bits 2 3 4 5 6 7 9 10 11 12 13 14 15 16)
+    add_test(NAME TJUnitTest${sample_bits}-lossless
+      COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+        -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
+        TJUnitTest -precision ${sample_bits} -lossless)
+    add_test(NAME TJUnitTest${sample_bits}-bmp
+      COMMAND ${Java_JAVA_EXECUTABLE} ${JAVAARGS} -cp java/turbojpeg.jar
+        -Djava.library.path=${CMAKE_CURRENT_BINARY_DIR}/${OBJDIR}
+        TJUnitTest -precision ${sample_bits} -bmp)
+  endforeach()
 endif()
 
 set(TEST_LIBTYPES "")
@@ -1075,7 +996,8 @@ endif()
 #       is being used for floating point math (which is generally the default
 #       with x86 compilers)
 # msvc = validate against the expected results from the C code when compiled
-#        with a 32-bit version of Visual C++
+#        with a 32-bit version of Visual C++ and /arch:IA32 (which was the
+#        default in Visual C++ 2010 and earlier)
 
 if(CPU_TYPE STREQUAL "x86_64" OR CPU_TYPE STREQUAL "i386")
   if(WITH_SIMD)
@@ -1113,7 +1035,7 @@ if(DEFINED WITH_SIMD_INT AND NOT WITH_SIMD EQUAL WITH_SIMD_INT)
 endif()
 set(WITH_SIMD_INT ${WITH_SIMD} CACHE INTERNAL "")
 set(FLOATTEST8 ${DEFAULT_FLOATTEST8} CACHE STRING
-  "The type of floating point math used by the 8-bit-per-sample floating point DCT/IDCT algorithms.  This tells the testing system which numerical results it should expect from those tests.  [sse = libjpeg-turbo x86/x86-64 SIMD extensions, no-fp-contract = generic FPU with floating point expression contraction disabled, fp-contract = generic FPU with floating point expression contraction enabled, 387 = 387 FPU, msvc = 32-bit Visual Studio] (default = ${DEFAULT_FLOATTEST8})"
+  "The type of floating point math used by the 8-bit-per-sample floating point DCT/IDCT algorithms.  This tells the testing system which numerical results it should expect from those tests.  [sse = ${CMAKE_PROJECT_NAME} x86/x86-64 SIMD extensions, no-fp-contract = generic FPU with floating point expression contraction disabled, fp-contract = generic FPU with floating point expression contraction enabled, 387 = 387 FPU, msvc = 32-bit Visual Studio + 387 FPU] (default = ${DEFAULT_FLOATTEST8})"
   ${FORCE_FLOATTEST8})
 message(STATUS "FLOATTEST8 = ${FLOATTEST8}")
 
@@ -1155,7 +1077,7 @@ elseif(CPU_TYPE STREQUAL "powerpc" OR CPU_TYPE STREQUAL "arm64")
 endif()
 
 set(FLOATTEST12 ${DEFAULT_FLOATTEST12} CACHE STRING
-  "The type of floating point math used by the 12-bit-per-sample floating point DCT/IDCT algorithms.  This tells the testing system which numerical results it should expect from those tests.  [sse = libjpeg-turbo x86/x86-64 SIMD extensions, no-fp-contract = generic FPU with floating point expression contraction disabled, fp-contract = generic FPU with floating point expression contraction enabled, 387 = 387 FPU, msvc = 32-bit Visual Studio] (default = ${DEFAULT_FLOATTEST12})")
+  "The type of floating point math used by the 12-bit-per-sample floating point DCT/IDCT algorithms.  This tells the testing system which numerical results it should expect from those tests.  [sse = ${CMAKE_PROJECT_NAME} x86/x86-64 SIMD extensions, no-fp-contract = generic FPU with floating point expression contraction disabled, fp-contract = generic FPU with floating point expression contraction enabled, 387 = 387 FPU, msvc = 32-bit Visual Studio + 387 FPU] (default = ${DEFAULT_FLOATTEST12})")
 message(STATUS "FLOATTEST12 = ${FLOATTEST12}")
 
 if(FLOATTEST12)
@@ -1196,90 +1118,14 @@ foreach(libtype ${TEST_LIBTYPES})
       COMMAND tjunittest${suffix} -precision 12)
     add_test(NAME tjunittest12-${libtype}-alloc
       COMMAND tjunittest${suffix} -precision 12 -alloc)
-    add_test(NAME tjunittest12-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 12 -lossless)
-    add_test(NAME tjunittest12-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 12 -lossless -alloc)
-    add_test(NAME tjunittest12-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 12 -bmp)
-    add_test(NAME tjunittest2-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 2)
-    add_test(NAME tjunittest2-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 2 -alloc)
-    add_test(NAME tjunittest2-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 2 -bmp)
-    add_test(NAME tjunittest3-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 3)
-    add_test(NAME tjunittest3-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 3 -alloc)
-    add_test(NAME tjunittest3-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 3 -bmp)
-    add_test(NAME tjunittest4-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 4)
-    add_test(NAME tjunittest4-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 4 -alloc)
-    add_test(NAME tjunittest4-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 4 -bmp)
-    add_test(NAME tjunittest5-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 5)
-    add_test(NAME tjunittest5-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 5 -alloc)
-    add_test(NAME tjunittest5-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 5 -bmp)
-    add_test(NAME tjunittest6-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 6)
-    add_test(NAME tjunittest6-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 6 -alloc)
-    add_test(NAME tjunittest6-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 6 -bmp)
-    add_test(NAME tjunittest7-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 7)
-    add_test(NAME tjunittest7-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 7 -alloc)
-    add_test(NAME tjunittest7-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 7 -bmp)
-    add_test(NAME tjunittest9-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 9)
-    add_test(NAME tjunittest9-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 9 -alloc)
-    add_test(NAME tjunittest9-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 9 -bmp)
-    add_test(NAME tjunittest10-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 10)
-    add_test(NAME tjunittest10-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 10 -alloc)
-    add_test(NAME tjunittest10-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 10 -bmp)
-    add_test(NAME tjunittest11-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 11)
-    add_test(NAME tjunittest11-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 11 -alloc)
-    add_test(NAME tjunittest11-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 11 -bmp)
-    add_test(NAME tjunittest13-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 13)
-    add_test(NAME tjunittest13-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 13 -alloc)
-    add_test(NAME tjunittest13-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 13 -bmp)
-    add_test(NAME tjunittest14-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 14)
-    add_test(NAME tjunittest14-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 14 -alloc)
-    add_test(NAME tjunittest14-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 14 -bmp)
-    add_test(NAME tjunittest15-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 15)
-    add_test(NAME tjunittest15-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 15 -alloc)
-    add_test(NAME tjunittest15-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 15 -bmp)
-    add_test(NAME tjunittest16-${libtype}-lossless
-      COMMAND tjunittest${suffix} -precision 16)
-    add_test(NAME tjunittest16-${libtype}-lossless-alloc
-      COMMAND tjunittest${suffix} -precision 16 -alloc)
-    add_test(NAME tjunittest16-${libtype}-bmp
-      COMMAND tjunittest${suffix} -precision 16 -bmp)
+    foreach(sample_bits 2 3 4 5 6 7 9 10 11 12 13 14 15 16)
+      add_test(NAME tjunittest${sample_bits}-${libtype}-lossless
+        COMMAND tjunittest${suffix} -precision ${sample_bits} -lossless)
+      add_test(NAME tjunittest${sample_bits}-${libtype}-lossless-alloc
+        COMMAND tjunittest${suffix} -precision ${sample_bits} -lossless -alloc)
+      add_test(NAME tjunittest${sample_bits}-${libtype}-bmp
+        COMMAND tjunittest${suffix} -precision ${sample_bits} -bmp)
+    endforeach()
 
     foreach(sample_bits 8 12)
 
@@ -1391,6 +1237,10 @@ foreach(libtype ${TEST_LIBTYPES})
 
   endif()
 
+  if(UNIX)
+    add_test(NAME bmpsizetest-${libtype} COMMAND bmpsizetest${suffix})
+  endif()
+
   # These tests are carefully crafted to provide full coverage of as many of
   # the underlying algorithms as possible (including all of the
   # SIMD-accelerated ones.)
@@ -1456,15 +1306,14 @@ foreach(libtype ${TEST_LIBTYPES})
       set(MD5_JPEG_GRAY_ISLOW 235c90707b16e2e069f37c888b2636d9)
       set(MD5_PPM_GRAY_ISLOW 7213c10af507ad467da5578ca5ee1fca)
       set(MD5_PPM_GRAY_ISLOW_RGB e96ee81c30a6ed422d466338bd3de65d)
-      set(MD5_JPEG_420S_IFAST_OPT 7af8e60be4d9c227ec63ac9b6630855e)
+      set(MD5_JPEG_420S_ISLOW_OPT 7af8e60be4d9c227ec63ac9b6630855e)
 
       set(MD5_JPEG_3x2_FLOAT_PROG_SSE a8c17daf77b457725ec929e215b603f8)
       set(MD5_PPM_3x2_FLOAT_SSE 42876ab9e5c2f76a87d08db5fbd57956)
       set(MD5_JPEG_3x2_FLOAT_PROG_NO_FP_CONTRACT
-        a8c17daf77b457725ec929e215b603f8)
+        ${MD5_JPEG_3x2_FLOAT_PROG_SSE})
       set(MD5_PPM_3x2_FLOAT_NO_FP_CONTRACT ${MD5_PPM_3x2_FLOAT_SSE})
-      set(MD5_JPEG_3x2_FLOAT_PROG_FP_CONTRACT
-        ${MD5_JPEG_3x2_FLOAT_PROG_NO_FP_CONTRACT})
+      set(MD5_JPEG_3x2_FLOAT_PROG_FP_CONTRACT ${MD5_JPEG_3x2_FLOAT_PROG_SSE})
       if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         set(MD5_PPM_3x2_FLOAT_FP_CONTRACT 2da9de6ae869e88b8372de815d366b03)
       else()
@@ -1528,7 +1377,7 @@ foreach(libtype ${TEST_LIBTYPES})
       set(MD5_PPM_GRAY_ISLOW_RGB 116424ac07b79e5e801f00508eab48ec)
       set(MD5_BMP_GRAY_ISLOW_565 12f78118e56a2f48b966f792fedf23cc)
       set(MD5_BMP_GRAY_ISLOW_565D bdbbd616441a24354c98553df5dc82db)
-      set(MD5_JPEG_420S_IFAST_OPT 388708217ac46273ca33086b22827ed8)
+      set(MD5_JPEG_420S_ISLOW_OPT 388708217ac46273ca33086b22827ed8)
 
       set(MD5_JPEG_3x2_FLOAT_PROG_SSE 343e3f8caf8af5986ebaf0bdc13b5c71)
       set(MD5_PPM_3x2_FLOAT_SSE 1a75f36e5904d6fc3a85a43da9ad89bb)
@@ -1702,9 +1551,9 @@ foreach(libtype ${TEST_LIBTYPES})
 
     # CC: RGB->YCC  SAMP: fullsize smooth/h2v2 smooth  FDCT: islow
     # ENT: 2-pass huff
-    add_bittest(${cjpeg} 420s-ifast-opt "-sample;2x2;-smooth;1;-dct;int;-opt"
-      ${testout}_420s_ifast_opt.jpg ${TESTIMAGES}/testorig.ppm
-      ${MD5_JPEG_420S_IFAST_OPT})
+    add_bittest(${cjpeg} 420s-islow-opt "-sample;2x2;-smooth;1;-dct;int;-opt"
+      ${testout}_420s_islow_opt.jpg ${TESTIMAGES}/testorig.ppm
+      ${MD5_JPEG_420S_ISLOW_OPT})
 
     if(FLOATTEST${sample_bits})
       # CC: RGB->YCC  SAMP: fullsize/int  FDCT: float  ENT: prog huff
@@ -2062,15 +1911,18 @@ endif()
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.ijg
   ${CMAKE_CURRENT_SOURCE_DIR}/README.md
   ${CMAKE_CURRENT_SOURCE_DIR}/src/example.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/tjcomp.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/tjdecomp.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/tjtran.c
   ${CMAKE_CURRENT_SOURCE_DIR}/doc/libjpeg.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/doc/structure.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/doc/usage.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/doc/wizard.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md DESTINATION ${CMAKE_INSTALL_DOCDIR}
-  COMPONENT doc)
+  ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md
+  DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT doc)
+if(WITH_TURBOJPEG)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/tjcomp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tjdecomp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tjtran.c
+    DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT doc)
+endif()
 if(WITH_JAVA)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/java/TJComp.java
     ${CMAKE_CURRENT_SOURCE_DIR}/java/TJDecomp.java

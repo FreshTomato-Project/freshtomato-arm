@@ -12,15 +12,21 @@ from typing_extensions import TypedDict, Literal, Protocol, NotRequired
 from .. import build
 from .. import options
 from ..compilers import Compiler
+from ..compilers.compilers import Language
 from ..dependencies.base import Dependency, DependencyMethods, IncludeType
 from ..mesonlib import EnvironmentVariables, MachineChoice, File, FileMode, FileOrString
 from ..options import OptionKey
 from ..modules.cmake import CMakeSubprojectOptions
-from ..programs import ExternalProgram
+from ..programs import Program, ExternalProgram
 from .type_checking import PkgConfigDefineType, SourcesVarargsType
 
 TestArgs = T.Union[str, File, build.Target, ExternalProgram]
 RustAbi = Literal['rust', 'c']
+
+class NativeKW(TypedDict):
+
+    native: MachineChoice
+
 
 class FuncAddProjectArgs(TypedDict):
 
@@ -34,14 +40,16 @@ class FuncAddProjectArgs(TypedDict):
     """
 
     native: MachineChoice
-    language: T.List[str]
+    language: T.List[Language]
 
 
 class BaseTest(TypedDict):
 
     """Shared base for the Rust module."""
 
-    should_fail: bool
+    should_fail: T.Optional[bool]
+    expected_fail: T.Optional[bool]
+    expected_exitcode: T.Optional[int]
     timeout: int
     workdir: T.Optional[str]
     depends: T.List[T.Union[build.CustomTarget, build.BuildTarget]]
@@ -147,6 +155,7 @@ class FuncInstallHeaders(TypedDict):
     install_mode: FileMode
     subdir: T.Optional[str]
     follow_symlinks: T.Optional[bool]
+    install_tag: T.Optional[str]
 
 
 class FuncInstallMan(TypedDict):
@@ -171,8 +180,8 @@ class FuncAddLanguages(ExtractRequired):
 
 class RunTarget(TypedDict):
 
-    command: T.List[T.Union[str, build.BuildTarget, build.CustomTarget, ExternalProgram, File]]
-    depends: T.List[T.Union[build.BuildTarget, build.CustomTarget]]
+    command: T.List[T.Union[str, build.BuildTargetTypes, ExternalProgram, File]]
+    depends: T.List[T.Union[build.BuildTargetTypes]]
     env: EnvironmentVariables
 
 
@@ -183,7 +192,7 @@ class CustomTarget(TypedDict):
     build_by_default: T.Optional[bool]
     build_subdir: str
     capture: bool
-    command: T.List[T.Union[str, build.BuildTargetTypes, ExternalProgram, File]]
+    command: T.List[T.Union[str, build.BuildTargetTypes, Program, File]]
     console: bool
     depend_files: T.List[FileOrString]
     depends: T.List[T.Union[build.BuildTarget, build.CustomTarget]]
@@ -251,6 +260,7 @@ class RunCommand(TypedDict):
 
     check: bool
     capture: T.Optional[bool]
+    console: T.Optional[bool]
     env: EnvironmentVariables
 
 
@@ -282,10 +292,10 @@ class ConfigurationDataSet(TypedDict):
 
 class VcsTag(TypedDict):
 
-    command: T.List[T.Union[str, build.GeneratedTypes, ExternalProgram, File]]
+    command: T.List[T.Union[str, build.GeneratedTypes, Program, File]]
     fallback: T.Optional[str]
     input: T.List[T.Union[str, build.BuildTarget, build.GeneratedTypes,
-                          build.ExtractedObjects, ExternalProgram, File]]
+                          build.ExtractedObjects, Program, File]]
     output: T.List[str]
     replace_string: str
     install: bool
@@ -337,14 +347,19 @@ class _BaseBuildTarget(TypedDict):
 
     build_by_default: bool
     build_rpath: str
+    dependencies: T.List[Dependency]
     extra_files: T.List[FileOrString]
     gnu_symbol_visibility: str
+    include_directories: T.List[build.IncludeDirs]
     install: bool
     install_mode: FileMode
+    install_tag: T.Optional[str]
     install_rpath: str
     implicit_include_directories: bool
     link_depends: T.List[T.Union[str, File, build.GeneratedTypes]]
-    link_language: T.Optional[str]
+    link_language: T.Optional[Language]
+    link_whole: T.List[build.StaticTargetTypes]
+    link_with: T.List[build.BuildTargetTypes]
     name_prefix: T.Optional[str]
     name_suffix: T.Optional[str]
     native: MachineChoice
@@ -365,11 +380,16 @@ class _BuildTarget(_BaseBuildTarget):
     d_import_dirs: T.List[T.Union[str, build.IncludeDirs]]
     d_module_versions: T.List[T.Union[str, int]]
     d_unittest: bool
+    install_dir: T.List[T.Union[str, bool]]
+    install_vala_header: T.Union[str, bool, None]
+    install_vala_vapi: T.Union[str, bool, None]
+    install_vala_gir: T.Union[str, bool, None]
     rust_crate_type: T.Optional[Literal['bin', 'lib', 'rlib', 'dylib', 'cdylib', 'staticlib', 'proc-macro']]
     rust_dependency_map: T.Dict[str, str]
     swift_interoperability_mode: Literal['c', 'cpp']
     swift_module_name: str
     sources: SourcesVarargsType
+    link_args: T.List[str]
     c_pch: T.List[str]
     cpp_pch: T.List[str]
     c_args: T.List[str]
@@ -488,8 +508,8 @@ class FuncDeclareDependency(TypedDict):
     extra_files: T.List[FileOrString]
     include_directories: T.List[T.Union[build.IncludeDirs, str]]
     link_args: T.List[str]
-    link_whole: T.List[T.Union[build.StaticLibrary, build.CustomTarget, build.CustomTargetIndex]]
-    link_with: T.List[build.LibTypes]
+    link_whole: T.List[build.StaticTargetTypes]
+    link_with: T.List[build.BuildTargetTypes]
     objects: T.List[build.ExtractedObjects]
     sources: T.List[T.Union[FileOrString, build.GeneratedTypes]]
     variables: T.Dict[str, str]
@@ -506,7 +526,7 @@ class FuncDependency(ExtractRequired):
     default_options: T.Dict[OptionKey, options.ElementaryOptionValues]
     fallback: T.Union[str, T.List[str], None]
     include_type: IncludeType
-    language: T.Optional[str]
+    language: T.Optional[Language]
     main: bool
     method: DependencyMethods
     modules: T.List[str]

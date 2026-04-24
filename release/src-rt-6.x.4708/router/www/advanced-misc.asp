@@ -22,13 +22,14 @@
 
 et1000 = features('1000et');
 
+/* BCMARM-BEGIN */
 function _phTrim(s) {
 	return (s || '').replace(/^\s+|\s+$/g, '');
 }
 
 function _phCfg() {
 	var cfg = nvram.porthealth_cfg || '';
-	var o = { enable: 0, mode: 'monitor', max: 50, hold: 180, cache: 60, ift: 'l' };
+	var o = { enable: 0, mode: 'monitor', max: 10, hold: 180, cache: 9000, ift: 'l' };
 	var parts, i, kv, k, v;
 
 	cfg = _phTrim(cfg);
@@ -50,30 +51,32 @@ function _phCfg() {
 
 	if ((o.mode != 'monitor') && (o.mode != 'recover') && (o.mode != 'disable')) o.mode = 'monitor';
 	if ((o.ift != 'l') && (o.ift != 'w') && (o.ift != 'a')) o.ift = 'l';
-	o.max = fixInt(o.max, 1, 100000, 50);
+	o.max = fixInt(o.max, 1, 100000, 10);
 	o.hold = fixInt(o.hold, 1, 86400, 180);
-	o.cache = fixInt(o.cache, 0, 86400, 60);
+	o.cache = fixInt(o.cache, 0, 86400, 900);
 
 	return o;
 }
+/* BCMARM-END */
 
 function verifyFields(focused, quiet) {
 	E('_jumbo_frame_size').disabled = !E('_f_jumbo_frame_enable').checked;
-
+/* BCMARM-BEGIN */
 	if (!v_range(E('_f_porthealth_max'), quiet, 1, 100000)) return 0;
 	if (!v_range(E('_f_porthealth_hold'), quiet, 1, 86400)) return 0;
 	if (!v_range(E('_f_porthealth_cache'), quiet, 0, 86400)) return 0;
-
+/* BCMARM-END */
 	return 1;
 }
 
 function save() {
 	var fom = E('t_fom');
+/* BCMARM-BEGIN */
 	var ph;
 
 	if (!verifyFields(null, 0))
 		return;
-
+/* BCMARM-END */
 	fom.jumbo_frame_enable.value = E('_f_jumbo_frame_enable').checked ? 1 : 0;
 /* CTF-BEGIN */
 	fom.ctf_disable.value = E('_f_ctf_disable').checked ? 0 : 1;
@@ -81,7 +84,7 @@ function save() {
 /* BCMNAT-BEGIN */
 	fom.bcmnat_disable.value = E('_f_bcmnat_disable').checked ? 0 : 1;
 /* BCMNAT-END */
-
+/* BCMARM-BEGIN */
 	/* Port Health */
 	ph = {
 		enable: E('_f_porthealth_enable').checked ? 1 : 0,
@@ -97,7 +100,7 @@ function save() {
 		',hold=' + ph.hold +
 		',cache=' + ph.cache +
 		',if=' + ph.ift;
-
+/* BCMARM-END */
 	if ((fom.wan_speed.value != nvram.wan_speed) ||
 /* CTF-BEGIN */
 	    (fom.ctf_disable.value != nvram.ctf_disable) ||
@@ -137,7 +140,9 @@ function save() {
 
 <input type="hidden" name="_nextpage" value="advanced-misc.asp">
 <input type="hidden" name="_reboot" value="0">
+<!-- BCMARM-BEGIN -->
 <input type="hidden" name="_service" value="porthealth-restart">
+<!-- BCMARM-END -->
 <input type="hidden" name="jumbo_frame_enable">
 <!-- CTF-BEGIN -->
 <input type="hidden" name="ctf_disable">
@@ -145,15 +150,18 @@ function save() {
 <!-- BCMNAT-BEGIN -->
 <input type="hidden" name="bcmnat_disable">
 <!-- BCMNAT-END -->
-
+<!-- BCMARM-BEGIN -->
 <input type="hidden" name="porthealth_cfg">
+<!-- BCMARM-END -->
 
 <!-- / / / -->
 
 <div class="section-title">Miscellaneous</div>
 <div class="section">
 	<script>
+/* BCMARM-BEGIN */
 		ph = _phCfg();
+/* BCMARM-END */
 		a = [];
 		for (i = 3; i <= 20; ++i) a.push([i, i + ' seconds']);
 		createFieldTable('', [
@@ -169,15 +177,17 @@ function save() {
 /* BCMNAT-END */
 			{ title: 'Enable Jumbo Frames *', name: 'f_jumbo_frame_enable', type: 'checkbox', value: nvram.jumbo_frame_enable != '0', hidden: !et1000 },
 			{ title: 'Jumbo Frame Size *', name: 'jumbo_frame_size', type: 'text', maxlen: 4, size: 6, value: fixInt(nvram.jumbo_frame_size, 1, 9720, 2000),
-				suffix: ' <small>Bytes (range: 1 - 9720; default: 2000)<\/small>', hidden: !et1000 },
-			null,
+				suffix: ' <small>Bytes (range: 1 - 9720; default: 2000)<\/small>', hidden: !et1000 }
+/* BCMARM-BEGIN */
+			,null,
 			{ title: 'Port Health', text: '<small>Monitors switch ports 0-4; VLAN role comes from robocfg show.<\/small>' },
 			{ title: 'Enable', name: 'f_porthealth_enable', type: 'checkbox', value: ph.enable == 1 },
 			{ title: 'Mode', name: 'f_porthealth_mode', type: 'select', value: ph.mode, options: [['monitor','Monitor (log only)'],['recover','Recover (step down speed)'],['disable','Disable port']] },
-			{ title: 'Ports', name: 'f_porthealth_if', type: 'select', value: ph.ift, options: [['l','LAN only'],['w','WAN only'],['a','LAN + WAN']] },
-			{ title: 'Max Errors / Minute', name: 'f_porthealth_max', type: 'text', value: ph.max, maxlen: 6, size: 8 },
-			{ title: 'Hold Time (seconds)', name: 'f_porthealth_hold', type: 'text', value: ph.hold, maxlen: 6, size: 8, suffix: ' <small>(recover mode only)<\/small>' },
-			{ title: 'Cache TTL (seconds)', name: 'f_porthealth_cache', type: 'text', value: ph.cache, maxlen: 6, size: 8, suffix: ' <small>(0 disables caching)<\/small>' }
+			{ title: 'Ports', name: 'f_porthealth_if', type: 'select', value: ph.ift, options: [['l','LAN only'],['w','WAN only'],['a', 'LAN + WAN']] },
+			{ title: 'Max Errors / Minute', name: 'f_porthealth_max', type: 'text', value: ph.max, maxlen: 6, size: 8, suffix: ' <small>(default: 10)<\/small>' },
+			{ title: 'Hold Time (seconds)', name: 'f_porthealth_hold', type: 'text', value: ph.hold, maxlen: 6, size: 8, suffix: ' <small>(recover mode only; default: 180)<\/small>' },
+			{ title: 'Cache TTL (seconds)', name: 'f_porthealth_cache', type: 'text', value: ph.cache, maxlen: 6, size: 8, suffix: ' <small>(0 disables caching; default: 900)<\/small>' }
+/* BCMARM-END */
 		]);
 	</script>
 

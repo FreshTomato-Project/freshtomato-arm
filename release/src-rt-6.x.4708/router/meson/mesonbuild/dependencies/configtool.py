@@ -36,10 +36,10 @@ class ConfigToolDependency(ExternalDependency):
     skip_version: T.Optional[str] = None
     allow_default_for_cross = False
     __strip_version = re.compile(r'^[0-9][0-9.]+')
+    type_name = DependencyTypeName('config-tool')
 
-    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs, language: T.Optional[str] = None, exclude_paths: T.Optional[T.List[str]] = None):
-        super().__init__(DependencyTypeName('config-tool'), environment, kwargs, language=language)
-        self.name = name
+    def __init__(self, name: str, environment: 'Environment', kwargs: DependencyObjectKWs, exclude_paths: T.Optional[T.List[str]] = None):
+        super().__init__(name, environment, kwargs)
         # You may want to overwrite the class version in some cases
         self.tools = listify(kwargs.get('tools', self.tools))
         if not self.tool_name:
@@ -139,20 +139,16 @@ class ConfigToolDependency(ExternalDependency):
 
         return self.config is not None
 
-    def get_config_value(self, args: T.List[str], stage: str) -> T.List[str]:
+    def get_config_value(self, args: T.List[str], stage: str, required: bool = False) -> T.List[str]:
         p, out, err = Popen_safe_logged(self.config + args)
         if p.returncode != 0:
-            if self.required:
+            if self.required or required:
                 raise DependencyException(f'Could not generate {stage} for {self.name}.\n{err}')
             return []
         return split_args(out)
 
     def get_variable_args(self, variable_name: str) -> T.List[str]:
         return [f'--{variable_name}']
-
-    @staticmethod
-    def log_tried() -> str:
-        return 'config-tool'
 
     def get_variable(self, *, cmake: T.Optional[str] = None, pkgconfig: T.Optional[str] = None,
                      configtool: T.Optional[str] = None, internal: T.Optional[str] = None,

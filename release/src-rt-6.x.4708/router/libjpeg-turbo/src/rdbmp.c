@@ -6,7 +6,7 @@
  * Modified 2009-2017 by Guido Vollbeding.
  * libjpeg-turbo Modifications:
  * Modified 2011 by Siarhei Siamashka.
- * Copyright (C) 2015, 2017-2018, 2021-2024, D. R. Commander.
+ * Copyright (C) 2015, 2017-2018, 2021-2024, 2026, D. R. Commander.
  * For conditions of distribution and use, see the accompanying README.ijg
  * file.
  *
@@ -30,12 +30,6 @@
 #include "cdjpeg.h"             /* Common decls for cjpeg/djpeg applications */
 
 #ifdef BMP_SUPPORTED
-
-
-/* Macros to deal with unsigned chars as efficiently as compiler allows */
-
-typedef unsigned char U_CHAR;
-#define UCH(x)  ((int)(x))
 
 
 #define ReadOK(file, buffer, len) \
@@ -72,7 +66,7 @@ typedef struct _bmp_source_struct {
                                    its own image buffer and read the rows in
                                    bottom-up order */
 
-  U_CHAR *iobuffer;             /* I/O buffer (used to buffer a single row from
+  unsigned char *iobuffer;      /* I/O buffer (used to buffer a single row from
                                    disk if use_inversion_array == FALSE) */
 } bmp_source_struct;
 
@@ -413,17 +407,17 @@ METHODDEF(void)
 start_input_bmp(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
 {
   bmp_source_ptr source = (bmp_source_ptr)sinfo;
-  U_CHAR bmpfileheader[14];
-  U_CHAR bmpinfoheader[64];
+  unsigned char bmpfileheader[14];
+  unsigned char bmpinfoheader[64];
 
 #define GET_2B(array, offset) \
-  ((unsigned short)UCH(array[offset]) + \
-   (((unsigned short)UCH(array[offset + 1])) << 8))
+  ((unsigned short)array[offset] + \
+   (((unsigned short)array[offset + 1]) << 8))
 #define GET_4B(array, offset) \
-  ((unsigned int)UCH(array[offset]) + \
-   (((unsigned int)UCH(array[offset + 1])) << 8) + \
-   (((unsigned int)UCH(array[offset + 2])) << 16) + \
-   (((unsigned int)UCH(array[offset + 3])) << 24))
+  ((unsigned int)array[offset] + \
+   (((unsigned int)array[offset + 1]) << 8) + \
+   (((unsigned int)array[offset + 2]) << 16) + \
+   (((unsigned int)array[offset + 3]) << 24))
 
   int bfOffBits;
   int headerSize;
@@ -523,6 +517,8 @@ start_input_bmp(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
 
   if (biWidth <= 0 || biHeight <= 0)
     ERREXIT(cinfo, JERR_BMP_EMPTY);
+  if (biWidth > JPEG_MAX_DIMENSION || biHeight > JPEG_MAX_DIMENSION)
+    ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, JPEG_MAX_DIMENSION);
   if (sinfo->max_pixels &&
       (unsigned long long)biWidth * biHeight > sinfo->max_pixels)
     ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, sinfo->max_pixels);
@@ -579,8 +575,6 @@ start_input_bmp(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
       cinfo->input_components = 4;
     else
       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
-    if ((unsigned long long)biWidth * 3ULL > 0xFFFFFFFFULL)
-      ERREXIT(cinfo, JERR_WIDTH_OVERFLOW);
     row_width = (JDIMENSION)biWidth * 3;
     break;
   case 32:
@@ -592,8 +586,6 @@ start_input_bmp(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
       cinfo->input_components = 4;
     else
       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
-    if ((unsigned long long)biWidth * 4ULL > 0xFFFFFFFFULL)
-      ERREXIT(cinfo, JERR_WIDTH_OVERFLOW);
     row_width = (JDIMENSION)biWidth * 4;
     break;
   default:
@@ -613,7 +605,7 @@ start_input_bmp(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
       progress->total_extra_passes++; /* count file input as separate pass */
     }
   } else {
-    source->iobuffer = (U_CHAR *)
+    source->iobuffer = (unsigned char *)
       (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE, row_width);
     switch (source->bits_per_pixel) {
     case 8:
@@ -630,12 +622,6 @@ start_input_bmp(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
     }
   }
 
-  /* Ensure that biWidth * cinfo->input_components doesn't exceed the maximum
-     value of the JDIMENSION type.  This is only a danger with BMP files, since
-     their width and height fields are 32-bit integers. */
-  if ((unsigned long long)biWidth *
-      (unsigned long long)cinfo->input_components > 0xFFFFFFFFULL)
-    ERREXIT(cinfo, JERR_WIDTH_OVERFLOW);
   /* Allocate one-row buffer for returned data */
   source->pub.buffer = (*cinfo->mem->alloc_sarray)
     ((j_common_ptr)cinfo, JPOOL_IMAGE,

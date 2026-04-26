@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2025 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2026 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ struct state {
   int clid_len, ia_type, interface, hostname_auth, lease_allocate;
   char *client_hostname, *hostname, *domain, *send_domain;
   struct dhcp_context *context;
-  struct in6_addr *link_address, *fallback, *ll_addr, *ula_addr;
+  struct in6_addr *relay_address, *fallback, *ll_addr, *ula_addr;
   unsigned int xid, fqdn_flags, iaid;
   char *iface_name;
   void *packet_options, *end;
@@ -34,7 +34,7 @@ struct state {
 };
 
 static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t sz, 
-			     struct in6_addr *client_addr, time_t now);
+			     struct in6_addr *client_addr, struct in6_addr *link_address, time_t now);
 static int dhcp6_no_relay(struct state *state, int msg_type, unsigned char *inbuff, size_t sz, time_t now);
 static void log6_opts(int nest, unsigned int xid, void *start_opts, void *end_opts);
 static void log6_packet(struct state *state, char *type, struct in6_addr *addr, char *string);
@@ -99,9 +99,8 @@ unsigned short dhcp6_reply(struct dhcp_context *context, int multicast_dest, int
   state.ula_addr = ula_addr;
   state.mac_len = 0;
   state.tags = NULL;
-  state.link_address = NULL;
-
-  if (dhcp6_maybe_relay(&state, daemon->dhcp_packet.iov_base, sz, client_addr, now))
+  
+  if (dhcp6_maybe_relay(&state, daemon->dhcp_packet.iov_base, sz, client_addr, NULL, now))
     return msg_type == DHCP6RELAYFORW ? DHCPV6_SERVER_PORT : DHCPV6_CLIENT_PORT;
 
   return 0;
@@ -109,7 +108,7 @@ unsigned short dhcp6_reply(struct dhcp_context *context, int multicast_dest, int
 
 /* This cost me blood to write, it will probably cost you blood to understand - srk. */
 static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t sz, 
-			     struct in6_addr *client_addr, time_t now)
+			     struct in6_addr *client_addr, struct in6_addr *link_address, time_t now)
 {
   uint8_t *end = inbuff + sz;
   uint8_t *opts = inbuff + 34;
@@ -136,7 +135,7 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
       link_address == NULL means there's no relay in use, so we try and find the client's 
       MAC address from the local ND cache. */
       
-      if (!state->link_address)
+      if (!link_address)
 	get_client_mac(client_addr, state->interface, state->mac, &state->mac_len, &state->mac_type, now);
       else
 	{
@@ -144,9 +143,9 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
 	  struct shared_network *share = NULL;
 	  state->context = NULL;
 
-	  if (!IN6_IS_ADDR_LOOPBACK(state->link_address) &&
-	      !IN6_IS_ADDR_LINKLOCAL(state->link_address) &&
-	      !IN6_IS_ADDR_MULTICAST(state->link_address))
+	  if (!IN6_IS_ADDR_LOOPBACK(link_address) &&
+	      !IN6_IS_ADDR_LINKLOCAL(link_address) &&
+	      !IN6_IS_ADDR_MULTICAST(link_address))
 	    for (c = daemon->dhcp6; c; c = c->next)
 	      {
 		for (share = daemon->shared_networks; share; share = share->next)
@@ -155,7 +154,7 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
 		      continue;
 		    
 		    if (share->if_index != 0 ||
-			!IN6_ARE_ADDR_EQUAL(state->link_address, &share->match_addr6))
+			!IN6_ARE_ADDR_EQUAL(link_address, &share->match_addr6))
 		      continue;
 		    
 		    if ((c->flags & CONTEXT_DHCP) &&
@@ -168,8 +167,8 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
 		if (share ||
 		    ((c->flags & CONTEXT_DHCP) &&
 		     !(c->flags & (CONTEXT_TEMPLATE | CONTEXT_OLD)) &&
-		     is_same_net6(state->link_address, &c->start6, c->prefix) &&
-		     is_same_net6(state->link_address, &c->end6, c->prefix)))
+		     is_same_net6(link_address, &c->start6, c->prefix) &&
+		     is_same_net6(link_address, &c->end6, c->prefix)))
 		  {
 		    c->preferred = c->valid = 0xffffffff;
 		    c->current = state->context;
@@ -179,7 +178,7 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
 	  
 	  if (!state->context)
 	    {
-	      inet_ntop(AF_INET6, state->link_address, daemon->addrbuff, ADDRSTRLEN); 
+	      inet_ntop(AF_INET6, link_address, daemon->addrbuff, ADDRSTRLEN); 
 	      my_syslog(MS_DHCP | LOG_WARNING, 
 			_("no address range available for DHCPv6 request from relay at %s"),
 			daemon->addrbuff);
@@ -193,6 +192,8 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
 		    _("no address range available for DHCPv6 request via %s"), state->iface_name);
 	  return 0;
 	}
+
+      state->relay_address = link_address;
 
       return dhcp6_no_relay(state, msg_type, inbuff, sz, now);
     }
@@ -253,11 +254,12 @@ static int dhcp6_maybe_relay(struct state *state, unsigned char *inbuff, size_t 
 	      /* the packet data is unaligned, copy to aligned storage */
 	      memcpy(&align, inbuff + 2, IN6ADDRSZ); 
 
-
-	      /* RFC6221 para 4 */
-	      if (!IN6_IS_ADDR_UNSPECIFIED(&align))
-		state->link_address = &align;
-	      if (!dhcp6_maybe_relay(state, opt6_ptr(opt, 0), opt6_len(opt), client_addr, now))
+	      /* RFC6221 para 4 says if link_address in encapulation
+		 is zero, ignore it, and, by implication, use the link
+		 address of any enclosing encapsulation or, failing that
+		 of the arrival interface on the the server. */
+	      if (!dhcp6_maybe_relay(state, opt6_ptr(opt, 0), opt6_len(opt), client_addr,
+				     IN6_IS_ADDR_UNSPECIFIED(&align) ? link_address : &align, now))
 		return 0;
 	    }
 	  else
@@ -1977,10 +1979,10 @@ static void update_leases(struct state *state, struct dhcp_context *context, str
 		}
 	    }
 	  
-	  if (state->link_address)
-	    inet_ntop(AF_INET6, state->link_address, daemon->addrbuff, ADDRSTRLEN);
+	  if (state->relay_address)
+	    inet_ntop(AF_INET6, state->relay_address, daemon->addrbuff, ADDRSTRLEN);
 	  
-	  lease_add_extradata(lease, (unsigned char *)daemon->addrbuff, state->link_address ? strlen(daemon->addrbuff) : 0, 0);
+	  lease_add_extradata(lease, (unsigned char *)daemon->addrbuff, state->relay_address ? strlen(daemon->addrbuff) : 0, 0);
 	  
 	  if ((opt = opt6_find(state->packet_options, state->end, OPTION6_USER_CLASS, 2)))
 	    {

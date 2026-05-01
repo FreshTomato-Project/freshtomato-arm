@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2025 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2026 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -4960,7 +4960,8 @@ err:
 	      arg = NULL; /* provoke error below */
 	  }
 	
-	if (!domain || !arg || !(new->name = canonicalise_opt(domain)))
+	if (!domain || !arg || !new->intr ||
+	    !(new->name = canonicalise_opt(domain)))
 	  ret_err(option == LOPT_DYNHOST ?
 		  _("bad dynamic host") : _("bad interface name"));
 	

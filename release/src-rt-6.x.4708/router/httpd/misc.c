@@ -48,6 +48,13 @@ typedef struct {
 } meminfo_t;
 
 
+int is_ascii_alnum(unsigned char c)
+{
+	return (c >= 'A' && c <= 'Z') ||
+	       (c >= 'a' && c <= 'z') ||
+	       (c >= '0' && c <= '9');
+}
+
 /* to javascript-safe string */
 char *js_string(const char *s)
 {

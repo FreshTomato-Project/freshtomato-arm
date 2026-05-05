@@ -210,13 +210,6 @@ AC_ARG_ENABLE(
 )
 
 AC_ARG_ENABLE(
-	[strict],
-	[AS_HELP_STRING([--enable-strict], [enable strict compiler warnings (debugging option) @<:@default=no@:>@])],
-	,
-	[enable_strict="no"]
-)
-
-AC_ARG_ENABLE(
 	[pedantic],
 	[AS_HELP_STRING([--enable-pedantic], [enable pedantic compiler warnings, will not generate a working executable (debugging option) @<:@default=no@:>@])],
 	,
@@ -228,13 +221,6 @@ AC_ARG_ENABLE(
 	[AS_HELP_STRING([--enable-werror], [promote compiler warnings to errors, will cause builds to fail if the compiler issues warnings (debugging option) @<:@default=no@:>@])],
 	,
 	[enable_werror="no"]
-)
-
-AC_ARG_ENABLE(
-	[strict-options],
-	[AS_HELP_STRING([--enable-strict-options], [enable strict options check between peers (debugging option) @<:@default=no@:>@])],
-	,
-	[enable_strict_options="no"]
 )
 
 AC_ARG_ENABLE(
@@ -738,7 +724,7 @@ if test "$enable_dco" != "no"; then
 				OPTIONAL_LIBNL_GENL_LIBS="${LIBNL_GENL_LIBS}"
 
 				AC_DEFINE(ENABLE_DCO, 1, [Enable shared data channel offload])
-				AC_MSG_NOTICE([Enabled ovpn-dco support for Linux])
+				AC_MSG_NOTICE([Enabled ovpn-dco (via ovpn kernel module) support for Linux])
 			fi
 			;;
 		*-*-freebsd*)
@@ -1278,12 +1264,8 @@ if test "${WIN32}" = "yes"; then
 fi
 
 if test "${enable_pedantic}" = "yes"; then
-	enable_strict="yes"
 	CFLAGS="${CFLAGS} -pedantic"
 	AC_DEFINE([PEDANTIC], [1], [Enable pedantic mode])
-fi
-if test "${enable_strict}" = "yes"; then
-	CFLAGS="${CFLAGS} -Wsign-compare -Wuninitialized"
 fi
 if test "${enable_werror}" = "yes"; then
 	CFLAGS="${CFLAGS} -Werror"

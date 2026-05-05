@@ -1,3 +1,101 @@
+Overview of changes in 2.7.4
+============================
+Bugfixes
+--------
+- using ``--dns server ...`` style configs on Windows with win-dco would
+  lead to erroneously enabling "DnsSecValidationRequired : True", possibly
+  breaking VPN DNS resolution.  Pushing ``--dns server ... dnssec no``
+  can be used as a workaround until clients can be updated.
+  (Github: OpenVPN/openvpn#1024)
+
+- correct comments in the ``--dns-up-down`` platform scripts relating to
+  ``dns_server_..._dnssec`` values.
+
+- Fix release-only build of pkcs11-helper vcpkg port, do not try to
+  install files from debug build.
+
+Building improvements
+---------------------
+- update Github Action rules, bring back vcpkg caching
+
+- ``--enable-strict`` and ``--enable-strict-options`` configure flags have
+  been removed (because they did not actually do anything anymore)
+
+User-visible Changes
+--------------------
+- mbedtls-builds will now provide a proper error message if a
+  ``tls-group`` statement with no valid groups is encountered
+  (used to run into SSL handshake failure later on).
+
+
+Overview of changes in 2.7.3
+============================
+Bugfixes
+--------
+- in combination with ``--management-query-passwords``, setups using
+  ``--auth-user-pass file`` or inline ``auth-user-pass`` would no longer
+  use the configured passwords and prompt on the management interface
+  instead (OpenVPN GUI would then provide an empty user/password prompt)
+  (Github: OpenVPN/openpvn#1021).
+
+Overview of changes in 2.7.2
+============================
+Security fixes
+--------------
+- fix race condition in TLS handshake that could lead to leaking of
+  packet data from a previous handshake under specific circumstances
+  (CVE-2026-40215)
+
+  (Bug found by XlabAI Team of Tencent Xuanwu Lab (xlabai@tencent.com))
+
+- fix server ASSERT() on receiving a suitably malformed packet with
+  a valid tls-crypt-v2 key (CVE-2026-35058)
+
+  (Bug found by XlabAI Team of Tencent Xuanwu Lab (xlabai@tencent.com)
+   and independently by Emma Reuter of Cisco ASIG (TALOS-2026-2381))
+
+Bugfixes
+--------
+- when using a config file with inlined username and no password,
+  fix prompting for the password from management interface.
+
+- Windows: fix DNSSEC flag handling - this got never applied due to
+  a bad comparison being always false.
+
+- Windows: fix deinstallation progress bar on adapter deletion.
+
+New features
+------------
+- management interface: permit input of very long passwords in
+  base64-encoded multiline format.  Signal support to management
+  clients via "management version 6".
+
+Documentation
+-------------
+- improve documentation and error messages related to old and new
+  Linux DCO modules
+
+- remove some references to pre-2.3 OpenVPN
+
+- improve manpage for ``--learn-address`` config
+
+User-visible Changes
+--------------------
+- improve error messages on ``--verify-x509-name`` failures
+
+- improve error logging when overlong username or passwords can not
+  be written to TLS buffer
+
+Long-term code maintenance
+--------------------------
+- fully support OpenSSL 4.0 now, without "deprecated API" warnings
+  (multiple small changes to adapt to 3.5 -> 4.0 API changes)
+
+- add unit tests for certificate detail printing
+
+- add unit tests for "empty password on inline credentials" handling
+
+
 Overview of changes in 2.7.1
 ============================
 Bugfixes
@@ -119,11 +217,12 @@ Windows automatic service now runs as an unpriviledged user
     are not readable for ``NT SERVICE\OpenVPNService``.
 
 Support for new version of Linux DCO module
-    OpenVPN DCO module is moving upstream and being merged into the
-    main Linux kernel. For this process some API changes were required.
-    OpenVPN 2.7 will only support the new API. The new module is called
-    ``ovpn``. Out-of-tree builds for older kernels are available. Please
-    see the release announcements for futher information.
+    The OpenVPN DCO module has been merged into the Linux kernel as of
+    6.16.  This required some API changes and OpenVPN 2.7 only supports
+    the new API. The new module is called ``ovpn``. Out-of-tree builds
+    for older kernels are available from
+    https://github.com/OpenVPN/ovpn-backports. Please
+    see the release announcements for further information.
 
 Support for server mode in win-dco driver
     On Windows the win-dco driver can now be used in server setups.

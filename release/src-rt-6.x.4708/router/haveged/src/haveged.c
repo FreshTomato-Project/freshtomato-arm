@@ -1,7 +1,7 @@
 /**
  ** Simple entropy harvester based upon the havege RNG
  **
- ** Copyright 2018-2024 Jirka Hladky hladky DOT jiri AT gmail DOT com
+ ** Copyright 2018-2026 Jirka Hladky hladky DOT jiri AT gmail DOT com
  ** Copyright 2009-2014 Gary Wuertz gary@issiweb.com
  ** Copyright 2011-2012 BenEleventh Consulting manolson@beneleventh.com
  **
@@ -61,7 +61,7 @@
 // {{{ VERSION_TEXT
 static const char* VERSION_TEXT =
   "haveged %s\n\n"
-  "Copyright (C) 2018-2024 Jirka Hladky <hladky.jiri@gmail.com>\n"
+  "Copyright (C) 2018-2026 Jirka Hladky <hladky.jiri@gmail.com>\n"
   "Copyright (C) 2009-2014 Gary Wuertz <gary@issiweb.com>\n"
   "Copyright (C) 2011-2012 BenEleventh Consulting <manolson@beneleventh.com>\n\n"
   "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.\n"
@@ -489,10 +489,17 @@ int main(int argc, char **argv)
             fprintf(stderr, "%s: disabling command mode for this instance\n", params->daemon);
          }
       }
-      /* Initilize named semaphore to synchronize command isntances */
+      /* Initialize named semaphore to synchronize command instances */
+      if (mkdir("/dev/shm", 0755) != 0) {
+        if (errno != EEXIST) {
+          error_exit("Couldn't create /dev/shm directory: %s", strerror(errno));
+        }
+      }
+
       sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
       if (sem == NULL) {
-         error_exit("Couldn't create nammed semaphore " SEM_NAME" error: %s", strerror(errno));
+         fprintf(stderr, "Warning: Couldn't create named semaphore " SEM_NAME" error: %s", strerror(errno));
+         fprintf(stderr, "         %s: disabling command mode for this instance\n", params->daemon);
       }
     }
 #endif

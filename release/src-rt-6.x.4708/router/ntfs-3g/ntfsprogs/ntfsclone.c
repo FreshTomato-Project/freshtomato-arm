@@ -161,6 +161,7 @@ static struct {
 	int new_serial;
 	int metadata_image;
 	int preserve_timestamps;
+	int adjust_sector_size;
 	int full_logfile;
 	int restore_image;
 	char *output;
@@ -366,6 +367,8 @@ static void usage(int ret)
 		"        --ignore-fs-check  Ignore the filesystem check result\n"
 		"        --new-serial       Set a new serial number\n"
 		"        --new-half-serial  Set a partial new serial number\n"
+		"    -S, --adjust-sector-size\n"
+		"                           Adjust NTFS sector size to suit target device\n"
 		"    -t, --preserve-timestamps Do not clear the timestamps\n"
 		"    -q, --quiet            Do not display any progress bars\n"
 		"    -f, --force            Force to progress (DANGEROUS)\n"
@@ -419,6 +422,7 @@ static void parse_options(int argc, char **argv)
 		{ "new-half-serial",  no_argument,	 NULL, 'i' },
 		{ "full-logfile",     no_argument,	 NULL, 'l' },
 		{ "save-image",	      no_argument,	 NULL, 's' },
+		{ "adjust-sector-size", no_argument,     NULL, 'S' },
 		{ "preserve-timestamps",   no_argument,  NULL, 't' },
 		{ "version",	      no_argument,	 NULL, 'V' },
 		{ NULL, 0, NULL, 0 }
@@ -482,6 +486,9 @@ static void parse_options(int argc, char **argv)
 			break;
 		case 's':
 			opt.save_image++;
+			break;
+		case 'S':
+			opt.adjust_sector_size++;
 			break;
 		case 't':
 			opt.preserve_timestamps++;
@@ -2703,6 +2710,170 @@ int main(int argc, char **argv)
 			fclose(stream_out);
 		ntfs_umount(vol,FALSE);
 		free(lcn_bitmap.bm);
+
+		if (opt.adjust_sector_size) {
+			BOOL dev_opened = TRUE;
+			int sector_size = 0;
+			NTFS_BOOT_SECTOR bs;
+			s64 nbytes = 0;
+			u16 ntfs_sector_size = 0;
+			u32 ntfs_cluster_size = 0;
+			u32 new_sectors_per_cluster = 0;
+			u64 new_hidden_sectors = 0;
+			s64 new_number_of_sectors = 0;
+
+			memset(&bs, 0, sizeof(bs));
+
+			if (!dev_out) {
+				const int flags = O_RDWR | O_BINARY;
+
+				dev_out = ntfs_device_alloc(opt.output, 0,
+					&ntfs_device_default_io_ops, NULL);
+				if (!dev_out ||
+					(dev_out->d_ops->open)(dev_out, flags))
+				{
+					fprintf(stderr, "Opening volume '%s' "
+						"failed: %s",
+						opt.output, strerror(errno));
+					exit(1);
+				}
+			}
+
+			sector_size = ntfs_device_sector_size_get(
+				/* struct ntfs_device *dev */
+				dev_out);
+			if (sector_size < 0) {
+				fprintf(stderr, "Error getting sector "
+					"size of output device: %s\n",
+					strerror(errno));
+				exit(1);
+			}
+
+			nbytes = dev_out->d_ops->pread(
+				/* struct ntfs_device *dev */
+				dev_out,
+				/* void *buf */
+				&bs,
+				/* s64 count */
+				sizeof(bs),
+				/* s64 offset */
+				0);
+			if (nbytes != sizeof(bs)) {
+				fprintf(stderr, "Error while reading "
+					"boot sector of NTFS volume: "
+					"%s\n",
+					strerror(errno));
+				exit(1);
+			}
+
+			ntfs_sector_size =
+				/* Note: Misaligned? */
+				le16_to_cpu(bs.bpb.bytes_per_sector);
+			ntfs_cluster_size =
+				((u32) ntfs_sector_size) *
+				((bs.bpb.sectors_per_cluster > 128) ?
+				1 << (256 - bs.bpb.sectors_per_cluster)
+				: bs.bpb.sectors_per_cluster);
+			new_sectors_per_cluster =
+				ntfs_cluster_size / sector_size;
+			new_hidden_sectors =
+				(((u64) le32_to_cpu(bs.bpb.
+				hidden_sectors)) *
+				ntfs_sector_size) / sector_size;
+			new_number_of_sectors =
+				(sle64_to_cpu(bs.
+				number_of_sectors) *
+				ntfs_sector_size) / sector_size;
+
+			if ((unsigned) sector_size == ntfs_sector_size);
+			else if (ntfs_cluster_size < sector_size) {
+				fprintf(stderr, "Error: No sector size "
+					"adjustment possible because "
+					"the cluster size (%lu bytes) "
+					"is smaller than the sector "
+					"size of the new device (%d "
+					"bytes). The NTFS volume needs "
+					"to be reformatted to be "
+					"usable on this device.\n",
+					(unsigned long)
+					ntfs_cluster_size,
+					sector_size);
+				exit(1);
+			}
+			else if (new_hidden_sectors > 0xFFFFFFFFUL &&
+				!opt.force)
+			{
+				fprintf(stderr, "Error: No sector size "
+					"adjustment possible because "
+					"the new hidden sectors value "
+					"would overflow its type (%llu "
+					"sectors).\n",
+					(unsigned long long)
+					new_hidden_sectors);
+				exit(1);
+			}
+			else if (new_number_of_sectors < 0) {
+				fprintf(stderr, "Error: No sector size "
+					"adjustment possible because "
+					"the new total number of "
+					"sectors is negative (%lld "
+					"sectors).\n",
+					(long long) new_number_of_sectors);
+				exit(1);
+			}
+
+			if ((unsigned) sector_size == ntfs_sector_size) {
+				Printf("No sector size adjustment "
+					"needed. NTFS sector size "
+					"already matches device sector "
+					"size (%d bytes).\n",
+					sector_size);
+			}
+			else {
+				if (new_sectors_per_cluster <= 128) {
+					bs.bpb.sectors_per_cluster =
+						(u8) new_sectors_per_cluster;
+				}
+				else {
+					bs.bpb.sectors_per_cluster =
+						257 -
+						ffs(new_sectors_per_cluster);
+				}
+
+				bs.bpb.bytes_per_sector =
+					cpu_to_le16(sector_size);
+				bs.bpb.hidden_sectors =
+					cpu_to_le32((new_hidden_sectors >
+					UINT64_MAX) ? 0U :
+					(u32) new_hidden_sectors);
+				bs.number_of_sectors =
+					cpu_to_sle64(new_number_of_sectors);
+
+				nbytes = dev_out->d_ops->pwrite(
+					/* struct ntfs_device *dev */
+					dev_out,
+					/* void *buf */
+					&bs,
+					/* s64 count */
+					sizeof(bs),
+					/* s64 offset */
+					0);
+				if (nbytes != sizeof(bs)) {
+					fprintf(stderr, "Error while "
+						"writing boot sector "
+						"of NTFS volume: %s\n",
+						strerror(errno));
+					exit(1);
+				}
+			}
+
+			if (dev_opened) {
+				(dev_out->d_ops->close)(dev_out);
+				ntfs_device_free(dev_out);
+				dev_out = NULL;
+			}
+		}
+
 		exit(0);
 	}
 

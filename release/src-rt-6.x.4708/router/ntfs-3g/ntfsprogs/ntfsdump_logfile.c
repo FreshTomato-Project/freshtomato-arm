@@ -233,19 +233,21 @@ static int logfile_open(BOOL is_volume, const char *filename,
 		struct stat sbuf;
 		int fd;
 
-		if (stat(filename, &sbuf) == -1) {
+		fd = open(filename, O_RDONLY);
+		if (fd == -1) {
 			if (errno == ENOENT)
 				log_err_exit(NULL, "The file %s does not "
 						"exist.  Did you specify it "
 						"correctly?\n", filename);
+			log_err_exit(NULL, "Failed to open file %s: %s\n",
+					filename, strerror(errno));
+		}
+
+		if (fstat(fd, &sbuf) == -1) {
 			log_err_exit(NULL, "Error getting information about "
 					"%s: %s\n", filename, strerror(errno));
 		}
 
-		fd = open(filename, O_RDONLY);
-		if (fd == -1)
-			log_err_exit(NULL, "Failed to open file %s: %s\n",
-					filename, strerror(errno));
 		logfile->data_size = sbuf.st_size;
 		logfile->fd = fd;
 	}

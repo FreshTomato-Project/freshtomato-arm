@@ -292,6 +292,7 @@ obj-y				+= $(if $(TCONFIG_BCMARM),libmnl) $(IPSET_TARGET)
 obj-$(TCONFIG_PPTPD)		+= pptpd
 obj-$(TCONFIG_PROXY)		+= igmpproxy udpxy
 obj-$(TCONFIG_IPERF)		+= iperf
+obj-$(TCONFIG_TCPDUMP) 		+= libpcap tcpdump
 obj-$(TCONFIG_BCMBSD)		+= bsd
 obj-$(TCONFIG_HAVEGED)		+= haveged
 
@@ -3809,6 +3810,60 @@ iperf-clean:
 	@rm -f iperf/stamp-h1 iperf/Makefile
 	$(call unpatch_files,iperf)
 
+libpcap/stamp-h1:
+	cd libpcap && \
+		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		$(CONFIGURE) --prefix=/usr \
+			--disable-shared \
+			--disable-usb \
+			--disable-netmap \
+			--disable-bluetooth \
+			--disable-dbus \
+			--disable-rdma \
+			--without-libnl \
+			--with-dag=no \
+			--with-septel=no \
+			--with-snf=no \
+			--with-turbocap=no \
+			--with-dpdk=no
+	@touch $@
+
+libpcap: libpcap/stamp-h1
+	@$(SEP)
+	$(MAKE) -C libpcap libpcap.a
+
+libpcap-install:
+	@rm -rf $(INSTALLDIR)/libpcap
+
+libpcap-clean:
+	-@$(MAKE) -C libpcap distclean
+	@rm -f libpcap/stamp-h1
+
+tcpdump/stamp-h1: libpcap
+	cd tcpdump && \
+		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		$(CONFIGURE) --prefix=/usr --bindir=/usr/sbin \
+			--disable-smb \
+			--without-smi \
+			--without-crypto \
+			--without-cap-ng \
+			--without-sandbox-capsicum
+	@touch $@
+
+tcpdump: tcpdump/stamp-h1
+	@$(SEP)
+	$(MAKE) -C tcpdump
+
+tcpdump-install:
+	install -D tcpdump/tcpdump $(INSTALLDIR)/tcpdump/usr/sbin/tcpdump
+	$(STRIP) -s $(INSTALLDIR)/tcpdump/usr/sbin/tcpdump
+
+tcpdump-clean:
+	-@$(MAKE) -C tcpdump distclean
+	@rm -f tcpdump/stamp-h1
+
 libdaemon/stamp-h1:
 	cd libdaemon && autoreconf -fsi && \
 		CFLAGS="-Os -Wall $(EXTRACFLAGS) -fPIC -ffunction-sections -fdata-sections" \
@@ -4519,4 +4574,4 @@ $(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
 
 .PHONY: all clean distclean mrproper install package image
 .PHONY: conf mconf oldconf kconf kmconf config menuconfig oldconfig
-.PHONY: dummy libnet libpcap
+.PHONY: dummy libnet libpcap tcpdump

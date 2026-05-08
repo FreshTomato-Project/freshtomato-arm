@@ -343,6 +343,10 @@ config TCONFIG_IPERF
 	bool "IP Bandwidth monitoring utility"
 	default n
 
+config TCONFIG_TCPDUMP
+	bool "tcpdump packet analyzer"
+	default n
+
 config TCONFIG_QRCODE
 	bool "WiFi QR Code generator"
 	default n

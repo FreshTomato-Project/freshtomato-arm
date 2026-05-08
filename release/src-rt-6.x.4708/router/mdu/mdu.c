@@ -385,14 +385,13 @@ static int curl_dump_cb(CURL *handle, curl_infotype type, char *data, size_t siz
 			++out;
 		}
 	}
-	*out = '\0'; /* null-terminate the modified string (for convenience) */
 
 	/* adjust the size after removing '\r' */
-	size = out - data; 
+	size = out - data;
 
-	if (data[size - 1] == '\n')
+	if (size > 0 && data[size - 1] == '\n')
 		size -= 1;
-	if (is_info && data[size - 1] == ':')
+	if (size > 0 && is_info && data[size - 1] == ':')
 		size -= 1;
 
 	/* write timestamp and prefix to file */
@@ -564,6 +563,10 @@ static char *curl_resolve_ip(const unsigned int ssl, const char *url, const char
 static long _http_req(const unsigned int ssl, int static_host, const char *host, const char *req, const char *query, const char *header, int auth, char *data, char **body)
 {
 	logmsg(LOG_DEBUG, "*** %s: IN host=[%s] query=[%s] ssl=[%d] header=[%s] auth=[%d] data=[%s] req=[%s] ifname=[%s]", __FUNCTION__, host, query, ssl, header, auth, data ? data : "NULL", req, ifname);
+
+	/* always start with a valid empty body so callers can safely strstr/strchr */
+	if (body)
+		*body = "";
 
 #ifdef USE_LIBCURL
 	FILE *curl_wbuf = NULL;
@@ -953,10 +956,6 @@ static long http_req(const unsigned int ssl, int static_host, const char *host, 
 static int read_tmaddr(const char *name, long *tm, char *addr)
 {
 	char s[192];
-	struct in_addr ipv4;
-#ifdef TCONFIG_IPV6
-	struct in6_addr ipv6;
-#endif
 
 	logmsg(LOG_DEBUG, "*** %s: IN cachename: %s", __FUNCTION__, name);
 
@@ -964,14 +963,13 @@ static int read_tmaddr(const char *name, long *tm, char *addr)
 	if (f_read_string(name, s, sizeof(s)) > 0) {
 		if (sscanf(s, "%ld,%63s", tm, addr) == 2) {
 			logmsg(LOG_DEBUG, "*** %s: tm=%ld addr=%s", __FUNCTION__, *tm, addr);
-
-			if (*tm > 0 && (inet_pton(AF_INET, addr, &ipv4) == 1
+			if (*tm > 0 && (inet_pton(AF_INET, addr, &(struct in_addr){0}) == 1 ||
 #ifdef TCONFIG_IPV6
-			                || inet_pton(AF_INET6, addr, &ipv6) == 1
+			                inet_pton(AF_INET6, addr, &(struct in6_addr){0}) == 1))
+#else
+			                0))
 #endif
-			   )) {
 				return 1;
-			}
 		}
 		else
 			logmsg(LOG_DEBUG, "*** %s: unknown=%s", __FUNCTION__, s);
@@ -1819,7 +1817,14 @@ static void update_cloudflare(const unsigned int ssl)
 		}
 
 		found += strlen(find);
-		*strchr(found, '"') = '\0'; /* truncate at closing quote */
+		{
+			char *quote = strchr(found, '"');
+			if (quote == NULL) {
+				free(body_copy);
+				error(M_UNKNOWN_RESPONSE__D, -1);
+			}
+			*quote = '\0'; /* truncate at closing quote */
+		}
 
 		snprintf(query, QUARTER_BLOB, "/client/v4/zones/%s/dns_records/%s", zone, found);
 	}
@@ -2093,7 +2098,7 @@ int main(int argc, char *argv[])
 		if (no_wan_mode == 1) {
 			logmsg(LOG_DEBUG, "*** %s: checking for no WAN mode - true, using custom interface: %s", __FUNCTION__, nvram_safe_get("ddnsx_custom_if"));
 			memset(ifname, 0, sizeof(ifname)); /* reset */
-			snprintf(ifname, sizeof(ifname), nvram_safe_get("ddnsx_custom_if"));
+			snprintf(ifname, sizeof(ifname), "%s", nvram_safe_get("ddnsx_custom_if"));
 		}
 	}
 

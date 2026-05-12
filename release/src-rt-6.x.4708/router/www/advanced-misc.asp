@@ -168,6 +168,7 @@ function save() {
 			{ title: 'Boot Wait Time *', name: 'wait_time', type: 'select', options: a, value: fixInt(nvram.wait_time, 3, 20, 3) },
 			{ title: 'WAN Port Speed *', name: 'wan_speed', type: 'select', options: [[0,'10Mbps Full'],[1,'10Mbps Half'],[2,'100Mbps Full'],[3,'100Mbps Half'],[4,'Autonegotiation']], value: nvram.wan_speed },
 			null,
+<div class="note-spacer"><small>* Autonegotiate 1000MB or Higest Speed Hardware/Network/Wiring will allow. If out of spec use porthealth.</small></div>
 /* CTF-BEGIN */
 			{ title: 'CTF (Cut-Through Forwarding)<br>and HW acceleration', name: 'f_ctf_disable', type: 'checkbox', value: nvram.ctf_disable != '1', suffix: ' <small>disables QoS and BW Limiter!<\/small>' },
 			null,

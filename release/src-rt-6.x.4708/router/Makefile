@@ -3909,6 +3909,7 @@ avahi/stamp-h1:
 			--disable-manpages --disable-xmltoman --disable-doxygen-doc --disable-doxygen-dot \
 			--disable-doxygen-man --disable-doxygen-rtf --disable-doxygen-xml --disable-doxygen-chm \
 			--disable-doxygen-chi --disable-doxygen-html --disable-doxygen-ps --disable-doxygen-pdf \
+			--disable-libsystemd --with-systemdsystemunitdir=no \
 			--with-xml=expat \
 			--with-avahi-user=nobody --with-avahi-group=nobody \
 			--with-autoipd-user=nobody --with-autoipd-group=nobody \

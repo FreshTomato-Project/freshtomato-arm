@@ -26,8 +26,8 @@
 	<synopsis>
       <cmd>avahi-publish -s [<arg>options</arg>] <arg>name</arg> <arg>service-type</arg> <arg>port</arg> [<arg>TXT data</arg> ...]</cmd>
       <cmd>avahi-publish-service [<arg>options</arg>] <arg>name</arg> <arg>service-type</arg> <arg>port</arg> [<arg>TXT data</arg> ...]</cmd>
-      <cmd>avahi-publish -a [<arg>options</arg>] <arg>host name</arg> <arg>address</arg></cmd>
-      <cmd>avahi-publish-address [<arg>options</arg>] <arg>host name</arg> <arg>address</arg></cmd>
+      <cmd>avahi-publish -a [<arg>options</arg>] <arg>host-name</arg> <arg>address</arg></cmd>
+      <cmd>avahi-publish-address [<arg>options</arg>] <arg>host-name</arg> <arg>address</arg></cmd>
 	</synopsis>
 
     <description>
@@ -82,6 +82,11 @@
         subtype and _ftp._tcp is the main type. You may pass this
         option multiple times to register the service with multiple
         subtypes.</p></optdesc>
+      </option>
+
+      <option>
+        <p><opt>-R | --no-reverse</opt></p>
+        <optdesc><p>Do not publish reverse entry with address.</p></optdesc>
       </option>
 
 	  <option>

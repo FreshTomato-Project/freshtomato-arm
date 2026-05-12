@@ -103,6 +103,7 @@ static void ga_client_get_property(GObject * object,
             break;
         case PROP_FLAGS:
             g_value_set_enum(value, priv->flags);
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
             break;
@@ -193,7 +194,7 @@ static GQuark detail_for_state(AvahiClientState state) {
     } states[] = {
         { AVAHI_CLIENT_S_REGISTERING, "registering", 0},
         { AVAHI_CLIENT_S_RUNNING, "running", 0},
-        { AVAHI_CLIENT_S_COLLISION, "collistion", 0},
+        { AVAHI_CLIENT_S_COLLISION, "collision", 0},
         { AVAHI_CLIENT_FAILURE, "failure", 0},
         { AVAHI_CLIENT_CONNECTING, "connecting", 0},
         { 0, NULL, 0}

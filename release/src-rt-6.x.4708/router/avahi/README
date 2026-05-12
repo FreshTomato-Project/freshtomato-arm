@@ -1,30 +1,36 @@
 AVAHI SERVICE DISCOVERY SUITE
 
 Avahi is a free, LGPL implementation of DNS Service Discovery (DNS-SD RFC 6763) over Multicast DNS (mDNS RFC 6762),
-commonly known as and compatible with Apple Bonjour primarily targetting Linux.
+commonly known as and compatible with Apple Bonjour primarily targeting Linux.
 
-Copyright 2004-2015 by the Avahi developers.
+Copyright 2004-2022 by the Avahi developers.
+
+BUGS:
+	https://github.com/avahi/avahi
 
 WEB SITE:
-	http://avahi.org/
+	https://avahi.org/
 
 GIT:
-	http://github.com/lathiat/avahi.git
+	https://github.com/avahi/avahi.git
 
 MAILING LIST:
-	http://lists.freedesktop.org/mailman/listinfo/avahi
+	https://lists.freedesktop.org/mailman/listinfo/avahi
 
-IRC:
-	#avahi on irc.freenode.org
+COVERITY SCAN REPORT:
+	https://scan.coverity.com/projects/avahi-daemon
 
-CIA:
-	http://cia.navi.cx/stats/project/avahi
+OSS-FUZZ REPORT:
+	https://introspector.oss-fuzz.com/project-profile?project=avahi
 
-FRESHMEAT:
-	http://freshmeat.net/projects/avahi/
+COVERAGE REPORT:
+	https://coveralls.io/github/avahi/avahi
 
-OHLOH:
-	http://www.ohloh.net/projects/avahi/
+CODESPELL REPORT:
+	https://fossies.org/linux/test/avahi-master.tar.gz/codespell.html
+
+TRANSLATION PLATFORM:
+	https://translate.fedoraproject.org/engage/avahi
 
 AUTHORS:
 	Lennart Poettering

@@ -48,6 +48,15 @@ noinst_PROGRAMS = \
 	watch-test \
 	watch-test-thread \
 	utf8-test
+
+TESTS = \
+	strlst-test \
+	domain-test \
+	alternative-test \
+	timeval-test \
+	watch-test \
+	watch-test-thread \
+	utf8-test
 endif
 
 lib_LTLIBRARIES = \
@@ -68,8 +77,8 @@ libavahi_common_la_SOURCES = \
 	utf8.c utf8.h \
 	i18n.c i18n.h
 
-libavahi_common_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) -DAVAHI_LOCALEDIR=\"$(avahilocaledir)\"
-libavahi_common_la_LIBADD = $(AM_LDADD) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(INTLLIBS)
+libavahi_common_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) -DAVAHI_LOCALEDIR=\"$(localedir)\"
+libavahi_common_la_LIBADD = $(AM_LDADD) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) $(LTLIBINTL)
 libavahi_common_la_LDFLAGS = $(AM_LDFLAGS)  -version-info $(LIBAVAHI_COMMON_VERSION_INFO)
 
 strlst_test_SOURCES = \

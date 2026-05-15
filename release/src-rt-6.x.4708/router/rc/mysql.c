@@ -483,29 +483,43 @@ void start_mysql(int force)
 		rc = mysql_to_hex(pass_hex, sizeof(pass_hex), nvram_safe_get("mysql_passwd"));
 		if (rc != 0) {
 			logmsg(LOG_ERR, "%s: mysql password is too long", __FUNCTION__);
+			killall_tk_period_wait("mysqld", 50);
+			sleep(1);
+			eval("rm", "-f", mysql_pid, mysql_passwd);
 			goto END;
 		}
 
-		if (f_exists(mysql_passwd))
-			unlink(mysql_passwd);
-
-		f_write_string(mysql_passwd, "use mysql;", FW_CREATE | FW_NEWLINE, 0600);
 		if (pass_hex[0])
 			rc = snprintf(sql, sizeof(sql), "update user set password=password(0x%s) where user='root';", pass_hex);
 		else
 			rc = snprintf(sql, sizeof(sql), "update user set password=password('') where user='root';");
 		if ((rc < 0) || (rc >= (int)sizeof(sql))) {
 			logmsg(LOG_ERR, "%s: password SQL is too long", __FUNCTION__);
-			unlink(mysql_passwd);
+			killall_tk_period_wait("mysqld", 50);
+			sleep(1);
+			eval("rm", "-f", mysql_pid, mysql_passwd);
 			goto END;
 		}
-		f_write_string(mysql_passwd, sql, FW_APPEND | FW_NEWLINE, 0);
-		f_write_string(mysql_passwd, "flush privileges;", FW_APPEND | FW_NEWLINE, 0);
+
+		if (f_exists(mysql_passwd))
+			unlink(mysql_passwd);
+
+		if ((f_write_string(mysql_passwd, "use mysql;", FW_CREATE | FW_NEWLINE, 0600) < 0) ||
+		    (f_write_string(mysql_passwd, sql, FW_APPEND | FW_NEWLINE, 0) < 0) ||
+		    (f_write_string(mysql_passwd, "flush privileges;", FW_APPEND | FW_NEWLINE, 0) < 0)) {
+			logerr(__FUNCTION__, __LINE__, mysql_passwd);
+			killall_tk_period_wait("mysqld", 50);
+			sleep(1);
+			eval("rm", "-f", mysql_pid, mysql_passwd);
+			goto END;
+		}
 
 		rc = snprintf(sql, sizeof(sql), "source %s", mysql_passwd);
 		if ((rc < 0) || (rc >= (int)sizeof(sql))) {
 			logmsg(LOG_ERR, "%s: mysql source command is too long", __FUNCTION__);
-			unlink(mysql_passwd);
+			killall_tk_period_wait("mysqld", 50);
+			sleep(1);
+			eval("rm", "-f", mysql_pid, mysql_passwd);
 			goto END;
 		}
 

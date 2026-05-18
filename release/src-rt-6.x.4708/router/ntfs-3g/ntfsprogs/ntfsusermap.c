@@ -780,14 +780,15 @@ static boolean outputmap(const char *volume, const char *dir)
 {
 	char buf[256];
 	int fn;
-	char *fullname;
+	char *fullname = NULL;
 	char *backup;
 	struct USERMAPPING *mapping;
 	boolean done;
 	boolean err;
 	boolean undecided;
+#ifdef HAVE_WINDOWS_H
 	struct stat st;
-	int s;
+#endif
 
 	done = DENIED;
 	fullname = (char *)malloc(strlen(MAPFILE) + 1
@@ -815,17 +816,18 @@ static boolean outputmap(const char *volume, const char *dir)
 		printf("\n");
 #endif
 
-		s = stat(fullname,&st);
-		if (!s) {
-			backup = (char*)malloc(strlen(fullname + 5));
+		backup = (char*)malloc(strlen(fullname) + 5);
+		if (backup) {
 			strcpy(backup,fullname);
 			strcat(backup,".bak");
 #ifdef HAVE_WINDOWS_H
 			unlink(backup);
 #endif
-			if (rename(fullname,backup))
+			if (!rename(fullname,backup)) {
 				printf("* Old mapping file moved to %s\n",
 					backup);
+			}
+			free(backup);
 		}
 
 		printf("* Creating file %s\n", fullname);
@@ -895,6 +897,11 @@ static boolean outputmap(const char *volume, const char *dir)
 	if (!done)
 		fprintf(stderr, "* Could not create mapping file \"%s\"\n",
 				fullname);
+
+	if (fullname) {
+		free(fullname);
+	}
+
 	return (done);
 }
 

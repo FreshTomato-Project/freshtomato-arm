@@ -132,7 +132,7 @@ static void create_services(AvahiClient *c) {
         }
 
         /* Add an additional (hypothetic) subtype */
-        if ((ret = avahi_entry_group_add_service_subtype(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name, "_printer._tcp", NULL, "_magic._sub._printer._tcp") < 0)) {
+        if ((ret = avahi_entry_group_add_service_subtype(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name, "_printer._tcp", NULL, "_magic._sub._printer._tcp")) < 0) {
             fprintf(stderr, "Failed to add subtype _magic._sub._printer._tcp: %s\n", avahi_strerror(ret));
             goto fail;
         }
@@ -246,7 +246,7 @@ int main(AVAHI_GCC_UNUSED int argc, AVAHI_GCC_UNUSED char*argv[]) {
     /* Allocate a new client */
     client = avahi_client_new(avahi_simple_poll_get(simple_poll), 0, client_callback, NULL, &error);
 
-    /* Check wether creating the client object succeeded */
+    /* Check whether creating the client object succeeded */
     if (!client) {
         fprintf(stderr, "Failed to create client: %s\n", avahi_strerror(error));
         goto fail;

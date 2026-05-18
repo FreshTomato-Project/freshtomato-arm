@@ -113,19 +113,19 @@ extern const char *tomato_shortver;
 #endif
 
 #ifdef TCONFIG_MULTIWAN
-#define MWAN_MAX	4
+#define MWAN_MAX		4
 #else
-#define MWAN_MAX	2
+#define MWAN_MAX		2
 #endif
 
 #ifdef TCONFIG_EXTSW
-#define MAX_PORT_ID	5
+#define MAX_PORT_ID		5
 #else
-#define MAX_PORT_ID	4
+#define MAX_PORT_ID		4
 #endif
 
 #if !defined(CONFIG_BCMWL6) && !defined(TCONFIG_BLINK) /* only mips RT branch */
-#define TOMATO_VLANNUM	16
+#define TOMATO_VLANNUM		16
 #endif
 
 enum {
@@ -226,7 +226,7 @@ extern void gen_urandom(char *buf1, unsigned char *buf2, size_t buf_sz, const un
 #define EFH_PRINT		0x00000080 /* output partition list to the web response */
 
 extern struct mntent *findmntents(char *file, int swp, int (*func)(struct mntent *mnt, uint flags), uint flags);
-extern char *find_label_or_uuid(char *dev_name, char *label, char *uuid);
+extern char *find_label_or_uuid(char *dev_name, char *label, size_t label_sz, char *uuid, size_t uuid_sz);
 extern void add_remove_usbhost(char *host, int add);
 typedef int (*host_exec)(char *dev_name, int host_num, char *dsc_name, char *pt_name, uint flags);
 extern int exec_for_host(int host, int obsolete, uint flags, host_exec func);
@@ -319,6 +319,10 @@ extern int ppid(int pid);
 #define FW_CREATE		0
 #define FW_APPEND		1
 #define FW_NEWLINE		2
+#if defined(TCONFIG_NGINX) || defined(TCONFIG_BT)
+#define FWESC_JSON		1
+#define FWESC_LINE		2
+#endif
 extern unsigned long f_size(const char *path);
 extern int f_exists(const char *file);
 extern int d_exists(const char *file);
@@ -327,6 +331,9 @@ extern int f_write(const char *file, const void *buffer, int len, unsigned flags
 extern int f_read_string(const char *file, char *buffer, int max); /* returns bytes read, not including term; max includes term */
 extern int f_write_string(const char *file, const char *buffer, unsigned flags, unsigned cmode);
 extern int f_write_procsysnet(const char *path, const char *value);
+#if defined(TCONFIG_NGINX) || defined(TCONFIG_BT)
+extern int f_write_escaped(FILE *fp, int mode, const char *s1, const char *s2);
+#endif
 extern int f_read_alloc(const char *path, char **buffer, int max);
 extern int f_read_alloc_string(const char *path, char **buffer, int max);
 extern int f_wait_exists(const char *name, int max);
@@ -444,8 +451,12 @@ extern int dhd_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
 #endif
 
 /* shutils.c */
-extern pid_t get_pid_by_name(char *name); /* Returns the process ID */
-extern int getMTD(char *name); /* Find partition with defined name and return partition number as an integer */
+#ifdef TCONFIG_BCMBSD
+ extern pid_t get_pid_by_name(const char *name); /* Returns the process ID */
+#endif
+#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+ extern int getMTD(const char *name); /* Find partition with defined name and return partition number as an integer */
+#endif
 
 /* mdu.c/ddns.c */
 #define MDU_STOP_FN		"/var/lib/mdu/mdu-stop"

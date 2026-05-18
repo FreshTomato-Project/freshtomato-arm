@@ -81,8 +81,8 @@ static void rtm_info(struct rt_msghdr *rtm, AvahiInterfaceMonitor *m)
     (ifm->ifm_flags & IFF_UP) &&
     (!m->server->config.use_iff_running || (ifm->ifm_flags & IFF_RUNNING)) &&
     ((ifm->ifm_flags & IFF_LOOPBACK) ||
-     (ifm->ifm_flags & IFF_MULTICAST)) &&
-    (m->server->config.allow_point_to_point || !(ifm->ifm_flags & IFF_POINTOPOINT));
+     (ifm->ifm_flags & IFF_MULTICAST) ||
+      ((ifm->ifm_flags & IFF_POINTOPOINT) && m->server->config.allow_point_to_point));
 
   avahi_free(hw->name);
   hw->name = avahi_strndup(sdl->sdl_data, sdl->sdl_nlen);
@@ -428,8 +428,8 @@ static void if_add_interface(struct lifreq *lifreq, AvahiInterfaceMonitor *m, in
             (flags & IFF_UP) &&
             (!m->server->config.use_iff_running || (flags & IFF_RUNNING)) &&
             ((flags & IFF_LOOPBACK) ||
-            (flags & IFF_MULTICAST)) &&
-            (m->server->config.allow_point_to_point || !(flags & IFF_POINTOPOINT));
+             (flags & IFF_MULTICAST) ||
+              ((flags & IFF_POINTOPOINT) && m->server->config.allow_point_to_point));
         hw->name = avahi_strdup(lifreq->lifr_name);
         hw->mtu = mtu;
         /* TODO get mac address */
@@ -495,6 +495,7 @@ void avahi_interface_monitor_sync(AvahiInterfaceMonitor *m) {
   avahi_interface_monitor_check_relevant(m);
   avahi_interface_monitor_update_rrs(m, 0);
   avahi_log_info("Network interface enumeration completed.");
+  avahi_free(buf);
 #elif defined (SIOCGLIFNUM) && defined(HAVE_STRUCT_LIFCONF) /* Solaris 8 and later; Sol 7? */
     int sockfd;
     int ret;
@@ -519,7 +520,7 @@ void avahi_interface_monitor_sync(AvahiInterfaceMonitor *m) {
             avahi_log_error("malloc failed in avahi_interface_monitor_sync");
             goto end;
     }
-    lifc.lifc_family = NULL;
+    lifc.lifc_family = AF_UNSPEC;
     lifc.lifc_flags = 0;
     if(ioctl(sockfd, SIOCGLIFCONF, &lifc) < 0) {
         avahi_log_error(__FILE__": ioctl(SIOCGLIFCONF): %s", strerror(errno));

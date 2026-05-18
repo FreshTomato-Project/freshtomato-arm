@@ -65,7 +65,12 @@ static void record_browser_callback(
         assert(record->key->type == AVAHI_DNS_TYPE_PTR);
 
         if (avahi_service_name_split(record->data.ptr.name, NULL, 0, type, sizeof(type), domain, sizeof(domain)) < 0) {
-            avahi_log_warn("Invalid service type '%s'", record->key->name);
+            avahi_log_debug("Failed to split service name '%s'", record->data.ptr.name);
+            return;
+        }
+
+        if (!avahi_is_valid_service_type_strict(type)) {
+            avahi_log_debug("Invalid service '%s'", record->data.ptr.name);
             return;
         }
 
@@ -171,6 +176,9 @@ AvahiSServiceTypeBrowser *avahi_s_service_type_browser_new(
         AvahiSServiceTypeBrowser *b;
 
         b = avahi_s_service_type_browser_prepare(server, interface, protocol, domain, flags, callback, userdata);
+        if (!b)
+            return NULL;
+
         avahi_s_service_type_browser_start(b);
 
         return b;

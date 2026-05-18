@@ -1,0 +1,25 @@
+--- avahi/avahi-core/iface-linux.c
++++ avahi/avahi-core/iface-linux.c.patched
+@@ -41,6 +41,13 @@
+ #include <linux/if_addr.h>
+ #define IFA_RTA(r)  ((struct rtattr*)(((char*)(r)) + NLMSG_ALIGN(sizeof(struct ifaddrmsg))))
+ #endif
++
++/*
++ * Compatibility with old Linux headers (e.g. 2.6.x / 3.7) that do not
++ * define the IFA_FLAGS netlink attribute. In newer headers it is the
++ * attribute immediately after IFA_MULTICAST, i.e. ABI value 8.
++ */
++#define AVAHI_LINUX_IFA_FLAGS 8
+ 
+ static int netlink_list_items(AvahiNetlink *nl, uint16_t type, unsigned *ret_seq) {
+     struct nlmsghdr *n;
+@@ -233,7 +240,7 @@
+ 
+                     break;
+ 
+-                case IFA_FLAGS:
++                case AVAHI_LINUX_IFA_FLAGS:
+                     if (RTA_PAYLOAD(a) != sizeof(flags))
+                         return;
+ 

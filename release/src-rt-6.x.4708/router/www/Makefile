@@ -138,6 +138,7 @@ ifneq ($(TCONFIG_FTP),y)
 	rm -f $(INSTALLDIR)/www/nas-ftp.asp
 	sed -i $(INSTALLDIR)/www/tomato.js -e "/FTP-BEGIN/,/FTP-END/d"
 	sed -i $(INSTALLDIR)/www/isup.jsx -e "/FTP-BEGIN/,/FTP-END/d"
+	sed -i $(INSTALLDIR)/www/isup.js -e "/FTP-BEGIN/,/FTP-END/d"
 endif
 
 # Only include the Samba pages if Samba is configured in.
@@ -385,6 +386,7 @@ else
 	sed -i $(INSTALLDIR)/www/about.asp -e "/PPTPD-BEGIN/,/PPTPD-END/d"
 	sed -i $(INSTALLDIR)/www/advanced-dhcpdns.asp -e "/PPTPD-BEGIN/,/PPTPD-END/d"
 	sed -i $(INSTALLDIR)/www/isup.jsx -e "/PPTPD-BEGIN/,/PPTPD-END/d"
+	sed -i $(INSTALLDIR)/www/isup.js -e "/PPTPD-BEGIN/,/PPTPD-END/d"
 endif
 
 # Only include the nfs pages if NFS is compiled in
@@ -574,7 +576,7 @@ ifneq ($(TCONFIG_BCMARM),y)
 endif
 
 # only include isup.js helper if it is needed
-ifeq ($(TCONFIG_FTP)$(TCONFIG_SAMBASRV)$(TCONFIG_MEDIA_SERVER)$(TCONFIG_PPTPD)$(TCONFIG_NGINX)$(TCONFIG_BT),)
+ifeq ($(TCONFIG_FTP)$(TCONFIG_SAMBASRV)$(TCONFIG_MEDIA_SERVER)$(TCONFIG_PPTPD)$(TCONFIG_NGINX)$(TCONFIG_BT)$(TCONFIG_TOR),)
 	rm -f $(INSTALLDIR)/www/isup.js
 endif
 

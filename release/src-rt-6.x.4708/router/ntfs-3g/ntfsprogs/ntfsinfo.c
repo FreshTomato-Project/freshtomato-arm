@@ -8,7 +8,7 @@
  * Copyright (c) 2004-2005 Yuval Fledel
  * Copyright (c) 2004-2007 Yura Pakhuchiy
  * Copyright (c)      2005 Cristian Klein
- * Copyright (c) 2011-2020 Jean-Pierre Andre
+ * Copyright (c) 2011-2022 Jean-Pierre Andre
  *
  * This utility will dump a file's attributes.
  *
@@ -77,6 +77,7 @@
 #include "security.h"
 #include "mst.h"
 #include "dir.h"
+#include "logfile.h"
 #include "ntfstime.h"
 /* #include "version.h" */
 #include "support.h"
@@ -462,11 +463,74 @@ static const char *reparse_type_name(le32 tag)
 }
 
 /* *************** functions for dumping global info ******************** */
+
+/*
+ *		Show $LogFile details
+ */
+
+static void ntfs_dump_logfile(ntfs_inode *ni)
+{
+	ntfs_attr *na;
+	RESTART_PAGE_HEADER *rp = NULL;
+	RESTART_AREA *ra;
+	const char *state;
+
+	na = ntfs_attr_open(ni, AT_DATA, AT_UNNAMED, 0);
+	if (!na) {
+		fprintf(stderr, "Failed to open $FILE_LogFile/$DATA");
+		goto out;
+	}
+	
+	if (ntfs_check_logfile(na, &rp)) {
+		printf("File_Logfile Information\n");
+		if (rp) {
+			ra = (RESTART_AREA*)((char*)rp
+				+ le16_to_cpu(rp->restart_area_offset));
+			if (ntfs_is_rstr_record(rp->magic))
+				state = "valid";
+			else if (ntfs_is_chkd_record(rp->magic))
+				state = "checked";
+			else if (ntfs_is_empty_record(rp->magic))
+				state = "erased";
+			else
+				state = "unknown";
+			printf("\tLog state: %s\n", state);
+			printf("\tSystem page size: %d\n",
+				(int)le32_to_cpu(rp->system_page_size));
+			printf("\tLog page size: %d\n",
+				(int)le32_to_cpu(rp->log_page_size));
+			printf("\tLog version: %d.%d\n",
+				(int)le16_to_cpu(rp->major_ver),
+				(int)le16_to_cpu(rp->minor_ver));
+			printf("\tLog clients: %d\n",
+				(int)le16_to_cpu(ra->log_clients));
+			printf("\tFree client: %d\n",
+				(int)le16_to_cpu(ra->client_free_list));
+			printf("\tCurrent client: %d\n",
+				(int)le16_to_cpu(ra->client_in_use_list));
+			printf("\tRestart flags: 0x%x\n",
+				(int)le16_to_cpu(ra->flags));
+			if (ntfs_is_logfile_clean(na, rp))
+				state = "CLEAN";
+			else
+				state = "DIRTY";
+			printf("\tRestart state: %s\n", state);
+			free(rp);
+		} else {
+			printf("\tNo restart page\n");
+		}
+	}
+	ntfs_attr_close(na);
+out : ;
+}
+
 /**
  * ntfs_dump_volume - dump information about the volume
  */
 static void ntfs_dump_volume(ntfs_volume *vol)
 {
+	ntfs_inode *log;
+
 	printf("Volume Information \n");
 	printf("\tName of device: %s\n", vol->dev->d_name);
 	printf("\tDevice state: %lu\n", vol->dev->d_state);
@@ -552,7 +616,13 @@ static void ntfs_dump_volume(ntfs_volume *vol)
 				(long long)vol->free_clusters,
 				100.0*vol->free_clusters
 					/(double)vol->nr_clusters);
-
+	log = ntfs_inode_open(vol, FILE_LogFile);
+	if (!log) {
+		fprintf(stderr, "Failed to open inode FILE_LogFile");
+	} else {
+		ntfs_dump_logfile(log);
+		ntfs_inode_close(log);
+	}
 	//TODO: Still need to add a few more attributes
 }
 
@@ -1245,12 +1315,58 @@ static void ntfs_dump_sds_entry(SECURITY_DESCRIPTOR_HEADER *sds)
 	ntfs_dump_security_descriptor(sd, "\t");
 }
 
+static void ntfs_dump_sds_records(ntfs_attr *na, ntfs_index_context *xsii)
+{
+	SII_INDEX_DATA sii_data;
+	SECURITY_DESCRIPTOR_HEADER *sd;
+	INDEX_ENTRY *entry;
+	s64 offs;
+	u32 size;
+	u32 max_size;
+
+	max_size = 0;
+	sd = (SECURITY_DESCRIPTOR_HEADER*)NULL;
+	entry = xsii->entry;
+
+	if (entry) {
+		do {
+			/* Copy to get the offset properly aligned */
+			memcpy(&sii_data, ((char*)&entry->key.sii)
+				 + sizeof(entry->key.sii), sizeof(sii_data));
+			offs = le64_to_cpu(sii_data.offset);
+			size = le32_to_cpu(sii_data.length);
+			if (size > max_size) {
+				sd = (SECURITY_DESCRIPTOR_HEADER*)
+						realloc(sd, size);
+				max_size = size;
+			}
+			if (sd) {
+				if (ntfs_attr_pread(na, offs, size, sd)
+							== size) {
+					ntfs_dump_sds_entry(sd);
+				} else {
+					ntfs_log_perror(
+						"Failed to read a $SDS entry");
+				}
+			} else
+				ntfs_log_error(
+					"Failed to allocate a $SDS entry\n");
+			entry = ntfs_index_next(entry, xsii);
+		} while (entry && sd);
+	} else {
+		ntfs_log_perror("Could not get any $SII entry");
+	}
+	free(sd);
+}
+
+
 static void ntfs_dump_sds(ATTR_RECORD *attr, ntfs_inode *ni)
 {
-	SECURITY_DESCRIPTOR_HEADER *sds, *sd;
+	ntfs_index_context *xsii;
 	ntfschar *name;
 	int name_len;
-	s64 data_size;
+	le32 keyid;
+	ntfs_attr *na;
 	u64 inode;
 
 	inode = ni->mft_no;
@@ -1268,25 +1384,29 @@ static void ntfs_dump_sds(ATTR_RECORD *attr, ntfs_inode *ni)
 				  name, name_len, CASE_SENSITIVE, NULL, 0))
 		return;
 
-	sd = sds = ntfs_attr_readall(ni, AT_DATA, name, name_len, &data_size);
-	if (!sd) {
-		ntfs_log_perror("Failed to read $SDS attribute");
+		/* Open the $SDS data attribute */
+	na = ntfs_attr_open(ni, AT_DATA, name, name_len);
+	if (!na) {
+		ntfs_log_perror("Failed to open the $SDS data attribute");
 		return;
 	}
-	/*
-	 * FIXME: The right way is based on the indexes, so we couldn't
-	 * miss real entries. For now, dump until it makes sense.
-	 */
-	while (sd->length && sd->hash &&
-	       le64_to_cpu(sd->offset) < (u64)data_size &&
-	       le32_to_cpu(sd->length) < (u64)data_size &&
-	       le64_to_cpu(sd->offset) +
-			le32_to_cpu(sd->length) < (u64)data_size) {
-		ntfs_dump_sds_entry(sd);
-		sd = (SECURITY_DESCRIPTOR_HEADER *)((char*)sd +
-				((le32_to_cpu(sd->length) + 15) & ~15));
+
+		/* Use the $SII index to locate the records ordered by ids */
+	xsii = ntfs_index_ctx_get(ni, NTFS_INDEX_SII, 4);
+	if (!xsii) {
+		ntfs_log_perror("Failed to allocate the $SII index");
+	} else {
+			/* Search for the first entry */
+		keyid = const_cpu_to_le32(0);
+		if (!ntfs_index_lookup((char*)&keyid,
+					sizeof(SII_INDEX_KEY), xsii)) {
+			ntfs_log_perror("Failed to open the $SII index");
+		} else {
+			ntfs_dump_sds_records(na, xsii);
+		}
+		ntfs_index_ctx_put(xsii);
 	}
-	free(sds);
+	ntfs_attr_close(na);
 }
 
 static const char *get_attribute_type_name(le32 type)
@@ -1472,8 +1592,18 @@ static void ntfs_dump_attribute_header(ntfs_attr_search_ctx *ctx,
  */
 static void ntfs_dump_attr_data(ATTR_RECORD *attr, ntfs_inode *ni)
 {
-	if (opts.verbose)
-		ntfs_dump_sds(attr, ni);
+	if (opts.verbose) {
+		switch (ni->mft_no) {
+		case FILE_Secure :
+			ntfs_dump_sds(attr, ni);
+			break;
+		case FILE_LogFile :
+			ntfs_dump_logfile(ni);
+			break;
+		default :
+			break;
+		}
+	}
 }
 
 typedef enum {
@@ -1521,7 +1651,7 @@ static void ntfs_dump_index_key(INDEX_ENTRY *entry, INDEX_ATTR_TYPE type)
 				reparse_type_name(tag));
 		ntfs_log_verbose("\t\tKey file id:\t\t %llu (0x%llx)\n",
 				(unsigned long long)
-				le64_to_cpu(entry->key.reparse.file_id),
+				MREF_LE(entry->key.reparse.file_id),
 				(unsigned long long)
 				le64_to_cpu(entry->key.reparse.file_id));
 		break;
@@ -1924,16 +2054,18 @@ static s32 ntfs_dump_index_block(INDEX_BLOCK *ib, INDEX_ATTR_TYPE type,
  */
 static void ntfs_dump_attr_index_allocation(ATTR_RECORD *attr, ntfs_inode *ni)
 {
-	INDEX_ALLOCATION *allocation, *tmp_alloc;
+	INDEX_ALLOCATION *allocation;
 	INDEX_ROOT *ir;
 	INDEX_ATTR_TYPE type;
+	ntfs_attr *na;
+	s64 offset;
+	u32 index_block_size;
 	int total_entries = 0;
 	int total_indx_blocks = 0;
 	u8 *bitmap, *byte;
 	int bit;
 	ntfschar *name;
 	u32 name_len;
-	s64 data_size;
 
 	ir = ntfs_index_root_get(ni, attr);
 	if (!ir) {
@@ -1952,21 +2084,32 @@ static void ntfs_dump_attr_index_allocation(ATTR_RECORD *attr, ntfs_inode *ni)
 		goto out_index_root;
 	}
 
-	tmp_alloc = allocation = ntfs_attr_readall(ni, AT_INDEX_ALLOCATION,
-						   name, name_len, &data_size);
-	if (!tmp_alloc) {
-		ntfs_log_perror("Failed to read $INDEX_ALLOCATION attribute");
+	index_block_size = le32_to_cpu(ir->index_block_size);
+	allocation = (INDEX_ALLOCATION*)ntfs_malloc(index_block_size);
+	if (!allocation) {
+		ntfs_log_perror("Failed to allocate $INDEX_ALLOCATION buffer");
 		goto out_bitmap;
 	}
+	na = ntfs_attr_open(ni, AT_INDEX_ALLOCATION, name, name_len);
+	if (!na) {
+		ntfs_log_perror("Failed to open $INDEX_ALLOCATION");
+		goto out_alloc;
+	}
 
+	offset = 0;
 	bit = 0;
-	while ((u8 *)tmp_alloc < (u8 *)allocation + data_size) {
+	while (offset < na->data_size) {
 		if (*byte & (1 << bit)) {
 			int entries;
 
-			entries = ntfs_dump_index_block(tmp_alloc, type,
-							le32_to_cpu(
-							ir->index_block_size));
+			if (ntfs_attr_pread(na, offset, index_block_size,
+					allocation) != index_block_size) {
+				ntfs_log_perror("ntfs_attr_pread failed");
+				goto out_na;
+			}
+
+			entries = ntfs_dump_index_block(allocation, type,
+						index_block_size);
 	       		if (entries != -1) {
 				total_entries += entries;
 				total_indx_blocks++;
@@ -1974,19 +2117,19 @@ static void ntfs_dump_attr_index_allocation(ATTR_RECORD *attr, ntfs_inode *ni)
 						entries);
 			}
 		}
-		tmp_alloc = (INDEX_ALLOCATION *)((u8 *)tmp_alloc +
-						le32_to_cpu(
-						ir->index_block_size));
 		bit++;
 		if (bit > 7) {
 			bit = 0;
 			byte++;
 		}
+		offset += index_block_size;
 	}
-
 	printf("\tIndex entries total:\t %d\n", total_entries);
 	printf("\tINDX blocks total:\t %d\n", total_indx_blocks);
 
+out_na :
+	ntfs_attr_close(na);
+out_alloc :
 	free(allocation);
 out_bitmap:
 	free(bitmap);

@@ -1,0 +1,51 @@
+name: Cross-only compilation environment
+
+concurrency:
+  group: nonnative-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+      # Stable branches such as 0.56 or 1.0
+      - '[0-9]+.[0-9]+'
+    paths:
+      - "mesonbuild/**"
+      - "test cases/**"
+      - ".github/workflows/nonnative.yml"
+      - "run*tests.py"
+  pull_request:
+    paths:
+      - "mesonbuild/**"
+      - "test cases/**"
+      - ".github/workflows/nonnative.yml"
+      - "run*tests.py"
+
+permissions:
+  contents: read
+
+jobs:
+  cross-only-armhf:
+    runs-on: ubuntu-latest
+    container: mesonbuild/eoan:latest
+    env:
+      MESON_CI_JOBNAME: ubuntu-${{ github.job }}
+
+    steps:
+    - run: |
+        apt-get -y purge clang gcc gdc
+        apt-get -y autoremove
+    - uses: actions/checkout@v4
+    - name: Run tests
+      run: bash -c 'source /ci/env_vars.sh; cd $GITHUB_WORKSPACE; ./run_tests.py $CI_ARGS --cross ubuntu-armhf.json --cross-only'
+
+  cross-cuda:
+    runs-on: ubuntu-latest
+    container: mesonbuild/cuda-cross:latest
+    env:
+      MESON_CI_JOBNAME: cuda-cross-${{ github.job }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run tests
+      run: bash -c 'source /ci/env_vars.sh; cd $GITHUB_WORKSPACE; ./run_tests.py $CI_ARGS --cross cuda-cross.json --cross-only'

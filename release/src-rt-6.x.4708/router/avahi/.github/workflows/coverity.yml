@@ -1,0 +1,33 @@
+---
+name: Coverity
+
+on:
+  schedule:
+    # Run Coverity daily at midnight
+    - cron:  '0 0 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-24.04
+    if: github.repository == 'avahi/avahi'
+    steps:
+      - name: Repository checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - run: sudo -E .github/workflows/build.sh install-build-deps
+
+      - name: Run Coverity
+        env:
+          COVERITY_SCAN_TOKEN: "${{ secrets.COVERITY_SCAN_TOKEN }}"
+          COVERITY_SCAN_NOTIFICATION_EMAIL: "${{ secrets.COVERITY_SCAN_NOTIFICATION_EMAIL }}"
+        run: .github/workflows/coverity.sh

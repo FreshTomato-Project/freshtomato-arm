@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: avahi 0.8\n"
-"Report-Msgid-Bugs-To: https://github.com/lathiat/avahi/issues\n"
-"POT-Creation-Date: 2020-02-18 07:03+0000\n"
+"Project-Id-Version: Avahi\n"
+"Report-Msgid-Bugs-To: https://github.com/avahi/avahi/issues\n"
+"POT-Creation-Date: 2024-08-10 10:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -242,7 +242,7 @@ msgid "Avahi Discovery"
 msgstr ""
 
 #: avahi-discover-standalone/avahi-discover.ui:60
-#: avahi-python/avahi-discover/avahi-discover.py:83
+#: avahi-python/avahi-discover/avahi-discover.py:84
 msgid "<i>No service currently selected.</i>"
 msgstr ""
 
@@ -254,40 +254,35 @@ msgstr ""
 msgid "Browse for Zeroconf services available on your network"
 msgstr ""
 
-#: avahi-python/avahi-discover/avahi-discover.desktop.in.in:9
-#: avahi-ui/bssh.desktop.in.in:9 avahi-ui/bvnc.desktop.in.in:9
-msgid "network-wired"
-msgstr ""
-
-#: avahi-python/avahi-discover/avahi-discover.py:238
+#: avahi-python/avahi-discover/avahi-discover.py:239
 msgid "TXT"
 msgstr ""
 
-#: avahi-python/avahi-discover/avahi-discover.py:240
+#: avahi-python/avahi-discover/avahi-discover.py:244
 msgid "TXT Data:"
 msgstr ""
 
-#: avahi-python/avahi-discover/avahi-discover.py:240
+#: avahi-python/avahi-discover/avahi-discover.py:244
 msgid "empty"
 msgstr ""
 
-#: avahi-python/avahi-discover/avahi-discover.py:242
+#: avahi-python/avahi-discover/avahi-discover.py:249
 msgid "Service Type:"
 msgstr ""
 
-#: avahi-python/avahi-discover/avahi-discover.py:243
+#: avahi-python/avahi-discover/avahi-discover.py:250
 msgid "Service Name:"
 msgstr ""
 
-#: avahi-python/avahi-discover/avahi-discover.py:244
+#: avahi-python/avahi-discover/avahi-discover.py:251
 msgid "Domain Name:"
 msgstr ""
 
-#: avahi-python/avahi-discover/avahi-discover.py:245
+#: avahi-python/avahi-discover/avahi-discover.py:252
 msgid "Interface:"
 msgstr ""
 
-#: avahi-python/avahi-discover/avahi-discover.py:246
+#: avahi-python/avahi-discover/avahi-discover.py:253
 msgid "Address:"
 msgstr ""
 

@@ -79,7 +79,7 @@
  
  /* Declare static char *compiler_opts  in config.h */
  #define DNSMASQ_COMPILE_OPTS
-@@ -1692,8 +1730,22 @@
+@@ -1687,8 +1725,22 @@
  	/* Note: this may leave TCP-handling processes with the old file still open.
  	   Since any such process will die in CHILD_LIFETIME or probably much sooner,
  	   we leave them logging to the old file. */
@@ -102,7 +102,7 @@
  	break;
  
        case EVENT_NEWADDR:
-@@ -1737,6 +1789,12 @@
+@@ -1732,6 +1784,12 @@
  	    close(daemon->helperfd);
  	  }
  #endif

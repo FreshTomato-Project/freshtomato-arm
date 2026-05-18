@@ -276,7 +276,9 @@ void start_ovpn_client(int unit)
 	            "daemon openvpn-client%d\n"
 	            "dev %s\n"
 	            "txqueuelen 1000\n"
+#ifndef TCONFIG_BCMARM
 	            "persist-key\n"
+#endif
 	            "persist-tun\n",
 	            unit,
 	            iface);
@@ -530,6 +532,20 @@ void start_ovpn_client(int unit)
 #endif
 		}
 #endif /* TCONFIG_BCMARM */
+
+		/* Clamp TCP MSS to PMTU of OpenVPN client interface (IPv4 & IPv6) */
+		if (!nvram_get_int("tcp_clamp_disable")) {
+			fprintf(fp, "iptables -t mangle -I FORWARD -o %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+			            "iptables -t mangle -I FORWARD -i %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n",
+			            iface, iface);
+#ifdef TCONFIG_IPV6
+			if (ipv6_enabled()) {
+				fprintf(fp, "ip6tables -t mangle -I FORWARD -o %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+				            "ip6tables -t mangle -I FORWARD -i %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n",
+				            iface, iface);
+			}
+#endif
+		}
 
 		if (route_mode == NAT) {
 			/* masquerade all client outbound traffic regardless of source subnet */
@@ -1148,6 +1164,20 @@ void start_ovpn_server(int unit)
 #endif
 			}
 #endif /* TCONFIG_BCMARM */
+
+			/* Clamp TCP MSS to PMTU of OpenVPN server interface (IPv4 & IPv6) */
+			if (!nvram_get_int("tcp_clamp_disable")) {
+				fprintf(fp, "iptables -t mangle -I FORWARD -o %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+				            "iptables -t mangle -I FORWARD -i %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n",
+				            iface, iface);
+#ifdef TCONFIG_IPV6
+				if (ipv6_enabled()) {
+					fprintf(fp, "ip6tables -t mangle -I FORWARD -o %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+					            "ip6tables -t mangle -I FORWARD -i %s -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n",
+					            iface, iface);
+				}
+#endif
+			}
 		}
 
 		/* Create firewall rules for IPv6 */

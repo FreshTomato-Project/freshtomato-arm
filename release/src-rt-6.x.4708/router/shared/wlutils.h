@@ -15,11 +15,13 @@
 #ifndef _wlutils_h_
 #define _wlutils_h_
 
-#include <shared.h>
-
 #include <typedefs.h>
-#include <proto/ethernet.h>
 #include <wlioctl.h>
+#include <shared.h>
+#ifdef TCONFIG_BCMARM
+ #include <proto/ethernet.h>
+#endif
+
 
 /*
  * Pass a wlioctl request to the specified interface.
@@ -125,5 +127,8 @@ extern int wl_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, i
 extern int wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
 #endif
 
-extern char * wl_ether_etoa(const struct ether_addr *n);
+#ifdef CONFIG_BCMWL5
+ extern char *wl_ether_etoa(const struct ether_addr *n);
+#endif
+
 #endif /* _wlutils_h_ */

@@ -1565,7 +1565,7 @@ ntfs-3g/Makefile:
 	$(call patch_files,ntfs-3g)
 	cd ntfs-3g && autoreconf -fsi && \
 		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC $(OPTSIZE_FLAG)" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" \
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -ldl -fPIC" \
 		$(CONFIGURE) $(if $(TCONFIG_BCMARM),,ac_cv_func_utimensat=no) --enable-shared=no --enable-static=no \
 			--disable-library --disable-ldconfig --disable-mount-helper --with-fuse=internal \
 			--disable-ntfsprogs --disable-crypto --without-uuid \
@@ -3834,6 +3834,7 @@ libdaemon-clean:
 	@rm -f libdaemon/stamp-h1
 
 expat/static/Makefile:
+	$(call patch_files,expat)
 	@rm -rf expat/static && mkdir -p expat/static
 	cd expat/static && $(call CMAKE_CrossOptions, crosscompiled.cmake) && \
 		cmake -DCMAKE_TOOLCHAIN_FILE=crosscompiled.cmake \
@@ -3850,6 +3851,9 @@ expat/static/Makefile:
 			-DEXPAT_NS=OFF \
 			-DEXPAT_MIN_SIZE=ON \
 			-DEXPAT_SHARED_LIBS=OFF \
+			-DEXPAT_WITH_ARC4RANDOM=OFF \
+			-DEXPAT_WITH_ARC4RANDOM_BUF=OFF \
+			-DEXPAT_WITH_GETENTROPY=OFF \
 			..
 
 expat/build/Makefile:
@@ -3868,6 +3872,9 @@ expat/build/Makefile:
 			-DEXPAT_DTD=OFF \
 			-DEXPAT_NS=OFF \
 			-DEXPAT_MIN_SIZE=ON \
+			-DEXPAT_WITH_ARC4RANDOM=OFF \
+			-DEXPAT_WITH_ARC4RANDOM_BUF=OFF \
+			-DEXPAT_WITH_GETENTROPY=OFF \
 			..
 
 expat: expat/static/Makefile expat/build/Makefile
@@ -3877,13 +3884,14 @@ expat: expat/static/Makefile expat/build/Makefile
 	@$(MAKE) -C expat/build DESTDIR=$(TOP)/expat/staged install
 
 expat-install:
-	install -D expat/build/libexpat.so.1.11.3 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.11.3
-	cd $(INSTALLDIR)/expat/usr/lib && $(STRIP) libexpat.so.1.11.3 && ln -sf libexpat.so.1.11.3 libexpat.so.1
+	install -D expat/build/libexpat.so.1.12.0 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.12.0
+	cd $(INSTALLDIR)/expat/usr/lib && $(STRIP) libexpat.so.1.12.0 && ln -sf libexpat.so.1.12.0 libexpat.so.1
 
 expat-clean:
 	@rm -rf expat/static
 	@rm -rf expat/build
 	@rm -rf expat/staged
+	$(call unpatch_files,expat)
 
 avahi/stamp-h1:
 	$(call patch_files,avahi)
@@ -3901,6 +3909,7 @@ avahi/stamp-h1:
 			--disable-manpages --disable-xmltoman --disable-doxygen-doc --disable-doxygen-dot \
 			--disable-doxygen-man --disable-doxygen-rtf --disable-doxygen-xml --disable-doxygen-chm \
 			--disable-doxygen-chi --disable-doxygen-html --disable-doxygen-ps --disable-doxygen-pdf \
+			--disable-libsystemd --with-systemdsystemunitdir=no \
 			--with-xml=expat \
 			--with-avahi-user=nobody --with-avahi-group=nobody \
 			--with-autoipd-user=nobody --with-autoipd-group=nobody \

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -e
+
+source /ci/common.sh
+
+pkgs=(
+  python3-pip python3 python3-devel python3-setuptools
+  ninja make git autoconf automake patch libjpeg-devel
+  elfutils gcc gcc-c++ gcc-fortran gcc-objc gcc-obj-c++ vala rust bison flex curl lcov
+  mono-core gtkmm3-devel gtest gmock protobuf-devel wxGTK3-3_2-devel gobject-introspection-devel
+  itstool gtk3-devel java-17-openjdk-devel gtk-doc llvm-devel clang-devel sdl2-compat-devel graphviz-devel zlib-devel zlib-devel-static
+  #hdf5-devel netcdf-devel libscalapack2-openmpi3-devel libscalapack2-gnu-openmpi3-hpc-devel openmpi3-devel
+  doxygen vulkan-devel vulkan-validationlayers openssh mercurial libpcap-devel libgpgme-devel
+  libqt5-qtbase-devel libqt5-qttools-devel libqt5-linguist libqt5-qtbase-private-headers-devel
+  qt6-declarative-devel  qt6-base-devel qt6-tools qt6-tools-linguist qt6-declarative-tools qt6-core-private-devel
+  libwmf-devel valgrind cmake nasm gnustep-base-devel gettext-tools gettext-runtime gettext-csharp ncurses-devel
+  libxml2-devel libxslt-devel libyaml-devel glib2-devel json-glib-devel
+  boost-devel libboost_date_time-devel libboost_filesystem-devel libboost_locale-devel
+  libboost_headers-devel libboost_test-devel libboost_log-devel libboost_regex-devel
+  libboost_python3-devel libboost_regex-devel
+  # HACK: remove npm once we switch back to hotdoc sdist
+  npm
+)
+
+# Sys update
+zypper --non-interactive patch --with-update --with-optional
+zypper --non-interactive update
+
+# Install deps
+zypper install -y "${pkgs[@]}"
+# HACK: build hotdoc from git repo since current sdist is broken on modern compilers
+# change back to 'hotdoc' once it's fixed
+install_python_packages git+https://github.com/hotdoc/hotdoc
+
+# HACK: uninstall npm after building hotdoc, remove when we remove npm
+zypper remove -y -u npm
+
+echo 'export PKG_CONFIG_PATH="/usr/lib64/mpi/gcc/openmpi3/lib64/pkgconfig:$PKG_CONFIG_PATH"' >> /ci/env_vars.sh
+
+# dmd is very special on OpenSUSE (as in the packages do not work)
+# see https://bugzilla.opensuse.org/show_bug.cgi?id=1162408
+curl -fsS https://dlang.org/install.sh | bash -s dmd | tee dmd_out.txt
+cat dmd_out.txt | grep source | sed 's/^[^`]*`//g' | sed 's/`.*//g' >> /ci/env_vars.sh
+chmod +x /ci/env_vars.sh
+# Lower ulimit before running dub, otherwise there's a very high chance it will OOM.
+# See: https://github.com/dlang/phobos/pull/9048 and https://github.com/dlang/phobos/pull/8990
+echo 'ulimit -n -S 10000' >> /ci/env_vars.sh
+
+source /ci/env_vars.sh
+
+dub_fetch dubtestproject@1.2.0
+dub build dubtestproject:test1 --compiler=dmd --arch=x86_64
+dub build dubtestproject:test2 --compiler=dmd --arch=x86_64
+dub build dubtestproject:test3 --compiler=dmd --arch=x86_64
+dub_fetch urld@3.0.0
+dub build urld --compiler=dmd --arch=x86_64
+
+# Cleanup
+zypper --non-interactive clean --all

@@ -170,6 +170,63 @@ int ntfs_strappend(char **dest, const char *append)
 	return 0;
 }
 
+int ntfs_strappend_escaped(char **dest, const char *append)
+{
+	int ret = -1;
+	char *escaped_string = NULL;
+
+#if FUSE_VERSION >= 27
+	if (fuse_version() >= 28) {
+		const char *ptr = append;
+		char *dest_ptr = NULL;
+		size_t append_length = 0;
+		size_t escaped_length = 0;
+
+		while (*ptr) {
+			if (*ptr == '\\' || *ptr == ',') {
+				escaped_length++;
+			}
+
+			escaped_length++;
+			append_length++;
+			ptr++;
+		}
+
+		if (escaped_length != append_length) {
+			ptr = append;
+
+			escaped_string = malloc(escaped_length + 1);
+			if (!escaped_string) {
+				goto out;
+			}
+
+			dest_ptr = escaped_string;
+
+			while (*ptr) {
+				if (*ptr == '\\' || *ptr == ',') {
+					*(dest_ptr++) = '\\';
+				}
+
+				*(dest_ptr++) = *(ptr++);
+			}
+
+			*dest_ptr = '\0';
+
+			ntfs_log_debug("Generated escaped string: %s\n",
+				escaped_string);
+		}
+	}
+#endif /* FUSE_VERSION >= 27 */
+
+	ret = ntfs_strappend(dest, escaped_string ? escaped_string : append);
+out:
+	if (escaped_string) {
+		free(escaped_string);
+	}
+
+	return ret;
+}
+
 /*
  *		Insert an option before ",fsname="
  *	This is for keeping "fsname" as the last option, because on
@@ -272,7 +329,7 @@ char *parse_mount_options(ntfs_fuse_context_t *ctx,
 				goto err_exit;
 			if ((poptl->flags & FLGOPT_OCTAL)
 			    && (!val
-				|| !sscanf(val, "%o", &intarg))) {
+				|| sscanf(val, "%o", &intarg) != 1)) {
 				ntfs_log_error("'%s' option needs an octal value\n",
 					opt);
 				goto err_exit;
@@ -282,7 +339,8 @@ char *parse_mount_options(ntfs_fuse_context_t *ctx,
 					intarg = 0;
 				else
 					if (!val
-					    || !sscanf(val, "%i", &intarg)) {
+					    || sscanf(val, "%i", &intarg) != 1)
+					{
 						ntfs_log_error("'%s' option "
 						     "needs a decimal value\n",
 							opt);
@@ -564,8 +622,9 @@ char *parse_mount_options(ntfs_fuse_context_t *ctx,
 	
 	if (ntfs_strappend(&ret, "fsname="))
 		goto err_exit;
-	if (ntfs_strappend(&ret, popts->device))
+	if (ntfs_strappend_escaped(&ret, popts->device)) {
 		goto err_exit;
+	}
 	if (permissions && !acl)
 		ctx->secure_flags |= (1 << SECURITY_DEFAULT);
 	if (acl)

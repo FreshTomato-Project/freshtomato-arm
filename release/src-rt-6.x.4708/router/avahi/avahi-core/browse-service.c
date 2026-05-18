@@ -69,7 +69,12 @@ static void record_browser_callback(
             flags |= AVAHI_LOOKUP_RESULT_LOCAL;
 
         if (avahi_service_name_split(record->data.ptr.name, service, sizeof(service), type, sizeof(type), domain, sizeof(domain)) < 0) {
-            avahi_log_warn("Failed to split '%s'", record->key->name);
+            avahi_log_debug("Failed to split service name '%s'", record->data.ptr.name);
+            return;
+        }
+
+        if (!avahi_is_valid_service_type_strict(type)) {
+            avahi_log_debug("Invalid service '%s'", record->data.ptr.name);
             return;
         }
 
@@ -184,6 +189,9 @@ AvahiSServiceBrowser *avahi_s_service_browser_new(
         AvahiSServiceBrowser *b;
 
         b = avahi_s_service_browser_prepare(server, interface, protocol, service_type, domain, flags, callback, userdata);
+        if (!b)
+            return NULL;
+
         avahi_s_service_browser_start(b);
 
         return b;

@@ -1,0 +1,21 @@
+* -text
+
+httpd/**/*.c text eol=lf
+httpd/**/*.h text eol=lf
+
+rc/**/*.c text eol=lf
+rc/**/*.h text eol=lf
+
+shared/**/*.c text eol=lf
+shared/**/*.h text eol=lf
+
+others/** text eol=lf
+
+www/*.asp  text eol=lf
+www/*.html text eol=lf
+www/*.js   text eol=lf
+www/*.jsx  text eol=lf
+www/*.css  text eol=lf
+www/*.txt  text eol=lf
+
+www/tools/** -text

@@ -1,0 +1,27 @@
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[httpd/**.{c,h}]
+end_of_line = lf
+
+[rc/**.{c,h}]
+end_of_line = lf
+
+[shared/**.{c,h}]
+end_of_line = lf
+
+[others/**]
+end_of_line = lf
+
+[www/*.{asp,html,js,jsx,css,txt}]
+end_of_line = lf
+insert_final_newline = true
+
+[www/tools/**]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset

@@ -1144,7 +1144,10 @@ ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
         if (rc == NGX_OK) {
             r->access_code = 0;
 
-            for (h = r->headers_out.www_authenticate; h; h = h->next) {
+            h = ngx_http_proxy_auth(r) ? r->headers_out.proxy_authenticate
+                                       : r->headers_out.www_authenticate;
+
+            for ( /* void */ ; h; h = h->next) {
                 h->hash = 0;
             }
 
@@ -1152,8 +1155,13 @@ ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
             return NGX_AGAIN;
         }
 
-        if (rc == NGX_HTTP_FORBIDDEN || rc == NGX_HTTP_UNAUTHORIZED) {
-            if (r->access_code != NGX_HTTP_UNAUTHORIZED) {
+        if (rc == NGX_HTTP_FORBIDDEN
+            || rc == NGX_HTTP_UNAUTHORIZED
+            || rc == NGX_HTTP_PROXY_AUTH_REQUIRED)
+        {
+            if (r->access_code != NGX_HTTP_UNAUTHORIZED
+                && r->access_code != NGX_HTTP_PROXY_AUTH_REQUIRED)
+            {
                 r->access_code = rc;
             }
 
@@ -1164,7 +1172,8 @@ ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 
     /* rc == NGX_ERROR || rc == NGX_HTTP_...  */
 
-    if (rc == NGX_HTTP_UNAUTHORIZED) {
+    if (rc == NGX_HTTP_UNAUTHORIZED || rc == NGX_HTTP_PROXY_AUTH_REQUIRED) {
+        r->access_code = rc;
         return ngx_http_core_auth_delay(r);
     }
 
@@ -1185,16 +1194,18 @@ ngx_http_core_post_access_phase(ngx_http_request_t *r,
     access_code = r->access_code;
 
     if (access_code) {
-        r->access_code = 0;
-
         if (access_code == NGX_HTTP_FORBIDDEN) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                           "access forbidden by rule");
         }
 
-        if (access_code == NGX_HTTP_UNAUTHORIZED) {
+        if (access_code == NGX_HTTP_UNAUTHORIZED
+            || access_code == NGX_HTTP_PROXY_AUTH_REQUIRED)
+        {
             return ngx_http_core_auth_delay(r);
         }
+
+        r->access_code = 0;
 
         ngx_http_finalize_request(r, access_code);
         return NGX_OK;
@@ -1208,12 +1219,16 @@ ngx_http_core_post_access_phase(ngx_http_request_t *r,
 static ngx_int_t
 ngx_http_core_auth_delay(ngx_http_request_t *r)
 {
+    ngx_int_t                  access_code;
     ngx_http_core_loc_conf_t  *clcf;
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
     if (clcf->auth_delay == 0) {
-        ngx_http_finalize_request(r, NGX_HTTP_UNAUTHORIZED);
+        access_code = r->access_code;
+        r->access_code = 0;
+
+        ngx_http_finalize_request(r, access_code);
         return NGX_OK;
     }
 
@@ -1249,6 +1264,7 @@ ngx_http_core_auth_delay(ngx_http_request_t *r)
 static void
 ngx_http_core_auth_delay_handler(ngx_http_request_t *r)
 {
+    ngx_int_t     access_code;
     ngx_event_t  *wev;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -1265,7 +1281,10 @@ ngx_http_core_auth_delay_handler(ngx_http_request_t *r)
         return;
     }
 
-    ngx_http_finalize_request(r, NGX_HTTP_UNAUTHORIZED);
+    access_code = r->access_code;
+    r->access_code = 0;
+
+    ngx_http_finalize_request(r, access_code);
 }
 
 
@@ -2001,19 +2020,23 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
 ngx_int_t
 ngx_http_auth_basic_user(ngx_http_request_t *r)
 {
-    ngx_str_t   auth, encoded;
-    ngx_uint_t  len;
+    ngx_str_t         auth, encoded;
+    ngx_uint_t        len;
+    ngx_table_elt_t  *h;
 
     if (r->headers_in.user.len == 0 && r->headers_in.user.data != NULL) {
         return NGX_DECLINED;
     }
 
-    if (r->headers_in.authorization == NULL) {
+    h = ngx_http_proxy_auth(r) ? r->headers_in.proxy_authorization
+                               : r->headers_in.authorization;
+
+    if (h == NULL) {
         r->headers_in.user.data = (u_char *) "";
         return NGX_DECLINED;
     }
 
-    encoded = r->headers_in.authorization->value;
+    encoded = h->value;
 
     if (encoded.len < sizeof("Basic ") - 1
         || ngx_strncasecmp(encoded.data, (u_char *) "Basic ",

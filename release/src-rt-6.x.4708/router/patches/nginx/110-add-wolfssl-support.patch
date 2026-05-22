@@ -40,7 +40,7 @@
              # FreeBSD port
 --- nginx/auto/options
 +++ nginx/auto/options
-@@ -156,6 +156,7 @@ PCRE2=YES
+@@ -159,6 +159,7 @@ PCRE2=YES
  USE_OPENSSL=NO
  USE_OPENSSL_QUIC=NO
  OPENSSL=NONE
@@ -48,7 +48,7 @@
  
  USE_ZLIB=NO
  ZLIB=NONE
-@@ -373,6 +374,7 @@ use the \"--with-mail_ssl_module\" option instead"
+@@ -387,6 +388,7 @@ use the \"--with-mail_ssl_module\" option instead"
          --with-pcre-jit)                 PCRE_JIT=YES               ;;
          --without-pcre2)                 PCRE2=DISABLED             ;;
  
@@ -56,7 +56,7 @@
          --with-openssl=*)                OPENSSL="$value"           ;;
          --with-openssl-opt=*)            OPENSSL_OPT="$value"       ;;
  
-@@ -604,6 +606,7 @@ cat << END
+@@ -624,6 +626,7 @@ cat << END
    --with-libatomic                   force libatomic_ops library usage
    --with-libatomic=DIR               set path to libatomic_ops library sources
  
@@ -156,7 +156,7 @@
      level = NGX_LOG_CRIT;
  
      if (sslerr == SSL_ERROR_SYSCALL) {
-@@ -5014,7 +5058,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
+@@ -4997,7 +5041,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
              return -1;
          }
  
@@ -166,7 +166,7 @@
          if (HMAC_Init_ex(hctx, key[0].hmac_key, size, digest, NULL) != 1) {
              ngx_ssl_error(NGX_LOG_ALERT, c->log, 0, "HMAC_Init_ex() failed");
              return -1;
-@@ -5057,7 +5102,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
+@@ -5040,7 +5085,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
              size = 32;
          }
  
@@ -176,7 +176,7 @@
          if (HMAC_Init_ex(hctx, key[i].hmac_key, size, digest, NULL) != 1) {
              ngx_ssl_error(NGX_LOG_ALERT, c->log, 0, "HMAC_Init_ex() failed");
              return -1;
-@@ -5578,6 +5624,14 @@ ngx_ssl_get_curve(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
+@@ -5561,6 +5607,14 @@ ngx_ssl_get_curve(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
  
  #endif
  

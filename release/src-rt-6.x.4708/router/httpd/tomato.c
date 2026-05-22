@@ -573,6 +573,7 @@ static const nvset_t nvset_list[] = {
 
 	{ "lan_state",			V_01				},
 	{ "lan_desc",			V_01				},
+	{ "eth_desc", 			V_LENGTH(0, 80)			},
 	{ "lan_invert",			V_01				},
 	{ "lan_dhcp",			V_01				},	/* DHCP client [0|1] - obtain a LAN (br0) IP via DHCP */
 	{ "lan_proto",			V_WORD				},	/* static, dhcp */
@@ -1902,7 +1903,7 @@ static void _execute_command(char *url, char *command, char *query, wofilter_t w
 
 	/*
 	 * execute script via shell
-	 * NOTE: do NOT change to execvp(argv) – UI depends on full shell semantics
+	 * NOTE: do NOT change to execvp(argv) ï¿½ UI depends on full shell semantics
 	 */
 	snprintf(cmd, sizeof(cmd), "%s 2>&1", webExecFile);
 	web_pipecmd(cmd, wof);

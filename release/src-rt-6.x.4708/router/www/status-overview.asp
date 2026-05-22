@@ -227,11 +227,15 @@ function ethstates() {
 		return 0;
 
 	var state = [];
+	var ed = (nvram.eth_desc || '').split('%');
 	var u, uidx, code = '', v = 0;
 	var portsDiv = E('ports');
 
 	if (!portsDiv._ether_ports_built) {
 		code ='<div class="section-title">Ethernet Ports State<\/div><div class="section"><table class="fields"><tr>';
+		for (uidx = 0; uidx <= MAX_PORT_ID; ++uidx)
+			code += '<td class="title indent2"><div id="ethdesc_'+uidx+'" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em">'+((ed[uidx] || '').substring(0, 8))+'<\/div><\/td>';
+		code += '<td class="content"><\/td><\/tr><tr>';
 
 		/* WANs */
 		for (uidx = 1; uidx <= nvram.mwan_num; ++uidx) {
@@ -281,6 +285,23 @@ function ethstates() {
 		if (cap)
 			cap.innerHTML = (stats.lan_desc == '1') ? (state[1] || '') : '';
 	}
+}
+
+function saveEthDesc() {
+	var i, e, v, d = [];
+	for (i = 0; i <= MAX_PORT_ID; ++i) {
+		e = E('ethdesc_'+i);
+		if (!e) continue;
+		v = (e.textContent || '').replace(/[%\r\n]/g, '').substring(0, 8);
+		if (e.textContent != v) e.textContent = v;
+		d.push(v);
+	}
+	d = d.join('%');
+	if ((nvram.eth_desc || '') == d)
+		return;
+	nvram.eth_desc = d;
+	var cmd = new XmlHttp();
+	cmd.post('shell.cgi', 'action=execute&command='+escapeCGI(('nvram set eth_desc="'+d.replace(/["\\$`]/g, '\\$&')+'"\nnvram commit').replace(/\r/g, '')));
 }
 
 function anon_enable() {

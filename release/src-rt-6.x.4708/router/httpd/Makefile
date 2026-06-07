@@ -1,7 +1,7 @@
 include ../common.mak
 
 CFLAGS  = -Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -Wsign-compare
-CFLAGS += -I$(SRCBASE)/include -I$(TOP)/shared -I$(TOP)/nvram$(BCMEX)
+CFLAGS += -I$(SRCBASE)/include -idirafter$(LINUXDIR)/include -I$(TOP)/shared -I$(TOP)/nvram$(BCMEX)
 LDFLAGS = -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/shared -L$(TOP)/nvram$(BCMEX)
 LIBS    = -lshared -lnvram -lpthread $(EXTRALIBS)
 

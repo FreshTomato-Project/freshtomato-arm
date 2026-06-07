@@ -17,6 +17,16 @@
 
 #define ARPT_FUNCTION_MAXNAMELEN XT_FUNCTION_MAXNAMELEN
 #define ARPT_TABLE_MAXNAMELEN XT_TABLE_MAXNAMELEN
+#define arpt_entry_target xt_entry_target
+#define arpt_standard_target xt_standard_target
+#define ARPT_CONTINUE XT_CONTINUE
+#define ARPT_RETURN XT_RETURN
+#define arpt_counters_info xt_counters_info
+#define arpt_counters xt_counters
+#define ARPT_STANDARD_TARGET XT_STANDARD_TARGET
+#define ARPT_ERROR_TARGET XT_ERROR_TARGET
+#define ARPT_ENTRY_ITERATE(entries, size, fn, args...) \
+	XT_ENTRY_ITERATE(struct arpt_entry, entries, size, fn, ## args)
 
 #define ARPT_DEV_ADDR_LEN_MAX 16
 
@@ -56,9 +66,6 @@ struct arpt_arp {
 	/* Inverse flags */
 	u_int16_t invflags;
 };
-
-#define arpt_entry_target xt_entry_target
-#define arpt_standard_target xt_standard_target
 
 /* Values for "flag" field in struct arpt_ip (general arp structure).
  * No flags defined yet.
@@ -119,16 +126,10 @@ struct arpt_entry
 #define ARPT_SO_GET_REVISION_TARGET	(ARPT_BASE_CTL + 3)
 #define ARPT_SO_GET_MAX			(ARPT_SO_GET_REVISION_TARGET)
 
-/* CONTINUE verdict for targets */
-#define ARPT_CONTINUE XT_CONTINUE
-
-/* For standard target */
-#define ARPT_RETURN XT_RETURN
-
 /* The argument to ARPT_SO_GET_INFO */
 struct arpt_getinfo {
 	/* Which table: caller fills this in. */
-	char name[ARPT_TABLE_MAXNAMELEN];
+	char name[XT_TABLE_MAXNAMELEN];
 
 	/* Kernel fills these in. */
 	/* Which hook entry points are valid: bitmask */
@@ -150,7 +151,7 @@ struct arpt_getinfo {
 /* The argument to ARPT_SO_SET_REPLACE. */
 struct arpt_replace {
 	/* Which table. */
-	char name[ARPT_TABLE_MAXNAMELEN];
+	char name[XT_TABLE_MAXNAMELEN];
 
 	/* Which hook entry points are valid: bitmask.  You can't
            change this. */
@@ -178,14 +179,10 @@ struct arpt_replace {
 	struct arpt_entry entries[0];
 };
 
-/* The argument to ARPT_SO_ADD_COUNTERS. */
-#define arpt_counters_info xt_counters_info
-#define arpt_counters xt_counters
-
 /* The argument to ARPT_SO_GET_ENTRIES. */
 struct arpt_get_entries {
 	/* Which table: user fills this in. */
-	char name[ARPT_TABLE_MAXNAMELEN];
+	char name[XT_TABLE_MAXNAMELEN];
 
 	/* User fills this in: total entry size. */
 	unsigned int size;
@@ -194,20 +191,11 @@ struct arpt_get_entries {
 	struct arpt_entry entrytable[0];
 };
 
-/* Standard return verdict, or do jump. */
-#define ARPT_STANDARD_TARGET XT_STANDARD_TARGET
-/* Error verdict. */
-#define ARPT_ERROR_TARGET XT_ERROR_TARGET
-
 /* Helper functions */
-static __inline__ struct arpt_entry_target *arpt_get_target(struct arpt_entry *e)
+static __inline__ struct xt_entry_target *arpt_get_target(struct arpt_entry *e)
 {
 	return (void *)e + e->target_offset;
 }
-
-/* fn returns 0 to continue iteration */
-#define ARPT_ENTRY_ITERATE(entries, size, fn, args...) \
-	XT_ENTRY_ITERATE(struct arpt_entry, entries, size, fn, ## args)
 
 /*
  *	Main firewall chains definitions and global var's definitions.

@@ -31,6 +31,11 @@
 #if defined(_MSC_VER)
 #define snprintf _snprintf
 #define putenv _putenv
+/* Disable: warning C5287: operands are different enum types */
+#if (_MSC_VER > 1800)
+/* Disable: warning C5287: operands are different enum types, supported after Visual Studio 2013 */
+#pragma warning(disable:5287)
+#endif
 #endif
 
 // Future versions of libusb will use usb_interface instead of interface
@@ -498,7 +503,7 @@ static int test_mass_storage(libusb_device_handle *handle, uint8_t endpoint_in, 
 	for (i=0; i<8; i++) {
 		vid[i] = buffer[8+i];
 		pid[i] = buffer[16+i];
-		rev[i/2] = buffer[32+i/2];	// instead of another loop
+		rev[i/2] = buffer[32+(i/2)];	// instead of another loop
 	}
 	vid[8] = 0;
 	pid[8] = 0;

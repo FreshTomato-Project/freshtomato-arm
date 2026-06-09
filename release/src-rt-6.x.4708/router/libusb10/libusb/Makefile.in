@@ -89,11 +89,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@OS_HAIKU_TRUE@am__append_1 = libusb_haiku.la
-@OS_LINUX_TRUE@@USE_UDEV_TRUE@am__append_2 = os/linux_udev.c
-@OS_LINUX_TRUE@@USE_UDEV_FALSE@am__append_3 = os/linux_netlink.c
-@OS_EMSCRIPTEN_TRUE@am__append_4 = libusb_emscripten.la
-@OS_EMSCRIPTEN_TRUE@am__append_5 = -std=c++20
+@LIBUSB_WINDOWS_HOTPLUG_TRUE@am__append_1 = os/windows_hotplug.h os/windows_hotplug.c
+@OS_HAIKU_TRUE@am__append_2 = libusb_haiku.la
+@OS_LINUX_TRUE@@USE_UDEV_TRUE@am__append_3 = os/linux_udev.c
+@OS_LINUX_TRUE@@USE_UDEV_FALSE@am__append_4 = os/linux_netlink.c
+@OS_EMSCRIPTEN_TRUE@am__append_5 = libusb_emscripten.la
+@OS_EMSCRIPTEN_TRUE@am__append_6 = -std=c++20
 subdir = libusb
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -150,7 +151,8 @@ am__libusb_1_0_la_SOURCES_DIST = libusbi.h version.h version_nano.h \
 	os/null_usb.c os/openbsd_usb.c os/sunos_usb.h os/sunos_usb.c \
 	libusb-1.0.def libusb-1.0.rc os/windows_common.h \
 	os/windows_common.c os/windows_usbdk.h os/windows_usbdk.c \
-	os/windows_winusb.h os/windows_winusb.c
+	os/windows_winusb.h os/windows_winusb.c os/windows_hotplug.h \
+	os/windows_hotplug.c
 am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_1 = os/events_windows.lo os/threads_windows.lo
 am__objects_2 = os/events_posix.lo os/threads_posix.lo
@@ -164,20 +166,21 @@ am__objects_8 = os/netbsd_usb.lo
 am__objects_9 = os/null_usb.lo
 am__objects_10 = os/openbsd_usb.lo
 am__objects_11 = os/sunos_usb.lo
-am__objects_12 = libusb-1.0.lo os/windows_common.lo \
-	os/windows_usbdk.lo os/windows_winusb.lo
-@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_FALSE@@OS_NULL_FALSE@@OS_OPENBSD_FALSE@@OS_SUNOS_FALSE@@OS_WINDOWS_TRUE@am__objects_13 = $(am__objects_12)
-@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_FALSE@@OS_NULL_FALSE@@OS_OPENBSD_FALSE@@OS_SUNOS_TRUE@am__objects_13 = $(am__objects_11)
-@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_FALSE@@OS_NULL_FALSE@@OS_OPENBSD_TRUE@am__objects_13 = $(am__objects_10)
-@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_FALSE@@OS_NULL_TRUE@am__objects_13 = $(am__objects_9)
-@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_TRUE@am__objects_13 = $(am__objects_8)
-@OS_DARWIN_FALSE@@OS_LINUX_TRUE@am__objects_13 = $(am__objects_7) \
+@LIBUSB_WINDOWS_HOTPLUG_TRUE@am__objects_12 = os/windows_hotplug.lo
+am__objects_13 = libusb-1.0.lo os/windows_common.lo \
+	os/windows_usbdk.lo os/windows_winusb.lo $(am__objects_12)
+@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_FALSE@@OS_NULL_FALSE@@OS_OPENBSD_FALSE@@OS_SUNOS_FALSE@@OS_WINDOWS_TRUE@am__objects_14 = $(am__objects_13)
+@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_FALSE@@OS_NULL_FALSE@@OS_OPENBSD_FALSE@@OS_SUNOS_TRUE@am__objects_14 = $(am__objects_11)
+@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_FALSE@@OS_NULL_FALSE@@OS_OPENBSD_TRUE@am__objects_14 = $(am__objects_10)
+@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_FALSE@@OS_NULL_TRUE@am__objects_14 = $(am__objects_9)
+@OS_DARWIN_FALSE@@OS_LINUX_FALSE@@OS_NETBSD_TRUE@am__objects_14 = $(am__objects_8)
+@OS_DARWIN_FALSE@@OS_LINUX_TRUE@am__objects_14 = $(am__objects_7) \
 @OS_DARWIN_FALSE@@OS_LINUX_TRUE@	$(am__objects_5) \
 @OS_DARWIN_FALSE@@OS_LINUX_TRUE@	$(am__objects_6)
-@OS_DARWIN_TRUE@am__objects_13 = $(am__objects_4) $(am__objects_5) \
+@OS_DARWIN_TRUE@am__objects_14 = $(am__objects_4) $(am__objects_5) \
 @OS_DARWIN_TRUE@	$(am__objects_6)
 am_libusb_1_0_la_OBJECTS = core.lo descriptor.lo hotplug.lo io.lo \
-	strerror.lo sync.lo $(am__objects_3) $(am__objects_13)
+	strerror.lo sync.lo $(am__objects_3) $(am__objects_14)
 libusb_1_0_la_OBJECTS = $(am_libusb_1_0_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -188,18 +191,18 @@ libusb_1_0_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(libusb_1_0_la_LDFLAGS) $(LDFLAGS) -o $@
 libusb_emscripten_la_LIBADD =
 am__libusb_emscripten_la_SOURCES_DIST = os/emscripten_webusb.cpp
-am__objects_14 = os/emscripten_webusb.lo
+am__objects_15 = os/emscripten_webusb.lo
 @OS_EMSCRIPTEN_TRUE@am_libusb_emscripten_la_OBJECTS =  \
-@OS_EMSCRIPTEN_TRUE@	$(am__objects_14)
+@OS_EMSCRIPTEN_TRUE@	$(am__objects_15)
 libusb_emscripten_la_OBJECTS = $(am_libusb_emscripten_la_OBJECTS)
 @OS_EMSCRIPTEN_TRUE@am_libusb_emscripten_la_rpath =
 libusb_haiku_la_LIBADD =
 am__libusb_haiku_la_SOURCES_DIST = os/haiku_usb.h \
 	os/haiku_usb_backend.cpp os/haiku_pollfs.cpp \
 	os/haiku_usb_raw.h os/haiku_usb_raw.cpp
-am__objects_15 = os/haiku_usb_backend.lo os/haiku_pollfs.lo \
+am__objects_16 = os/haiku_usb_backend.lo os/haiku_pollfs.lo \
 	os/haiku_usb_raw.lo
-@OS_HAIKU_TRUE@am_libusb_haiku_la_OBJECTS = $(am__objects_15)
+@OS_HAIKU_TRUE@am_libusb_haiku_la_OBJECTS = $(am__objects_16)
 libusb_haiku_la_OBJECTS = $(am_libusb_haiku_la_OBJECTS)
 @OS_HAIKU_TRUE@am_libusb_haiku_la_rpath =
 AM_V_P = $(am__v_P_@AM_V@)
@@ -230,8 +233,9 @@ am__depfiles_remade = ./$(DEPDIR)/core.Plo ./$(DEPDIR)/descriptor.Plo \
 	os/$(DEPDIR)/openbsd_usb.Plo os/$(DEPDIR)/sunos_usb.Plo \
 	os/$(DEPDIR)/threads_posix.Plo \
 	os/$(DEPDIR)/threads_windows.Plo \
-	os/$(DEPDIR)/windows_common.Plo os/$(DEPDIR)/windows_usbdk.Plo \
-	os/$(DEPDIR)/windows_winusb.Plo
+	os/$(DEPDIR)/windows_common.Plo \
+	os/$(DEPDIR)/windows_hotplug.Plo \
+	os/$(DEPDIR)/windows_usbdk.Plo os/$(DEPDIR)/windows_winusb.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -305,7 +309,7 @@ AMTAR = @AMTAR@
 AM_CFLAGS = @AM_CFLAGS@ -fvisibility=hidden $(THREAD_CFLAGS)
 AM_CPPFLAGS = @AM_CPPFLAGS@
 AM_CXXFLAGS = @AM_CXXFLAGS@ -fvisibility=hidden $(THREAD_CFLAGS) \
-	$(am__append_5)
+	$(am__append_6)
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AM_LDFLAGS = @AM_LDFLAGS@
 AR = @AR@
@@ -462,21 +466,19 @@ OS_NETBSD_SRC = os/netbsd_usb.c
 OS_NULL_SRC = os/null_usb.c
 OS_OPENBSD_SRC = os/openbsd_usb.c
 OS_SUNOS_SRC = os/sunos_usb.h os/sunos_usb.c
-OS_WINDOWS_SRC = libusb-1.0.def libusb-1.0.rc \
-		 os/windows_common.h os/windows_common.c \
-		 os/windows_usbdk.h os/windows_usbdk.c \
-		 os/windows_winusb.h os/windows_winusb.c
-
-@OS_DARWIN_TRUE@OS_SRC = $(OS_DARWIN_SRC) $(am__append_2) \
-@OS_DARWIN_TRUE@	$(am__append_3)
-@OS_LINUX_TRUE@OS_SRC = $(OS_LINUX_SRC) $(am__append_2) \
-@OS_LINUX_TRUE@	$(am__append_3)
+OS_WINDOWS_SRC = libusb-1.0.def libusb-1.0.rc os/windows_common.h \
+	os/windows_common.c os/windows_usbdk.h os/windows_usbdk.c \
+	os/windows_winusb.h os/windows_winusb.c $(am__append_1)
+@OS_DARWIN_TRUE@OS_SRC = $(OS_DARWIN_SRC) $(am__append_3) \
+@OS_DARWIN_TRUE@	$(am__append_4)
+@OS_LINUX_TRUE@OS_SRC = $(OS_LINUX_SRC) $(am__append_3) \
+@OS_LINUX_TRUE@	$(am__append_4)
 @OS_NETBSD_TRUE@OS_SRC = $(OS_NETBSD_SRC)
 @OS_NULL_TRUE@OS_SRC = $(OS_NULL_SRC)
 @OS_OPENBSD_TRUE@OS_SRC = $(OS_OPENBSD_SRC)
 @OS_SUNOS_TRUE@OS_SRC = $(OS_SUNOS_SRC)
 @OS_WINDOWS_TRUE@OS_SRC = $(OS_WINDOWS_SRC)
-noinst_LTLIBRARIES = $(am__append_1) $(am__append_4)
+noinst_LTLIBRARIES = $(am__append_2) $(am__append_5)
 @OS_HAIKU_TRUE@libusb_haiku_la_SOURCES = $(OS_HAIKU_SRC)
 @OS_EMSCRIPTEN_TRUE@libusb_1_0_la_LIBADD = libusb_emscripten.la
 @OS_HAIKU_TRUE@libusb_1_0_la_LIBADD = libusb_haiku.la
@@ -608,6 +610,7 @@ os/sunos_usb.lo: os/$(am__dirstamp) os/$(DEPDIR)/$(am__dirstamp)
 os/windows_common.lo: os/$(am__dirstamp) os/$(DEPDIR)/$(am__dirstamp)
 os/windows_usbdk.lo: os/$(am__dirstamp) os/$(DEPDIR)/$(am__dirstamp)
 os/windows_winusb.lo: os/$(am__dirstamp) os/$(DEPDIR)/$(am__dirstamp)
+os/windows_hotplug.lo: os/$(am__dirstamp) os/$(DEPDIR)/$(am__dirstamp)
 
 libusb-1.0.la: $(libusb_1_0_la_OBJECTS) $(libusb_1_0_la_DEPENDENCIES) $(EXTRA_libusb_1_0_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libusb_1_0_la_LINK) -rpath $(libdir) $(libusb_1_0_la_OBJECTS) $(libusb_1_0_la_LIBADD) $(LIBS)
@@ -655,6 +658,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@os/$(DEPDIR)/threads_posix.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@os/$(DEPDIR)/threads_windows.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@os/$(DEPDIR)/windows_common.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@os/$(DEPDIR)/windows_hotplug.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@os/$(DEPDIR)/windows_usbdk.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@os/$(DEPDIR)/windows_winusb.Plo@am__quote@ # am--include-marker
 
@@ -894,6 +898,7 @@ distclean: distclean-am
 	-rm -f os/$(DEPDIR)/threads_posix.Plo
 	-rm -f os/$(DEPDIR)/threads_windows.Plo
 	-rm -f os/$(DEPDIR)/windows_common.Plo
+	-rm -f os/$(DEPDIR)/windows_hotplug.Plo
 	-rm -f os/$(DEPDIR)/windows_usbdk.Plo
 	-rm -f os/$(DEPDIR)/windows_winusb.Plo
 	-rm -f Makefile
@@ -964,6 +969,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f os/$(DEPDIR)/threads_posix.Plo
 	-rm -f os/$(DEPDIR)/threads_windows.Plo
 	-rm -f os/$(DEPDIR)/windows_common.Plo
+	-rm -f os/$(DEPDIR)/windows_hotplug.Plo
 	-rm -f os/$(DEPDIR)/windows_usbdk.Plo
 	-rm -f os/$(DEPDIR)/windows_winusb.Plo
 	-rm -f Makefile

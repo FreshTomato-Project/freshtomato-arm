@@ -66,7 +66,7 @@ int udebug_remote_buf_map(struct udebug *ctx, struct udebug_remote_buf *rb, uint
 		return -1;
 	}
 
-	rb->pcap_iface = ~0;
+	rb->pcap_iface = ~0U;
 	rb->node.key = key;
 	avl_insert(&ctx->remote_rings, &rb->node);
 
@@ -82,7 +82,7 @@ void udebug_remote_buf_unmap(struct udebug *ctx, struct udebug_remote_buf *rb)
 	udebug_buf_free(&rb->buf);
 	rb->poll = 0;
 	rb->node.key = NULL;
-	rb->pcap_iface = ~0;
+	rb->pcap_iface = ~0U;
 }
 
 int udebug_remote_buf_set_poll(struct udebug *ctx, struct udebug_remote_buf *rb, bool val)
@@ -237,7 +237,7 @@ udebug_remote_buf_snapshot(struct udebug_remote_buf *rb)
 
 	s = calloc_a(sizeof(*s),
 		     &ptr_buf, ptr_size * sizeof(*ptr_buf),
-		     &data_buf, data_size);
+		     &data_buf, (size_t)data_size);
 
 	s->data = memcpy(data_buf, udebug_buf_ptr(&rb->buf, data_start), data_size);
 	s->data_size = data_size;

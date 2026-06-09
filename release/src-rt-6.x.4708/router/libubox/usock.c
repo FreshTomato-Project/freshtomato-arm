@@ -27,19 +27,28 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <poll.h>
+#include <limits.h>
 
 #include "usock.h"
 #include "utils.h"
 
 static void usock_set_flags(int sock, unsigned int type)
 {
-	if (!(type & USOCK_NOCLOEXEC))
-		fcntl(sock, F_SETFD, fcntl(sock, F_GETFD) | FD_CLOEXEC);
+	int flags;
 
-	if (type & USOCK_NONBLOCK)
-		fcntl(sock, F_SETFL, fcntl(sock, F_GETFL) | O_NONBLOCK);
+	if (!(type & USOCK_NOCLOEXEC)) {
+		flags = fcntl(sock, F_GETFD);
+		if (flags >= 0)
+			fcntl(sock, F_SETFD, flags | FD_CLOEXEC);
+	}
+
+	if (type & USOCK_NONBLOCK) {
+		flags = fcntl(sock, F_GETFL);
+		if (flags >= 0)
+			fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+	}
 }
 
 static int usock_connect(int type, struct sockaddr *sa, int sa_len, int family, int socktype, bool server)
@@ -106,13 +115,14 @@ usock_inet_notimeout(int type, struct addrinfo *result, void *addr)
 static int poll_restart(struct pollfd *fds, int nfds, int timeout)
 {
 	struct timespec ts, cur;
+	int64_t remaining;
 	int msec = timeout % 1000;
 	int ret;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	ts.tv_nsec += msec * 1000000;
-	if (ts.tv_nsec > 1000000000) {
+	if (ts.tv_nsec >= 1000000000) {
 		ts.tv_sec++;
 		ts.tv_nsec -= 1000000000;
 	}
@@ -124,10 +134,11 @@ static int poll_restart(struct pollfd *fds, int nfds, int timeout)
 			return ret;
 
 		clock_gettime(CLOCK_MONOTONIC, &cur);
-		timeout = (ts.tv_sec - cur.tv_sec) * 1000;
-		timeout += (ts.tv_nsec - cur.tv_nsec) / 1000000;
-		if (timeout <= 0)
+		remaining = ((int64_t)ts.tv_sec - (int64_t)cur.tv_sec) * 1000;
+		remaining += (ts.tv_nsec - cur.tv_nsec) / 1000000;
+		if (remaining <= 0)
 			return 0;
+		timeout = remaining > INT_MAX ? INT_MAX : (int)remaining;
 	}
 }
 
@@ -145,13 +156,16 @@ static int usock_check_connect(int fd)
 static int usock_timeout_remaining(struct timespec *deadline)
 {
 	struct timespec cur;
-	int msec;
+	int64_t msec;
 
 	clock_gettime(CLOCK_MONOTONIC, &cur);
-	msec = (deadline->tv_sec - cur.tv_sec) * 1000;
+	msec = ((int64_t)deadline->tv_sec - (int64_t)cur.tv_sec) * 1000;
 	msec += (deadline->tv_nsec - cur.tv_nsec) / 1000000;
 
-	return msec > 0 ? msec : 0;
+	if (msec > INT_MAX)
+		return INT_MAX;
+
+	return msec > 0 ? (int)msec : 0;
 }
 
 #define USOCK_MAX_CANDIDATES 8
@@ -202,6 +216,7 @@ int usock_inet_timeout(int type, const char *host, const char *service,
 	int n_candidates, n_active = 0;
 	int sock = -1;
 	int fd, delay, i, j;
+	int flags;
 
 	if (getaddrinfo(host, service, &hints, &result))
 		return -1;
@@ -292,8 +307,11 @@ out:
 	}
 
 	if (sock >= 0) {
-		if (!(type & USOCK_NONBLOCK))
-			fcntl(sock, F_SETFL, fcntl(sock, F_GETFL) & ~O_NONBLOCK);
+		if (!(type & USOCK_NONBLOCK)) {
+			flags = fcntl(sock, F_GETFL);
+			if (flags >= 0)
+				fcntl(sock, F_SETFL, flags & ~O_NONBLOCK);
+		}
 		if (addr)
 			memcpy(addr, rp->ai_addr, rp->ai_addrlen);
 	}

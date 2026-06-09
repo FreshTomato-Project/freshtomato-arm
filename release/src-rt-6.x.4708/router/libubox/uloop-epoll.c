@@ -52,6 +52,9 @@ static int register_poll(struct uloop_fd *fd, unsigned int flags)
 	if (flags & ULOOP_EDGE_TRIGGER)
 		ev.events |= EPOLLET;
 
+	if (flags & ULOOP_PRIORITY)
+		ev.events |= EPOLLPRI;
+
 	ev.data.ptr = fd;
 
 	return epoll_ctl(poll_fd, op, fd->fd, &ev);
@@ -85,7 +88,7 @@ static int uloop_fetch_events(int timeout)
 				uloop_fd_delete(u);
 		}
 
-		if(!(events[n].events & (EPOLLRDHUP|EPOLLIN|EPOLLOUT|EPOLLERR|EPOLLHUP))) {
+		if(!(events[n].events & (EPOLLRDHUP|EPOLLIN|EPOLLOUT|EPOLLERR|EPOLLHUP|EPOLLPRI))) {
 			cur->fd = NULL;
 			continue;
 		}
@@ -98,6 +101,9 @@ static int uloop_fetch_events(int timeout)
 
 		if(events[n].events & EPOLLOUT)
 			ev |= ULOOP_WRITE;
+
+		if(events[n].events & EPOLLPRI)
+			ev |= ULOOP_PRIORITY;
 
 		cur->events = ev;
 	}

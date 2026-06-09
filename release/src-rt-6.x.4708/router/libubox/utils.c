@@ -38,14 +38,28 @@ void *__calloc_a(size_t len, ...)
 	void *ret;
 	void **cur_addr;
 	size_t cur_len;
-	int alloc_len = 0;
+	size_t alloc_len = 0;
 	char *ptr;
 
 	va_start(ap, len);
 
 	va_copy(ap1, ap);
-	foreach_arg(ap1, cur_addr, cur_len, &ret, len)
-		alloc_len += (cur_len + C_PTR_ALIGN - 1 ) & C_PTR_MASK;
+	foreach_arg(ap1, cur_addr, cur_len, &ret, len) {
+		size_t aligned;
+
+		if (cur_len > SIZE_MAX - (C_PTR_ALIGN - 1)) {
+			va_end(ap1);
+			va_end(ap);
+			return NULL;
+		}
+		aligned = (cur_len + C_PTR_ALIGN - 1) & C_PTR_MASK;
+		if (aligned > SIZE_MAX - alloc_len) {
+			va_end(ap1);
+			va_end(ap);
+			return NULL;
+		}
+		alloc_len += aligned;
+	}
 	va_end(ap1);
 
 	ptr = calloc(1, alloc_len);

@@ -16,13 +16,23 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <limits.h>
+
 #include "blob.h"
 
 static bool
 blob_buffer_grow(struct blob_buf *buf, int minlen)
 {
-	struct blob_buf *new;
-	int delta = ((minlen / 256) + 1) * 256;
+	void *new;
+	int delta;
+
+	if (minlen < 0 || minlen > INT_MAX - 256)
+		return false;
+
+	delta = ((minlen / 256) + 1) * 256;
+	if (buf->buflen < 0 || delta > INT_MAX - buf->buflen)
+		return false;
+
 	new = realloc(buf->buf, buf->buflen + delta);
 	if (new) {
 		buf->buf = new;
@@ -58,7 +68,9 @@ blob_buf_grow(struct blob_buf *buf, int required)
 {
 	int offset_head = attr_to_offset(buf, buf->head);
 
-	if ((buf->buflen + required) > BLOB_ATTR_LEN_MASK)
+	if (required < 0 || buf->buflen < 0)
+		return false;
+	if (required > BLOB_ATTR_LEN_MASK - buf->buflen)
 		return false;
 	if (!buf->grow || !buf->grow(buf, required))
 		return false;
@@ -113,8 +125,8 @@ void
 blob_fill_pad(struct blob_attr *attr)
 {
 	char *buf = (char *) attr;
-	int len = blob_pad_len(attr);
-	int delta = len - blob_raw_len(attr);
+	size_t len = blob_pad_len(attr);
+	size_t delta = len - blob_raw_len(attr);
 
 	if (delta > 0)
 		memset(buf + len - delta, 0, delta);
@@ -326,7 +338,7 @@ struct blob_attr *
 blob_memdup(const struct blob_attr *attr)
 {
 	struct blob_attr *ret;
-	int size = blob_pad_len(attr);
+	size_t size = blob_pad_len(attr);
 
 	ret = malloc(size);
 	if (!ret)

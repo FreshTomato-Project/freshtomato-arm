@@ -83,7 +83,7 @@ blob_data(const struct blob_attr *attr)
 static inline unsigned int
 blob_id(const struct blob_attr *attr)
 {
-	int id = (be32_to_cpu(attr->id_len) & BLOB_ATTR_ID_MASK) >> BLOB_ATTR_ID_SHIFT;
+	unsigned int id = (be32_to_cpu(attr->id_len) & BLOB_ATTR_ID_MASK) >> BLOB_ATTR_ID_SHIFT;
 	return id;
 }
 
@@ -117,8 +117,8 @@ blob_raw_len(const struct blob_attr *attr)
 static inline size_t
 blob_pad_len(const struct blob_attr *attr)
 {
-	unsigned int len = blob_raw_len(attr);
-	len = (len + BLOB_ATTR_ALIGN - 1) & ~(BLOB_ATTR_ALIGN - 1);
+	size_t len = blob_raw_len(attr);
+	len = (len + BLOB_ATTR_ALIGN - 1) & ~(size_t)(BLOB_ATTR_ALIGN - 1);
 	return len;
 }
 
@@ -154,25 +154,25 @@ blob_get_u64(const struct blob_attr *attr)
 static inline int8_t
 blob_get_int8(const struct blob_attr *attr)
 {
-	return blob_get_u8(attr);
+	return (int8_t)blob_get_u8(attr);
 }
 
 static inline int16_t
 blob_get_int16(const struct blob_attr *attr)
 {
-	return blob_get_u16(attr);
+	return (int16_t)blob_get_u16(attr);
 }
 
 static inline int32_t
 blob_get_int32(const struct blob_attr *attr)
 {
-	return blob_get_u32(attr);
+	return (int32_t)blob_get_u32(attr);
 }
 
 static inline int64_t
 blob_get_int64(const struct blob_attr *attr)
 {
-	return blob_get_u64(attr);
+	return (int64_t)blob_get_u64(attr);
 }
 
 static inline const char *

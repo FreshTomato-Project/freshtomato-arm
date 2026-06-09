@@ -1,6 +1,6 @@
 --- libubox/uloop.h
 +++ libubox/uloop.h
-@@ -122,7 +122,11 @@
+@@ -123,7 +123,11 @@
  int uloop_timeout_add(struct uloop_timeout *timeout);
  int uloop_timeout_set(struct uloop_timeout *timeout, int msecs);
  int uloop_timeout_cancel(struct uloop_timeout *timeout);

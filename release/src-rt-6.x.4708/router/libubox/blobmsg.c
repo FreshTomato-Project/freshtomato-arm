@@ -13,6 +13,8 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#include <limits.h>
+
 #include "blobmsg.h"
 
 static const int blob_type[__BLOBMSG_TYPE_LAST] = {
@@ -163,18 +165,30 @@ int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
 	return 0;
 }
 
+/*
+ * Upper bound on the number of policy entries blobmsg_parse() will
+ * accept. The pslen scratch array is allocated on the stack via
+ * alloca(); 4096 entries cap the per-call stack use at
+ * 4096 * sizeof(uint16_t) = 8 KiB, which comfortably fits the typical
+ * 8 KiB thread default while being far above any realistic policy
+ * size used in practice (a few dozen entries).
+ */
+#define BLOBMSG_PARSE_MAX_POLICY 4096
+
 int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
                   struct blob_attr **tb, void *data, unsigned int len)
 {
 	const struct blobmsg_hdr *hdr;
 	struct blob_attr *attr;
-	uint8_t *pslen;
+	uint16_t *pslen;
 	int i;
 
 	memset(tb, 0, policy_len * sizeof(*tb));
 	if (!data || !len)
 		return -EINVAL;
-	pslen = alloca(policy_len);
+	if (policy_len < 0 || policy_len > BLOBMSG_PARSE_MAX_POLICY)
+		return -ENOMEM;
+	pslen = alloca(policy_len * sizeof(*pslen));
 	for (i = 0; i < policy_len; i++) {
 		if (!policy[i].name)
 			continue;
@@ -240,7 +254,7 @@ blobmsg_new(struct blob_buf *buf, int type, const char *name, int payload_len, v
 	if (!attr)
 		return NULL;
 
-	attr->id_len |= be32_to_cpu(BLOB_ATTR_EXTENDED);
+	attr->id_len |= cpu_to_be32(BLOB_ATTR_EXTENDED);
 	hdr = blob_data(attr);
 	hdr->namelen = cpu_to_be16(namelen);
 
@@ -328,6 +342,8 @@ blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, unsigned int
 	struct blob_attr *attr;
 	void *data_dest;
 
+	if (maxlen == (unsigned int)-1)
+		return NULL;
 	maxlen++;
 	attr = blobmsg_new(buf, BLOBMSG_TYPE_STRING, name, maxlen, &data_dest);
 	if (!attr)
@@ -344,10 +360,18 @@ blobmsg_realloc_string_buffer(struct blob_buf *buf, unsigned int maxlen)
 {
 	struct blob_attr *attr = blob_next(buf->head);
 	int offset = attr_to_offset(buf, blob_next(buf->head)) + blob_pad_len(attr) - BLOB_COOKIE;
-	int required = maxlen + 1 - (buf->buflen - offset);
+	int required;
 
-	if (required <= 0)
+	if (maxlen >= INT_MAX)
+		return NULL;
+
+	if (buf->buflen < 0 || offset < 0 || offset > buf->buflen)
+		return NULL;
+
+	if ((int)maxlen + 1 <= buf->buflen - offset)
 		goto out;
+
+	required = (int)maxlen + 1 - (buf->buflen - offset);
 
 	if (!blob_buf_grow(buf, required))
 		return NULL;

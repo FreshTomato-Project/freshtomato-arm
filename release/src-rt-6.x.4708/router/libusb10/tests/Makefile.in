@@ -434,7 +434,7 @@ AM_CFLAGS = @AM_CFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/libusb
 AM_CXXFLAGS = @AM_CXXFLAGS@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
-AM_LDFLAGS = -static
+AM_LDFLAGS = $(test_static_link_flag)
 AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -570,6 +570,11 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 LDADD = ../libusb/libusb-1.0.la
+@OS_HAIKU_FALSE@test_static_link_flag = -static
+
+# Haiku backend includes C++ objects and some toolchains do not ship
+# static libstdc++. Keep tests dynamically linked to avoid static link failures.
+@OS_HAIKU_TRUE@test_static_link_flag = 
 stress_SOURCES = stress.c testlib.c
 stress_mt_SOURCES = stress_mt.c
 set_option_SOURCES = set_option.c testlib.c

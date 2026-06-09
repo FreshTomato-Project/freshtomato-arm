@@ -539,6 +539,7 @@ struct nvram_tuple router_defaults[] = {
 
 	{ "lan_state",			"1"				, 0 },	/* Show Ethernet LAN ports state (0|1) */
 	{ "lan_desc",			"1"				, 0 },	/* Show Ethernet LAN ports state (0|1) */
+	{ "eth_desc", 			""				, 0 },	/* Ethernet port custom descriptions (MAX_PORT_ID+1 entries, separated by %) */
 	{ "lan_invert",			"0"				, 0 },	/* Invert Ethernet LAN ports state (0|1) */
 
 	{ "mwan_num",			"1"				, 0 },

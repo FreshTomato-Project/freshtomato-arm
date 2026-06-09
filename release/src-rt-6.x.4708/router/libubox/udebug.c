@@ -595,7 +595,7 @@ void udebug_entry_set_length(struct udebug_buf *buf, uint16_t len)
 int udebug_entry_printf(struct udebug_buf *buf, const char *fmt, ...)
 {
 	va_list ap;
-	size_t ret;
+	int ret;
 
 	va_start(ap, fmt);
 	ret = udebug_entry_vprintf(buf, fmt, ap);
@@ -625,14 +625,14 @@ int udebug_entry_vprintf(struct udebug_buf *buf, const char *fmt, va_list ap)
 	va_copy(ap2, ap);
 	len = vsnprintf(str, UDEBUG_MIN_ALLOC_LEN, fmt, ap2);
 	va_end(ap2);
-	if (len <= UDEBUG_MIN_ALLOC_LEN)
+	if (len < UDEBUG_MIN_ALLOC_LEN)
 		goto out;
 
 	if (ptr->len + len > buf->data_size / 2)
 		return -1;
 
 	udebug_buf_alloc(buf, ofs, len + 1);
-	len = vsnprintf(str, len, fmt, ap);
+	len = vsnprintf(str, len + 1, fmt, ap);
 
 out:
 	ptr->len += len;

@@ -321,9 +321,14 @@ int md5sum(const char *file, void *md5_buf)
 
 	md5_begin(&ctx);
 	do {
-		int len = fread(buf, 1, sizeof(buf), f);
-		if (!len)
+		size_t len = fread(buf, 1, sizeof(buf), f);
+		if (!len) {
+			if (ferror(f)) {
+				fclose(f);
+				return -1;
+			}
 			break;
+		}
 
 		md5_hash(buf, len, &ctx);
 		ret += len;

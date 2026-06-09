@@ -682,8 +682,14 @@ conflux_mark_all_for_close(const uint8_t *nonce, bool is_client, int reason)
    * set. This happens if there is a recovery leg launched for an existing
    * linked set. */
 
+  /* Make a local copy of nonce first, since it might be part of a conflux
+   * leg that gets freed by the various calls in this function. */
+  uint8_t nonce_localcopy[DIGEST256_LEN];
+  memcpy(nonce_localcopy, nonce, sizeof(nonce_localcopy));
+
   /* Close the unlinked set. */
-  unlinked_circuits_t *unlinked = unlinked_pool_get(nonce, is_client);
+  unlinked_circuits_t *unlinked =
+    unlinked_pool_get(nonce_localcopy, is_client);
   if (unlinked) {
     unlinked_close_or_free(unlinked);
   }
@@ -692,7 +698,7 @@ conflux_mark_all_for_close(const uint8_t *nonce, bool is_client, int reason)
 
   /* Close the linked set. It will free itself upon the close of
    * the last leg. */
-  conflux_t *linked = linked_pool_get(nonce, is_client);
+  conflux_t *linked = linked_pool_get(nonce_localcopy, is_client);
   if (linked) {
     if (linked->in_full_teardown) {
       return;

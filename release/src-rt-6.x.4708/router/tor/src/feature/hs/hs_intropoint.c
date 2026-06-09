@@ -14,6 +14,7 @@
 #include "core/or/circuitlist.h"
 #include "core/or/circuituse.h"
 #include "core/or/relay.h"
+#include "core/or/relay_msg.h"
 #include "feature/rend/rendmid.h"
 #include "feature/relay/relay_metrics.h"
 #include "feature/stats/rephist.h"
@@ -641,11 +642,32 @@ handle_introduce1(or_circuit_t *client_circ, const uint8_t *request,
 {
   int ret = -1;
   or_circuit_t *service_circ;
-  trn_cell_introduce1_t *parsed_cell;
+  trn_cell_introduce1_t *parsed_cell = NULL;
   uint16_t status = TRUNNEL_HS_INTRO_ACK_STATUS_SUCCESS;
 
   tor_assert(client_circ);
   tor_assert(request);
+
+  /* Make sure the cell we're going to send toward the onion service is
+   * small enough to fit in a CGO-style circuit. Otherwise we should fail
+   * it right here, rather than trying to send it toward the onion
+   * service, maybe discovering that it doesn't fit, and maybe tearing
+   * down that intro circuit.
+   *
+   * Note that we refuse this cell in that case even if it would fit
+   * (that is, even if the onion service side isn't using a CGO-style
+   * circuit), because we don't want to reveal to the client which kind
+   * of circuit the onion service made. */
+  if (request_len >
+      relay_cell_max_payload_size(RELAY_CELL_FORMAT_V1,
+                                  RELAY_COMMAND_INTRODUCE2)) {
+    relay_increment_intro1_action(INTRO1_MALFORMED);
+    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+           "Rejecting over-long INTRODUCE1 cell. Responding with NACK.");
+    /* Inform client that the INTRODUCE1 has a bad format. */
+    status = TRUNNEL_HS_INTRO_ACK_STATUS_BAD_FORMAT;
+    goto send_ack;
+  }
 
   /* Parse cell. Note that we can only parse the non encrypted section for
    * which we'll use the authentication key to find the service introduction
@@ -689,7 +711,7 @@ handle_introduce1(or_circuit_t *client_circ, const uint8_t *request,
     }
   }
 
-  /* Before sending, lets make sure this cell can be sent on the service
+  /* Before sending, let's make sure this cell can be sent on the service
    * circuit asking the DoS defenses. */
   if (!hs_dos_can_send_intro2(service_circ)) {
     relay_increment_intro1_action(INTRO1_RATE_LIMITED);

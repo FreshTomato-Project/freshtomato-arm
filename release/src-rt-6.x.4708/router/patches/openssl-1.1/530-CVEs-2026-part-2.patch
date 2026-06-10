@@ -1,0 +1,175 @@
+--- openssl-1.1/crypto/asn1/a_mbstr.c
++++ openssl-1.1/crypto/asn1/a_mbstr.c
+@@ -171,18 +171,41 @@ int ASN1_mbstring_ncopy(ASN1_STRING **out, const unsigned char *in, int len,
+         break;
+ 
+     case MBSTRING_BMP:
++        if (nchar > INT_MAX / 2) {
++            ASN1err(ASN1_F_ASN1_MBSTRING_NCOPY, ASN1_R_STRING_TOO_LONG);
++            if (free_out) {
++                ASN1_STRING_free(dest);
++                *out = NULL;
++            }
++            return -1;
++        }
+         outlen = nchar << 1;
+         cpyfunc = cpy_bmp;
+         break;
+ 
+     case MBSTRING_UNIV:
++        if (nchar > INT_MAX / 4) {
++            ASN1err(ASN1_F_ASN1_MBSTRING_NCOPY, ASN1_R_STRING_TOO_LONG);
++            if (free_out) {
++                ASN1_STRING_free(dest);
++                *out = NULL;
++            }
++            return -1;
++        }
+         outlen = nchar << 2;
+         cpyfunc = cpy_univ;
+         break;
+ 
+     case MBSTRING_UTF8:
+         outlen = 0;
+-        traverse_string(in, len, inform, out_utf8, &outlen);
++        ret = traverse_string(in, len, inform, out_utf8, &outlen);
++        if (ret < 0) { /* error already raised in out_utf8() */
++            if (free_out) {
++                ASN1_STRING_free(dest);
++                *out = NULL;
++            }
++            return -1;
++        }
+         cpyfunc = cpy_utf8;
+         break;
+     }
+@@ -256,9 +279,19 @@ static int in_utf8(unsigned long value, void *arg)
+ 
+ static int out_utf8(unsigned long value, void *arg)
+ {
+-    int *outlen;
++    int *outlen, len;
++
++    len = UTF8_putc(NULL, -1, value);
++    if (len <= 0) {
++        ASN1err(ASN1_F_ASN1_MBSTRING_NCOPY, ASN1_R_INVALID_UTF8STRING);
++        return len;
++    }
+     outlen = arg;
+-    *outlen += UTF8_putc(NULL, -1, value);
++    if (*outlen > INT_MAX - len) {
++        ASN1err(ASN1_F_ASN1_MBSTRING_NCOPY, ASN1_R_STRING_TOO_LONG);
++        return -1;
++    }
++    *outlen += len;
+     return 1;
+ }
+ 
+--- openssl-1.1/crypto/asn1/tasn_dec.c
++++ openssl-1.1/crypto/asn1/tasn_dec.c
+@@ -57,7 +57,7 @@ static int asn1_d2i_ex_primitive(ASN1_VALUE **pval,
+                                  const ASN1_ITEM *it,
+                                  int tag, int aclass, char opt,
+                                  ASN1_TLC *ctx);
+-static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
++static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, long len,
+                        int utype, char *free_cont, const ASN1_ITEM *it);
+ 
+ /* Table to convert tags to bit values, used for MSTRING type */
+@@ -790,19 +790,24 @@ static int asn1_d2i_ex_primitive(ASN1_VALUE **pval,
+ 
+ /* Translate ASN1 content octets into a structure */
+ 
+-static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
++static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, long len,
+                        int utype, char *free_cont, const ASN1_ITEM *it)
+ {
+     ASN1_VALUE **opval = NULL;
+     ASN1_STRING *stmp;
+     ASN1_TYPE *typ = NULL;
+     int ret = 0;
++    int ilen = (int)len;
+     const ASN1_PRIMITIVE_FUNCS *pf;
+     ASN1_INTEGER **tint;
+     pf = it->funcs;
+ 
+-    if (pf && pf->prim_c2i)
+-        return pf->prim_c2i(pval, cont, len, utype, free_cont, it);
++    if (pf && pf->prim_c2i) {
++        if (len == (long)ilen)
++            return pf->prim_c2i(pval, cont, ilen, utype, free_cont, it);
++        ASN1err(ASN1_F_ASN1_EX_C2I, ASN1_R_TOO_LONG);
++        return 0;
++    }
+     /* If ANY type clear type and set pointer to internal value */
+     if (it->utype == V_ASN1_ANY) {
+         if (!*pval) {
+@@ -820,7 +825,8 @@ static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
+     }
+     switch (utype) {
+     case V_ASN1_OBJECT:
+-        if (!c2i_ASN1_OBJECT((ASN1_OBJECT **)pval, &cont, len))
++        if (len != (long)ilen
++            || !c2i_ASN1_OBJECT((ASN1_OBJECT **)pval, &cont, ilen))
+             goto err;
+         break;
+ 
+@@ -875,6 +881,10 @@ static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
+     case V_ASN1_SET:
+     case V_ASN1_SEQUENCE:
+     default:
++        if (len != (long)ilen) {
++            ASN1err(ASN1_F_ASN1_EX_C2I, ASN1_R_TOO_LONG);
++            goto err;
++        }
+         if (utype == V_ASN1_BMPSTRING && (len & 1)) {
+             ASN1err(ASN1_F_ASN1_EX_C2I, ASN1_R_BMPSTRING_IS_WRONG_LENGTH);
+             goto err;
+@@ -900,10 +910,10 @@ static int asn1_ex_c2i(ASN1_VALUE **pval, const unsigned char *cont, int len,
+         if (*free_cont) {
+             OPENSSL_free(stmp->data);
+             stmp->data = (unsigned char *)cont; /* UGLY CAST! RL */
+-            stmp->length = len;
++            stmp->length = ilen;
+             *free_cont = 0;
+         } else {
+-            if (!ASN1_STRING_set(stmp, cont, len)) {
++            if (!ASN1_STRING_set(stmp, cont, ilen)) {
+                 ASN1err(ASN1_F_ASN1_EX_C2I, ERR_R_MALLOC_FAILURE);
+                 ASN1_STRING_free(stmp);
+                 *pval = NULL;
+--- openssl-1.1/crypto/cms/cms_pwri.c
++++ openssl-1.1/crypto/cms/cms_pwri.c
+@@ -177,14 +177,18 @@ static int kek_unwrap_key(unsigned char *out, size_t *outlen,
+                           const unsigned char *in, size_t inlen,
+                           EVP_CIPHER_CTX *ctx)
+ {
+-    size_t blocklen = EVP_CIPHER_CTX_block_size(ctx);
++    int blocklen = EVP_CIPHER_CTX_block_size(ctx);
+     unsigned char *tmp;
+     int outl, rv = 0;
+-    if (inlen < 2 * blocklen) {
++
++    if (blocklen < 4)
++        return 0;
++
++    if (inlen < 2 * (size_t)blocklen) {
+         /* too small */
+         return 0;
+     }
+-    if (inlen % blocklen) {
++    if (inlen > INT_MAX || inlen % blocklen) {
+         /* Invalid size */
+         return 0;
+     }
+@@ -336,6 +340,10 @@ int cms_RecipientInfo_pwri_crypt(CMS_ContentInfo *cms, CMS_RecipientInfo *ri,
+ 
+     /* Finish password based key derivation to setup key in "ctx" */
+ 
++    if (algtmp == NULL) {
++        CMSerr(CMS_F_CMS_RECIPIENTINFO_PWRI_CRYPT, CMS_R_INVALID_KEY_ENCRYPTION_PARAMETER);
++        goto err;
++    }
+     if (EVP_PBE_CipherInit(algtmp->algorithm,
+                            (char *)pwri->pass, pwri->passlen,
+                            algtmp->parameter, kekctx, en_de) < 0) {

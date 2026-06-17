@@ -23,7 +23,7 @@
 
 <script>
 
-//	<% nvram ("t_model_name,vlan0ports,vlan1ports,vlan2ports,vlan3ports,vlan4ports,vlan5ports,vlan6ports,vlan7ports,vlan8ports,vlan9ports,vlan10ports,vlan11ports,vlan12ports,vlan13ports,vlan14ports,vlan15ports,vlan0hwname,vlan1hwname,vlan2hwname,vlan3hwname,vlan4hwname,vlan5hwname,vlan6hwname,vlan7hwname,vlan8hwname,vlan9hwname,vlan10hwname,vlan11hwname,vlan12hwname,vlan13hwname,vlan14hwname,vlan15hwname,wan_ifnameX,manual_boot_nv,boardtype,boardflags,lan_ifname,lan_ifnames,vlan0tag,vlan0vid,vlan1vid,vlan2vid,vlan3vid,vlan4vid,vlan5vid,vlan6vid,vlan7vid,vlan8vid,vlan9vid,vlan10vid,vlan11vid,vlan12vid,vlan13vid,vlan14vid,vlan15vid,model,wl_ssid,wl_radio,wl_net_mode,wl_nband,boardnum,boardrev,trunk_vlan_so,eth_desc");%>
+//	<% nvram ("t_model_name,vlan0ports,vlan1ports,vlan2ports,vlan3ports,vlan4ports,vlan5ports,vlan6ports,vlan7ports,vlan8ports,vlan9ports,vlan10ports,vlan11ports,vlan12ports,vlan13ports,vlan14ports,vlan15ports,vlan0hwname,vlan1hwname,vlan2hwname,vlan3hwname,vlan4hwname,vlan5hwname,vlan6hwname,vlan7hwname,vlan8hwname,vlan9hwname,vlan10hwname,vlan11hwname,vlan12hwname,vlan13hwname,vlan14hwname,vlan15hwname,wan_ifnameX,manual_boot_nv,boardtype,boardflags,lan_ifname,lan_ifnames,vlan0tag,vlan0vid,vlan1vid,vlan2vid,vlan3vid,vlan4vid,vlan5vid,vlan6vid,vlan7vid,vlan8vid,vlan9vid,vlan10vid,vlan11vid,vlan12vid,vlan13vid,vlan14vid,vlan15vid,model,wl_ssid,wl_radio,wl_net_mode,wl_nband,boardnum,boardrev,trunk_vlan_so");%>
 
 var cprefix = 'advanced_vlan';
 var port_vlan_supported = 0;
@@ -74,7 +74,6 @@ function portCaption(i) {
  */
 function show() {
 	var state = [];
-	var ed = (nvram.eth_desc || '').split('%');
 	var port = etherstates.port0;
 	if (port == 'disabled')
 		return 0;
@@ -96,27 +95,7 @@ function show() {
 		var captionText = renderEthIcon(o, sp, du, cap);
 		if (o)
 			o.title = captionText || state[1] || '';
-		var d = E('ethdesc_'+i);
-		if (d && d !== document.activeElement)
-			d.textContent = (ed[i] || '').substring(0, 8);
 	}
-}
-
-function saveEthDesc() {
-	var i, e, v, d = [];
-	for (i = 0; i <= MAX_PORT_ID; ++i) {
-		e = E('ethdesc_'+i);
-		if (!e) continue;
-		v = (e.textContent || '').replace(/[%\r\n]/g, '').substring(0, 8);
-		if (e.textContent != v) e.textContent = v;
-		d.push(v);
-	}
-	d = d.join('%');
-	if ((nvram.eth_desc || '') == d)
-		return;
-	nvram.eth_desc = d;
-	var cmd = new XmlHttp();
-	cmd.post('shell.cgi', 'action=execute&command='+escapeCGI(('nvram set eth_desc="'+d.replace(/["\\$`]/g, '\\$&')+'"\nnvram commit').replace(/\r/g, '')));
 }
 
 /* does not seem to be strictly necessary for boardflags as it's supposed to be a bitmap */
@@ -474,14 +453,14 @@ if (port_vlan_supported) {
 		var ethIconH = Math.round(35 * ethIconScale / 100);
 
 		var headers = ['VLAN', 'VID',
-		               '<div id="vport_0"><div id="ethdesc_0" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_0" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
-		               '<div id="vport_1"><div id="ethdesc_1" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_1" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
-		               '<div id="vport_2"><div id="ethdesc_2" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_2" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
-		               '<div id="vport_3"><div id="ethdesc_3" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_3" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
-		               '<div id="vport_4"><div id="ethdesc_4" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_4" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>'
+		               '<div id="vport_0"><span class="eth-icon" id="ethsvg_0" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
+		               '<div id="vport_1"><span class="eth-icon" id="ethsvg_1" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
+		               '<div id="vport_2"><span class="eth-icon" id="ethsvg_2" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
+		               '<div id="vport_3"><span class="eth-icon" id="ethsvg_3" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
+		               '<div id="vport_4"><span class="eth-icon" id="ethsvg_4" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>'
 		];
 /* EXTSW-BEGIN */
-		headers.push('<div id="vport_5"><div id="ethdesc_5" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_5" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>');
+		headers.push('<div id="vport_5"><span class="eth-icon" id="ethsvg_5" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>');
 /* EXTSW-END */
 		headers.push('Native<br>VLAN', 'Bridge');
 		this.headerSet(headers);

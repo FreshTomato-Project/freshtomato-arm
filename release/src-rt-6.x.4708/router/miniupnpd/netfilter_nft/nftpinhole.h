@@ -1,4 +1,4 @@
-/* $Id: nftpinhole.h,v 1.1 2019/06/25 21:27:57 nanard Exp $ */
+/* $Id: nftpinhole.h,v 1.10 2016/01/19 10:03:30 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2012-2016 Thomas Bernard

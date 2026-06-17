@@ -1,4 +1,4 @@
-/* $Id: pcplearndscp.c,v 1.3 2021/08/21 08:20:11 nanard Exp $ */
+/* $Id: pcplearndscp.c $ */
 /* MiniUPnP project
  * Website : http://miniupnp.free.fr/
  * Author : Miroslav Bagljas

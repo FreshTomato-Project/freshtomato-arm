@@ -1,4 +1,4 @@
-/* $Id: nftnlrdr_misc.h,v 1.12 2024/03/19 23:35:54 nanard Exp $ */
+/* $Id: nftnlrdr_misc.h,v 1.11 2024/03/11 23:35:07 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * (c) 2015 Tomofumi Hayashi

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.8 2024/06/22 16:48:54 nanard Exp $
+# $Id: Makefile,v 1.7 2020/05/21 00:10:56 nanard Exp $
 # made for GNU Make (and BSD make)
 # only for testing purposes.
 # Please follow instructions in INSTALL file for building miniUPnPd

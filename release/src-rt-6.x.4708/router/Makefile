@@ -1523,8 +1523,7 @@ libnfnetlink-clean:
 miniupnpd/stamp-h1:
 	$(call patch_files,miniupnpd)
 	cd miniupnpd && \
-		PKG_CONFIG_LIBDIR="" \
-		./configure --igd2 --leasefile --vendorcfg --portinuse --disable-pppconn --firewall=iptables --iptablespath=$(TOP)/$(IPTABLES_TARGET) $(if $(TCONFIG_IPV6),--ipv6,)
+		./configure --igd2 --leasefile --vendorcfg --portinuse --disable-pppconn --firewall=iptables --disable-tests --iptablespath=$(TOP)/$(IPTABLES_TARGET) $(if $(TCONFIG_IPV6),--ipv6,)
 	@touch $@
 
 miniupnpd: miniupnpd/stamp-h1
@@ -1539,8 +1538,7 @@ miniupnpd-install:
 
 miniupnpd-clean:
 	-@$(MAKE) -C miniupnpd clean
-	@rm -f miniupnpd/config.h
-	@rm -f miniupnpd/stamp-h1
+	@rm -f miniupnpd/config.h miniupnpd/stamp-h1
 	$(call unpatch_files,miniupnpd)
 
 vsftpd:

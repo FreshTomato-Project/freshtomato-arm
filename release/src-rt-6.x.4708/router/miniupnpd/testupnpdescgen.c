@@ -1,4 +1,4 @@
-/* $Id: testupnpdescgen.c,v 1.38 2021/08/21 08:16:16 nanard Exp $ */
+/* $Id: testupnpdescgen.c,v 1.37 2020/11/04 21:02:29 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/

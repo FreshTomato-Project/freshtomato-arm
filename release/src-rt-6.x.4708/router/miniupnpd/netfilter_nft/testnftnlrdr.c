@@ -1,4 +1,4 @@
-/* $Id: testnftnlrdr.c,v 1.5 2024/03/19 23:35:54 nanard Exp $ */
+/* $Id: testnftnlrdr.c,v 1.2 2019/06/30 19:49:18 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * (c) 2006-2023 Thomas Bernard

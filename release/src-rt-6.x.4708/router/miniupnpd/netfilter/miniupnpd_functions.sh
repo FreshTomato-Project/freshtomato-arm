@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: miniupnpd_functions.sh,v 1.3 2019/04/03 16:25:55 nanard Exp $
+# $Id: miniupnpd_functions.sh,v 1.2 2018/05/29 10:25:44 nanard Exp $
 
 IP=$(which ip) || {
 	echo "Can't find ip" >&2

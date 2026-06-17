@@ -1,8 +1,8 @@
-/* $Id: upnppinhole.c,v 1.17 2024/04/28 23:32:21 nanard Exp $ */
+/* $Id: upnppinhole.c,v 1.19 2025/04/12 23:14:30 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
- * (c) 2006-2024 Thomas Bernard
+ * (c) 2006-2025 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -93,45 +93,6 @@ upnp_check_outbound_pinhole(int proto, int * timeout)
 #endif
 
 #ifdef ENABLE_LEASEFILE
-/* proto_atoi()
- * convert the string "UDP" or "TCP" to IPPROTO_UDP and IPPROTO_UDP */
-static int
-proto_atoi(const char * protocol)
-{
-	int proto = IPPROTO_TCP;
-	if(strcasecmp(protocol, "UDP") == 0)
-		proto = IPPROTO_UDP;
-#ifdef IPPROTO_UDPLITE
-	else if(strcasecmp(protocol, "UDPLITE") == 0)
-		proto = IPPROTO_UDPLITE;
-#endif /* IPPROTO_UDPLITE */
-	return proto;
-}
-
-/* proto_itoa()
- * convert IPPROTO_UDP, IPPROTO_UDP, etc. to "UDP", "TCP" */
-static const char *
-proto_itoa(int proto)
-{
-	const char * protocol;
-	switch(proto) {
-	case IPPROTO_UDP:
-		protocol = "UDP";
-		break;
-	case IPPROTO_TCP:
-		protocol = "TCP";
-		break;
-#ifdef IPPROTO_UDPLITE
-	case IPPROTO_UDPLITE:
-		protocol = "UDPLITE";
-		break;
-#endif /* IPPROTO_UDPLITE */
-	default:
-		protocol = "*UNKNOWN*";
-	}
-	return protocol;
-}
-
 static int
 lease_file6_add(const char * rem_client,
 			   unsigned short rem_port,
@@ -378,7 +339,7 @@ lease_file6_remove(const char * int_client, unsigned short int_port, int proto, 
 
 }
 
-int lease_file6_expire()
+int lease_file6_expire(void)
 {
 	FILE* fd, *fdt;
 	char * p, * p2;
@@ -496,7 +457,7 @@ int lease_file6_expire()
 /* reload_from_lease_file()
  * read lease_file and add the rules contained
  */
-int reload_from_lease_file6()
+int reload_from_lease_file6(void)
 {
 	FILE * fd;
 	char * p, * p2;

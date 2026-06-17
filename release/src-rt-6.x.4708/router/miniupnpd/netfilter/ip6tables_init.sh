@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: ip6tables_init.sh,v 1.3 2019/04/03 16:25:55 nanard Exp $
+# $Id: ip6tables_init_and_clean.sh,v 1.1 2012/04/24 22:13:41 nanard Exp $
 # Improved Miniupnpd iptables init script.
 # Checks for state of filter before doing anything..
 

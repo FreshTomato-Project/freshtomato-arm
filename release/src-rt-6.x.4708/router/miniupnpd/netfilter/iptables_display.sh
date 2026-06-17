@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: iptables_display.sh,v 1.8 2018/04/06 10:17:09 nanard Exp $
+# $Id: iptables_display.sh,v 1.4 2011/05/16 12:11:37 nanard Exp $
 
 . $(dirname "$0")/miniupnpd_functions.sh
 

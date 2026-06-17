@@ -1,4 +1,4 @@
-/* $Id: natpmp.h,v 1.13 2014/05/19 13:38:03 nanard Exp $ */
+/* $Id: natpmp.h,v 1.12 2014/03/24 10:49:46 nanard Exp $ */
 /* MiniUPnP project
  * author : Thomas Bernard
  * website : http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/

@@ -1,9 +1,9 @@
-/* $Id: upnphttp.c,v 1.114 2024/01/15 00:13:22 nanard Exp $ */
+/* $Id: upnphttp.c,v 1.116 2025/03/23 23:25:42 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * Project :  miniupnp
  * Website :  http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * Author :   Thomas Bernard
- * Copyright (c) 2005-2024 Thomas Bernard
+ * Copyright (c) 2005-2025 Thomas Bernard
  * This software is subject to the conditions detailed in the
  * LICENCE file included in this distribution.
  * */
@@ -29,7 +29,7 @@
 #include "upnpsoap.h"
 #include "upnpevents.h"
 #include "upnputils.h"
-#if defined(RANDOMIZE_URLS) || defined(DYNAMIC_OS_VERSION)
+#if defined(RANDOMIZE_URLS) || defined(DYNAMIC_OS_VERSION) || defined(IGD_V2)
 #include "upnpglobalvars.h"
 #endif /* RANDOMIZE_URLS */
 
@@ -38,13 +38,6 @@
 #include <openssl/engine.h>
 #include <openssl/conf.h>
 static SSL_CTX *ssl_ctx = NULL;
-
-#ifndef HTTPS_CERTFILE
-#define HTTPS_CERTFILE "/etc/ssl/certs/ssl-cert-snakeoil.pem"
-#endif
-#ifndef HTTPS_KEYFILE
-#define HTTPS_KEYFILE "/etc/ssl/private/ssl-cert-snakeoil.key"
-#endif
 
 static void
 syslogsslerr(void)
@@ -157,12 +150,14 @@ InitSSL_upnphttp(struct upnphttp * h)
 	if(h->ssl == NULL) {
 		syslog(LOG_ERR, "SSL_new() failed");
 		syslogsslerr();
-		abort();
+		h->state = EToDelete;
+		return;
 	}
 	if(!SSL_set_fd(h->ssl, h->socket)) {
 		syslog(LOG_ERR, "SSL_set_fd() failed");
 		syslogsslerr();
-		abort();
+		h->state = EToDelete;
+		return;
 	}
 	r = SSL_accept(h->ssl); /* start the handshaking */
 	if(r < 0) {
@@ -172,7 +167,8 @@ InitSSL_upnphttp(struct upnphttp * h)
 		if(err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
 			syslog(LOG_ERR, "SSL_accept() failed");
 			syslogsslerr();
-			abort();
+			h->state = EToDelete;
+			return;
 		}
 	}
 }
@@ -269,9 +265,10 @@ ParseHttpHeaders(struct upnphttp * h)
 					p++;
 				while(p[n]>=' ')
 					n++;
-				if((p[0] == '"' && p[n-1] == '"')
-				  || (p[0] == '\'' && p[n-1] == '\''))
+				if((n >= 2) && ((p[0] == '"' && p[n-1] == '"')
+				             || (p[0] == '\'' && p[n-1] == '\'')))
 				{
+					/* remove the quotes */
 					p++; n -= 2;
 				}
 				h->req_soapActionOff = p - h->req_buf;

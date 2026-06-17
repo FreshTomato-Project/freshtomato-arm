@@ -1,4 +1,4 @@
-/* $Id: upnphttp.h,v 1.44 2021/08/21 08:11:09 nanard Exp $ */
+/* $Id: upnphttp.h,v 1.42 2015/12/16 10:21:49 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/

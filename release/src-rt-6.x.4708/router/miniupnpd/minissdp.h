@@ -1,4 +1,4 @@
-/* $Id: minissdp.h,v 1.14 2017/05/24 22:26:35 nanard Exp $ */
+/* $Id: minissdp.h,v 1.12 2014/04/09 07:20:59 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2017 Thomas Bernard

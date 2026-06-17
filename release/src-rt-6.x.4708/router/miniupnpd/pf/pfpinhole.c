@@ -1,4 +1,4 @@
-/* $Id: pfpinhole.c,v 1.31 2024/06/22 16:48:54 nanard Exp $ */
+/* $Id: pfpinhole.c,v 1.30 2024/01/14 23:56:45 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
@@ -349,6 +349,8 @@ int delete_pinhole(unsigned short uid)
 			pr.ticket = ri.ticket;
 			pr.nr = i;
 			strlcpy(pr.anchor, anchor_name, MAXPATHLEN);
+#else /* USE_LIBPFCTL */
+			pr.action = PF_CHANGE_GET_TICKET;
 #endif /* USE_LIBPFCTL */
 			if(ioctl(dev, DIOCCHANGERULE, &pr) < 0) {
 				syslog(LOG_ERR, "ioctl(dev, DIOCCHANGERULE, ...) PF_CHANGE_GET_TICKET: %m");

@@ -1,8 +1,8 @@
-/* $Id: obsdrdr.c,v 1.104 2024/06/22 16:48:54 nanard Exp $ */
+/* $Id: obsdrdr.c,v 1.102 2023/12/07 18:56:32 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
- * (c) 2006-2024 Thomas Bernard
+ * (c) 2006-2025 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -563,9 +563,15 @@ delete_nat_rule(const char * ifname, unsigned short iport, int proto, in_addr_t 
 		       i, ntohs(RULE.src.port[0]), RULE.proto,
 		       RULE.src.addr.v.a.addr.v4.s_addr, iaddr);
 #endif /* TEST */
+#ifdef __APPLE__
+		if(iport == ntohs(RULE.src.xport.range.port[0])
+		 && RULE.proto == proto
+		 && iaddr == RULE.src.addr.v.a.addr.v4.s_addr)
+#else
 		if(iport == ntohs(RULE.src.port[0])
 		 && RULE.proto == proto
 		 && iaddr == RULE.src.addr.v.a.addr.v4.s_addr)
+#endif
 		{
 #ifdef USE_LIBPFCTL
 			/* to change with the libpfctl alternative to DIOCCHANGERULE */
@@ -1470,12 +1476,27 @@ get_redirect_rule_by_index(int index,
 		goto error;
 	}
 #else /* USE_LIBPFCTL */
+#if defined(OpenBSD) && OpenBSD >= 202310
+	/* OpenBSD >= 7.4
+	 * DIOCGETRULE is changed to always get rules incrementaly
+	 * pr.nr is now a return value
+	 * https://github.com/openbsd/src/commit/072583c99019a91ac511a1e33e10ad02df79ec97 */
+	do {
+		if(ioctl(dev, DIOCGETRULE, &pr) < 0)
+		{
+			syslog(LOG_ERR, "ioctl(dev, DIOCGETRULE): %m");
+			goto error;
+		}
+	} while(pr.nr < (unsigned int)index);
+#else
+	/* not OpenBSD >= 7.4 */
 	pr.nr = index;
 	if(ioctl(dev, DIOCGETRULE, &pr) < 0)
 	{
 		syslog(LOG_ERR, "ioctl(dev, DIOCGETRULE): %m");
 		goto error;
 	}
+#endif /* defined(OpenBSD) && OpenBSD >= 202310 */
 #endif /* USE_LIBPFCTL */
 	*proto = RULE.proto;
 #ifdef __APPLE__

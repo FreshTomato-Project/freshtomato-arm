@@ -1,4 +1,4 @@
-/* $Id: portinuse.h,v 1.2 2014/03/28 12:03:28 nanard Exp $ */
+/* $Id: $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard

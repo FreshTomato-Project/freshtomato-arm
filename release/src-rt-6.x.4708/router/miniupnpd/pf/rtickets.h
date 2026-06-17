@@ -1,4 +1,4 @@
-/* $Id: rtickets.h,v 1.1 2024/01/14 23:56:45 nanard Exp $ */
+/* $Id: $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * (c) 2023 Thomas Bernard

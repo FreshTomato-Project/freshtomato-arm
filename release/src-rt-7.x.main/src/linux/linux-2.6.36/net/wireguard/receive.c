@@ -349,6 +349,15 @@ out:
 
 #include "selftest/counter.c"
 
+static void wg_update_rx_stats(struct wg_peer *peer, size_t len)
+{
+	struct net_device *dev = peer->device->dev;
+
+	++dev->stats.rx_packets;
+	dev->stats.rx_bytes += len;
+	peer->rx_bytes += len;
+}
+
 static void wg_packet_consume_data_done(struct wg_peer *peer,
 					struct sk_buff *skb,
 					struct endpoint *endpoint)
@@ -426,6 +435,7 @@ static void wg_packet_consume_data_done(struct wg_peer *peer,
 	if (unlikely(routed_peer != peer))
 		goto dishonest_packet_peer;
 
+	wg_update_rx_stats(peer, message_data_len(len_before_trim));
 	napi_gro_receive(&peer->napi, skb);
 	return;
 

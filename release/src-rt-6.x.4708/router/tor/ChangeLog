@@ -1,3 +1,99 @@
+Changes in version 0.4.9.11 - 2026-06-25
+  Security release follows in quick succession after the previous one due to
+  additional high-priority security issues including one concerning onion
+  services (#41297). We strongly recommend upgrading as soon as possible.
+
+  o Major bugfixes (onion services):
+    - Prevent a race condition where in just the right circumstances a
+      rendezvous point could man-in-the-middle (impersonate) the onion
+      service that the client was trying to reach. Fixes bug 41297;
+      bugfix on 0.3.5.3-alpha.
+
+  o Major bugfixes (client):
+    - Clients no longer assert and exit if an onion service encodes an
+      all-zero public key for one of its introduction points. Fixes bug
+      41295; bugfix on 0.3.2.1-alpha.
+
+  o Major bugfixes (directory authorities):
+    - Stop allowing 0 as a port in exit policy lines. We had put in some
+      secondary checks to make sure exit policy ports weren't out of the
+      expected range, but one of those checks accidentally allowed us to
+      parse the port "0" as equivalent to the port range "1-0", which
+      triggered an assert when generating a networkstatus vote (on v3
+      directory authorities) or a networkstatus document (on the bridge
+      authority). Fixes bug 41292; bugfix on 0.1.2.5-alpha.
+
+  o Major bugfixes (security, conflux):
+    - Fix a use-after-free (and potential double free) of a conflux
+      object when a recovery leg revives a conflux set whose last linked
+      leg has already been closed. A malicious exit could use this to
+      crash a client. TROVE-2026-026. Fixes bug 41306; bugfix
+      on 0.4.8.1-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on June 25, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/06/25.
+
+
+Changes in version 0.4.9.10 - 2026-06-23
+  Another release with an important security fix and major bugfixes. We
+  strongly recommend upgrading as soon as possible.
+
+  o Major bugfixes (conflux, security, TROVE):
+    - Reject a CONFLUX_LINK cell that arrives on a circuit which already
+      has attached streams. A malicious client could send a
+      RELAY_COMMAND_BEGIN before the CONFLUX_LINK on the same circuit,
+      attaching an exit stream that would later end up orphan leaving a
+      dangling circuit back-pointer and a use-after-free (UAF) when the
+      circuit is freed. TROVE-2026-025. Fixes bug 41258; bugfix
+      on 0.4.8.1-alpha.
+
+  o Major bugfixes (client):
+    - Resume warning about unsafe socks protocols (socks4 or
+      socks5-not-hostname) when SafeSocks is not set. Also resume
+      warning every time when TestSocks is set. Fixes bug 41290; bugfix
+      on 0.2.2.18-alpha and 0.2.4.11-alpha.
+
+  o Major bugfixes (clients):
+    - Make clients more consistently expire entry guards 48 to 60 days
+      after they are first used. Previously, we would sometimes expire
+      entry guards after this intended range, but sometimes we would
+      wait up to 120 days. Fixes bug 41280; bugfix on 0.3.0.1-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on June 23, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/06/23.
+
+  o Minor bugfixes (code security):
+    - Add a defensive check in port_parse_ports_relay() to make it
+      clearer to static analysis tools that there is no security
+      problem. Fixes bug 41278; bugfix on 0.4.3.1-alpha.
+
+  o Minor bugfixes (client-side onion service):
+    - Stop leaking memory in the case where the client fetches a well-
+      formed onion descriptor but it turns out to not match the onion
+      address we intended to fetch. Fixes bug 41264; bugfix
+      on 0.3.2.1-alpha.
+
+  o Minor bugfixes (directory authorities):
+    - Correctly omit "package" lines from the consensus. In proposal 301
+      we tried to make a new consensus method that never generates
+      "package" lines, but we got the logic wrong. Fixes bug 41293;
+      bugfix on 0.4.9.1-alpha.
+
+  o Minor bugfixes (relay):
+    - Avoid a mistaken BUG() warning and backtrace if a client sends an
+      INTRODUCE1 cell using the legacy format from v2 onion services.
+      This error case was already handled correctly, but there's no need
+      to warn and backtrace. Fixes bug 41299; bugfix on 0.4.6.1-alpha.
+
+
 Changes in version 0.4.9.9 - 2026-06-01
   This is a security release fixing several major bugfixes that were reported
   in the past weeks. We strongly recommend upgrading as soon as possible.

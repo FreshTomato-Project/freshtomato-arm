@@ -595,11 +595,13 @@ validate_introduce1_parsed_cell(const trn_cell_introduce1_t *cell)
 
   tor_assert(cell);
 
-  /* This code path SHOULD NEVER be reached if the cell is a legacy type so
-   * safety net here. The legacy ID must be zeroes in this case. */
+  /* If it's a legacy (v2 intro1 cell), refuse it and return. This type of
+   * cell starts with something other than 20 zeros. */
   legacy_key_id_len = trn_cell_introduce1_getlen_legacy_key_id(cell);
   legacy_key_id = trn_cell_introduce1_getconstarray_legacy_key_id(cell);
-  if (BUG(!fast_mem_is_zero((char *) legacy_key_id, legacy_key_id_len))) {
+  if (!fast_mem_is_zero((char *) legacy_key_id, legacy_key_id_len)) {
+    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+           "Incoming INTRODUCE1 cell uses legacy format. Rejecting.");
     goto invalid;
   }
 
@@ -631,7 +633,7 @@ validate_introduce1_parsed_cell(const trn_cell_introduce1_t *cell)
   return -1;
 }
 
-/** We just received a non legacy INTRODUCE1 cell on <b>client_circ</b> with
+/** We just received an INTRODUCE1 cell on <b>client_circ</b> with
  * the payload in <b>request</b> of size <b>request_len</b>. Return 0 if
  * everything went well, or -1 if an error occurred. This function is in charge
  * of sending back an INTRODUCE_ACK cell and will close client_circ on error.

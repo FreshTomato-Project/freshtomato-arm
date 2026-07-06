@@ -3114,7 +3114,7 @@ libevent: libevent/stamp-h1
 
 libevent-install:
 ifeq ($(or $(TCONFIG_BBT),$(TCONFIG_TOR)),y)
-	install -D libevent/.libs/libevent-2.1.so.7.0.1 $(INSTALLDIR)/libevent/usr/lib/libevent-2.1.so.7
+	install -D libevent/.libs/libevent-2.1.so.7.0.2 $(INSTALLDIR)/libevent/usr/lib/libevent-2.1.so.7
 	$(STRIP) -s $(INSTALLDIR)/libevent/usr/lib/libevent-2.1.so.7
 	cd $(INSTALLDIR)/libevent/usr/lib/ && ln -sf libevent-2.1.so.7 libevent.so
 endif

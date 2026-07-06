@@ -310,16 +310,14 @@ bool outside_of_confinement(const char *currpath, bool allow_tabcomp);
 void init_backup_dir(void);
 #endif
 int copy_file(FILE *inn, FILE *out, bool close_out);
-bool write_file(const char *name, FILE *thefile, bool normal,
-				kind_of_writing_type method, bool annotate);
+bool write_file(const char *name, FILE *thefile, writing_type method, bool annotate);
 #ifndef NANO_TINY
-bool write_region_to_file(const char *name, FILE *stream, bool normal,
-				kind_of_writing_type method);
+bool write_region_to_file(const char *name, FILE *stream, writing_type method);
 #endif
 int write_it_out(bool exiting, bool withprompt);
 void do_writeout(void);
 void do_savefile(void);
-char *real_dir_from_tilde(const char *path);
+char *expand_leading_tilde(const char *path);
 #if defined(ENABLE_TABCOMP) || defined(ENABLE_BROWSER)
 int diralphasort(const void *va, const void *vb);
 #endif
@@ -574,15 +572,15 @@ const char *strstrwrapper(const char *haystack, const char *needle,
 		const char *start);
 void *nmalloc(size_t howmuch);
 void *nrealloc(void *ptr, size_t howmuch);
-char *measured_copy(const char *string, size_t count);
 char *mallocstrcpy(char *dest, const char *src);
+char *measured_copy(const char *string, size_t count);
 char *copy_of(const char *string);
 char *free_and_assign(char *dest, char *src);
 size_t get_page_start(size_t column);
-size_t xplustabs(void);
 size_t actual_x(const char *text, size_t column);
-size_t wideness(const char *text, size_t maxlen);
+size_t wideness(const char *text, size_t count);
 size_t breadth(const char *text);
+size_t xplustabs(void);
 void new_magicline(void);
 #if !defined(NANO_TINY) || defined(ENABLE_HELP)
 void remove_magicline(void);
@@ -671,7 +669,6 @@ void get_older_item(void);
 void get_newer_item(void);
 #endif
 void flip_replace(void);
-void flip_goto(void);
 #ifdef ENABLE_BROWSER
 void to_files(void);
 void goto_dir(void);
@@ -680,7 +677,6 @@ void goto_dir(void);
 void do_nothing(void);
 void do_toggle(void);
 void dos_format(void);
-void mac_format(void);
 void append_it(void);
 void prepend_it(void);
 void back_it_up(void);

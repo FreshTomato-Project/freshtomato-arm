@@ -68,7 +68,9 @@ AC_DEFUN([gl_EARLY],
   # Code from module c32isspace:
   # Code from module c32isupper:
   # Code from module c32isxdigit:
+  # Code from module c32rtomb:
   # Code from module c32tolower:
+  # Code from module c32toupper:
   # Code from module c32width:
   # Code from module c99:
   # Code from module canonicalize-lgpl:
@@ -158,6 +160,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module localcharset:
   # Code from module locale-h:
   # Code from module localeconv:
+  # Code from module localeinfo:
   # Code from module lock:
   # Code from module lstat:
   # Code from module malloc-gnu:
@@ -165,8 +168,10 @@ AC_DEFUN([gl_EARLY],
   # Code from module malloca:
   # Code from module math-h:
   # Code from module mbchar:
+  # Code from module mbiter-aux:
   # Code from module mbiterf:
   # Code from module mbrtoc32:
+  # Code from module mbrtoc32-regular:
   # Code from module mbrtowc:
   # Code from module mbsinit:
   # Code from module mbsnlen:
@@ -200,6 +205,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module pthread-h:
   gl_ANYTHREADLIB_EARLY
   # Code from module pthread-once:
+  # Code from module pthread_sigmask:
   # Code from module raise:
   # Code from module rawmemchr:
   # Code from module readdir:
@@ -267,6 +273,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module uchar-h:
   # Code from module unicase/base:
   # Code from module unicase/tolower:
+  # Code from module unicase/toupper:
   # Code from module unictype/base:
   # Code from module unictype/ctype-alnum:
   # Code from module unictype/ctype-alpha:
@@ -309,6 +316,8 @@ AC_DEFUN([gl_EARLY],
   # Code from module windows-once:
   # Code from module windows-recmutex:
   # Code from module windows-rwlock:
+  # Code from module windows-spin:
+  # Code from module windows-tls:
   # Code from module wmemchr:
   # Code from module wmempcpy:
   # Code from module xalloc-oversized:
@@ -438,6 +447,10 @@ AC_DEFUN([gl_INIT],
   AC_REQUIRE([gl_MBRTOC32_SANITYCHECK])
   AC_REQUIRE([gl_C32RTOMB_SANITYCHECK])
   gl_UCHAR_MODULE_INDICATOR([c32isxdigit])
+  gl_FUNC_C32RTOMB
+  gl_CONDITIONAL([GL_COND_OBJ_C32RTOMB],
+                 [test $HAVE_C32RTOMB = 0 || test $REPLACE_C32RTOMB = 1])
+  gl_UCHAR_MODULE_INDICATOR([c32rtomb])
   AC_REQUIRE([gl_UCHAR_H])
   dnl Determine REPLACE_MBSTATE_T, from which GNULIB_defined_mbstate_t is
   dnl determined.  It describes how mbrtoc32 is implemented.
@@ -445,6 +458,13 @@ AC_DEFUN([gl_INIT],
   AC_REQUIRE([gl_MBRTOC32_SANITYCHECK])
   AC_REQUIRE([gl_C32RTOMB_SANITYCHECK])
   gl_UCHAR_MODULE_INDICATOR([c32tolower])
+  AC_REQUIRE([gl_UCHAR_H])
+  dnl Determine REPLACE_MBSTATE_T, from which GNULIB_defined_mbstate_t is
+  dnl determined.  It describes how mbrtoc32 is implemented.
+  AC_REQUIRE([gl_MBSTATE_T_BROKEN])
+  AC_REQUIRE([gl_MBRTOC32_SANITYCHECK])
+  AC_REQUIRE([gl_C32RTOMB_SANITYCHECK])
+  gl_UCHAR_MODULE_INDICATOR([c32toupper])
   AC_REQUIRE([gl_UCHAR_H])
   dnl Determine REPLACE_MBSTATE_T, from which GNULIB_defined_mbstate_t is
   dnl determined.  It describes how mbrtoc32 is implemented.
@@ -782,6 +802,8 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_MBRTOC32
   ])
   gl_UCHAR_MODULE_INDICATOR([mbrtoc32])
+  gl_FUNC_MBRTOC32_REGULAR
+  gl_MODULE_INDICATOR([mbrtoc32-regular])
   gl_FUNC_MBRTOWC
   gl_CONDITIONAL([GL_COND_OBJ_MBRTOWC],
                  [test $HAVE_MBRTOWC = 0 || test $REPLACE_MBRTOWC = 1])
@@ -901,6 +923,13 @@ AC_DEFUN([gl_INIT],
   gl_CONDITIONAL([GL_COND_OBJ_PTHREAD_ONCE],
                  [test $HAVE_PTHREAD_ONCE = 0 || test $REPLACE_PTHREAD_ONCE = 1])
   gl_PTHREAD_MODULE_INDICATOR([pthread-once])
+  gl_FUNC_PTHREAD_SIGMASK
+  gl_CONDITIONAL([GL_COND_OBJ_PTHREAD_SIGMASK],
+                 [test $HAVE_PTHREAD_SIGMASK = 0 || test $REPLACE_PTHREAD_SIGMASK = 1])
+  AM_COND_IF([GL_COND_OBJ_PTHREAD_SIGMASK], [
+    gl_PREREQ_PTHREAD_SIGMASK
+  ])
+  gl_SIGNAL_MODULE_INDICATOR([pthread_sigmask])
   gl_FUNC_RAISE
   gl_CONDITIONAL([GL_COND_OBJ_RAISE],
                  [test $HAVE_RAISE = 0 || test $REPLACE_RAISE = 1])
@@ -1136,7 +1165,8 @@ AC_DEFUN([gl_INIT],
   gl_UNICASE_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
   gl_LIBUNISTRING_MODULE([1.4], [unicase/tolower])
-  gl_LIBUNISTRING_LIBHEADER([1.3], [unictype.h])
+  gl_LIBUNISTRING_MODULE([1.4], [unicase/toupper])
+  gl_LIBUNISTRING_LIBHEADER([1.4], [unictype.h])
   gl_UNICTYPE_H
   gl_UNICTYPE_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
@@ -1236,6 +1266,12 @@ AC_DEFUN([gl_INIT],
                  [case "$host_os" in mingw* | windows*) true;; *) false;; esac])
   AC_REQUIRE([AC_CANONICAL_HOST])
   gl_CONDITIONAL([GL_COND_OBJ_WINDOWS_RWLOCK],
+                 [case "$host_os" in mingw* | windows*) true;; *) false;; esac])
+  AC_REQUIRE([AC_CANONICAL_HOST])
+  gl_CONDITIONAL([GL_COND_OBJ_WINDOWS_SPIN],
+                 [case "$host_os" in mingw* | windows*) true;; *) false;; esac])
+  AC_REQUIRE([AC_CANONICAL_HOST])
+  gl_CONDITIONAL([GL_COND_OBJ_WINDOWS_TLS],
                  [case "$host_os" in mingw* | windows*) true;; *) false;; esac])
   gl_FUNC_WMEMCHR
   gl_CONDITIONAL([GL_COND_OBJ_WMEMCHR], [test $HAVE_WMEMCHR = 0])
@@ -1462,8 +1498,10 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/c32isspace.c
   lib/c32isupper.c
   lib/c32isxdigit.c
+  lib/c32rtomb.c
   lib/c32to-impl.h
   lib/c32tolower.c
+  lib/c32toupper.c
   lib/c32width.c
   lib/canonicalize-lgpl.c
   lib/cdefs.h
@@ -1574,6 +1612,8 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/localcharset.h
   lib/locale.in.h
   lib/localeconv.c
+  lib/localeinfo.c
+  lib/localeinfo.h
   lib/lstat.c
   lib/malloc.c
   lib/malloc/dynarray-skeleton.c
@@ -1593,6 +1633,8 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/math.in.h
   lib/mbchar.c
   lib/mbchar.h
+  lib/mbiter-aux.c
+  lib/mbiter-aux.h
   lib/mbiterf.c
   lib/mbiterf.h
   lib/mbrtoc32.c
@@ -1643,6 +1685,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/printf-parse.h
   lib/pthread-once.c
   lib/pthread.in.h
+  lib/pthread_sigmask.c
   lib/raise.c
   lib/rawmemchr.c
   lib/rawmemchr.valgrind
@@ -1723,6 +1766,8 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/unicase/simple-mapping.h
   lib/unicase/tolower.c
   lib/unicase/tolower.h
+  lib/unicase/toupper.c
+  lib/unicase/toupper.h
   lib/unictype.in.h
   lib/unictype/bitmap.h
   lib/unictype/ctype_alnum.c
@@ -1794,6 +1839,10 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/windows-recmutex.h
   lib/windows-rwlock.c
   lib/windows-rwlock.h
+  lib/windows-spin.c
+  lib/windows-spin.h
+  lib/windows-tls.c
+  lib/windows-tls.h
   lib/wmemchr-impl.h
   lib/wmemchr.c
   lib/wmempcpy.c
@@ -1897,6 +1946,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/math_h.m4
   m4/mbchar.m4
   m4/mbiter.m4
+  m4/mbrtoc32-regular.m4
   m4/mbrtoc32.m4
   m4/mbrtowc.m4
   m4/mbsinit.m4
@@ -1935,6 +1985,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/pthread-spin.m4
   m4/pthread_h.m4
   m4/pthread_rwlock_rdlock.m4
+  m4/pthread_sigmask.m4
   m4/raise.m4
   m4/rawmemchr.m4
   m4/readdir.m4

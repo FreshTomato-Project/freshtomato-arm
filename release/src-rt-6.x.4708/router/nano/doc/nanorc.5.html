@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed Apr  8 15:04:25 2026 -->
+<!-- CreationDate: Tue Jun 23 05:29:12 2026 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -53,11 +53,10 @@ startup, if <b>--rcfile</b> is not given, <b>nano</b> reads
 two files: first the system-wide settings, from
 <i>/etc/nanorc</i> (the exact path might be different on
 your system), and then the user-specific settings, either
-from <i>~/.nanorc</i> or from
-<i>$XDG_CONFIG_HOME/nano/nanorc</i> or from
-<i>~/.config/nano/nanorc</i>, whichever is encountered
-first. If <b>--rcfile</b> is given, <b>nano</b> reads just
-the specified settings file.</p>
+from <i>~/.nanorc</i> or from <i>$XDG_CONFIG_HOME/
+nano/nanorc</i> or from <i>~/.config/nano/nanorc</i>,
+whichever is encountered first. If <b>--rcfile</b> is given,
+<b>nano</b> reads just the specified settings file.</p>
 
 <h2>NOTICES
 <a name="NOTICES"></a>
@@ -74,10 +73,10 @@ the command line or <b>set solosidescroll</b> in your
 
 <p style="margin-left:11%; margin-top: 1em">Also since
 version 9.0, keystrokes <b>M-&lt;</b> and <b>M-&gt;</b> have
-been reassigned to the &rsquo;scrollleft&rsquo; and
-&rsquo;scrollright&rsquo; functions. If you want those
-keystrokes to do what they did before version 9.0, add these
-two lines at the end of your <i>nanorc</i> file:</p>
+been reassigned to the <b>scrollleft</b> and
+<b>scrollright</b> functions. If you want those keystrokes
+to do what they did before version 9.0, add these two lines
+at the end of your <i>nanorc</i> file:</p>
 
 <p style="margin-left:17%; margin-top: 1em"><b>bind M-&lt;
 prevbuf main <br>
@@ -105,15 +104,16 @@ bind M-B linter main</b></p>
 
 <p style="margin-left:11%; margin-top: 1em">The
 configuration file accepts a series of <b>set</b> and
-<b>unset</b> commands, which can be used to configure nano
-on startup without using command-line options. Additionally,
-there are some commands to define syntax highlighting and to
-rebind keys &mdash; see the two separate sections on those.
-<b>nano</b> reads one command per line. All commands and
-keywords should be written in lowercase.</p>
+<b>unset</b> commands, which can be used to configure
+<b>nano</b> on startup without using command-line options.
+Additionally, there are some commands to define syntax
+highlighting and to rebind keys &mdash; see the two separate
+sections on those. <b>nano</b> reads one command per line.
+All commands and keywords should be written in
+lowercase.</p>
 
 <p style="margin-left:11%; margin-top: 1em">Options in
-<i>nanorc</i> files take precedence over nano&rsquo;s
+<i>nanorc</i> files take precedence over <b>nano</b>&rsquo;s
 defaults, and command-line options override <i>nanorc</i>
 settings. Also, options that do not take an argument are
 unset by default. So using the <b>unset</b> command is only
@@ -282,10 +282,10 @@ they can be easily reused in later sessions.</p>
 
 <p style="margin-left:11%;"><b>set indicator</b></p>
 
-<p style="margin-left:15%;">Display a &quot;scrollbar&quot;
-on the righthand side of the edit window. It shows the
-position of the viewport in the buffer and how much of the
-buffer is covered by the viewport.</p>
+<p style="margin-left:15%;">Display a
+&ldquo;scrollbar&rdquo; on the righthand side of the edit
+window. It shows the position of the viewport in the buffer
+and how much of the buffer is covered by the viewport.</p>
 
 <p style="margin-left:11%;"><b>set jumpyscrolling</b></p>
 
@@ -308,16 +308,16 @@ gets a mark in the margin.)</p>
 
 <p style="margin-left:11%;"><b>set locking</b></p>
 
-<p style="margin-left:15%;">Enable vim-style lock-files for
-when editing files.</p>
+<p style="margin-left:15%;">Use vim-style lock-files when
+editing files.</p>
 
 <p style="margin-left:11%;"><b>set magic</b></p>
 
 <p style="margin-left:15%;">When neither the file&rsquo;s
-name nor its first line give a clue, try using libmagic to
-determine the applicable syntax. (Calling libmagic can be
-relatively time consuming. It is therefore not done by
-default.)</p>
+name nor its first line give a clue, try using
+<i>libmagic</i> to determine the applicable syntax. (Calling
+<i>libmagic</i> can be relatively time consuming. It is
+therefore not done by default.)</p>
 
 <p style="margin-left:11%;"><b>set matchbrackets
 &quot;</b><i>characters</i><b>&quot;</b></p>
@@ -333,21 +333,21 @@ The default value is &quot;<b>(&lt;[{)&gt;]}</b>&quot;.</p>
 <p style="margin-left:15%;">Suppress the title bar and
 instead show information about the current buffer at the
 bottom of the screen, in the space for the status bar. In
-this &quot;mini bar&quot; the filename is shown on the left,
-followed by an asterisk if the buffer has been modified. On
-the right are displayed the current line and column number,
-the code of the character under the cursor (in Unicode
-format: U+xxxx), the same flags as are shown by <b>set
-stateflags</b>, and a percentage that expresses how far the
-cursor is into the file (linewise). When a file is loaded or
-saved, and also when switching between buffers, the number
-of lines in the buffer is displayed after the filename. This
-number is cleared upon the next keystroke, or replaced with
-an [i/n] counter when multiple buffers are open. The line
-plus column numbers and the character code are displayed
-only when <b>set constantshow</b> is used, and can be
-toggled on and off with <b>M-C</b>. The state flags are
-displayed only when <b>set stateflags</b> is used.</p>
+this &ldquo;mini bar&rdquo; the filename is shown on the
+left, followed by an asterisk if the buffer has been
+modified. On the right are displayed the current line and
+column number, the code of the character under the cursor
+(in Unicode format: U+xxxx), the same flags as are shown by
+<b>set stateflags</b>, and a percentage that expresses how
+far the cursor is into the file (linewise). When a file is
+loaded or saved, and also when switching between buffers,
+the number of lines in the buffer is displayed after the
+filename. This number is cleared upon the next keystroke, or
+replaced with an [i/n] counter when multiple buffers are
+open. The line plus column numbers and the character code
+are displayed only when <b>set constantshow</b> is used, and
+can be toggled on and off with <b>M-C</b>. The state flags
+are displayed only when <b>set stateflags</b> is used.</p>
 
 <p style="margin-left:11%;"><b>set minicolor</b>
 [<b>bold,</b>][<b>italic,</b>]<i>fgcolor</i><b>,</b><i>bgcolor</i></p>
@@ -375,7 +375,7 @@ key.</p>
 <p style="margin-left:11%;"><b>set noconvert</b></p>
 
 <p style="margin-left:15%;">Don&rsquo;t convert files from
-DOS/Mac format.</p>
+DOS format.</p>
 
 <p style="margin-left:11%;"><b>set nohelp</b></p>
 
@@ -462,9 +462,9 @@ writing source code.</p>
 <p style="margin-left:11%;"><b>set rawsequences</b></p>
 
 <p style="margin-left:15%;">Interpret escape sequences
-directly, instead of asking <b>ncurses</b> to translate
+directly, instead of asking <i>ncurses</i> to translate
 them. (If you need this option to get some keys to work
-properly, it means that the <b>terminfo</b> terminal
+properly, it means that the <i>terminfo</i> terminal
 description that is used does not fully match the actual
 behavior of your terminal. This can happen when you ssh into
 a BSD machine, for example.) Using this option disables
@@ -493,7 +493,7 @@ automatically on exit (<b>^X</b>); don&rsquo;t prompt.</p>
 <i>fgcolor</i><b>,</b><i>bgcolor</i></p>
 
 <p style="margin-left:15%;">Use this color combination for
-the indicator alias &quot;scrollbar&quot;. See <b>set
+the indicator alias &ldquo;scrollbar&rdquo;. See <b>set
 titlecolor</b> for more details.</p>
 
 <p style="margin-left:11%;"><b>set selectedcolor</b>
@@ -637,9 +637,9 @@ text is justified.</p>
 <p style="margin-left:11%;"><b>set unix</b></p>
 
 <p style="margin-left:15%;">Save a file by default in Unix
-format. This overrides nano&rsquo;s default behavior of
-saving a file in the format that it had. (This option has no
-effect when you also use <b>set noconvert</b>.)</p>
+format. This overrides <b>nano</b>&rsquo;s default behavior
+of saving a file in the format that it had. (This option has
+no effect when you also use <b>set noconvert</b>.)</p>
 
 <p style="margin-left:11%;"><b>set whitespace
 &quot;</b><i>characters</i><b>&quot;</b></p>
@@ -710,7 +710,7 @@ possible. A complete explanation can be found in the manual
 page of GNU grep: <b>man grep</b>.</p>
 
 <p style="margin-left:11%; margin-top: 1em">Each regular
-expression in a <b>nanorc</b> file should be wrapped in
+expression in a <i>nanorc</i> file should be wrapped in
 double quotes (<b>&quot;&quot;</b>). Multiple regular
 expressions can follow each other on a line by separating
 them with blanks. This means that a regular expression
@@ -735,7 +735,7 @@ new <b>syntax</b> command is encountered.</p>
 (for the relevant buffer) if the absolute filename matches
 the extended regular expression <i>fileregex</i>. Or the
 syntax can be explicitly activated (for all buffers) by
-using the <b>-Y</b> or <b>--syntax</b> command-line option
+using the <b>-Y</b> or <b>--- syntax</b> command-line option
 followed by the <i>name</i>.</p>
 
 <p style="margin-left:22%; margin-top: 1em">The syntax
@@ -759,9 +759,9 @@ determine whether this syntax should be used for it.</p>
 <p style="margin-left:22%;">If no <i>fileregex</i> matched
 and no <b>header</b> regex matched either, then compare this
 <i>regex</i> (or regexes) against the result of querying the
-<b>magic</b> database about the current file, to determine
+<i>magic</i> database about the current file, to determine
 whether this syntax should be used for it. (This querying is
-done only when <b>libmagic</b> is actually installed on the
+done only when <i>libmagic</i> is actually installed on the
 system and <b>--magic</b> or <b>set magic</b> was
 given.)</p>
 
@@ -788,10 +788,11 @@ bracket-style comments; for example,
 before the pipe are prepended to the line and the characters
 after the pipe are appended at the end of the line. If no
 pipe character is present, the full string is prepended; for
-example, &quot;<b>#</b>&quot; for Python files. If empty
-double quotes are specified, the comment/uncomment function
-is disabled; for example, &quot;&quot; for JSON. The default
-value is &quot;<b>#</b>&quot;.</p>
+example, &quot;<b>#</b>&quot; for Python files. If nothing
+is specified between the double quotes, then the
+comment/uncomment function is disabled; for example,
+&quot;&quot; for JSON. The default value is
+&quot;<b>#</b>&quot;.</p>
 
 <p style="margin-left:11%;"><b>tabgives
 &quot;</b><i>string</i><b>&quot;</b></p>
@@ -968,7 +969,8 @@ ASCII characters (@, ], \, ^, _), or the word
 
 <p>where <i>X</i> is any ASCII character (except [), or the
 word &quot;Space&quot;, &quot;Left&quot;, &quot;Right&quot;,
-&quot;Up&quot;, or &quot;Down&quot;. Example: M-8.</p></td></tr>
+&quot;Up&quot;, &quot;Down&quot;, &quot;Ins&quot;, or
+&quot;Del&quot;. Example: M-8.</p></td></tr>
 <tr valign="top" align="left">
 <td width="15%"></td>
 <td width="10%">
@@ -980,9 +982,9 @@ word &quot;Space&quot;, &quot;Left&quot;, &quot;Right&quot;,
 
 
 <p>where <i>X</i> is a Latin letter. Example: Sh-M-U. By
-default, each Meta+letter keystroke does the same as the
-corresponding Shift+Meta+letter. But when any Shift+Meta
-bind is made, that will no longer be the case, for all
+default, each Shift+Meta+letter keystroke does the same as
+the corresponding Meta+letter. But when any Shift+Meta bind
+is made, that will no longer be the case, for all
 letters.</p> </td></tr>
 <tr valign="top" align="left">
 <td width="15%"></td>
@@ -1417,7 +1419,7 @@ action (add text, delete text, etc).</p>
 <p style="margin-left:15%;"><b>redo</b></p>
 
 <p style="margin-left:18%;">Redoes the last undone action
-(i.e., it undoes an undo).</p>
+(that is: it undoes an undo).</p>
 
 <p style="margin-left:15%;"><b>refresh</b></p>
 
@@ -1461,11 +1463,6 @@ entry at a prompt.</p>
 <p style="margin-left:18%;">Toggles between searching for
 something and replacing something.</p>
 
-<p style="margin-left:15%;"><b>flipgoto</b></p>
-
-<p style="margin-left:18%;">Toggles between searching for
-text and targeting a line number.</p>
-
 <p style="margin-left:15%;"><b>flipexecute</b></p>
 
 <p style="margin-left:18%;">Switches from inserting a file
@@ -1485,18 +1482,13 @@ the current buffer and into a new empty buffer.</p>
 <p style="margin-left:15%;"><b>flipconvert</b></p>
 
 <p style="margin-left:18%;">When reading in a file, toggles
-between converting and not converting it from DOS/Mac
-format. Converting is the default.</p>
+between converting and not converting it from DOS format.
+Converting is the default.</p>
 
 <p style="margin-left:15%;"><b>dosformat</b></p>
 
 <p style="margin-left:18%;">When writing a file, switches
-to writing a DOS format (CR/LF).</p>
-
-<p style="margin-left:15%;"><b>macformat</b></p>
-
-<p style="margin-left:18%;">When writing a file, switches
-to writing a Mac format.</p>
+to writing DOS format (CR+LF line endings).</p>
 
 <p style="margin-left:15%;"><b>append</b></p>
 
@@ -1506,7 +1498,7 @@ the end instead of overwriting.</p>
 <p style="margin-left:15%;"><b>prepend</b></p>
 
 <p style="margin-left:18%;">When writing a file,
-&quot;prepends&quot; (writes at the beginning) instead of
+&ldquo;prepends&rdquo; (writes at the beginning) instead of
 overwriting.</p>
 
 <p style="margin-left:15%;"><b>backup</b></p>

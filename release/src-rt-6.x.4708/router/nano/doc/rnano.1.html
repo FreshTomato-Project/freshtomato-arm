@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed Apr  8 15:02:18 2026 -->
+<!-- CreationDate: Tue Jun 23 05:25:01 2026 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -46,7 +46,8 @@ restricted nano</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>rnano</b>
 [<i>options</i>]
-[[+<i>line</i>[,<i>column</i>]]&nbsp;<i>file</i>]...</p>
+[[<b>+</b><i>line</i>[<b>,</b><i>column</i>]]
+<i>file</i>]...</p>
 
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
@@ -55,9 +56,8 @@ restricted nano</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>rnano</b>
 runs the <b>nano</b> editor in restricted mode. This allows
-editing only the specified file or files, and doesn&rsquo;t
-allow the user access to the filesystem nor to a command
-shell.</p>
+editing only the <i>file</i> (or files) specified on the
+command line.</p>
 
 <p style="margin-left:11%; margin-top: 1em">In restricted
 mode, <b>nano</b> will:</p>
@@ -65,85 +65,110 @@ mode, <b>nano</b> will:</p>
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
-<td width="11%"></td>
+<td width="17%"></td>
 <td width="1%">
 
 
 <p>&bull;</p></td>
 <td width="2%"></td>
-<td width="86%">
+<td width="80%">
 
 
 <p>not make backups;</p></td></tr>
 <tr valign="top" align="left">
-<td width="11%"></td>
+<td width="17%"></td>
 <td width="1%">
 
 
 <p>&bull;</p></td>
 <td width="2%"></td>
-<td width="86%">
-
-
-<p>not allow suspending;</p></td></tr>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="1%">
-
-
-<p>&bull;</p></td>
-<td width="2%"></td>
-<td width="86%">
-
-
-<p>not allow spell checking;</p></td></tr>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="1%">
-
-
-<p>&bull;</p></td>
-<td width="2%"></td>
-<td width="86%">
+<td width="80%">
 
 
 <p>not read nor write the history files;</p></td></tr>
 <tr valign="top" align="left">
-<td width="11%"></td>
+<td width="17%"></td>
 <td width="1%">
 
 
 <p>&bull;</p></td>
 <td width="2%"></td>
-<td width="86%">
+<td width="80%">
+
+
+<p>not allow suspending;</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="2%"></td>
+<td width="80%">
+
+
+<p>not allow spell checking;</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="2%"></td>
+<td width="80%">
+
+
+<p>not allow running any command in the shell;</p></td></tr>
+<tr valign="top" align="left">
+<td width="17%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="2%"></td>
+<td width="80%">
 
 
 <p>not allow saving the current buffer under a different
 name;</p> </td></tr>
 <tr valign="top" align="left">
-<td width="11%"></td>
+<td width="17%"></td>
 <td width="1%">
 
 
 <p>&bull;</p></td>
 <td width="2%"></td>
-<td width="86%">
+<td width="80%">
 
 
 <p>not allow inserting another file or opening a new
 buffer;</p> </td></tr>
 <tr valign="top" align="left">
-<td width="11%"></td>
+<td width="17%"></td>
 <td width="1%">
 
 
 <p>&bull;</p></td>
 <td width="2%"></td>
-<td width="86%">
+<td width="80%">
 
 
 <p>not allow appending or prepending to any file.</p></td></tr>
 </table>
+
+<p style="margin-left:11%; margin-top: 1em">As an
+exception, before the specified file or files, the
+<i>nanorc</i> files are read, to allow customization. If
+customization should not be allowed, use option <b>-I</b>
+(<b>--ignorercfiles</b>) as well.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When no
+<i>file</i> is specified on the command line, the user may
+save the contents that they type into the new buffer under
+any name, except that existing files may not be overwritten.
+If the places where this new file may be created should be
+limited, then additionally use the option <b>-o</b>
+(<b>--operatingdir</b>).</p>
 
 <h2>OPTIONS
 <a name="OPTIONS"></a>

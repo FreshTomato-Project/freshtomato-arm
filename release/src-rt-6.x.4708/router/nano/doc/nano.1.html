@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Wed Apr  8 15:02:17 2026 -->
+<!-- CreationDate: Tue Jun 23 05:25:01 2026 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -22,8 +22,8 @@
 
 <a href="#NAME">NAME</a><br>
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
-<a href="#NOTICES">NOTICES</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#NOTICES">NOTICES</a><br>
 <a href="#EDITING">EDITING</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
 <a href="#TOGGLES">TOGGLES</a><br>
@@ -60,45 +60,6 @@ Nano&rsquo;s ANOther text editor, inspired by Pico</p>
 [[<b>+</b>[<b>crCR</b>]{<b>/</b>|<b>?</b>}<i>string</i>]
 <i>file</i>]...</p>
 
-<h2>NOTICES
-<a name="NOTICES"></a>
-</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em">Since version
-9.0, all lines are scrolled horizontally together (when the
-cursor approaches the edge), by just the amount needed,
-instead of scrolling only the current line by a large step.
-If you prefer the old behavior, you can use <b>--solo</b> on
-the command line or <b>set solosidescroll</b> in your
-<i>nanorc</i>.</p>
-
-<p style="margin-left:11%; margin-top: 1em">Also since
-version 9.0, keystrokes <b>M-&lt;</b> and <b>M-&gt;</b> have
-been reassigned to the &rsquo;scrollleft&rsquo; and
-&rsquo;scrollright&rsquo; functions. If you want those
-keystrokes to do what they did before version 9.0, add these
-two lines at the end of your <i>nanorc</i> file:</p>
-
-<p style="margin-left:17%; margin-top: 1em"><b>bind M-&lt;
-prevbuf main <br>
-bind M-&gt; nextbuf main</b></p>
-
-<p style="margin-left:11%; margin-top: 1em">Since version
-8.0, to be newcomer friendly, <b>^F</b> starts a forward
-search, <b>^B</b> starts a backward search, <b>M-F</b>
-searches the next occurrence forward, and <b>M-B</b>
-searches the next occurrence backward. If you want those
-keystrokes to do what they did before version 8.0, add the
-following four lines at the end of your <i>nanorc</i>
-file:</p>
-
-<p style="margin-left:17%; margin-top: 1em"><b>bind ^F
-forward main <br>
-bind ^B back main <br>
-bind M-F formatter main <br>
-bind M-B linter main</b></p>
-
 <h2>DESCRIPTION
 <a name="DESCRIPTION"></a>
 </h2>
@@ -106,7 +67,7 @@ bind M-B linter main</b></p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>nano</b> is
 a small and friendly text editor. It copies the look and
-feel of Pico, but is free software, and implements several
+feel of Pico, but is free software, and implements a few
 features that Pico lacks, such as: opening multiple files,
 scrolling per line, undo/redo, syntax coloring, line
 numbering, and soft-wrapping overlong lines.</p>
@@ -138,13 +99,52 @@ do:</p>
 case: if instead of a filename a dash (<b>-</b>) is given,
 <b>nano</b> will read data from standard input.</p>
 
+<h2>NOTICES
+<a name="NOTICES"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Since version
+9.0, all lines are scrolled horizontally together (when the
+cursor approaches the edge), by just the amount needed,
+instead of scrolling only the current line by a large step.
+If you prefer the old behavior, you can use <b>--solo</b> on
+the command line or <b>set solosidescroll</b> in your
+<i>nanorc</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also since
+version 9.0, keystrokes <b>M-&lt;</b> and <b>M-&gt;</b> have
+been reassigned to the <b>scrollleft</b> and
+<b>scrollright</b> functions. If you want those keystrokes
+to do what they did before version 9.0, add these two lines
+at the end of your <i>nanorc</i> file:</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>bind M-&lt;
+prevbuf main <br>
+bind M-&gt; nextbuf main</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">Since version
+8.0, to be newcomer friendly, <b>^F</b> starts a forward
+search, <b>^B</b> starts a backward search, <b>M-F</b>
+searches the next occurrence forward, and <b>M-B</b>
+searches the next occurrence backward. If you want those
+keystrokes to do what they did before version 8.0, add the
+following four lines at the end of your <i>nanorc</i>
+file:</p>
+
+<p style="margin-left:17%; margin-top: 1em"><b>bind ^F
+forward main <br>
+bind ^B back main <br>
+bind M-F formatter main <br>
+bind M-B linter main</b></p>
+
 <h2>EDITING
 <a name="EDITING"></a>
 </h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">Entering text
-and moving around in a file is straightforward: typing the
+and moving around in a file are straightforward: typing the
 letters and using the normal cursor movement keys. Commands
 are entered by using the Control (^) and the Alt or Meta
 (M-) keys. Typing <b>^K</b> deletes the current line and
@@ -221,7 +221,7 @@ instead of reverse video. This can be overridden for
 specific elements by setting the options <b>titlecolor</b>,
 <b>statuscolor</b>, <b>promptcolor</b>, <b>minicolor</b>,
 <b>keycolor</b>, <b>numbercolor</b>, and/or
-<b>selectedcolor</b> in your nanorc file. See
+<b>selectedcolor</b> in your <i>nanorc</i> file. See
 <b>nanorc</b>(5).</p>
 
 <p style="margin-left:11%;"><b>-E</b>,
@@ -269,9 +269,9 @@ stripecolor</b> in your <i>nanorc</i> file.)</p>
 <b>--rawsequences</b></p>
 
 <p style="margin-left:22%;">Interpret escape sequences
-directly, instead of asking <b>ncurses</b> to translate
+directly, instead of asking <i>ncurses</i> to translate
 them. (If you need this option to get some keys to work
-properly, it means that the <b>terminfo</b> terminal
+properly, it means that the <i>terminfo</i> terminal
 description that is used does not fully match the actual
 behavior of your terminal. This can happen when you ssh into
 a BSD machine, for example.) Using this option disables
@@ -295,7 +295,7 @@ text is justified.</p>
 <b>--noconvert</b></p>
 
 <p style="margin-left:22%;">Disable automatic conversion of
-files from DOS/Mac format.</p>
+files from DOS format.</p>
 
 <p style="margin-left:11%;"><b>-O</b>,
 <b>--bookstyle</b></p>
@@ -327,15 +327,34 @@ source code.</p>
 <p style="margin-left:11%;"><b>-R</b>,
 <b>--restricted</b></p>
 
-<p style="margin-left:22%;">Restricted mode: don&rsquo;t
-read or write to any file not specified on the command line.
-This means: don&rsquo;t read or write history files;
+<p style="margin-left:22%;">Read and write only the
+<i>file</i> (or files) specified on the command line. This
+means: don&rsquo;t read or write the history files;
 don&rsquo;t allow suspending; don&rsquo;t allow spell
-checking; don&rsquo;t allow a file to be appended to,
-prepended to, or saved under a different name if it already
-has one; and don&rsquo;t make backup files. Restricted mode
-can also be activated by invoking <b>nano</b> with any name
-beginning with &rsquo;r&rsquo; (e.g. &quot;rnano&quot;).</p>
+checking; don&rsquo;t allow executing any command in the
+shell; don&rsquo;t allow the current buffer to be saved
+under a different name; don&rsquo;t allow appending or
+prepending to any file; and don&rsquo;t make backup
+files.</p>
+
+<p style="margin-left:22%; margin-top: 1em">As an
+exception, before the specified file or files, the
+<i>nanorc</i> files are read, to allow customization. If
+customization should not be allowed, use option <b>-I</b>
+(<b>--ignorercfiles</b>) as well.</p>
+
+<p style="margin-left:22%; margin-top: 1em">When no
+<i>file</i> is specified on the command line, restricted
+mode allows you to save the contents that you type into the
+new buffer under any name, except that existing files may
+not be overwritten. If the places where this new file may be
+created should be limited, then use option <b>-o</b>
+(<b>--operatingdir</b>) as well.</p>
+
+<p style="margin-left:22%; margin-top: 1em">Restricted mode
+can also be activated by invoking <b>nano</b> with a name
+beginning with &rsquo;r&rsquo; (for example:
+<b>rnano</b>).</p>
 
 <p style="margin-left:11%;"><b>-S</b>,
 <b>--softwrap</b></p>
@@ -343,8 +362,8 @@ beginning with &rsquo;r&rsquo; (e.g. &quot;rnano&quot;).</p>
 <p style="margin-left:22%;">Display over multiple screen
 rows lines that exceed the screen&rsquo;s width. (You can
 make this soft-wrapping occur at whitespace instead of
-rudely at the screen&rsquo;s edge, by using also
-<b>--atblanks</b>.)</p>
+rudely at the screen&rsquo;s edge, by using also <b>---
+atblanks</b>.)</p>
 
 <p style="margin-left:11%;"><b>-T</b> <i>number</i>,
 <b>--tabsize=</b><i>number</i></p>
@@ -412,8 +431,8 @@ current line when it becomes overlong, that is: when it
 becomes wider than the value given with <b>-r</b>
 (<b>--fill</b>). The default value for <b>-r</b> is the
 terminal&rsquo;s width minus eight. (This option is the
-opposite of <b>-w</b> (<b>--nowrap</b>) &mdash; the last one
-given takes effect.)</p>
+opposite of <b>-w</b> (<b>--- nowrap</b>) &mdash; the last
+one given takes effect.)</p>
 
 <p style="margin-left:11%;"><b>-c</b>,
 <b>--constantshow</b></p>
@@ -441,8 +460,9 @@ title bar, leaving it entirely blank.</p>
 <b>--rcfile=</b><i>file</i></p>
 
 <p style="margin-left:22%;">Read only this <i>file</i> for
-setting nano&rsquo;s options, instead of reading both the
-system-wide and the user&rsquo;s nanorc files.</p>
+setting <b>nano</b>&rsquo;s options, instead of reading both
+the system-wide and the user&rsquo;s <i>nanorc</i>
+files.</p>
 
 <p style="margin-left:11%;"><b>-g</b>,
 <b>--showcursor</b></p>
@@ -501,10 +521,10 @@ Shift key.</p>
 <p style="margin-left:22%;">Treat any name given on the
 command line as a new file. This allows <b>nano</b> to write
 to named pipes: it starts with a blank buffer, and writes to
-the pipe when the user saves the &quot;file&quot;. This way
-<b>nano</b> can be used as an editor in combination with for
-instance <b>gpg</b> without having to write sensitive data
-to disk first.</p>
+the pipe when the user saves the &ldquo;file&rdquo;. This
+way <b>nano</b> can be used as an editor in combination with
+for instance <b>gpg</b> without having to write sensitive
+data to disk first.</p>
 
 <p style="margin-left:11%;"><b>-o</b> <i>directory</i>,
 <b>--operatingdir=</b><i>directory</i></p>
@@ -525,10 +545,10 @@ this.</p>
 <p style="margin-left:11%;"><b>-q</b>,
 <b>--indicator</b></p>
 
-<p style="margin-left:22%;">Display a &quot;scrollbar&quot;
-on the righthand side of the edit window. It shows the
-position of the viewport in the buffer and how much of the
-buffer is covered by the viewport.</p>
+<p style="margin-left:22%;">Display a
+&ldquo;scrollbar&rdquo; on the righthand side of the edit
+window. It shows the position of the viewport in the buffer
+and how much of the buffer is covered by the viewport.</p>
 
 <p style="margin-left:11%;"><b>-r</b> <i>number</i>,
 <b>--fill=</b><i>number</i></p>
@@ -560,9 +580,9 @@ prompting (when exiting with <b>^X</b>).</p>
 <p style="margin-left:11%;"><b>-u</b>, <b>--unix</b></p>
 
 <p style="margin-left:22%;">Save a file by default in Unix
-format. This overrides nano&rsquo;s default behavior of
-saving a file in the format that it had. (This option has no
-effect when you also use <b>--noconvert</b>.)</p>
+format. This overrides <b>nano</b>&rsquo;s default behavior
+of saving a file in the format that it had. (This option has
+no effect when you also use <b>--noconvert</b>.)</p>
 
 <p style="margin-left:11%;"><b>-v</b>, <b>--view</b></p>
 
@@ -599,8 +619,8 @@ syntaxes and exit.</p>
 <p style="margin-left:11%;"><b>-!</b>, <b>--magic</b></p>
 
 <p style="margin-left:22%;">When neither the file&rsquo;s
-name nor its first line give a clue, try using libmagic to
-determine the applicable syntax.</p>
+name nor its first line give a clue, try using
+<i>libmagic</i> to determine the applicable syntax.</p>
 
 <p style="margin-left:11%;"><b>-@</b>,
 <b>--colonparsing</b></p>
@@ -632,11 +652,11 @@ the center of the title bar.</p>
 <p style="margin-left:22%;">Suppress the title bar and
 instead show information about the current buffer at the
 bottom of the screen, in the space for the status bar. In
-this &quot;mini bar&quot; the filename is shown on the left,
-followed by an asterisk if the buffer has been modified. On
-the right are displayed the current line and column number,
-the code of the character under the cursor (in Unicode
-format: U+xxxx), the same flags as are shown by
+this &ldquo;mini bar&rdquo; the filename is shown on the
+left, followed by an asterisk if the buffer has been
+modified. On the right are displayed the current line and
+column number, the code of the character under the cursor
+(in Unicode format: U+xxxx), the same flags as are shown by
 <b>--stateflags</b>, and a percentage that expresses how far
 the cursor is into the file (linewise). When a file is
 loaded or saved, and also when switching between buffers,
@@ -779,7 +799,7 @@ normally.</p> </td></tr>
 <p style="margin-left:11%; margin-top: 1em">Suspension is
 enabled by default, reachable via <b>^T^Z</b>. (If you want
 a plain <b>^Z</b> to suspend nano, add <b>bind ^Z suspend
-main</b> to your nanorc.)</p>
+main</b> to your <i>nanorc</i>.)</p>
 
 <p style="margin-left:11%; margin-top: 1em">At a Yes-No
 prompt, <b>^Y</b> can be used for &quot;Yes&quot;, <b>^N</b>
@@ -807,10 +827,10 @@ file named <i>nano.save</i> if the buffer didn&rsquo;t have
 a name already, or adds a &quot;.save&quot; suffix to the
 current filename. If an emergency file with that name
 already exists in the current directory, it adds
-&quot;.save&quot; plus a number (e.g. &quot;.save.1&quot;)
-to the current filename in order to make it unique. In
-multibuffer mode, <b>nano</b> writes all open buffers to
-their respective emergency files.</p>
+&quot;.save&quot; plus a number (for example:
+&quot;.save.1&quot;) to the current filename in order to
+make it unique. In multibuffer mode, <b>nano</b> writes all
+open buffers to their respective emergency files.</p>
 
 <p style="margin-left:11%; margin-top: 1em">If you have any
 question about how to use <b>nano</b> in some specific
@@ -831,11 +851,11 @@ unmodified arrow keys.</p>
 any other bugs that you encounter via: <i><br>
 https://savannah.gnu.org/bugs/?group=nano</i>.</p>
 
-<p style="margin-left:11%; margin-top: 1em">When nano
-crashes, it saves any modified buffers to emergency .save
-files. If you are able to reproduce the crash and you want
-to get a backtrace, define the environment variable
-<b>NANO_NOCATCH</b>.</p>
+<p style="margin-left:11%; margin-top: 1em">When
+<b>nano</b> crashes, it saves any modified buffers to
+emergency <i>.save</i> files. If you are able to reproduce
+the crash and you want to get a backtrace, define the
+environment variable <b>NANO_NOCATCH</b>.</p>
 
 <h2>HOMEPAGE
 <a name="HOMEPAGE"></a>

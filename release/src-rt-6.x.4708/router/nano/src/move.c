@@ -83,7 +83,7 @@ size_t proper_x(linestruct *line, size_t *leftedge, bool forward,
 				column / tabsize < (*leftedge + editwincols - 1) / tabsize))) {
 		index++;
 
-		if (shifted != NULL)
+		if (shifted)
 			*shifted = TRUE;
 	}
 
@@ -237,7 +237,7 @@ void do_center(void)
 /* Move to the first beginning of a paragraph before the current line. */
 void do_para_begin(linestruct **line)
 {
-	if ((*line)->prev != NULL)
+	if ((*line)->prev)
 		*line = (*line)->prev;
 
 	while (!begpar(*line, 0))
@@ -247,11 +247,10 @@ void do_para_begin(linestruct **line)
 /* Move down to the last line of the first found paragraph. */
 void do_para_end(linestruct **line)
 {
-	while ((*line)->next != NULL && !inpar(*line))
+	while ((*line)->next && !inpar(*line))
 		*line = (*line)->next;
 
-	while ((*line)->next != NULL && inpar((*line)->next) &&
-									!begpar((*line)->next, 0))
+	while ((*line)->next && inpar((*line)->next) && !begpar((*line)->next, 0))
 		*line = (*line)->next;
 }
 
@@ -275,7 +274,7 @@ void to_para_end(void)
 
 	/* Step beyond the last line of the paragraph, if possible;
 	 * otherwise, move to the end of the line. */
-	if (openfile->current->next != NULL) {
+	if (openfile->current->next) {
 		openfile->current = openfile->current->next;
 		openfile->current_x = 0;
 	} else
@@ -295,15 +294,14 @@ void to_prev_block(void)
 	bool is_text = FALSE, seen_text = FALSE;
 
 	/* Skip backward until first blank line after some nonblank line(s). */
-	while (openfile->current->prev != NULL && (!seen_text || is_text)) {
+	while (openfile->current->prev && (!seen_text || is_text)) {
 		openfile->current = openfile->current->prev;
 		is_text = !white_string(openfile->current->data);
 		seen_text = seen_text || is_text;
 	}
 
 	/* Step forward one line again if we passed text but this line is blank. */
-	if (seen_text && openfile->current->next != NULL &&
-				white_string(openfile->current->data))
+	if (seen_text && openfile->current->next && white_string(openfile->current->data))
 		openfile->current = openfile->current->next;
 
 	openfile->current_x = 0;
@@ -318,7 +316,7 @@ void to_next_block(void)
 	bool seen_white = is_white;
 
 	/* Skip forward until first nonblank line after some blank line(s). */
-	while (openfile->current->next != NULL && (!seen_white || is_white)) {
+	while (openfile->current->next && (!seen_white || is_white)) {
 		openfile->current = openfile->current->next;
 		is_white = white_string(openfile->current->data);
 		seen_white = seen_white || is_white;
@@ -348,8 +346,7 @@ void do_prev_word(void)
 		}
 
 		/* Step back one character. */
-		openfile->current_x = step_left(openfile->current->data,
-												openfile->current_x);
+		openfile->current_x = step_left(openfile->current->data, openfile->current_x);
 
 		if (is_word_char(openfile->current->data + openfile->current_x,
 								punctuation_as_letters)) {
@@ -370,8 +367,7 @@ void do_prev_word(void)
 
 	if (step_forward)
 		/* Move one character forward again to sit on the start of the word. */
-		openfile->current_x = step_right(openfile->current->data,
-												openfile->current_x);
+		openfile->current_x = step_right(openfile->current->data, openfile->current_x);
 }
 
 /* Move to the next word.  If after_ends is TRUE, stop at the ends of words
@@ -398,8 +394,7 @@ bool do_next_word(bool after_ends)
 			seen_space = TRUE;
 		} else {
 			/* Step forward one character. */
-			openfile->current_x = step_right(openfile->current->data,
-												openfile->current_x);
+			openfile->current_x = step_right(openfile->current->data, openfile->current_x);
 		}
 
 #ifndef NANO_TINY
@@ -478,7 +473,7 @@ void do_home(void)
 	if (ISSET(SMART_HOME)) {
 		size_t indent_x = indent_length(openfile->current->data);
 
-		if (openfile->current->data[indent_x] != '\0') {
+		if (openfile->current->data[indent_x]) {
 			/* If we're exactly on the indent, move fully home.  Otherwise,
 			 * when not softwrapping or not after the first nonblank chunk,
 			 * move to the first nonblank character. */
@@ -638,7 +633,7 @@ void do_scroll_down(void)
 	if (openfile->cursor_row == 0)
 		do_down();
 
-	if (editwinrows > 1 && (openfile->edittop->next != NULL
+	if (editwinrows > 1 && (openfile->edittop->next
 #ifndef NANO_TINY
 				|| (ISSET(SOFTWRAP) && (extra_chunks_in(openfile->edittop) >
 					chunk_for(openfile->firstcolumn, openfile->edittop)))
@@ -654,13 +649,11 @@ void do_left(void)
 	linestruct *was_current = openfile->current;
 
 	if (openfile->current_x > 0) {
-		openfile->current_x = step_left(openfile->current->data,
-												openfile->current_x);
+		openfile->current_x = step_left(openfile->current->data, openfile->current_x);
 #ifdef ENABLE_UTF8
 		while (openfile->current_x > 0 &&
 					is_zerowidth(openfile->current->data + openfile->current_x))
-			openfile->current_x = step_left(openfile->current->data,
-												openfile->current_x);
+			openfile->current_x = step_left(openfile->current->data, openfile->current_x);
 #endif
 	} else if (openfile->current != openfile->filetop) {
 		openfile->current = openfile->current->prev;
@@ -675,14 +668,12 @@ void do_right(void)
 {
 	linestruct *was_current = openfile->current;
 
-	if (openfile->current->data[openfile->current_x] != '\0') {
-		openfile->current_x = step_right(openfile->current->data,
-												openfile->current_x);
+	if (openfile->current->data[openfile->current_x]) {
+		openfile->current_x = step_right(openfile->current->data, openfile->current_x);
 #ifdef ENABLE_UTF8
-		while (openfile->current->data[openfile->current_x] != '\0' &&
+		while (openfile->current->data[openfile->current_x] &&
 					is_zerowidth(openfile->current->data + openfile->current_x))
-			openfile->current_x = step_right(openfile->current->data,
-												openfile->current_x);
+			openfile->current_x = step_right(openfile->current->data, openfile->current_x);
 #endif
 	} else if (openfile->current != openfile->filebot) {
 		openfile->current = openfile->current->next;

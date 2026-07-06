@@ -41,6 +41,11 @@
 #define ROOT_UID  0
 #endif
 
+#if defined(__APPLE__) && !defined(st_atim)
+#define st_atim  st_atimespec
+#define st_mtim  st_mtimespec
+#endif
+
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
@@ -120,11 +125,6 @@
 #define REPLACING  1
 #define INREGION   2
 
-#define NORMAL  TRUE
-#define SPECIAL  FALSE
-#define TEMPORARY  FALSE
-
-#define ANNOTATE  TRUE
 #define NONOTES  FALSE
 
 #define PRUNE_DUPLICATE  TRUE
@@ -281,7 +281,7 @@
 
 /* Enumeration types. */
 typedef enum {
-	UNSPECIFIED, NIX_FILE, DOS_FILE, MAC_FILE
+	UNSPECIFIED, NIX_FILE, DOS_FILE
 } format_type;
 
 typedef enum {
@@ -289,8 +289,8 @@ typedef enum {
 } message_type;
 
 typedef enum {
-	OVERWRITE, APPEND, PREPEND, EMERGENCY
-} kind_of_writing_type;
+	OVERWRITE, APPEND, PREPEND, SPECIAL
+} writing_type;
 
 typedef enum {
 	CENTERING, FLOWING, STATIONARY
@@ -584,7 +584,7 @@ typedef struct openfilestruct {
 	bool softmark;
 		/* Whether a marked region was made by holding Shift. */
 	format_type fmt;
-		/* The file's format -- Unix or DOS or Mac. */
+		/* The file's format -- Unix or DOS. */
 	char *lock_filename;
 		/* The path of the lockfile, if we created one. */
 	undostruct *undotop;

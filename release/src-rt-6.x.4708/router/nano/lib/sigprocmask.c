@@ -24,17 +24,28 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "glthread/lock.h"
-
 #if HAVE_MSVC_INVALID_PARAMETER_HANDLER
 # include "msvc-inval.h"
+#endif
+
+#if !GNULIB_SIGPROCMASK_SINGLE_THREAD
+# include "windows-spin.h"
+#else
+# define glwthread_spin_lock(lock)
+# define glwthread_spin_unlock(lock)
+#endif
+
+#if !GNULIB_SIGPROCMASK_SINGLE_THREAD
+# include "windows-tls.h"
+# include "windows-once.h"
 #endif
 
 /* We assume that a platform without POSIX signal blocking functions
    also does not have the POSIX sigaction() function, only the
    signal() function.  We also assume signal() has SysV semantics,
    where any handler is uninstalled prior to being invoked.  This is
-   true for native Windows platforms.  */
+   true for native Windows platforms.  Documentation:
+   <https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/signal>  */
 
 /* We use raw signal(), but also provide a wrapper rpl_signal() so
    that applications can query or change a blocked signal.  */
@@ -86,10 +97,6 @@ signal_nothrow (int sig, handler_t handler)
 # define signal signal_nothrow
 #endif
 
-/* This lock protects the variables defined in this file from concurrent
-   modification in multiple threads.  */
-gl_lock_define_initialized(static, sig_lock)
-
 /* Handling of gnulib defined signals.  */
 
 #if GNULIB_defined_SIGPIPE
@@ -129,7 +136,10 @@ sigismember (const sigset_t *set, int sig)
       return (*set >> sig) & 1;
     }
   else
-    return 0;
+    {
+      errno = EINVAL;
+      return -1;
+    }
 }
 
 int
@@ -179,7 +189,6 @@ sigdelset (sigset_t *set, int sig)
     }
 }
 
-
 int
 sigfillset (sigset_t *set)
 {
@@ -187,49 +196,139 @@ sigfillset (sigset_t *set)
   return 0;
 }
 
-/* Set of currently blocked signals.  */
-static sigset_t blocked_set /* = 0 */;
+/* Thread-local storage.
+   We don't use 'thread_local' here, since on mingw it (or '__thread') pulls in
+   libwinpthread, which we want to avoid.  See gl_AVOID_WINPTHREAD.  */
 
-/* Set of currently blocked and pending signals.  */
-static volatile sig_atomic_t pending_array[NSIG] /* = { 0 } */;
-
-/* Signal handler that is installed for blocked signals.  */
-static void
-blocked_handler (int sig)
+struct per_thread
 {
-  /* Reinstall the handler, in case the signal occurs multiple times
-     while blocked.  There is an inherent race where an asynchronous
-     signal in between when the kernel uninstalled the handler and
-     when we reinstall it will trigger the default handler; oh
-     well.  */
-  signal (sig, blocked_handler);
-  if (sig >= 0 && sig < NSIG)
-    pending_array[sig] = 1;
+  /* Set of currently blocked signals.  */
+  sigset_t blocked_set /* = 0 */;
+  /* Set of currently blocked and pending signals.  */
+  volatile sig_atomic_t pending_array[NSIG] /* = { 0 } */;
+};
+
+#if !GNULIB_SIGPROCMASK_SINGLE_THREAD
+
+static glwthread_tls_key_t tls_key; /* TLS key for a 'struct per_thread *' */
+
+static void
+keys_init (void)
+{
+  if (glwthread_tls_key_create (&tls_key, free) != 0)
+    /* Should not happen.  */
+    abort ();
+  /* The per-thread initial value is NULL.  */
 }
+
+/* Ensure that keys_init is called once only.  */
+static glwthread_once_t keys_init_once = GLWTHREAD_ONCE_INIT;
+
+/* Returns the per-thread data belonging to the current thread.  */
+static struct per_thread *
+get_per_thread (void)
+{
+  glwthread_once (&keys_init_once, keys_init);
+  struct per_thread *data = glwthread_tls_get (tls_key);
+  if (data == NULL)
+    {
+      data = (struct per_thread *) calloc (1, sizeof (struct per_thread));
+      if (data == NULL)
+        /* Should not happen.  */
+        abort ();
+      glwthread_tls_set (tls_key, data);
+    }
+  return data;
+}
+
+#else
+
+/* Assume a single thread.  */
+static struct per_thread per_thread_singleton;
+
+# define get_per_thread() (&per_thread_singleton)
+
+#endif
 
 int
 sigpending (sigset_t *set)
 {
+  const struct per_thread *pt = get_per_thread ();
   sigset_t pending = 0;
   for (int sig = 0; sig < NSIG; sig++)
-    if (pending_array[sig])
+    if (pt->pending_array[sig])
       pending |= 1U << sig;
 
   *set = pending;
   return 0;
 }
 
-/* The previous signal handlers.
-   Only the array elements corresponding to blocked signals are relevant.  */
-static volatile handler_t old_handlers[NSIG];
+/* A registry which signal handlers are overridden.  */
+struct override
+{
+  /* True if the signal is or was blocked in some thread.  */
+  volatile int overridden;
+  /* The original signal handler, if overridden.  */
+  volatile handler_t original_handler;
+};
+static struct override overrides[NSIG] /* = { { 0, NULL }, ... } */;
+
+#if !GNULIB_SIGPROCMASK_SINGLE_THREAD
+/* A spin lock that protects overrides against simultaneous use from
+   different threads, outside signal handlers.  */
+static glwthread_spinlock_t overrides_mt_lock = GLWTHREAD_SPIN_INIT;
+/* A spin lock that protects overrides against simultaneous use from
+   a signal handler and a pthread_sigmask invocation.  */
+static glwthread_spinlock_t overrides_handler_lock = GLWTHREAD_SPIN_INIT;
+#endif
+
+/* Signal handler that overrides an original one.  */
+static void
+override_handler (int sig)
+{
+  /* Reinstall the handler, in case the signal occurs multiple times
+     while blocked.  There is an inherent race where an asynchronous
+     signal in between when the kernel uninstalled the handler and
+     when we reinstall it will trigger the default handler; oh well.  */
+  signal (sig, override_handler);
+
+  struct per_thread *pt = get_per_thread ();
+  if ((pt->blocked_set >> sig) & 1)
+    {
+      /* The signal is blocked in the current thread.  */
+      pt->pending_array[sig] = 1;
+    }
+  else
+    {
+      if (!overrides[sig].overridden)
+        {
+          /* Another thread has already installed the override_handler but
+             is not yet done.  Wait until it has finished the operation.  */
+          glwthread_spin_lock (&overrides_handler_lock);
+          glwthread_spin_unlock (&overrides_handler_lock);
+          /* Now overrides[sig].overridden must be true.  */
+          if (!overrides[sig].overridden)
+            abort ();
+        }
+      handler_t handler = overrides[sig].original_handler;
+      if (handler == SIG_DFL)
+        {
+          /* Restore the original handler.  Then raise the signal again.  */
+          signal (sig, SIG_DFL);
+          raise (sig);
+        }
+      else if (handler != SIG_IGN)
+        (*handler) (sig);
+    }
+}
 
 int
-sigprocmask (int operation, const sigset_t *set, sigset_t *old_set)
+pthread_sigmask (int operation, const sigset_t *set, sigset_t *old_set)
 {
-  gl_lock_lock (sig_lock);
+  struct per_thread *pt = get_per_thread ();
 
   if (old_set != NULL)
-    *old_set = blocked_set;
+    *old_set = pt->blocked_set;
 
   if (set != NULL)
     {
@@ -237,30 +336,58 @@ sigprocmask (int operation, const sigset_t *set, sigset_t *old_set)
       switch (operation)
         {
         case SIG_BLOCK:
-          new_blocked_set = blocked_set | *set;
+          new_blocked_set = pt->blocked_set | *set;
           break;
         case SIG_SETMASK:
           new_blocked_set = *set;
           break;
         case SIG_UNBLOCK:
-          new_blocked_set = blocked_set & ~*set;
+          new_blocked_set = pt->blocked_set & ~*set;
           break;
         default:
-          gl_lock_unlock (sig_lock);
-          errno = EINVAL;
-          return -1;
+          return EINVAL;
         }
 
-      sigset_t to_unblock = blocked_set & ~new_blocked_set;
-      sigset_t to_block = new_blocked_set & ~blocked_set;
+      sigset_t to_unblock = pt->blocked_set & ~ new_blocked_set;
+      sigset_t to_block = new_blocked_set & ~ pt->blocked_set;
 
       if (to_block != 0)
         for (int sig = 0; sig < NSIG; sig++)
           if ((to_block >> sig) & 1)
             {
-              pending_array[sig] = 0;
-              if ((old_handlers[sig] = signal (sig, blocked_handler)) != SIG_ERR)
-                blocked_set |= 1U << sig;
+              /* All pt->pending_array[sig] remain zero.  */
+              pt->blocked_set |= 1U << sig;
+              if (!overrides[sig].overridden)
+                {
+                  glwthread_spin_lock (&overrides_mt_lock);
+                  glwthread_spin_lock (&overrides_handler_lock);
+                  if (!overrides[sig].overridden)
+                    {
+                      /* Now it's OK to install the override_handler:
+                         - If it gets invoked in this thread, there is no race
+                           condition since pt->blocked_set already has the sig
+                           bit set.
+                         - If it gets invoked in another thread, the
+                           overrides_handler_lock protects it from proceeding
+                           until we have stored the old_handler.  For this case,
+                           it is important that the overrides_handler_lock is
+                           the innermost taken lock.  */
+                      handler_t old_handler = signal (sig, override_handler);
+                      if (old_handler != SIG_ERR)
+                        {
+                          if (old_handler == override_handler)
+                            /* Different threads calling pthread_sigmask at the
+                               same time (race condition).  This shouldn't
+                               happen, thanks to the second test of
+                               overrides[sig].overridden, above.  */
+                            abort ();
+                          overrides[sig].original_handler = old_handler;
+                          overrides[sig].overridden = 1;
+                        }
+                    }
+                  glwthread_spin_unlock (&overrides_handler_lock);
+                  glwthread_spin_unlock (&overrides_mt_lock);
+                }
             }
 
       if (to_unblock != 0)
@@ -270,14 +397,9 @@ sigprocmask (int operation, const sigset_t *set, sigset_t *old_set)
           for (int sig = 0; sig < NSIG; sig++)
             if ((to_unblock >> sig) & 1)
               {
-                if (signal (sig, old_handlers[sig]) != blocked_handler)
-                  /* The application changed a signal handler while the signal
-                     was blocked, bypassing our rpl_signal replacement.
-                     We don't support this.  */
-                  abort ();
-                received[sig] = pending_array[sig];
-                blocked_set &= ~(1U << sig);
-                pending_array[sig] = 0;
+                received[sig] = pt->pending_array[sig];
+                pt->blocked_set &= ~(1U << sig);
+                pt->pending_array[sig] = 0;
               }
             else
               received[sig] = 0;
@@ -288,12 +410,27 @@ sigprocmask (int operation, const sigset_t *set, sigset_t *old_set)
         }
     }
 
-  gl_lock_unlock (sig_lock);
   return 0;
 }
 
+/* sigprocmask is like pthread_sigmask, but has unspecified behaviour
+   in multithreaded processes and a different return value convention.  */
+int
+sigprocmask (int operation, const sigset_t *set, sigset_t *old_set)
+{
+  int ret = pthread_sigmask (operation, set, old_set);
+  if (ret == 0)
+    return 0;
+  else
+    {
+      errno = ret;
+      return -1;
+    }
+}
+
 /* Install the handler FUNC for signal SIG, and return the previous
-   handler.  */
+   handler.
+   This override transparently hides the override_handler.  */
 handler_t
 rpl_signal (int sig, handler_t handler)
 {
@@ -307,23 +444,31 @@ rpl_signal (int sig, handler_t handler)
         sig = SIGABRT;
       #endif
 
-      if (blocked_set & (1U << sig))
+      handler_t result;
+      if (overrides[sig].overridden)
         {
-          /* POSIX states that sigprocmask and signal are both
-             async-signal-safe.  This is not true of our
-             implementation - there is a slight data race where an
-             asynchronous interrupt on signal A can occur after we
-             install blocked_handler but before we have updated
-             old_handlers for signal B, such that handler A can see
-             stale information if it calls signal(B).  Oh well -
-             signal handlers really shouldn't try to manipulate the
-             installed handlers of unrelated signals.  */
-          handler_t result = old_handlers[sig];
-          old_handlers[sig] = handler;
-          return result;
+          /* There is an inherent race condition, when one thread calls
+             rpl_signal to install a different signal handler, while another
+             thread invokes the signal handler (via override_handler).
+             It is unavoidable.  Nothing we can do about it.  */
+          result = overrides[sig].original_handler;
+          overrides[sig].original_handler = handler;
         }
       else
-        return signal (sig, handler);
+        {
+          /* Lock, in case of another thread calling pthread_sigmask, with the
+             effect of installing the override_handler (race condition).  */
+          glwthread_spin_lock (&overrides_mt_lock);
+          if (overrides[sig].overridden)
+            {
+              result = overrides[sig].original_handler;
+              overrides[sig].original_handler = handler;
+            }
+          else
+            result = signal (sig, handler);
+          glwthread_spin_unlock (&overrides_mt_lock);
+        }
+      return result;
     }
   else
     {
@@ -337,16 +482,17 @@ rpl_signal (int sig, handler_t handler)
 int
 _gl_raise_SIGPIPE (void)
 {
-  gl_lock_lock (sig_lock);
-  if (blocked_set & (1U << SIGPIPE))
-    {
-      pending_array[SIGPIPE] = 1;
-      gl_lock_unlock (sig_lock);
-    }
+  /* On POSIX platforms, SIGPIPE is generated by the kernel and delivered to
+     any thread of the current process.  In the SIGPIPE emulation here, we do
+     it slightly differently: we deliver it to the current thread always,
+     like  raise (SIGPIPE)  would do.  */
+  struct per_thread *pt = get_per_thread ();
+  if (pt->blocked_set & (1U << SIGPIPE))
+    /* The signal is blocked in the current thread.  */
+    pt->pending_array[SIGPIPE] = 1;
   else
     {
       handler_t handler = SIGPIPE_handler;
-      gl_lock_unlock (sig_lock);
       if (handler == SIG_DFL)
         exit (128 + SIGPIPE);
       else if (handler != SIG_IGN)

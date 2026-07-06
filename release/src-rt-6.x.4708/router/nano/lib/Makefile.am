@@ -308,6 +308,14 @@ EXTRA_DIST += c32is-impl.h
 
 ## end   gnulib module c32isxdigit
 
+## begin gnulib module c32rtomb
+
+if GL_COND_OBJ_C32RTOMB
+libgnu_a_SOURCES += c32rtomb.c
+endif
+
+## end   gnulib module c32rtomb
+
 ## begin gnulib module c32tolower
 
 libgnu_a_SOURCES += c32tolower.c
@@ -315,6 +323,14 @@ libgnu_a_SOURCES += c32tolower.c
 EXTRA_DIST += c32to-impl.h
 
 ## end   gnulib module c32tolower
+
+## begin gnulib module c32toupper
+
+libgnu_a_SOURCES += c32toupper.c
+
+EXTRA_DIST += c32to-impl.h
+
+## end   gnulib module c32toupper
 
 ## begin gnulib module c32width
 
@@ -1340,6 +1356,14 @@ endif
 
 ## end   gnulib module localeconv
 
+## begin gnulib module localeinfo
+
+libgnu_a_SOURCES += localeinfo.c
+
+EXTRA_DIST += localeinfo.h
+
+## end   gnulib module localeinfo
+
 ## begin gnulib module lock
 
 libgnu_a_SOURCES += glthread/lock.h glthread/lock.c
@@ -1750,6 +1774,12 @@ EXTRA_DIST += mbchar.h
 
 ## end   gnulib module mbchar
 
+## begin gnulib module mbiter-aux
+
+libgnu_a_SOURCES += mbiter-aux.h mbiter-aux.c
+
+## end   gnulib module mbiter-aux
+
 ## begin gnulib module mbiterf
 
 libgnu_a_SOURCES += mbiterf.h mbiterf.c
@@ -2145,6 +2175,14 @@ libgnu_a_SOURCES += pthread-once.c
 endif
 
 ## end   gnulib module pthread-once
+
+## begin gnulib module pthread_sigmask
+
+if GL_COND_OBJ_PTHREAD_SIGMASK
+libgnu_a_SOURCES += pthread_sigmask.c
+endif
+
+## end   gnulib module pthread_sigmask
 
 ## begin gnulib module raise
 
@@ -3359,9 +3397,11 @@ sys/wait.h: sys_wait.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_U
 	$(AM_V_GEN)$(MKDIR_P) '%reldir%/sys'
 	$(AM_V_at)$(SED_HEADER_STDOUT) \
 	      -e 's|@''GUARD_PREFIX''@|GL|g' \
+	      -e 's|@''INCLUDE_NEXT_AS_FIRST_DIRECTIVE''@|$(INCLUDE_NEXT_AS_FIRST_DIRECTIVE)|g' \
 	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
 	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
 	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+	      -e 's|@''NEXT_AS_FIRST_DIRECTIVE_SYS_WAIT_H''@|$(NEXT_AS_FIRST_DIRECTIVE_SYS_WAIT_H)|g' \
 	      -e 's|@''NEXT_SYS_WAIT_H''@|$(NEXT_SYS_WAIT_H)|g' \
 	      -e 's/@''GNULIB_WAITPID''@/$(GL_GNULIB_WAITPID)/g' \
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
@@ -3570,6 +3610,16 @@ endif
 EXTRA_DIST += unicase/simple-mapping.h unicase/tolower.h
 
 ## end   gnulib module unicase/tolower
+
+## begin gnulib module unicase/toupper
+
+if LIBUNISTRING_COMPILE_UNICASE_TOUPPER
+libgnu_a_SOURCES += unicase/toupper.c
+endif
+
+EXTRA_DIST += unicase/simple-mapping.h unicase/toupper.h
+
+## end   gnulib module unicase/toupper
 
 ## begin gnulib module unictype/base
 
@@ -4518,6 +4568,26 @@ endif
 EXTRA_DIST += windows-initguard.h windows-rwlock.h
 
 ## end   gnulib module windows-rwlock
+
+## begin gnulib module windows-spin
+
+if GL_COND_OBJ_WINDOWS_SPIN
+libgnu_a_SOURCES += windows-spin.c
+endif
+
+EXTRA_DIST += windows-spin.h
+
+## end   gnulib module windows-spin
+
+## begin gnulib module windows-tls
+
+if GL_COND_OBJ_WINDOWS_TLS
+libgnu_a_SOURCES += windows-tls.c
+endif
+
+EXTRA_DIST += windows-tls.h
+
+## end   gnulib module windows-tls
 
 ## begin gnulib module wmemchr
 

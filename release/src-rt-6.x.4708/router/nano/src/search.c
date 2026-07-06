@@ -79,13 +79,12 @@ void search_init(bool replacing, bool retain_answer)
 		/* What will be searched for when the user types just <Enter>. */
 
 	/* If something was searched for earlier, include it in the prompt. */
-	if (*last_search != '\0') {
+	if (*last_search) {
 		char *disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
 
 		thedefault = nmalloc(strlen(disp) + 7);
 		/* We use (COLS / 3) here because we need to see more on the line. */
-		sprintf(thedefault, " [%s%s]", disp,
-					(breadth(last_search) > COLS / 3) ? "..." : "");
+		sprintf(thedefault, " [%s%s]", disp, (breadth(last_search) > COLS / 3) ? "..." : "");
 		free(disp);
 	} else
 		thedefault = copy_of("");
@@ -99,8 +98,8 @@ void search_init(bool replacing, bool retain_answer)
 					/* TRANSLATORS: This is the main search prompt. */
 					"%s%s%s%s%s%s", _("Search"),
 					/* TRANSLATORS: The next four modify the search prompt. */
-					ISSET(CASE_SENSITIVE) ? _(" [Case Sensitive]") : "",
-					ISSET(USE_REGEXP) ? _(" [Regexp]") : "",
+					ISSET(CASE_SENSITIVE) ? _(" [Case sensitive]") : "",
+					ISSET(USE_REGEXP) ? _(" [Reg.exp.]") : "",
 					ISSET(BACKWARDS_SEARCH) ? _(" [Backwards]") : "",
 					replacing ?
 #ifndef NANO_TINY
@@ -118,7 +117,7 @@ void search_init(bool replacing, bool retain_answer)
 		/* If Enter was pressed, prepare to do a replace or a search. */
 		if (response == 0 || response == -2) {
 			/* If an actual answer was typed, remember it. */
-			if (*answer != '\0') {
+			if (*answer) {
 				last_search = mallocstrcpy(last_search, answer);
 #ifdef ENABLE_HISTORIES
 				update_history(&search_history, answer, PRUNE_DUPLICATE);
@@ -154,9 +153,6 @@ void search_init(bool replacing, bool retain_answer)
 				napms(600);
 			} else
 				replacing = !replacing;
-		} else if (function == flip_goto) {
-			ask_for_line_and_column(answer);
-			break;
 		} else
 			break;
 	}
@@ -203,22 +199,21 @@ int findnextstr(const char *needle, bool whole_word_only, int modus,
 			if (ISSET(BACKWARDS_SEARCH) && from != line->data) {
 				from = line->data + step_left(line->data, from - line->data);
 				found = strstrwrapper(line->data, needle, from);
-			} else if (!ISSET(BACKWARDS_SEARCH) && *from != '\0') {
+			} else if (!ISSET(BACKWARDS_SEARCH) && *from) {
 				from += char_length(from);
 				found = strstrwrapper(line->data, needle, from);
 			}
 		} else
 			found = strstrwrapper(line->data, needle, from);
 
-		if (found != NULL) {
+		if (found) {
 			/* When doing a regex search, compute the length of the match. */
 			if (ISSET(USE_REGEXP))
 				found_len = regmatches[0].rm_eo - regmatches[0].rm_so;
 #ifdef ENABLE_SPELLER
 			/* When we're spell checking, a match should be a separate word;
 			 * if it's not, continue looking in the rest of the line. */
-			if (whole_word_only && !is_separate_word(found - line->data,
-												found_len, line->data)) {
+			if (whole_word_only && !is_separate_word(found - line->data, found_len, line->data)) {
 				from = found + char_length(found);
 				continue;
 			}
@@ -324,7 +319,7 @@ int findnextstr(const char *needle, bool whole_word_only, int modus,
 	openfile->current_x = found_x;
 
 	/* When requested, pass back the length of the match. */
-	if (match_len != NULL)
+	if (match_len)
 		*match_len = found_len;
 
 #ifndef NANO_TINY
@@ -333,8 +328,11 @@ int findnextstr(const char *needle, bool whole_word_only, int modus,
 		light_from_col = xplustabs();
 		light_to_col = wideness(line->data, found_x + found_len);
 
-		/* When panning, ensure the end of the match will be visible too. */
-		if (united_sidescroll)
+		/* When panning, "unpan" when the match fits within an unpanned viewport,
+		   otherwise ensure that the end of the match will be visible too. */
+		if (united_sidescroll && light_to_col < editwincols - CUSHION)
+			openfile->brink = 0;
+		else if (united_sidescroll)
 			openfile->brink = get_page_start(light_to_col);
 
 		refresh_needed = TRUE;
@@ -367,7 +365,7 @@ void do_research(void)
 #ifdef ENABLE_HISTORIES
 	/* If nothing was searched for yet during this run of nano, but
 	 * there is a search history, take the most recent item. */
-	if (*last_search == '\0' && searchbot->prev != NULL)
+	if (*last_search == '\0' && searchbot->prev)
 		last_search = mallocstrcpy(last_search, searchbot->prev->data);
 #endif
 
@@ -421,7 +419,7 @@ void not_found_msg(const char *str)
 void go_looking(void)
 {
 	linestruct *was_current = openfile->current;
-	size_t was_current_x = openfile->current_x;
+	size_t was_x = openfile->current_x;
 
 //#define TIMEIT  12
 #ifdef TIMEIT
@@ -436,8 +434,7 @@ void go_looking(void)
 
 	/* If we found something, and we're back at the exact same spot
 	 * where we started searching, then this is the only occurrence. */
-	if (didfind == 1 && openfile->current == was_current &&
-						openfile->current_x == was_current_x)
+	if (didfind == 1 && openfile->current == was_current && openfile->current_x == was_x)
 		statusline(REMARK, _("This is the only occurrence"));
 	else if (didfind == 0)
 		not_found_msg(last_search);
@@ -449,43 +446,37 @@ void go_looking(void)
 	edit_redraw(was_current, CENTERING);
 }
 
-/* Calculate the size of the replacement text, taking possible
- * subexpressions \1 to \9 into account.  Return the replacement
- * text in the passed string only when create is TRUE. */
-int replace_regexp(char *string, bool create)
+/* Return the size of the replacement text for the found regex, taking
+ * any references to subexpressions (\1 to \9) into account.  Copy the
+ * replacement text into `string` when this parameter isn't NULL. */
+int replace_regexp(char *string)
 {
 	size_t replacement_size = 0;
-	const char *c = answer;
+	const char *given = answer;
 
-	/* Iterate through the replacement text to handle subexpression
-	 * replacement using \1, \2, \3, etc. */
-	while (*c != '\0') {
-		int num = (*(c + 1) - '0');
+	while (*given) {
+		int digit = (given[1] - '0');
 
-		if (*c != '\\' || num < 1 || num > 9 || num > search_regexp.re_nsub) {
-			if (create)
-				*string++ = *c;
-			c++;
-			replacement_size++;
-		} else {
-			size_t i = regmatches[num].rm_eo - regmatches[num].rm_so;
+		/* When there is a valid backreference, use the relevant subexpression;
+		 * otherwise, use the literal given answer. */
+		if (*given == '\\' && 0 < digit && digit < 10 && digit <= search_regexp.re_nsub) {
+			size_t extent = regmatches[digit].rm_eo - regmatches[digit].rm_so;
 
-			/* Skip over the replacement expression. */
-			c += 2;
-
-			/* But add the length of the subexpression to new_size. */
-			replacement_size += i;
-
-			/* And if create is TRUE, append the result of the
-			 * subexpression match to the new line. */
-			if (create) {
-				strncpy(string, openfile->current->data + regmatches[num].rm_so, i);
-				string += i;
+			if (string) {
+				strncpy(string, openfile->current->data + regmatches[digit].rm_so, extent);
+				string += extent;
 			}
+			replacement_size += extent;
+			given += 2;
+		} else {
+			if (string)
+				*string++ = *given;
+			replacement_size++;
+			given++;
 		}
 	}
 
-	if (create)
+	if (string)
 		*string = '\0';
 
 	return replacement_size;
@@ -501,7 +492,7 @@ char *replace_line(const char *needle)
 	/* First adjust the size of the new line for the change. */
 	if (ISSET(USE_REGEXP)) {
 		match_len = regmatches[0].rm_eo - regmatches[0].rm_so;
-		new_size += replace_regexp(NULL, FALSE) - match_len;
+		new_size += replace_regexp(NULL) - match_len;
 	} else {
 		match_len = strlen(needle);
 		new_size += strlen(answer) - match_len;
@@ -514,7 +505,7 @@ char *replace_line(const char *needle)
 
 	/* Add the replacement text. */
 	if (ISSET(USE_REGEXP))
-		replace_regexp(copy + openfile->current_x, TRUE);
+		replace_regexp(copy + openfile->current_x);
 	else
 		strcpy(copy + openfile->current_x, answer);
 
@@ -593,10 +584,11 @@ ssize_t do_replace_loop(const char *needle, bool whole_word_only,
 		if (!replaceall) {
 			spotlighted = TRUE;
 			light_from_col = xplustabs();
-			light_to_col = wideness(openfile->current->data,
-										openfile->current_x + match_len);
+			light_to_col = wideness(openfile->current->data, openfile->current_x + match_len);
 #ifndef NANO_TINY
-			if (united_sidescroll)
+			if (united_sidescroll && light_to_col < editwincols - CUSHION)
+				openfile->brink = 0;
+			else if (united_sidescroll)
 				openfile->brink = get_page_start(light_to_col);
 #endif
 			/* Refresh the edit window, scrolling it if necessary. */
@@ -786,13 +778,6 @@ void ask_for_line_and_column(char *provided)
 					_("Enter line number, column number"));
 	int doublesign = 0;
 
-	if (func_from_key(response) == flip_goto) {
-		UNSET(BACKWARDS_SEARCH);
-		/* Switch to searching but retain what the user typed so far. */
-		search_init(FALSE, TRUE);
-		return;
-	}
-
 	/* When cancelled or blank, or when a function was run, we're done. */
 	if (response < 0) {
 		statusbar(_("Cancelled"));
@@ -875,8 +860,7 @@ void goto_line_and_column(ssize_t line, ssize_t column, bool hugfloor)
 							editwinrows / 2, &currentline, &leftedge);
 	} else
 #endif
-		rows_from_tail = openfile->filebot->lineno -
-							openfile->current->lineno;
+		rows_from_tail = openfile->filebot->lineno - openfile->current->lineno;
 
 	/* If the target line is close to the tail of the file, put the last
 	 * line or chunk on the bottom line of the screen; otherwise, just
@@ -937,7 +921,7 @@ bool find_a_bracket(bool reverse, const char *bracket_pair)
 void do_find_bracket(void)
 {
 	linestruct *was_current = openfile->current;
-	size_t was_current_x = openfile->current_x;
+	size_t was_x = openfile->current_x;
 		/* The current cursor position, in case we don't find a complement. */
 	const char *ch;
 		/* The location in matchbrackets of the bracket under the cursor. */
@@ -978,8 +962,7 @@ void do_find_bracket(void)
 	wanted_ch = ch;
 	while (charcount-- > 0) {
 		if (reverse)
-			wanted_ch = matchbrackets + step_left(matchbrackets,
-													wanted_ch - matchbrackets);
+			wanted_ch = matchbrackets + step_left(matchbrackets, wanted_ch - matchbrackets);
 		else
 			wanted_ch += char_length(wanted_ch);
 	}
@@ -1008,7 +991,7 @@ void do_find_bracket(void)
 
 	/* Restore the cursor position. */
 	openfile->current = was_current;
-	openfile->current_x = was_current_x;
+	openfile->current_x = was_x;
 }
 
 /* Place an anchor at the current line when none exists, otherwise remove it. */

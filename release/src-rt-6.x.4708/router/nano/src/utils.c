@@ -40,13 +40,13 @@ void get_homedir(void)
 		if (homenv == NULL || geteuid() == ROOT_UID) {
 			const struct passwd *userage = getpwuid(geteuid());
 
-			if (userage != NULL)
+			if (userage)
 				homenv = userage->pw_dir;
 		}
 #endif
 
 		/* Only set `homedir` if a home directory could be determined. */
-		if (homenv != NULL && *homenv != '\0')
+		if (homenv && *homenv)
 			homedir = copy_of(homenv);
 	}
 }
@@ -116,7 +116,7 @@ bool parse_num(const char *string, ssize_t *result)
 
 	value = (ssize_t)strtol(string, &excess, 10);
 
-	if (errno == ERANGE || *string == '\0' || *excess != '\0')
+	if (errno == ERANGE || *string == '\0' || *excess)
 		return FALSE;
 
 	*result = value;
@@ -173,7 +173,7 @@ size_t recode_LF_to_NUL(char *string)
 {
 	char *beginning = string;
 
-	while (*string != '\0') {
+	while (*string) {
 		if (*string == '\n')
 			*string = '\0';
 		string++;
@@ -367,15 +367,8 @@ size_t get_page_start(size_t column)
 		return column - (editwincols - 2);
 }
 
-/* Return the placewewant associated with current_x, i.e. the zero-based
- * column position of the cursor. */
-size_t xplustabs(void)
-{
-	return wideness(openfile->current->data, openfile->current_x);
-}
-
-/* Return the index in text of the character that (when displayed) will
- * not overshoot the given column. */
+/* Return the index in the given text of the character that (when displayed)
+ * will not overshoot the given column. */
 size_t actual_x(const char *text, size_t column)
 {
 	const char *start = text;
@@ -383,7 +376,7 @@ size_t actual_x(const char *text, size_t column)
 	size_t width = 0;
 		/* The current accumulated span, in columns. */
 
-	while (*text != '\0') {
+	while (*text) {
 		int charlen = advance_over(text, &width);
 
 		if (width > column)
@@ -395,22 +388,21 @@ size_t actual_x(const char *text, size_t column)
 	return (text - start);
 }
 
-/* A strnlen() with tabs and multicolumn characters factored in:
- * how many columns wide are the first maxlen bytes of text? */
-size_t wideness(const char *text, size_t maxlen)
+/* Return the number of columns that the first count bytes of text occupy. */
+size_t wideness(const char *text, size_t count)
 {
 	size_t width = 0;
 
-	if (maxlen == 0)
+	if (count == 0)
 		return 0;
 
-	while (*text != '\0') {
+	while (*text) {
 		size_t charlen = advance_over(text, &width);
 
-		if (maxlen <= charlen)
+		if (count <= charlen)
 			break;
 
-		maxlen -= charlen;
+		count -= charlen;
 		text += charlen;
 	}
 
@@ -422,10 +414,16 @@ size_t breadth(const char *text)
 {
 	size_t span = 0;
 
-	while (*text != '\0')
+	while (*text)
 		text += advance_over(text, &span);
 
 	return span;
+}
+
+/* Return the (zero-based) column position of the cursor. */
+size_t xplustabs(void)
+{
+	return wideness(openfile->current->data, openfile->current_x);
 }
 
 /* Append a new magic line to the end of the buffer. */

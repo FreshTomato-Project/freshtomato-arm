@@ -16,7 +16,7 @@
 .\"   Documentation License along with this program.  If not, see
 .\"   <https://www.gnu.org/licenses/>.
 .\"
-.TH NANO 1 "version 9.0" "April 2026"
+.TH NANO 1 "June 2026" "GNU nano 9.1"
 
 .SH NAME
 nano \- Nano's ANOther text editor, inspired by Pico
@@ -27,15 +27,42 @@ nano \- Nano's ANOther text editor, inspired by Pico
 .sp
 .BR nano " [" \fIoptions "] [[" + [ crCR ]{ / | ? } \fIstring "] " \fIfile ]...
 
+.SH DESCRIPTION
+\fBnano\fR is a small and friendly text editor.  It copies the look and feel
+of Pico, but is free software, and implements a few features that Pico
+lacks, such as: opening multiple files, scrolling per line, undo/redo,
+syntax coloring, line numbering, and soft-wrapping overlong lines.
+.sp
+When giving a filename on the command line, the cursor can be put on a
+specific line by adding the line number with a plus sign (\fB+\fR) before
+the filename, and even in a specific column by adding it with a comma.
+Negative numbers count from the end of the file or line.
+.sp
+The cursor can be put on the first or last occurrence of a specific string
+by specifying that string after \fB+/\fR or \fB+?\fR before the filename.
+The string can be made case sensitive and/or caused to be interpreted as a
+regular expression by inserting \fBc\fR and/or \fBr\fR after the \fB+\fR sign.
+These search modes can be explicitly disabled by using the uppercase variant
+of those letters: \fBC\fR and/or \fBR\fR.  When the string contains spaces,
+it needs to be enclosed in quotes.  To give an example: to open a file at
+the first occurrence of the word "Foo", you would do:
+.sp
+.RS 4
+.BI "nano +c/Foo " file
+.RE
+.sp
+As a special case: if instead of a filename a dash (\fB\-\fR) is given,
+\fBnano\fR will read data from standard input.
+
 .SH NOTICES
 Since version 9.0, all lines are scrolled horizontally together
 (when the cursor approaches the edge), by just the amount needed,
 instead of scrolling only the current line by a large step.
-If you prefer the old behavior, you can use \fB--solo\fR on the
-command line or \fBset solosidescroll\fR in your \fInanorc\fR.
+If you prefer the old behavior, you can use \fB\-\-\%solo\fR on the
+command line or \fBset \%solosidescroll\fR in your \fInanorc\fR.
 .sp
-Also since version 9.0, keystrokes \fBM-<\fR and \fBM->\fR have
-been reassigned to the `scrollleft` and `scrollright` functions.
+Also since version 9.0, keystrokes \fBM\-<\fR and \fBM\->\fR have
+been reassigned to the \fB\%scrollleft\fR and \fB\%scrollright\fR functions.
 If you want those keystrokes to do what they did before version 9.0,
 add these two lines at the end of your \fInanorc\fR file:
 .sp
@@ -62,35 +89,8 @@ four lines at the end of your \fInanorc\fR file:
 .RE
 .sp
 
-.SH DESCRIPTION
-\fBnano\fR is a small and friendly text editor.  It copies the look and feel
-of Pico, but is free software, and implements several features that Pico
-lacks, such as: opening multiple files, scrolling per line, undo/redo,
-syntax coloring, line numbering, and soft-wrapping overlong lines.
-.sp
-When giving a filename on the command line, the cursor can be put on a
-specific line by adding the line number with a plus sign (\fB+\fR) before
-the filename, and even in a specific column by adding it with a comma.
-Negative numbers count from the end of the file or line.
-.sp
-The cursor can be put on the first or last occurrence of a specific string
-by specifying that string after \fB+/\fR or \fB+?\fR before the filename.
-The string can be made case sensitive and/or caused to be interpreted as a
-regular expression by inserting \fBc\fR and/or \fBr\fR after the \fB+\fR sign.
-These search modes can be explicitly disabled by using the uppercase variant
-of those letters: \fBC\fR and/or \fBR\fR.  When the string contains spaces,
-it needs to be enclosed in quotes.  To give an example: to open a file at
-the first occurrence of the word "Foo", you would do:
-.sp
-.RS 4
-.BI "nano +c/Foo " file
-.RE
-.sp
-As a special case: if instead of a filename a dash (\fB\-\fR) is given,
-\fBnano\fR will read data from standard input.
-
 .SH EDITING
-Entering text and moving around in a file is straightforward: typing the
+Entering text and moving around in a file are straightforward: typing the
 letters and using the normal cursor movement keys.  Commands are entered
 by using the Control (^) and the Alt or Meta (M\-) keys.
 Typing \fB^K\fR deletes the current line and puts it in the cutbuffer.
@@ -118,11 +118,8 @@ A literal control code (except \fB^J\fR) can be inserted by typing
 .sp
 The two lines at the bottom of the screen show some important commands;
 the built-in help (\fB^G\fR) lists all the available ones.
-The default key bindings can be changed via a \fInanorc\fR file \(em see
+The default key bindings can be changed via a \fInanorc\fR file \[em] see
 .BR nanorc (5).
-
-.\" Never hyphenate these:
-.hw ncurses terminfo
 
 .SH OPTIONS
 .TP
@@ -134,22 +131,22 @@ already at that position, it jumps to the true beginning of the line.
 .TP
 .BR \-B ", " \-\-backup
 When saving a file, back up the previous version of it, using the current
-filename suffixed with a tilde (\fB~\fR).
+filename suffixed with a tilde (\fB\[ti]\fR).
 .TP
 .BI \-C " directory\fR, " \-\-backupdir= directory
 Make and keep not just one backup file, but make and keep a uniquely numbered
-one every time a file is saved \(em when backups are enabled (\fB\-B\fR).
-The uniquely numbered files are stored in the specified \fIdirectory\fR.
+one every time a file is saved \[em] when backups are enabled (\fB\-B\fR).
+The uniquely numbered files are stored in the specified \fI\%directory\fR.
 .TP
 .BR \-D ", " \-\-boldtext
 For the interface, use bold instead of reverse video.
 This can be overridden for specific elements by setting the options
 \fB\%titlecolor\fR, \fB\%statuscolor\fR, \fB\%promptcolor\fR,
 \fB\%minicolor\fR, \fB\%keycolor\fR, \fB\%numbercolor\fR, and/or
-\fB\%selectedcolor\fR in your nanorc file.  See \fBnanorc\fR(5).
+\fB\%selectedcolor\fR in your \fInanorc\fR file.  See \fBnanorc\fR(5).
 .TP
 .BR \-E ", " \-\-tabstospaces
-Convert each typed tab to spaces \(em to the number of spaces
+Convert each typed tab to spaces \[em] to the number of spaces
 that a tab at that position would take up.
 (Note: pasted tabs are not converted.)
 .TP
@@ -172,9 +169,9 @@ text.  (The color of the stripe can be changed with \fBset \%stripecolor\fR
 in your \fInanorc\fR file.)
 .TP
 .BR \-K ", " \-\-rawsequences
-Interpret escape sequences directly, instead of asking \fBncurses\fR
+Interpret escape sequences directly, instead of asking \fI\%ncurses\fR
 to translate them.  (If you need this option to get some keys to work
-properly, it means that the \fBterminfo\fR terminal description that
+properly, it means that the \fI\%terminfo\fR terminal description that
 is used does not fully match the actual behavior of your terminal.
 This can happen when you ssh into a BSD machine, for example.)
 Using this option disables \fBnano\fR's mouse support.
@@ -188,7 +185,7 @@ Snip trailing whitespace from the wrapped line when automatic
 hard-wrapping occurs or when text is justified.
 .TP
 .BR \-N ", " \-\-noconvert
-Disable automatic conversion of files from DOS/Mac format.
+Disable automatic conversion of files from DOS format.
 .TP
 .BR \-O ", " \-\-bookstyle
 When justifying, treat any line that starts with whitespace as the
@@ -207,28 +204,39 @@ This makes it possible to rejustify blocks of quoted text when composing
 email, and to rewrap blocks of line comments when writing source code.
 .TP
 .BR \-R ", " \-\-restricted
-Restricted mode: don't read or write to any file not specified on the
-command line.  This means: don't read or write history files;
-don't allow suspending; don't allow spell checking;
-don't allow a file to be appended to, prepended to, or saved under a
-different name if it already has one; and don't make backup files.
+Read and write only the \fIfile\fR (or files) specified on the command line.
+This means: don't read or write the history files; don't allow suspending;
+don't allow spell checking; don't allow executing any command in the shell;
+don't allow the current buffer to be saved under a different name; don't
+allow appending or prepending to any file; and don't make backup files.
+.sp
+As an exception, before the specified file or files, the \fInanorc\fR files
+are read, to allow customization.  If customization should not be allowed,
+use option \fB\-I\fR (\fB\-\-\%ignorercfiles\fR) as well.
+.sp
+When no \fIfile\fR is specified on the command line, restricted mode
+allows you to save the contents that you type into the new buffer
+under any name, except that existing files may not be overwritten.
+If the places where this new file may be created should be limited,
+then use option \fB\-o\fR (\fB\-\-\%operatingdir\fR) as well.
+.sp
 Restricted mode can also be activated by invoking \fBnano\fR
-with any name beginning with 'r' (e.g.\& "rnano").
+with a name beginning with 'r' (for example: \fBrnano\fR).
 .TP
 .BR \-S ", " \-\-softwrap
 Display over multiple screen rows lines that exceed the screen's width.
 (You can make this soft-wrapping occur at whitespace instead of rudely at
-the screen's edge, by using also \fB\-\-atblanks\fR.)
+the screen's edge, by using also \fB\-\-\%atblanks\fR.)
 .TP
 .BI \-T " number\fR, " \-\-tabsize= number
-Set the size (width) of a tab to \fInumber\fR columns.  The value of
-\fInumber\fR must be greater than 0.  The default value is \fB8\fR.
+Set the size (width) of a tab to \fI\%number\fR columns.  The value of
+\fI\%number\fR must be greater than 0.  The default value is \fB8\fR.
 .TP
 .BR \-U ", " \-\-quickblank
 Make status-bar messages disappear after 1 keystroke instead of after 20.
-Note that option \fB\-c\fR (\fB\-\-constantshow\fR) overrides this.
-When option \fB\-\-minibar\fR or \fB\-\-zero\fR is in effect,
-\fB\-\-quickblank\fR makes a message disappear after
+Note that option \fB\-c\fR (\fB\-\-\%constantshow\fR) overrides this.
+When option \fB\-\-\%minibar\fR or \fB\-\-\%zero\fR is in effect,
+\fB\-\-\%quickblank\fR makes a message disappear after
 0.8 seconds instead of after the default 1.5 seconds.
 .
 .TP
@@ -242,7 +250,7 @@ characters as part of a word.
 .BI "\-X """ characters\fB"\fR, " \-\-wordchars=""" characters """"
 Specify which other characters (besides the normal alphanumeric ones)
 should be considered as part of a word.  When using this option, you
-probably want to omit \fB\-W\fR (\fB\-\-wordbounds\fR).
+probably want to omit \fB\-W\fR (\fB\-\-\%wordbounds\fR).
 .TP
 .BI \-Y " name\fR, " \-\-syntax= name
 Specify the name of the syntax highlighting to use from among the ones
@@ -259,14 +267,14 @@ instead of always at the edge of the screen.
 .BR \-b ", " \-\-breaklonglines
 Automatically hard-wrap the current line when it becomes overlong,
 that is: when it becomes wider than the value given with \fB\-r\fR
-(\fB\-\-fill\fR).  The default value for \fB-r\fR is the terminal's
+(\fB\-\-fill\fR).  The default value for \fB\-r\fR is the terminal's
 width minus eight.
-(This option is the opposite of \fB\-w\fR (\fB\-\-nowrap\fR) \(em
+(This option is the opposite of \fB\-w\fR (\fB\-\-\%nowrap\fR) \[em]
 the last one given takes effect.)
 .TP
 .BR \-c ", " \-\-constantshow
 Constantly report the cursor position on the status bar.
-Note that this overrides option \fB\-U\fR (\fB\-\-quickblank\fR).
+Note that this overrides option \fB\-U\fR (\fB\-\-\%quickblank\fR).
 .TP
 .BR \-d ", " \-\-rebinddelete
 Interpret the Delete and Backspace keys differently so that both Backspace
@@ -277,8 +285,8 @@ system either Backspace acts like Delete or Delete acts like Backspace.
 Do not use the line below the title bar, leaving it entirely blank.
 .TP
 .BI \-f " file\fR, " \-\-rcfile= file
-Read only this \fIfile\fR for setting nano's options, instead of reading
-both the system-wide and the user's nanorc files.
+Read only this \fIfile\fR for setting \fBnano\fR's options, instead of reading
+both the system-wide and the user's \fInanorc\fR files.
 .TP
 .BR \-g ", " \-\-showcursor
 Make the cursor visible in the file browser (putting it on the
@@ -314,52 +322,52 @@ selected through dragging by holding down the Shift key.
 .BR \-n ", " \-\-noread
 Treat any name given on the command line as a new file.  This allows
 \fBnano\fR to write to named pipes: it starts with a blank buffer,
-and writes to the pipe when the user saves the "file".  This way
+and writes to the pipe when the user saves the \[lq]file\[rq].  This way
 \fBnano\fR can be used as an editor in combination with for instance
 \fBgpg\fR without having to write sensitive data to disk first.
 .TP
 .BI \-o " directory\fR, " \-\-operatingdir= directory
-Change to the given \fIdirectory\fR, and allow reading and writing
+Change to the given \fI\%directory\fR, and allow reading and writing
 files only in this directory and its subdirectories.
 .TP
 .BR \-p ", " \-\-preserve
 Preserve the XOFF and XON sequences (\fB^S\fR and \fB^Q\fR) so that
 they are caught by the terminal (stopping and resuming the output).
-Note that option \fB\-/\fR (\fB\-\-modernbindings\fR) overrides this.
+Note that option \fB\-/\fR (\fB\-\-\%modernbindings\fR) overrides this.
 .TP
 .BR \-q ", " \-\-indicator
-Display a "scrollbar" on the righthand side of the edit window.
+Display a \[lq]scrollbar\[rq] on the righthand side of the edit window.
 It shows the position of the viewport in the buffer
 and how much of the buffer is covered by the viewport.
 .TP
 .BI \-r " number\fR, " \-\-fill= number
 Set the target width for justifying and automatic hard-wrapping at this
-\fInumber\fR of columns.  If the value is 0 or less, wrapping occurs
-at the width of the screen minus \fInumber\fR columns, allowing the wrap
+\fI\%number\fR of columns.  If the value is 0 or less, wrapping occurs
+at the width of the screen minus \fI\%number\fR columns, allowing the wrap
 point to vary along with the width of the screen if the screen is resized.
 The default value is \fB\-8\fR.
 .TP
 .B "\-s ""\fIprogram\fR [\fIargument \fR...]\fB""\fR, \fB\-\-speller=""\fIprogram\fR [\fIargument \fR...]\fB"""
 Use this command to perform spell checking and correcting, instead of
-using the built-in corrector that calls \fBhunspell\fR(1) or \fBspell\fR(1).
+using the built-in corrector that calls \fB\%hunspell\fR(1) or \fBspell\fR(1).
 .TP
 .BR \-t ", " \-\-saveonexit
 Save a changed buffer without prompting (when exiting with \fB^X\fR).
 .TP
 .BR \-u ", " \-\-unix
-Save a file by default in Unix format.  This overrides nano's
+Save a file by default in Unix format.  This overrides \fBnano\fR's
 default behavior of saving a file in the format that it had.
-(This option has no effect when you also use \fB\-\-noconvert\fR.)
+(This option has no effect when you also use \fB\-\-\%noconvert\fR.)
 .TP
 .BR \-v ", " \-\-view
 Just view the file and disallow editing: read-only mode.
 This mode allows the user to open also other files for viewing,
-unless \fB\-\-restricted\fR is given too.
+unless \fB\-\-\%restricted\fR is given too.
 .TP
 .BR \-w ", " \-\-nowrap
 Do not automatically hard-wrap the current line when it becomes overlong.
 This is the default.  (This option is the opposite of \fB\-b\fR
-(\fB\-\-breaklonglines\fR) \(em the last one given takes effect.)
+(\fB\-\-\%breaklonglines\fR) \[em] the last one given takes effect.)
 .TP
 .BR \-x ", " \-\-nohelp
 Don't show the two help lines at the bottom of the screen.
@@ -372,7 +380,7 @@ List the names of the available syntaxes and exit.
 .TP
 .BR \-! ", " \-\-magic
 When neither the file's name nor its first line give a clue,
-try using libmagic to determine the applicable syntax.
+try using \fI\%libmagic\fR to determine the applicable syntax.
 .TP
 .BR \-@ ", " \-\-colonparsing
 When a filename given on the command line ends in a colon plus digits
@@ -395,19 +403,19 @@ filename in the center of the title bar.
 .BR \-_ ", " \-\-minibar
 Suppress the title bar and instead show information about
 the current buffer at the bottom of the screen, in the space
-for the status bar.  In this "mini bar" the filename is shown
+for the status bar.  In this \[lq]mini bar\[rq] the filename is shown
 on the left, followed by an asterisk if the buffer has been modified.
 On the right are displayed the current line and column number, the
 code of the character under the cursor (in Unicode format: U+xxxx),
-the same flags as are shown by \fB\-\-stateflags\fR, and a percentage
+the same flags as are shown by \fB\-\-\%stateflags\fR, and a percentage
 that expresses how far the cursor is into the file (linewise).
 When a file is loaded or saved, and also when switching between buffers,
 the number of lines in the buffer is displayed after the filename.
 This number is cleared upon the next keystroke, or replaced with an
 [i/n] counter when multiple buffers are open.
 The line plus column numbers and the character code are displayed only when
-\fB\-\-constantshow\fR is used, and can be toggled on and off with \fBM\-C\fR.
-The state flags are displayed only when \fB\-\-stateflags\fR is used.
+\fB\-\-\%constantshow\fR is used, and can be toggled on and off with \fBM\-C\fR.
+The state flags are displayed only when \fB\-\-\%stateflags\fR is used.
 .TP
 .BR \-0 ", " \-\-zero
 Hide all elements of the interface (title bar, status bar, and help lines)
@@ -423,7 +431,7 @@ current line sideways by a large amount, instead of scrolling all visible lines
 sideways by just the amount needed to keep the cursor in view.
 This latter whole-window smooth sideways scrolling is the new default behavior.
 The single-line jerky sideways scrolling enabled by this option was the old
-behavior \(em the only behavior that \fBnano\fR knew.
+behavior \[em] the only behavior that \fBnano\fR knew.
 .TP
 .BR \-/ ", " \-\-modernbindings
 Use key bindings similar to the ones that most modern programs use:
@@ -436,7 +444,7 @@ Furthermore, \fB^A\fR sets the mark, \fB^B\fR searches backward,
 \fB^D\fR searches previous, \fB^R\fR makes replacements,
 \fB^P\fR shows the position, \fB^T\fR goes to a line,
 \fB^W\fR writes out a file, and \fB^E\fR executes a command.
-Note that this option overrides option \fB\-p\fR (\fB\-\-preserve\fR).
+Note that this option overrides option \fB\-p\fR (\fB\-\-\%preserve\fR).
 
 .SH TOGGLES
 Several of the above options can be switched on and off also while
@@ -451,16 +459,16 @@ the help viewer and the linter.  All other toggles work in
 the main menu only.
 
 .SH FILES
-When \fB\-\-rcfile\fR is given, \fBnano\fR reads just the specified file
+When \fB\-\-\%rcfile\fR is given, \fBnano\fR reads just the specified file
 for setting its options and syntaxes and key bindings.  Without that
 option, \fBnano\fR reads two configuration files: first the system's
 \fInanorc\fR (if it exists), and then the user's \fInanorc\fR (if it
-exists), either \fI~/.nanorc\fR or \fI$XDG_CONFIG_HOME/nano/nanorc\fR
-or \fI~/.config/nano/nanorc\fR, whichever is encountered first.  See
+exists), either \fI\%\[ti]/.nanorc\fR or \fI\%$XDG_CONFIG_HOME/\:nano/\:nanorc\fR
+or \fI\%\[ti]/.config/\:nano/\:nanorc\fR, whichever is encountered first.  See
 .BR nanorc (5)
 for more information on the possible contents of those files.
 .sp
-See \fI/usr/share/nano/\fR and \fI/usr/share/nano/extra/\fR
+See \fI/usr/\:share/\:nano/\fR and \fI/usr/\:share/\:nano/\:extra/\fR
 for available syntax-coloring definitions.
 
 .SH EXIT STATUS
@@ -477,7 +485,7 @@ The last open buffer was discarded (with \fB^O^Q\fR or \fB^X^Q\fR).
 .SH NOTES
 Suspension is enabled by default, reachable via \fB^T^Z\fR.
 (If you want a plain \fB^Z\fR to suspend nano, add
-\fBbind ^Z suspend main\fR to your nanorc.)
+\fBbind ^Z suspend main\fR to your \fInanorc\fR.)
 .sp
 At a Yes-No prompt, \fB^Y\fR can be used for "Yes", \fB^N\fR for "No",
 and \fB^A\fR for "All".
@@ -493,10 +501,10 @@ line nor in one of the \fInanorc\fR files, \fBnano\fR checks the
 .sp
 In some cases \fBnano\fR tries to dump the buffer into an emergency file.
 This happens mainly if \fBnano\fR receives a SIGHUP or SIGTERM or runs out
-of memory.  It writes the buffer into a file named \fInano.save\fR if the
+of memory.  It writes the buffer into a file named \fI\%nano.save\fR if the
 buffer didn't have a name already, or adds a ".save" suffix to the current
 filename.  If an emergency file with that name already exists in the
-current directory, it adds ".save" plus a number (e.g.\& ".save.1") to
+current directory, it adds ".save" plus a number (for example: ".save.1") to
 the current filename in order to make it unique.  In multibuffer mode,
 \fBnano\fR writes all open buffers to their respective emergency files.
 .sp
@@ -512,7 +520,7 @@ Please report any other bugs that you encounter via:
 .br
 .IR https://savannah.gnu.org/bugs/?group=nano .
 .sp
-When nano crashes, it saves any modified buffers to emergency .save files.
+When \fBnano\fR crashes, it saves any modified buffers to emergency \fI.save\fR files.
 If you are able to reproduce the crash and you want to get a backtrace, define
 the environment variable \fBNANO_NOCATCH\fR.
 

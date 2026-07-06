@@ -1,48 +1,38 @@
-# printf-posix.m4 serial 6 (gettext-0.18.2)
-dnl Copyright (C) 2003, 2007, 2009-2013 Free Software Foundation, Inc.
+# printf-posix.m4
+# serial 5
+dnl Copyright (C) 2007-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
-dnl From Bruno Haible.
-dnl Test whether the printf() function supports POSIX/XSI format strings with
-dnl positions.
-
-AC_DEFUN([gt_PRINTF_POSIX],
+AC_DEFUN([gl_FUNC_PRINTF_POSIX],
 [
-  AC_REQUIRE([AC_PROG_CC])
-  AC_CACHE_CHECK([whether printf() supports POSIX/XSI format strings],
-    gt_cv_func_printf_posix,
-    [
-      AC_RUN_IFELSE(
-        [AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <string.h>
-/* The string "%2$d %1$d", with dollar characters protected from the shell's
-   dollar expansion (possibly an autoconf bug).  */
-static char format[] = { '%', '2', '$', 'd', ' ', '%', '1', '$', 'd', '\0' };
-static char buf[100];
-int main ()
-{
-  sprintf (buf, format, 33, 55);
-  return (strcmp (buf, "55 33") != 0);
-}]])],
-        [gt_cv_func_printf_posix=yes],
-        [gt_cv_func_printf_posix=no],
-        [
-          AC_EGREP_CPP([notposix], [
-#if defined __NetBSD__ || defined __BEOS__ || defined _MSC_VER || defined __MINGW32__ || defined __CYGWIN__
-  notposix
-#endif
-            ],
-            [gt_cv_func_printf_posix="guessing no"],
-            [gt_cv_func_printf_posix="guessing yes"])
-        ])
-    ])
-  case $gt_cv_func_printf_posix in
-    *yes)
-      AC_DEFINE([HAVE_POSIX_PRINTF], [1],
-        [Define if your printf() function supports format strings with positions.])
-      ;;
-  esac
+  AC_REQUIRE([gl_FUNC_PRINTF_IS_POSIX])
+  if test $gl_cv_func_printf_posix = no; then
+    gl_PREREQ_VASNPRINTF_WITH_POSIX_EXTRAS
+    gl_REPLACE_VASNPRINTF
+    gl_REPLACE_PRINTF
+  fi
 ])
+
+dnl Test whether printf is POSIX compliant.
+dnl Result is gl_cv_func_printf_posix.
+AC_DEFUN([gl_FUNC_PRINTF_IS_POSIX],
+[
+  AC_REQUIRE([gl_FUNC_VFPRINTF_IS_POSIX])
+  gl_cv_func_printf_posix="$gl_cv_func_vfprintf_posix"
+])
+
+AC_DEFUN([gl_REPLACE_PRINTF],
+[
+  AC_REQUIRE([gl_STDIO_H_DEFAULTS])
+  AC_REQUIRE([gl_ASM_SYMBOL_PREFIX])
+  AC_LIBOBJ([printf])
+  REPLACE_PRINTF=1
+  AC_DEFINE([REPLACE_PRINTF_POSIX], [1],
+    [Define if printf is overridden by a POSIX compliant gnulib implementation.])
+  gl_PREREQ_PRINTF
+])
+
+AC_DEFUN([gl_PREREQ_PRINTF], [:])

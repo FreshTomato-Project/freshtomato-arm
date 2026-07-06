@@ -249,7 +249,7 @@ config_t *parse_config_line(char *line, const char *fname, int lineno) {
 
 	eol = line + strlen(line);
 
-	while(strchr("\t ", *--eol)) {
+	while(eol > line && strchr("\t ", *--eol)) {
 		*eol = '\0';
 	}
 

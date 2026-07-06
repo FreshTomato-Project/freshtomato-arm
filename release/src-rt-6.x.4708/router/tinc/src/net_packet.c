@@ -1108,7 +1108,7 @@ bool receive_sptps_record(void *handle, uint8_t type, const void *data, uint16_t
 	int offset = (type & PKT_MAC) ? 0 : 14;
 
 	if(type & PKT_COMPRESSED) {
-		length_t ulen = uncompress_packet(DATA(&inpkt) + offset, MAXSIZE - inpkt.offset, (const uint8_t *)data, len, from->incompression);
+		length_t ulen = uncompress_packet(DATA(&inpkt) + offset, MAXSIZE - inpkt.offset - offset, (const uint8_t *)data, len, from->incompression);
 
 		if(!ulen) {
 			return false;

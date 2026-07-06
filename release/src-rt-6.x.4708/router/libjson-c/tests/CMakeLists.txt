@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.9...3.12) # see ../CMakeLists.txt for why
 add_executable(test1Formatted test1.c parse_flags.c parse_flags.h)
 target_compile_definitions(test1Formatted PRIVATE TEST_FORMATTED=1)
 target_link_libraries(test1Formatted PRIVATE ${PROJECT_NAME})
@@ -21,6 +21,7 @@ set(ALL_TEST_NAMES
     test_charcase
     test_compare
     test_deep_copy
+    test_deep_nesting
     test_double_serializer
     test_float
     test_int_add
@@ -37,12 +38,21 @@ set(ALL_TEST_NAMES
     test_visit
     test_object_iterator)
 
+set(NOBUILD_TEST_NAMES
+    test_json_parse_cli
+)
+
 if (NOT DISABLE_JSON_POINTER)
     set(ALL_TEST_NAMES ${ALL_TEST_NAMES} test_json_pointer)
+    set(ALL_TEST_NAMES ${ALL_TEST_NAMES} test_safe_json_pointer_set)
     if (NOT DISABLE_JSON_PATCH)
         set(ALL_TEST_NAMES ${ALL_TEST_NAMES} test_json_patch)
     endif()
 endif()
+
+foreach(TESTNAME ${NOBUILD_TEST_NAMES})
+add_test(NAME ${TESTNAME} COMMAND ${PROJECT_SOURCE_DIR}/tests/${TESTNAME}.test)
+endforeach(TESTNAME)
 
 foreach(TESTNAME ${ALL_TEST_NAMES})
 

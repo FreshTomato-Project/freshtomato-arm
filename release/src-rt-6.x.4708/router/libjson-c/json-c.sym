@@ -17,6 +17,7 @@ JSONC_PRIVATE {
     array_list_free;
     array_list_new;
     array_list_put_idx;
+    array_list_set_idx;
     array_list_sort;
     json_hex_chars;
     json_parse_double;
@@ -24,6 +25,7 @@ JSONC_PRIVATE {
     json_parse_uint64;
     lh_table_delete;
     lh_table_delete_entry;
+    lh_table_delete_entry_to_tail;
     lh_table_free;
     lh_table_insert;
     lh_table_insert_w_hash;
@@ -180,3 +182,10 @@ JSONC_0.17 {
 JSONC_0.18 {
 #  global:
 } JSONC_0.17;
+
+JSONC_0.19 {
+  global:
+    json_pointer_set_with_limit_index;
+    json_pointer_set_with_cb;
+    json_object_array_put_with_idx_limit_cb;
+} JSONC_0.18;

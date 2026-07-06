@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.9...3.12)
 
 # JSON-C library is C only project.
 # PROJECT_VERSION{,_MAJOR,_MINOR,_PATCH} set by project():
-project(json-c LANGUAGES C VERSION 0.18)
+project(json-c LANGUAGES C VERSION 0.19)
 
 # set default build type if not specified by user
 if(NOT CMAKE_BUILD_TYPE)
@@ -45,10 +45,6 @@ include(CMakePackageConfigHelpers)
 option(BUILD_SHARED_LIBS  "Default to building shared libraries" ON)
 option(BUILD_STATIC_LIBS  "Default to building static libraries" ON)
 
-if (BUILD_SHARED_LIBS)
-    add_definitions(-D JSON_C_DLL)
-endif()
-
 # Generate a release merge and test it to verify the correctness of republishing the package.
 ADD_CUSTOM_TARGET(distcheck
 COMMAND make package_source
@@ -70,15 +66,68 @@ option(OVERRIDE_GET_RANDOM_SEED       "Override json_c_get_random_seed() with cu
 option(DISABLE_EXTRA_LIBS             "Avoid linking against extra libraries, such as libbsd." OFF)
 option(DISABLE_JSON_POINTER           "Disable JSON pointer (RFC6901) and JSON patch support." OFF)
 option(DISABLE_JSON_PATCH             "Disable JSON patch (RFC6902) support."                 OFF)
-option(NEWLOCALE_NEEDS_FREELOCALE     "Work around newlocale bugs in old FreeBSD by calling freelocale"  OFF)
+option(NEWLOCALE_NEEDS_FREELOCALE     "Work around newlocale bugs in old FreeBSD and macOS by calling freelocale"  OFF)
 option(BUILD_APPS                     "Default to building apps" ON)
 
+# macOS (Darwin) has the same newlocale() bug as older FreeBSD versions:
+# newlocale() does not free the locale object passed to it, causing memory leaks.
+# See: https://github.com/json-c/json-c/issues/668
+if(APPLE AND NOT NEWLOCALE_NEEDS_FREELOCALE)
+    message(STATUS "macOS detected: enabling NEWLOCALE_NEEDS_FREELOCALE to prevent memory leaks")
+    set(NEWLOCALE_NEEDS_FREELOCALE ON CACHE BOOL "macOS needs freelocale workaround" FORCE)
+endif()
 
-if (UNIX OR MINGW OR CYGWIN)
+if (AMIGA)
+    set(DISABLE_THREAD_LOCAL_STORAGE ON)
+    set(ENABLE_THREADING OFF)
+    set(BUILD_SHARED_LIBS OFF)
+    set(BUILD_APPS OFF)
+    set(DISABLE_STATIC_FPIC ON)
+    if ($ENV{CROSS_PFX} STREQUAL "m68k-amigaos")
+        set(AMIGA_M68K ON)
+        set(BUILD_TESTING OFF)
+        if (${M68K_CRT} STREQUAL "newlib")
+            set(NEWLIB ON)
+        elseif(${M68K_CRT} STREQUAL "clib2")
+            set(CLIB2 ON)
+        elseif(${M68K_CRT} STREQUAL "ixemul")
+            set(IXEMUL ON)
+        elseif(${M68K_CRT} STREQUAL "nix20")
+            set(NIX20 ON)
+        elseif(${M68K_CRT} STREQUAL "nix13")
+            set(NIX13 ON)
+        else()
+            set(NEWLIB ON)
+        endif()
+        message(STATUS "Building for Motorola 68k AmigaOS using CRT: ${M68K_CRT}")
+    elseif ($ENV{CROSS_PFX} STREQUAL "ppc-amigaos")
+        set(AMIGA_PPC ON)
+        message(STATUS "Building for PowerPC AmigaOS")
+    elseif($ENV{CROSS_PFX} STREQUAL "ppc-morphos")
+        set(MORPHOS ON)
+        if (NOIXEMUL)
+            message(STATUS "Building for PowerPC MorphOS without ixemul")
+            set(DISABLE_WERROR ON)
+            set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -noixemul")
+        else()
+            message(STATUS "Building for PowerPC MorphOS with ixemul")
+        endif()
+    else()
+        message(FATAL_ERROR "Unsupported AmigaOS target")
+    endif()
+else()
+    message(STATUS "Building for ${CMAKE_SYSTEM_NAME}")
+endif()
+
+if (UNIX OR MINGW OR CYGWIN OR AMIGA)
     list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
 endif()
 
-if (UNIX)
+if (BUILD_SHARED_LIBS)
+    add_definitions(-D JSON_C_DLL)
+endif()
+
+if (UNIX OR AMIGA)
     list(APPEND CMAKE_REQUIRED_LIBRARIES   m)
 endif()
 
@@ -136,7 +185,17 @@ endif()
 check_symbol_exists(_isnan          "float.h" HAVE_DECL__ISNAN)
 check_symbol_exists(_finite         "float.h" HAVE_DECL__FINITE)
 
-if ((MSVC AND NOT (MSVC_VERSION LESS 1800)) OR MINGW OR CYGWIN OR UNIX)
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+    # Detect clang-cl.exe, it is Clang but with MSVC compatible command line arguments
+    execute_process (COMMAND ${CMAKE_C_COMPILER} -? ERROR_QUIET OUTPUT_QUIET RESULT_VARIABLE _clang_result)
+    if (_clang_result EQUAL 0)
+        set(CLANG_CL TRUE)
+    else()
+        set(CLANG_CL FALSE)
+    endif()
+endif()
+
+if ((MSVC AND NOT (MSVC_VERSION LESS 1800)) OR MINGW OR CYGWIN OR UNIX OR AMIGA OR CLANG_CL)
     check_symbol_exists(INFINITY    "math.h" HAVE_DECL_INFINITY)
     check_symbol_exists(isinf       "math.h" HAVE_DECL_ISINF)
     check_symbol_exists(isnan       "math.h" HAVE_DECL_ISNAN)
@@ -144,22 +203,23 @@ if ((MSVC AND NOT (MSVC_VERSION LESS 1800)) OR MINGW OR CYGWIN OR UNIX)
 endif()
 
 check_symbol_exists(_doprnt         "stdio.h" HAVE_DOPRNT)
-if (UNIX OR MINGW OR CYGWIN)
+if (UNIX OR MINGW OR CYGWIN OR AMIGA)
     check_symbol_exists(snprintf    "stdio.h" HAVE_SNPRINTF)
 endif()
 check_symbol_exists(vasprintf       "stdio.h" HAVE_VASPRINTF)
 check_symbol_exists(vsnprintf       "stdio.h" HAVE_VSNPRINTF)
 check_symbol_exists(vprintf         "stdio.h" HAVE_VPRINTF)
-
-check_symbol_exists(arc4random      "stdlib.h" HAVE_ARC4RANDOM)
+if (NOT AMIGA_M68K)
+    check_symbol_exists(arc4random      "stdlib.h" HAVE_ARC4RANDOM)
+endif()
 if (NOT HAVE_ARC4RANDOM AND DISABLE_EXTRA_LIBS STREQUAL "OFF")
     check_include_file(bsd/stdlib.h HAVE_BSD_STDLIB_H)
     if (HAVE_BSD_STDLIB_H)
-		list(APPEND CMAKE_REQUIRED_LIBRARIES "bsd")
-		unset(HAVE_ARC4RANDOM CACHE)
+        list(APPEND CMAKE_REQUIRED_LIBRARIES "bsd")
+        unset(HAVE_ARC4RANDOM CACHE)
         check_symbol_exists(arc4random   "bsd/stdlib.h" HAVE_ARC4RANDOM)
         if (NOT HAVE_ARC4RANDOM)
-			list(REMOVE_ITEM CMAKE_REQUIRED_LIBRARIES "bsd")
+            list(REMOVE_ITEM CMAKE_REQUIRED_LIBRARIES "bsd")
         endif()
     endif()
 endif()
@@ -173,6 +233,10 @@ endif()
 if (HAVE_LOCALE_H)
     check_symbol_exists(setlocale   "locale.h" HAVE_SETLOCALE)
     check_symbol_exists(uselocale   "locale.h" HAVE_USELOCALE)
+    if (NOT NIX20 AND NOT NIX13)
+        # libnix does not fully support this yet
+        check_symbol_exists(duplocale   "locale.h" HAVE_DUPLOCALE)
+    endif()
 endif()
 
 # uClibc *intentionally* crashes in duplocale(), at least as of:
@@ -203,6 +267,7 @@ if (HAVE_SYS_RANDOM_H)
 endif()
 if (HAVE_SYS_RESOURCE_H)
     check_symbol_exists(getrusage   "sys/resource.h" HAVE_GETRUSAGE)
+    check_symbol_exists(setrlimit   "sys/resource.h" HAVE_SETRLIMIT)
 endif()
 
 check_symbol_exists(strtoll     "stdlib.h" HAVE_STRTOLL)
@@ -282,9 +347,7 @@ if (NOT DEFINED CMAKE_C_COMPILER_FRONTEND_VARIANT OR "${CMAKE_C_COMPILER_FRONTEN
 	elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 		set(CMAKE_C_COMPILER_FRONTEND_VARIANT "GNU")
 	elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-		# Detect clang-cl.exe, it is Clang but with MSVC compatible command line arguments
-		execute_process (COMMAND ${CMAKE_C_COMPILER} -? ERROR_QUIET OUTPUT_QUIET RESULT_VARIABLE _clang_result)
-		if (_clang_result EQUAL 0)
+		if (CLANG_CL)
 			set(CMAKE_C_COMPILER_FRONTEND_VARIANT "MSVC")
 		else()
 			set(CMAKE_C_COMPILER_FRONTEND_VARIANT "GNU")
@@ -298,6 +361,9 @@ if ("${CMAKE_C_COMPILER_FRONTEND_VARIANT}" STREQUAL "GNU" OR "${CMAKE_C_COMPILER
 	if ("${DISABLE_WERROR}" STREQUAL "OFF")
 	    set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -Werror")
 	endif()
+    if (AMIGA_M68K)
+        set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -fbaserel")
+    endif()
     set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -Wall")
     set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -Wcast-qual")
     set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -Wno-error=deprecated-declarations")
@@ -429,6 +495,13 @@ set(JSON_C_SOURCES
     ${PROJECT_SOURCE_DIR}/strerror_override.c
 )
 
+set(JSON_C_RESOURCES)
+
+if (BUILD_SHARED_LIBS AND WIN32)
+    enable_language(RC)
+    set(JSON_C_RESOURCES ${JSON_C_RESOURCES} ${PROJECT_SOURCE_DIR}/libjson.rc)
+endif()
+
 if (NOT DISABLE_JSON_POINTER)
     set(JSON_C_PUBLIC_HEADERS   ${JSON_C_PUBLIC_HEADERS}  ${PROJECT_SOURCE_DIR}/json_pointer.h)
     set(JSON_C_SOURCES          ${JSON_C_SOURCES}         ${PROJECT_SOURCE_DIR}/json_pointer.c)
@@ -468,9 +541,10 @@ endif()
 add_library(${PROJECT_NAME}
     ${JSON_C_SOURCES}
     ${JSON_C_HEADERS}
+    ${JSON_C_RESOURCES}
 )
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    VERSION 5.4.0
+    VERSION 5.5.0
     SOVERSION 5)
 list(APPEND CMAKE_TARGETS ${PROJECT_NAME})
 # If json-c is used as subroject it set to target correct interface -I flags and allow

@@ -9,7 +9,7 @@
  
      if (socket_connection_reset(sock, status))
      {
-@@ -1806,7 +1806,7 @@
+@@ -1808,7 +1808,7 @@
                  socks_preprocess_outgoing_link(c, sock, &to_addr, &size_delta);
  
                  /* Send packet */
@@ -20,7 +20,7 @@
                  link_socket_write_post_size_adjust(&size, size_delta, &c->c2.to_link);
 --- openvpn/src/openvpn/options.c
 +++ openvpn/src/openvpn/options.c
-@@ -831,6 +831,9 @@
+@@ -832,6 +832,9 @@
      o->resolve_retry_seconds = RESOLV_RETRY_INFINITE;
      o->resolve_in_advance = false;
      o->proto_force = -1;
@@ -30,7 +30,7 @@
      o->occ = true;
  #ifdef ENABLE_MANAGEMENT
      o->management_log_history_cache = 250;
-@@ -974,6 +977,9 @@
+@@ -975,6 +978,9 @@
  {
      setenv_str_i(es, "remote", e->remote, i);
      setenv_str_i(es, "remote_port", e->remote_port, i);
@@ -40,7 +40,7 @@
  
      if (e->http_proxy_options)
      {
-@@ -1599,6 +1605,9 @@
+@@ -1611,6 +1617,9 @@
      SHOW_BOOL(bind_ipv6_only);
      SHOW_INT(connect_retry_seconds);
      SHOW_INT(connect_timeout);
@@ -50,7 +50,7 @@
  
      if (o->http_proxy_options)
      {
-@@ -6648,6 +6657,46 @@
+@@ -6667,6 +6676,46 @@
          }
          options->proto_force = proto_force;
      }

@@ -1,4 +1,48 @@
 
+Changes with nginx 1.31.2                                        17 Jun 2026
+
+    *) Security: use-after-free might occur when using HTTP/3 and processing
+       a specially crafted QUIC session, allowing an attacker to cause
+       worker process memory corruption or segmentation fault in a worker
+       process (CVE-2026-42530).
+       Thanks to Trung Nguyen of CyStack.
+
+    *) Security: a heap memory buffer overflow might occur in a worker
+       process when using a configuration with "ignore_invalid_headers off;"
+       and "large_client_header_buffers" with large configured values when
+       proxying a specially crafted request to HTTP/2 or gRPC backend,
+       allowing an attacker to cause worker process memory corruption or
+       segmentation fault in a worker process (CVE-2026-42055).
+       Thanks to Mufeed VH of Winfunc Research.
+
+    *) Security: a heap memory buffer overread might occur in a worker
+       process while handling a specially sent response with decoding from
+       UTF-8 via the "charset_map" directive, allowing an attacker to cause
+       a limited disclosure of worker proccess memory or segmentation fault
+       in a worker process (CVE-2026-48142).
+       Thanks to Han Yan of Xiaomi and p4p3r of CYBERONE.
+
+    *) Change: now the $request_id variable uses SipHash-2-4.
+
+    *) Feature: the $ssl_sigalgs variable.
+
+    *) Bugfix: a variable defined by the "split_clients" directive might be
+       empty if all percentages were specified explicitly and summed up to
+       100%.
+
+    *) Bugfix: constant time "secure_link" hash comparison.
+       Thanks to kodareef5.
+
+
+Changes with nginx 1.31.1                                        22 May 2026
+
+    *) Security: a heap memory buffer overflow might occur in a worker
+       process when using a configuration with overlapping captures in
+       ngx_http_rewrite_module, potentially resulting in arbitrary code
+       execution (CVE-2026-9256).
+       Thanks to Mufeed VH of Winfunc Research.
+
+
 Changes with nginx 1.31.0                                        13 May 2026
 
     *) Security: when using the "proxy_set_body" directive, an attacker

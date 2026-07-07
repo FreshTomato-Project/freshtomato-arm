@@ -3099,6 +3099,7 @@ $(LIBCURL_TARGET)-clean:
 	$(call unpatch_files,$(LIBCURL_TARGET))
 
 libevent/stamp-h1:
+	$(call patch_files,libevent)
 	cd libevent && ./autogen.sh && \
 		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC" \
 		CPPFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC -I$(TOP)/zlib/staged/usr/include" \
@@ -3124,6 +3125,7 @@ libevent-clean:
 	-@$(MAKE) -C libevent clean
 	@rm -f libevent/stamp-h1 libevent/Makefile
 	@rm -rf libevent/staged
+	$(call unpatch_files,libevent)
 
 libiconv/stamp-h1:
 	cd libiconv && \

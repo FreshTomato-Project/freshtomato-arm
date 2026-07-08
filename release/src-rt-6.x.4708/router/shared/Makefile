@@ -41,12 +41,13 @@ ifeq ($(or $(TCONFIG_BLINK),$(TCONFIG_BCMARM)),y)
 endif
 
 ifeq ($(TCONFIG_USB),y)
- OBJS += usb.o \
-        $(TOP)/busybox/util-linux/volume_id/linux_swap.o \
-        $(TOP)/busybox/util-linux/volume_id/ext.o \
-        $(TOP)/busybox/util-linux/volume_id/util2.o \
-        $(TOP)/busybox/util-linux/volume_id/fat.o \
-        $(TOP)/busybox/util-linux/volume_id/ntfs.o
+ OBJS += bb_uuid.o \
+         usb.o \
+         $(TOP)/busybox/util-linux/volume_id/linux_swap.o \
+         $(TOP)/busybox/util-linux/volume_id/ext.o \
+         $(TOP)/busybox/util-linux/volume_id/util2.o \
+         $(TOP)/busybox/util-linux/volume_id/fat.o \
+         $(TOP)/busybox/util-linux/volume_id/ntfs.o
  ifeq ($(TCONFIG_BCMARM),y)
   OBJS += $(TOP)/busybox/util-linux/volume_id/exfat.o
  endif

@@ -186,15 +186,6 @@ static char* find_keyword(char *ptr, size_t len, const char *word)
 	return NULL;
 }
 
-static void replace(char *s, char what, char with)
-{
-	while (*s) {
-		if (what == *s)
-			*s = with;
-		++s;
-	}
-}
-
 static char *filename2modname(const char *filename, char *modname)
 {
 	int i;
@@ -230,7 +221,7 @@ static char* str_2_list(const char *str)
 	dst[len] = '\0';
 	memcpy(dst, str, len);
 //TODO: protect against 2+ spaces: "word  word"
-	replace(dst, ' ', '\0');
+	replace_char(dst, ' ', '\0');
 	return dst;
 }
 
@@ -369,14 +360,14 @@ static int parse_module(module_info *info, const char *pathname)
 	}
 	bksp(); /* remove last ' ' */
 	info->aliases = copy_stringbuf();
-	replace(info->aliases, '-', '_');
+	replace_char(info->aliases, '-', '_');
 
 	/* "dependency1 depandency2" */
 	reset_stringbuf();
 	ptr = find_keyword(module_image, len, "depends=");
 	if (ptr && *ptr) {
-		replace(ptr, ',', ' ');
-		replace(ptr, '-', '_');
+		replace_char(ptr, ',', ' ');
+		replace_char(ptr, '-', '_');
 		dbg2_error_msg("dep:'%s'", ptr);
 		append(ptr);
 	}
@@ -707,7 +698,7 @@ static int process_module(char *name, const char *cmdline_options)
 
 	dbg1_error_msg("process_module('%s','%s')", name, cmdline_options);
 
-	replace(name, '-', '_');
+	replace_char(name, '-', '_');
 
 	dbg1_error_msg("already_loaded:%d is_remove:%d", already_loaded(name), is_remove);
 
@@ -732,18 +723,16 @@ static int process_module(char *name, const char *cmdline_options)
 
 	options = NULL;
 	if (!is_remove) {
-		char *opt_filename = xasprintf("/etc/modules/%s", name);
+		char *opt_filename = concat_path_file("/etc/modules", name);
 		options = xmalloc_open_read_close(opt_filename, NULL);
 		if (options)
-			replace(options, '\n', ' ');
+			replace_char(options, '\n', ' ');
 #if ENABLE_FEATURE_CMDLINE_MODULE_OPTIONS
 		if (cmdline_options) {
 			/* NB: cmdline_options always have one leading ' '
 			 * (see main()), we remove it here */
-			char *op = xasprintf(options ? "%s %s" : "%s %s" + 3,
+			xasprintf_inplace(options, options ? "%s %s" : "%s %s" + 3,
 						cmdline_options + 1, options);
-			free(options);
-			options = op;
 		}
 #endif
 		free(opt_filename);
@@ -1019,9 +1008,7 @@ int modprobe_main(int argc UNUSED_PARAM, char **argv)
 		char **arg = argv;
 		while (*++arg) {
 			/* Enclose options in quotes */
-			char *s = options;
-			options = xasprintf("%s \"%s\"", s ? s : "", *arg);
-			free(s);
+			xasprintf_inplace(options, "%s \"%s\"", options ? options : "", *arg);
 			*arg = NULL;
 		}
 # else

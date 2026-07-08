@@ -124,10 +124,15 @@ int	req_unit = -1;		/* requested interface unit */
 char	path_net_init[MAXPATHLEN]; /* pathname of net-init script */
 char	path_net_preup[MAXPATHLEN];/* pathname of net-pre-up script */
 char	path_net_down[MAXPATHLEN]; /* pathname of net-down script */
+char	path_auth_up[MAXPATHLEN]; /* pathname of auth-up script */
+char	path_auth_down[MAXPATHLEN]; /* pathname of auth-down script */
 char	path_ipup[MAXPATHLEN];	/* pathname of ip-up script */
 char	path_ipdown[MAXPATHLEN];/* pathname of ip-down script */
 char	path_ippreup[MAXPATHLEN]; /* pathname of ip-pre-up script */
 char	req_ifname[IFNAMSIZ];	/* requested interface name */
+#ifdef __linux__
+char	req_vrf[IFNAMSIZ];	/* VRF name to bind with PPP interface */
+#endif
 bool	multilink = 0;		/* Enable multilink operation */
 char	*bundle_name = NULL;	/* bundle name for multilink */
 bool	dump_options;		/* print out option values */
@@ -136,7 +141,6 @@ bool	dryrun;			/* print out option values and exit */
 char	*domain;		/* domain name set by domain option */
 int	child_wait = 5;		/* # seconds to wait for children at exit */
 struct userenv *userenv_list;	/* user environment variables */
-int	dfl_route_metric = -1;	/* metric of the default route to set over the PPP link */
 
 #ifdef PPP_WITH_IPV6CP
 char	path_ipv6up[MAXPATHLEN];   /* pathname of ipv6-up script */
@@ -315,6 +319,12 @@ struct option general_options[] = {
       "Set PPP interface name",
       OPT_PRIO | OPT_PRIV | OPT_STATIC, NULL, IFNAMSIZ },
 
+#ifdef __linux__
+    { "vrf", o_string, req_vrf,
+      "Bind PPP interface to the specified VRF and install routes in its routing table",
+      OPT_PRIO | OPT_PRIV | OPT_STATIC, NULL, IFNAMSIZ },
+#endif
+
     { "dump", o_bool, &dump_options,
       "Print out option values after parsing all options", 1 },
     { "dryrun", o_bool, &dryrun,
@@ -326,14 +336,10 @@ struct option general_options[] = {
 
     { "set", o_special, (void *)user_setenv,
       "Set user environment variable",
-      OPT_A2PRINTER | OPT_NOPRINT, (void *)user_setprint },
+      OPT_A2PRINTER | OPT_NOPRINT | OPT_PRIV, (void *)user_setprint },
     { "unset", o_special, (void *)user_unsetenv,
       "Unset user environment variable",
-      OPT_A2PRINTER | OPT_NOPRINT, (void *)user_unsetprint },
-
-    { "defaultroute-metric", o_int, &dfl_route_metric,
-      "Metric to use for the default route (Linux only; -1 for default behavior)",
-      OPT_PRIV|OPT_LLIMIT|OPT_INITONLY, NULL, 0, -1 },
+      OPT_A2PRINTER | OPT_NOPRINT | OPT_PRIV, (void *)user_unsetprint },
 
     { "net-init-script", o_string, path_net_init,
       "Set pathname of net-init script",
@@ -343,6 +349,13 @@ struct option general_options[] = {
       OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
     { "net-down-script", o_string, path_net_down,
       "Set pathname of net-down script",
+      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+
+    { "auth-up-script", o_string, path_auth_up,
+      "Set pathname of auth-up script",
+      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+    { "auth-down-script", o_string, path_auth_down,
+      "Set pathname of auth-down script",
       OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
 
     { "ip-up-script", o_string, path_ipup,
@@ -618,9 +631,13 @@ ppp_options_from_file(char *filename, int must_exist, int check_prot, int priv)
 
 err:
     fclose(f);
-    free(option_source);
     privileged_option = oldpriv;
     option_source = oldsource;
+
+    /* Note that we usually leak option_source here.  This is OK
+     * since this code is only run during startup.  Other places
+     * makes copies of the pointer (shallow copy), and as such we
+     * have no choice but to leak that here */
     return ret;
 }
 
@@ -1632,6 +1649,7 @@ callfile(char **argv)
 {
     char *fname, *arg, *p;
     int l, ok;
+    char *realname;
 
     arg = *argv;
     ok = 1;
@@ -1660,9 +1678,15 @@ callfile(char **argv)
     slprintf(fname, l, "%s%s", PPP_PATH_PEERFILES, arg);
     ppp_script_setenv("CALL_FILE", arg, 0);
 
-    ok = ppp_options_from_file(fname, 1, 1, 1);
+    if (!ppp_check_access(fname, &realname, 1, 0)) {
+	free(fname);
+	return 0;
+    }
+
+    ok = ppp_options_from_file(realname, 1, 1, 1);
 
     free(fname);
+    free(realname);
     return ok;
 }
 

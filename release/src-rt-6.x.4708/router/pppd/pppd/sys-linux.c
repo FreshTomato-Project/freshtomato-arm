@@ -95,7 +95,6 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <unistd.h>
-#include <limits.h>
 
 /* This is in netdevice.h. However, this compile will fail miserably if
    you attempt to include netdevice.h because it has so many references
@@ -121,8 +120,6 @@
 #endif
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-#include <linux/ppp-ioctl.h>
 
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -155,6 +152,8 @@
 #endif /* PPP_WITH_IPV6CP */
 
 #include "multilink.h"
+
+#include <linux/ppp-ioctl.h>
 
 #ifdef PPP_WITH_FILTER
 #include <pcap-bpf.h>
@@ -216,8 +215,7 @@ int ppp_dev_fd = -1;		/* fd for /dev/ppp (new style driver) */
 
 static int chindex;		/* channel index (new style driver) */
 
-static fd_set in_fds;		/* set of fds that wait_input waits for */
-static int max_in_fd;		/* highest fd set in in_fds */
+static unsigned routing_table_id = RT_TABLE_MAIN;
 
 static int has_proxy_arp       = 0;
 static int driver_version      = 0;
@@ -236,8 +234,6 @@ static int	if_is_up;	/* Interface has been marked up */
 static int	if6_is_up;	/* Interface has been marked up for IPv6, to help differentiate */
 static int	have_default_route;	/* Gateway for default route added */
 static int	have_default_route6;	/* Gateway for default IPv6 route added */
-static struct	rtentry old_def_rt;	/* Old default route */
-static int	default_rt_repl_rest;	/* replace and restore old default rt */
 static u_int32_t proxy_arp_addr;	/* Addr for proxy arp entry added */
 static char proxy_arp_dev[16];		/* Device for proxy arp entry */
 static u_int32_t our_old_addr;		/* for detecting address changes */
@@ -264,8 +260,6 @@ static int baud_rate_of (int speed);
 static void close_route_table (void);
 static int open_route_table (void);
 static int read_route_table (struct rtentry *rt);
-static int defaultroute_exists (struct rtentry *rt, int metric);
-static int defaultroute6_exists (struct in6_rtmsg *rt, int metric);
 static int get_ether_addr (u_int32_t ipaddr, struct sockaddr *hwaddr,
 			   char *name, int namelen);
 static void decode_version (char *buf, int *version, int *mod, int *patch);
@@ -276,7 +270,8 @@ static int setifstate (int u, int state);
 
 extern u_char	inpacket_buf[];	/* borrowed from main.c */
 
-extern int dfl_route_metric;
+extern unsigned dfl_route_metric;
+extern unsigned dfl_route6_metric;
 
 /*
  * SET_SA_FAMILY - set the sa_family field of a struct sockaddr,
@@ -494,9 +489,6 @@ void sys_init(void)
     if (sock6_fd < 0)
 	sock6_fd = -errno;	/* save errno for later */
 #endif
-
-    FD_ZERO(&in_fds);
-    max_in_fd = 0;
 }
 
 /********************************************************************
@@ -800,12 +792,93 @@ void ppp_generic_disestablish(int dev_fd)
     }
 }
 
+/********************************************************************
+ *
+ * get_vrf_table_id - get the routing table id of a VRF from its ifindex.
+ * 
+ * Returns 0 (unspec table id) on failure.
+ */
+static unsigned get_vrf_table_id(unsigned vrf_ifindex)
+{
+    struct {
+        struct nlmsghdr nlh;
+        struct ifinfomsg ifm;
+    } nlreq;
+    struct {
+        struct ifinfomsg ifm;
+        char buf[4096];
+    } nlresp;
+    struct rtattr *vrf_table = NULL;
+    struct rtattr *info_data = NULL;
+    struct rtattr *linkinfo = NULL;
+    struct rtattr *kind = NULL;
+    struct rtattr *rta;
+    size_t nlresp_size;
+    int vrf_len;
+    int li_len;
+    int resp;
+    int len;
+
+    memset(&nlreq, 0, sizeof(nlreq));
+    nlreq.nlh.nlmsg_len = sizeof(nlreq);
+    nlreq.nlh.nlmsg_type = RTM_GETLINK;
+    nlreq.nlh.nlmsg_flags = NLM_F_REQUEST;
+    nlreq.ifm.ifi_family = AF_UNSPEC;
+    nlreq.ifm.ifi_index = vrf_ifindex;
+
+    nlresp_size = sizeof(nlresp);
+    resp = rtnetlink_msg("RTM_GETLINK/NLM_F_REQUEST", NULL, &nlreq, sizeof(nlreq), &nlresp, &nlresp_size, RTM_NEWLINK);
+    if (resp) {
+        errno = (resp < 0) ? -resp : EINVAL;
+        error("Couldn't collect vrf info: %m");
+        return 0;
+    }
+
+    len = nlresp_size - sizeof(nlresp.ifm);
+
+    /* Walk on top-level attributes */
+    for (rta = IFLA_RTA(&nlresp.ifm); RTA_OK(rta, len); rta = RTA_NEXT(rta, len)) {
+        if (rta->rta_type == IFLA_LINKINFO) {
+            linkinfo = rta;
+            break;
+        }
+    }
+    if (!linkinfo)
+        return 0;
+
+    /* Walk in IFLA_LINKINFO */
+    li_len = RTA_PAYLOAD(linkinfo);
+    for (rta = (struct rtattr *)RTA_DATA(linkinfo); RTA_OK(rta, li_len); rta = RTA_NEXT(rta, li_len)) {
+        if (rta->rta_type == IFLA_INFO_KIND)
+            kind = rta;
+        else if (rta->rta_type == IFLA_INFO_DATA)
+            info_data = rta;
+    }
+    if (!kind || strcmp((char *)RTA_DATA(kind), "vrf") != 0)
+        return 0;
+    if (!info_data)
+        return 0;
+
+    /* Walk in IFLA_INFO_DATA */
+    vrf_len = RTA_PAYLOAD(info_data);
+    for (rta = (struct rtattr *)RTA_DATA(info_data); RTA_OK(rta, vrf_len); rta = RTA_NEXT(rta, vrf_len)) {
+        if (rta->rta_type == IFLA_VRF_TABLE) {
+            vrf_table = rta;
+            break;
+        }
+    }
+    if (!vrf_table)
+        return 0;
+
+    return *(unsigned *)RTA_DATA(vrf_table);
+}
+
 /*
  * make_ppp_unit_rtnetlink - register a new ppp network interface for ppp_dev_fd
  * with specified req_ifname via rtnetlink. Interface name req_ifname must not
  * be empty. Custom ppp unit id req_unit is ignored and kernel choose some free.
  */
-static int make_ppp_unit_rtnetlink(void)
+static int make_ppp_unit_rtnetlink(unsigned vrf_ifindex)
 {
     struct {
         struct nlmsghdr nlh;
@@ -814,6 +887,10 @@ static int make_ppp_unit_rtnetlink(void)
             struct rtattr rta;
             char ifname[IFNAMSIZ];
         } ifn;
+        struct {
+            struct rtattr rta;
+            unsigned ifindex;
+        } ifp;
         struct {
             struct rtattr rta;
             struct {
@@ -842,6 +919,9 @@ static int make_ppp_unit_rtnetlink(void)
     nlreq.ifn.rta.rta_len = sizeof(nlreq.ifn);
     nlreq.ifn.rta.rta_type = IFLA_IFNAME;
     strlcpy(nlreq.ifn.ifname, req_ifname, sizeof(nlreq.ifn.ifname));
+    nlreq.ifp.rta.rta_len = sizeof(nlreq.ifp);
+    nlreq.ifp.rta.rta_type = IFLA_MASTER;
+    nlreq.ifp.ifindex = vrf_ifindex;
     nlreq.ifli.rta.rta_len = sizeof(nlreq.ifli);
     nlreq.ifli.rta.rta_type = IFLA_LINKINFO;
     nlreq.ifli.ifik.rta.rta_len = sizeof(nlreq.ifli.ifik);
@@ -884,6 +964,7 @@ static int make_ppp_unit_rtnetlink(void)
  */
 static int make_ppp_unit(void)
 {
+	unsigned vrf_ifindex = 0;
 	int x, flags;
 
 	if (ppp_dev_fd >= 0) {
@@ -897,6 +978,20 @@ static int make_ppp_unit(void)
 	if (flags == -1
 	    || fcntl(ppp_dev_fd, F_SETFL, flags | O_NONBLOCK) == -1)
 		warn("Couldn't set /dev/ppp to nonblock: %m");
+
+	if (req_vrf[0] != '\0') {
+		vrf_ifindex = if_nametoindex(req_vrf);
+		if (vrf_ifindex == 0) {
+			error("Requested vrf %s does not exist", req_vrf);
+			return -1;
+		}
+
+		routing_table_id = get_vrf_table_id(vrf_ifindex);
+		if (routing_table_id == 0) {
+			error("Couldn't get the routing table id of vrf %s", req_vrf);
+			return -1;
+		}
+	}
 
 	/*
 	 * Via rtnetlink it is possible to create ppp network interface with
@@ -912,7 +1007,7 @@ static int make_ppp_unit(void)
 	 * avoid system issues with interface renaming.
 	 */
 	if (req_unit == -1 && req_ifname[0] != '\0' && kernel_version >= KVERSION(2,1,16)) {
-	    if (make_ppp_unit_rtnetlink()) {
+	    if (make_ppp_unit_rtnetlink(vrf_ifindex)) {
 		if (ioctl(ppp_dev_fd, PPPIOCGUNIT, &ifunit))
 		    fatal("Couldn't retrieve PPP unit id: %m");
 		return 0;
@@ -939,6 +1034,42 @@ static int make_ppp_unit(void)
 	}
 	if (x < 0)
 		error("Couldn't create new ppp unit: %m");
+
+	if (x == 0 && req_vrf[0] != '\0') {
+		struct {
+			struct nlmsghdr nlh;
+			struct ifinfomsg ifm;
+			struct {
+				struct rtattr rta;
+				unsigned ifindex;
+			} ifp;
+		} nlreq;
+		char ppp_iface[IFNAMSIZ];
+		int resp;
+
+		memset(&nlreq, 0, sizeof(nlreq));
+
+		slprintf(ppp_iface, sizeof(ppp_iface), "%s%d", PPP_DRV_NAME, ifunit);
+
+		nlreq.nlh.nlmsg_len = sizeof(nlreq);
+		nlreq.nlh.nlmsg_type = RTM_SETLINK;
+		nlreq.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+
+		nlreq.ifm.ifi_family = AF_UNSPEC;
+		nlreq.ifm.ifi_index = if_nametoindex(ppp_iface);
+
+		nlreq.ifp.rta.rta_type = IFLA_MASTER;
+		nlreq.ifp.rta.rta_len = sizeof(nlreq.ifp);
+		nlreq.ifp.ifindex = vrf_ifindex;
+
+		resp = rtnetlink_msg("RTM_SETLINK/NLM_F_REQUEST", NULL, &nlreq, sizeof(nlreq), NULL, NULL, 0);
+		if (resp) {
+			x = -1;
+			error("Couldn't move interface %s in vrf %s", ppp_iface, req_vrf);
+		} else {
+			info("Moved interface %s in vrf %s", ppp_iface, req_vrf);
+		}
+	}
 
 	if (x == 0 && req_ifname[0] != '\0') {
 		struct ifreq ifr;
@@ -1420,45 +1551,6 @@ void output (int unit, unsigned char *p, int len)
     }
 }
 
-/********************************************************************
- *
- * wait_input - wait until there is data available,
- * for the length of time specified by *timo (indefinite
- * if timo is NULL).
- */
-
-void wait_input(struct timeval *timo)
-{
-    fd_set ready, exc;
-    int n;
-
-    ready = in_fds;
-    exc = in_fds;
-    n = select(max_in_fd + 1, &ready, NULL, &exc, timo);
-    if (n < 0 && errno != EINTR)
-	fatal("select: %m");
-}
-
-/*
- * add_fd - add an fd to the set that wait_input waits for.
- */
-void add_fd(int fd)
-{
-    if (fd >= FD_SETSIZE)
-	fatal("internal error: file descriptor too large (%d)", fd);
-    FD_SET(fd, &in_fds);
-    if (fd > max_in_fd)
-	max_in_fd = fd;
-}
-
-/*
- * remove_fd - remove an fd from the set that wait_input waits for.
- */
-void remove_fd(int fd)
-{
-    FD_CLR(fd, &in_fds);
-}
-
 
 /********************************************************************
  *
@@ -1916,6 +2008,15 @@ int get_ppp_stats(int u, struct pppd_stats *stats)
     static int (*func)(int, struct pppd_stats*) = NULL;
 
     if (!func) {
+	if (kernel_version < KVERSION(3, 8, 0)) {
+	    /* In kernel versions prior to 3.8 pppstat in kernel was
+	     * forced to __u32, so just use the IOCTL mechanism which
+	     * will track wrap-around */
+	    func = get_ppp_stats_ioctl;
+	    TIMEOUT(ppp_stats_poller, (void*)(long)u, 25);
+	    return func(u, stats);
+	}
+
 	if (get_ppp_stats_rtnetlink(u, stats)) {
 	    func = get_ppp_stats_rtnetlink;
 	    return 1;
@@ -2106,36 +2207,6 @@ static int read_route_table(struct rtentry *rt)
     return 1;
 }
 
-/********************************************************************
- *
- * defaultroute_exists - determine if there is a default route
- * with the given metric (or negative for any)
- */
-
-static int defaultroute_exists (struct rtentry *rt, int metric)
-{
-    int result = 0;
-
-    if (!open_route_table())
-	return 0;
-
-    while (read_route_table(rt) != 0) {
-	if ((rt->rt_flags & RTF_UP) == 0)
-	    continue;
-
-	if (kernel_version > KVERSION(2,1,0) && SIN_ADDR(rt->rt_genmask) != 0)
-	    continue;
-	if (SIN_ADDR(rt->rt_dst) == 0L && (metric < 0
-					   || rt->rt_metric == metric)) {
-	    result = 1;
-	    break;
-	}
-    }
-
-    close_route_table();
-    return result;
-}
-
 /*
  * have_route_to - determine if the system has any route to
  * a given IP address.  `addr' is in network byte order.
@@ -2165,72 +2236,128 @@ int have_route_to(u_int32_t addr)
 }
 
 /********************************************************************
+ * route_netlink
+ *
+ * Try using netlink to add/remove routes.
+ */
+static
+int _route_netlink(const char* op_fam, int operation, int family, unsigned metric, const void* prefix, uint8_t len)
+{
+    struct {
+	struct nlmsghdr nlh;
+	struct rtmsg rtmsg;
+	struct {
+	    struct rtattr rta;
+	    unsigned ind;
+	} oif;
+	struct {
+	    struct rtattr rta;
+	    unsigned val;
+	} metric;
+	struct {
+	    struct rtattr rta;
+	    unsigned id;
+	} table;
+	struct {
+	    struct rtattr rta;
+	    unsigned char ipdata[16]; /* IPv6 MAX */
+	} prefix;
+    } nlreq;
+    int resp;
+    size_t txsz = sizeof(nlreq) - sizeof(nlreq.prefix);
+    char in6addr[INET6_ADDRSTRLEN];
+
+    memset(&nlreq, 0, sizeof(nlreq));
+
+    nlreq.nlh.nlmsg_type = operation;
+    nlreq.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_CREATE;
+    if (operation == RTM_NEWROUTE)
+	nlreq.nlh.nlmsg_flags |= NLM_F_APPEND;
+
+    nlreq.rtmsg.rtm_family = family;
+    nlreq.rtmsg.rtm_table = RT_TABLE_UNSPEC;
+    nlreq.rtmsg.rtm_protocol = RTPROT_BOOT;
+    nlreq.rtmsg.rtm_scope = RT_SCOPE_LINK;
+    nlreq.rtmsg.rtm_type = RTN_UNICAST;
+
+    nlreq.oif.rta.rta_len = sizeof(nlreq.oif);
+    nlreq.oif.rta.rta_type = RTA_OIF;
+    nlreq.oif.ind = if_nametoindex(ifname);
+
+    nlreq.metric.rta.rta_len = sizeof(nlreq.metric);
+    nlreq.metric.rta.rta_type = RTA_PRIORITY;
+    nlreq.metric.val = metric;
+
+    nlreq.table.rta.rta_len = sizeof(nlreq.table);
+    nlreq.table.rta.rta_type = RTA_TABLE;
+    nlreq.table.id = routing_table_id;
+
+    if (prefix) {
+	char nbytes;
+	switch (family) {
+	case AF_INET: nbytes = 4; break;
+	case AF_INET6: nbytes = 16; break;
+	default: error("Unable to add route given that address family isn't known and prefix was specified."); return 0;
+	}
+	nlreq.rtmsg.rtm_dst_len = len;
+	nlreq.prefix.rta.rta_type = RTA_DST;
+	nlreq.prefix.rta.rta_len = sizeof(nlreq.prefix.rta) + nbytes;
+	memcpy(nlreq.prefix.ipdata, prefix, nbytes);
+
+	txsz += nlreq.prefix.rta.rta_len;
+    }
+
+    nlreq.nlh.nlmsg_len = txsz;
+    resp = rtnetlink_msg(op_fam, NULL, &nlreq, txsz, NULL, NULL, 0);
+
+    /* In some cases the interface could be down already from kernel perspective,
+     * and routes already removed resulting in errno=ESRCH, treat as success */
+    if (resp == 0 || operation == RTM_DELROUTE && -resp == ESRCH)
+	return 1; /* success */
+
+    error("Unable to %s %s %s route: %s", operation == RTM_NEWROUTE ? "add" : "remove",
+	    family == AF_INET ? "IPv4" : "IPv6",
+	    prefix ? inet_ntop(family, prefix, in6addr, sizeof(in6addr)) : "default",
+	    resp < 0 ? strerror(-resp) : "Netlink error");
+
+    return 0;
+}
+#define route_netlink(operation, family, metric, prefix, length) _route_netlink(#operation "/" #family, operation, family, metric, prefix, length)
+
+/********************************************************************
+ * sifaddroute - add a non-default route to the system through the ppp interface.
+ * It's the caller responsiblity to ensure that prefix points to a buffer of appriate size:
+ * AF_INET => 4 bytes
+ * AF_INET6 => 16 bytes
+ */
+int sifaddroute(int family, const void* prefix, uint8_t len, unsigned metric)
+{
+    return route_netlink(RTM_NEWROUTE, family, metric, prefix, len);
+}
+
+/********************************************************************
+ * sifdelroute - remove a non-default route to the system through the ppp interface.
+ * It's the caller responsiblity to ensure that prefix points to a buffer of appriate size:
+ * AF_INET => 4 bytes
+ * AF_INET6 => 16 bytes
+ */
+int sifdelroute(int family, const void* prefix, uint8_t len, unsigned metric)
+{
+    return route_netlink(RTM_DELROUTE, family, metric, prefix, len);
+}
+
+/********************************************************************
  *
  * sifdefaultroute - assign a default route through the address given.
- *
- * If the global default_rt_repl_rest flag is set, then this function
- * already replaced the original system defaultroute with some other
- * route and it should just replace the current defaultroute with
- * another one, without saving the current route. Use: demand mode,
- * when pppd sets first a defaultroute it it's temporary ppp0 addresses
- * and then changes the temporary addresses to the addresses for the real
- * ppp connection when it has come up.
  */
-
-int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway, bool replace)
+int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 {
-    struct rtentry rt, tmp_rt;
-    struct rtentry *del_rt = NULL;
+    /* try appending using netlink first */
+    if (route_netlink(RTM_NEWROUTE, AF_INET, dfl_route_metric, NULL, 0))
+	return 1;
 
-    if (default_rt_repl_rest) {
-	/* We have already replaced the original defaultroute, if we
-	 * are called again, we will delete the current default route
-	 * and set the new default route in this function.
-	 * - this is normally only the case the doing demand: */
-	if (defaultroute_exists(&tmp_rt, -1))
-	    del_rt = &tmp_rt;
-    } else if (!replace) {
-	/*
-	 * We don't want to replace an existing route.
-	 * We may however add our route along an existing route with a different
-	 * metric.
-	 */
-	if (defaultroute_exists(&rt, dfl_route_metric) && strcmp(rt.rt_dev, ifname) != 0) {
-	   if (rt.rt_flags & RTF_GATEWAY)
-	       error("not replacing existing default route via %I with metric %d",
-		     SIN_ADDR(rt.rt_gateway), dfl_route_metric);
-	   else
-	       error("not replacing existing default route through %s with metric %d",
-		     rt.rt_dev, dfl_route_metric);
-	   return 0;
-	}
-    } else if (defaultroute_exists(&old_def_rt, -1           ) &&
-			    strcmp( old_def_rt.rt_dev, ifname) != 0) {
-	/*
-	 * We want to replace an existing route and did not replace an existing
-	 * default route yet, let's check if we should save and replace an
-	 * existing default route:
-	 */
-	u_int32_t old_gateway = SIN_ADDR(old_def_rt.rt_gateway);
-
-	if (old_gateway != gateway) {
-	    if (!replace) {
-		error("not replacing default route to %s [%I]",
-			old_def_rt.rt_dev, old_gateway);
-		return 0;
-	    } else {
-		/* we need to copy rt_dev because we need it permanent too: */
-		char * tmp_dev = malloc(strlen(old_def_rt.rt_dev)+1);
-		strcpy(tmp_dev, old_def_rt.rt_dev);
-		old_def_rt.rt_dev = tmp_dev;
-
-		notice("replacing old default route to %s [%I]",
-			old_def_rt.rt_dev, old_gateway);
-		default_rt_repl_rest = 1;
-		del_rt = &old_def_rt;
-	    }
-	}
-    }
+    /* ok, that failed, let's see if we can use ioctl */
+    struct rtentry rt;
 
     memset (&rt, 0, sizeof (rt));
     SET_SA_FAMILY (rt.rt_dst, AF_INET);
@@ -2249,12 +2376,6 @@ int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway, bool replac
 	    error("default route ioctl(SIOCADDRT): %m");
 	return 0;
     }
-    if (default_rt_repl_rest && del_rt)
-	if (ioctl(sock_fd, SIOCDELRT, del_rt) < 0) {
-	    if ( ! ok_error ( errno ))
-		error("del old default route ioctl(SIOCDELRT): %m(%d)", errno);
-	    return 0;
-	}
 
     have_default_route = 1;
     return 1;
@@ -2267,6 +2388,11 @@ int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway, bool replac
 
 int cifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 {
+    /* try removing using netlink first */
+    if (route_netlink(RTM_DELROUTE, AF_INET, dfl_route_metric, NULL, 0))
+	return 1;
+
+    /* ok, that failed, let's see if we can use ioctl */
     struct rtentry rt;
 
     have_default_route = 0;
@@ -2291,164 +2417,24 @@ int cifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 	    return 0;
 	}
     }
-    if (default_rt_repl_rest) {
-	notice("restoring old default route to %s [%I]",
-			old_def_rt.rt_dev, SIN_ADDR(old_def_rt.rt_gateway));
-	if (ioctl(sock_fd, SIOCADDRT, &old_def_rt) < 0) {
-	    if ( ! ok_error ( errno ))
-		error("restore default route ioctl(SIOCADDRT): %m(%d)", errno);
-	    return 0;
-	}
-	default_rt_repl_rest = 0;
-    }
 
     return 1;
 }
 
 #ifdef PPP_WITH_IPV6CP
-/*
- * /proc/net/ipv6_route parsing stuff.
- */
-static int route_dest_plen_col;
-static int open_route6_table (void);
-static int read_route6_table (struct in6_rtmsg *rt);
-
-/********************************************************************
- *
- * open_route6_table - open the interface to the route table
- */
-static int open_route6_table (void)
-{
-    char *path;
-
-    close_route_table();
-
-    path = path_to_procfs("/net/ipv6_route");
-    route_fd = fopen (path, "r");
-    if (route_fd == NULL) {
-	error("can't open routing table %s: %m", path);
-	return 0;
-    }
-
-    /* default to usual columns */
-    route_dest_col = 0;
-    route_dest_plen_col = 1;
-    route_gw_col = 4;
-    route_metric_col = 5;
-    route_flags_col = 8;
-    route_dev_col = 9;
-    route_num_cols = 10;
-
-    return 1;
-}
-
-/********************************************************************
- *
- * read_route6_table - read the next entry from the route table
- */
-
-static void hex_to_in6_addr(struct in6_addr *addr, const char *s)
-{
-    char hex8[9];
-    unsigned i;
-    uint32_t v;
-
-    hex8[8] = 0;
-    for (i = 0; i < 4; i++) {
-	memcpy(hex8, s + 8*i, 8);
-	v = strtoul(hex8, NULL, 16);
-	addr->s6_addr32[i] = v;
-    }
-}
-
-static int read_route6_table(struct in6_rtmsg *rt)
-{
-    char *cols[ROUTE_MAX_COLS], *p;
-    int col;
-
-    memset (rt, '\0', sizeof (struct in6_rtmsg));
-
-    if (fgets (route_buffer, sizeof (route_buffer), route_fd) == (char *) 0)
-	return 0;
-
-    p = route_buffer;
-    for (col = 0; col < route_num_cols; ++col) {
-	cols[col] = strtok(p, route_delims);
-	if (cols[col] == NULL)
-	    return 0;		/* didn't get enough columns */
-	p = NULL;
-    }
-
-    hex_to_in6_addr(&rt->rtmsg_dst, cols[route_dest_col]);
-    rt->rtmsg_dst_len = strtoul(cols[route_dest_plen_col], NULL, 16);
-    hex_to_in6_addr(&rt->rtmsg_gateway, cols[route_gw_col]);
-
-    rt->rtmsg_metric = strtoul(cols[route_metric_col], NULL, 16);
-    rt->rtmsg_flags = strtoul(cols[route_flags_col], NULL, 16);
-    rt->rtmsg_ifindex = if_nametoindex(cols[route_dev_col]);
-
-    return 1;
-}
-
-/********************************************************************
- *
- * defaultroute6_exists - determine if there is a default route
- */
-
-static int defaultroute6_exists (struct in6_rtmsg *rt, int metric)
-{
-    int result = 0;
-
-    if (!open_route6_table())
-	return 0;
-
-    while (read_route6_table(rt) != 0) {
-	if ((rt->rtmsg_flags & RTF_UP) == 0)
-	    continue;
-
-	if (rt->rtmsg_dst_len != 0)
-	    continue;
-	if (rt->rtmsg_dst.s6_addr32[0] == 0L
-	 && rt->rtmsg_dst.s6_addr32[1] == 0L
-	 && rt->rtmsg_dst.s6_addr32[2] == 0L
-	 && rt->rtmsg_dst.s6_addr32[3] == 0L
-	 && (metric < 0 || rt->rtmsg_metric == metric)) {
-	    result = 1;
-	    break;
-	}
-    }
-
-    close_route_table();
-    return result;
-}
-
 /********************************************************************
  *
  * sif6defaultroute - assign a default route through the address given.
- *
- * If the global default_rt_repl_rest flag is set, then this function
- * already replaced the original system defaultroute with some other
- * route and it should just replace the current defaultroute with
- * another one, without saving the current route. Use: demand mode,
- * when pppd sets first a defaultroute it it's temporary ppp0 addresses
- * and then changes the temporary addresses to the addresses for the real
- * ppp connection when it has come up.
  */
 
 int sif6defaultroute (int unit, eui64_t ouraddr, eui64_t gateway)
 {
-    struct in6_rtmsg rt;
-    char buf[IF_NAMESIZE];
+    /* try appending using netlink first */
+    if (route_netlink(RTM_NEWROUTE, AF_INET6, dfl_route6_metric, NULL, 0))
+	return 1;
 
-    if (defaultroute6_exists(&rt, dfl_route_metric) &&
-	    rt.rtmsg_ifindex != if_nametoindex(ifname)) {
-	if (rt.rtmsg_flags & RTF_GATEWAY)
-	    error("not replacing existing default route via gateway");
-	else
-	    error("not replacing existing default route through %s",
-		  if_indextoname(rt.rtmsg_ifindex, buf));
-	return 0;
-    }
+    /* ok, that failed, let's see if we can use ioctl */
+    struct in6_rtmsg rt;
 
     memset (&rt, 0, sizeof (rt));
 
@@ -2474,6 +2460,11 @@ int sif6defaultroute (int unit, eui64_t ouraddr, eui64_t gateway)
 
 int cif6defaultroute (int unit, eui64_t ouraddr, eui64_t gateway)
 {
+    /* try removing using netlink first */
+    if (route_netlink(RTM_DELROUTE, AF_INET6, dfl_route6_metric, NULL, 0))
+	return 1;
+
+    /* ok, that failed, let's see if we can use ioctl */
     struct in6_rtmsg rt;
 
     have_default_route6 = 0;

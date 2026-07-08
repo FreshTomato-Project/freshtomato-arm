@@ -299,6 +299,9 @@ void pr_log(void *, char *, ...);
 /* finish up after using pr_log */
 void end_pr_log(void);
 
+/* Check that a file can safely be used */
+int ppp_check_access(const char *path, char **path_to_use, int must_exist, int exec);
+
 /*
  * Get the current exist status of pppd
  */
@@ -563,6 +566,15 @@ extern int (*holdoff_hook)(void);
 extern int  (*allowed_address_hook)(uint32_t addr);
 extern void (*snoop_recv_hook)(unsigned char *p, int len);
 extern void (*snoop_send_hook)(unsigned char *p, int len);
+
+/* mechanism to setup event handlers */
+typedef void (*event_cb)(int fd, void* ctx); /* callback signature */
+void add_fd_callback(int, event_cb, void*); /* add fd with callback */
+void remove_fd(int);	/* Remove fd from set to wait for */
+
+/* route management, be sure that prefix points to a correct buffer */
+int sifaddroute(int family, const void* prefix, uint8_t len, unsigned metric);
+int sifdelroute(int family, const void* prefix, uint8_t len, unsigned metric);
 
 #ifdef __cplusplus
 }

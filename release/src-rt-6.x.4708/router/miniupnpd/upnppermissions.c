@@ -148,29 +148,50 @@ get_range(const char * s, u_short * begin, u_short * end)
 	return s;
 }
 
+/*! \brief parse a IPv4 address or mask
+ * it is either 4 numbers separated with 3 dots,
+ * or a number between 0 and 32 for the mask
+ * \param[in] s input string
+ * \param[out] add parsed address/mask
+ * \return the updated string pointer or NULL for errors */
 static const char *
-get_addr(const char * s, struct in_addr * addr, unsigned int * dot_cnt)
+get_addr_or_mask(const char * s, struct in_addr * addr)
 {
 	size_t i;
 	char buf[64];
+	unsigned int dot_cnt = 0;
 
 	if(!isdigit((unsigned char)*s))
 		return NULL;
 
-	*dot_cnt = 0;
 	for(i = 0; isdigit((unsigned char)s[i]) || s[i] == '.';)
 	{
 		if(s[i] == '.')
-			(*dot_cnt)++;
+			dot_cnt++;
 		buf[i] = s[i];
 		i++;
 		if (i > sizeof(buf) - 1)
 			return NULL;
 	}
-
 	buf[i] = '\0';
-	if(!inet_aton(buf, addr))
+
+	if(dot_cnt == 3)
+	{
+		if(!inet_aton(buf, addr))
+			return NULL;
+	}
+	else if (dot_cnt == 0)
+	{
+		int n_bits = atoi(buf);
+		if (n_bits >= 32 || n_bits < 0)
+			return NULL;
+		addr->s_addr = !n_bits ? 0 : htonl(0xffffffffu << (32 - n_bits));
+	}
+	else
+	{
+		/* neither an IPv4 nor a number of bits */
 		return NULL;
+	}
 
 	return s + i;
 }
@@ -268,8 +289,6 @@ int
 read_permission_line(struct upnpperm * perm,
                      const char * p)
 {
-	unsigned int dot_cnt;
-
 	/* zero memory : see https://github.com/miniupnp/miniupnp/issues/652 */
 	memset(perm, 0, sizeof(struct upnpperm));
 
@@ -306,7 +325,7 @@ read_permission_line(struct upnpperm * perm,
 		return -1;
 
 	/* third token: ip/mask */
-	p = get_addr(p, &perm->address, &dot_cnt);
+	p = get_addr_or_mask(p, &perm->address);
 	if(!p)
 		return -1;
 
@@ -315,19 +334,9 @@ read_permission_line(struct upnpperm * perm,
 	else
 	{
 		p++;
-		p = get_addr(p, &perm->mask, &dot_cnt);
+		p = get_addr_or_mask(p, &perm->mask);
 		if(!p)
 			return -1;
-		/* inet_aton(): When only one part is given, the value is stored
-		 * directly in the network address without any byte
-		 * rearrangement. */
-		if(!dot_cnt)
-		{
-			unsigned int n_bits = ntohl(perm->mask.s_addr);
-			if(n_bits > 32)
-				return -1;
-			perm->mask.s_addr = !n_bits ? 0 : htonl(0xffffffffu << (32 - n_bits));
-		}
 	}
 
 	p = get_sep(p);

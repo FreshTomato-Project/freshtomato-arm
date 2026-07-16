@@ -817,6 +817,7 @@ void stop_dnsmasq(void)
 void reload_dnsmasq(void)
 {
 	/* notify dnsmasq */
+	logmsg(LOG_INFO, "reloading dnsmasq");
 	killall("dnsmasq", SIGINT);
 }
 

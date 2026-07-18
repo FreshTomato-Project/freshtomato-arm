@@ -18,7 +18,7 @@
 
 <script>
 
-//	<% nvram("t_features,wait_time,wan_speed,jumbo_frame_enable,jumbo_frame_size,ctf_disable,bcmnat_disable,porthealth_cfg"); %>
+//	<% nvram("t_features,wait_time,wan_speed,jumbo_frame_enable,jumbo_frame_size,ctf_disable,bcmnat_disable,porthealth_cfg,tcp_clamp_disable"); %>
 
 et1000 = features('1000et');
 
@@ -78,6 +78,14 @@ function save() {
 		return;
 /* BCMARM-END */
 	fom.jumbo_frame_enable.value = E('_f_jumbo_frame_enable').checked ? 1 : 0;
+	fom.tcp_clamp_disable.value = E('_f_tcp_clamp_disable').checked ? 0 : 1;
+	if (fom.tcp_clamp_disable.value != nvram.tcp_clamp_disable) {
+		fom._service.value += ',firewall-restart';
+		nvram.tcp_clamp_disable = fom.tcp_clamp_disable.value;
+	}
+	else {
+		fom._service.value = 'porthealth-restart';
+	}
 /* CTF-BEGIN */
 	fom.ctf_disable.value = E('_f_ctf_disable').checked ? 0 : 1;
 /* CTF-END */
@@ -153,6 +161,7 @@ function save() {
 <!-- BCMARM-BEGIN -->
 <input type="hidden" name="porthealth_cfg">
 <!-- BCMARM-END -->
+<input type="hidden" name="tcp_clamp_disable">
 
 <!-- / / / -->
 
@@ -177,7 +186,8 @@ function save() {
 /* BCMNAT-END */
 			{ title: 'Enable Jumbo Frames *', name: 'f_jumbo_frame_enable', type: 'checkbox', value: nvram.jumbo_frame_enable != '0', hidden: !et1000 },
 			{ title: 'Jumbo Frame Size *', name: 'jumbo_frame_size', type: 'text', maxlen: 4, size: 6, value: fixInt(nvram.jumbo_frame_size, 1, 9720, 2000),
-				suffix: ' <small>Bytes (range: 1 - 9720; default: 2000)<\/small>', hidden: !et1000 }
+				suffix: ' <small>Bytes (range: 1 - 9720; default: 2000)<\/small>', hidden: !et1000 },
+			{ title: 'TCP MSS Clamping', name: 'f_tcp_clamp_disable', type: 'checkbox', value: nvram.tcp_clamp_disable != '1' }
 /* BCMARM-BEGIN */
 			,null,
 			{ title: 'Port Health', text: '<small>Monitors switch ports 0-4; VLAN role comes from robocfg show.<\/small>' },

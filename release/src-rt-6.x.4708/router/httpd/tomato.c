@@ -822,6 +822,7 @@ static const nvset_t nvset_list[] = {
 #ifdef TCONFIG_BCMARM
 	{ "porthealth_cfg",		V_LENGTH(0, 128)		},
 #endif
+	{ "tcp_clamp_disable",		V_01				},	/* Adjust TCP MSS for forwarded traffic on WAN and VPN interfaces to avoid MTU-related connection issues. */
 /* advanced-vlan */
 	{ "vlan0ports",			V_TEXT(0, 17)			},
 	{ "vlan1ports",			V_TEXT(0, 17)			},

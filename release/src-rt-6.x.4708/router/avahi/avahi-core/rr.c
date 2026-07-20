@@ -450,13 +450,14 @@ AvahiRecord *avahi_record_copy(AvahiRecord *r) {
                 goto fail;
 
             if (!(copy->data.hinfo.cpu = avahi_strdup(r->data.hinfo.cpu))) {
-                avahi_free(r->data.hinfo.os);
+                avahi_free(copy->data.hinfo.os);
                 goto fail;
             }
             break;
 
         case AVAHI_DNS_TYPE_TXT:
-            copy->data.txt.string_list = avahi_string_list_copy(r->data.txt.string_list);
+            if (r->data.txt.string_list && !(copy->data.txt.string_list = avahi_string_list_copy(r->data.txt.string_list)))
+                goto fail;
             break;
 
         case AVAHI_DNS_TYPE_A:

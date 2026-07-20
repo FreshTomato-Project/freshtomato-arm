@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This file is part of avahi.
 #
@@ -44,9 +44,13 @@ export LIB_FUZZING_ENGINE=${LIB_FUZZING_ENGINE:--fsanitize=fuzzer}
 
 export MERGE_WITH_OSS_FUZZ_CORPORA=${MERGE_WITH_OSS_FUZZ_CORPORA:-no}
 
+export TURN_ON_NALLOCFUZZ=${TURN_ON_NALLOCFUZZ:-no}
+
+export MAKE=${MAKE:-gmake}
+
 if [[ -n "${FUZZING_ENGINE:-}" ]]; then
     apt-get update
-    apt-get install -y autoconf gettext libtool m4 automake pkg-config libexpat-dev zipmerge
+    apt-get install -y autoconf autopoint gettext libtool m4 automake pkg-config libexpat-dev zipmerge
 
     if [[ "$ARCHITECTURE" == i386 ]]; then
         apt-get install -y libexpat-dev:i386
@@ -63,16 +67,17 @@ if [[ -n "${FUZZING_ENGINE:-}" ]]; then
     # by reusing the homegrown strlcpy function even when glibc comes with strlcpy.
     # It should be removed when https://github.com/llvm/llvm-project/issues/114377 is fixed.
     if grep -qF strlcpy /usr/include/string.h && [[ "$SANITIZER" == memory ]]; then
-        sed -i '
+        sed -i.bak '
             s/#ifndef HAVE_STRLCPY/#ifdef HAVE_STRLCPY/
             s/strlcpy/msan_friendly_strlcpy/
             ' avahi-common/domain.c
     fi
 fi
 
-sed -i 's/check_inconsistencies=yes/check_inconsistencies=no/' common/acx_pthread.m4
+sed -i.bak 's/check_inconsistencies=yes/check_inconsistencies=no/' common/acx_pthread.m4
 
-if ! ./autogen.sh \
+autoreconf -ivf
+if ! ./configure \
     --disable-stack-protector --disable-qt3 --disable-qt4 --disable-qt5 --disable-gtk \
     --disable-gtk3 --disable-dbus --disable-gdbm --disable-libdaemon --disable-python \
     --disable-manpages --disable-mono --disable-monodoc --disable-glib --disable-gobject \
@@ -81,7 +86,37 @@ if ! ./autogen.sh \
     exit 1
 fi
 
-make -j"$(nproc)" V=1
+"$MAKE" -j"$(nproc)" V=1
+
+if [[ "$TURN_ON_NALLOCFUZZ" == yes ]]; then
+    # It's the official nallocfuzz repository but it can diverge
+    # from its battle-tested copy in Suricata. For example
+    # https://github.com/catenacyber/nallocfuzz/issues/6 is already
+    # addressed in Suricata.
+    git clone https://github.com/catenacyber/nallocfuzz
+    pushd nallocfuzz
+    git checkout 190f87c0b1d4250d03a8c92cc80184bd8241c83d
+cat <<'EOL' >>nallocinc.c
+
+static AvahiAllocator allocator = {
+    .malloc = malloc,
+    .free = free,
+    .realloc = realloc,
+    .calloc = calloc,
+};
+
+int LLVMFuzzerInitialize(int *argc, char ***argv) {
+    nalloc_init(*argv[0]);
+    if (strstr(*argv[0], "nallocfuzz"))
+        avahi_set_allocator(&allocator);
+    return 0;
+}
+EOL
+    cp nallocinc.c ../fuzz
+    popd
+    CFLAGS="-DHAVE_NALLOCFUZZ $CFLAGS"
+    CXXFLAGS="-DHAVE_NALLOCFUZZ $CXXFLAGS"
+fi
 
 for f in fuzz/fuzz-*.c; do
     fuzz_target=$(basename "$f" .c)
@@ -108,6 +143,10 @@ for f in fuzz/fuzz-*.c; do
         $LIB_FUZZING_ENGINE \
         $additional_obj_files \
         "avahi-core/.libs/libavahi-core.a" "avahi-common/.libs/libavahi-common.a"
+
+    if [[ "$TURN_ON_NALLOCFUZZ" == yes ]] && grep nalloc_start "$f"; then
+        cp "$OUT/$fuzz_target" "$OUT/$fuzz_target-nallocfuzz"
+    fi
 done
 
 # Let's take the systemd public corpus here. It has been accumulating since 2018
@@ -119,9 +158,13 @@ if [[ "$MERGE_WITH_OSS_FUZZ_CORPORA" == "yes" ]]; then
     for f in "$OUT/"fuzz-*; do
         [[ -x "$f" ]] || continue
         fuzzer=$(basename "$f")
+        [[ "$fuzzer" =~ "-nallocfuzz" ]] && continue
         t=$(mktemp)
         if wget -O "$t" "https://storage.googleapis.com/avahi-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/avahi_${fuzzer}/public.zip"; then
             zipmerge "$OUT/${fuzzer}_seed_corpus.zip" "$t"
+            if [[ -x "$f-nallocfuzz" ]]; then
+                cp "$OUT/${fuzzer}_seed_corpus.zip" "$OUT/${fuzzer}-nallocfuzz_seed_corpus.zip"
+            fi
         fi
         rm -rf "$t"
     done

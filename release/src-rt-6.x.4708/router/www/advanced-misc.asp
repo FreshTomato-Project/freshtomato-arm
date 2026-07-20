@@ -76,15 +76,19 @@ function save() {
 
 	if (!verifyFields(null, 0))
 		return;
+
+	fom._service.value = 'porthealth-restart';
 /* BCMARM-END */
 	fom.jumbo_frame_enable.value = E('_f_jumbo_frame_enable').checked ? 1 : 0;
 	fom.tcp_clamp_disable.value = E('_f_tcp_clamp_disable').checked ? 0 : 1;
 	if (fom.tcp_clamp_disable.value != nvram.tcp_clamp_disable) {
-		fom._service.value += ',firewall-restart';
+		if (fom._service.value.indexOf('firewall') < 0) {
+			if (fom._service.value != '')
+				fom._service.value += ',';
+
+			fom._service.value += 'firewall-restart';
+		}
 		nvram.tcp_clamp_disable = fom.tcp_clamp_disable.value;
-	}
-	else {
-		fom._service.value = 'porthealth-restart';
 	}
 /* CTF-BEGIN */
 	fom.ctf_disable.value = E('_f_ctf_disable').checked ? 0 : 1;
@@ -118,7 +122,7 @@ function save() {
 /* BCMNAT-END */
 	    (fom.jumbo_frame_enable.value != nvram.jumbo_frame_enable) ||
 	    (fom.jumbo_frame_size.value != nvram.jumbo_frame_size)) {
-		if (confirm("Router must be rebooted to apply changed settings. Reboot now? (and commit changes to NVRAM)")) {
+		if (confirm('Router must be rebooted to apply changed settings. Reboot now? (and commit changes to NVRAM)')) {
 			fom._reboot.value = 1;
 			form.submit(fom, 0);
 		}
@@ -148,9 +152,7 @@ function save() {
 
 <input type="hidden" name="_nextpage" value="advanced-misc.asp">
 <input type="hidden" name="_reboot" value="0">
-<!-- BCMARM-BEGIN -->
-<input type="hidden" name="_service" value="porthealth-restart">
-<!-- BCMARM-END -->
+<input type="hidden" name="_service" value="">
 <input type="hidden" name="jumbo_frame_enable">
 <!-- CTF-BEGIN -->
 <input type="hidden" name="ctf_disable">

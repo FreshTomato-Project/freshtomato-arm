@@ -1078,8 +1078,15 @@ CONFIG_MD_RAID1=m
 # CONFIG_MD_RAID456 is not set
 # CONFIG_MD_MULTIPATH is not set
 # CONFIG_MD_FAULTY is not set
-# CONFIG_BLK_DEV_DM is not set
-
+CONFIG_BLK_DEV_DM=m
+# CONFIG_DM_DEBUG is not set
+# CONFIG_DM_CRYPT is not set
+# CONFIG_DM_SNAPSHOT is not set
+# CONFIG_DM_MIRROR is not set
+# CONFIG_DM_ZERO is not set
+# CONFIG_DM_MULTIPATH is not set
+# CONFIG_DM_DELAY is not set
+# CONFIG_DM_UEVENT is not set
 # CONFIG_FUSION is not set
 
 #

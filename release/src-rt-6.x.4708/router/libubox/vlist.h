@@ -43,7 +43,7 @@ struct vlist_node {
 
 #define VLIST_TREE_INIT(_name, _comp, _update, _keep_old, _no_delete)	\
 	{								\
-		.avl = AVL_TREE_INIT(_name.avl, _comp, false, NULL),	\
+		.avl = AVL_TREE_INIT(_name.avl, _comp, false, &_name),	\
 		.update = _update,					\
 		.version = 1,						\
 		.keep_old = _keep_old,					\

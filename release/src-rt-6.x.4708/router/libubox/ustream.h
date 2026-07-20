@@ -55,7 +55,7 @@ struct ustream {
 	 * notify_read: (optional)
 	 * called by the ustream core to notify that new data is available
 	 * for reading.
-	 * must not free the ustream from this callback
+	 * freeing the ustream from this callback is allowed
 	 */
 	void (*notify_read)(struct ustream *s, int bytes_new);
 
@@ -63,7 +63,7 @@ struct ustream {
 	 * notify_write: (optional)
 	 * called by the ustream core to notify that some buffered data has
 	 * been written to the stream.
-	 * must not free the ustream from this callback
+	 * freeing the ustream from this callback is allowed
 	 */
 	void (*notify_write)(struct ustream *s, int bytes);
 
@@ -116,6 +116,7 @@ struct ustream {
 	bool write_error;
 	bool eof;
 	uint8_t pending_cb;
+	bool *free_flag;
 
 	enum read_blocked_reason read_blocked;
 };
@@ -185,6 +186,20 @@ static inline bool ustream_read_buf_full(struct ustream *s)
 }
 
 /*** --- functions only used by ustream implementations --- ***/
+
+/*
+ * Guard for invoking notify callbacks that may call ustream_free().
+ * ustream_free() signals the innermost active guard; a triggered guard
+ * forwards the signal to the next outer one, so every nested call site
+ * can bail out without touching the freed stream.
+ */
+struct ustream_free_guard {
+	bool freed;
+	bool *prev;
+};
+
+void ustream_free_guard_set(struct ustream *s, struct ustream_free_guard *g);
+bool ustream_free_guard_check(struct ustream *s, struct ustream_free_guard *g);
 
 /* ustream_init_defaults: fill default callbacks and options */
 void ustream_init_defaults(struct ustream *s);

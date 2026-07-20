@@ -121,6 +121,7 @@ list_del_init(struct list_head *entry)
 #define	list_first_entry(ptr, type, field)	list_entry((ptr)->next, type, field)
 #define	list_last_entry(ptr, type, field)	list_entry((ptr)->prev, type, field)
 #define	list_next_entry(pos, member)		list_entry((pos)->member.next, typeof(*(pos)), member)
+#define	list_prev_entry(pos, member)		list_entry((pos)->member.prev, typeof(*(pos)), member)
 #define	list_entry_is_h(p, h, field)		(&p->field == (h))
 
 #define	list_for_each(p, head)						\

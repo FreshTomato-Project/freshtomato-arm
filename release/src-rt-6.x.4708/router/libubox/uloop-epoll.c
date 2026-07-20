@@ -168,14 +168,14 @@ err:
 
 static int timer_remove(struct uloop_interval *tm)
 {
-	int ret = __uloop_fd_delete(&tm->priv.ufd);
+	if (!tm->priv.ufd.registered)
+		return -1;
 
-	if (ret == 0) {
-		close(tm->priv.ufd.fd);
-		memset(&tm->priv.ufd, 0, sizeof(tm->priv.ufd));
-	}
+	uloop_fd_delete(&tm->priv.ufd);
+	close(tm->priv.ufd.fd);
+	memset(&tm->priv.ufd, 0, sizeof(tm->priv.ufd));
 
-	return ret;
+	return 0;
 }
 
 static int64_t timer_next(struct uloop_interval *tm)

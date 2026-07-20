@@ -82,11 +82,10 @@ bool kvlist_set(struct kvlist *kv, const char *name, const void *data)
 	if (!node)
 		return false;
 
-	kvlist_delete(kv, name);
-
 	memcpy(node->data, data, len);
-
 	node->avl.key = strcpy(name_buf, name);
+
+	kvlist_delete(kv, name);
 	avl_insert(&kv->avl, &node->avl);
 
 	return true;

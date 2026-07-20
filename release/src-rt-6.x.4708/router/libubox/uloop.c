@@ -60,6 +60,14 @@ static struct list_head timeouts = LIST_HEAD_INIT(timeouts);
 static struct list_head processes = LIST_HEAD_INIT(processes);
 static struct list_head signals = LIST_HEAD_INIT(signals);
 
+/*
+ * Entries the signal and process dispatch loops are about to visit. A callback
+ * may delete (and free) an arbitrary sibling entry; the matching *_delete()
+ * advances these so the loops never dereference a freed entry.
+ */
+static struct uloop_signal *signal_next;
+static struct uloop_process *process_next;
+
 static int poll_fd = -1;
 bool uloop_cancelled = false;
 bool uloop_handle_sigchld = true;
@@ -93,9 +101,17 @@ static bool get_signo(uint64_t signums, int signo)
 	return (signo >= 1) && (signo <= 64) && (signums & (UINT64_C(1) << (signo - 1)));
 }
 
+static struct uloop_signal *uloop_signal_next_entry(struct uloop_signal *s)
+{
+	if (list_is_last(&s->list, &signals))
+		return NULL;
+
+	return list_next_entry(s, list);
+}
+
 static void signal_consume(struct uloop_fd *fd, unsigned int events)
 {
-	struct uloop_signal *usig, *usig_next;
+	struct uloop_signal *usig;
 	uint64_t signums = 0;
 	uint8_t buf[32];
 	ssize_t nsigs;
@@ -108,9 +124,14 @@ static void signal_consume(struct uloop_fd *fd, unsigned int events)
 	}
 	while (nsigs > 0);
 
-	list_for_each_entry_safe(usig, usig_next, &signals, list)
+	signal_next = list_empty(&signals) ? NULL :
+		list_first_entry(&signals, struct uloop_signal, list);
+
+	while ((usig = signal_next) != NULL) {
+		signal_next = uloop_signal_next_entry(usig);
 		if (get_signo(signums, usig->signo))
 			usig->cb(usig);
+	}
 }
 
 static int waker_pipe = -1;
@@ -417,10 +438,21 @@ int uloop_process_add(struct uloop_process *p)
 	return 0;
 }
 
+static struct uloop_process *uloop_process_next_entry(struct uloop_process *p)
+{
+	if (list_is_last(&p->list, &processes))
+		return NULL;
+
+	return list_next_entry(p, list);
+}
+
 int uloop_process_delete(struct uloop_process *p)
 {
 	if (!p->pending)
 		return -1;
+
+	if (process_next == p)
+		process_next = uloop_process_next_entry(p);
 
 	list_del(&p->list);
 	p->pending = false;
@@ -430,7 +462,7 @@ int uloop_process_delete(struct uloop_process *p)
 
 static void uloop_handle_processes(void)
 {
-	struct uloop_process *p, *tmp;
+	struct uloop_process *p;
 	pid_t pid;
 	int ret;
 
@@ -442,9 +474,14 @@ static void uloop_handle_processes(void)
 			continue;
 
 		if (pid <= 0)
-			return;
+			break;
 
-		list_for_each_entry_safe(p, tmp, &processes, list) {
+		process_next = list_empty(&processes) ? NULL :
+			list_first_entry(&processes, struct uloop_process, list);
+
+		while ((p = process_next) != NULL) {
+			process_next = uloop_process_next_entry(p);
+
 			if (p->pid < pid)
 				continue;
 
@@ -456,6 +493,7 @@ static void uloop_handle_processes(void)
 		}
 	}
 
+	process_next = NULL;
 }
 
 int uloop_interval_set(struct uloop_interval *timer, unsigned int msecs)
@@ -588,14 +626,34 @@ int uloop_signal_add(struct uloop_signal *s)
 
 int uloop_signal_delete(struct uloop_signal *s)
 {
+	struct uloop_signal *tmp;
+
 	if (!s->pending)
 		return -1;
+
+	if (signal_next == s)
+		signal_next = uloop_signal_next_entry(s);
 
 	list_del(&s->list);
 	s->pending = false;
 
-	if (s->orig.sa_handler != uloop_signal_wake)
-		sigaction(s->signo, &s->orig, NULL);
+	/* Only the first watcher registered for a signal saved the real
+	 * original disposition; later ones saved uloop_signal_wake. */
+	if (s->orig.sa_handler == uloop_signal_wake)
+		return 0;
+
+	list_for_each_entry(tmp, &signals, list) {
+		if (tmp->signo != s->signo)
+			continue;
+
+		/* Other watchers remain for this signal, hand the saved
+		 * disposition over to one of them so it can be restored once
+		 * the last watcher is removed. */
+		tmp->orig = s->orig;
+		return 0;
+	}
+
+	sigaction(s->signo, &s->orig, NULL);
 
 	return 0;
 }

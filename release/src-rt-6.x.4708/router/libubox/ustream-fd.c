@@ -45,6 +45,7 @@ static void ustream_fd_set_read_blocked(struct ustream *s)
 static void ustream_fd_read_pending(struct ustream_fd *sf, bool *more)
 {
 	struct ustream *s = &sf->stream;
+	struct ustream_free_guard guard;
 	int buflen = 0;
 	ssize_t len;
 	char *buf;
@@ -76,7 +77,11 @@ static void ustream_fd_read_pending(struct ustream_fd *sf, bool *more)
 			return;
 		}
 
+		ustream_free_guard_set(s, &guard);
 		ustream_fill_read(s, len);
+		if (ustream_free_guard_check(s, &guard))
+			return;
+
 		*more = true;
 	} while (1);
 }
@@ -116,13 +121,24 @@ static int ustream_fd_write(struct ustream *s, const char *buf, int buflen, bool
 static bool __ustream_fd_poll(struct ustream_fd *sf, unsigned int events)
 {
 	struct ustream *s = &sf->stream;
+	struct ustream_free_guard guard;
 	bool more = false;
 
-	if (events & ULOOP_READ)
+	if (events & ULOOP_READ) {
+		ustream_free_guard_set(s, &guard);
 		ustream_fd_read_pending(sf, &more);
+		if (ustream_free_guard_check(s, &guard))
+			return more;
+	}
 
 	if (events & ULOOP_WRITE) {
-		bool no_more = ustream_write_pending(s);
+		bool no_more;
+
+		ustream_free_guard_set(s, &guard);
+		no_more = ustream_write_pending(s);
+		if (ustream_free_guard_check(s, &guard))
+			return more;
+
 		if (no_more)
 			ustream_fd_set_uloop(s, false);
 	}

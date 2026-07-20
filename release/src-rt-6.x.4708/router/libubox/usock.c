@@ -119,6 +119,13 @@ static int poll_restart(struct pollfd *fds, int nfds, int timeout)
 	int msec = timeout % 1000;
 	int ret;
 
+	if (timeout < 0) {
+		do {
+			ret = poll(fds, nfds, timeout);
+		} while (ret < 0 && (errno == EINTR || errno == EAGAIN));
+		return ret;
+	}
+
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	ts.tv_nsec += msec * 1000000;
@@ -353,7 +360,7 @@ int usock_wait_ready(int fd, int msecs) {
 	fds[0].fd = fd;
 	fds[0].events = POLLOUT;
 
-	res = poll(fds, 1, msecs);
+	res = poll_restart(fds, 1, msecs);
 	if (res < 0) {
 		return errno;
 	} else if (res == 0) {

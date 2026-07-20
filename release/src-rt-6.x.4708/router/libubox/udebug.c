@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -117,6 +118,11 @@ __udebug_buf_map(struct udebug_buf *buf, int fd)
 {
 	unsigned int pad = 0;
 	void *ptr, *ptr2;
+	struct stat st;
+
+	if (fstat(fd, &st) < 0 ||
+	    (uint64_t)st.st_size < (uint64_t)buf->head_size + buf->data_size)
+		return -1;
 
 #ifdef mips
 	pad = page_size;
@@ -430,6 +436,12 @@ int udebug_buf_open(struct udebug_buf *buf, int fd, uint32_t ring_size, uint32_t
 	buf->data_size = data_size;
 
 	if (buf->ring_size > (1U << 24) || buf->data_size > (1U << 29))
+		return -1;
+
+	/* ring_size and data_size come from a peer and are used as power-of-two
+	 * masks when indexing the ring and data area; reject anything else. */
+	if (!buf->ring_size || (buf->ring_size & (buf->ring_size - 1)) ||
+	    !buf->data_size || (buf->data_size & (buf->data_size - 1)))
 		return -1;
 
 	if (__udebug_buf_map(buf, fd))

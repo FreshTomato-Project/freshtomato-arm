@@ -249,6 +249,9 @@ int b64_decode(const void *src, void *dest, size_t dest_len);
 
 static inline unsigned int cbuf_order(unsigned int x)
 {
+	if (x <= 1)
+		return 0;
+
 	return 32 - __builtin_clz(x - 1);
 }
 

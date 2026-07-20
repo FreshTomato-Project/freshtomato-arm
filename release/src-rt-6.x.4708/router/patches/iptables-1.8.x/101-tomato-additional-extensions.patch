@@ -1325,7 +1325,7 @@
 +}
 +
 +/* validate netmask */
-+#ifndef CONFIG_TOOLCHAIN73
++#if !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
 +inline int valid_netmask(u_int32_t netmask) {
 +#else
 +int valid_netmask(u_int32_t netmask) {
@@ -1338,7 +1338,7 @@
 +}
 +
 +/* validate network/netmask pair */
-+#ifndef CONFIG_TOOLCHAIN73
++#if !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
 +inline int valid_network_and_netmask(struct t_ipt_account_info *info) {
 +#else
 +int valid_network_and_netmask(struct t_ipt_account_info *info) {

@@ -4,7 +4,7 @@
   *
   * Returns: Seqnum as read from sysfs
   */
-+#if !defined(CONFIG_TOOLCHAIN53) && !defined(CONFIG_TOOLCHAIN73)
++#if !defined(CONFIG_TOOLCHAIN53) && !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
  inline event_seqnum_t get_kernel_seqnum() {
 +#else
 +extern inline event_seqnum_t get_kernel_seqnum() {
@@ -16,7 +16,7 @@
   *
   * Returns: Socket fd if succesful, -1 otherwise.
   */
-+#if !defined(CONFIG_TOOLCHAIN53) && !defined(CONFIG_TOOLCHAIN73)
++#if !defined(CONFIG_TOOLCHAIN53) && !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
  inline int init_netlink_socket(int type) {
 +#else
 +extern inline int init_netlink_socket(int type) {
@@ -30,7 +30,7 @@
   *
   * Returns: Pointer to freshly allocated memory
   */
-+#if !defined(CONFIG_TOOLCHAIN53) && !defined(CONFIG_TOOLCHAIN73)
++#if !defined(CONFIG_TOOLCHAIN53) && !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
  inline void *xmalloc(size_t size) {
 +#else
 +extern inline void *xmalloc(size_t size) {
@@ -42,7 +42,7 @@
   *
   * Returns: Pointer to reallocated memory
   */
-+#if !defined(CONFIG_TOOLCHAIN53) && !defined(CONFIG_TOOLCHAIN73)
++#if !defined(CONFIG_TOOLCHAIN53) && !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
  inline void *xrealloc(void *inptr, size_t size) {
 +#else
 +extern inline void *xrealloc(void *inptr, size_t size) {
@@ -56,7 +56,7 @@
   *
   * Returns: void
   */
-+#ifndef CONFIG_TOOLCHAIN73
++#if !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
  inline void free_hotplug2_event(struct hotplug2_event_t *event) {
 +#else
 +void free_hotplug2_event(struct hotplug2_event_t *event) {
@@ -68,7 +68,7 @@
   *
   * Returns: Macro of the given action
   */
-+#ifndef CONFIG_TOOLCHAIN73
++#if !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
  inline int get_hotplug2_event_action(char *action) {
 +#else
 +int get_hotplug2_event_action(char *action) {
@@ -80,7 +80,7 @@
   *
   * Returns: A copy of the source event structure
   */
-+#ifndef CONFIG_TOOLCHAIN73
++#if !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
  inline struct hotplug2_event_t *dup_hotplug2_event(struct hotplug2_event_t *src) {
 +#else
 +struct hotplug2_event_t *dup_hotplug2_event(struct hotplug2_event_t *src) {
@@ -92,7 +92,7 @@
   *
   * Returns: A new event structure
   */
-+#ifndef CONFIG_TOOLCHAIN73
++#if !defined(CONFIG_TOOLCHAIN73) && !defined(CONFIG_TOOLCHAIN75)
  inline struct hotplug2_event_t *get_hotplug2_event(char *event_str, int size) {
 +#else
 +struct hotplug2_event_t *get_hotplug2_event(char *event_str, int size) {

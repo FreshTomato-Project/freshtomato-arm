@@ -1121,7 +1121,7 @@ struct nvram_tuple router_defaults[] = {
 #ifdef TCONFIG_BCMARM
 	{ "porthealth_cfg",		""				, 0 },
 #endif
-	{ "tcp_clamp_disable",		"0"				, 0 },	/* Adjust TCP MSS for forwarded traffic on WAN and VPN interfaces to avoid MTU-related connection issues. */
+
 /* advanced-dhcpdns */
 	{ "dhcpd_dmdns",		"1"				, 0 },
 	{ "dhcpd_slt",			"0"				, 0 },

@@ -169,6 +169,7 @@
 #define RESPONSE_INTERVAL 16    /* wait for reply up to N secs */
 #define HOSTNAME_INTERVAL  4    /* hostname lookup failed. Wait N * peer->dns_errors secs for next try */
 #define DNS_ERRORS_CAP  0x3f    /* peer->dns_errors is in [0..63] */
+#define PERIODIC_SCRIPT_INTERVAL 60 /* run the periodic -S hook every N seconds */
 
 /* Step threshold (sec). std ntpd uses 0.128.
  */
@@ -480,9 +481,23 @@ struct globals {
 
 static double LOG2D(int a)
 {
+	double d = 1.0;
+
+	/*
+	 * The precision exponent comes from the network and is an int8_t.
+	 * Keep shifts below the width of unsigned long on 32-bit targets.
+	 */
+	while (a > 30) {
+		d *= (1UL << 30);
+		a -= 30;
+	}
+	while (a < -30) {
+		d /= (1UL << 30);
+		a += 30;
+	}
 	if (a < 0)
-		return 1.0 / (1UL << -a);
-	return 1UL << a;
+		return d / (1UL << -a);
+	return d * (1UL << a);
 }
 static ALWAYS_INLINE double SQUARE(double x)
 {
@@ -583,8 +598,10 @@ d_to_lfp(l_fixedpt_t *lfp, double d)
 {
 	uint32_t intl;
 	uint32_t frac;
-	intl = (uint32_t)(time_t)d;
-	frac = (uint32_t)((d - (time_t)d) * 0xffffffff);
+	if (d >= (double)(1ULL << 32))
+		d -= (double)(1ULL << 32);
+	intl = (uint32_t)d;
+	frac = (uint32_t)((d - (double)intl) * 0xffffffff);
 	lfp->int_partl = htonl(intl);
 	lfp->fractionl = htonl(frac);
 }
@@ -804,6 +821,11 @@ add_peers(const char *s, key_entry_t *key_entry)
 				return;
 			}
 		}
+	} else {
+		/* Do not leave an unresolved peer immediately due forever.
+		 * The main loop will retry it after this backoff expires.
+		 */
+		set_next(p, HOSTNAME_INTERVAL * p->dns_errors);
 	}
 
 	IF_FEATURE_NTP_AUTH(p->key_entry = key_entry;)
@@ -879,6 +901,9 @@ send_query_to_peer(peer_t *p)
 	if (!p->p_lsa)
 		return;
 
+	/* A local send failure is still a failed reachability attempt. */
+	p->reachable_bits <<= 1;
+
 	/* Why do we need to bind()?
 	 * See what happens when we don't bind:
 	 *
@@ -899,23 +924,37 @@ send_query_to_peer(peer_t *p)
 
 	if (p->p_fd == -1) {
 		int fd, family;
-		len_and_sockaddr *local_lsa;
+		len_and_sockaddr local_lsa;
 
 		family = p->p_lsa->u.sa.sa_family;
-		p->p_fd = fd = xsocket_type(&local_lsa, family, SOCK_DGRAM);
-		/* local_lsa has "null" address and port 0 now.
-		 * bind() ensures we have a *particular port* selected by kernel
-		 * and remembered in p->p_fd, thus later recv(p->p_fd)
+		fd = socket(family, SOCK_DGRAM, 0);
+		if (fd < 0) {
+			bb_perror_msg("can't create query socket for %s", p->p_dotted);
+			set_next(p, RETRY_INTERVAL);
+			return;
+		}
+
+		/* Use a wildcard address and port 0 for the peer's family.
+		 * bind() ensures we have a particular port selected by the
+		 * kernel and remembered in p->p_fd, thus later recv(p->p_fd)
 		 * receives only packets sent to this port.
 		 */
+		memset(&local_lsa, 0, sizeof(local_lsa));
+		local_lsa.len = p->p_lsa->len;
+		local_lsa.u.sa.sa_family = family;
 		PROBE_LOCAL_ADDR
-		xbind(fd, &local_lsa->u.sa, local_lsa->len);
+		if (bind(fd, &local_lsa.u.sa, local_lsa.len) != 0) {
+			bb_perror_msg("can't bind query socket for %s", p->p_dotted);
+			close(fd);
+			set_next(p, RETRY_INTERVAL);
+			return;
+		}
 		PROBE_LOCAL_ADDR
+		p->p_fd = fd;
 #if ENABLE_FEATURE_IPV6
 		if (family == AF_INET)
 #endif
 			setsockopt_int(fd, IPPROTO_IP, IP_TOS, IPTOS_DSCP_AF21);
-		free(local_lsa);
 	}
 
 	/* Emit message _before_ attempted send. Think of a very short
@@ -941,14 +980,9 @@ send_query_to_peer(peer_t *p)
 	p->p_xmt_msg.m_xmttime.fractionl = rand();
 	p->p_xmttime = gettime1900d();
 
-	/* Were doing it only if sendto worked, but
-	 * loss of sync detection needs reachable_bits updated
-	 * even if sending fails *locally*:
-	 * "network is unreachable" because cable was pulled?
-	 * We still need to declare "unsync" if this condition persists.
+	/* Loss of sync detection also counts local send failures:
+	 * "network is unreachable" because cable was pulled, for example.
 	 */
-	p->reachable_bits <<= 1;
-
 #if ENABLE_FEATURE_NTP_AUTH
 	if (p->key_entry)
 		hash_peer(p);
@@ -984,13 +1018,29 @@ send_query_to_peer(peer_t *p)
  */
 static void run_script(const char *action, double offset)
 {
+	peer_t *peer;
+	const char *server_hostname;
+	const char *server_ip;
 	char *argv[3];
-	char *env1, *env2, *env3, *env4;
+	char *env1, *env2, *env3, *env4, *env5, *env6, *env7;
 
 	G.last_script_run = G.cur_time;
 
 	if (!G.script_name)
 		return;
+
+	/*
+	 * The periodic hook can run before the first peer is selected.
+	 * Keep peer-related variables present, but empty in that case.
+	 */
+	peer = G.last_update_peer;
+	server_hostname = "";
+	server_ip = "";
+	if (peer) {
+		server_hostname = peer->p_hostname;
+		if (peer->p_dotted)
+			server_ip = peer->p_dotted;
+	}
 
 	argv[0] = (char*) G.script_name;
 	argv[1] = (char*) action;
@@ -1006,9 +1056,15 @@ static void run_script(const char *action, double offset)
 	putenv(env3);
 	env4 = xasprintf("%s=%f", "offset", offset);
 	putenv(env4);
-	/* Other items of potential interest: selected peer,
+	env5 = xasprintf("%s=%s", "server_hostname", server_hostname);
+	putenv(env5);
+	env6 = xasprintf("%s=%s", "server_ip", server_ip);
+	putenv(env6);
+	env7 = xasprintf("%s=%f", "discipline_jitter", G.discipline_jitter);
+	putenv(env7);
+	/* Other items of potential interest:
 	 * rootdelay, reftime, rootdisp, refid, ntp_status,
-	 * last_update_offset, last_update_recv_time, discipline_jitter,
+	 * last_update_offset, last_update_recv_time,
 	 * how many peers have reachable_bits = 0?
 	 */
 
@@ -1021,13 +1077,19 @@ static void run_script(const char *action, double offset)
 	unsetenv("freq_drift_ppm");
 	unsetenv("poll_interval");
 	unsetenv("offset");
+	unsetenv("server_hostname");
+	unsetenv("server_ip");
+	unsetenv("discipline_jitter");
 	free(env1);
 	free(env2);
 	free(env3);
 	free(env4);
+	free(env5);
+	free(env6);
+	free(env7);
 }
 
-static NOINLINE void
+static NOINLINE int
 step_time(double offset)
 {
 	llist_t *item;
@@ -1046,8 +1108,22 @@ step_time(double offset)
 	 * a more complex code would be needed.
 	 */
 	dtime = tvc.tv_sec + (1.0e-6 * tvc.tv_usec) + offset;
+	/*
+	 * A peer can make offset large enough that dtime is not representable
+	 * by a 32-bit time_t.  Converting such a double to time_t is undefined.
+	 * ntpd does not support dates before the Unix epoch.
+	 */
+	if (dtime != dtime
+	 || dtime < 0.0
+	 || (sizeof(time_t) == 4
+	     && dtime >= (((time_t)-1 > (time_t)0)
+	                  ? 4294967296.0 : 2147483648.0))
+	) {
+		bb_error_msg("refusing invalid clock step: resulting time %.0f", dtime);
+		return 0;
+	}
 	tvn.tv_sec = (time_t)dtime;
-	tvn.tv_usec = (dtime - tvn.tv_sec) * 1000000;
+	tvn.tv_usec = (dtime - (double)tvn.tv_sec) * 1000000;
 	xsettimeofday(&tvn);
 
 	VERB2 {
@@ -1084,6 +1160,7 @@ step_time(double offset)
 			set_next(pp, RETRY_INTERVAL);
 		}
 	}
+	return 1;
 }
 
 static void clamp_pollexp_and_set_MAXSTRAT(void)
@@ -1525,7 +1602,8 @@ update_local_clock(peer_t *p)
 		 * intervals.
 		 */
 		VERB4 bb_error_msg("stepping time by %+f; poll_exp=MINPOLL", offset);
-		step_time(offset);
+		if (!step_time(offset))
+			return 0;
 		if (option_mask32 & OPT_q) {
 			/* We were only asked to set time once. Done. */
 			exit(0);
@@ -2086,6 +2164,8 @@ recv_and_process_client_pkt(void /*int fd*/)
 	l_fixedpt_t      query_xmttime;
 
 	to = get_sock_lsa(G_listen_fd);
+	if (!to)
+		bb_simple_perror_msg_and_die("getsockname");
 	from = xzalloc(to->len);
 
 	size = recv_from_to(G_listen_fd, &msg, sizeof(msg), MSG_DONTWAIT, from, &to->u.sa, to->len);
@@ -2515,7 +2595,7 @@ int ntpd_main(int argc UNUSED_PARAM, char **argv)
 
 		/* Nothing between here and poll() blocks for any significant time */
 
-		nextaction = G.last_script_run + (11*60);
+		nextaction = G.last_script_run + PERIODIC_SCRIPT_INTERVAL;
 		if (nextaction < G.cur_time + 1)
 			nextaction = G.cur_time + 1;
 
@@ -2533,13 +2613,18 @@ int ntpd_main(int argc UNUSED_PARAM, char **argv)
 
 			if (p->next_action_time <= G.cur_time) {
 				if (p->p_fd == -1) {
-					/* Time to send new req */
-					if (--cnt == 0) {
-						VERB4 bb_simple_error_msg("disabling burst mode");
-						G.polladj_count = 0;
-						G.poll_exp = MINPOLL;
+					/* Do not consume the initial burst countdown until
+					 * hostname resolution has produced an address.
+					 */
+					if (p->p_lsa) {
+						/* Time to send new req */
+						if (cnt != 0 && --cnt == 0) {
+							VERB4 bb_simple_error_msg("disabling burst mode");
+							G.polladj_count = 0;
+							G.poll_exp = MINPOLL;
+						}
+						send_query_to_peer(p);
 					}
-					send_query_to_peer(p);
 				} else {
 					/* Timed out waiting for reply */
 					close(p->p_fd);
@@ -2602,7 +2687,7 @@ int ntpd_main(int argc UNUSED_PARAM, char **argv)
 			if (bb_got_signal)
 				break; /* poll was interrupted by a signal */
 
-			if (G.cur_time - G.last_script_run > 11*60) {
+			if (G.cur_time - G.last_script_run >= PERIODIC_SCRIPT_INTERVAL) {
 				/* Useful for updating battery-backed RTC and such */
 				run_script("periodic", G.last_update_offset);
 				gettime1900d(); /* sets G.cur_time */

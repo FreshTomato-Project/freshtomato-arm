@@ -30,28 +30,26 @@ define unpatch_files
 endef
 
 define CMAKE_CrossOptions
- ( \
-  echo "SET(CMAKE_CROSSCOMPILING \"TRUE\")" >>$(1); \
-  echo "SET(TOP $(TOP))" >>$(1); \
-  echo "SET(CMAKE_SYSTEM_NAME Linux)" >>$(1); \
-  echo "SET(CMAKE_SYSTEM_VERSION $(LINUX_KERNEL))" >>$(1); \
-  echo "SET(CMAKE_SYSTEM $(PLATFORM))" >>$(1); \
-  echo "SET(CMAKE_SYSTEM_PROCESSOR $(ARCH))" >>$(1); \
-  echo "SET(CMAKE_C_COMPILER $(CC))" >>$(1); \
-  echo "SET(CMAKE_CXX_COMPILER $(CXX))" >>$(1); \
-  echo "SET(CMAKE_C_COMPILER_RANLIB $(RANLIB))" >>$(1); \
-  echo "SET(CMAKE_AR $(AR))" >>$(1); \
-  echo "SET(CMAKE_LINKER $(LD))" >>$(1); \
-  echo "SET(CMAKE_NM $(NM))" >>$(1); \
-  echo "SET(CMAKE_OBJCOPY $(OBJCOPY))" >>$(1); \
-  echo "SET(CMAKE_OBJDUMP $(OBJDUMP))" >>$(1); \
-  echo "SET(CMAKE_RANLIB $(RANLIB))" >>$(1); \
-  echo "SET(CMAKE_STRIP $(STRIP))" >>$(1); \
-  echo "SET(CMAKE_FIND_ROOT_PATH $(TOOLCHAIN))" >>$(1); \
-  echo "SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)" >>$(1); \
-  echo "SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)" >>$(1); \
-  echo "SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)" >>$(1); \
- )
+	( \
+	echo "SET(CMAKE_CROSSCOMPILING TRUE)" >>$(1); \
+	echo "SET(TOP \"$(TOP)\")" >>$(1); \
+	echo "SET(CMAKE_SYSTEM_NAME Linux)" >>$(1); \
+	echo "SET(CMAKE_SYSTEM_VERSION \"$(LINUX_KERNEL)\")" >>$(1); \
+	echo "SET(CMAKE_SYSTEM_PROCESSOR \"$(ARCH)\")" >>$(1); \
+	echo "SET(CMAKE_C_COMPILER \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(CC))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_CXX_COMPILER \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(CXX))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_AR \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(AR))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_LINKER \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(LD))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_NM \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(NM))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_OBJCOPY \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(OBJCOPY))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_OBJDUMP \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(OBJDUMP))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_RANLIB \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(RANLIB))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_STRIP \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(STRIP))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_FIND_ROOT_PATH \"$(abspath $(TOOLCHAIN))\")" >>$(1); \
+	echo "SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)" >>$(1); \
+	echo "SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)" >>$(1); \
+	echo "SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)" >>$(1); \
+	)
 endef
 
 define meson_CrossOptions

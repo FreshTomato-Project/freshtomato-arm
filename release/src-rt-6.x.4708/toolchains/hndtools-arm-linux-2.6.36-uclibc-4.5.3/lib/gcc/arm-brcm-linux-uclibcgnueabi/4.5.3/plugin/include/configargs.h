@@ -1,7 +1,0 @@
-/* Generated automatically. */
-static const char configuration_arguments[] = "/home/pedro/buildroot-2012.02-ARM/output/toolchain/gcc-4.5.3/configure MAKEINFO=missing --prefix=/home/pedro/buildroot-2012.02-ARM/output/host/hndtools-arm-linux-2.6.36-uclibc-4.5.3 --build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu --target=arm-brcm-linux-uclibcgnueabi --enable-languages=c,c++ --with-sysroot=/home/pedro/buildroot-2012.02-ARM/output/host/hndtools-arm-linux-2.6.36-uclibc-4.5.3/arm-brcm-linux-uclibcgnueabi/sysroot --with-build-time-tools=/home/pedro/buildroot-2012.02-ARM/output/host/hndtools-arm-linux-2.6.36-uclibc-4.5.3/arm-brcm-linux-uclibcgnueabi/bin --disable-__cxa_atexit --enable-target-optspace --disable-libgomp --with-gnu-ld --disable-libssp --disable-multilib --enable-tls --enable-shared --with-gmp=/home/pedro/buildroot-2012.02-ARM/output/host/hndtools-arm-linux-2.6.36-uclibc-4.5.3 --with-mpfr=/home/pedro/buildroot-2012.02-ARM/output/host/hndtools-arm-linux-2.6.36-uclibc-4.5.3 --with-mpc=/home/pedro/buildroot-2012.02-ARM/output/host/hndtools-arm-linux-2.6.36-uclibc-4.5.3 --enable-threads --disable-decimal-float --with-float=soft --with-abi=aapcs-linux --with-arch=armv7-a --with-tune=cortex-a9 --with-pkgversion='Buildroot 2012.02-g5617611' --with-bugurl=http://bugs.buildroot.net/";
-static const char thread_model[] = "posix";
-
-static const struct {
-  const char *name, *value;
-} configure_default_options[] = { { "abi", "aapcs-linux" }, { "arch", "armv7-a" }, { "tune", "cortex-a9" }, { "float", "soft" } };

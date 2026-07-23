@@ -99,7 +99,6 @@ void start_jffs2(void)
 		format = 1;
 	}
 
-	memset(s, 0, 256);
 	snprintf(s, sizeof(s), "%d", size);
 	p = nvram_safe_get("jffs2_size");
 	if ((!*p) || (strcmp(p, s) != 0)) {
@@ -132,7 +131,6 @@ void start_jffs2(void)
 
 	modprobe(JFFS_NAME);
 
-	memset(s, 0, 256);
 	snprintf(s, sizeof(s), MTD_BLKDEV(%d), part);
 
 	if (mount(s, "/jffs", JFFS_NAME, MS_NOATIME, "") != 0) {

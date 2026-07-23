@@ -1,0 +1,20 @@
+Users can set environmental variables to override Transmission's default behavior and for debugging.
+
+## Transmission-Specific Variables
+ * If `TRANSMISSION_HOME` is set, Transmission will look there for its settings instead of in the [default location](Configuration-Files.md#Locations).
+ * If `TRANSMISSION_WEB_HOME` is set, Transmission will look there for the [Web Interface](Web-Interface.md) files, such as the JavaScript, HTML, and graphics files.
+ * If `TR_CURL_SSL_NO_VERIFY` is set, Transmission will not validate SSL certificate for HTTPS connections when talking to trackers. See CURL's documentation ([CURLOPT_SSL_VERIFYHOST](https://curl.se/libcurl/c/CURLOPT_SSL_VERIFYHOST.html) and [CURLOPT_SSL_VERIFYPEER](https://curl.se/libcurl/c/CURLOPT_SSL_VERIFYPEER.html)) for more details.
+ * If `TR_CURL_VERBOSE` is set, debugging information for libcurl will be enabled.  More information about libcurl's debugging mode [is available here](https://curl.haxx.se/libcurl/c/curl_easy_setopt.html#CURLOPTVERBOSE).
+ * If `TR_DHT_VERBOSE` is set, Transmission will log all of the DHT's activities in excruciating detail to standard error.
+ * If `TR_SAVE_VERSION_FORMAT` is set to `4` or `5`, it will save settings.json, stats.json, etc. files to either Transmission 4 or Transmission 5 format.
+
+## Standard Variables Used by Transmission
+ * If `TRANSMISSION_WEB_HOME` is _not_ set, non-Mac platforms will look for the [Web Interface](Web-Interface.md) files in `XDG_DATA_HOME` and in `XDG_DATA_DIRS` as described in [the XDG Base Directory Specification](https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html#variables). `XDG_DATA_HOME` has a default value of `$HOME/.local/share/`.
+ * If `TRANSMISSION_HOME` is _not_ set, Unix-based versions of Transmission will look for their settings in `$XDG_CONFIG_HOME/transmission/`. `XDG_CONFIG_HOME` has a default value of `$HOME/.config/`.
+ * If `HOME` is set, it is used in three ways:
+   1. By the `XDG` variables, as described above.
+   2. If `TRANSMISSION_HOME` is _not_ set, Mac-based versions of Transmission will look for their settings in `$HOME/Library/Application Support/Transmission`.
+   3. `$HOME/Downloads` is the default download directory.
+
+## Standard Variables Used by Other Tools
+ * Transmission uses the [libcurl](https://curl.haxx.se/libcurl/) library for HTTP- and HTTPS-based tracker announces and scrapes. Transmission does not support proxies, but libcurl itself honors [a handful of environment variables](https://curl.haxx.se/libcurl/c/curl_easy_setopt.html#CURLOPTPROXY) to customize _its_ proxy behavior.

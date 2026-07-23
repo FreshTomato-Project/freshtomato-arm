@@ -135,19 +135,21 @@ else
  TCONFIG_RAID :=
 endif
 
-# Specify iptables/iproute2/ipset/pcre/php target
+# Specify iptables/iproute2/ipset/pcre/php/transmission target
 ifeq ($(TCONFIG_BCMARM),y)
  export IPTABLES_TARGET := iptables-1.8.x
  export IPROUTE_TARGET := iproute2-3.x
  export IPSET_TARGET := ipset
  export PCRE_TARGET := pcre2
  export PHP_TARGET := php
+ export BT_TARGET := transmission-4
 else
  export IPTABLES_TARGET := iptables
  export IPROUTE_TARGET := iproute2
  export IPSET_TARGET := ipset-6.24
  export PCRE_TARGET := pcre
  export PHP_TARGET := php7
+ export BT_TARGET := transmission
 endif
 
 # IPv6
@@ -343,7 +345,7 @@ obj-$(TCONFIG_USB)		+= e2fsprogs p910nd comgt libjson-c libubox uqmi sd-idle $(i
 obj-$(TCONFIG_NOCAT)		+= $(if $(TCONFIG_BCMARM),zlib libffi libiconv gettext-tiny $(PCRE_TARGET) glib2,glib) nocat
 obj-$(TCONFIG_SAMBASRV)		+= $(if $(or $(TCONFIG_BCMARM),$(TCONFIG_NGINX)),libiconv,) zlib samba3 wsdd2
 obj-$(TCONFIG_IPV6)		+= dhcpv6
-obj-$(TCONFIG_BBT)		+= zlib libevent $(SSL_TARGET) $(LIBCURL_TARGET) transmission
+obj-$(TCONFIG_BBT)		+= zlib libevent $(SSL_TARGET) $(LIBCURL_TARGET) $(BT_TARGET)
 obj-$(TCONFIG_MEDIA_SERVER)	+= zlib sqlite $(if $(TCONFIG_BCMARM),libiconv) libogg flac libjpeg-turbo libexif libid3tag libvorbis ffmpeg minidlna
 obj-$(TCONFIG_CONNTRACK_TOOL)	+= libmnl libnfnetlink libnetfilter_conntrack libnetfilter_log libnetfilter_queue conntrack-tools
 obj-y				+= $(IPTABLES_TARGET) $(IPROUTE_TARGET) # iptables <- conntrack-tools for ARM!
@@ -3154,64 +3156,66 @@ libiconv-install:
 		ln -sf libiconv.so.2.7.1 libiconv.so.2 && \
 		ln -sf libiconv.so.2.7.1 libiconv.so
 
-transmission/build/Makefile:
-	@rm -rf transmission/build && mkdir -p transmission/build
-	$(call patch_files,transmission)
-	cd transmission/build && $(call CMAKE_CrossOptions, crosscompiled.cmake) && \
+$(BT_TARGET)/build/Makefile:
+	@rm -rf $(BT_TARGET)/build && mkdir -p $(BT_TARGET)/build
+	$(call patch_files,$(BT_TARGET))
+	cd $(BT_TARGET)/build && $(call CMAKE_CrossOptions, crosscompiled.cmake) && \
 		cmake -DCMAKE_TOOLCHAIN_FILE=crosscompiled.cmake \
 			-DCMAKE_INSTALL_PREFIX=/usr \
 			-DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_RPATH=TRUE \
-			-DCMAKE_C_FLAGS="-Wall $(EXTRACFLAGS) -DNDEBUG $(GCC_CMODE) -ffunction-sections -fdata-sections \
+			$(if $(TCONFIG_BCMARM), \
+				-DCMAKE_C_STANDARD=11 -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=ON \
+				-DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=ON \
+			) \
+			-DCMAKE_C_FLAGS="-Wall $(EXTRACFLAGS) -DNDEBUG $(if $(TCONFIG_BCMARM),,$(GCC_CMODE)) -ffunction-sections -fdata-sections \
 				$(if $(TCONFIG_BCMARM),,--param large-function-growth=800 --param max-inline-insns-single=3600) \
 				-I$(TOP)/zlib/staged/usr/include -I$(TOP)/$(LIBCURL_TARGET)/staged/usr/include -I$(TOP)/libevent/staged/usr/include \
-				$(if $(TCONFIG_WOLFSSL),-I$(TOP)/wolfssl/staged/usr/include -I$(TOP)/wolfssl/staged/usr/include/wolfssl,-I$(TOP)/$(OPENSSLDIR)/staged/usr/include)" \
-			-DCMAKE_CXX_FLAGS="-Wall $(EXTRA_CXXFLAGS) -DNDEBUG $(GCC_CXXMODE) -ffunction-sections -fdata-sections \
+				-I$(TOP)/$(OPENSSLDIR)/staged/usr/include" \
+			-DCMAKE_CXX_FLAGS="-Wall $(EXTRA_CXXFLAGS) -DNDEBUG $(if $(TCONFIG_BCMARM),,$(GCC_CXXMODE)) -ffunction-sections -fdata-sections \
 				$(if $(TCONFIG_BCMARM),,--param large-function-growth=800 --param max-inline-insns-single=3600) \
 				-I$(TOP)/zlib/staged/usr/include -I$(TOP)/libevent/staged/usr/include \
-				$(if $(TCONFIG_WOLFSSL),-I$(TOP)/wolfssl/staged/usr/include -I$(TOP)/wolfssl/staged/usr/include/wolfssl,-I$(TOP)/$(OPENSSLDIR)/staged/usr/include)" \
-			-DCMAKE_EXE_LINKER_FLAGS="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib -L$(TOP)/$(LIBCURL_TARGET)/staged/usr/lib -L$(TOP)/libevent/staged/usr/lib -lz -levent -lpthread -lstdc++ -lcurl \
-				$(if $(TCONFIG_WOLFSSL),-L$(TOP)/wolfssl/staged/usr/lib -lwolfssl,-L$(TOP)/$(OPENSSLDIR)/staged/usr/lib -lssl -lcrypto)" \
-			-DENABLE_LIGHTWEIGHT=ON -DENABLE_UTP=ON -DENABLE_UTILS=ON -DENABLE_NLS=OFF -DENABLE_CLI=OFF -DENABLE_GTK=OFF -DENABLE_QT=OFF -DENABLE_MAC=OFF -DENABLE_TESTS=OFF \
+				-I$(TOP)/$(OPENSSLDIR)/staged/usr/include" \
+			-DCMAKE_EXE_LINKER_FLAGS="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib -L$(TOP)/$(LIBCURL_TARGET)/staged/usr/lib -L$(TOP)/libevent/staged/usr/lib \
+				-L$(TOP)/$(OPENSSLDIR)/staged/usr/lib -lz -levent -lpthread -lstdc++ -lcurl -lssl -lcrypto" \
+			-DENABLE_UTP=ON -DENABLE_UTILS=ON -DENABLE_NLS=OFF -DENABLE_CLI=OFF -DENABLE_GTK=OFF -DENABLE_QT=OFF -DENABLE_MAC=OFF -DENABLE_TESTS=OFF -DWITH_INOTIFY=OFF -DWITH_KQUEUE=OFF \
 			-DUSE_SYSTEM_EVENT2=ON -DUSE_SYSTEM_DHT=OFF -DUSE_SYSTEM_UTP=OFF -DUSE_SYSTEM_B64=OFF -DUSE_SYSTEM_MINIUPNPC=OFF -DUSE_SYSTEM_NATPMP=OFF -DWITH_SYSTEMD=OFF -DINSTALL_DOC=OFF \
-			-DWITH_CRYPTO=$(if $(TCONFIG_WOLFSSL),cyassl,openssl) \
+			$(if $(TCONFIG_BCMARM),-DUSE_SYSTEM_PSL=OFF -DUSE_SYSTEM_DEFLATE=OFF -DWITH_APPINDICATOR=OFF,-DENABLE_LIGHTWEIGHT=ON -DWITH_LIBAPPINDICATOR=OFF) \
+			-DWITH_CRYPTO=openssl \
 			-DCURL_INCLUDE_DIR=$(TOP)/$(LIBCURL_TARGET)/staged/usr/include \
 			-DCURL_LIBRARY=$(TOP)/$(LIBCURL_TARGET)/staged/usr/lib/libcurl.so \
 			-DEVENT2_INCLUDE_DIR=$(TOP)/libevent/staged/usr/include \
 			-DEVENT2_LIBRARY=$(TOP)/libevent/staged/usr/lib/libevent.so \
-			$(if $(TCONFIG_WOLFSSL), \
-				-DWOLFSSL_INCLUDE_DIR=$(TOP)/wolfssl/staged/usr/include \
-				-DWOLFSSL_LIBRARY=$(TOP)/wolfssl/staged/usr/lib/libwolfssl.so \
-				, \
-				-DOPENSSL_INCLUDE_DIR=$(TOP)/$(OPENSSLDIR)/staged/usr/include \
-				-DOPENSSL_CRYPTO_LIBRARY=$(TOP)/$(OPENSSLDIR)/staged/usr/lib/libcrypto.so \
-				-DOPENSSL_SSL_LIBRARY=$(TOP)/$(OPENSSLDIR)/staged/usr/lib/libssl.so \
+			-DOPENSSL_INCLUDE_DIR=$(TOP)/$(OPENSSLDIR)/staged/usr/include \
+			-DOPENSSL_CRYPTO_LIBRARY=$(TOP)/$(OPENSSLDIR)/staged/usr/lib/libcrypto.so \
+			-DOPENSSL_SSL_LIBRARY=$(TOP)/$(OPENSSLDIR)/staged/usr/lib/libssl.so \
+			$(if $(TCONFIG_BCMARM),, \
+				-DZLIB_INCLUDE_DIR=$(TOP)/zlib/staged/usr/include \
+				-DZLIB_LIBRARY=$(TOP)/zlib/staged/usr/lib/libz.so \
+				-DICONV_INCLUDE_DIR="" \
+				-DICONV_LIBRARY="" \
 			) \
-			-DZLIB_INCLUDE_DIR=$(TOP)/zlib/staged/usr/include \
-			-DZLIB_LIBRARY=$(TOP)/zlib/staged/usr/lib/libz.so \
-			-DICONV_INCLUDE_DIR="" \
-			-DICONV_LIBRARY="" \
 			..
 
-transmission: transmission/build/Makefile
+$(BT_TARGET): $(BT_TARGET)/build/Makefile
 	@$(SEP)
-	$(MAKE) -C transmission/build $(PARALLEL_BUILD)
+	$(MAKE) -C $(BT_TARGET)/build $(PARALLEL_BUILD)
 
-transmission-install:
-	$(MAKE) -C transmission/build DESTDIR=$(INSTALLDIR)/transmission install
-	@rm -rf $(INSTALLDIR)/transmission/usr/bin/transmission-show
-	@rm -rf $(INSTALLDIR)/transmission/usr/bin/transmission-edit
-	@rm -rf $(INSTALLDIR)/transmission/usr/bin/transmission-create
-	$(STRIP) -s $(INSTALLDIR)/transmission/usr/bin/transmission-daemon
+$(BT_TARGET)-install:
+	$(MAKE) -C $(BT_TARGET)/build DESTDIR=$(INSTALLDIR)/$(BT_TARGET) install
+	@rm -rf $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-show
+	@rm -rf $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-edit
+	@rm -rf $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-create
+	$(STRIP) -s $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-daemon
 ifneq ($(TCONFIG_TR_EXTRAS),y)
-	@rm -rf $(INSTALLDIR)/transmission/usr/bin/transmission-remote
+	@rm -rf $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-remote
 else
-	$(STRIP) -s $(INSTALLDIR)/transmission/usr/bin/transmission-remote
+	$(STRIP) -s $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-remote
 endif
 
-transmission-clean:
-	-@$(MAKE) -C transmission clean
-	@rm -rf transmission/build
-	$(call unpatch_files,transmission)
+$(BT_TARGET)-clean:
+	-@$(MAKE) -C $(BT_TARGET) clean
+	@rm -rf $(BT_TARGET)/build
+	$(call unpatch_files,$(BT_TARGET))
 
 libnfsidmap/stamp-h1:
 	cd libnfsidmap && ./autogen.sh && \

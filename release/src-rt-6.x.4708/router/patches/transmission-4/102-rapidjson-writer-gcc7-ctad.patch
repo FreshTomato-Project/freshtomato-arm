@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: pedro <pedro311@gmail.com>
+Date: Tue, 21 Jul 2026 00:00:00 +0200
+Subject: [PATCH] libtransmission: avoid RapidJSON Writer CTAD on GCC < 12
+
+Transmission already specifies the PrettyWriter output stream type
+explicitly as a workaround for GCC PR c++/85790.  The compact Writer
+path still uses class template argument deduction and triggers the same
+GCC 7 ICE:
+
+  unexpected expression 'writeFlags' of kind template_parm_index
+
+Specify the first template argument explicitly for Writer as well.
+
+---
+ transmission-4/libtransmission/variant-json.cc | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git transmission-4/libtransmission/variant-json.cc transmission-4/libtransmission/variant-json.cc
+--- transmission-4/libtransmission/variant-json.cc
++++ transmission-4/libtransmission/variant-json.cc
+@@ -380,7 +380,9 @@ std::string tr_variant_serde::to_json_string(tr_variant const& var) const
+     auto buf = FmtOutputStream{};
+     if (compact_)
+     {
+-        auto writer = rapidjson::Writer{ buf };
++        // Avoid GCC PR c++/85790 in the implicit deduction guide,
++        // as done for PrettyWriter below.
++        auto writer = rapidjson::Writer<FmtOutputStream>{ buf };
+         var.visit(JsonWriter{ writer });
+     }
+     else
+-- 
+2.39.5

@@ -23,7 +23,8 @@
 var cprefix = 'status_log';
 
 var currentSearch = '';
-var negativeSearch = 0;
+var currentSearchTerms = [];
+var currentHighlightRegex = null;
 var currentFilterValue = 0;
 var currentlyScrolling = false;
 var scrollingDetectorTimeout;
@@ -88,23 +89,12 @@ logGrid.populate = function() {
 		if (entriesMode != 0)
 			messagesToAdd = messagesToAdd.slice(-1 * entriesMode - 1);
 
-		var localSearch;
-		if (currentSearch) {
-			localSearch = currentSearch;
-			if (localSearch.substr(0, 1) == '-') {
-				localSearch = localSearch.substr(1);
-				negativeSearch = 1;
-			}
-			else
-				negativeSearch = 0;
-		}
-
 		var count = 0;
 		for (var index = 0; index < messagesToAdd.length; ++index) {
 			if (messagesToAdd[index]) {
 				var logLineMap = getLogLineParsedMap(messagesToAdd[index]);
 				if ((currentFilterValue == 0) || (E('maxlevel').checked ? (currentFilterValue >= logLineMap[LINE_PARSE_MAP_LEVEL_ATTR_POS][1]) : (currentFilterValue == logLineMap[LINE_PARSE_MAP_LEVEL_ATTR_POS][1]))) {
-						if (!localSearch || containsSearch(logLineMap, localSearch)) {
+						if (containsSearch(logLineMap)) {
 							var row = createHighlightedRow(logLineMap);
 							this.insert(-1, row, row, true);
 							count++;
@@ -113,7 +103,7 @@ logGrid.populate = function() {
 			}
 		}
 
-		E('log-occurence-span').style.display = (currentSearch ? 'inline' : 'none');
+		E('log-occurence-span').style.display = (currentSearchTerms && currentSearchTerms.length > 0 ? 'inline' : 'none');
 		elem.setInnerHTML('log-occurence-value', count);
 		if (time.indexOf('Not Available') === -1)
 			elem.setInnerHTML('log-refresh-time', time.match(/(\d+\:\d+\:\d+)\s(.*)/i)[1]+' - Last Refreshed');
@@ -173,16 +163,74 @@ var criticalRegex = new RegExp(/^(.*?)crit.*/i);
 var emergencyRegex = new RegExp(/^(.*?)emer.*/i);
 var debugRegex = new RegExp(/^(.*?)debu.*/i);
 
-function containsSearch(logLineMap, text) {
-	var ret = (String(logLineMap[LINE_PARSE_MAP_DATE_POS]).toUpperCase().indexOf(text.toUpperCase()) >= 0 ||
-		   String(logLineMap[LINE_PARSE_MAP_FACILITY_POS]).toUpperCase().indexOf(text.toUpperCase()) >= 0 ||
-		   String(logLineMap[LINE_PARSE_MAP_LEVEL_PROCESS_POS]).toUpperCase().indexOf(text.toUpperCase()) >= 0 ||
-		   String(logLineMap[LINE_PARSE_MAP_LEVEL_MESSAGE_POS]).toUpperCase().indexOf(text.toUpperCase()) >= 0);
+function escapeRegex(s) {
+	return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
 
-	if (negativeSearch == 1)
-		return !ret;
-	else
-		return ret;
+function parseSearchInput(text) {
+	var terms = [];
+	if (!text || !text.trim()) return { terms: terms, highlightRegex: null };
+
+	var regex = /(-?)(?:"([^"]+)"|(\S+))/g;
+	var match;
+	var positiveRegexParts = [];
+
+	while ((match = regex.exec(text)) !== null) {
+		var isNegative = (match[1] === '-');
+		var val = match[2] || match[3];
+
+		if (val) {
+			// Split by pipe to create OR groups
+			var orParts = val.split('|').filter(Boolean);
+			if (orParts.length === 0) continue;
+
+			var orGroup = [];
+			for (var i = 0; i < orParts.length; i++) {
+				orGroup.push(orParts[i].toLowerCase());
+				if (!isNegative) {
+					positiveRegexParts.push(escapeRegex(orParts[i]));
+				}
+			}
+
+			terms.push({
+				orGroup: orGroup,
+				negative: isNegative
+			});
+		}
+	}
+
+	var highlightRegex = positiveRegexParts.length > 0
+		? new RegExp('(' + positiveRegexParts.join('|') + ')', 'gi')
+		: null;
+
+	return { terms: terms, highlightRegex: highlightRegex };
+}
+
+function containsSearch(logLineMap) {
+	if (!currentSearchTerms || currentSearchTerms.length === 0) return true;
+
+	var rowText = (
+		(logLineMap[LINE_PARSE_MAP_DATE_POS] || '') + ' ' +
+		(logLineMap[LINE_PARSE_MAP_FACILITY_POS] || '') + ' ' +
+		(logLineMap[LINE_PARSE_MAP_LEVEL_PROCESS_POS] || '') + ' ' +
+		(logLineMap[LINE_PARSE_MAP_LEVEL_MESSAGE_POS] || '')
+	).toLowerCase();
+
+	for (var i = 0; i < currentSearchTerms.length; i++) {
+		var term = currentSearchTerms[i];
+		
+		var foundAny = false;
+		for (var j = 0; j < term.orGroup.length; j++) {
+			if (rowText.indexOf(term.orGroup[j]) !== -1) {
+				foundAny = true;
+				break;
+			}
+		}
+
+		if (term.negative && foundAny) return false;
+		if (!term.negative && !foundAny) return false;
+	}
+	return true;
 }
 
 function getLevelColor(level) {
@@ -241,40 +289,40 @@ function createHighlightedRow(logLineMap) {
 	         generateHighlightSpan(logLineMap[LINE_PARSE_MAP_FACILITY_POS], 'co2', null),
 	         generateHighlightSpan(logLineMap[LINE_PARSE_MAP_LEVEL_POS], 'co3', logLineMap[LINE_PARSE_MAP_LEVEL_ATTR_POS][0]),
 	         generateHighlightSpan(logLineMap[LINE_PARSE_MAP_LEVEL_PROCESS_POS], 'co4', null),
-	         generateHighlightSpan(escapeHTML(''+logLineMap[LINE_PARSE_MAP_LEVEL_MESSAGE_POS]), 'co5', null)
+	         generateHighlightSpan(logLineMap[LINE_PARSE_MAP_LEVEL_MESSAGE_POS], 'co5', null)
 	];
 }
 
 function generateHighlightSpan(innerText, classN, customStyle) {
-	var newText = document.createElement('td');
-	newText.className = classN;
-	if (customStyle)
-		newText.className += ' '+customStyle;
+	var td = document.createElement('td');
+	td.className = classN + (customStyle ? ' ' + customStyle : '');
+	innerText = '' + (innerText || '');
 
-	var indexOfSearch = innerText.toUpperCase().indexOf(currentSearch.toUpperCase());
-	if (indexOfSearch == -1)
-		elem.setInnerHTML(newText, innerText);
-	else {
-		var sizeOfSearch = currentSearch.length;
-
-		var stringBeforeFound = '';
-		if (indexOfSearch != 0) {
-			stringBeforeFound = innerText.substring(0, indexOfSearch);
-			newText.innerHTML += stringBeforeFound;
-		}
-
-		var highlightedString = innerText.substring(indexOfSearch, indexOfSearch + sizeOfSearch);
-		if (highlightedString)
-			newText.innerHTML += '<span style="background-color:yellow">'+highlightedString+'<\/span>';
-
-		var stringAfterFound = '';
-		if (indexOfSearch + sizeOfSearch < innerText.length) {
-			stringAfterFound = innerText.substring(indexOfSearch + sizeOfSearch, innerText.length);
-			newText.innerHTML += stringAfterFound;
-		}
+	if (!currentHighlightRegex) {
+		elem.setInnerHTML(td, escapeHTML(innerText));
+		return td;
 	}
 
-	return newText;
+	var parts = [];
+	var lastIndex = 0;
+	var match;
+
+	currentHighlightRegex.lastIndex = 0;
+
+	while ((match = currentHighlightRegex.exec(innerText)) !== null) {
+		if (match.index > lastIndex) {
+			parts.push(escapeHTML(innerText.substring(lastIndex, match.index)));
+		}
+		parts.push('<span style="background-color:yellow">' + escapeHTML(match[0]) + '</span>');
+		lastIndex = currentHighlightRegex.lastIndex;
+	}
+	
+	if (lastIndex < innerText.length) {
+		parts.push(escapeHTML(innerText.substring(lastIndex)));
+	}
+
+	td.innerHTML = parts.join('');
+	return td;
 }
 
 function filterLevelChanged() {
@@ -345,6 +393,8 @@ function toggleClearButton() {
 function clearSearch() {
 	E('log-find-text').value = '';
 	currentSearch = '';
+	currentSearchTerms = [];
+	currentHighlightRegex = null;
 	E('log-occurence-span').style.display = 'none';
 	toggleClearButton();
 	logGrid.populate();
@@ -360,10 +410,16 @@ function onKeyUpEvent(event) {
 }
 
 var onInputEvent = debounce(function() {
-	currentSearch = E('log-find-text').value;
+	currentSearch = E('log-find-text').value || '';
+	
+	var parsed = parseSearchInput(currentSearch);
+	currentSearchTerms = parsed.terms;
+	currentHighlightRegex = parsed.highlightRegex;
+
 	toggleClearButton();
 	logGrid.populate();
-	if (currentSearch.length == 0) {
+	
+	if (currentSearchTerms.length === 0) {
 		E('log-occurence-span').style.display = 'none';
 		scrollToBottom();
 	}

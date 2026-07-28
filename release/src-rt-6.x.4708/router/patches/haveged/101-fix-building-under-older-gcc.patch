@@ -34,7 +34,7 @@
  ##haveged_SOURCES = haveged.c havege.c havegetune.c havegecollect.c havegetest.c havegecmd.c \
 --- haveged/src/Makefile.in
 +++ haveged/src/Makefile.in
-@@ -327,7 +327,7 @@
+@@ -329,7 +329,7 @@
  top_build_prefix = @top_build_prefix@
  top_builddir = @top_builddir@
  top_srcdir = @top_srcdir@

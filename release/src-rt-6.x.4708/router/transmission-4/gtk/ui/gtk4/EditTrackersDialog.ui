@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="transmission-gtk">
+  <requires lib="gtk" version="4.0"/>
+  <object class="GtkDialog" id="EditTrackersDialog">
+    <property name="modal">1</property>
+    <child internal-child="content_area">
+      <object class="GtkBox" id="dialog_layout">
+        <property name="orientation">vertical</property>
+        <property name="spacing">6</property>
+        <property name="css-classes">tr-dialog-content</property>
+        <property name="vexpand">1</property>
+        <child>
+          <object class="GtkBox" id="dialog_content_layout">
+            <property name="orientation">vertical</property>
+            <property name="spacing">6</property>
+            <child>
+              <object class="GtkFrame">
+                <child type="label">
+                  <object class="GtkLabel" id="urls_section_title">
+                    <property name="label" translatable="yes">Tracker Announce URLs</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkGrid" id="urls_section_layout">
+                    <property name="row-spacing">6</property>
+                    <property name="column-spacing">12</property>
+                    <child>
+                      <object class="GtkLabel" id="urls_section_top_comment_label">
+                        <property name="label" translatable="yes"><![CDATA[To add a backup URL, add it on the next line after a primary URL.
+To add a new primary URL, add it after a blank line.]]></property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">0</property>
+                          <property name="column-span">2</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkScrolledWindow" id="urls_view_scroll">
+                        <property name="width-request">500</property>
+                        <property name="height-request">166</property>
+                        <property name="focusable">1</property>
+                        <property name="has-frame">1</property>
+                        <property name="child">
+                          <object class="GtkTextView" id="urls_view">
+                            <property name="focusable">1</property>
+                            <property name="accepts-tab">0</property>
+                          </object>
+                        </property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">1</property>
+                          <property name="column-span">2</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="urls_section_bottom_comment_label">
+                        <property name="label" translatable="yes">Also see Default Public Trackers in Edit &gt; Preferences &gt; Network</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">2</property>
+                          <property name="column-span">2</property>
+                        </layout>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child internal-child="action_area">
+      <object class="GtkBox" id="dialog_buttons">
+        <property name="css-classes">tr-button-box</property>
+        <property name="spacing">6</property>
+        <child>
+          <object class="GtkButton" id="cancel_button">
+            <property name="label" translatable="yes">_Cancel</property>
+            <property name="focusable">1</property>
+            <property name="receives-default">1</property>
+            <property name="use-underline">1</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkButton" id="save_button">
+            <property name="label" translatable="yes">_Save</property>
+            <property name="focusable">1</property>
+            <property name="receives-default">1</property>
+            <property name="use-underline">1</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="cancel">cancel_button</action-widget>
+      <action-widget response="accept">save_button</action-widget>
+    </action-widgets>
+  </object>
+</interface>

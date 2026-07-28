@@ -52,7 +52,6 @@ static void prep_qosstr(char *prefix)
 	char buf[8];
 
 	for (i = 1; i <= MWAN_MAX; i++) {
-		memset(buf, 0, sizeof(buf));
 		snprintf(buf, sizeof(buf), (i == 1 ? "wan" : "wan%d"), i);
 		if (!strcmp(prefix, buf)) {
 			snprintf(buf, sizeof(buf), (i == 1 ? "/etc/wan_qos" : "/etc/wan%d_qos"), i);
@@ -116,6 +115,7 @@ void ipt_qos(void)
 	int sizegroup;
 	int class_flag;
 	int rule_num;
+	unsigned int mwan_num;
 	int wanup[MWAN_MAX];
 #ifndef TCONFIG_BCMARM
 	int qosDevNumStr = 0;
@@ -125,6 +125,9 @@ void ipt_qos(void)
 
 	if (!nvram_get_int("qos_enable"))
 		return;
+
+	mwan_num = mwan_active_num();
+	memset(wanup, 0, sizeof(wanup));
 
 	inuse = 0;
 	class_flag = 0;
@@ -343,8 +346,7 @@ void ipt_qos(void)
 	ip46t_write(ipv6_enabled, "-A QOSO -j CONNMARK --set-mark 0x%x/0xff00f\n", class_num);
 	ip46t_write(ipv6_enabled, "-A QOSO -j RETURN\n");
 
-	for (i = 2; i <= MWAN_MAX; i++) { /* always add rules for 1st WAN, so doesn't matter if it's up */
-		memset(s, 0, sizeof(s));
+	for (i = 2; i <= (int)mwan_num; i++) { /* always add rules for 1st WAN, so doesn't matter if it's up */
 		snprintf(s, sizeof(s), "wan%d", i);
 		wanup[i - 1] = check_wanup(s);
 	}
@@ -352,7 +354,7 @@ void ipt_qos(void)
 	/* tc in tomato can only match from fw in filter using PACKET (not connection) mark.
 	 * Copy the connection mark to packet mark in POSTROUTING (to apply egress qos)
 	 */
-	for (i = 1; i <= MWAN_MAX; i++) {
+	for (i = 1; i <= (int)mwan_num; i++) {
 		if ((wanup[i - 1]) || (i == 1)) {
 			qface = wanfaces[i - 1].iface[0].name;
 			ipt_write("-A FORWARD -o %s -j QOSO\n"
@@ -372,7 +374,6 @@ void ipt_qos(void)
 #endif /* TCONFIG_IPV6 */
 
 	inuse |= (1 << i) | 1; /* default and highest are always built */
-	memset(s, 0, sizeof(s));
 	snprintf(s, sizeof(s), "%d", inuse);
 	nvram_set("qos_inuse", s);
 
@@ -401,7 +402,7 @@ void ipt_qos(void)
 			/* tc in tomato can only match from fw in filter using PACKET (not connection) mark.
 			 * Copy the connection mark to packet mark in PREROUTING (to apply ingress qos)
 			 */
-			for (j = 1; j <= MWAN_MAX; j++) {
+			for (j = 1; j <= (int)mwan_num; j++) {
 				if ((wanup[j - 1]) || (j == 1)) {
 					qface = wanfaces[j - 1].iface[0].name;
 					ipt_write("-A PREROUTING -i %s -j CONNMARK --restore-mark --mask 0xf\n", qface);
@@ -416,7 +417,7 @@ void ipt_qos(void)
 #endif /* TCONFIG_PPTPD */
 
 			if (nvram_get_int("qos_udp")) {
-				for (j = 1; j <= MWAN_MAX; j++) {
+				for (j = 1; j <= (int)mwan_num; j++) {
 					if ((wanup[j - 1]) || (j == 1)) {
 						qface = wanfaces[j - 1].iface[0].name;
 						qosDevNumStr = j - 1;
@@ -425,7 +426,7 @@ void ipt_qos(void)
 				}
 			}
 			else {
-				for (j = 1; j <= MWAN_MAX; j++) {
+				for (j = 1; j <= (int)mwan_num; j++) {
 					if ((wanup[j - 1]) || (j == 1)) {
 						qface = wanfaces[j - 1].iface[0].name;
 						qosDevNumStr = j - 1;
@@ -491,11 +492,8 @@ void start_qos(char *prefix)
 	x = nvram_get_int("ne_vegas");
 	if (x) {
 		char alpha[10], beta[10], gamma[10];
-		memset(alpha, 0, sizeof(alpha));
 		snprintf(alpha, sizeof(alpha), "alpha=%d", nvram_get_int("ne_valpha"));
-		memset(beta, 0, sizeof(beta));
 		snprintf(beta, sizeof(beta), "beta=%d", nvram_get_int("ne_vbeta"));
-		memset(gamma, 0, sizeof(gamma));
 		snprintf(gamma, sizeof(gamma), "gamma=%d", nvram_get_int("ne_vgamma"));
 		modprobe("tcp_vegas", alpha, beta, gamma);
 		f_write_procsysnet("ipv4/tcp_congestion_control", "vegas");

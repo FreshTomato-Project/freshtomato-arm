@@ -23,6 +23,23 @@
 #define LOGMSG_NVDEBUG	"ddns_debug"
 
 
+static void clear_extip_cache(const char *name)
+{
+#ifdef TCONFIG_IPV6
+	char s[128];
+#endif
+
+	f_write(name, NULL, 0, 0, 0);
+
+#ifdef TCONFIG_IPV6
+	snprintf(s, sizeof(s), "%s.4", name);
+	f_write(s, NULL, 0, 0, 0);
+
+	snprintf(s, sizeof(s), "%s.6", name);
+	f_write(s, NULL, 0, 0, 0);
+#endif
+}
+
 static void update(int num, int *dirty, int force)
 {
 	char config[2048];
@@ -115,14 +132,15 @@ static void update(int num, int *dirty, int force)
 		logmsg(LOG_DEBUG, "*** %s: inet_addr ip: %s", __FUNCTION__, ip);
 	}
 
-	/* copy content of nvram cache to a file cache */
+	snprintf(s, sizeof(s), "%s.extip", ddnsx_path);
+
+	/* copy content of nvram cache to a file cache; mdu decides whether it can be trusted */
 	snprintf(cache_fn, sizeof(cache_fn), "%s.cache", ddnsx_path);
 	f_write_string(cache_fn, nvram_safe_get(cache_nv), 0, 0);
 
 	/* if nvram cache is empty, the 'Force next update' option is probably checked - reset also cache file .extip */
-	snprintf(s, sizeof(s), "%s.extip", ddnsx_path);
 	if (strcmp(nvram_safe_get(cache_nv), "") == 0)
-		f_write(s, NULL, 0, 0, 0);
+		clear_extip_cache(s);
 
 	if (!f_exists(msg_fn)) {
 		logmsg(LOG_DEBUG, "*** %s: !f_exist(%s) - creating ...", __FUNCTION__, msg_fn);
@@ -357,7 +375,7 @@ void stop_ddns(void)
 	killall("ddns-update", SIGKILL);
 
 	/* prevent mdu from leaving unwanted routing (only in MultiWAN mode) */
-	if (nvram_get_int("mwan_num") > 1 && pidof("mdu") > 0 && !nvram_get_int("g_upgrade") && !nvram_get_int("g_reboot")) {
+	if (mwan_active_num() > 1 && pidof("mdu") > 0 && !nvram_get_int("g_upgrade") && !nvram_get_int("g_reboot")) {
 		f_write_string(MDU_STOP_FN, "1", 0, 0); /* create stop file */
 		while (pidof("mdu") > 0 && (m-- > 0)) {
 			logmsg(LOG_DEBUG, "*** %s: waiting for mdu to end, %d secs left ...", __FUNCTION__, m);

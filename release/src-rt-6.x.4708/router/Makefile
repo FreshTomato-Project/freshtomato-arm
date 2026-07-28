@@ -30,28 +30,26 @@ define unpatch_files
 endef
 
 define CMAKE_CrossOptions
- ( \
-  echo "SET(CMAKE_CROSSCOMPILING \"TRUE\")" >>$(1); \
-  echo "SET(TOP $(TOP))" >>$(1); \
-  echo "SET(CMAKE_SYSTEM_NAME Linux)" >>$(1); \
-  echo "SET(CMAKE_SYSTEM_VERSION $(LINUX_KERNEL))" >>$(1); \
-  echo "SET(CMAKE_SYSTEM $(PLATFORM))" >>$(1); \
-  echo "SET(CMAKE_SYSTEM_PROCESSOR $(ARCH))" >>$(1); \
-  echo "SET(CMAKE_C_COMPILER $(CC))" >>$(1); \
-  echo "SET(CMAKE_CXX_COMPILER $(CXX))" >>$(1); \
-  echo "SET(CMAKE_C_COMPILER_RANLIB $(RANLIB))" >>$(1); \
-  echo "SET(CMAKE_AR $(AR))" >>$(1); \
-  echo "SET(CMAKE_LINKER $(LD))" >>$(1); \
-  echo "SET(CMAKE_NM $(NM))" >>$(1); \
-  echo "SET(CMAKE_OBJCOPY $(OBJCOPY))" >>$(1); \
-  echo "SET(CMAKE_OBJDUMP $(OBJDUMP))" >>$(1); \
-  echo "SET(CMAKE_RANLIB $(RANLIB))" >>$(1); \
-  echo "SET(CMAKE_STRIP $(STRIP))" >>$(1); \
-  echo "SET(CMAKE_FIND_ROOT_PATH $(TOOLCHAIN))" >>$(1); \
-  echo "SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)" >>$(1); \
-  echo "SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)" >>$(1); \
-  echo "SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)" >>$(1); \
- )
+	( \
+	echo "SET(CMAKE_CROSSCOMPILING TRUE)" >>$(1); \
+	echo "SET(TOP \"$(TOP)\")" >>$(1); \
+	echo "SET(CMAKE_SYSTEM_NAME Linux)" >>$(1); \
+	echo "SET(CMAKE_SYSTEM_VERSION \"$(LINUX_KERNEL)\")" >>$(1); \
+	echo "SET(CMAKE_SYSTEM_PROCESSOR \"$(ARCH)\")" >>$(1); \
+	echo "SET(CMAKE_C_COMPILER \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(CC))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_CXX_COMPILER \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(CXX))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_AR \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(AR))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_LINKER \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(LD))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_NM \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(NM))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_OBJCOPY \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(OBJCOPY))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_OBJDUMP \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(OBJDUMP))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_RANLIB \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(RANLIB))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_STRIP \"$(abspath $(TOOLCHAIN))/bin/$(notdir $(STRIP))\" CACHE FILEPATH \"\" FORCE)" >>$(1); \
+	echo "SET(CMAKE_FIND_ROOT_PATH \"$(abspath $(TOOLCHAIN))\")" >>$(1); \
+	echo "SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)" >>$(1); \
+	echo "SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)" >>$(1); \
+	echo "SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)" >>$(1); \
+	)
 endef
 
 define meson_CrossOptions
@@ -137,19 +135,21 @@ else
  TCONFIG_RAID :=
 endif
 
-# Specify iptables/iproute2/ipset/pcre/php target
+# Specify iptables/iproute2/ipset/pcre/php/transmission target
 ifeq ($(TCONFIG_BCMARM),y)
  export IPTABLES_TARGET := iptables-1.8.x
  export IPROUTE_TARGET := iproute2-3.x
  export IPSET_TARGET := ipset
  export PCRE_TARGET := pcre2
  export PHP_TARGET := php
+ export BT_TARGET := transmission-4
 else
  export IPTABLES_TARGET := iptables
  export IPROUTE_TARGET := iproute2
  export IPSET_TARGET := ipset-6.24
  export PCRE_TARGET := pcre
  export PHP_TARGET := php7
+ export BT_TARGET := transmission
 endif
 
 # IPv6
@@ -248,7 +248,7 @@ ifeq ($(TCONFIG_BBT),)
 endif
 
 # set gcc mode for packages that don't compile in default one
-ifeq ($(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73),)
+ifeq ($(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73)$(CONFIG_TOOLCHAIN75),)
  GCC_CMODE := -std=gnu99
  GCC_CXXMODE := -std=gnu++98
 else
@@ -345,7 +345,7 @@ obj-$(TCONFIG_USB)		+= e2fsprogs p910nd comgt libjson-c libubox uqmi sd-idle $(i
 obj-$(TCONFIG_NOCAT)		+= $(if $(TCONFIG_BCMARM),zlib libffi libiconv gettext-tiny $(PCRE_TARGET) glib2,glib) nocat
 obj-$(TCONFIG_SAMBASRV)		+= $(if $(or $(TCONFIG_BCMARM),$(TCONFIG_NGINX)),libiconv,) zlib samba3 wsdd2
 obj-$(TCONFIG_IPV6)		+= dhcpv6
-obj-$(TCONFIG_BBT)		+= zlib libevent $(SSL_TARGET) $(LIBCURL_TARGET) transmission
+obj-$(TCONFIG_BBT)		+= zlib libevent $(SSL_TARGET) $(LIBCURL_TARGET) $(BT_TARGET)
 obj-$(TCONFIG_MEDIA_SERVER)	+= zlib sqlite $(if $(TCONFIG_BCMARM),libiconv) libogg flac libjpeg-turbo libexif libid3tag libvorbis ffmpeg minidlna
 obj-$(TCONFIG_CONNTRACK_TOOL)	+= libmnl libnfnetlink libnetfilter_conntrack libnetfilter_log libnetfilter_queue conntrack-tools
 obj-y				+= $(IPTABLES_TARGET) $(IPROUTE_TARGET) # iptables <- conntrack-tools for ARM!
@@ -432,13 +432,17 @@ ifeq ($(TCONFIG_BCMARM),y)
  include $(SRCBASE)/makefiles/WLAN_Common.mk
  export BASEDIR := $(WLAN_TreeBaseA)
  export EXTRALIBS = -lgcc_s
- ifeq ($(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73),)
+ ifeq ($(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73)$(CONFIG_TOOLCHAIN75),)
   export LD_LIBRARY_PATH := $(SRCBASE)/toolchains/hndtools-arm-linux-2.6.36-uclibc-4.5.3/lib
  else
   ifeq ($(CONFIG_TOOLCHAIN73),y)
    export LD_LIBRARY_PATH := $(SRCBASE)/toolchains/hndtools-arm-uclibc-7.3/usr/lib
   else
-   export LD_LIBRARY_PATH := $(SRCBASE)/toolchains/hndtools-arm-uclibc-5.3/usr/lib
+   ifeq ($(CONFIG_TOOLCHAIN75),y)
+    export LD_LIBRARY_PATH := $(SRCBASE)/toolchains/hndtools-arm-uclibc-7.5/usr/lib
+   else
+    export LD_LIBRARY_PATH := $(SRCBASE)/toolchains/hndtools-arm-uclibc-5.3/usr/lib
+   endif
   endif
  endif
  ifeq (2_6_36,$(LINUX_VERSION))
@@ -1397,7 +1401,7 @@ iptables-clean:
 iptables-1.8.x/stamp-h1:
 	$(call patch_files,iptables-1.8.x)
 	cd iptables-1.8.x && ./autogen.sh && \
-		CFLAGS="-Os -Wall $(EXTRACFLAGS) -D_GNU_SOURCE -U CONFIG_NVRAM_SIZE $(if $(CONFIG_TOOLCHAIN73),-DCONFIG_TOOLCHAIN73,)" \
+		CFLAGS="-Os -Wall $(EXTRACFLAGS) -D_GNU_SOURCE -U CONFIG_NVRAM_SIZE $(if $(CONFIG_TOOLCHAIN73),-DCONFIG_TOOLCHAIN73) $(if $(CONFIG_TOOLCHAIN75),-DCONFIG_TOOLCHAIN75)" \
 		CPPFLAGS="-Os -Wall -D_GNU_SOURCE $(if $(TCONFIG_CONNTRACK_TOOL),-I$(TOP)/libnfnetlink/include -I$(TOP)/libnetfilter_conntrack/include,)" \
 		LDFLAGS="$(if $(TCONFIG_CONNTRACK_TOOL),-L$(TOP)/libnfnetlink/src/.libs -lnfnetlink -L$(TOP)/libnetfilter_conntrack/src/.libs -Wl$(comma)-rpath$(comma)$(TOP)/libnetfilter_conntrack/src/.libs \
 			-Wl$(comma)-rpath$(comma)$(TOP)/libmnl/staged/usr/lib,) -lrt" \
@@ -1523,8 +1527,7 @@ libnfnetlink-clean:
 miniupnpd/stamp-h1:
 	$(call patch_files,miniupnpd)
 	cd miniupnpd && \
-		PKG_CONFIG_LIBDIR="" \
-		./configure --igd2 --leasefile --vendorcfg --portinuse --disable-pppconn --firewall=iptables --iptablespath=$(TOP)/$(IPTABLES_TARGET) $(if $(TCONFIG_IPV6),--ipv6,)
+		./configure --igd2 --leasefile --vendorcfg --portinuse --disable-pppconn --firewall=iptables --disable-tests --iptablespath=$(TOP)/$(IPTABLES_TARGET) $(if $(TCONFIG_IPV6),--ipv6,)
 	@touch $@
 
 miniupnpd: miniupnpd/stamp-h1
@@ -1539,8 +1542,7 @@ miniupnpd-install:
 
 miniupnpd-clean:
 	-@$(MAKE) -C miniupnpd clean
-	@rm -f miniupnpd/config.h
-	@rm -f miniupnpd/stamp-h1
+	@rm -f miniupnpd/config.h miniupnpd/stamp-h1
 	$(call unpatch_files,miniupnpd)
 
 vsftpd:
@@ -1882,11 +1884,11 @@ sqlite: sqlite/Makefile
 
 sqlite-install:
 ifeq ($(or $(TCONFIG_NGINX),$(TCONFIG_MEDIA_SERVER)),y)
-	install -D sqlite/staged/usr/lib/libsqlite3.so.3.53.1 $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.53.1
-	$(STRIP) $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.53.1
+	install -D sqlite/staged/usr/lib/libsqlite3.so.3.53.3 $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.53.3
+	$(STRIP) $(INSTALLDIR)/sqlite/usr/lib/libsqlite3.so.3.53.3
 	cd $(INSTALLDIR)/sqlite/usr/lib/ && \
-		ln -sf libsqlite3.so.3.53.1 libsqlite3.so.0 && \
-		ln -sf libsqlite3.so.3.53.1 libsqlite3.so
+		ln -sf libsqlite3.so.3.53.3 libsqlite3.so.0 && \
+		ln -sf libsqlite3.so.3.53.3 libsqlite3.so
 endif
 	@true
 
@@ -2150,7 +2152,7 @@ hotplug2:
 	@$(SEP)
 	$(call patch_files,hotplug2)
 	$(MAKE) -C $@ \
-		EXTRACFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections $(if $(CONFIG_TOOLCHAIN53),-DCONFIG_TOOLCHAIN53) $(if $(CONFIG_TOOLCHAIN73),-DCONFIG_TOOLCHAIN73)" \
+		EXTRACFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections $(if $(CONFIG_TOOLCHAIN53),-DCONFIG_TOOLCHAIN53) $(if $(CONFIG_TOOLCHAIN73),-DCONFIG_TOOLCHAIN73) $(if $(CONFIG_TOOLCHAIN75),-DCONFIG_TOOLCHAIN75)" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 hotplug2-install:
@@ -2230,7 +2232,7 @@ spawn-fcgi/build:
 		--prefix=/usr \
 		-Dsysconfdir=/etc \
 		-Dlocalstatedir=/var \
-		-Dc_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73),gnu11,gnu99) \
+		-Dc_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73)$(CONFIG_TOOLCHAIN75),gnu11,gnu99) \
 		-Dc_args="$(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
 		-Dc_link_args="-Wl,--gc-sections" \
 		-Doptimization=s \
@@ -3101,6 +3103,7 @@ $(LIBCURL_TARGET)-clean:
 	$(call unpatch_files,$(LIBCURL_TARGET))
 
 libevent/stamp-h1:
+	$(call patch_files,libevent)
 	cd libevent && ./autogen.sh && \
 		CFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC" \
 		CPPFLAGS="-Os -Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections -fPIC -I$(TOP)/zlib/staged/usr/include" \
@@ -3116,7 +3119,7 @@ libevent: libevent/stamp-h1
 
 libevent-install:
 ifeq ($(or $(TCONFIG_BBT),$(TCONFIG_TOR)),y)
-	install -D libevent/.libs/libevent-2.1.so.7.0.1 $(INSTALLDIR)/libevent/usr/lib/libevent-2.1.so.7
+	install -D libevent/.libs/libevent-2.1.so.7.0.2 $(INSTALLDIR)/libevent/usr/lib/libevent-2.1.so.7
 	$(STRIP) -s $(INSTALLDIR)/libevent/usr/lib/libevent-2.1.so.7
 	cd $(INSTALLDIR)/libevent/usr/lib/ && ln -sf libevent-2.1.so.7 libevent.so
 endif
@@ -3126,6 +3129,7 @@ libevent-clean:
 	-@$(MAKE) -C libevent clean
 	@rm -f libevent/stamp-h1 libevent/Makefile
 	@rm -rf libevent/staged
+	$(call unpatch_files,libevent)
 
 libiconv/stamp-h1:
 	cd libiconv && \
@@ -3152,64 +3156,66 @@ libiconv-install:
 		ln -sf libiconv.so.2.7.1 libiconv.so.2 && \
 		ln -sf libiconv.so.2.7.1 libiconv.so
 
-transmission/build/Makefile:
-	@rm -rf transmission/build && mkdir -p transmission/build
-	$(call patch_files,transmission)
-	cd transmission/build && $(call CMAKE_CrossOptions, crosscompiled.cmake) && \
+$(BT_TARGET)/build/Makefile:
+	@rm -rf $(BT_TARGET)/build && mkdir -p $(BT_TARGET)/build
+	$(call patch_files,$(BT_TARGET))
+	cd $(BT_TARGET)/build && $(call CMAKE_CrossOptions, crosscompiled.cmake) && \
 		cmake -DCMAKE_TOOLCHAIN_FILE=crosscompiled.cmake \
 			-DCMAKE_INSTALL_PREFIX=/usr \
 			-DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_RPATH=TRUE \
-			-DCMAKE_C_FLAGS="-Wall $(EXTRACFLAGS) -DNDEBUG $(GCC_CMODE) -ffunction-sections -fdata-sections \
+			$(if $(TCONFIG_BCMARM), \
+				-DCMAKE_C_STANDARD=11 -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=ON \
+				-DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=ON \
+			) \
+			-DCMAKE_C_FLAGS="-Wall $(EXTRACFLAGS) -DNDEBUG $(if $(TCONFIG_BCMARM),,$(GCC_CMODE)) -ffunction-sections -fdata-sections \
 				$(if $(TCONFIG_BCMARM),,--param large-function-growth=800 --param max-inline-insns-single=3600) \
 				-I$(TOP)/zlib/staged/usr/include -I$(TOP)/$(LIBCURL_TARGET)/staged/usr/include -I$(TOP)/libevent/staged/usr/include \
-				$(if $(TCONFIG_WOLFSSL),-I$(TOP)/wolfssl/staged/usr/include -I$(TOP)/wolfssl/staged/usr/include/wolfssl,-I$(TOP)/$(OPENSSLDIR)/staged/usr/include)" \
-			-DCMAKE_CXX_FLAGS="-Wall $(EXTRA_CXXFLAGS) -DNDEBUG $(GCC_CXXMODE) -ffunction-sections -fdata-sections \
+				-I$(TOP)/$(OPENSSLDIR)/staged/usr/include" \
+			-DCMAKE_CXX_FLAGS="-Wall $(EXTRA_CXXFLAGS) -DNDEBUG $(if $(TCONFIG_BCMARM),,$(GCC_CXXMODE)) -ffunction-sections -fdata-sections \
 				$(if $(TCONFIG_BCMARM),,--param large-function-growth=800 --param max-inline-insns-single=3600) \
 				-I$(TOP)/zlib/staged/usr/include -I$(TOP)/libevent/staged/usr/include \
-				$(if $(TCONFIG_WOLFSSL),-I$(TOP)/wolfssl/staged/usr/include -I$(TOP)/wolfssl/staged/usr/include/wolfssl,-I$(TOP)/$(OPENSSLDIR)/staged/usr/include)" \
-			-DCMAKE_EXE_LINKER_FLAGS="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib -L$(TOP)/$(LIBCURL_TARGET)/staged/usr/lib -L$(TOP)/libevent/staged/usr/lib -lz -levent -lpthread -lstdc++ -lcurl \
-				$(if $(TCONFIG_WOLFSSL),-L$(TOP)/wolfssl/staged/usr/lib -lwolfssl,-L$(TOP)/$(OPENSSLDIR)/staged/usr/lib -lssl -lcrypto)" \
-			-DENABLE_LIGHTWEIGHT=ON -DENABLE_UTP=ON -DENABLE_UTILS=ON -DENABLE_NLS=OFF -DENABLE_CLI=OFF -DENABLE_GTK=OFF -DENABLE_QT=OFF -DENABLE_MAC=OFF -DENABLE_TESTS=OFF \
+				-I$(TOP)/$(OPENSSLDIR)/staged/usr/include" \
+			-DCMAKE_EXE_LINKER_FLAGS="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib -L$(TOP)/$(LIBCURL_TARGET)/staged/usr/lib -L$(TOP)/libevent/staged/usr/lib \
+				-L$(TOP)/$(OPENSSLDIR)/staged/usr/lib -lz -levent -lpthread -lstdc++ -lcurl -lssl -lcrypto" \
+			-DENABLE_UTP=ON -DENABLE_UTILS=ON -DENABLE_NLS=OFF -DENABLE_CLI=OFF -DENABLE_GTK=OFF -DENABLE_QT=OFF -DENABLE_MAC=OFF -DENABLE_TESTS=OFF -DWITH_INOTIFY=OFF -DWITH_KQUEUE=OFF \
 			-DUSE_SYSTEM_EVENT2=ON -DUSE_SYSTEM_DHT=OFF -DUSE_SYSTEM_UTP=OFF -DUSE_SYSTEM_B64=OFF -DUSE_SYSTEM_MINIUPNPC=OFF -DUSE_SYSTEM_NATPMP=OFF -DWITH_SYSTEMD=OFF -DINSTALL_DOC=OFF \
-			-DWITH_CRYPTO=$(if $(TCONFIG_WOLFSSL),cyassl,openssl) \
+			$(if $(TCONFIG_BCMARM),-DUSE_SYSTEM_PSL=OFF -DUSE_SYSTEM_DEFLATE=OFF -DWITH_APPINDICATOR=OFF,-DENABLE_LIGHTWEIGHT=ON -DWITH_LIBAPPINDICATOR=OFF) \
+			-DWITH_CRYPTO=openssl \
 			-DCURL_INCLUDE_DIR=$(TOP)/$(LIBCURL_TARGET)/staged/usr/include \
 			-DCURL_LIBRARY=$(TOP)/$(LIBCURL_TARGET)/staged/usr/lib/libcurl.so \
 			-DEVENT2_INCLUDE_DIR=$(TOP)/libevent/staged/usr/include \
 			-DEVENT2_LIBRARY=$(TOP)/libevent/staged/usr/lib/libevent.so \
-			$(if $(TCONFIG_WOLFSSL), \
-				-DWOLFSSL_INCLUDE_DIR=$(TOP)/wolfssl/staged/usr/include \
-				-DWOLFSSL_LIBRARY=$(TOP)/wolfssl/staged/usr/lib/libwolfssl.so \
-				, \
-				-DOPENSSL_INCLUDE_DIR=$(TOP)/$(OPENSSLDIR)/staged/usr/include \
-				-DOPENSSL_CRYPTO_LIBRARY=$(TOP)/$(OPENSSLDIR)/staged/usr/lib/libcrypto.so \
-				-DOPENSSL_SSL_LIBRARY=$(TOP)/$(OPENSSLDIR)/staged/usr/lib/libssl.so \
+			-DOPENSSL_INCLUDE_DIR=$(TOP)/$(OPENSSLDIR)/staged/usr/include \
+			-DOPENSSL_CRYPTO_LIBRARY=$(TOP)/$(OPENSSLDIR)/staged/usr/lib/libcrypto.so \
+			-DOPENSSL_SSL_LIBRARY=$(TOP)/$(OPENSSLDIR)/staged/usr/lib/libssl.so \
+			$(if $(TCONFIG_BCMARM),, \
+				-DZLIB_INCLUDE_DIR=$(TOP)/zlib/staged/usr/include \
+				-DZLIB_LIBRARY=$(TOP)/zlib/staged/usr/lib/libz.so \
+				-DICONV_INCLUDE_DIR="" \
+				-DICONV_LIBRARY="" \
 			) \
-			-DZLIB_INCLUDE_DIR=$(TOP)/zlib/staged/usr/include \
-			-DZLIB_LIBRARY=$(TOP)/zlib/staged/usr/lib/libz.so \
-			-DICONV_INCLUDE_DIR="" \
-			-DICONV_LIBRARY="" \
 			..
 
-transmission: transmission/build/Makefile
+$(BT_TARGET): $(BT_TARGET)/build/Makefile
 	@$(SEP)
-	$(MAKE) -C transmission/build $(PARALLEL_BUILD)
+	$(MAKE) -C $(BT_TARGET)/build $(PARALLEL_BUILD)
 
-transmission-install:
-	$(MAKE) -C transmission/build DESTDIR=$(INSTALLDIR)/transmission install
-	@rm -rf $(INSTALLDIR)/transmission/usr/bin/transmission-show
-	@rm -rf $(INSTALLDIR)/transmission/usr/bin/transmission-edit
-	@rm -rf $(INSTALLDIR)/transmission/usr/bin/transmission-create
-	$(STRIP) -s $(INSTALLDIR)/transmission/usr/bin/transmission-daemon
+$(BT_TARGET)-install:
+	$(MAKE) -C $(BT_TARGET)/build DESTDIR=$(INSTALLDIR)/$(BT_TARGET) install
+	@rm -rf $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-show
+	@rm -rf $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-edit
+	@rm -rf $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-create
+	$(STRIP) -s $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-daemon
 ifneq ($(TCONFIG_TR_EXTRAS),y)
-	@rm -rf $(INSTALLDIR)/transmission/usr/bin/transmission-remote
+	@rm -rf $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-remote
 else
-	$(STRIP) -s $(INSTALLDIR)/transmission/usr/bin/transmission-remote
+	$(STRIP) -s $(INSTALLDIR)/$(BT_TARGET)/usr/bin/transmission-remote
 endif
 
-transmission-clean:
-	-@$(MAKE) -C transmission clean
-	@rm -rf transmission/build
-	$(call unpatch_files,transmission)
+$(BT_TARGET)-clean:
+	-@$(MAKE) -C $(BT_TARGET) clean
+	@rm -rf $(BT_TARGET)/build
+	$(call unpatch_files,$(BT_TARGET))
 
 libnfsidmap/stamp-h1:
 	cd libnfsidmap && ./autogen.sh && \
@@ -3361,7 +3367,7 @@ tinc/build:
 		-Dlocalstatedir=/var \
 		-Dpkg_config_path="$(TOP)/zlib/staged/usr/lib/pkgconfig:$(TOP)/lzo/staged/usr/lib/pkgconfig:$(TOP)/lz4/staged/usr/lib/pkgconfig:$(TOP)/$(OPENSSLDIR)/staged/usr/lib/pkgconfig" \
 		-Dbuildtype=release \
-		-Dc_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73),gnu11,gnu99) \
+		-Dc_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73)$(CONFIG_TOOLCHAIN75),gnu11,gnu99) \
 		-Dwarning_level=1 \
 		-Dc_args="$(EXTRACFLAGS) -ffunction-sections -fdata-sections -I$(TOP)/zlib/staged/usr/include -I$(TOP)/lzo/staged/usr/include -I$(TOP)/lz4/staged/usr/include -I$(TOP)/$(OPENSSLDIR)/staged/usr/include" \
 		-Dc_link_args="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib -L$(TOP)/lzo/staged/usr/lib -L$(TOP)/lz4/staged/usr/lib -L$(TOP)/$(OPENSSLDIR)/staged/usr/lib -lpthread" \
@@ -3854,6 +3860,7 @@ expat/static/Makefile:
 			-DEXPAT_WITH_ARC4RANDOM=OFF \
 			-DEXPAT_WITH_ARC4RANDOM_BUF=OFF \
 			-DEXPAT_WITH_GETENTROPY=OFF \
+			-DEXPAT_DEV_URANDOM=ON \
 			..
 
 expat/build/Makefile:
@@ -3875,6 +3882,7 @@ expat/build/Makefile:
 			-DEXPAT_WITH_ARC4RANDOM=OFF \
 			-DEXPAT_WITH_ARC4RANDOM_BUF=OFF \
 			-DEXPAT_WITH_GETENTROPY=OFF \
+			-DEXPAT_DEV_URANDOM=ON \
 			..
 
 expat: expat/static/Makefile expat/build/Makefile
@@ -3884,8 +3892,8 @@ expat: expat/static/Makefile expat/build/Makefile
 	@$(MAKE) -C expat/build DESTDIR=$(TOP)/expat/staged install
 
 expat-install:
-	install -D expat/build/libexpat.so.1.12.0 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.12.0
-	cd $(INSTALLDIR)/expat/usr/lib && $(STRIP) libexpat.so.1.12.0 && ln -sf libexpat.so.1.12.0 libexpat.so.1
+	install -D expat/build/libexpat.so.1.12.2 $(INSTALLDIR)/expat/usr/lib/libexpat.so.1.12.2
+	cd $(INSTALLDIR)/expat/usr/lib && $(STRIP) libexpat.so.1.12.2 && ln -sf libexpat.so.1.12.2 libexpat.so.1
 
 expat-clean:
 	@rm -rf expat/static
@@ -4244,9 +4252,9 @@ libffi: libffi/stamp-h1
 
 libffi-install:
 ifeq ($(TCONFIG_IRQBALANCE),y)
-	install -D $(TOP)/libffi/.libs/libffi.so.8.2.0 $(INSTALLDIR)/libffi/usr/lib/libffi.so.8.2.0
-	$(STRIP) $(INSTALLDIR)/libffi/usr/lib/libffi.so.8.2.0
-	cd $(INSTALLDIR)/libffi/usr/lib && ln -sf libffi.so.8.2.0 libffi.so.8 && ln -sf libffi.so.8.2.0 libffi.so
+	install -D $(TOP)/libffi/.libs/libffi.so.8.3.1 $(INSTALLDIR)/libffi/usr/lib/libffi.so.8.3.1
+	$(STRIP) $(INSTALLDIR)/libffi/usr/lib/libffi.so.8.3.1
+	cd $(INSTALLDIR)/libffi/usr/lib && ln -sf libffi.so.8.3.1 libffi.so.8 && ln -sf libffi.so.8.3.1 libffi.so
 endif
 	@true
 
@@ -4271,8 +4279,8 @@ glib2/build:
 			-I$(TOP)/libffi/staged/usr/include -I$(TOP)/$(PCRE_TARGET)/staged/usr/include -I$(TOP)/gettext-tiny/staged/usr/include" \
 		-Dcpp_link_args="-Wl,--gc-sections -L$(TOP)/libiconv/staged/usr/lib -liconv -L$(TOP)/zlib/staged/usr/lib -lz -L$(TOP)/libffi/staged/usr/lib -lffi \
 			-L$(TOP)/$(PCRE_TARGET)/staged/usr/lib -lpcre2-8 -L$(TOP)/gettext-tiny/staged/usr/lib" \
-		-Dc_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73),gnu11,gnu99) \
-		-Dcpp_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73),gnu++14,gnu++98) \
+		-Dc_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73)$(CONFIG_TOOLCHAIN75),gnu11,gnu99) \
+		-Dcpp_std=$(if $(CONFIG_TOOLCHAIN53)$(CONFIG_TOOLCHAIN73)$(CONFIG_TOOLCHAIN75),gnu++14,gnu++98) \
 		-Dwarning_level=1 \
 		-Doptimization=s \
 		-Ddebug=false \

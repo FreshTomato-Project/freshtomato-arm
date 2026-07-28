@@ -32,10 +32,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#if defined(__APPLE__) && !defined(st_mtim)
-#define st_mtim  st_mtimespec
-#endif
-
 #ifndef NANO_TINY
 /* Toggle the mark. */
 void do_mark(void)
@@ -282,7 +278,7 @@ void handle_indent_action(undostruct *u, bool undoing, bool add_indent)
 		goto_line_posx(u->head_lineno, u->head_x);
 
 	/* For each line in the group, add or remove the individual indent. */
-	while (line != NULL && line->lineno <= group->bottom_line) {
+	while (line && line->lineno <= group->bottom_line) {
 		char *blanks = group->indentations[line->lineno - group->top_line];
 
 		if (undoing ^ add_indent)
@@ -436,9 +432,8 @@ void handle_comment_action(undostruct *u, bool undoing, bool add_comment)
 	while (group) {
 		linestruct *line = line_from_number(group->top_line);
 
-		while (line != NULL && line->lineno <= group->bottom_line) {
-			comment_line(undoing ^ add_comment ?
-								COMMENT : UNCOMMENT, line, u->strdata);
+		while (line && line->lineno <= group->bottom_line) {
+			comment_line(undoing ^ add_comment ? COMMENT : UNCOMMENT, line, u->strdata);
 			line = line->next;
 		}
 
@@ -863,7 +858,7 @@ void do_enter(void)
 #ifdef ENABLE_JUSTIFY
 		/* When doing automatic long-line wrapping and the next line is
 		 * in this same paragraph, use its indentation as the model. */
-		if (ISSET(BREAK_LONG_LINES) && sampleline->next != NULL &&
+		if (ISSET(BREAK_LONG_LINES) && sampleline->next &&
 					inpar(sampleline->next) && !begpar(sampleline->next, 0))
 			sampleline = sampleline->next;
 #endif
@@ -934,15 +929,14 @@ void discard_until(const undostruct *thisitem)
 	undostruct *dropit = openfile->undotop;
 	groupstruct *group;
 
-	while (dropit != NULL && dropit != thisitem) {
+	while (dropit && dropit != thisitem) {
 		openfile->undotop = dropit->next;
 		free(dropit->strdata);
 		free_lines(dropit->cutbuffer);
 		group = dropit->grouping;
-		while (group != NULL) {
+		while (group) {
 			groupstruct *next = group->next;
-			free_chararray(group->indentations,
-								group->bottom_line - group->top_line + 1);
+			free_chararray(group->indentations, group->bottom_line - group->top_line + 1);
 			free(group);
 			group = next;
 		}
@@ -1008,13 +1002,13 @@ void add_undo(undo_type action, const char *message)
 	case BACK:
 		/* If the next line is the magic line, don't ever undo this
 		 * backspace, as it won't actually have deleted anything. */
-		if (thisline->next == openfile->filebot && thisline->data[0] != '\0')
+		if (thisline->next == openfile->filebot && thisline->data[0])
 			u->xflags |= WAS_BACKSPACE_AT_EOF;
 		/* Fall-through. */
 	case DEL:
 		/* When not at the end of a line, store the deleted character;
 		 * otherwise, morph the undo item into a line join. */
-		if (thisline->data[openfile->current_x] != '\0') {
+		if (thisline->data[openfile->current_x]) {
 			int charlen = char_length(thisline->data + u->head_x);
 
 			u->strdata = measured_copy(thisline->data + u->head_x, charlen);
@@ -1023,7 +1017,7 @@ void add_undo(undo_type action, const char *message)
 			break;
 		}
 		action = JOIN;
-		if (thisline->next != NULL) {
+		if (thisline->next) {
 			if (u->type == BACK) {
 				u->head_lineno = thisline->next->lineno;
 				u->head_x = 0;
@@ -1189,7 +1183,7 @@ void update_undo(undo_type action)
 	case CUT:
 		if (u->type == ZAP)
 			u->cutbuffer = cutbuffer;
-		else if (cutbuffer != NULL) {
+		else if (cutbuffer) {
 			free_lines(u->cutbuffer);
 			u->cutbuffer = copy_buffer(cutbuffer);
 		} else
@@ -1199,7 +1193,7 @@ void update_undo(undo_type action)
 			size_t count = 0;
 
 			/* Find the end of the cut for the undo/redo, using our copy. */
-			while (bottomline->next != NULL) {
+			while (bottomline->next) {
 				bottomline = bottomline->next;
 				count++;
 			}
@@ -1254,8 +1248,7 @@ void do_wrap(void)
 		/* The length of the remainder. */
 
 	/* First find the last blank character where we can break the line. */
-	wrap_loc = break_line(line->data + lead_len,
-							wrap_at - wideness(line->data, lead_len), FALSE);
+	wrap_loc = break_line(line->data + lead_len, wrap_at - wideness(line->data, lead_len), FALSE);
 
 	/* If no wrapping point was found before end-of-line, we don't wrap. */
 	if (wrap_loc < 0 || lead_len + wrap_loc == line_len)
@@ -1401,12 +1394,12 @@ ssize_t break_line(const char *textstart, ssize_t goal, bool snap_at_nl)
 		/* The column number that corresponds to the position of the pointer. */
 
 	/* Skip over leading whitespace, where a line should never be broken. */
-	while (*pointer != '\0' && is_blank_char(pointer))
+	while (*pointer && is_blank_char(pointer))
 		pointer += advance_over(pointer, &column);
 
 	/* Find the last blank that does not overshoot the target column.
 	 * When treating a help text, do not break in the keystrokes area. */
-	while (*pointer != '\0' && ((ssize_t)column <= goal)) {
+	while (*pointer && ((ssize_t)column <= goal)) {
 		if (is_blank_char(pointer) && (!inhelp || column > 17 || goal < 40))
 			lastblank = pointer;
 #ifdef ENABLE_HELP
@@ -1442,7 +1435,7 @@ ssize_t break_line(const char *textstart, ssize_t goal, bool snap_at_nl)
 	pointer = lastblank + char_length(lastblank);
 
 	/* Skip any consecutive blanks after the last blank. */
-	while (*pointer != '\0' && is_blank_char(pointer)) {
+	while (*pointer && is_blank_char(pointer)) {
 		lastblank = pointer;
 		pointer += char_length(pointer);
 	}
@@ -1458,7 +1451,7 @@ size_t indent_length(const char *line)
 {
 	const char *start = line;
 
-	while (*line != '\0' && is_blank_char(line))
+	while (*line && is_blank_char(line))
 		line += char_length(line);
 
 	return (line - start);
@@ -1544,7 +1537,7 @@ bool find_paragraph(linestruct **firstline, size_t *const linecount)
 	linestruct *line = *firstline;
 
 	/* When not currently in a paragraph, move forward to a line that is. */
-	while (!inpar(line) && line->next != NULL)
+	while (!inpar(line) && line->next)
 		line = line->next;
 
 	*firstline = line;
@@ -1571,8 +1564,7 @@ void concat_paragraph(linestruct *line, size_t count)
 		linestruct *next_line = line->next;
 		size_t next_line_len = strlen(next_line->data);
 		size_t next_quot_len = quote_length(next_line->data);
-		size_t next_lead_len = next_quot_len +
-							indent_length(next_line->data + next_quot_len);
+		size_t next_lead_len = next_quot_len + indent_length(next_line->data + next_quot_len);
 		size_t line_len = strlen(line->data);
 
 		/* We're just about to tack the next line onto this one.  If
@@ -1619,29 +1611,29 @@ void squeeze(linestruct *line, size_t skip)
 	 * all blanks after it; 2) if it is punctuation, copy it plus a possible
 	 * tailing bracket, and change at most two subsequent blanks to spaces, and
 	 * pass over all blanks after these; 3) leave anything else unchanged. */
-	while (*from != '\0') {
+	while (*from) {
 		if (is_blank_char(from)) {
 			from += char_length(from);
 			*(to++) = ' ';
 
-			while (*from != '\0' && is_blank_char(from))
+			while (*from && is_blank_char(from))
 				from += char_length(from);
-		} else if (mbstrchr(punct, from) != NULL) {
+		} else if (mbstrchr(punct, from)) {
 			copy_character(&from, &to);
 
-			if (*from != '\0' && mbstrchr(brackets, from) != NULL)
+			if (*from && mbstrchr(brackets, from))
 				copy_character(&from, &to);
 
-			if (*from != '\0' && is_blank_char(from)) {
+			if (*from && is_blank_char(from)) {
 				from += char_length(from);
 				*(to++) = ' ';
 			}
-			if (*from != '\0' && is_blank_char(from)) {
+			if (*from && is_blank_char(from)) {
 				from += char_length(from);
 				*(to++) = ' ';
 			}
 
-			while (*from != '\0' && is_blank_char(from))
+			while (*from && is_blank_char(from))
 				from += char_length(from);
 		} else
 			copy_character(&from, &to);
@@ -1701,7 +1693,7 @@ void rewrap_paragraph(linestruct **line, char *lead_string, size_t lead_len)
 #endif
 
 	/* When possible, go to the line after the rewrapped paragraph. */
-	if ((*line)->next != NULL)
+	if ((*line)->next)
 		*line = (*line)->next;
 }
 
@@ -1844,8 +1836,7 @@ void justify_text(bool whole_buffer)
 		secondary_lead = nmalloc(secondary_len + 1);
 
 		strncpy(secondary_lead, startline->data, quot_len);
-		strncpy(secondary_lead + quot_len, sampleline->data + other_quot_len,
-													other_white_len);
+		strncpy(secondary_lead + quot_len, sampleline->data + other_quot_len, other_white_len);
 		secondary_lead[secondary_len] = '\0';
 
 		/* Include preceding and succeeding leads into the marked region. */
@@ -1857,7 +1848,7 @@ void justify_text(bool whole_buffer)
 		linecount = endline->lineno - startline->lineno + (end_x > 0 ? 1 : 0);
 
 		/* Remember whether the end of the region was before the end-of-line. */
-		before_eol = endline->data[end_x] != '\0';
+		before_eol = (endline->data[end_x] != '\0');
 	} else
 #endif /* NANO_TINY */
 	{
@@ -1895,7 +1886,7 @@ void justify_text(bool whole_buffer)
 		}
 
 		/* When possible, step one line further; otherwise, to line's end. */
-		if (endline->next != NULL) {
+		if (endline->next) {
 			endline = endline->next;
 			end_x = 0;
 		} else
@@ -2046,7 +2037,7 @@ void construct_argument_list(char ***arguments, char *command, char *filename)
 	char *element = strtok(copy_of_command, " ");
 	int count = 2;
 
-	while (element != NULL) {
+	while (element) {
 		*arguments = nrealloc(*arguments, ++count * sizeof(char *));
 		(*arguments)[count - 3] = element;
 		element = strtok(NULL, " ");
@@ -2344,23 +2335,23 @@ bool fix_spello(const char *word)
 	return proceed;
 }
 
-/* Run a spell-check on the given file, using 'spell' to produce a list of all
- * misspelled words, then feeding those through 'sort' and 'uniq' to obtain an
- * alphabetical list, which words are then offered one by one to the user for
- * correction. */
-void do_int_speller(const char *tempfile_name)
+/* Use 'spell' to get a list of misspelled words, feed them through 'sort'
+ * and 'uniq', then offer them one by one to the user for correction. */
+void spell_check(const char *tempfile_name)
 {
 #if defined(HAVE_FORK) && defined(HAVE_WAITPID)
 	char *misspellings, *pointer, *oneword;
 	long pipesize;
-	size_t buffersize, bytesread, totalread;
+	size_t buffersize, totalread;
+	ssize_t bytesread;
+	int errornumber;
 	int spell_fd[2], sort_fd[2], uniq_fd[2], tempfile_fd = -1;
 	pid_t pid_spell, pid_sort, pid_uniq;
 	int spell_status, sort_status, uniq_status;
 	unsigned stash[sizeof(flags) / sizeof(flags[0])];
 
 	/* Create all three pipes up front. */
-	if (pipe(spell_fd) == -1 || pipe(sort_fd) == -1 || pipe(uniq_fd) == -1) {
+	if (pipe(spell_fd) < 0 || pipe(sort_fd) < 0 || pipe(uniq_fd) < 0) {
 		statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
 		return;
 	}
@@ -2370,7 +2361,7 @@ void do_int_speller(const char *tempfile_name)
 	/* Fork a process to run spell in. */
 	if ((pid_spell = fork()) == 0) {
 		/* Child: open the temporary file that holds the text to be checked. */
-		if ((tempfile_fd = open(tempfile_name, O_RDONLY)) == -1)
+		if ((tempfile_fd = open(tempfile_name, O_RDONLY)) < 0)
 			exit(6);
 
 		/* Connect standard input to the temporary file. */
@@ -2473,14 +2464,19 @@ void do_int_speller(const char *tempfile_name)
 		pointer = misspellings + totalread;
 	}
 
-	*pointer = '\0';
+	errornumber = errno;
 	close(uniq_fd[0]);
+	*pointer = '\0';
 
 	block_sigwinch(FALSE);
 
 	/* Re-enter curses mode. */
 	terminal_init();
 	doupdate();
+
+	/* When reading from the pipe went wrong, skip the spell fixes. */
+	if (bytesread < 0)
+		goto finale;
 
 	/* Save the settings of the global flags. */
 	memcpy(stash, flags, sizeof(flags));
@@ -2494,7 +2490,7 @@ void do_int_speller(const char *tempfile_name)
 	oneword = misspellings;
 
 	/* Process each of the misspelled words. */
-	while (*pointer != '\0') {
+	while (*pointer) {
 		if ((*pointer == '\r') || (*pointer == '\n')) {
 			*pointer = '\0';
 			if (oneword != pointer) {
@@ -2512,23 +2508,26 @@ void do_int_speller(const char *tempfile_name)
 	if (oneword != pointer)
 		fix_spello(oneword);
 
-	free(misspellings);
-	refresh_needed = TRUE;
-
 	/* Restore the settings of the global flags. */
 	memcpy(flags, stash, sizeof(flags));
+
+  finale:
+	free(misspellings);
+	refresh_needed = TRUE;
 
 	/* Process the end of the three processes. */
 	waitpid(pid_spell, &spell_status, 0);
 	waitpid(pid_sort, &sort_status, 0);
 	waitpid(pid_uniq, &uniq_status, 0);
 
-	if (WIFEXITED(uniq_status) == 0 || WEXITSTATUS(uniq_status))
-		statusline(ALERT, _("Error invoking \"uniq\""));
-	else if (WIFEXITED(sort_status) == 0 || WEXITSTATUS(sort_status))
-		statusline(ALERT, _("Error invoking \"sort\""));
-	else if (WIFEXITED(spell_status) == 0 || WEXITSTATUS(spell_status))
-		statusline(ALERT, _("Error invoking \"spell\""));
+	if (!WIFEXITED(uniq_status) || WEXITSTATUS(uniq_status))
+		statusline(ALERT, _("Error invoking '%s'"), "uniq");
+	else if (!WIFEXITED(sort_status) || WEXITSTATUS(sort_status))
+		statusline(ALERT, _("Error invoking '%s'"), "sort");
+	else if (!WIFEXITED(spell_status) || WEXITSTATUS(spell_status))
+		statusline(ALERT, _("Error invoking '%s'"), "spell");
+	else if (bytesread < 0)
+		statusline(ALERT, _("Error reading pipe: %s"), strerror(errornumber));
 	else
 		statusline(REMARK, _("Finished checking spelling"));
 #endif
@@ -2556,10 +2555,10 @@ void do_spell(void)
 
 #ifndef NANO_TINY
 	if (openfile->mark)
-		okay = write_region_to_file(temp_name, stream, TEMPORARY, OVERWRITE);
+		okay = write_region_to_file(temp_name, stream, SPECIAL);
 	else
 #endif
-		okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
+		okay = write_file(temp_name, stream, SPECIAL, NONOTES);
 
 	if (!okay) {
 		statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
@@ -2573,7 +2572,7 @@ void do_spell(void)
 	if (alt_speller && *alt_speller)
 		treat(temp_name, alt_speller, TRUE);
 	else
-		do_int_speller(temp_name);
+		spell_check(temp_name);
 
 	unlink(temp_name);
 	free(temp_name);
@@ -2591,7 +2590,9 @@ void do_linter(void)
 #if defined(HAVE_FORK) && defined(HAVE_WAITPID)
 	char *lintings, *pointer, *onelint;
 	long pipesize;
-	size_t buffersize, bytesread, totalread;
+	size_t buffersize, totalread;
+	ssize_t bytesread;
+	int errornumber;
 	bool parsesuccess = FALSE;
 	int lint_status, lint_fd[2];
 	pid_t pid_lint;
@@ -2625,7 +2626,7 @@ void do_linter(void)
 	}
 
 	/* Create a pipe up front. */
-	if (pipe(lint_fd) == -1) {
+	if (pipe(lint_fd) < 0) {
 		statusline(ALERT, _("Could not create pipe: %s"), strerror(errno));
 		return;
 	}
@@ -2678,12 +2679,12 @@ void do_linter(void)
 	/* Block resizing signals while reading from the pipe. */
 	block_sigwinch(TRUE);
 
-	/* Read in the returned syntax errors. */
 	totalread = 0;
 	buffersize = pipesize + 1;
 	lintings = nmalloc(buffersize);
 	pointer = lintings;
 
+	/* Read in the returned syntax errors. */
 	while ((bytesread = read(lint_fd[0], pointer, pipesize)) > 0) {
 		totalread += bytesread;
 		buffersize += pipesize;
@@ -2691,16 +2692,21 @@ void do_linter(void)
 		pointer = lintings + totalread;
 	}
 
-	*pointer = '\0';
+	errornumber = errno;
 	close(lint_fd[0]);
+	*pointer = '\0';
 
 	block_sigwinch(FALSE);
+
+	/* When reading from the pipe went wrong, skip the linting. */
+	if (bytesread < 0)
+		goto epilog;
 
 	pointer = lintings;
 	onelint = lintings;
 
 	/* Now parse the output of the linter. */
-	while (*pointer != '\0') {
+	while (*pointer) {
 		if ((*pointer == '\r') || (*pointer == '\n')) {
 			*pointer = '\0';
 			if (onelint != pointer) {
@@ -2734,7 +2740,7 @@ void do_linter(void)
 							curlint = nmalloc(sizeof(lintstruct));
 							curlint->next = NULL;
 							curlint->prev = tmplint;
-							if (curlint->prev != NULL)
+							if (curlint->prev)
 								curlint->prev->next = curlint;
 							curlint->filename = copy_of(filename);
 							curlint->lineno = linenumber;
@@ -2753,6 +2759,7 @@ void do_linter(void)
 		pointer++;
 	}
 
+  epilog:
 	free(lintings);
 
 	/* Process the end of the linting process. */
@@ -2768,11 +2775,13 @@ void do_linter(void)
 			free(tmplint);
 		}
 		return;
+	} else if (bytesread < 0) {
+		statusline(ALERT, _("Error reading pipe: %s"), strerror(errornumber));
+		return;
 	}
 
 	if (!parsesuccess) {
-		statusline(REMARK, _("Got 0 parsable lines from command: %s"),
-						openfile->syntax->linter);
+		statusline(REMARK, _("Got 0 parsable lines from command: %s"), openfile->syntax->linter);
 		return;
 	}
 
@@ -2794,7 +2803,7 @@ void do_linter(void)
 		functionptrtype function;
 		struct stat lintfileinfo;
 
-		if (stat(curlint->filename, &lintfileinfo) != -1 &&
+		if (stat(curlint->filename, &lintfileinfo) == 0 &&
 					(openfile->statinfo == NULL ||
 					openfile->statinfo->st_ino != lintfileinfo.st_ino)) {
 #ifdef ENABLE_MULTIBUFFER
@@ -2826,13 +2835,13 @@ void do_linter(void)
 					char *dontwantfile = copy_of(curlint->filename);
 					lintstruct *restlint = NULL;
 
-					while (curlint != NULL) {
+					while (curlint) {
 						if (strcmp(curlint->filename, dontwantfile) == 0) {
 							if (curlint == lints)
 								lints = curlint->next;
 							else
 								curlint->prev->next = curlint->next;
-							if (curlint->next != NULL)
+							if (curlint->next)
 								curlint->next->prev = curlint->prev;
 							tmplint = curlint;
 							curlint = curlint->next;
@@ -2896,7 +2905,7 @@ void do_linter(void)
 			tmplint = NULL;
 			do_help();
 		} else if (function == do_page_up || function == to_prev_block) {
-			if (curlint->prev != NULL)
+			if (curlint->prev)
 				curlint = curlint->prev;
 			else if (last_wait != time(NULL)) {
 				statusbar(_("At first message"));
@@ -2906,7 +2915,7 @@ void do_linter(void)
 				statusline(NOTICE, "%s", curlint->msg);
 			}
 		} else if (function == do_page_down || function == to_next_block) {
-			if (curlint->next != NULL)
+			if (curlint->next)
 				curlint = curlint->next;
 			else if (last_wait != time(NULL)) {
 				statusbar(_("At last message"));
@@ -2964,8 +2973,8 @@ void do_formatter(void)
 
 	temp_name = safe_tempfile(&stream);
 
-	if (temp_name != NULL)
-		okay = write_file(temp_name, stream, TEMPORARY, OVERWRITE, NONOTES);
+	if (temp_name)
+		okay = write_file(temp_name, stream, SPECIAL, NONOTES);
 
 	if (!okay)
 		statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
@@ -3123,7 +3132,7 @@ void complete_a_word(void)
 	/* If this is a fresh completion attempt... */
 	if (pletion_line == NULL) {
 		/* Clear the list of words of a previous completion run. */
-		while (list_of_completions != NULL) {
+		while (list_of_completions) {
 			completionstruct *dropit = list_of_completions;
 			list_of_completions = list_of_completions->next;
 			free(dropit->word);
@@ -3173,7 +3182,7 @@ void complete_a_word(void)
 	shard[shard_length] = '\0';
 
 	/* Run through all of the lines in the buffer, looking for shard. */
-	while (pletion_line != NULL) {
+	while (pletion_line) {
 		ssize_t threshold = strlen(pletion_line->data) - shard_length;
 				/* The point where we can stop searching for shard. */
 		completionstruct *some_word;
@@ -3205,8 +3214,7 @@ void complete_a_word(void)
 				continue;
 
 			/* If this match is the shard itself, ignore it. */
-			if (pletion_line == openfile->current &&
-								i == openfile->current_x - shard_length)
+			if (pletion_line == openfile->current && i == openfile->current_x - shard_length)
 				continue;
 
 			completion = copy_completion(pletion_line->data + i);
@@ -3217,7 +3225,7 @@ void complete_a_word(void)
 				some_word = some_word->next;
 
 			/* If we've already tried this word, skip it. */
-			if (some_word != NULL) {
+			if (some_word) {
 				free(completion);
 				continue;
 			}
@@ -3262,7 +3270,7 @@ void complete_a_word(void)
 	}
 
 	/* The search has gone through all buffers. */
-	if (list_of_completions != NULL) {
+	if (list_of_completions) {
 		edit_refresh();
 		statusline(AHEM, _("No further matches"));
 	} else

@@ -1,0 +1,65 @@
+The Transmission Project
+https://transmissionbt.com/
+
+Maintainers
+  Charles Kerr (@ckerr) (libtransmission, Qt client, utils)
+  Mike Gelfand (@mikedld) (GTK client, scripts & tooling)
+  Mitchell Livingston (@livings124) (macOS client)
+
+Contributor Team
+  Derek Reiff (@dareiff) (Web client)
+  Dmitry Serov (@DevilDimon) (macOS client)
+  Dzmitry Neviadomski (@nevack) (macOS client)
+  FX Coudert (@fxcoudert) (macOS client)
+  John Clay (@JohnClay)
+  SweetP Pro (@sweetppro) (macOS client)
+  Yat Ho (@tearfur) (libtransmission)
+
+Hall of Fame
+  Eric Petit (@titer) (Project originator)
+  Josh Elsasser (Daemon, Backend, GTK client)
+  Juliusz Chroboczek (DHT, network code)
+  Bryan Varner (BeOS client)
+  Malcolm Jarvis (Web client)
+  Kendall Hopkins <SoftwareElves@gmail.com> (Web client)
+  Kevin Glowacz <kjg@transmissionbt.com> (Web client)
+
+Starting with Transmission 4.0.0, contributors are credited in each
+release's notes so that repeat contributions receive repeat shout-outs.
+Please see news/ for these credits!
+
+These people contributed to the project before Transmission 4:
+
+  Aleksej Lebedev, Alexander Futekov, Alexandre Jouandin, Andreas Nilsson,
+  Balázs Meskó, Bernard Spil, Bogdan Vasiliev, Bruno Bierbaumer,
+  Bryan Varner, Carles Pastor Badosa, Carl Michael Skog, Charles Kerr,
+  Christian Muehlhaeuser, Chris Young, Chuan Zhang, Clément Fauchereau,
+  Cœur, Colin B, Craig Andrews, C.W. Betts, Daniel Kamil Kozar, Daniel Lee,
+  Daniil Subbotin, Dan Walters, David Beinder, David Miguel Susano Pinto,
+  Dean Ostetto, Derek Reiff, Dhiru Kholia, Diego Jiménez, Dinesh Manajipet,
+  Dmitry Antipov, Dmitry Serov, Dmytro Lytovchenko, Duncan Beevers,
+  Dzmitry Neviadomski, Edward Betts, Erick Turnquist, Eric Petit, Esa Varemo,
+  Federico Bond, Federico Scodelaro, Frank Aurich, FX Coudert, Gary Elshaw,
+  Greg Hazel, Guido Cella, Guido Vranken, Hakjoon Sim, Han Shen,
+  Herman Semenov, Hugo van Heuven, Ilkka Kallioniemi, Ilya Chirkov,
+  Isabella Skořepová, Jakub Steiner, James "Kibo" Parry, Jan Weiß,
+  Jelle van der Waa, John Clay, Jonas Malaco, Jonas Rask, Josh Elsasser,
+  Juliusz Chroboczek, Kendall Hopkins, Kevin Glowacz, Kevin Stubbings,
+  Kirill Ovchinnikov, Lucas Clemente Vella, Luukas Pörtfors,
+  Maarten Van Coile, Maciej Wolny, Malcolm Jarvis, Mark Deepwell,
+  Markus Amalthea Magnuson, Matan Ziv-Av, Matt Joiner, Max Zettlmeißl,
+  Michael Lopez, Michael Skree, Michal Kubiak, Mike Gelfand, Mike Gilbert,
+  Mingye Wang, Mitch Livingston, Mukund Sivaraman, Nathan Benichou,
+  Nicholas Guriev, Niklas Haas, Norbert Papke, Oleg Chashko, Pavel Borzenkov,
+  Pavel Shlyak, Pedro Scarapicchia Junior, Peter Bailey, Peter Dave Hello,
+  Pierre Carru, Piotr Drąg, Rahim Nathwani, Rashid Eissing, Reed Morrison,
+  Rick Patrick, Robert Palmer, Robert Vehse, Robin Seth Ekman, Rodger Werner,
+  Rosen Penev, Sam Marcus, Sam Thursfield, Sander van Kasteel,
+  Sebastiaan Lokhorst, Sebastian Andrzej Siewior, Sebastian Jensen,
+  Sergey Fedoseev, Simon Wells, Stefan Talpalaru, Ștefan Talpalaru,
+  Sven Depondt, Szepesi Tibor, Tavis Ormandy, Thomas Hines, Tomas Carnecky,
+  Tomáš Kelemen, Tom Forbes, Tom Richards, Viacheslav Chimishuk,
+  Vincent Vinel, Vitaly Potyarkin, Waldemar Brodkorb, Will Thompson,
+  Yaron Shahrabani, Yuze Jiang, and Zachary J. Slater.
+
+If anyone is missing from this list, please let us know!

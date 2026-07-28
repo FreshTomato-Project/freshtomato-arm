@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 AC_INIT([ppp],
-        [2.5.2],
+        [2.5.3],
         [https://github.com/ppp-project/ppp])
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
@@ -330,6 +330,7 @@ AC_CONFIG_FILES([
     pppd/plugins/pppoatm/Makefile
     pppd/plugins/pppol2tp/Makefile
     pppd/plugins/radius/Makefile
+    pppd/plugins/dhcpv6relay/Makefile
     pppdump/Makefile
     pppstats/Makefile
     scripts/Makefile
@@ -361,3 +362,6 @@ Features enabled
     EAP-TLS..............: ${enable_eaptls:-yes}
     systemd notifications: ${enable_systemd:-no}
 "
+
+AM_COND_IF([PPP_WITH_CBCP],
+    AC_MSG_WARN([CBCP support is likely to be removed in future]))

@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "shutils.h"
 #include "shared.h"
@@ -124,7 +125,7 @@ int exec_for_host(int host, int obsolete, uint flags, host_exec func)
 			if (sscanf(dp->d_name, "%d:%d:%d:%d", &host_no, &bus, &target, &lun) != 4)
 				continue;
 
-			snprintf(bfr, sizeof(bfr), "/sys/bus/scsi/devices/%s", dp->d_name);
+			snprintf(bfr, sizeof(bfr), "/sys/bus/scsi/devices/%d:%d:%d:%d", host_no, bus, target, lun);
 			if ((dir_host = opendir(bfr))) {
 				while ((dp = readdir(dir_host))) {
 					if (strncmp(dp->d_name, "block:", 6) != 0)
@@ -263,7 +264,7 @@ void add_remove_usbhost(char *host, int add)
 struct volume_id
 {
 	int		fd;
-	int		error;
+	unsigned	known_size;
 	size_t		sbbuf_len;
 	size_t		seekbuf_len;
 	uint8_t		*sbbuf;
@@ -326,6 +327,7 @@ char *find_label_or_uuid(char *dev_name, char *label, size_t label_sz, char *uui
 	const unsigned char *ext_flags = NULL;
 
 	memset(&id, 0x00, sizeof(id));
+	id.known_size = UINT_MAX;
 	if (label) *label = 0;
 	if (uuid) *uuid = 0;
 	if ((id.fd = open(dev_name, O_RDONLY)) < 0)
@@ -334,13 +336,13 @@ char *find_label_or_uuid(char *dev_name, char *label, size_t label_sz, char *uui
 	volume_id_get_buffer(&id, 0, SB_BUFFER_SIZE);
 
 	/* detect swap */
-	if (!id.error && volume_id_probe_linux_swap(&id) == 0)
+	if (id.known_size == UINT_MAX && volume_id_probe_linux_swap(&id) == 0)
 		fstype = "swap";
 	/* detect vfat */
-	else if (!id.error && volume_id_probe_vfat(&id) == 0)
+	else if (id.known_size == UINT_MAX && volume_id_probe_vfat(&id) == 0)
 		fstype = "vfat";
 	/* detect ext2/3/4 */
-	else if (!id.error && volume_id_probe_ext(&id) == 0) {
+	else if (id.known_size == UINT_MAX && volume_id_probe_ext(&id) == 0) {
 		if (id.sbbuf[0x438] == 0x53 && id.sbbuf[0x439] == 0xEF) {
 			ext_flags = &id.sbbuf[0x45c];
 
@@ -353,12 +355,12 @@ char *find_label_or_uuid(char *dev_name, char *label, size_t label_sz, char *uui
 		}
 	}
 	/* detect ntfs */
-	else if (!id.error && volume_id_probe_ntfs(&id) == 0)
+	else if (id.known_size == UINT_MAX && volume_id_probe_ntfs(&id) == 0)
 		fstype = "ntfs";
 #ifdef TCONFIG_BCMARM
  #ifdef HFS
 	/* detect hfs */
-	else if (!id.error && volume_id_probe_hfs_hfsplus(&id) == 0) {
+	else if (id.known_size == UINT_MAX && volume_id_probe_hfs_hfsplus(&id) == 0) {
 		if ((!memcmp(id.sbbuf + 1032, "HFSJ", 4)) || (!memcmp(id.sbbuf + 1032, "H+", 2)) ||
 		    (!memcmp(id.sbbuf + 1024, "H+", 2)) || (!memcmp(id.sbbuf + 1024, "HX", 2))) {
 			if (id.sbbuf[1025] == 0x58)
@@ -371,11 +373,11 @@ char *find_label_or_uuid(char *dev_name, char *label, size_t label_sz, char *uui
 	}
  #endif
 	/* detect exfat */
-	else if (!id.error && volume_id_probe_exfat(&id) == 0)
+	else if (id.known_size == UINT_MAX && volume_id_probe_exfat(&id) == 0)
 		fstype = "exfat";
 #endif /* TCONFIG_BCMARM */
 	/* -> unknown FS */
-	else if (!id.error)
+	else if (id.known_size == UINT_MAX)
 		fstype = "unknown";
 
 	volume_id_free_buffer(&id);

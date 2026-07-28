@@ -44,7 +44,7 @@ void set_interface_colorpairs(void)
 	for (size_t index = 0; index < NUMBER_OF_ELEMENTS; index++) {
 		colortype *combo = color_combo[index];
 
-		if (combo != NULL) {
+		if (combo) {
 			if (!defaults_allowed) {
 				if (combo->fg == THE_DEFAULT)
 					combo->fg = COLOR_WHITE;
@@ -143,7 +143,7 @@ void find_and_prime_applicable_syntax(void)
 		return;
 
 	/* If we specified a syntax-override string, use it. */
-	if (syntaxstr != NULL) {
+	if (syntaxstr) {
 		/* An override of "none" is like having no syntax at all. */
 		if (strcmp(syntaxstr, "none") == 0)
 			return;
@@ -203,7 +203,7 @@ void find_and_prime_applicable_syntax(void)
 		}
 
 		/* Now try and find a syntax that matches the magic string. */
-		if (magicstring != NULL) {
+		if (magicstring) {
 			for (sntx = syntaxes; sntx != NULL; sntx = sntx->next)
 				if (found_in_list(sntx->magics, magicstring))
 					break;
@@ -222,7 +222,7 @@ void find_and_prime_applicable_syntax(void)
 	}
 
 	/* When the syntax isn't loaded yet, parse it and initialize its colors. */
-	if (sntx != NULL && sntx->filename != NULL) {
+	if (sntx && sntx->filename) {
 		parse_one_include(sntx->filename, sntx);
 		set_syntax_colorpairs(sntx);
 	}
@@ -263,8 +263,7 @@ void check_the_multis(linestruct *line)
 				continue;
 		} else if (line->multidata[ink->id] == WHOLELINE) {
 			/* Ensure that a detected start match is not actually an end match. */
-			if (!anend && (!astart || regexec(ink->end, line->data, 1,
-												&endmatch, 0) != 0))
+			if (!anend && (!astart || regexec(ink->end, line->data, 1, &endmatch, 0) != 0))
 				continue;
 		} else if (line->multidata[ink->id] == JUSTONTHIS) {
 			if (astart && anend && regexec(ink->start, line->data + startmatch.rm_eo +
@@ -347,8 +346,7 @@ void precalc_multicolorinfo(void)
 				/* Look for an end match on later lines. */
 				tailline = line->next;
 
-				while (tailline && regexec(ink->end, tailline->data,
-											1, &endmatch, 0) != 0)
+				while (tailline && regexec(ink->end, tailline->data, 1, &endmatch, 0) != 0)
 					tailline = tailline->next;
 
 				line->multidata[ink->id] = STARTSHERE;

@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: pedro <pedro311@gmail.com>
+Date: Tue, 21 Jul 2026 00:00:00 +0200
+Subject: [PATCH] libtransmission: require C++20 constexpr optional assignment
+
+std::optional assignment is not constexpr in C++17. Transmission already
+uses TR_CONSTEXPR20 for the paused and peer-limit setters, but the newer
+sequential-download setters were declared unconditionally constexpr.
+
+Use the same compatibility macro for those setters, allowing GCC 7.5 and
+other conforming C++17 standard libraries to compile the code.
+
+---
+ transmission-4/libtransmission/torrent-ctor.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git transmission-4/libtransmission/torrent-ctor.h transmission-4/libtransmission/torrent-ctor.h
+--- transmission-4/libtransmission/torrent-ctor.h
++++ transmission-4/libtransmission/torrent-ctor.h
+@@ -213,7 +213,7 @@ public:
+         return optional_args_[mode].sequential_download_;
+     }
+ 
+-    constexpr void set_sequential_download(tr_ctorMode const mode, bool const seq) noexcept
++    TR_CONSTEXPR20 void set_sequential_download(tr_ctorMode const mode, bool const seq) noexcept
+     {
+         optional_args_[mode].sequential_download_ = seq;
+     }
+@@ -223,7 +223,7 @@ public:
+         return optional_args_[mode].sequential_download_from_piece_;
+     }
+ 
+-    constexpr void set_sequential_download_from_piece(tr_ctorMode const mode, tr_piece_index_t const piece) noexcept
++    TR_CONSTEXPR20 void set_sequential_download_from_piece(tr_ctorMode const mode, tr_piece_index_t const piece) noexcept
+     {
+         optional_args_[mode].sequential_download_from_piece_ = piece;
+     }
+-- 
+2.39.5

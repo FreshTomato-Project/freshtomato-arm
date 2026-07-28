@@ -1625,6 +1625,27 @@ linked_circuit_closed(circuit_t *circ)
    * attached to the circuit so it can be freed in conflux_circuit_free(). */
   if (CONFLUX_NUM_LEGS(circ->conflux) > 0) {
     circ->conflux = NULL;
+  } else {
+    /* We are the last leg. We normally keep the conflux object attached to
+     * this circuit so it can be freed later in linked_circuit_free(). However,
+     * if an unlinked set (for instance a recovery leg launched for the same
+     * nonce) still shares this very same conflux object, it can revive it
+     * (conflux_process_linked() -> try_finalize_set()) and become a second
+     * owner. Were we to keep our reference, both this circuit and the revived
+     * linked set would point at the same conflux object and both would try to
+     * free it once reaped, leading to a use-after-free and double free. Hand
+     * ownership over to the unlinked set now -- it becomes responsible for
+     * freeing the conflux object -- and detach it from this circuit. */
+    unlinked_circuits_t *unlinked = unlinked_pool_get(nonce, is_client);
+    if (unlinked && unlinked->cfx == circ->conflux) {
+      /* We expect the unlinked set sharing our conflux object to be flagged as
+       * belonging to a linked set. If not, something is off in our bookkeeping
+       * but we can still recover by handing ownership over, so warn loudly
+       * rather than assert. */
+      BUG(!unlinked->is_for_linked_set);
+      unlinked->is_for_linked_set = false;
+      circ->conflux = NULL;
+    }
   }
 
   /* If this was a teardown condition, we need to mark other circuits,
@@ -1835,6 +1856,16 @@ conflux_process_link(circuit_t *circ, const relay_msg_t *msg)
   if (circ->conflux) {
     log_fn(LOG_PROTOCOL_WARN, LD_CIRC,
            "Got a CONFLUX_LINK on an already linked circuit "
+           "Closing circuit.");
+    circuit_mark_for_close(circ, END_CIRC_REASON_TORPROTOCOL);
+    goto end;
+  }
+
+  /* A LINK must arrive on a fresh circuit that has no attached streams. */
+  if (TO_OR_CIRCUIT(circ)->n_streams ||
+      TO_OR_CIRCUIT(circ)->resolving_streams) {
+    log_fn(LOG_PROTOCOL_WARN, LD_CIRC,
+           "Got a CONFLUX_LINK on a circuit with attached streams. "
            "Closing circuit.");
     circuit_mark_for_close(circ, END_CIRC_REASON_TORPROTOCOL);
     goto end;

@@ -1,6 +1,6 @@
 --- libjson-c/CMakeLists.txt
 +++ libjson-c/CMakeLists.txt
-@@ -449,7 +449,7 @@
+@@ -522,7 +522,7 @@
  include_directories(${PROJECT_SOURCE_DIR})
  include_directories(${PROJECT_BINARY_DIR})
  
@@ -9,7 +9,7 @@
  
  # "uninstall" custom target for make generators in unix like operating systems
  # and if that target is not present
-@@ -573,15 +573,15 @@
+@@ -647,15 +647,15 @@
  
  install(FILES ${JSON_C_PUBLIC_HEADERS} DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}/json-c)
  

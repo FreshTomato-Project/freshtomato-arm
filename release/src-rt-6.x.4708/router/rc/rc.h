@@ -314,6 +314,7 @@ extern void set_tz(void);
 extern void start_ntpd(void);
 extern void stop_ntpd(void);
 extern int ntpd_synced_main(int argc, char *argv[]);
+extern int ntpd_restart_main(int argc, char *argv[]);
 extern void check_services(void);
 extern void exec_service(void);
 extern int service_main(int argc, char *argv[]);
@@ -338,7 +339,7 @@ extern void start_ipv6(void);
 extern void stop_ipv6(void);
 #endif /* TCONFIG_IPV6 */
 #ifdef TCONFIG_BCMBSD
-extern int start_bsd(void);
+extern void start_bsd(void);
 extern void stop_bsd(void);
 #endif /* TCONFIG_BCMBSD */
 #ifdef TCONFIG_MDNS
@@ -474,6 +475,7 @@ static inline void stop_ddns(void) { };
 #endif
 
 /* misc.c */
+extern int lan_ifname_for_ipv4(const char *ip, char *ifname, size_t len);
 extern void usage_exit(const char *cmd, const char *help) __attribute__ ((noreturn));
 #define modprobe(mod, args...) ({ char *argv[] = { "modprobe", "-s", mod, ## args, NULL }; _eval(argv, NULL, 0, NULL); })
 extern int modprobe_r(const char *mod);

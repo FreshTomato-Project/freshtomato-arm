@@ -1,8 +1,8 @@
-/* $Id: upnpevents.c,v 1.44 2019/09/24 11:47:06 nanard Exp $ */
+/* $Id: upnpevents.c,v 1.45 2024/10/04 23:18:55 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
- * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2008-2019 Thomas Bernard
+ * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
+ * (c) 2008-2026 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -20,12 +20,18 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include "config.h"
+#include "getconnstatus.h"
+#include "getifaddr.h"
+#include "upnpredirect.h"
 #if defined(LIB_UUID)
 /* as found on linux */
 #include <uuid/uuid.h>
 #elif defined(BSD_UUID)
 #include <uuid.h>
 #endif /* LIB_UUID / BSD_UUID */
+#ifdef USE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
 #include "upnpevents.h"
 #include "miniupnpdpath.h"
 #include "upnpglobalvars.h"
@@ -317,13 +323,19 @@ upnp_event_notify_connect(struct upnp_event_notify * obj)
 		return;
 	}
 	p = obj->sub->callback;
-	p += 7;	/* http:// */
+	if(strncmp(p, "http://", 7) != 0) {
+		syslog(LOG_WARNING, "%s: wrong callback URL : \"%s\"",
+		       "upnp_event_notify_connect", p);
+		obj->state = EError;
+		return;
+	}
+	p += 7;	/* skip http:// */
 #ifdef ENABLE_IPV6
 	if(*p == '[') {	/* ip v6 */
 		obj->addrstr[i++] = '[';
 		p++;
 		obj->ipv6 = 1;
-		while(*p != ']' && i < (sizeof(obj->addrstr)-1))
+		while(*p != '\0' && *p != ']' && i < (sizeof(obj->addrstr)-1))
 			obj->addrstr[i++] = *(p++);
 		if(*p == ']')
 			p++;
@@ -331,7 +343,7 @@ upnp_event_notify_connect(struct upnp_event_notify * obj)
 			obj->addrstr[i++] = ']';
 	} else {
 #endif
-		while(*p != '/' && *p != ':' && i < (sizeof(obj->addrstr)-1))
+		while(*p != '\0' && *p != '/' && *p != ':' && i < (sizeof(obj->addrstr)-1))
 			obj->addrstr[i++] = *(p++);
 #ifdef ENABLE_IPV6
 	}
@@ -341,8 +353,9 @@ upnp_event_notify_connect(struct upnp_event_notify * obj)
 		obj->portstr[0] = *p;
 		i = 1;
 		p++;
-		port = (unsigned short)atoi(p);
-		while(*p != '\0' && *p != '/') {
+		port = 0;
+		while('0' <= *p && *p <= '9') {
+			port = port * 10 + *p - '0';
 			if(i<7) obj->portstr[i++] = *p;
 			p++;
 		}
@@ -686,5 +699,29 @@ void write_events_details(int s) {
 }
 #endif
 
-#endif
+#endif /* ENABLE_EVENTS */
 
+#ifdef USE_SYSTEMD
+void upnp_update_status(void)
+{
+	char wan_ip_address[INET_ADDRSTRLEN];
+
+	if(use_ext_ip_addr) {
+		snprintf(wan_ip_address, sizeof(wan_ip_address), "%s", use_ext_ip_addr);
+	} else {
+		struct in_addr addr;
+		if (getifaddr(ext_if_name, wan_ip_address, sizeof(wan_ip_address), &addr, NULL) < 0)
+			snprintf(wan_ip_address, sizeof(wan_ip_address), "(unknown)");
+		else if (addr_is_reserved(&addr))
+			snprintf(wan_ip_address, sizeof(wan_ip_address), "(invalid)");
+	}
+
+	sd_notifyf(0,
+		"STATUS=%s on %s, IP: %s, active redirects: %d\n",
+		get_wan_connection_status_str(ext_if_name),
+		ext_if_name,
+		wan_ip_address,
+		upnp_get_portmapping_number_of_entries()
+	);
+}
+#endif /* USE_SYSTEMD */

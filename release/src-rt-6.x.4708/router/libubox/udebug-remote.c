@@ -150,12 +150,15 @@ rbuf_advance_read_head(struct udebug_remote_buf *rb, uint32_t head,
 void udebug_remote_buf_set_start_time(struct udebug_remote_buf *rb, uint64_t ts)
 {
 	struct udebug_hdr *hdr = rb->buf.hdr;
-	uint32_t head = u32_get(&hdr->head);
-	uint32_t start = rb->head, end = head;
+	uint32_t head, start, end;
 	uint32_t diff;
 
 	if (!hdr)
 		return;
+
+	head = u32_get(&hdr->head);
+	start = rb->head;
+	end = head;
 
 	rbuf_advance_read_head(rb, head, NULL);
 	while ((diff = u32_sub(end, start)) > 0) {

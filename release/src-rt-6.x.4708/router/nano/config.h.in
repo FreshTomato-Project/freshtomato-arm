@@ -13,7 +13,7 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Define if no multithread safety and no multithreading is desired. */
+/* Define if neither thread safety nor multithreading is desired. */
 #undef AVOID_ANY_THREADS
 
 /* Define to the number of bits in type 'ptrdiff_t'. */
@@ -30,6 +30,9 @@
 
 /* Define to the number of bits in type 'wint_t'. */
 #undef BITSIZEOF_WINT_T
+
+/* Define if the c32rtomb function has an incorrect return value. */
+#undef C32RTOMB_RETVAL_BUG
 
 /* Define if you wish *printf() functions that have a safe handling of
    non-IEEE-754 'long double' values. */
@@ -215,6 +218,10 @@
 #undef GNULIB_LSTAT
 
 /* Define to a C preprocessor expression that evaluates to 1 or 0, depending
+   whether the gnulib module mbrtoc32-regular shall be considered present. */
+#undef GNULIB_MBRTOC32_REGULAR
+
+/* Define to a C preprocessor expression that evaluates to 1 or 0, depending
    whether the gnulib module mkstemps shall be considered present. */
 #undef GNULIB_MKSTEMPS
 
@@ -292,8 +299,14 @@
 /* Define to 1 when the gnulib module c32isxdigit should be tested. */
 #undef GNULIB_TEST_C32ISXDIGIT
 
+/* Define to 1 when the gnulib module c32rtomb should be tested. */
+#undef GNULIB_TEST_C32RTOMB
+
 /* Define to 1 when the gnulib module c32tolower should be tested. */
 #undef GNULIB_TEST_C32TOLOWER
+
+/* Define to 1 when the gnulib module c32toupper should be tested. */
+#undef GNULIB_TEST_C32TOUPPER
 
 /* Define to 1 when the gnulib module c32width should be tested. */
 #undef GNULIB_TEST_C32WIDTH
@@ -499,6 +512,9 @@
 
 /* Define to 1 when the gnulib module pthread-once should be tested. */
 #undef GNULIB_TEST_PTHREAD_ONCE
+
+/* Define to 1 when the gnulib module pthread_sigmask should be tested. */
+#undef GNULIB_TEST_PTHREAD_SIGMASK
 
 /* Define to 1 when the gnulib module putc should be tested. */
 #undef GNULIB_TEST_PUTC
@@ -1146,6 +1162,9 @@
    reader. */
 #undef HAVE_PTHREAD_RWLOCK_RDLOCK_PREFER_WRITER
 
+/* Define to 1 if the pthread_sigmask function can be used (despite bugs). */
+#undef HAVE_PTHREAD_SIGMASK
+
 /* Define to 1 if the system has the type `pthread_spinlock_t'. */
 #undef HAVE_PTHREAD_SPINLOCK_T
 
@@ -1211,6 +1230,9 @@
 
 /* Define to 1 if 'wint_t' is a signed integer type. */
 #undef HAVE_SIGNED_WINT_T
+
+/* Define to 1 if you have the `sigprocmask' function. */
+#undef HAVE_SIGPROCMASK
 
 /* Define to 1 if the system has the type `sigset_t'. */
 #undef HAVE_SIGSET_T
@@ -1635,6 +1657,10 @@
    */
 #undef MBRTOWC_EMPTY_INPUT_BUG
 
+/* Define if the mbrtowc function does not recognize some invalid UTF-8 byte
+   sequences. */
+#undef MBRTOWC_INVALID_UTF8_BUG
+
 /* Define if the mbrtowc function may signal encoding errors in the C locale.
    */
 #undef MBRTOWC_IN_C_LOCALE_MAYBE_EILSEQ
@@ -1741,7 +1767,7 @@
    */
 #undef NEED_XOPEN_SOURCE_EXTENDED
 
-/* Define to 1 if nl_langinfo is multithread-safe. */
+/* Define to 1 if nl_langinfo is thread-safe. */
 #undef NL_LANGINFO_MTSAFE
 
 /* Define to 1 if open() fails to recognize a trailing slash. */
@@ -1777,6 +1803,16 @@
 
 /* Define if the pthread_in_use() detection is hard. */
 #undef PTHREAD_IN_USE_DETECTION_HARD
+
+/* Define to 1 if pthread_sigmask(), when it fails, returns -1 and sets errno.
+   */
+#undef PTHREAD_SIGMASK_FAILS_WITH_ERRNO
+
+/* Define to 1 if pthread_sigmask may return 0 and have no effect. */
+#undef PTHREAD_SIGMASK_INEFFECTIVE
+
+/* Define to 1 if pthread_sigmask requires linking with some library. */
+#undef PTHREAD_SIGMASK_NOT_IN_LIBC
 
 /* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
    'ptrdiff_t'. */
@@ -1816,10 +1852,10 @@
 /* Define if vasnprintf exists but is overridden by gnulib. */
 #undef REPLACE_VASNPRINTF
 
-/* Define to 1 if setlocale (LC_ALL, NULL) is multithread-safe. */
+/* Define to 1 if setlocale (LC_ALL, NULL) is thread-safe. */
 #undef SETLOCALE_NULL_ALL_MTSAFE
 
-/* Define to 1 if setlocale (category, NULL) is multithread-safe. */
+/* Define to 1 if setlocale (category, NULL) is thread-safe. */
 #undef SETLOCALE_NULL_ONE_MTSAFE
 
 /* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
@@ -2469,6 +2505,23 @@
 # endif
 #endif
 
+/* _GL_ATTRIBUTE_COUNTED_BY (C) declares that the number of elements of
+   the field is given by C, which must be another field in the same struct.
+   The programmer is responsible for guaranteeing some invariants; see
+   <https://gcc.gnu.org/onlinedocs/gcc/Common-Attributes.html> for details.  */
+/* Applies to struct fields of type array or pointer (to data).  */
+#ifndef _GL_ATTRIBUTE_COUNTED_BY
+/* This attributes is supported
+     - for fields of array type: by gcc >= 16, clang >= 18,
+     - for fields of pointer type: by gcc when <https://gcc.gnu.org/PR125072>
+       will be fixed, clang >= 19.  */
+# if defined __clang__ && __clang_major__ >= 19
+#  define _GL_ATTRIBUTE_COUNTED_BY(c) __attribute__ ((__counted_by__ (c)))
+# else
+#  define _GL_ATTRIBUTE_COUNTED_BY(c)
+# endif
+#endif
+
 /* _GL_ATTRIBUTE_DEALLOC (F, I) declares that the function returns pointers
    that can be freed by passing them as the Ith argument to the
    function F.
@@ -2924,7 +2977,7 @@
 # endif
 #endif
 
-/* The following attributes enable detection of multithread-safety problems
+/* The following attributes enable detection of thread safety problems
    and resource leaks at compile-time, by clang ≥ 15, when the warning option
    -Wthread-safety is enabled.  For usage, see
    <https://clang.llvm.org/docs/ThreadSafetyAnalysis.html>.  */
@@ -3069,9 +3122,14 @@
 #undef regfree
 
 /* Define to the equivalent of the C99 'restrict' keyword, or to
-   nothing if this is not supported.  Do not define if restrict is
-   supported only directly.  */
+   nothing if this is not supported.  In particular it is not supported
+   in MSVC 14.44 and in g++ 7 on Solaris 11, although these compilers
+   define __STDC_VERSION__ to 199901L.
+   Do not define if restrict is supported directly.  */
+#if ! (defined __STDC_VERSION__ && 199901L <= __STDC_VERSION__ \
+       && !defined _MSC_VER && !defined __cplusplus)
 #undef restrict
+#endif
 /* Work around a bug in older versions of Sun C++, which did not
    #define __restrict__ or support _Restrict or __restrict__
    even though the corresponding Sun C compiler ended up with

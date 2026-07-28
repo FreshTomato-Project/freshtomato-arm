@@ -11,7 +11,7 @@ File: nano.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The GNU nano text editor
 ************************
 
-This manual documents GNU ‘nano’, version 9.0.
+This manual documents GNU ‘nano’, version 9.1.
 
 * Menu:
 
@@ -460,7 +460,7 @@ File: nano.info,  Node: Command-line options,  Next: Feature toggles,  Prev: The
 
 ‘-N’
 ‘--noconvert’
-     Disable automatic conversion of files from DOS/Mac format.
+     Disable automatic conversion of files from DOS format.
 
 ‘-O’
 ‘--bookstyle’
@@ -483,13 +483,25 @@ File: nano.info,  Node: Command-line options,  Next: Feature toggles,  Prev: The
 
 ‘-R’
 ‘--restricted’
-     Restricted mode: don’t read or write to any file not specified on
-     the command line.  This means: don’t read or write history files;
-     don’t allow suspending; don’t allow spell checking; don’t allow a
-     file to be appended to, prepended to, or saved under a different
-     name if it already has one; and don’t make backup files.
-     Restricted mode can also be activated by invoking ‘nano’ with any
-     name beginning with ‘r’ (e.g. ‘rnano’).
+     Read and write only the file (or files) specified on the command
+     line.  This means: don’t read or write the history files; don’t
+     allow suspending; don’t allow spell checking; don’t allow executing
+     any command in the shell; don’t allow the current buffer to be
+     saved under a different name; don’t allow appending or prepending
+     to any file; and don’t make backup files.
+
+     As an exception, before the specified file or files, the nanorc
+     files are read, to allow customization.  If customization should
+     not be allowed, use option ‘-I’ (‘--ignorercfiles’) as well.
+
+     When no file is specified on the command line, restricted mode
+     allows you to save the contents that you type into the new buffer
+     under any name, except that existing files may not be overwritten.
+     If the places where this new file may be created should be limited,
+     then use option ‘-o’ (‘--operatingdir’) as well.
+
+     Restricted mode can also be activated by invoking ‘nano’ with a
+     name beginning with ‘r’ (for example: ‘rnano’).
 
 ‘-S’
 ‘--softwrap’
@@ -615,7 +627,7 @@ File: nano.info,  Node: Command-line options,  Next: Feature toggles,  Prev: The
 ‘--noread’
      Treat any name given on the command line as a new file.  This
      allows ‘nano’ to write to named pipes: it starts with a blank
-     buffer, and writes to the pipe when the user saves the "file".
+     buffer, and writes to the pipe when the user saves the “file”.
      This way ‘nano’ can be used as an editor in combination with for
      instance ‘gpg’ without having to write sensitive data to disk
      first.
@@ -633,7 +645,7 @@ File: nano.info,  Node: Command-line options,  Next: Feature toggles,  Prev: The
 
 ‘-q’
 ‘--indicator’
-     Display a "scrollbar" on the righthand side of the edit window.  It
+     Display a “scrollbar” on the righthand side of the edit window.  It
      shows the position of the viewport in the buffer and how much of
      the buffer is covered by the viewport.
 
@@ -727,7 +739,7 @@ File: nano.info,  Node: Command-line options,  Next: Feature toggles,  Prev: The
 ‘--minibar’
      Suppress the title bar and instead show information about the
      current buffer at the bottom of the screen, in the space for the
-     status bar.  In this "mini bar" the filename is shown on the left,
+     status bar.  In this “mini bar” the filename is shown on the left,
      followed by an asterisk if the buffer has been modified.  On the
      right are displayed the current line and column number, the code of
      the character under the cursor (in Unicode format: U+xxxx), the
@@ -981,7 +993,7 @@ The supported settings in a nanorc file are:
      executed commands, so they can be easily reused in later sessions.
 
 ‘set indicator’
-     Display a "scrollbar" on the righthand side of the edit window.  It
+     Display a “scrollbar” on the righthand side of the edit window.  It
      shows the position of the viewport in the buffer and how much of
      the buffer is covered by the viewport.
 
@@ -1019,7 +1031,7 @@ The supported settings in a nanorc file are:
      an anchor additionally gets a mark in the margin.)
 
 ‘set locking’
-     Enable vim-style lock-files for when editing files.
+     Use vim-style lock-files when editing files.
 
 ‘set magic’
      When neither the file’s name nor its first line give a clue, try
@@ -1036,7 +1048,7 @@ The supported settings in a nanorc file are:
 ‘set minibar’
      Suppress the title bar and instead show information about the
      current buffer at the bottom of the screen, in the space for the
-     status bar.  In this "mini bar" the filename is shown on the left,
+     status bar.  In this “mini bar” the filename is shown on the left,
      followed by an asterisk if the buffer has been modified.  On the
      right are displayed the current line and column number, the code of
      the character under the cursor (in Unicode format: U+xxxx), the
@@ -1064,7 +1076,7 @@ The supported settings in a nanorc file are:
      default.
 
 ‘set noconvert’
-     Don’t convert files from DOS/Mac format.
+     Don’t convert files from DOS format.
 
 ‘set nohelp’
      Don’t display the help lists at the bottom of the screen.
@@ -1143,7 +1155,7 @@ The supported settings in a nanorc file are:
      Save a changed buffer automatically on exit (‘^X’); don’t prompt.
 
 ‘set scrollercolor FGCOLOR,BGCOLOR’
-     Use this color combination for the indicator alias "scrollbar".
+     Use this color combination for the indicator alias “scrollbar”.
      *Note set keycolor:: for valid color names.
 
 ‘set selectedcolor [bold,][italic,]FGCOLOR,BGCOLOR’
@@ -1329,9 +1341,10 @@ following commands in a nanorc file:
      files.  The characters before the pipe are prepended to the line
      and the characters after the pipe are appended at the end of the
      line.  If no pipe character is present, the full string is
-     prepended; for example, "#" for Python files.  If empty double
-     quotes are specified, the comment/uncomment functions are disabled;
-     for example, "" for JSON. The default value is "#".
+     prepended; for example, "#" for Python files.  If nothing is
+     specified between the double quotes, then the comment/uncomment
+     function is disabled; for example, "" for JSON. The default value
+     is "#".
 
 ‘tabgives "STRING"’
      Make the <Tab> key produce the given STRING.  Useful for languages
@@ -1438,13 +1451,14 @@ braced name is unfitting.
 
      ‘M-X’
           where X is any ASCII character (except [), or the word
-          "Space", "Left", "Right", "Up", or "Down".  Example: ‘M-8’.
+          "Space", "Left", "Right", "Up", "Down", "Ins", or "Del".
+          Example: ‘M-8’.
 
      ‘Sh-M-X’
           where X is a Latin letter.  Example: ‘Sh-M-U’.  By default,
-          each Meta+letter keystroke does the same as the corresponding
-          Shift+Meta+letter.  But when any Shift+Meta bind is made, that
-          will no longer be the case, for all letters.
+          each Shift+Meta+letter keystroke does the same as the
+          corresponding Meta+letter.  But when any Shift+Meta bind is
+          made, that will no longer be the case, for all letters.
 
      ‘FN’
           where N is a numeric value from 1 to 24.  Example: ‘F10’.
@@ -1736,7 +1750,7 @@ of the Backspace key.
      Undoes the last performed text action (add text, delete text, etc).
 
 ‘redo’
-     Redoes the last undone action (i.e., it undoes an undo).
+     Redoes the last undone action (that is: it undoes an undo).
 
 ‘refresh’
      Refreshes the screen.
@@ -1765,9 +1779,6 @@ of the Backspace key.
 ‘flipreplace’
      Toggles between searching for something and replacing something.
 
-‘flipgoto’
-     Toggles between searching for text and targeting a line number.
-
 ‘flipexecute’
      Switches from inserting a file to executing a command.
 
@@ -1781,19 +1792,17 @@ of the Backspace key.
 
 ‘flipconvert’
      When reading in a file, toggles between converting and not
-     converting it from DOS/Mac format.  Converting is the default.
+     converting it from DOS format.  Converting is the default.
 
 ‘dosformat’
-     When writing a file, switches to writing a DOS format (CR/LF).
-
-‘macformat’
-     When writing a file, switches to writing a Mac format.
+     When writing a file, switches to writing DOS format (CR+LF line
+     endings).
 
 ‘append’
      When writing a file, appends to the end instead of overwriting.
 
 ‘prepend’
-     When writing a file, ’prepends’ (writes at the beginning) instead
+     When writing a file, “prepends” (writes at the beginning) instead
      of overwriting.
 
 ‘backup’
@@ -2170,17 +2179,17 @@ Node: Exit status13061
 Node: The help viewer13379
 Node: The file browser13803
 Node: Command-line options14694
-Ref: --speller24572
-Node: Feature toggles30648
-Node: Nanorc files32720
-Node: Settings34273
-Ref: set keycolor39232
-Ref: set matchbrackets41397
-Ref: Whitespace50153
-Node: Syntax highlighting51331
-Node: Rebinding keys59070
-Node: Pico compatibility76064
-Node: Building and its options80607
+Ref: --speller25199
+Node: Feature toggles31279
+Node: Nanorc files33351
+Node: Settings34904
+Ref: set keycolor39867
+Ref: set matchbrackets42025
+Ref: Whitespace50785
+Node: Syntax highlighting51963
+Node: Rebinding keys59723
+Node: Pico compatibility76593
+Node: Building and its options81136
 
 End Tag Table
 

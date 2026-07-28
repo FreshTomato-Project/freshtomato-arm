@@ -58,8 +58,10 @@ DO_DECOMPRESS  ( const lzo_bytep in , lzo_uint  in_len,
     while (TEST_IP_AND_TEST_OP)
     {
         t = *ip++;
-        if (t > 31)
+        if (t > 31) {
+            NEED_IP(1);
             goto match;
+        }
 
         /* a literal run */
         if (t == 0)

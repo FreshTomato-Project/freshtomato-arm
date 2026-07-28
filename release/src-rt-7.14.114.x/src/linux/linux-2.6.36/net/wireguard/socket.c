@@ -180,8 +180,13 @@ int wg_socket_send_skb_to_peer(struct wg_peer *peer, struct sk_buff *skb, u8 ds)
 			    &peer->endpoint_cache);
 	else
 		dev_kfree_skb(skb);
-	if (likely(!ret))
+	if (likely(!ret)) {
+		struct net_device *dev = peer->device->dev;
+
+		++dev->stats.tx_packets;
+		dev->stats.tx_bytes += skb_len;
 		peer->tx_bytes += skb_len;
+	}
 	read_unlock_bh(&peer->endpoint_lock);
 
 	return ret;

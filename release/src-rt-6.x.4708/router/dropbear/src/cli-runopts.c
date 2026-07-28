@@ -423,7 +423,7 @@ void cli_getopts(int argc, char ** argv) {
 
 	if (host_arg == NULL) { /* missing hostname */
 		printhelp();
-		dropbear_exit("Remote host needs to provided.");
+		dropbear_exit("Remote host needs to be provided.");
 	}
 	TRACE(("host is: %s", host_arg))
 
@@ -944,7 +944,7 @@ static int match_extendedopt(const char** strptr, const char *optname) {
 	int optlen = strlen(optname);
 	const char *str = *strptr;
 
-	while (isspace(*str)) {
+	while (ascii_isspace(*str)) {
 		++str;
 	}
 
@@ -954,7 +954,7 @@ static int match_extendedopt(const char** strptr, const char *optname) {
 
 	str += optlen;
 
-	while (isspace(*str) || (!seen_eq && *str == '=')) {
+	while (ascii_isspace(*str) || (!seen_eq && *str == '=')) {
 		if (*str == '=') {
 			seen_eq = 1;
 		}
@@ -1066,7 +1066,7 @@ static void add_extendedopt(const char* origstr) {
 
 #if DROPBEAR_CLI_LOCALTCPFWD
 	if (match_extendedopt(&optstr, "GatewayPorts") == DROPBEAR_SUCCESS) {
-		opts.listen_fwd_all = 1;
+		opts.listen_fwd_all = parse_flag_value(optstr);
 		return;
 	}
 #endif
@@ -1138,7 +1138,7 @@ static void add_extendedopt(const char* origstr) {
 
 #if DROPBEAR_USE_SSH_CONFIG
 static void apply_config_settings(const char* cli_host_arg) {
-	char* is_multi_hop_host_target = strchr(cli_host_arg, ',');
+	const char* is_multi_hop_host_target = strchr(cli_host_arg, ',');
 	if (!is_multi_hop_host_target) {
 		char* config_path = expand_homedir_path(DROPBEAR_DEFAULT_SSH_CONFIG);
 		FILE* f;

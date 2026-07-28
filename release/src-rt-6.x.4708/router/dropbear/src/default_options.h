@@ -403,4 +403,11 @@ runtime with -M. 0 disables this feature. */
 #define DEFAULT_PATH "/usr/bin:/bin"
 #define DEFAULT_ROOT_PATH "/usr/sbin:/usr/bin:/sbin:/bin"
 
+/* Features pending deletion. These will be removed in a future release
+   since they don't seem to be used much. Open a github issue if you
+   want to keep them.
+ */
+
+/* Plugins are set with configure --enable-plugin-deprecated */
+
 #endif /* DROPBEAR_DEFAULT_OPTIONS_H_ */

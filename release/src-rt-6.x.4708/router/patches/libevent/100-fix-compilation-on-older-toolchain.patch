@@ -1,0 +1,28 @@
+--- libevent/event.c
++++ libevent/event.c
+@@ -1355,12 +1355,14 @@
+ {
+ #if defined(__clang__)
+ #elif defined(__GNUC__)
++#if defined(__GNUC__) && __GNUC__ >= 5
+ #pragma GCC diagnostic push
+ /* NOTE: it is better to avoid such code all together, by using separate
+  * variable to break the loop in the event structure, but now this code is safe
+  * */
+ #pragma GCC diagnostic ignored "-Wdangling-pointer"
+ #endif
++#endif
+ 
+ 	short ncalls;
+ 	int should_break;
+@@ -1390,8 +1392,10 @@
+ 
+ #if defined(__clang__)
+ #elif defined(__GNUC__)
++#if defined(__GNUC__) && __GNUC__ >= 5
+ #pragma GCC diagnostic pop
+ #endif
++#endif
+ }
+ 
+ /* Common timeouts are special timeouts that are handled as queues rather than

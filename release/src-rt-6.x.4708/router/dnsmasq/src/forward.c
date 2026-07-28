@@ -177,7 +177,10 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
   int forwarded = 0;
   int ede = EDE_UNSET;
   unsigned short rrtype, rrclass;
-
+  unsigned short id = ntohs(header->id); /* Retrieve the id from the new query before we overwrite it. */
+  unsigned int casediff = 0;
+  unsigned int *bitvector = NULL;
+  
   gotname = extract_request(header, plen, daemon->namebuff, &rrtype, &rrclass);
   
   /* Check for retry on existing query.
@@ -197,16 +200,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 					     FREC_HAS_PHEADER | FREC_DNSKEY_QUERY | FREC_DS_QUERY | FREC_NO_CACHE)))
     {
       struct frec_src *src;
-      unsigned int casediff = 0;
-      unsigned int *bitvector = NULL;
-      unsigned short id = ntohs(header->id); /* Retrieve the id from the new query before we overwrite it. */
-      
-      /* Get the case-scambled version of the query to resend. This is important because we
-	 may fall through below and forward the query in the packet buffer again and we
-	 want to use the same case scrambling as the first time. */
-      blockdata_retrieve(forward->stash, forward->stash_len, (void *)header); 
-      plen = forward->stash_len;
-
+          
       for (src = &forward->frec_src; src; src = src->next)
 	if (src->orig_id == id && 
 	    sockaddr_isequal(&src->source, udpaddr))
@@ -217,6 +211,11 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 	  old_src = 1;
 	  /* If a query is retried, use the log_id for the retry when logging the answer. */
 	  src->log_id = daemon->log_id;
+	  /* Get the case-scambled version of the query to resend. This is important because we
+	     may fall through below and forward the query in the packet buffer again and we
+	     want to use the same case scrambling as the first time. */
+	  blockdata_retrieve(forward->stash, forward->stash_len, (void *)header); 
+	  plen = forward->stash_len;
 	}
       else
 	{
@@ -242,9 +241,11 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 		 and never resetting until the frec gets deleted by
 		 aging followed by the receipt of a different query. This
 		 is a bit of a DoS vuln. Avoid by explicitly deleting the
-		 frec once it expires. */
-	      if (difftime(now, forward->time) >= TIMEOUT)
-		free_frec(forward);
+		 frec once it expires. The deletion is done at the end of
+		 this function, unless we set forward to NULL here. */
+	      if (difftime(now, forward->time) < TIMEOUT)
+		forward = NULL;
+
 	      goto reply;
 	    }
 
@@ -263,7 +264,10 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 
 	     The original query we sent is now in packet buffer and the query name in the
 	     new instance is on daemon->namebuff. */
-	    	  
+
+	  blockdata_retrieve(forward->stash, forward->stash_len, (void *)header); 
+	  plen = forward->stash_len;
+
 	  if (extract_name(header, forward->stash_len, NULL, daemon->workspacename, EXTR_NAME_EXTRACT, 0))
 	    {
 	      unsigned int i, gobig = 0;
@@ -312,7 +316,6 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 	  src->fd = udpfd;
 	  src->encode_bitmap = casediff;
 	  src->encode_bigmap = bitvector;
-	  
 	  src->udp_pkt_size = (unsigned short)replylimit;
 
 	  /* closely spaced identical queries cannot be a try and a retry, so
@@ -375,7 +378,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 #ifdef HAVE_DNSSEC
       if (option_bool(OPT_DNSSEC_VALID))
 	{
-	  plen = add_do_bit(header, plen, ((unsigned char *) header) + daemon->edns_pktsz);
+	  plen = add_do_bit(header, plen, daemon->edns_pktsz);
 	  
 	  /* For debugging, set Checking Disabled, otherwise, have the upstream check too,
 	     this allows it to select auth servers when one is returning bad data. */
@@ -388,18 +391,15 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
       forward->frec_src.orig_id = ntohs(header->id);
       forward->new_id = get_id();
       header->id = ntohs(forward->new_id);
-      forward->frec_src.encode_bitmap = (!option_bool(OPT_NO_0x20) && option_bool(OPT_DO_0x20)) ? rand32() : 0;
+      forward->frec_src.encode_bitmap = casediff = (!option_bool(OPT_NO_0x20) && option_bool(OPT_DO_0x20)) ? rand32() : 0;
       forward->frec_src.encode_bigmap = NULL;
-
-      if (!extract_name(header, plen, NULL, (char *)&forward->frec_src.encode_bitmap, EXTR_NAME_FLIP, 1))
+      
+      if (casediff != 0 && !extract_name(header, plen, NULL, (char *)&casediff, EXTR_NAME_FLIP, 1))
 	goto reply;
       
       /* Keep copy of query for retries and move to TCP */
       if (!(forward->stash = blockdata_alloc((char *)header, plen)))
-	{
-	  free_frec(forward);
-	  goto reply; /* no mem. return REFUSED */
-	}
+	goto reply; /* no mem. return REFUSED */
       
       forward->stash_len = plen;
       forward->frec_src.log_id = daemon->log_id;
@@ -514,7 +514,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
   forwarded = 0;
 
   /* Advertise the size of UDP reply we can accept. */
-  plen = add_pseudoheader(header, plen, (unsigned char *)(header + daemon->edns_pktsz), 0, NULL, 0, 0, 0);
+  plen = add_pseudoheader(header, plen, daemon->edns_pktsz, 0, NULL, 0, 0, 0);
 
   /* check for send errors here (no route to host) 
      if we fail to send to all nameservers, send back an error
@@ -582,14 +582,26 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
     }
   
   /* could not send on, prepare to return */ 
-  header->id = htons(forward->frec_src.orig_id);
-  free_frec(forward); /* cancel */
   ede = EDE_NETERR;
   
  reply:
   if (udpfd != -1)
     {
-      if (!(plen = make_local_answer(flags, gotname, plen, header, daemon->namebuff, (char *)(header + replylimit), first, last, ede)))
+      /* The query now in the buffer can have changed from what arrived during
+	 the preparation for forwarding in two respects.
+	 1) The header->id field may have changed.
+	 2) The case of letters in the query may have been changed.
+	 
+	 Restore both of these changes before using it to build an error return for the client.
+	 The original id is held in local variable id, and the difference in case
+	 is encoded in casediff and also bitvector if the difference spreads beyond the first
+	 32 characters.
+      */
+      header->id = htons(id);
+      if (casediff != 0)
+	extract_name(header, plen, NULL, (char *)(bitvector ? bitvector : &casediff), EXTR_NAME_FLIP, bitvector ? casediff : 1);
+	      
+      if (!(plen = make_local_answer(flags, gotname, plen, header, daemon->namebuff, replylimit, first, last, ede)))
 	return;
       
       if (fwd_flags & FREC_HAS_PHEADER)
@@ -597,9 +609,9 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 	  u16 swap = htons((u16)ede);
 
 	  if (ede != EDE_UNSET)
-	    plen = add_pseudoheader(header, plen, (unsigned char *)(header + replylimit), EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, 0, 0);
+	    plen = add_pseudoheader(header, plen, replylimit, EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, 0, 0);
 	  else
-	    plen = add_pseudoheader(header, plen, (unsigned char *)(header + replylimit), 0, NULL, 0, 0, 0);
+	    plen = add_pseudoheader(header, plen, replylimit, 0, NULL, 0, 0, 0);
 	}
       
 #if defined(HAVE_CONNTRACK) && defined(HAVE_UBUS)
@@ -619,6 +631,11 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
     }
   
   daemon->metrics[METRIC_DNS_LOCAL_ANSWERED]++;
+
+  /* This has to be after last use of bitvector. */
+  if (forward)
+    free_frec(forward);
+  
   return;
 }
 
@@ -695,7 +712,7 @@ static struct ipsets *domain_find_sets(struct ipsets *setlist, const char *domai
 
 static size_t process_reply(struct dns_header *header, time_t now, struct server *server, size_t n, int check_rebind, 
 			    int no_cache, int cache_secure, int bogusanswer, int ad_reqd, int do_bit, int added_pheader, 
-			    union mysockaddr *query_source, unsigned char *limit, int ede)
+			    union mysockaddr *query_source, size_t outlen, int ede)
 {
   unsigned char *pheader, *sizep;
   struct ipsets *ipsets = NULL, *nftsets = NULL;
@@ -879,7 +896,7 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
   if (pheader && ede != EDE_UNSET)
     {
       u16 swap = htons((u16)ede);
-      n = add_pseudoheader(header, n, limit, EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, do_bit, 1);
+      n = add_pseudoheader(header, n, outlen, EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, do_bit, 1);
     }
 
   if (RCODE(header) == NXDOMAIN)
@@ -1027,7 +1044,7 @@ static void dnssec_validate(struct frec *forward, struct dns_header *header,
 		 allocation of a new one: third arg of get_new_frec() does that. */
 	      if ((serverind = dnssec_server(forward->sentto, daemon->keyname, STAT_ISEQUAL(status, STAT_NEED_DS), NULL, NULL)) != -1 &&
 		  (server = daemon->serverarray[serverind]) &&
-		  (nn = dnssec_generate_query(header, ((unsigned char *) header) + daemon->edns_pktsz,
+		  (nn = dnssec_generate_query(header, daemon->edns_pktsz,
 					      daemon->keyname, forward->class, get_id(),
 					      STAT_ISEQUAL(status, STAT_NEED_KEY) ? T_DNSKEY : T_DS)) && 
 		  (fd = allocate_rfd(&rfds, server)) != -1 &&
@@ -1289,7 +1306,8 @@ void reply_query(int fd, time_t now)
   server->query_latency = server->mma_latency/128;
   
   /* Flip the bits back in the query name. */
-    if (!extract_name(header, n, NULL, (char *)&forward->frec_src.encode_bitmap, EXTR_NAME_FLIP, 1))
+    if (forward->frec_src.encode_bitmap != 0 &&
+	!extract_name(header, n, NULL, (char *)&forward->frec_src.encode_bitmap, EXTR_NAME_FLIP, 1))
     return;
       
 #ifdef HAVE_DNSSEC
@@ -1442,7 +1460,7 @@ void return_reply(time_t now, struct frec *forward, struct dns_header *header, s
   if ((nn = process_reply(header, now, forward->sentto, (size_t)n, check_rebind, no_cache_dnssec, cache_secure, bogusanswer, 
 			  forward->flags & FREC_AD_QUESTION, forward->flags & FREC_DO_QUESTION, 
 			  !(forward->flags & FREC_HAS_PHEADER), &forward->frec_src.source,
-			  ((unsigned char *)header) + daemon->edns_pktsz, ede)))
+			  daemon->edns_pktsz, ede)))
     {
       struct frec_src *src, *prev;
       int do_trunc;
@@ -1945,7 +1963,7 @@ void receive_query(struct listener *listen, time_t now)
     {
       int cacheable;
 
-      n = add_edns0_config(header, n, ((unsigned char *)header) + daemon->edns_pktsz, &source_addr, now, &cacheable);
+      n = add_edns0_config(header, n, daemon->edns_pktsz, &source_addr, now, &cacheable);
       saved_question = blockdata_alloc((char *) header, (size_t)n);
 
       if (!cacheable)
@@ -1979,12 +1997,12 @@ void receive_query(struct listener *listen, time_t now)
 	    {
 	      u16 swap = htons(ede);
 	      
-	      m = add_pseudoheader(header,  m,  ((unsigned char *) header) + daemon->edns_pktsz,
-				   EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, do_bit, 0);
+	      m = add_pseudoheader(header, m, daemon->edns_pktsz, EDNS0_OPTION_EDE,
+				   (unsigned char *)&swap, 2, do_bit, 0);
 	    }
 	  else
-	    m = add_pseudoheader(header,  m,  ((unsigned char *) header) + daemon->edns_pktsz,
-				 0, NULL, 0, do_bit, 0);
+	    m = add_pseudoheader(header, m, daemon->edns_pktsz, 0, 
+				 NULL, 0, do_bit, 0);
 	}
   
 #ifdef HAVE_DUMPFILE
@@ -2326,7 +2344,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
       query_header = (struct dns_header *)daemon->packet;
       daemon->srv_save = NULL;
 
-      m = dnssec_generate_query(query_header, ((unsigned char *)query_header) + daemon->edns_pktsz, keyname, class, 0,
+      m = dnssec_generate_query(query_header, daemon->edns_pktsz, keyname, class, 0,
 				STAT_ISEQUAL(new_status, STAT_NEED_KEY) ? T_DNSKEY : T_DS);
       
       if ((start = dnssec_server(server, keyname, STAT_ISEQUAL(new_status, STAT_NEED_DS), &first, &last)) == -1 ||
@@ -2479,7 +2497,7 @@ void tcp_request(int confd, time_t now, struct iovec *bigbuff,
 	  out_header = bigbuff->iov_base;
 	  
 	  /* Add edns0 pheader to query */
-	  size = add_edns0_config(header, size, ((unsigned char *) header) + daemon->packet_buff_sz, &peer_addr, now, &cacheable);
+	  size = add_edns0_config(header, size, daemon->packet_buff_sz, &peer_addr, now, &cacheable);
 
 	  /* Clear buffer to avoid risk of information disclosure. */
 	  memset(bigbuff->iov_base, 0, bigbuff->iov_len);
@@ -2620,7 +2638,7 @@ void tcp_request(int confd, time_t now, struct iovec *bigbuff,
 #ifdef HAVE_DNSSEC
 		  if (option_bool(OPT_DNSSEC_VALID))
 		    {
-		      size = add_do_bit(header, size, ((unsigned char *) header) + daemon->edns_pktsz);
+		      size = add_do_bit(header, size, daemon->edns_pktsz);
 		      
 		      /* For debugging, set Checking Disabled, otherwise, have the upstream check too,
 			 this allows it to select auth servers when one is returning bad data. */
@@ -2715,7 +2733,7 @@ void tcp_request(int confd, time_t now, struct iovec *bigbuff,
 		      
 		      m = process_reply(out_header, now, serv, (unsigned int)m, 
 					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec, cache_secure, bogusanswer,
-					ad_reqd, do_bit, !have_pseudoheader, &peer_addr, ((unsigned char *)out_header) + 65536, ede);
+					ad_reqd, do_bit, !have_pseudoheader, &peer_addr, 65536, ede);
 
 		      /* process_reply() adds pheader itself */
 		      have_pseudoheader = 0; 
@@ -2731,7 +2749,7 @@ void tcp_request(int confd, time_t now, struct iovec *bigbuff,
       if (m == 0)
 	{
 	  if (!(m = make_local_answer(flags, gotname, size, out_header, daemon->namebuff,
-				      ((char *) out_header) + 65536, first, last, ede)))
+				      65536, first, last, ede)))
 	    break;
 	}
       else if (ede == EDE_UNSET)
@@ -2747,9 +2765,9 @@ void tcp_request(int confd, time_t now, struct iovec *bigbuff,
 	  u16 swap = htons((u16)ede);
 	  
 	  if (ede != EDE_UNSET)
-	    m = add_pseudoheader(out_header, m, ((unsigned char *) out_header) + 65536, EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, do_bit, 0);
+	    m = add_pseudoheader(out_header, m, 65536, EDNS0_OPTION_EDE, (unsigned char *)&swap, 2, do_bit, 0);
 	  else
-	    m = add_pseudoheader(out_header, m, ((unsigned char *) out_header) + 65536, 0, NULL, 0, do_bit, 0);
+	    m = add_pseudoheader(out_header, m, 65536, 0, NULL, 0, do_bit, 0);
 	}
       
       check_log_writer(1);

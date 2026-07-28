@@ -178,8 +178,8 @@ void browser_refresh(void)
 		/* Show information about the file: "--" for symlinks (except when
 		 * they point to a directory) and for files that have disappeared,
 		 * "(dir)" for directories, and the file size for normal files. */
-		if (lstat(filelist[index], &state) == -1 || S_ISLNK(state.st_mode)) {
-			if (stat(filelist[index], &state) == -1 || !S_ISDIR(state.st_mode))
+		if (lstat(filelist[index], &state) < 0 || S_ISLNK(state.st_mode)) {
+			if (stat(filelist[index], &state) < 0 || !S_ISDIR(state.st_mode))
 				info = copy_of("--");
 			else
 				/* TRANSLATORS: Anything more than 7 cells gets clipped. */
@@ -298,7 +298,7 @@ void search_filename(bool forwards)
 	int response;
 
 	/* If something was searched for before, show it between square brackets. */
-	if (*last_search != '\0') {
+	if (*last_search) {
 		char *disp = display_string(last_search, 0, COLS / 3, FALSE, FALSE);
 
 		thedefault = nmalloc(strlen(disp) + 7);
@@ -324,7 +324,7 @@ void search_filename(bool forwards)
 	}
 
 	/* If the user typed an answer, remember it. */
-	if (*answer != '\0') {
+	if (*answer) {
 		last_search = mallocstrcpy(last_search, answer);
 #ifdef ENABLE_HISTORIES
 		update_history(&search_history, answer, PRUNE_DUPLICATE);
@@ -341,7 +341,7 @@ void research_filename(bool forwards)
 {
 #ifdef ENABLE_HISTORIES
 	/* If nothing was searched for yet, take the last item from history. */
-	if (*last_search == '\0' && searchbot->prev != NULL)
+	if (*last_search == '\0' && searchbot->prev)
 		last_search = mallocstrcpy(last_search, searchbot->prev->data);
 #endif
 
@@ -372,7 +372,7 @@ char *strip_last_component(const char *path)
 	char *copy = copy_of(path);
 	char *last_slash = strrchr(copy, '/');
 
-	if (last_slash != NULL)
+	if (last_slash)
 		*last_slash = '\0';
 
 	return copy;
@@ -397,7 +397,7 @@ char *browse(char *path)
 
 	path = free_and_assign(path, get_full_path(path));
 
-	if (path != NULL)
+	if (path)
 		dir = opendir(path);
 
 	if (path == NULL || dir == NULL) {
@@ -414,7 +414,7 @@ char *browse(char *path)
 		present_name = mallocstrcpy(present_name, filelist[selected]);
 	}
 
-	if (dir != NULL) {
+	if (dir) {
 		/* Get the file list, and set gauge and piles in the process. */
 		read_the_list(path, dir);
 		closedir(dir);
@@ -427,7 +427,7 @@ char *browse(char *path)
 
 	/* If something was selected before, reselect it;
 	 * otherwise, just select the first item (..). */
-	if (present_name != NULL) {
+	if (present_name) {
 		reselect(present_name);
 		free(present_name);
 		present_name = NULL;
@@ -564,7 +564,7 @@ char *browse(char *path)
 				goto testresize;
 			}
 
-			path = free_and_assign(path, real_dir_from_tilde(answer));
+			path = free_and_assign(path, expand_leading_tilde(answer));
 
 			/* If the given path is relative, join it with the current path. */
 			if (*path != '/') {
@@ -573,7 +573,7 @@ char *browse(char *path)
 			}
 
 #ifdef ENABLE_OPERATINGDIR
-			if (outside_of_confinement(path, FALSE)) {
+			if (operating_dir && outside_of_confinement(path, FALSE)) {
 				/* TRANSLATORS: This refers to the confining effect of
 				 * the option --operatingdir, not of --restricted. */
 				statusline(ALERT, _("Can't go outside of %s"), operating_dir);
@@ -606,13 +606,13 @@ char *browse(char *path)
 			/* Note: The selected file can be outside the operating
 			 * directory if it's ".." or if it's a symlink to a
 			 * directory outside the operating directory. */
-			if (outside_of_confinement(filelist[selected], FALSE)) {
+			if (operating_dir && outside_of_confinement(filelist[selected], FALSE)) {
 				statusline(ALERT, _("Can't go outside of %s"), operating_dir);
 				continue;
 			}
 #endif
 			/* If for some reason the file is inaccessible, complain. */
-			if (stat(filelist[selected], &st) == -1) {
+			if (stat(filelist[selected], &st) < 0) {
 				statusline(ALERT, _("Error reading %s: %s"),
 								filelist[selected], strerror(errno));
 				continue;
@@ -676,15 +676,15 @@ char *browse(char *path)
  * start browsing in that directory, otherwise in the current directory. */
 char *browse_in(const char *inpath)
 {
-	char *path = real_dir_from_tilde(inpath);
+	char *path = expand_leading_tilde(inpath);
 	struct stat fileinfo;
 
 	/* If path is not a directory, try to strip a filename from it; if then
 	 * still not a directory, use the current working directory instead. */
-	if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode)) {
+	if (stat(path, &fileinfo) < 0 || !S_ISDIR(fileinfo.st_mode)) {
 		path = free_and_assign(path, strip_last_component(path));
 
-		if (stat(path, &fileinfo) == -1 || !S_ISDIR(fileinfo.st_mode)) {
+		if (stat(path, &fileinfo) < 0 || !S_ISDIR(fileinfo.st_mode)) {
 			path = free_and_assign(path, realpath(".", NULL));
 
 			if (path == NULL) {
@@ -698,7 +698,7 @@ char *browse_in(const char *inpath)
 #ifdef ENABLE_OPERATINGDIR
 	/* If the resulting path isn't in the operating directory,
 	 * use the operating directory instead. */
-	if (outside_of_confinement(path, FALSE))
+	if (operating_dir && outside_of_confinement(path, FALSE))
 		path = mallocstrcpy(path, operating_dir);
 #endif
 

@@ -2045,7 +2045,7 @@ bcm_ipv6_ntoa(void *ipv6, char *buf)
 
 	for (i = 0; i < IPV6_ADDR_LEN/2; i++) {
 		if ((uint8*) (a + i) == a4) {
-			snprintf(p, 16, ":%u.%u.%u.%u", a4[0], a4[1], a4[2], a4[3]);
+			snprintf(p, 17, ":%u.%u.%u.%u", a4[0], a4[1], a4[2], a4[3]);
 			break;
 		} else if (i == i_max) {
 			*p++ = ':';

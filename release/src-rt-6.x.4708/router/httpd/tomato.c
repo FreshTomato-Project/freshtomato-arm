@@ -573,7 +573,7 @@ static const nvset_t nvset_list[] = {
 
 	{ "lan_state",			V_01				},
 	{ "lan_desc",			V_01				},
-	{ "eth_desc", 			V_LENGTH(0, 80)			},
+	{ "eth_desc",			V_LENGTH(0, 120)		},
 	{ "lan_invert",			V_01				},
 	{ "lan_dhcp",			V_01				},	/* DHCP client [0|1] - obtain a LAN (br0) IP via DHCP */
 	{ "lan_proto",			V_WORD				},	/* static, dhcp */
@@ -783,6 +783,7 @@ static const nvset_t nvset_list[] = {
 	{ "wan_dhcp_pass",		V_01				},
 	{ "ipsec_pass",			V_RANGE(0, 3)			},	/* Enable IPSec Passthrough */
 	{ "fw_blackhole",		V_01				},	/* MTU black hole detection */
+	{ "tcp_clamp_disable",		V_01				},	/* Adjust TCP MSS for forwarded traffic on WAN and VPN interfaces to avoid MTU-related connection issues. */
 #ifdef TCONFIG_EMF
 	{ "emf_entry",			V_NONE				},
 	{ "emf_uffp_entry",		V_NONE				},
@@ -1903,7 +1904,7 @@ static void _execute_command(char *url, char *command, char *query, wofilter_t w
 
 	/*
 	 * execute script via shell
-	 * NOTE: do NOT change to execvp(argv) ï¿½ UI depends on full shell semantics
+	 * NOTE: do NOT change to execvp(argv) – UI depends on full shell semantics
 	 */
 	snprintf(cmd, sizeof(cmd), "%s 2>&1", webExecFile);
 	web_pipecmd(cmd, wof);
@@ -2025,57 +2026,45 @@ static void asp_css(int argc, char **argv)
 #if defined(TCONFIG_BCMARM) || defined(TCONFIG_MIPSR2)
 static void asp_discovery(int argc, char **argv)
 {
-	char buf[128] = "/usr/sbin/discovery.sh ";
-	unsigned int i;
+	char *cmd[6];
+	const char *p;
+	int n, is_number;
 
 	if (argc == 0 || (argc == 1 && strcmp(argv[0], "off") == 0))
 		return;
 
-	/* include 'arping' as a valid command */
-	const char* valid_commands[] = {"arping", "traceroute", "nc", "all"};
-	int valid_command = 0;
-
-	for (i = 0; i < sizeof(valid_commands)/sizeof(valid_commands[0]); i++) {
-		if (strcmp(argv[0], valid_commands[i]) == 0) {
-			valid_command = 1;
-			strlcat(buf, argv[0], sizeof(buf));
-			break;
-		}
-	}
-
-	if (!valid_command) {
+	if (strcmp(argv[0], "arping") != 0 && strcmp(argv[0], "traceroute") != 0 && strcmp(argv[0], "nc") != 0 && strcmp(argv[0], "all") != 0) {
 		fprintf(stderr, "Invalid discovery command: %s\n", argv[0]);
 		return;
 	}
 
+	n = 0;
+	cmd[n++] = "/usr/sbin/discovery.sh";
+	cmd[n++] = argv[0];
+
 	/* append target (wan/lan/both) */
-	if (argc > 1) {
-		const char *target = argv[1];
-		if (strcmp(target, "lan") == 0 || strcmp(target, "wan") == 0 || strcmp(target, "both") == 0) {
-			strlcat(buf, " ", sizeof(buf));
-			strlcat(buf, target, sizeof(buf));
-		}
-	}
+	if (argc > 1 && (strcmp(argv[1], "lan") == 0 || strcmp(argv[1], "wan") == 0 || strcmp(argv[1], "both") == 0))
+		cmd[n++] = argv[1];
 
 	/* append 'clear' flag */
-	if (argc > 2 && strcmp(argv[2], "clear") == 0) {
-		strlcat(buf, " clear", sizeof(buf));
-	}
+	if (argc > 2 && strcmp(argv[2], "clear") == 0)
+		cmd[n++] = argv[2];
 
 	/* append probe limit (numeric) */
-	if (argc > 3) {
-		int is_number = 1;
-		const char *p;
+	if (argc > 3 && *argv[3]) {
+		is_number = 1;
 		for (p = argv[3]; *p; ++p) {
-			if (!isdigit(*p)) {
+			if (!isdigit((unsigned char)*p)) {
 				is_number = 0;
 				break;
 			}
 		}
 		if (is_number)
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %s", argv[3]);
+			cmd[n++] = argv[3];
 	}
-	system(buf);
+
+	cmd[n] = NULL;
+	_eval(cmd, NULL, 0, NULL);
 }
 #endif
 

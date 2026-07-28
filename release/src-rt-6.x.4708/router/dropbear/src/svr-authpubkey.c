@@ -68,8 +68,12 @@
 
 #if DROPBEAR_SVR_PUBKEY_AUTH
 
-#define MIN_AUTHKEYS_LINE 10 /* "ssh-rsa AB" - short but doesn't matter */
-#define MAX_AUTHKEYS_LINE 4200 /* max length of a line in authkeys */
+/* "ssh-rsa AB" - short but doesn't matter */
+#define MIN_AUTHKEYS_LINE 10
+/* Max length of a valid key line in authkeys. A 16384 bit RSA key (ridiculous) is
+ * 2786 bytes.
+ * An addition limit DROPBEAR_MAX_LINE_LENGTH (10000) will stop file parsing entirely */
+#define MAX_AUTHKEYS_LINE 3000
 
 static char * authorized_keys_filepath(void);
 static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
@@ -173,9 +177,9 @@ void svr_auth_pubkey(int valid_user) {
 		 * Start counting failures (incrfail) only when it's reaching
 		 * the limit.
 		 */
-		unsigned int free_query_limit = 0;
-			MAX(0, (int)svr_opts.maxauthtries - MAX_PUBKEY_QUERIES);
-		int incrfail = ses.authstate.serv_pubkey_query_count > free_query_limit;
+		unsigned int free_query_limit =
+			MAX(0, MAX_PUBKEY_QUERIES - (int)svr_opts.maxauthtries);
+		int incrfail = ses.authstate.serv_pubkey_query_count >= free_query_limit;
 		send_msg_userauth_failure(0, incrfail);
 		ses.authstate.serv_pubkey_query_count++;
 		goto out;
@@ -408,7 +412,7 @@ static int checkpubkey_line(buffer* line, int line_num, const char* filename,
 		}
 		/* We have an allowlist - authorized_keys lines can't be fully trusted,
 		some shell scripts may do unsafe things with env var values */
-		if (!(isalnum(c) || strchr(".,_-+@", c))) {
+		if (!(ascii_isalnum(c) || strchr(".,_-+@", c))) {
 			TRACE(("Not setting SSH_PUBKEYINFO, special characters"))
 			infolen = 0;
 			break;
@@ -532,25 +536,25 @@ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
 	TRACE(("checkpubkey: opened authorized_keys OK"))
 
 	line = buf_new(MAX_AUTHKEYS_LINE);
-	line_num = 0;
 
 	/* iterate through the lines */
-	do {
+	for (line_num = 1; line_num <= MAX_AUTHKEYS_LINE_COUNT; line_num++) {
 		if (buf_getline(line, authfile) == DROPBEAR_FAILURE) {
 			/* EOF reached */
 			TRACE(("checkpubkey: authorized_keys EOF reached"))
 			break;
 		}
-		line_num++;
 
 		ret = checkpubkey_line(line, line_num, filename, keyalgo, keyalgolen,
 			keyblob, keybloblen, ret_options);
 		if (ret == DROPBEAR_SUCCESS) {
 			break;
 		}
+	}
 
-		/* We continue to the next line otherwise */
-	} while (1);
+	if (line_num > MAX_AUTHKEYS_LINE_COUNT) {
+		TRACE(("authorized_keys line limit"))
+	}
 
 out:
 	if (authfile) {

@@ -13,6 +13,8 @@ new_obj.to_string("\ud840\u4e16")="�世"
 new_obj.to_string("\ud840")="�"
 new_obj.to_string("\udd27")="�"
 new_obj.to_string([9,'\uDAD)=null
+new_obj.to_string("[9,'\uDAD")=null
+new_obj.to_string("\uD836\uDE87")="𝪇"
 new_obj.to_string(null)=null
 new_obj.to_string(NaN)=NaN
 new_obj.to_string(-NaN)=null
@@ -134,8 +136,13 @@ json_tokener_parse_ex(tok, "fff \ud834\udd,  15) ... OK: got correct error: cont
 json_tokener_parse_ex(tok, 1e bar"     ,   7) ... OK: got object of type [string]: "fff 𝄞 bar"
 json_tokener_parse_ex(tok, "fff \ud83d\ude,  15) ... OK: got correct error: continue
 json_tokener_parse_ex(tok, 00 bar"     ,   7) ... OK: got object of type [string]: "fff 😀 bar"
+json_tokener_parse_ex(tok, "ä"        ,   4) ... OK: got object of type [string]: "ä"
+json_tokener_parse_ex(tok, "ä"        ,   4) ... OK: got object of type [string]: "ä"
 json_tokener_parse_ex(tok, { "foo      ,   6) ... OK: got correct error: continue
 json_tokener_parse_ex(tok, : "bar"}    ,   8) ... OK: got correct error: unexpected character
+json_tokener_parse_ex(tok, "\uD836     ,   7) ... OK: got correct error: continue
+json_tokener_parse_ex(tok, \uDE87      ,   6) ... OK: got correct error: continue
+json_tokener_parse_ex(tok, "           ,   1) ... OK: got object of type [string]: "𝪇"
 json_tokener_parse_ex(tok, { "foo      ,   6) ... OK: got correct error: continue
 json_tokener_parse_ex(tok, ": {"bar    ,   8) ... OK: got correct error: continue
 json_tokener_parse_ex(tok, ":13}}XXXX  ,  10) ... OK: got object of type [object]: { "foo": { "bar": 13 } }
@@ -177,8 +184,8 @@ json_tokener_parse_ex(tok, null        ,   4) ... OK: got correct error: continu
 json_tokener_parse_ex(tok, null        ,   5) ... OK: got object of type [null]: null
 json_tokener_parse_ex(tok, Infinity    ,   9) ... OK: got object of type [double]: Infinity
 json_tokener_parse_ex(tok, infinity    ,   9) ... OK: got object of type [double]: Infinity
-json_tokener_parse_ex(tok, -infinity   ,  10) ... OK: got object of type [double]: -Infinity
 json_tokener_parse_ex(tok, infinity    ,   9) ... OK: got correct error: unexpected character
+json_tokener_parse_ex(tok, -infinity   ,  10) ... OK: got object of type [double]: -Infinity
 json_tokener_parse_ex(tok, -infinity   ,  10) ... OK: got correct error: unexpected character
 json_tokener_parse_ex(tok, inf         ,   3) ... OK: got correct error: continue
 json_tokener_parse_ex(tok, inity       ,   6) ... OK: got object of type [double]: Infinity
@@ -218,10 +225,13 @@ json_tokener_parse_ex(tok, [-9223372036854775809],  23) ... OK: got correct erro
 json_tokener_parse_ex(tok, [18446744073709551615],  23) ... OK: got object of type [array]: [ 18446744073709551615 ]
 json_tokener_parse_ex(tok, [18446744073709551616],  23) ... OK: got object of type [array]: [ 18446744073709551615 ]
 json_tokener_parse_ex(tok, [18446744073709551616],  23) ... OK: got correct error: number expected
+json_tokener_parse_ex(tok, 18446744073709551616,  21) ... OK: got object of type [int]: 18446744073709551615
 json_tokener_parse_ex(tok, 18446744073709551616,  21) ... OK: got correct error: unexpected end of data
 json_tokener_parse_ex(tok, [9223372036854775808.0],  24) ... OK: got object of type [array]: [ 9223372036854775808.0 ]
 json_tokener_parse_ex(tok, [-9223372036854775809.0],  25) ... OK: got object of type [array]: [ -9223372036854775809.0 ]
+json_tokener_parse_ex(tok, [-9223372036854775809.0],  25) ... OK: got object of type [array]: [ -9223372036854775809.0 ]
 json_tokener_parse_ex(tok, [18446744073709551615.0],  25) ... OK: got object of type [array]: [ 18446744073709551615.0 ]
+json_tokener_parse_ex(tok, [18446744073709551616.0],  25) ... OK: got object of type [array]: [ 18446744073709551616.0 ]
 json_tokener_parse_ex(tok, [18446744073709551616.0],  25) ... OK: got object of type [array]: [ 18446744073709551616.0 ]
 json_tokener_parse_ex(tok, noodle      ,   7) ... OK: got correct error: null expected
 json_tokener_parse_ex(tok, naodle      ,   7) ... OK: got correct error: null expected
@@ -250,6 +260,7 @@ json_tokener_parse_ex(tok, "\t"        ,   4) ... OK: got object of type [string
 json_tokener_parse_ex(tok, "\/"        ,   4) ... OK: got object of type [string]: "\/"
 json_tokener_parse_ex(tok, "/"         ,   3) ... OK: got object of type [string]: "\/"
 json_tokener_parse_ex(tok, "\a"        ,   4) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, 'foo'       ,   5) ... OK: got object of type [string]: "foo"
 json_tokener_parse_ex(tok, 'foo'       ,   5) ... OK: got correct error: unexpected character
 json_tokener_parse_ex(tok, [1,2,3]     ,   7) ... OK: got object of type [array]: [ 1, 2, 3 ]
 json_tokener_parse_ex(tok, [1,2,3}     ,   7) ... OK: got correct error: array value separator ',' expected
@@ -263,8 +274,9 @@ json_tokener_parse_ex(tok, {"a":1      ,   6) ... OK: got correct error: continu
 json_tokener_parse_ex(tok, [,]         ,   3) ... OK: got correct error: unexpected character
 json_tokener_parse_ex(tok, [,1]        ,   4) ... OK: got correct error: unexpected character
 json_tokener_parse_ex(tok, [1,2,3,]    ,   8) ... OK: got object of type [array]: [ 1, 2, 3 ]
-json_tokener_parse_ex(tok, [1,2,,3,]   ,   9) ... OK: got correct error: unexpected character
 json_tokener_parse_ex(tok, [1,2,3,]    ,   8) ... OK: got correct error: unexpected character
+json_tokener_parse_ex(tok, [1,2,,3,]   ,   9) ... OK: got correct error: unexpected character
+json_tokener_parse_ex(tok, [1,2,,3,]   ,   9) ... OK: got correct error: unexpected character
 json_tokener_parse_ex(tok, {"a":1,}    ,   8) ... OK: got correct error: unexpected character
 json_tokener_parse_ex(tok, "123asc$%&" ,  11) ... OK: got object of type [string]: "123asc$%&"
 json_tokener_parse_ex(tok, "123asc$%&" ,  11) ... OK: got object of type [string]: "123asc$%&"
@@ -290,6 +302,8 @@ json_tokener_parse_ex(tok, 11�11       ,   5) ... OK: got correct error: invalid
 json_tokener_parse_ex(tok, {"1�":1}    ,   8) ... OK: got correct error: invalid utf-8 string
 json_tokener_parse_ex(tok, "0	
 ",  36) ... OK: got object of type [string]: "0\u0001\u0002\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000b\f\r\u000e\u000f\u0010\u0011\u0012\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f"
+json_tokener_parse_ex(tok, {"0	
+":1},  40) ... OK: got object of type [object]: { "0\u0001\u0002\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000b\f\r\u000e\u000f\u0010\u0011\u0012\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f": 1 }
 json_tokener_parse_ex(tok, ""         ,   3) ... OK: got correct error: invalid string sequence
 json_tokener_parse_ex(tok, ""         ,   3) ... OK: got correct error: invalid string sequence
 json_tokener_parse_ex(tok, ""         ,   3) ... OK: got correct error: invalid string sequence
@@ -322,5 +336,37 @@ json_tokener_parse_ex(tok, ""         ,   3) ... OK: got correct error: invalid
 json_tokener_parse_ex(tok, ""         ,   3) ... OK: got correct error: invalid string sequence
 json_tokener_parse_ex(tok, ""         ,   3) ... OK: got correct error: invalid string sequence
 json_tokener_parse_ex(tok, ""         ,   3) ... OK: got correct error: invalid string sequence
-End Incremental Tests OK=230 ERROR=0
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"	":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"
+":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+json_tokener_parse_ex(tok, {"":1}     ,   7) ... OK: got correct error: invalid string sequence
+End Incremental Tests OK=272 ERROR=0
 ==================================

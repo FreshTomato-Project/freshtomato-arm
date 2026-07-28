@@ -1,0 +1,35 @@
+--- openvpn/src/openvpn/auth_token.c
++++ openvpn/src/openvpn/auth_token.c
+@@ -18,11 +18,22 @@
+ 
+ const char *auth_token_pem_name = "OpenVPN auth-token server key";
+ 
++/*
++ * Compatibility helper for compilers/build modes where C11 static_assert is
++ * not exposed as "static_assert".  Keep this as a typedef-based check so the
++ * assertion remains evaluated at compile time even with older C standards.
++ */
++#define OPENVPN_STATIC_ASSERT_CONCAT_(a, b) a##b
++#define OPENVPN_STATIC_ASSERT_CONCAT(a, b) OPENVPN_STATIC_ASSERT_CONCAT_(a, b)
++#define OPENVPN_STATIC_ASSERT(cond, msg) \
++    typedef char OPENVPN_STATIC_ASSERT_CONCAT(openvpn_static_assert_failed_, __LINE__)[(cond) ? 1 : -1]
++
++
+ #define AUTH_TOKEN_SESSION_ID_LEN        12
+ #define AUTH_TOKEN_SESSION_ID_BASE64_LEN (OPENVPN_BASE64_LENGTH(AUTH_TOKEN_SESSION_ID_LEN))
+ 
+ /* We want our token to be a multiple of 3 bytes to avoid the base64 padding */
+-static_assert(AUTH_TOKEN_SESSION_ID_LEN % 3 == 0, "AUTH_TOKEN_SESSION_ID_LEN needs to be multiple a 3");
++OPENVPN_STATIC_ASSERT(AUTH_TOKEN_SESSION_ID_LEN % 3 == 0, "AUTH_TOKEN_SESSION_ID_LEN needs to be multiple a 3");
+ 
+ #define AUTH_TOKEN_HMAC_LEN   SHA256_DIGEST_LENGTH
+ /* Size of the data of the token (not b64 encoded and without prefix) */
+@@ -34,7 +45,7 @@
+ 
+ /* Ensure that TOKEN_DATA_LEN is a multiple of 3 so the we avoid the base64
+  * padding */
+-static_assert(TOKEN_DATA_LEN % 3 == 0, "TOKEN_DATA_BASE64_LEN is not a multiple of 3");
++OPENVPN_STATIC_ASSERT(TOKEN_DATA_LEN % 3 == 0, "TOKEN_DATA_BASE64_LEN is not a multiple of 3");
+ 
+ bool
+ is_auth_token(const char *password)

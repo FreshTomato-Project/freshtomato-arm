@@ -5,6 +5,142 @@ FreshTomato-ARM Changelog
 
 
 
+2026.3          2026.06.21
+---------------------------
+
+- Note: because of CVE fixes in toolchain (uClibc), updating is strongly recommended!
+
+Toolchain:
+- toolchain: add fix for CVE-2022-23218 and CVE-2022-23219 in uClibc
+
+Updates:
+- adminer: update to adminneo-5.4.1
+- avahi: update to 0.9-rc4
+- dnsmasq: update to v2.93-ea4645d
+- dropbear: update to 2026.91
+- expat: update to 2.8.1
+- haveged: update to 1.9.22
+- libcurl: update to 8.20.0
+- libubox: update to 1fe93d2 (2026-05-23) snapshot
+- libusb: update to 1.0.30
+- meson: update to 1.11.1
+- miniupnpd: update to 2.3.10-be6aa1a
+- nginx: update to 1.31.0
+- ntfs-3g: update to 2026.2.25
+- openssl: update to 3.0.21
+- openvpn: update to 2.7.4
+- php: update to 8.3.31
+- rom: update CA bundle to 2026-05-14
+- sqlite: update to 3.53.1
+- tor: update to 0.4.9.9
+
+GUI / WWW:
+- www: admin-iptraffic.asp: fix missing firewall restart on first cstats enable
+- www: ipt-[daily|monthly].asp: 'Hide IPs without traffic' switch
+- www: isup.js: remove redundant code when a given service is not being built
+- www: Makefile: fix javascript errors when image is built with only TCONFIG_TOR
+- www: nas-ups.asp: Add async refresh functionality for UPS data
+- www: status-overview.asp: correction to port naming when no cables are connected
+- www: tomato.css: shrink font on svg graphs
+- www: update advanced-misc.asp port health cache 900 default
+
+Build:
+- build: add .gitattributes/.editorconfig to normalize line endings
+- build: Makefile: nettle: do not remove lib subdir during clean for 4.0+
+- build: normalize line endings
+
+Other:
+- httpd: do_file: allow paths with symlinks, some calling functions require this
+- httpd: httpd.c: allow CFE download from read-only MTD device
+- httpd: openvpn.c: fix command injection via wan_domain
+- httpd: traceping.c: check_addr(): use ASCII-only alnum validation
+- httpd: webio.c: harden web_read() and web_write() stdio handling
+- libshared: add common escaped FILE writer
+- libshared: harden getMTD() parsing of /proc/mtd entries
+- libshared: led.c: use eval() instead of system()
+- libshared: make safe_fread/safe_fwrite use size_t consistently
+- libshared: shutils.c: ether_atoe(): use strict parser for Ethernet address strings
+- libshared: shutils.c: ether_etoa(): replace sprintf with manual hex conversion
+- libshared: shutils.c: fix cprintf() console fd handling
+- libshared: shutils.c: harden _eval() process setup and error handling
+- libshared: shutils.c: harden nvifname_to_osifname()
+- libshared: shutils.c: harden osifname_to_nvifname()
+- libshared: shutils.c: harden sh_strrspn() to be safer and more consistent with size_t-based string handling
+- libshared: shutils.c: harden wl_ether_etoa()
+- libshared: shutils.c: improve add_to_list() bounds checking and string handling
+- libshared: shutils.c: improve find_smallest_in_list() correctness and safety
+- libshared: shutils.c: improve get_ifname_unit() input validation and error handling
+- libshared: shutils.c: improve get_pid_by_name() safety  and /proc cmdline parsing
+- libshared: shutils.c: improve remove_dups() by reusing the common list helper logic and adding bounds validation for the input buffer
+- libshared: shutils.c: improve remove_from_list() bounds handling and safe in-place list updates
+- libshared: shutils.c: simplify and harden find_in_list()
+- libshared: shutils.h: improve foreach() token copying by replacing strncpy() with strlcpy()
+- libshared: usb.c: exec_for_host(): harden partition name handling
+- libshared: usb.c: fix signed char handling in ext2/3/4 detection
+- libshared: usb.c: improve buffer handling (strlcpy/snprintf); pass buffer sizes as arguments to find_label_or_uuid()
+- libshared: usb.c: use eval() instead of system()
+- libshared: usb.c: fix buffer size in strlcpy calls for label and uuid
+- libshared: wlutils.h: one version for ARM/MIPS branch
+- mdu: allocate Basic Auth base64 buffer dynamically
+- mdu: avoid closing socket twice after fdopen
+- mdu: build socket request in full request buffer
+- mdu: clear libcurl globals during cleanup
+- mdu: copy curl resolved IP before cleanup
+- mdu: fix Cloudflare IP comparison and record type
+- mdu: fix getaddrinfo migration in non-libcurl HTTP path
+- mdu: fix libcurl header list parsing
+- mdu: fix SIGSEGV and other fixes (close #155)
+- mdu: pass address buffer size to read_tmaddr()
+- mdu: pass buffer size to append_addr_option()
+- nvram: main.c: fix exit codes for nvram utility (close #255)
+- openssl-1.1: add fix for: CVE-2026-45447
+- openssl-1.1: add fix for: CVE-2026-7383, CVE-2026-9076, CVE-2026-34180, CVE-2026-42766
+- rc: ddns.c: use eval() instead of system(); remove memset() where it's not needed
+- rc: dnsmasq.c: fix dual-MAC DHCP reservations dropped by strict ether_atoe()
+- rc: firewall.c: add upnp chain for filter on each enabled WAN
+- rc: firewall.c: check per-WAN state in MultiWAN mangle rules
+- rc: firewall.c: fix cleanup on restore file open failure
+- rc: firewall.c: fix layer7 inbound cache bounds check
+- rc: firewall.c: fix multi-second boot stall from start_firewall holding its own lock
+- rc: firewall.c: fix rp_filter condition for mcast
+- rc: firewall.c: fix unresolved address log arguments
+- rc: firewall.c: limit TCP MSS clamping to WAN egress interfaces
+- rc: firewall.c: make cstats account cleanup a restore fallback
+- rc: firewall.c: safer bounds checking for lanAccess[] in filter_forward()
+- rc: firewall.c: simplify string buffer initialization
+- rc: firewall.c: use eval() instead of system()
+- rc: firewall.c: use UDP for remote SNMP DNAT
+- rc: init.c: replace system() call with eval() for consistency
+- rc: mwan.c: replace system() calls with _eval()
+- rc: mysql.c: handle password SQL write failures
+- rc: mysql.c: replace system() calls with _eval()
+- rc: mysql.c: wait for mysqld readiness before setup commands
+- rc: nocat.c: use eval() instead of system()
+- rc: openvpn.c: clamp TCP MSS on forwarded tunnel traffic
+- rc: openvpn.c: fix cstats upload accounting for OpenVPN client traffic
+- rc: openvpn.c: --persist-key is now deprecated, so don't use it
+- rc: pbr.c: fix getaddrinfo conversion and use inet_pton()
+- rc: pptp_client.c: fix IPv4 literal and hostname resolution
+- rc: pptp_client.c: use eval() instead of system(); remove memset() where it's not needed
+- rc: pptpd.c: use eval() instead of system()
+- rc: replace system() calls with _eval() helper
+- rc: services.c: avoid empty optional eval arguments
+- rc: services.c: avoid shell use in 6rd relay check
+- rc: services.c: fix 6rd tunnel setup
+- rc: services.c: fix minidlna argument construction
+- rc: services.c: restart firewall between stop/start miniupnpd
+- rc: services.c: restart ntpd every 24 hours
+- rc: services.c: restore umask on resolv file open failure
+- rc: services.c: start_ntpd(): reverting to the original version of this function - the changes caused more problems than they fixed
+- rc: services.c: use _eval() to start ntpd with resource limits
+- rc: tinc.c: use eval() instead of system()
+- rc: transmission.c: harden generated settings.json and fix small logic bugs
+- rc: transmission.c: replace system() calls with eval(); remove memset() where it's not needed
+- rc: wireguard.c: clamp TCP MSS on forwarded tunnel traffic
+- rc: wireguard.c: handle multiline ip route output when building routing tables (close #263)
+- rom/stubby: replace Neutopia DoT servers with Control D
+
+
 2026.2          2026.04.24
 ---------------------------
 

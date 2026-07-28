@@ -1,0 +1,60 @@
+// This file Copyright © Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
+
+#pragma once
+
+#include <cstdint>
+
+/**
+ * @addtogroup utils Utilities
+ * @{
+ */
+
+/** @brief Similar to optind, this is the current index into argv */
+extern int tr_optind;
+
+struct tr_option
+{
+    enum class Arg : uint8_t
+    {
+        None,
+        Optional,
+        Required
+    };
+
+    [[nodiscard]] constexpr bool has_arg() const noexcept
+    {
+        return arg >= Arg::Optional;
+    }
+
+    int val; /* the value to return from tr_getopt() */
+    char const* longName; /* --long-form */
+    char const* description; /* option's description for tr_getopt_usage() */
+    char const* shortName; /* short form */
+    Arg arg; /* See enum class Arg */
+    char const* argName; /* argument's description for tr_getopt_usage() */
+};
+
+enum : int8_t
+{
+    /* all options have been processed */
+    TR_OPT_DONE = 0,
+    /* a syntax error was detected, such as a missing
+     * argument for an option that requires one */
+    TR_OPT_ERR = -1,
+    /* an unknown option was reached */
+    TR_OPT_UNK = -2
+};
+
+/**
+ * @brief similar to `getopt()`
+ * @return `TR_GETOPT_DONE`, `TR_GETOPT_ERR`, `TR_GETOPT_UNK`, or the matching `tr_option`'s `val` field
+ */
+int tr_getopt(char const* usage, int argc, char const* const* argv, tr_option const* opts, char const** setme_optarg);
+
+/** @brief prints the `Usage` help section to stdout */
+void tr_getopt_usage(char const* app_name, char const* description, tr_option const* opts);
+
+/** @} */

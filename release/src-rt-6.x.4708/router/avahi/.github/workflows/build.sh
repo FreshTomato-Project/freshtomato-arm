@@ -22,11 +22,11 @@ else
     OS=$(uname -s | tr "[:upper:]" "[:lower:]")
 fi
 
-if [[ "$OS" =~ (alpine|netbsd|omnios) ]]; then
+if [[ "$OS" =~ (alpine|netbsd|omnios|openbsd) ]]; then
     NSS_MDNS=false
 fi
 
-if [[ "$OS" =~ (freebsd|netbsd|omnios) ]]; then
+if [[ "$OS" =~ (freebsd|netbsd|omnios|openbsd) ]]; then
     MAKE=gmake
 fi
 
@@ -34,8 +34,17 @@ if [[ "$OS" == omnios ]]; then
     PATH="/opt/local/sbin:/opt/local/bin:$PATH"
 fi
 
+if [[ "$OS" == openbsd ]]; then
+    export AUTOCONF_VERSION=2.72
+    export AUTOMAKE_VERSION=1.18
+    export MALLOC_OPTIONS=CFGJRSUX
+fi
+
 if [[ "$VALGRIND" == true ]]; then
-    export LOG_COMPILER="valgrind --leak-check=full --track-origins=yes --track-fds=yes --error-exitcode=1"
+    LOG_COMPILER="libtool --mode=execute \
+        valgrind -s --suppressions=$(pwd)/.github/workflows/unit-tests.supp \
+        --leak-check=full --track-origins=yes --track-fds=yes --error-exitcode=1"
+    export LOG_COMPILER
 fi
 
 asan_ubsan_reports_detected() {
@@ -134,7 +143,7 @@ case "$1" in
             gobject-introspection pkgconf expat libdaemon dbus-glib dbus gdbm \
             libevent glib automake libtool libinotify qt5-core qt5-buildtools \
             gtk3 py311-pygobject py311-dbus py311-gdbm mono git socat \
-            valgrind dfuzzer check radamsa
+            valgrind dfuzzer check radamsa wget
         # some deps pull in avahi itself, remove it
         pkg remove -fy avahi-app
         ;;
@@ -149,10 +158,10 @@ case "$1" in
         install_radamsa
         ;;
     install-build-deps-netbsd)
-        PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r)/All/" \
+        PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -p)/$(uname -r|sed 's/_.*//')/All/" \
         PKG_RCD_SCRIPTS=yes \
-            pkg_add -u autoconf automake dbus drill expat gettext git glib gmake intltool libdaemon libtool \
-            meson pkgconf socat
+            pkg_add -u autoconf automake clang compiler-rt dbus drill expat gettext git glib gmake intltool libdaemon libtool \
+            meson pkgconf socat wget
         install_dfuzzer
         install_radamsa
         ;;
@@ -170,6 +179,11 @@ case "$1" in
         pkg install gcc14
         install_dfuzzer
         ;;
+    install-build-deps-openbsd)
+        PKG_PATH="installpath:https://cdn.openbsd.org/%m" \
+        pkg_add -U "autoconf-${AUTOCONF_VERSION}p0" "automake-${AUTOMAKE_VERSION}.1" dbus drill git glib2 \
+            gmake intltool libdaemon libtool socat xmltoman
+        ;;
     build)
         if [[ "$OS" == freebsd ]]; then
             # Do what USES="localbase:ldflags" do in FreeBSD Ports, namely:
@@ -182,6 +196,10 @@ case "$1" in
             export CFLAGS+=" -I/opt/local/include"
             export CPPFLAGS+=" -I/opt/local/include"
             export LDFLAGS+=" -L/opt/local/lib"
+        elif [[ "$OS" == openbsd ]]; then
+            export CFLAGS+=" -I/usr/local/include"
+            export CPPFLAGS+=" -I/usr/local/include"
+            export LDFLAGS+=" -L/usr/local/lib"
         fi
 
         if [[ "$ASAN_UBSAN" == true ]]; then
@@ -200,6 +218,13 @@ case "$1" in
                 CFLAGS+=' -fno-sanitize=function'
             fi
 
+            if [[ "$OS" == netbsd ]]; then
+                # LSan fails with "Failed spawning a tracer thread (errno 22)"
+                ASAN_OPTIONS+=":detect_leaks=0"
+
+                # ASan isn't compatible with ASLR
+                sysctl -w security.pax.aslr.enabled=0
+            fi
         fi
 
         if [[ "$COVERAGE" == true ]]; then
@@ -281,6 +306,27 @@ case "$1" in
                 "--disable-libevent"
                 "--disable-libsystemd"
                 "--disable-manpages"
+                "--disable-mono"
+                "--disable-python"
+                "--disable-qt3"
+                "--disable-qt4"
+                "--disable-qt5"
+            )
+        elif [[ "$OS" == openbsd ]]; then
+            autogen_args+=(
+                "--prefix=/usr/local"
+                "--runstatedir=/var/run"
+                "--sysconfdir=/etc"
+                "--with-distro=none"
+                "--enable-tests"
+                "--disable-autoipd"
+                "--disable-compat-howl"
+                "--disable-gdbm"
+                "--disable-gobject"
+                "--disable-gtk"
+                "--disable-gtk3"
+                "--disable-libevent"
+                "--disable-libsystemd"
                 "--disable-mono"
                 "--disable-python"
                 "--disable-qt3"
@@ -428,7 +474,7 @@ EOL
 EOL
 
         $MAKE install
-        if [[ ! "$OS" =~ (netbsd|omnios) ]]; then
+        if [[ ! "$OS" =~ (netbsd|omnios|openbsd) ]]; then
             ldconfig
         fi
 
@@ -469,6 +515,10 @@ EOL
             groupadd avahi
             useradd -m -g avahi avahi
             svcadm restart dbus
+        elif [[ "$OS" == openbsd ]]; then
+            groupadd avahi
+            useradd -m -g avahi avahi
+            rcctl -d start messagebus
         else
             adduser --system --group avahi
             systemctl reload dbus

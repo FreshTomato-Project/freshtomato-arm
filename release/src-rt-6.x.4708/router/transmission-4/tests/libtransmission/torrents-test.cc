@@ -1,0 +1,319 @@
+// This file Copyright (C) 2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
+
+#include <array>
+#include <ctime> // time, size_t, time_t
+#include <memory>
+#include <set>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+#include <libtransmission/transmission.h>
+
+#include <libtransmission/torrent.h>
+#include <libtransmission/torrents.h>
+#include <libtransmission/torrent-metainfo.h>
+#include <libtransmission/tr-strbuf.h>
+
+#include "test-fixtures.h"
+
+using TorrentsTest = ::libtransmission::test::TransmissionTest;
+using namespace std::literals;
+
+TEST_F(TorrentsTest, invalidArgsAreLogged)
+{
+    tr_logFreeQueue(tr_logGetQueue());
+    tr_logSetLevel(TR_LOG_WARN);
+    tr_logSetQueueEnabled(true);
+
+    auto expected_log_size = size_t{};
+
+    tr_torrentSetSpeedLimit_KBps(nullptr, TR_UP, 0);
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentGetSpeedLimit_KBps(nullptr, TR_UP));
+    ++expected_log_size;
+
+    tr_torrentUseSpeedLimit(nullptr, TR_UP, true);
+    ++expected_log_size;
+
+    EXPECT_FALSE(tr_torrentUsesSpeedLimit(nullptr, TR_UP));
+    ++expected_log_size;
+
+    tr_torrentUseSessionLimits(nullptr, false);
+    ++expected_log_size;
+
+    EXPECT_FALSE(tr_torrentUsesSessionLimits(nullptr));
+    ++expected_log_size;
+
+    tr_torrentSetRatioMode(nullptr, TR_RATIOLIMIT_UNLIMITED);
+    ++expected_log_size;
+
+    tr_torrentSetRatioLimit(nullptr, 0.0);
+    ++expected_log_size;
+
+    EXPECT_DOUBLE_EQ(0.0, tr_torrentGetRatioLimit(nullptr));
+    ++expected_log_size;
+
+    EXPECT_FALSE(tr_torrentGetSeedRatio(nullptr, nullptr));
+    ++expected_log_size;
+
+    tr_torrentSetIdleMode(nullptr, TR_IDLELIMIT_GLOBAL);
+    ++expected_log_size;
+
+    EXPECT_EQ(TR_IDLELIMIT_GLOBAL, tr_torrentGetIdleMode(nullptr));
+    ++expected_log_size;
+
+    tr_torrentSetIdleLimit(nullptr, 0);
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentGetIdleLimit(nullptr));
+    ++expected_log_size;
+
+    tr_torrentSetQueuePosition(nullptr, 0);
+    ++expected_log_size;
+
+    tr_torrentRemove(nullptr, false, {}, nullptr);
+    ++expected_log_size;
+
+    tr_torrentSetLocation(nullptr, nullptr, false, nullptr);
+    ++expected_log_size;
+
+    tr_torrentSetDownloadDir(nullptr, nullptr);
+    ++expected_log_size;
+
+    EXPECT_STREQ("", tr_torrentGetDownloadDir(nullptr));
+    ++expected_log_size;
+
+    EXPECT_STREQ("", tr_torrentGetCurrentDir(nullptr));
+    ++expected_log_size;
+
+    tr_torrentChangeMyPort(nullptr);
+    ++expected_log_size;
+
+    tr_torrentManualUpdate(nullptr);
+    ++expected_log_size;
+
+    EXPECT_EQ(nullptr, tr_torrentStat(nullptr));
+    ++expected_log_size;
+
+    tr_torrentFile(nullptr, 0);
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentFileCount(nullptr));
+    ++expected_log_size;
+
+    tr_torrentWebseed(nullptr, 0);
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentWebseedCount(nullptr));
+    ++expected_log_size;
+
+    tr_torrentTracker(nullptr, 0);
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentTrackerCount(nullptr));
+    ++expected_log_size;
+
+    tr_torrentView(nullptr);
+    ++expected_log_size;
+
+    EXPECT_EQ(""s, tr_torrentFilename(nullptr));
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentFilenameToBuf(nullptr, nullptr, 0));
+    ++expected_log_size;
+
+    EXPECT_EQ(nullptr, tr_torrentPeers(nullptr, nullptr));
+    ++expected_log_size;
+
+    tr_torrentAvailability(nullptr, nullptr, 0);
+    ++expected_log_size;
+
+    tr_torrentAmountFinished(nullptr, nullptr, 0);
+    ++expected_log_size;
+
+    tr_torrentStart(nullptr);
+    ++expected_log_size;
+
+    tr_torrentStartNow(nullptr);
+    ++expected_log_size;
+
+    tr_torrentVerify(nullptr);
+    ++expected_log_size;
+
+    tr_torrentSetFileDLs(nullptr, nullptr, 0, false);
+    ++expected_log_size;
+
+    EXPECT_EQ(TR_PRI_NORMAL, tr_torrentGetPriority(nullptr));
+    ++expected_log_size;
+
+    tr_torrentSetPriority(nullptr, TR_PRI_NORMAL);
+    ++expected_log_size;
+
+    tr_torrentSetPeerLimit(nullptr, 0);
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentGetPeerLimit(nullptr));
+    ++expected_log_size;
+
+    EXPECT_FALSE(tr_torrentSetTrackerList(nullptr, nullptr));
+    ++expected_log_size;
+
+    EXPECT_EQ(""s, tr_torrentGetTrackerList(nullptr));
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentGetTrackerListToBuf(nullptr, nullptr, 0));
+    ++expected_log_size;
+
+    EXPECT_EQ(0, tr_torrentGetBytesLeftToAllocate(nullptr));
+    ++expected_log_size;
+
+    EXPECT_EQ(""s, tr_torrentFindFile(nullptr, 0));
+    ++expected_log_size;
+
+    tr_torrentRenamePath(nullptr, nullptr, nullptr, {}, nullptr);
+    ++expected_log_size;
+
+    tr_torrentSetFilePriorities(nullptr, nullptr, 0, TR_PRI_NORMAL);
+    ++expected_log_size;
+
+    EXPECT_FALSE(tr_torrentHasMetadata(nullptr));
+    ++expected_log_size;
+
+    auto actual_log_size = size_t{};
+    tr_log_message* const msgs = tr_logGetQueue();
+    for (auto* walk = msgs; walk != nullptr; walk = walk->next)
+    {
+        ++actual_log_size;
+    }
+    EXPECT_EQ(actual_log_size, expected_log_size);
+
+    // cleanup
+    tr_logFreeQueue(msgs);
+    tr_logSetQueueEnabled(false);
+}
+
+TEST_F(TorrentsTest, simpleTests)
+{
+    auto constexpr* const TorrentFile = LIBTRANSMISSION_TEST_ASSETS_DIR "/Android-x86 8.1 r6 iso.torrent";
+
+    auto owned = std::vector<std::unique_ptr<tr_torrent>>{};
+
+    auto tm = tr_torrent_metainfo{};
+    EXPECT_TRUE(tm.parse_torrent_file(TorrentFile));
+    owned.emplace_back(std::make_unique<tr_torrent>(std::move(tm)));
+    auto* const tor = owned.back().get();
+
+    auto torrents = tr_torrents{};
+    EXPECT_TRUE(std::empty(torrents));
+    EXPECT_EQ(0U, std::size(torrents));
+
+    auto const id = torrents.add(tor);
+    EXPECT_GT(id, 0);
+    tor->init_id(id);
+
+    EXPECT_TRUE(std::empty(torrents.removedSince(0)));
+    EXPECT_FALSE(std::empty(torrents));
+    EXPECT_EQ(1U, std::size(torrents));
+
+    EXPECT_EQ(tor, torrents.get(id));
+    EXPECT_EQ(tor, torrents.get(tor->info_hash()));
+    EXPECT_EQ(tor, torrents.get(tor->magnet()));
+
+    tm = tr_torrent_metainfo{};
+    EXPECT_TRUE(tm.parse_torrent_file(TorrentFile));
+    EXPECT_EQ(tor, torrents.get(tm));
+
+    // cleanup
+    torrents.remove(tor, time(nullptr));
+}
+
+TEST_F(TorrentsTest, rangedLoop)
+{
+    auto constexpr Filenames = std::array<std::string_view, 4>{ "Android-x86 8.1 r6 iso.torrent"sv,
+                                                                "debian-11.2.0-amd64-DVD-1.iso.torrent"sv,
+                                                                "ubuntu-18.04.6-desktop-amd64.iso.torrent"sv,
+                                                                "ubuntu-20.04.4-desktop-amd64.iso.torrent"sv };
+
+    auto owned = std::vector<std::unique_ptr<tr_torrent>>{};
+    auto torrents = tr_torrents{};
+    auto torrents_set = std::set<tr_torrent const*>{};
+
+    for (auto const& name : Filenames)
+    {
+        auto const path = tr_pathbuf{ LIBTRANSMISSION_TEST_ASSETS_DIR, '/', name };
+        auto tm = tr_torrent_metainfo{};
+        EXPECT_TRUE(tm.parse_torrent_file(path));
+        owned.emplace_back(std::make_unique<tr_torrent>(std::move(tm)));
+
+        auto* const tor = owned.back().get();
+        tor->init_id(torrents.add(tor));
+        EXPECT_EQ(tor, torrents.get(tor->id()));
+        torrents_set.insert(tor);
+    }
+
+    for (auto* const tor : torrents)
+    {
+        EXPECT_EQ(1U, torrents_set.erase(tor));
+    }
+    EXPECT_EQ(0U, std::size(torrents_set));
+}
+
+TEST_F(TorrentsTest, removedSince)
+{
+    auto constexpr Filenames = std::array<std::string_view, 4>{ "Android-x86 8.1 r6 iso.torrent"sv,
+                                                                "debian-11.2.0-amd64-DVD-1.iso.torrent"sv,
+                                                                "ubuntu-18.04.6-desktop-amd64.iso.torrent"sv,
+                                                                "ubuntu-20.04.4-desktop-amd64.iso.torrent"sv };
+
+    auto owned = std::vector<std::unique_ptr<tr_torrent>>{};
+    auto torrents = tr_torrents{};
+    auto torrents_v = std::vector<tr_torrent const*>{};
+    torrents_v.reserve(std::size(Filenames));
+
+    // setup: add the torrents
+    for (auto const& name : Filenames)
+    {
+        auto const path = tr_pathbuf{ LIBTRANSMISSION_TEST_ASSETS_DIR, '/', name };
+        auto tm = tr_torrent_metainfo{};
+        EXPECT_TRUE(tm.parse_torrent_file(path));
+        owned.emplace_back(std::make_unique<tr_torrent>(std::move(tm)));
+
+        auto* const tor = owned.back().get();
+        tor->init_id(torrents.add(tor));
+        torrents_v.push_back(tor);
+    }
+
+    // setup: remove them at the given timestamp
+    auto constexpr TimeRemoved = std::array<time_t, 4>{ 100, 200, 200, 300 };
+    for (size_t i = 0; i < 4; ++i)
+    {
+        auto* const tor = torrents_v[i];
+        EXPECT_EQ(tor, torrents.get(tor->id()));
+        torrents.remove(torrents_v[i], TimeRemoved[i]);
+        EXPECT_EQ(nullptr, torrents.get(tor->id()));
+    }
+
+    auto remove = std::vector<tr_torrent_id_t>{};
+    remove = { torrents_v[3]->id() };
+    EXPECT_EQ(remove, torrents.removedSince(300));
+    EXPECT_EQ(remove, torrents.removedSince(201));
+    remove = { torrents_v[1]->id(), torrents_v[2]->id(), torrents_v[3]->id() };
+    EXPECT_EQ(remove, torrents.removedSince(200));
+    remove = { torrents_v[0]->id(), torrents_v[1]->id(), torrents_v[2]->id(), torrents_v[3]->id() };
+    EXPECT_EQ(remove, torrents.removedSince(50));
+}
+
+using TorrentsPieceSpanTest = libtransmission::test::SessionTest;
+
+TEST_F(TorrentsPieceSpanTest, exposesFilePieceSpan)
+{
+    auto tor = zeroTorrentInit(ZeroTorrentState::Complete);
+    auto file_view = tr_torrentFile(tor, 0);
+    EXPECT_EQ(file_view.beginPiece, 0);
+    EXPECT_EQ(file_view.endPiece, 32);
+}

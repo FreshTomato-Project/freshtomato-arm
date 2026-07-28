@@ -13,8 +13,8 @@ The complete manual for the GNU nano text editor.
 
 @smallbook
 @set EDITION 0.9
-@set VERSION 9.0
-@set UPDATED April 2026
+@set VERSION 9.1
+@set UPDATED June 2026
 
 @dircategory Editors
 @direntry
@@ -29,7 +29,7 @@ The complete manual for the GNU nano text editor.
 
 @title GNU @command{nano}
 @subtitle a small and friendly text editor
-@subtitle version 9.0
+@subtitle version 9.1
 
 @author Chris Allegretta
 
@@ -79,7 +79,7 @@ For suggesting improvements: @email{nano-devel@@gnu.org}
 @node Top
 @top
 
-This manual documents GNU @command{nano}, version 9.0.
+This manual documents GNU @command{nano}, version 9.1.
 
 @menu
 * Introduction::
@@ -519,7 +519,7 @@ hard-wrapping occurs or when text is justified.
 
 @item -N
 @itemx --noconvert
-Disable automatic conversion of files from DOS/Mac format.
+Disable automatic conversion of files from DOS format.
 
 @item -O
 @itemx --bookstyle
@@ -542,13 +542,24 @@ email, and to rewrap blocks of line comments when writing source code.
 
 @item -R
 @itemx --restricted
-Restricted mode: don't read or write to any file not specified on the
-command line.  This means: don't read or write history files; don't allow
-suspending; don't allow spell checking; don't
-allow a file to be appended to, prepended to, or saved under a different
-name if it already has one; and don't make backup files.
+Read and write only the file (or files) specified on the command line.
+This means: don't read or write the history files; don't allow suspending;
+don't allow spell checking; don't allow executing any command in the shell;
+don't allow the current buffer to be saved under a different name; don't
+allow appending or prepending to any file; and don't make backup files.
+
+As an exception, before the specified file or files, the nanorc files are
+read, to allow customization.  If customization should not be allowed,
+use option @option{-I} (@option{--ignorercfiles}) as well.
+
+When no file is specified on the command line, restricted mode
+allows you to save the contents that you type into the new buffer
+under any name, except that existing files may not be overwritten.
+If the places where this new file may be created should be limited,
+then use option @option{-o} (@option{--operatingdir}) as well.
+
 Restricted mode can also be activated by invoking @command{nano} with
-any name beginning with @code{r} (e.g.@: @command{rnano}).
+a name beginning with @code{r} (for example: @command{rnano}).
 
 @item -S
 @itemx --softwrap
@@ -671,7 +682,7 @@ dragging by holding down the Shift key.
 @itemx --noread
 Treat any name given on the command line as a new file.  This allows
 @command{nano} to write to named pipes: it starts with a blank buffer,
-and writes to the pipe when the user saves the "file".  This way
+and writes to the pipe when the user saves the “file”.  This way
 @command{nano} can be used as an editor in combination with for instance
 @command{gpg} without having to write sensitive data to disk first.
 
@@ -688,7 +699,7 @@ Note that option @option{-/} (@option{--modernbindings}) overrides this.
 
 @item -q
 @itemx --indicator
-Display a "scrollbar" on the righthand side of the edit window.
+Display a “scrollbar” on the righthand side of the edit window.
 It shows the position of the viewport in the buffer
 and how much of the buffer is covered by the viewport.
 
@@ -784,7 +795,7 @@ filename in the center of the title bar.
 @itemx --minibar
 Suppress the title bar and instead show information about
 the current buffer at the bottom of the screen, in the space
-for the status bar.  In this "mini bar" the filename is shown
+for the status bar.  In this “mini bar” the filename is shown
 on the left, followed by an asterisk if the buffer has been modified.
 On the right are displayed the current line and column number, the
 code of the character under the cursor (in Unicode format: U+xxxx),
@@ -1037,7 +1048,7 @@ Save the last hundred search strings and replacement strings and
 executed commands, so they can be easily reused in later sessions.
 
 @item set indicator
-Display a "scrollbar" on the righthand side of the edit window.
+Display a “scrollbar” on the righthand side of the edit window.
 It shows the position of the viewport in the buffer
 and how much of the buffer is covered by the viewport.
 
@@ -1084,7 +1095,7 @@ Display line numbers to the left of the text area.
 (Any line with an anchor additionally gets a mark in the margin.)
 
 @item set locking
-Enable vim-style lock-files for when editing files.
+Use vim-style lock-files when editing files.
 
 @item set magic
 When neither the file's name nor its first line give a clue,
@@ -1102,7 +1113,7 @@ The default value is "@t{(<[@{)>]@}}".
 @item set minibar
 Suppress the title bar and instead show information about
 the current buffer at the bottom of the screen, in the space
-for the status bar.  In this "mini bar" the filename is shown
+for the status bar.  In this “mini bar” the filename is shown
 on the left, followed by an asterisk if the buffer has been modified.
 On the right are displayed the current line and column number, the
 code of the character under the cursor (in Unicode format: U+xxxx),
@@ -1129,7 +1140,7 @@ cursor, set the mark (with two clicks), or execute shortcuts.
 When reading in a file with @kbd{^R}, insert it into a new buffer by default.
 
 @item set noconvert
-Don't convert files from DOS/Mac format.
+Don't convert files from DOS format.
 
 @item set nohelp
 Don't display the help lists at the bottom of the screen.
@@ -1205,7 +1216,7 @@ Regular expressions in @command{nano} are of the extended type (ERE).
 Save a changed buffer automatically on exit (@kbd{^X}); don't prompt.
 
 @item set scrollercolor @var{fgcolor},@var{bgcolor}
-Use this color combination for the indicator alias "scrollbar".
+Use this color combination for the indicator alias “scrollbar”.
 @xref{@code{set keycolor}} for valid color names.
 
 @item set selectedcolor [bold,][italic,]@var{fgcolor},@var{bgcolor}
@@ -1392,12 +1403,12 @@ Use the given @var{program} to do a syntax check on the current buffer.
 @item comment "@var{string}"
 Use the given string for commenting and uncommenting lines.
 If the string contains a vertical bar or pipe character (@t{|}),
-this designates bracket-style comments; for example, @t{"/*|*/"} for
+this designates bracket-style comments; for example, "@t{/*|*/}" for
 CSS files.  The characters before the pipe are prepended to the line and the
 characters after the pipe are appended at the end of the line.  If no pipe
-character is present, the full string is prepended; for example, @t{"#"} for
-Python files.  If empty double quotes are specified, the comment/uncomment
-functions are disabled; for example, @t{""} for JSON.
+character is present, the full string is prepended; for example, "@t{#}"
+for Python files.  If nothing is specified between the double quotes, then
+the comment/uncomment function is disabled; for example, "" for JSON.
 The default value is "@t{#}".
 
 @item tabgives "@var{string}"
@@ -1519,15 +1530,15 @@ Example: @code{^C}.
 
 @item @code{M-@var{X}}
 where @var{X} is any ASCII character (except [),
-or the word "Space", "Left", "Right", "Up", or "Down".
+or the word "Space", "Left", "Right", "Up", "Down", "Ins", or "Del".
 Example: @code{M-8}.
 
 @item @code{Sh-M-@var{X}}
 where @var{X} is a Latin letter.
 Example: @code{Sh-M-U}.
-By default, each Meta+letter keystroke does the same as the corresponding
-Shift+Meta+letter.  But when any Shift+Meta bind is made, that will
-no longer be the case, for all letters.
+By default, each Shift+Meta+letter keystroke does the same as the
+corresponding Meta+letter.  But when any Shift+Meta bind is made,
+that will no longer be the case, for all letters.
 
 @item @code{F@var{n}}
 where @var{n} is a numeric value from 1 to 24.
@@ -1816,7 +1827,7 @@ Replays the keystrokes of the last recorded macro.
 Undoes the last performed text action (add text, delete text, etc).
 
 @item redo
-Redoes the last undone action (i.e., it undoes an undo).
+Redoes the last undone action (that is: it undoes an undo).
 
 @item refresh
 Refreshes the screen.
@@ -1844,9 +1855,6 @@ Retrieves the next (later) entry at a prompt.
 @item flipreplace
 Toggles between searching for something and replacing something.
 
-@item flipgoto
-Toggles between searching for text and targeting a line number.
-
 @item flipexecute
 Switches from inserting a file to executing a command.
 
@@ -1860,19 +1868,16 @@ empty buffer.
 
 @item flipconvert
 When reading in a file, toggles between converting and not converting
-it from DOS/Mac format.  Converting is the default.
+it from DOS format.  Converting is the default.
 
 @item dosformat
-When writing a file, switches to writing a DOS format (CR/LF).
-
-@item macformat
-When writing a file, switches to writing a Mac format.
+When writing a file, switches to writing DOS format (CR+LF line endings).
 
 @item append
 When writing a file, appends to the end instead of overwriting.
 
 @item prepend
-When writing a file, 'prepends' (writes at the beginning) instead of overwriting.
+When writing a file, “prepends” (writes at the beginning) instead of overwriting.
 
 @item backup
 When writing a file, creates a backup of the current file.

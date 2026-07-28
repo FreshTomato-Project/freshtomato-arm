@@ -375,7 +375,6 @@ static void update_dnsmasq_ipset(const char *tag, domain_list_t *list, const int
 
 		/* extract domain */
 		*pos = '\0';
-		memset(domain_entry, 0, BUF_SIZE_128);
 		strlcpy(domain_entry, line + 7, BUF_SIZE_128);
 
 		/* normalize dnsmasq wildcard entries (.example.com -> example.com) */
@@ -2222,7 +2221,7 @@ void write_wg_dnsmasq_config(FILE* fp)
 			continue;
 
 		if (sscanf(fn, "wg%d.con%c", &num, &ch) == 2 && ch == 'f') {
-			snprintf(buf, BUF_SIZE, "%s/%s", WG_DNS_DIR, fn);
+			snprintf(buf, BUF_SIZE, "%s/%.236s", WG_DNS_DIR, fn);
 			if (fappend(fp, buf) == -1) {
 				logmsg(LOG_WARNING, "fappend failed for %s (%s)", buf, strerror(errno));
 				continue;

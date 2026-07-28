@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifdef HAVE_GETOPT_H 
 #include <getopt.h>
+#endif
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +39,10 @@
 
 static int formatted_output = JSON_C_TO_STRING_SPACED;
 static int show_output = 1;
+static int show_diag = 1;
 static int strict_mode = 0;
+static int validate_utf8 = 0;
+static int tokener_flags = 0;
 static int color = 0;
 static const char *fname = NULL;
 
@@ -52,6 +57,8 @@ static int showobj(struct json_object *new_obj);
 
 static void showmem(void)
 {
+	if (!show_diag)
+		return;
 #ifdef HAVE_GETRUSAGE
 	struct rusage rusage;
 	memset(&rusage, 0, sizeof(rusage));
@@ -74,11 +81,21 @@ static int parseit(int fd, int (*callback)(struct json_object *))
 		fprintf(stderr, "unable to allocate json_tokener: %s\n", strerror(errno));
 		return 1;
 	}
-	json_tokener_set_flags(tok, JSON_TOKENER_STRICT
+	if (strict_mode)
+	{
+		tokener_flags |= JSON_TOKENER_STRICT;
 #ifdef JSON_TOKENER_ALLOW_TRAILING_CHARS
-		 | JSON_TOKENER_ALLOW_TRAILING_CHARS
-#endif
-	);
+		tokener_flags |= JSON_TOKENER_ALLOW_TRAILING_CHARS;
+	#endif
+	}
+	if (validate_utf8)
+	{
+		tokener_flags |= JSON_TOKENER_VALIDATE_UTF8;
+	}
+	if (tokener_flags)
+	{
+		json_tokener_set_flags(tok, tokener_flags);
+	}
 
 	// XXX push this into some kind of json_tokener_parse_fd API?
 	//  json_object_from_fd isn't flexible enough, and mirroring
@@ -97,12 +114,12 @@ static int parseit(int fd, int (*callback)(struct json_object *))
 			size_t parse_end = json_tokener_get_parse_end(tok);
 			if (obj == NULL && jerr != json_tokener_continue)
 			{
-				const char *aterr = (start_pos + parse_end < (int)sizeof(buf)) ?
+				const char *aterr = (start_pos + parse_end < retu) ?
 					&buf[start_pos + parse_end] : "";
 				fflush(stdout);
 				size_t fail_offset = total_read - retu + start_pos + parse_end;
-				fprintf(stderr, "Failed at offset %lu: %s %c\n", (unsigned long)fail_offset,
-				        json_tokener_error_desc(jerr), aterr[0]);
+				fprintf(stderr, "Failed at offset %lu: %s: char=0x%02x\n", (unsigned long)fail_offset,
+				        json_tokener_error_desc(jerr), (unsigned char)aterr[0]);
 				json_tokener_free(tok);
 				return 1;
 			}
@@ -157,13 +174,16 @@ static void usage(const char *argv0, int exitval, const char *errmsg)
 		fp = stderr;
 	if (errmsg != NULL)
 		fprintf(fp, "ERROR: %s\n\n", errmsg);
-	fprintf(fp, "Usage: %s [-f|-F <arg>] [-n] [-s]\n", argv0);
+	fprintf(fp, "Usage: %s [-f|-F <arg>] [-n] [-s] [-u] [-N] [filename]\n", argv0);
 	fprintf(fp, "  -f - Format the output to stdout with JSON_C_TO_STRING_PRETTY (default is JSON_C_TO_STRING_SPACED)\n");
 	fprintf(fp, "  -F - Format the output to stdout with <arg>, e.g. 0 for JSON_C_TO_STRING_PLAIN\n");
 	fprintf(fp, "  -n - No output\n");
-	fprintf(fp, "  -c - color\n");
-	fprintf(fp, "  -s - Parse in strict mode, flags:\n");
+	fprintf(fp, "  -N - Omit diagnostic information, such as memory usage\n");
+	fprintf(fp, "  -c - Set JSON_C_TO_STRING_COLOR to colorize the output\n");
+	fprintf(fp, "  -P - Initialize tokener flags to the given value\n");
+	fprintf(fp, "  -s - Parse in strict mode, add flags:\n");
 	fprintf(fp, "       JSON_TOKENER_STRICT|JSON_TOKENER_ALLOW_TRAILING_CHARS\n");
+	fprintf(fp, "  -u - Add the JSON_TOKENER_VALIDATE_UTF8 flag when parsing\n");
 	fprintf(fp, " Diagnostic information will be emitted to stderr\n");
 
 	fprintf(fp, "\nWARNING WARNING WARNING\n");
@@ -175,26 +195,29 @@ int main(int argc, char **argv)
 {
 	int opt;
 
-	while ((opt = getopt(argc, argv, "fF:hnsc")) != -1)
+	while ((opt = getopt(argc, argv, "cfF:hnNP:su")) != -1)
 	{
 		switch (opt)
 		{
+		case 'c': color = JSON_C_TO_STRING_COLOR; break;
 		case 'f': formatted_output = JSON_C_TO_STRING_PRETTY; break;
 		case 'F': formatted_output = atoi(optarg); break;
 		case 'n': show_output = 0; break;
+		case 'N': show_diag = 0; break;
+		case 'P': tokener_flags = atoi(optarg); break;
 		case 's': strict_mode = 1; break;
-		case 'c': color = JSON_C_TO_STRING_COLOR; break;
+		case 'u': validate_utf8 = 1; break;
 		case 'h': usage(argv[0], 0, NULL);
 		default: /* '?' */ usage(argv[0], EXIT_FAILURE, "Unknown arguments");
 		}
 	}
-	if (optind >= argc)
+	int fd = STDIN_FILENO;
+	fname = "stdin";
+	if (argc > optind && strcmp(argv[optind], "-") != 0)
 	{
-		usage(argv[0], EXIT_FAILURE, "Expected argument after options");
+		fname = argv[optind];
+		fd = open(fname, O_RDONLY, 0);
 	}
-	fname = argv[optind];
-
-	int fd = open(argv[optind], O_RDONLY, 0);
 	showmem();
 	if (parseit(fd, showobj) != 0)
 		exit(EXIT_FAILURE);

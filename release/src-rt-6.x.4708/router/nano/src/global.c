@@ -313,7 +313,6 @@ void get_older_item(void)  {;}
 void get_newer_item(void)  {;}
 #endif
 void flip_replace(void)  {;}
-void flip_goto(void)  {;}
 #ifdef ENABLE_BROWSER
 void to_files(void)  {;}
 void goto_dir(void)  {;}
@@ -322,7 +321,6 @@ void goto_dir(void)  {;}
 void do_nothing(void)  {;}
 void do_toggle(void)  {;}
 void dos_format(void)  {;}
-void mac_format(void)  {;}
 void append_it(void)  {;}
 void prepend_it(void)  {;}
 void back_it_up(void)  {;}
@@ -393,6 +391,10 @@ int keycode_from_string(const char *keystring)
 			return ALT_UP;
 		else if (strcasecmp(keystring, "M-Down") == 0)
 			return ALT_DOWN;
+		else if (strcasecmp(keystring, "M-Ins") == 0)
+			return ALT_INSERT;
+		else if (strcasecmp(keystring, "M-Del") == 0)
+			return ALT_DELETE;
 		else
 			return -1;
 #ifdef ENABLE_NANORC
@@ -474,15 +476,14 @@ size_t shown_entries_for(int menu)
 	size_t maximum = ((COLS + 40) / 20) * 2;
 	size_t count = 0;
 
-	while (count < maximum && item != NULL) {
+	while (count < maximum && item) {
 		if (item->menus & menu)
 			count++;
 		item = item->next;
 	}
 
 	/* When --saveonexit is not used, widen the grid of the WriteOut menu. */
-	if (menu == MWRITEFILE && item == NULL &&
-						first_sc_for(menu, discard_buffer) == NULL)
+	if (menu == MWRITEFILE && item == NULL && first_sc_for(menu, discard_buffer) == NULL)
 		count--;
 
 	return count;
@@ -701,7 +702,6 @@ void shortcut_init(void)
 #endif
 #ifndef NANO_TINY
 	const char *dos_gist = N_("Toggle the use of DOS format");
-	const char *mac_gist = N_("Toggle the use of Mac format");
 	const char *append_gist = N_("Toggle appending");
 	const char *prepend_gist = N_("Toggle prepending");
 	const char *backup_gist = N_("Toggle backing up of the original file");
@@ -712,7 +712,7 @@ void shortcut_init(void)
 	const char *older_command_gist = N_("Recall the previous command");
 	const char *newer_command_gist = N_("Recall the next command");
 #endif
-	const char *convert_gist = N_("Do not convert from DOS/Mac format");
+	const char *convert_gist = N_("Do not convert from DOS format");
 #endif
 #ifdef ENABLE_MULTIBUFFER
 	const char *newbuffer_gist = N_("Toggle the use of a new buffer");
@@ -782,8 +782,6 @@ void shortcut_init(void)
 #ifndef NANO_TINY
 	add_to_funcs(full_refresh, MINSERTFILE|MEXECUTE, "Refresh", "x", 0);
 #endif
-	add_to_funcs(flip_goto, MWHEREIS, "Go To Line", "x", 0);
-	add_to_funcs(flip_goto, MGOTOLINE, "Go To Text", "x", 0);
 #endif
 
 	add_to_funcs(do_writeout, MMAIN,
@@ -855,7 +853,7 @@ void shortcut_init(void)
 
 #ifndef NANO_TINY
 	add_to_funcs(do_undo, MMAIN,
-			/* TRANSLATORS: Try to keep the next ten strings at most 12 characters. */
+			/* TRANSLATORS: Try to keep the next four strings at most 12 characters. */
 			N_("Undo"), WHENHELP(undo_gist), TOGETHER);
 	add_to_funcs(do_redo, MMAIN,
 			N_("Redo"), WHENHELP(redo_gist), BLANKAFTER);
@@ -867,9 +865,10 @@ void shortcut_init(void)
 #endif
 
 	add_to_funcs(case_sens_void, MWHEREIS|MREPLACE,
-			N_("Case Sens"), WHENHELP(case_gist), TOGETHER);
+			/* TRANSLATORS: Try to keep the next four strings at most 16 characters. */
+			N_("Case sensitive"), WHENHELP(case_gist), TOGETHER);
 	add_to_funcs(regexp_void, MWHEREIS|MREPLACE,
-			N_("Reg.exp."), WHENHELP(regexp_gist), TOGETHER);
+			N_("Reg.expression"), WHENHELP(regexp_gist), TOGETHER);
 	add_to_funcs(backwards_void, MWHEREIS|MREPLACE,
 			N_("Backwards"), WHENHELP(reverse_gist), BLANKAFTER);
 
@@ -880,6 +879,7 @@ void shortcut_init(void)
 
 #ifdef ENABLE_HISTORIES
 	add_to_funcs(get_older_item, MWHEREIS|MREPLACE|MREPLACEWITH|MWHEREISFILE,
+			/* TRANSLATORS: Try to keep the next two strings at most 10 characters. */
 			N_("Older"), WHENHELP(older_gist), TOGETHER);
 	add_to_funcs(get_newer_item, MWHEREIS|MREPLACE|MREPLACEWITH|MWHEREISFILE,
 			N_("Newer"), WHENHELP(newer_gist), BLANKAFTER);
@@ -944,7 +944,7 @@ void shortcut_init(void)
 
 #ifndef NANO_TINY
 	add_to_funcs(to_prev_word, MMAIN,
-			/* TRANSLATORS: Try to keep the next four strings at most 12 characters. */
+			/* TRANSLATORS: Try to keep the next four strings at most 13 characters. */
 			N_("Prev Word"), WHENHELP(prevword_gist), TOGETHER);
 	add_to_funcs(to_next_word, MMAIN,
 			N_("Next Word"), WHENHELP(nextword_gist), TOGETHER);
@@ -956,7 +956,7 @@ void shortcut_init(void)
 			N_("End"), WHENHELP(end_gist), TOGETHER);
 #ifndef NANO_TINY
 	add_to_funcs(do_scroll_left, MMAIN,
-			/* TRANSLATORS: Try to keep the next two strings at most 12 characters. */
+			/* TRANSLATORS: Try to keep the next two strings at most 13 characters. */
 			N_("Scroll Left"), WHENHELP(scrollleft_gist), TOGETHER);
 	add_to_funcs(do_scroll_right, MMAIN,
 			N_("Scroll Right"), WHENHELP(scrollright_gist), BLANKAFTER);
@@ -969,7 +969,7 @@ void shortcut_init(void)
 			N_("Next Line"), WHENHELP(nextline_gist), TOGETHER);
 #if !defined(NANO_TINY) || defined(ENABLE_HELP)
 	add_to_funcs(do_scroll_up, MMAIN,
-			/* TRANSLATORS: Try to keep the next four strings at most 12 characters. */
+			/* TRANSLATORS: Try to keep the next four strings at most 13 characters. */
 			N_("Scroll Up"), WHENHELP(scrollup_gist), TOGETHER);
 	add_to_funcs(do_scroll_down, MMAIN,
 			N_("Scroll Down"), WHENHELP(scrolldown_gist), BLANKAFTER);
@@ -981,8 +981,8 @@ void shortcut_init(void)
 			N_("Next Block"), WHENHELP(nextblock_gist), TOGETHER);
 #ifdef ENABLE_JUSTIFY
 	add_to_funcs(to_para_begin, MMAIN|MGOTOLINE,
-			/* TRANSLATORS: Try to keep these two strings at most 16 characters. */
-			N_("Begin of Paragr."), WHENHELP(parabegin_gist), TOGETHER);
+			/* TRANSLATORS: Try to keep these two strings at most 23 characters. */
+			N_("Start of Paragraph"), WHENHELP(parabegin_gist), TOGETHER);
 	add_to_funcs(to_para_end, MMAIN|MGOTOLINE,
 			N_("End of Paragraph"), WHENHELP(paraend_gist), BLANKAFTER);
 #endif
@@ -1007,7 +1007,7 @@ void shortcut_init(void)
 
 #ifdef ENABLE_MULTIBUFFER
 	add_to_funcs(switch_to_prev_buffer, MMAIN,
-			/* TRANSLATORS: Try to keep these two strings at most 15 characters. */
+			/* TRANSLATORS: Try to keep these two strings at most 14 characters. */
 			N_("Prev File"), WHENHELP(prevfile_gist), TOGETHER);
 	add_to_funcs(switch_to_next_buffer, MMAIN,
 			N_("Next File"), WHENHELP(nextfile_gist), BLANKAFTER);
@@ -1137,7 +1137,7 @@ void shortcut_init(void)
 #endif
 #ifdef ENABLE_SPELLER
 	add_to_funcs(do_spell, MEXECUTE,
-			/* TRANSLATORS: Try to keep the next four strings at most 12 characters. */
+			/* TRANSLATORS: Try to keep the next four strings at most 10 characters. */
 			N_("Spell Check"), WHENHELP(spell_gist), TOGETHER);
 #endif
 #ifdef ENABLE_LINTER
@@ -1153,31 +1153,22 @@ void shortcut_init(void)
 			N_("Formatter"), WHENHELP(formatter_gist), BLANKAFTER);
 #endif
 
-#ifdef ENABLE_HELP
-	add_to_funcs(flip_goto, MWHEREIS,
-			N_("Go To Line"), WHENHELP(gotoline_gist), BLANKAFTER);
-	add_to_funcs(flip_goto, MGOTOLINE,
-			N_("Go To Text"), WHENHELP(whereis_gist), BLANKAFTER);
-#endif
-
 #ifndef NANO_TINY
 	add_to_funcs(dos_format, MWRITEFILE,
 			N_("DOS Format"), WHENHELP(dos_gist), TOGETHER);
-	add_to_funcs(mac_format, MWRITEFILE,
-			N_("Mac Format"), WHENHELP(mac_gist), TOGETHER);
 
 	/* If we're using restricted mode, the Append, Prepend, and Backup toggles
 	 * are disabled.  The first and second are not useful as they only allow
 	 * reduplicating the current file, and the third is not allowed as it
 	 * would write to a file not specified on the command line. */
 	if (!ISSET(RESTRICTED)) {
+		add_to_funcs(back_it_up, MWRITEFILE,
+				N_("Backup File"), WHENHELP(backup_gist), TOGETHER);
+
 		add_to_funcs(append_it, MWRITEFILE,
 				N_("Append"), WHENHELP(append_gist), TOGETHER);
 		add_to_funcs(prepend_it, MWRITEFILE,
-				N_("Prepend"), WHENHELP(prepend_gist), TOGETHER);
-
-		add_to_funcs(back_it_up, MWRITEFILE,
-				N_("Backup File"), WHENHELP(backup_gist), BLANKAFTER);
+				N_("Prepend"), WHENHELP(prepend_gist), BLANKAFTER);
 	}
 
 	add_to_funcs(flip_convert, MINSERTFILE,
@@ -1510,8 +1501,6 @@ void shortcut_init(void)
 	add_to_sclist(MWHEREIS|MREPLACE, "M-R", 0, regexp_void, 0);
 	add_to_sclist(MWHEREIS|MREPLACE, "M-B", 0, backwards_void, 0);
 	add_to_sclist(MWHEREIS|MREPLACE, "^R", 0, flip_replace, 0);
-	add_to_sclist(MWHEREIS|MGOTOLINE, "^T", 0, flip_goto, 0);
-	add_to_sclist(MWHEREIS|MGOTOLINE, SLASH_OR_DASH, 0, flip_goto, 0);
 #ifdef ENABLE_HISTORIES
 	add_to_sclist(MWHEREIS|MREPLACE|MREPLACEWITH|MWHEREISFILE|MFINDINHELP|MEXECUTE, "^P", 0, get_older_item, 0);
 	add_to_sclist(MWHEREIS|MREPLACE|MREPLACEWITH|MWHEREISFILE|MFINDINHELP|MEXECUTE, "^N", 0, get_newer_item, 0);
@@ -1550,13 +1539,12 @@ void shortcut_init(void)
 		add_to_sclist(MWRITEFILE, "^Q", 0, discard_buffer, 0);
 #ifndef NANO_TINY
 	add_to_sclist(MWRITEFILE, "M-D", 0, dos_format, 0);
-	add_to_sclist(MWRITEFILE, "M-M", 0, mac_format, 0);
-	/* Only when not in restricted mode, allow Appending, Prepending,
-	 * making backups, and executing a command. */
+	/* Only when not in restricted mode, allow making backups,
+	 * appending, prepending, and executing a command. */
 	if (!ISSET(RESTRICTED) && !ISSET(VIEW_MODE)) {
+		add_to_sclist(MWRITEFILE, "M-B", 0, back_it_up, 0);
 		add_to_sclist(MWRITEFILE, "M-A", 0, append_it, 0);
 		add_to_sclist(MWRITEFILE, "M-P", 0, prepend_it, 0);
-		add_to_sclist(MWRITEFILE, "M-B", 0, back_it_up, 0);
 		add_to_sclist(MINSERTFILE|MEXECUTE, "^X", 0, flip_execute, 0);
 	}
 	add_to_sclist(MINSERTFILE, "M-N", 0, flip_convert, 0);

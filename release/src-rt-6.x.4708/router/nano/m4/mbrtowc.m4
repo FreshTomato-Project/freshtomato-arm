@@ -1,5 +1,5 @@
 # mbrtowc.m4
-# serial 47
+# serial 51
 dnl Copyright (C) 2001-2002, 2004-2005, 2008-2026 Free Software Foundation,
 dnl Inc.
 dnl This file is free software; the Free Software Foundation
@@ -38,6 +38,7 @@ AC_DEFUN([gl_FUNC_MBRTOWC],
       gl_MBRTOWC_STORES_INCOMPLETE
       gl_MBRTOWC_EMPTY_INPUT
       gl_MBRTOWC_C_LOCALE
+      gl_MBRTOWC_INVALID_UTF8
       case "$gl_cv_func_mbrtowc_null_arg1" in
         *yes) ;;
         *) AC_DEFINE([MBRTOWC_NULL_ARG1_BUG], [1],
@@ -78,6 +79,13 @@ AC_DEFUN([gl_FUNC_MBRTOWC],
         *yes) ;;
         *) AC_DEFINE([MBRTOWC_IN_C_LOCALE_MAYBE_EILSEQ], [1],
              [Define if the mbrtowc function may signal encoding errors in the C locale.])
+           REPLACE_MBRTOWC=1
+           ;;
+      esac
+      case "$gl_cv_func_mbrtowc_invalid_UTF8" in
+        *yes) ;;
+        *) AC_DEFINE([MBRTOWC_INVALID_UTF8_BUG], [1],
+             [Define if the mbrtowc function does not recognize some invalid UTF-8 byte sequences.])
            REPLACE_MBRTOWC=1
            ;;
       esac
@@ -315,7 +323,7 @@ int main ()
       size_t ret;
 
       memset (&state, '\0', sizeof (mbstate_t));
-      wc = (wchar_t) 0xBADFACE;
+      wc = (wchar_t) {0xBADFACE};
       ret = mbrtowc (&wc, input, 5, &state);
       if (ret != 2)
         result |= 1;
@@ -546,42 +554,42 @@ int main ()
   int result = 0;
   if (setlocale (LC_ALL, "French_France.65001") != NULL)
     {
-      wchar_t wc = (wchar_t) 0xBADFACE;
+      wchar_t wc = (wchar_t) {0xBADFACE};
       mbstate_t state;
 
       memset (&state, '\0', sizeof (mbstate_t));
       if (mbrtowc (&wc, "\303", 1, &state) == (size_t)(-2)
-          && wc != (wchar_t) 0xBADFACE)
+          && wc != (wchar_t) {0xBADFACE})
         result |= 1;
     }
   if (setlocale (LC_ALL, "Japanese_Japan.932") != NULL)
     {
-      wchar_t wc = (wchar_t) 0xBADFACE;
+      wchar_t wc = (wchar_t) {0xBADFACE};
       mbstate_t state;
 
       memset (&state, '\0', sizeof (mbstate_t));
       if (mbrtowc (&wc, "\226", 1, &state) == (size_t)(-2)
-          && wc != (wchar_t) 0xBADFACE)
+          && wc != (wchar_t) {0xBADFACE})
         result |= 2;
     }
   if (setlocale (LC_ALL, "Chinese_Taiwan.950") != NULL)
     {
-      wchar_t wc = (wchar_t) 0xBADFACE;
+      wchar_t wc = (wchar_t) {0xBADFACE};
       mbstate_t state;
 
       memset (&state, '\0', sizeof (mbstate_t));
       if (mbrtowc (&wc, "\245", 1, &state) == (size_t)(-2)
-          && wc != (wchar_t) 0xBADFACE)
+          && wc != (wchar_t) {0xBADFACE})
         result |= 4;
     }
   if (setlocale (LC_ALL, "Chinese_China.936") != NULL)
     {
-      wchar_t wc = (wchar_t) 0xBADFACE;
+      wchar_t wc = (wchar_t) {0xBADFACE};
       mbstate_t state;
 
       memset (&state, '\0', sizeof (mbstate_t));
       if (mbrtowc (&wc, "\261", 1, &state) == (size_t)(-2)
-          && wc != (wchar_t) 0xBADFACE)
+          && wc != (wchar_t) {0xBADFACE})
         result |= 8;
     }
   return result;
@@ -602,12 +610,12 @@ int main ()
 {
   if (setlocale (LC_ALL, "$LOCALE_EN_UTF8") != NULL)
     {
-      wchar_t wc = (wchar_t) 0xBADFACE;
+      wchar_t wc = (wchar_t) {0xBADFACE};
       mbstate_t state;
 
       memset (&state, '\0', sizeof (mbstate_t));
       if (mbrtowc (&wc, "\303", 1, &state) == (size_t)(-2)
-          && wc != (wchar_t) 0xBADFACE)
+          && wc != (wchar_t) {0xBADFACE})
         return 1;
     }
   return 0;
@@ -675,7 +683,7 @@ AC_DEFUN([gl_MBRTOWC_C_LOCALE],
             #include <wchar.h>
           ]], [[
             int i;
-            char *locale = setlocale (LC_ALL, "C");
+            const char *locale = setlocale (LC_ALL, "C");
             if (! locale)
               return 2;
             for (i = CHAR_MIN; i <= CHAR_MAX; i++)
@@ -697,6 +705,65 @@ AC_DEFUN([gl_MBRTOWC_C_LOCALE],
           *)                 gl_cv_func_mbrtowc_C_locale_sans_EILSEQ="$gl_cross_guess_normal" ;;
         esac
        ])
+    ])
+])
+
+dnl Test whether mbrtowc recognizes invalid UTF-8 byte sequences.
+
+AC_DEFUN([gl_MBRTOWC_INVALID_UTF8],
+[
+  AC_REQUIRE([gt_LOCALE_EN_UTF8])
+  AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
+  AC_CACHE_CHECK([whether mbrtowc recognizes invalid UTF-8],
+    [gl_cv_func_mbrtowc_invalid_UTF8],
+    [
+      dnl Initial guess, used when cross-compiling or when no suitable locale
+      dnl is present.
+changequote(,)dnl
+      case "$host_os" in
+                 # Guess no on NetBSD.
+        netbsd*) gl_cv_func_mbrtowc_invalid_UTF8="guessing no" ;;
+                 # Guess yes otherwise.
+        *)       gl_cv_func_mbrtowc_invalid_UTF8="guessing yes" ;;
+      esac
+changequote([,])dnl
+      if test "$LOCALE_EN_UTF8" != none; then
+        AC_RUN_IFELSE(
+          [AC_LANG_SOURCE([[
+#include <locale.h>
+#include <string.h>
+#include <wchar.h>
+int main ()
+{
+  if (setlocale (LC_ALL, "$LOCALE_EN_UTF8") != NULL)
+    {
+      int result = 0;
+      /* This test fails on NetBSD 10.  */
+      {
+        mbstate_t state;
+        wchar_t wc;
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        if (mbrtowc (&wc, "\340x", 2, &state) != (size_t)(-1))
+          result |= 1;
+      }
+      /* This test fails on NetBSD 10.  */
+      {
+        mbstate_t state;
+        wchar_t wc;
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        if (mbrtowc (&wc, "\360x\360", 3, &state) != (size_t)(-1))
+          result |= 2;
+      }
+      return result;
+    }
+  return 0;
+}]])],
+          [gl_cv_func_mbrtowc_invalid_UTF8=yes],
+          [gl_cv_func_mbrtowc_invalid_UTF8=no],
+          [:])
+      fi
     ])
 ])
 

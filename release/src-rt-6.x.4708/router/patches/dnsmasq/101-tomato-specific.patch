@@ -117,7 +117,7 @@
  	  fclose(daemon->lease_stream);
 --- dnsmasq/src/dnsmasq.h
 +++ dnsmasq/src/dnsmasq.h
-@@ -1704,6 +1704,12 @@
+@@ -1706,6 +1706,12 @@
  int icmp_ping(struct in_addr addr);
  int delay_dhcp(time_t start, int sec, int fd, uint32_t addr, unsigned short id);
  #endif
@@ -229,7 +229,7 @@
 +	    inet_ntop(AF_INET, &lease->addr, buf, ADDRSTRLEN);
 +
 +	  fprintf(f, "%lu %02X:%02X:%02X:%02X:%02X:%02X %s %s\n",
-+	              lease->expires - now,
++	              (lease->expires == 0) ? 0UL : (unsigned long)(lease->expires - now),
 +	              lease->hwaddr[0], lease->hwaddr[1], lease->hwaddr[2], lease->hwaddr[3], lease->hwaddr[4], lease->hwaddr[5],
 +	              buf,
 +	              ((lease->hostname) && (strlen(lease->hostname) > 0)) ? lease->hostname : "*");

@@ -59,7 +59,6 @@ int redial_main(int argc, char **argv)
 	int mwan_num;
 	char c_pid[10];
 	char tmp[32], tmp2[16];
-	memset(c_pid, 0, sizeof(c_pid));
 	snprintf(c_pid, sizeof(c_pid), "%d", getpid());
 	char prefix[] = "wanXX";
 	char prefix_mwan[] = "wanXX";
@@ -71,9 +70,7 @@ int redial_main(int argc, char **argv)
 
 	strlcpy(prefix_mwan, prefix, sizeof(prefix_mwan));
 
-	mwan_num = nvram_get_int("mwan_num");
-	if ((mwan_num < 1) || (mwan_num > MWAN_MAX))
-		mwan_num = 1;
+	mwan_num = mwan_active_num();
 
 	proto = get_wanx_proto(prefix);
 	if (proto == WP_PPPOE || proto == WP_PPP3G || proto == WP_PPTP || proto == WP_L2TP)
@@ -104,9 +101,7 @@ int redial_main(int argc, char **argv)
 		if (!strcmp(prefix, "wan") && mwan_num != 1)
 			strlcpy(prefix_mwan, "wan1", sizeof(prefix_mwan));
 
-		memset(tmp, 0, sizeof(tmp));
 		snprintf(tmp, sizeof(tmp), "%s-restart", prefix_mwan);
-		memset(tmp2, 0, sizeof(tmp2));
 		snprintf(tmp2, sizeof(tmp2), "%s-restart-c", prefix_mwan);
 
 		if (nvram_match("action_service", "wan-restart") || nvram_match("action_service", tmp) || nvram_match("action_service", "wan-restart-c") || nvram_match("action_service", tmp2))

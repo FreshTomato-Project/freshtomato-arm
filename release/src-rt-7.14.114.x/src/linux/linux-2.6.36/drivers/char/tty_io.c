@@ -3053,9 +3053,30 @@ struct tty_struct *get_current_tty(void)
 }
 EXPORT_SYMBOL_GPL(get_current_tty);
 
+/*
+ * Fill an externally owned tty file_operations object.
+ *
+ * /dev/ptmx uses this to create a mutable copy of the normal tty fops and
+ * then replace only ->open with ptmx_open().  Keep this as explicit field
+ * assignments instead of a whole-struct assignment.  On this old 2.6.36 tree
+ * built for ARM with newer GCC, losing ->unlocked_ioctl here makes
+ * ioctl(/dev/ptmx, TIOCSPTLCK/TIOCGPTN) fail in the VFS with -ENOTTY, which
+ * surfaces in Dropbear/libutil as:
+ *
+ *     openpty: Inappropriate ioctl for device
+ */
 void tty_default_fops(struct file_operations *fops)
 {
-	*fops = tty_fops;
+	memset(fops, 0, sizeof(*fops));
+	fops->llseek		= no_llseek;
+	fops->read		= tty_read;
+	fops->write		= tty_write;
+	fops->poll		= tty_poll;
+	fops->unlocked_ioctl	= tty_ioctl;
+	fops->compat_ioctl	= tty_compat_ioctl;
+	fops->open		= tty_open;
+	fops->release		= tty_release;
+	fops->fasync		= tty_fasync;
 }
 
 /*

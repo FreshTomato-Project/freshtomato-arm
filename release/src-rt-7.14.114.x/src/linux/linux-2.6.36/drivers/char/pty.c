@@ -753,6 +753,7 @@ static void __init unix98_pty_init(void)
 	/* Now create the /dev/ptmx special device */
 	tty_default_fops(&ptmx_fops);
 	ptmx_fops.open = ptmx_open;
+	WARN_ON(!ptmx_fops.unlocked_ioctl);
 
 	cdev_init(&ptmx_cdev, &ptmx_fops);
 	if (cdev_add(&ptmx_cdev, MKDEV(TTYAUX_MAJOR, 2), 1) ||

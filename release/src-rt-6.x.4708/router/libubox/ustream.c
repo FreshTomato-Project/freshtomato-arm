@@ -90,10 +90,34 @@ static void ustream_free_buffers(struct ustream_buf_list *l)
 	l->head = NULL;
 	l->tail = NULL;
 	l->data_tail = NULL;
+	l->data_bytes = 0;
+	l->buffers = 0;
+}
+
+void ustream_free_guard_set(struct ustream *s, struct ustream_free_guard *g)
+{
+	g->freed = false;
+	g->prev = s->free_flag;
+	s->free_flag = &g->freed;
+}
+
+bool ustream_free_guard_check(struct ustream *s, struct ustream_free_guard *g)
+{
+	if (g->freed) {
+		if (g->prev)
+			*g->prev = true;
+		return true;
+	}
+
+	s->free_flag = g->prev;
+	return false;
 }
 
 void ustream_free(struct ustream *s)
 {
+	if (s->free_flag)
+		*s->free_flag = true;
+
 	if (s->free)
 		s->free(s);
 
@@ -136,6 +160,7 @@ void ustream_init_defaults(struct ustream *s)
 	s->state_change.cb = ustream_state_change_cb;
 	s->write_error = false;
 	s->eof = false;
+	s->free_flag = NULL;
 	s->read_blocked = 0;
 
 	s->r.buffers = 0;
@@ -323,11 +348,17 @@ void ustream_fill_read(struct ustream *s, int len)
 	} while (len);
 
 	if (s->notify_read) {
+		struct ustream_free_guard guard;
+
 		if (s->pending_cb & CB_PENDING_READ)
 			return;
 
 		s->pending_cb |= CB_PENDING_READ;
+		ustream_free_guard_set(s, &guard);
 		s->notify_read(s, s->r.data_bytes);
+		if (ustream_free_guard_check(s, &guard))
+			return;
+
 		s->pending_cb &= ~CB_PENDING_READ;
 	}
 }
@@ -408,8 +439,14 @@ bool ustream_write_pending(struct ustream *s)
 		buf = next;
 	}
 
-	if (s->notify_write)
+	if (s->notify_write) {
+		struct ustream_free_guard guard;
+
+		ustream_free_guard_set(s, &guard);
 		s->notify_write(s, wr);
+		if (ustream_free_guard_check(s, &guard))
+			return true;
+	}
 
 	if (s->eof && wr && !s->w.data_bytes)
 		ustream_state_change(s);

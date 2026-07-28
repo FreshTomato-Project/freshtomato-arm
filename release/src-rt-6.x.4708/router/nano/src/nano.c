@@ -87,7 +87,7 @@ void splice_node(linestruct *afterthis, linestruct *newnode)
 {
 	newnode->next = afterthis->next;
 	newnode->prev = afterthis;
-	if (afterthis->next != NULL)
+	if (afterthis->next)
 		afterthis->next->prev = newnode;
 	afterthis->next = newnode;
 
@@ -117,9 +117,9 @@ void delete_node(linestruct *line)
 /* Disconnect a node from a linked list of linestructs and delete it. */
 void unlink_node(linestruct *line)
 {
-	if (line->prev != NULL)
+	if (line->prev)
 		line->prev->next = line->next;
-	if (line->next != NULL)
+	if (line->next)
 		line->next->prev = line->prev;
 
 	/* Update filebot when removing a node at the end of file. */
@@ -135,7 +135,7 @@ void free_lines(linestruct *src)
 	if (src == NULL)
 		return;
 
-	while (src->next != NULL) {
+	while (src->next) {
 		src = src->next;
 		delete_node(src->prev);
 	}
@@ -171,7 +171,7 @@ linestruct *copy_buffer(const linestruct *src)
 	item = head;
 	src = src->next;
 
-	while (src != NULL) {
+	while (src) {
 		item->next = copy_node(src);
 		item->next->prev = item;
 
@@ -189,7 +189,7 @@ void renumber_from(linestruct *line)
 {
 	ssize_t number = (line->prev == NULL) ? 0 : line->prev->lineno;
 
-	while (line != NULL) {
+	while (line) {
 		line->lineno = ++number;
 		line = line->next;
 	}
@@ -247,7 +247,7 @@ void finish(void)
 
 #ifndef NANO_TINY
 	/* Deallocate the two or three subwindows. */
-	if (topwin != NULL)
+	if (topwin)
 		delwin(topwin);
 	delwin(midwin);
 	delwin(footwin);
@@ -271,7 +271,7 @@ void close_and_go(void)
 		delete_lockfile(openfile->lock_filename);
 #endif
 #ifdef ENABLE_HISTORIES
-	if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
+	if (ISSET(POSITIONLOG) && openfile->filename[0])
 		update_positions_register();
 #endif
 #ifdef ENABLE_MULTIBUFFER
@@ -305,7 +305,7 @@ void do_exit(void)
 	 * and the file has a name, simply save.  Otherwise, ask the user. */
 	if (!openfile->modified || ISSET(VIEW_MODE))
 		choice = NO;
-	else if (ISSET(SAVE_ON_EXIT) && openfile->filename[0] != '\0')
+	else if (ISSET(SAVE_ON_EXIT) && openfile->filename[0])
 		choice = YES;
 	else {
 		if (ISSET(SAVE_ON_EXIT))
@@ -337,7 +337,7 @@ void emergency_save(const char *filename)
 
 	if (*targetname == '\0')
 		fprintf(stderr, _("\nToo many .save files\n"));
-	else if (write_file(targetname, NULL, SPECIAL, EMERGENCY, NONOTES))
+	else if (write_file(targetname, NULL, SPECIAL, NONOTES))
 		fprintf(stderr, _("\nBuffer written to %s\n"), targetname);
 
 	free(targetname);
@@ -393,8 +393,8 @@ void die(const char *msg, ...)
 void window_init(void)
 {
 	/* When resizing, first delete the existing windows. */
-	if (midwin != NULL) {
-		if (topwin != NULL)
+	if (midwin) {
+		if (topwin)
 			delwin(topwin);
 		delwin(midwin);
 		delwin(footwin);
@@ -513,16 +513,14 @@ void usage(void)
 #endif
 #ifdef ENABLE_MULTIBUFFER
 	if (!ISSET(RESTRICTED))
-		print_opt("-F", "--multibuffer",
-					N_("Read a file into a new buffer by default"));
+		print_opt("-F", "--multibuffer", N_("Read a file into a new buffer by default"));
 #endif
 #ifndef NANO_TINY
 	print_opt("-G", "--locking", N_("Use (vim-style) lock files"));
 #endif
 #ifdef ENABLE_HISTORIES
 	if (!ISSET(RESTRICTED))
-		print_opt("-H", "--historylog",
-					N_("Save & reload old search/replace strings"));
+		print_opt("-H", "--historylog", N_("Save & reload old search/replace strings"));
 #endif
 #ifdef ENABLE_NANORC
 	print_opt("-I", "--ignorercfiles", N_("Don't look at nanorc files"));
@@ -531,26 +529,20 @@ void usage(void)
 	print_opt(_("-J <number>"), _("--guidestripe=<number>"),
 					N_("Show a guiding bar at this column"));
 #endif
-	print_opt("-K", "--rawsequences",
-					N_("Fix numeric keypad key confusion problem"));
+	print_opt("-K", "--rawsequences", N_("Fix numeric keypad key confusion problem"));
 #ifndef NANO_TINY
-	print_opt("-L", "--nonewlines",
-					N_("Don't add an automatic newline"));
+	print_opt("-L", "--nonewlines", N_("Don't add an automatic newline"));
 #endif
 #ifdef ENABLED_WRAPORJUSTIFY
-	print_opt("-M", "--trimblanks",
-					N_("Trim tail spaces when hard-wrapping"));
+	print_opt("-M", "--trimblanks", N_("Trim tail spaces when hard-wrapping"));
 #endif
 #ifndef NANO_TINY
-	print_opt("-N", "--noconvert",
-					N_("Don't convert files from DOS/Mac format"));
-	print_opt("-O", "--bookstyle",
-					N_("Leading whitespace means new paragraph"));
+	print_opt("-N", "--noconvert", N_("Don't convert files from DOS format"));
+	print_opt("-O", "--bookstyle", N_("Leading whitespace means new paragraph"));
 #endif
 #ifdef ENABLE_HISTORIES
 	if (!ISSET(RESTRICTED))
-		print_opt("-P", "--positionlog",
-					N_("Save & restore position of the cursor"));
+		print_opt("-P", "--positionlog", N_("Save & restore position of the cursor"));
 #endif
 #ifdef ENABLE_JUSTIFY
 	print_opt(_("-Q <regex>"), _("--quotestr=<regex>"),
@@ -568,8 +560,7 @@ void usage(void)
 	print_opt("-U", "--quickblank", N_("Wipe status bar upon next keystroke"));
 	print_opt("-V", "--version", N_("Print version information and exit"));
 #ifndef NANO_TINY
-	print_opt("-W", "--wordbounds",
-					N_("Detect word boundaries more accurately"));
+	print_opt("-W", "--wordbounds", N_("Detect word boundaries more accurately"));
 	print_opt(_("-X <string>"), _("--wordchars=<string>"),
 					N_("Which other characters are word parts"));
 #endif
@@ -585,8 +576,7 @@ void usage(void)
 	print_opt("-b", "--breaklonglines", N_("Automatically hard-wrap overlong lines"));
 #endif
 	print_opt("-c", "--constantshow", N_("Constantly show cursor position"));
-	print_opt("-d", "--rebinddelete",
-					N_("Fix Backspace/Delete confusion problem"));
+	print_opt("-d", "--rebinddelete", N_("Fix Backspace/Delete confusion problem"));
 #ifndef NANO_TINY
 	print_opt("-e", "--emptyline", N_("Keep the line below the title bar empty"));
 #endif
@@ -870,8 +860,7 @@ bool scoop_stdin(void)
 
 	/* When input comes from a terminal, show a helpful message. */
 	if (isatty(STDIN_FILENO))
-		fprintf(stderr, _("Reading data from keyboard; "
-							"type ^D or ^D^D to finish.\n"));
+		fprintf(stderr, _("Reading data from keyboard; type ^D or ^D^D to finish.\n"));
 
 	/* Open standard input. */
 	stream = fopen("/dev/stdin", "rb");
@@ -1155,8 +1144,7 @@ void toggle_this(int flag)
 	if (flag == NO_HELP || flag == NO_SYNTAX)
 		enabled = !enabled;
 
-	statusline(REMARK, "%s %s", _(epithet_of_flag(flag)),
-									enabled ? _("enabled") : _("disabled"));
+	statusline(REMARK, "%s %s", _(epithet_of_flag(flag)), enabled ? _("enabled") : _("disabled"));
 }
 #endif /* !NANO_TINY */
 
@@ -1554,7 +1542,7 @@ void inject(char *burst, size_t count)
 
 #ifndef NANO_TINY
 	/* When panning, and we have come near the edge of the viewport... */
-	if (united_sidescroll && openfile->placewewant > openfile->brink + editwincols - CUSHION - 1 )
+	if (united_sidescroll && openfile->placewewant > openfile->brink + editwincols - CUSHION - 1)
 		refresh_needed = TRUE;
 
 	/* When softwrapping and the number of chunks in the current line changed,
@@ -2238,11 +2226,11 @@ int main(int argc, char **argv)
 			fill = fill_cmdline;
 #endif
 #ifndef NANO_TINY
-		if (backup_dir_cmdline != NULL) {
+		if (backup_dir_cmdline) {
 			free(backup_dir);
 			backup_dir = backup_dir_cmdline;
 		}
-		if (word_chars_cmdline != NULL) {
+		if (word_chars_cmdline) {
 			free(word_chars);
 			word_chars = word_chars_cmdline;
 		}
@@ -2252,19 +2240,19 @@ int main(int argc, char **argv)
 			tabsize = tabsize_cmdline;
 #endif
 #ifdef ENABLE_OPERATINGDIR
-		if (operating_dir_cmdline != NULL || ISSET(RESTRICTED)) {
+		if (operating_dir_cmdline || ISSET(RESTRICTED)) {
 			free(operating_dir);
 			operating_dir = operating_dir_cmdline;
 		}
 #endif
 #ifdef ENABLE_JUSTIFY
-		if (quotestr_cmdline != NULL) {
+		if (quotestr_cmdline) {
 			free(quotestr);
 			quotestr = quotestr_cmdline;
 		}
 #endif
 #ifdef ENABLE_SPELLER
-		if (alt_speller_cmdline != NULL) {
+		if (alt_speller_cmdline) {
 			free(alt_speller);
 			alt_speller = alt_speller_cmdline;
 		}
@@ -2335,13 +2323,13 @@ int main(int argc, char **argv)
 #ifndef NANO_TINY
 	/* If a backup directory was specified and we're not in restricted mode,
 	 * verify it is an existing folder, so backup files can be saved there. */
-	if (backup_dir != NULL && !ISSET(RESTRICTED))
+	if (backup_dir && !ISSET(RESTRICTED))
 		init_backup_dir();
 #endif
 #ifdef ENABLE_OPERATINGDIR
 	/* Set up the operating directory.  This entails chdir()ing there,
 	 * so that file reads and writes will be based there. */
-	if (operating_dir != NULL)
+	if (operating_dir)
 		init_operating_dir();
 #endif
 
@@ -2375,7 +2363,7 @@ int main(int argc, char **argv)
 	if (alt_speller == NULL && !ISSET(RESTRICTED)) {
 		const char *spellenv = getenv("SPELL");
 
-		if (spellenv != NULL)
+		if (spellenv)
 			alt_speller = copy_of(spellenv);
 	}
 #endif
@@ -2594,7 +2582,7 @@ int main(int argc, char **argv)
 		}
 
 #ifdef ENABLE_HISTORIES
-		if (ISSET(POSITIONLOG) && openfile->filename[0] != '\0')
+		if (ISSET(POSITIONLOG) && openfile->filename[0])
 			restore_cursor_position_if_any();
 #endif
 
@@ -2605,7 +2593,7 @@ int main(int argc, char **argv)
 			goto_line_and_column(givenline, givencol, TRUE);
 		}
 #ifndef NANO_TINY
-		else if (searchstring != NULL) {
+		else if (searchstring) {
 			openfile->current = openfile->filetop;
 			openfile->current_x = 0;
 			if (ISSET(USE_REGEXP))
@@ -2656,7 +2644,7 @@ int main(int argc, char **argv)
 	prepare_for_display();
 
 #ifdef ENABLE_NANORC
-	if (startup_problem != NULL)
+	if (startup_problem)
 		statusline(ALERT, "%s", startup_problem);
 
 #define NOTREBOUND  first_sc_for(MMAIN, do_help) && \
@@ -2666,7 +2654,7 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef ENABLE_HELP
-	if (*openfile->filename == '\0' && openfile->totsize == 0 &&
+	if (openfile->filename[0] == '\0' && openfile->totsize == 0 &&
 				openfile->next == openfile && !ISSET(NO_HELP) && NOTREBOUND)
 		statusbar(_("Welcome to nano.  For basic help, type Ctrl+G."));
 #endif
@@ -2705,7 +2693,7 @@ int main(int argc, char **argv)
 		/* Update the displayed current cursor position only when there
 		 * is no message and no keys are waiting in the input buffer. */
 		if (ISSET(CONSTANT_SHOW) && lastmessage == VACUUM && LINES > 1 &&
-								!ISSET(ZERO) && waiting_keycodes() == 0)
+									!ISSET(ZERO) && waiting_keycodes() == 0)
 			report_cursor_position();
 
 		as_an_at = TRUE;

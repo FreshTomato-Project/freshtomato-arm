@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 2.8)  # see ../CMakeLists.txt for why 2.8
+cmake_minimum_required(VERSION 3.9...3.12)  # see ../CMakeLists.txt for why
 
 if(POLICY CMP0075)
     cmake_policy(SET CMP0075 NEW)
@@ -93,6 +93,9 @@ check_symbol_exists(json_tokener_get_parse_end "json_tokener.h" HAVE_JSON_TOKENE
 endif() # end "standalone mode" block
 
 # ---------------------------------
+
+# Check whether getopt.h exists
+check_include_file(getopt.h HAVE_GETOPT_H)
 
 check_include_file(sys/resource.h   HAVE_SYS_RESOURCE_H) # for getrusage
 if (HAVE_SYS_RESOURCE_H)

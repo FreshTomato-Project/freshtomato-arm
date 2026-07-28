@@ -209,12 +209,7 @@ PRINTF_FETCHARGS (va_list args, arguments *a)
         if (ap->a.a_wide_string == NULL)
           {
             static const wchar_t wide_null_string[] =
-              {
-                (wchar_t)'(',
-                (wchar_t)'N', (wchar_t)'U', (wchar_t)'L', (wchar_t)'L',
-                (wchar_t)')',
-                (wchar_t)0
-              };
+              { L'(', L'N', L'U', L'L', L'L', L')', 0 };
             ap->a.a_wide_string = wide_null_string;
           }
         break;

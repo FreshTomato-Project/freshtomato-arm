@@ -23,7 +23,7 @@
 
 <script>
 
-//	<% nvram ("t_model_name,vlan0ports,vlan1ports,vlan2ports,vlan3ports,vlan4ports,vlan5ports,vlan6ports,vlan7ports,vlan8ports,vlan9ports,vlan10ports,vlan11ports,vlan12ports,vlan13ports,vlan14ports,vlan15ports,vlan0hwname,vlan1hwname,vlan2hwname,vlan3hwname,vlan4hwname,vlan5hwname,vlan6hwname,vlan7hwname,vlan8hwname,vlan9hwname,vlan10hwname,vlan11hwname,vlan12hwname,vlan13hwname,vlan14hwname,vlan15hwname,wan_ifnameX,manual_boot_nv,boardtype,boardflags,lan_ifname,lan_ifnames,vlan0tag,vlan0vid,vlan1vid,vlan2vid,vlan3vid,vlan4vid,vlan5vid,vlan6vid,vlan7vid,vlan8vid,vlan9vid,vlan10vid,vlan11vid,vlan12vid,vlan13vid,vlan14vid,vlan15vid,model,wl_ssid,wl_radio,wl_net_mode,wl_nband,boardnum,boardrev,trunk_vlan_so,eth_desc");%>
+//	<% nvram ("t_model_name,vlan0ports,vlan1ports,vlan2ports,vlan3ports,vlan4ports,vlan5ports,vlan6ports,vlan7ports,vlan8ports,vlan9ports,vlan10ports,vlan11ports,vlan12ports,vlan13ports,vlan14ports,vlan15ports,vlan0hwname,vlan1hwname,vlan2hwname,vlan3hwname,vlan4hwname,vlan5hwname,vlan6hwname,vlan7hwname,vlan8hwname,vlan9hwname,vlan10hwname,vlan11hwname,vlan12hwname,vlan13hwname,vlan14hwname,vlan15hwname,wan_ifnameX,manual_boot_nv,boardtype,boardflags,lan_ifname,lan_ifnames,vlan0tag,vlan0vid,vlan1vid,vlan2vid,vlan3vid,vlan4vid,vlan5vid,vlan6vid,vlan7vid,vlan8vid,vlan9vid,vlan10vid,vlan11vid,vlan12vid,vlan13vid,vlan14vid,vlan15vid,model,wl_ssid,wl_radio,wl_net_mode,wl_nband,boardnum,boardrev,trunk_vlan_so,mwan_num,eth_desc");%>
 
 var cprefix = 'advanced_vlan';
 var port_vlan_supported = 0;
@@ -36,51 +36,18 @@ var trunk_vlan_supported = 1; /* Enable on all routers */
 
 var unknown_router = 0;
 
-function calcWanPortCount() {
-	var count = 0;
-	var maxWan = parseInt(nvram.mwan_num, 10);
-	if (isNaN(maxWan) || (maxWan < 0)) maxWan = 0;
-
-	for (var uidx = 1; uidx <= maxWan; ++uidx) {
-		var u = (uidx > 1) ? uidx : '';
-		if ((nvram['wan'+u+'_sta'] == '') && (nvram['wan'+u+'_proto'] != 'lte') && (nvram['wan'+u+'_proto'] != 'ppp3g'))
-			++count;
-	}
-	return count;
-}
-
-function portCaption(i) {
-	var wanCount = calcWanPortCount();
-
-	var orig;
-	if (i < wanCount)
-		orig = (i === 0 && (nvram.model == 'DSL-AC68U')) ? 'DSL' : ('WAN'+i);
-
-	if (!orig)
-		orig = (wanCount > 0) ? ('LAN'+(i - 1)) : ('LAN'+i);
-
-	/* Return only first and last character when the caption is longer than 1
-	 * (e.g. "LAN0" -> "L0", "WAN1" -> "W1"). Single-char captions stay
-	 * as-is.
-	 */
-	if (orig && orig.length > 1)
-		return String(orig).charAt(0) + String(orig).charAt(orig.length - 1);
-
-	return orig;
-}
-
 /* caption/rendering is handled by ethernet-icon.js (renderEthIcon)
  * keep the VLAN page markup minimal and call into renderEthIcon() from show()
  */
 function show() {
 	var state = [];
-	var ed = (nvram.eth_desc || '').split('%');
 	var port = etherstates.port0;
 	if (port == 'disabled')
 		return 0;
 
 	for (var i = 0 ; i <= MAX_PORT_ID ; i++) {
-		port = etherstates['port'+i];
+		var displayIndex = displayPortIndex(i);
+		port = etherstates['port'+displayIndex];
 		if (port === undefined) continue;
 		state = _ethstates(port);
 		var p = (state[0] || '').split('_');
@@ -91,32 +58,12 @@ function show() {
 		sp = ''+spn;
 		du = (du || '').toUpperCase();
 		if ((du !== 'FD') && (du !== 'HD')) du = 'HD';
-		var cap = portCaption(i);
+		var cap = portCaption(displayIndex, 1); /* shorten */
 		var o = E('ethsvg_'+i);
-		var captionText = renderEthIcon(o, sp, du, cap);
+		renderEthIcon(o, sp, du, cap);
 		if (o)
-			o.title = captionText || state[1] || '';
-		var d = E('ethdesc_'+i);
-		if (d && d !== document.activeElement)
-			d.textContent = (ed[i] || '').substring(0, 8);
+			o.title = state[1] ? state[1] : cap;
 	}
-}
-
-function saveEthDesc() {
-	var i, e, v, d = [];
-	for (i = 0; i <= MAX_PORT_ID; ++i) {
-		e = E('ethdesc_'+i);
-		if (!e) continue;
-		v = (e.textContent || '').replace(/[%\r\n]/g, '').substring(0, 8);
-		if (e.textContent != v) e.textContent = v;
-		d.push(v);
-	}
-	d = d.join('%');
-	if ((nvram.eth_desc || '') == d)
-		return;
-	nvram.eth_desc = d;
-	var cmd = new XmlHttp();
-	cmd.post('shell.cgi', 'action=execute&command='+escapeCGI(('nvram set eth_desc="'+d.replace(/["\\$`]/g, '\\$&')+'"\nnvram commit').replace(/\r/g, '')));
 }
 
 /* does not seem to be strictly necessary for boardflags as it's supposed to be a bitmap */
@@ -196,9 +143,7 @@ switch (nvram['t_model_name']) {
 		COL_P2N = '2';
 		COL_P3N = '1';
 		COL_P4N = '0';
-/* EXTSW-BEGIN */
 		COL_P5N = '5';
-/* EXTSW-END */
 		break;
 	case 'vlan-testid3':
 	case 'Asus RT-AC3200':
@@ -408,21 +353,22 @@ switch (nvram['boardtype']) {
 var COL_VID = 0;
 var COL_MAP = 1;
 var COL_P0  = 2;
-var COL_P1  = 3;
-var COL_P2  = 4;
-var COL_P3  = 5;
-var COL_P4  = 6;
-var COL_VID_DEF;
-var COL_BRI;
-/* EXTSW-NO-BEGIN */
-COL_VID_DEF = 7;
-COL_BRI = 8;
-/* EXTSW-NO-END */
-/* EXTSW-BEGIN */
-COL_P5 = 7;
-COL_VID_DEF = 8;
-COL_BRI = 9;
-/* EXTSW-END */
+var COL_VID_DEF = COL_P0 + MAX_PORT_ID + 1;
+var COL_BRI = COL_VID_DEF + 1;
+var COL_PN = [];
+
+for (var i = 0; i <= MAX_PORT_ID; ++i) {
+	var colName = window['COL_P'+i+'N'];
+	COL_PN.push((typeof colName == 'undefined') ? i.toString() : colName);
+}
+
+function portCol(i) {
+	return COL_P0 + i;
+}
+
+function portColName(i) {
+	return (typeof COL_PN[i] == 'undefined') ? i.toString() : COL_PN[i];
+}
 
 /* RTNPLUS-NO-BEGIN */
 var vlt = nvram.vlan0tag | '0';
@@ -446,17 +392,11 @@ if (port_vlan_supported) {
 		var portOptions = [[0,''],[1,'🌕 On'],[2,'🌓 Tag']];
 		var cols = [
 			{ type: 'select', options: [[0,'0'],[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6'],[7,'7'],[8,'8'],[9,'9'],[10,'10'],[11,'11'],[12,'12'],[13,'13'],[14,'14'],[15,'15']], prefix: '<div class="centered">', suffix: '<\/div>' },
-			{ type: 'text', maxlen: 4, prefix: '<div class="centered">', suffix: '<\/div>' },
-			{ type: 'select', options: portOptions, prefix: '<div class="centered">', suffix: '<\/div>' },
-			{ type: 'select', options: portOptions, prefix: '<div class="centered">', suffix: '<\/div>' },
-			{ type: 'select', options: portOptions, prefix: '<div class="centered">', suffix: '<\/div>' },
-			{ type: 'select', options: portOptions, prefix: '<div class="centered">', suffix: '<\/div>' },
-			{ type: 'select', options: portOptions, prefix: '<div class="centered">', suffix: '<\/div>' }
+			{ type: 'text', maxlen: 4, prefix: '<div class="centered">', suffix: '<\/div>' }
 		];
 
-/* EXTSW-BEGIN */
-		cols.push({ type: 'select', options: portOptions, prefix: '<div class="centered">', suffix: '<\/div>' });
-/* EXTSW-END */
+		for (var i = 0; i <= MAX_PORT_ID; ++i)
+			cols.push({ type: 'select', options: portOptions, prefix: '<div class="centered">', suffix: '<\/div>' });
 
 		/* Default VLAN */
 		cols.push({ type: 'checkbox', prefix: '<div class="centered">', suffix: '<\/div>' });
@@ -472,17 +412,18 @@ if (port_vlan_supported) {
 		var ethIconScale = 100; /* percentage */
 		var ethIconW = Math.round(46 * ethIconScale / 100);
 		var ethIconH = Math.round(35 * ethIconScale / 100);
+		var ethDesc = (nvram.eth_desc || '').split('%');
 
-		var headers = ['VLAN', 'VID',
-		               '<div id="vport_0"><div id="ethdesc_0" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_0" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
-		               '<div id="vport_1"><div id="ethdesc_1" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_1" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
-		               '<div id="vport_2"><div id="ethdesc_2" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_2" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
-		               '<div id="vport_3"><div id="ethdesc_3" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_3" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>',
-		               '<div id="vport_4"><div id="ethdesc_4" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_4" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>'
-		];
-/* EXTSW-BEGIN */
-		headers.push('<div id="vport_5"><div id="ethdesc_5" contenteditable="true" title="Click to edit" onblur="saveEthDesc()" style="text-align:center;cursor:text;min-height:1em"><\/div><span class="eth-icon" id="ethsvg_5" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>');
-/* EXTSW-END */
+		function portHeader(i) {
+			var displayIndex = displayPortIndex(i);
+			var desc = escapeHTML(ethDescClean(ethDesc[displayIndex])) || '&nbsp;';
+			return '<div id="vport_'+i+'"><div class="small" style="padding-bottom:5px">'+desc+'<\/div><span class="eth-icon" id="ethsvg_'+i+'" data-w="'+ethIconW+'" data-h="'+ethIconH+'"><\/span><\/div>';
+		}
+
+		var headers = ['VLAN', 'VID'];
+		for (var i = 0; i <= MAX_PORT_ID; ++i)
+			headers.push(portHeader(i));
+
 		headers.push('Native<br>VLAN', 'Bridge');
 		this.headerSet(headers);
 
@@ -561,16 +502,11 @@ REMOVE-END */
 
 					var row = [
 						i.toString(),
-						((nvram['vlan'+i+'vid'] != '') && (nvram['vlan'+i+'vid'] > 0)) ? (nvram['vlan'+i+'vid']).toString() : '0',
-						pt(COL_P0N),
-						pt(COL_P1N),
-						pt(COL_P2N),
-						pt(COL_P3N),
-						pt(COL_P4N)
+						((nvram['vlan'+i+'vid'] != '') && (nvram['vlan'+i+'vid'] > 0)) ? (nvram['vlan'+i+'vid']).toString() : '0'
 					];
-/* EXTSW-BEGIN */
-					row.push(pt(COL_P5N));
-/* EXTSW-END */
+					for (var j = 0; j <= MAX_PORT_ID; ++j)
+						row.push(pt(portColName(j)));
+
 					row.push((((nvram['vlan'+i+'ports']).indexOf('*') != -1) ? '1' : '0'));
 					row.push((bridged[i] != null) ? bridged[i] : '1');
 					vlg.insertData(-1, row);
@@ -619,7 +555,7 @@ REMOVE-END */
 	}
 
 	vlg.verifyFields = function(row, quiet) {
-		var i, j, old, oldP0, oldP1, oldP2, oldP3, oldP4, oldP5, me, checkNative, valid = 1;
+		var i, j, old, me, checkNative, valid = 1;
 		var f = fields.getAll(row);
 
 		for (i = 0; i<= MAX_VLAN_ID ; i++)
@@ -647,26 +583,15 @@ REMOVE-END */
 			if (val !== 0 && val !== 1 && val !== 2)
 				f[col].value = '0';
 		}
-		enforcePortState(COL_P0);
-		enforcePortState(COL_P1);
-		enforcePortState(COL_P2);
-		enforcePortState(COL_P3);
-		enforcePortState(COL_P4);
-/* EXTSW-BEGIN */
-		enforcePortState(COL_P5);
-/* EXTSW-END */
+		for (i = 0; i <= MAX_PORT_ID; ++i)
+			enforcePortState(portCol(i));
 
 		/* Modifications to enable Native VLAN support (allow one untagged vlan per port) by default */
 		var err_vlan = 'Only one untagged VLAN per port is allowed (Native VLAN)';
 		old = ((row == this.editor) && this.source) ? this.source.getRowData() : null;
-		oldP0 = (old && (old.length > COL_P0)) ? old[COL_P0] : '0';
-		oldP1 = (old && (old.length > COL_P1)) ? old[COL_P1] : '0';
-		oldP2 = (old && (old.length > COL_P2)) ? old[COL_P2] : '0';
-		oldP3 = (old && (old.length > COL_P3)) ? old[COL_P3] : '0';
-		oldP4 = (old && (old.length > COL_P4)) ? old[COL_P4] : '0';
-/* EXTSW-BEGIN */
-		oldP5 = (old && (old.length > COL_P5)) ? old[COL_P5] : '0';
-/* EXTSW-END */
+		var oldPort = [];
+		for (i = 0; i <= MAX_PORT_ID; ++i)
+			oldPort[i] = (old && (old.length > portCol(i))) ? old[portCol(i)] : '0';
 		me = this;
 		checkNative = function(col, oldVal) {
 			if (f[col].value == '1') {
@@ -680,14 +605,8 @@ REMOVE-END */
 			else
 				ferror.clear(f[col]);
 		}
-		checkNative(COL_P0, oldP0);
-		checkNative(COL_P1, oldP1);
-		checkNative(COL_P2, oldP2);
-		checkNative(COL_P3, oldP3);
-		checkNative(COL_P4, oldP4);
-/* EXTSW-BEGIN */
-		checkNative(COL_P5, oldP5);
-/* EXTSW-END */
+		for (i = 0; i <= MAX_PORT_ID; ++i)
+			checkNative(portCol(i), oldPort[i]);
 
 		if (this.countDefaultVID() > 0) {
 			f[COL_VID_DEF].disabled = 1;
@@ -758,20 +677,15 @@ REMOVE-END */
 		var view = [
 			data[COL_VID],
 /* RTNPLUS-NO-BEGIN */
-			((data[COL_MAP].toString() == '') || (data[COL_MAP].toString() == '0')) ? (parseInt(E('_vlan0tag').value) * 1 + data[COL_VID] * 1).toString() : data[COL_MAP].toString(),
+			((data[COL_MAP].toString() == '') || (data[COL_MAP].toString() == '0')) ? (parseInt(E('_vlan0tag').value) * 1 + data[COL_VID] * 1).toString() : data[COL_MAP].toString()
 /* RTNPLUS-NO-END */
 /* RTNPLUS-BEGIN */
-			((data[COL_MAP].toString() == '') || (data[COL_MAP].toString() == '0')) ? (data[COL_VID] * 1).toString() : data[COL_MAP].toString(),
+			((data[COL_MAP].toString() == '') || (data[COL_MAP].toString() == '0')) ? (data[COL_VID] * 1).toString() : data[COL_MAP].toString()
 /* RTNPLUS-END */
-			pv(data[COL_P0]),
-			pv(data[COL_P1]),
-			pv(data[COL_P2]),
-			pv(data[COL_P3]),
-			pv(data[COL_P4])
 		];
-/* EXTSW-BEGIN */
-		view.push(pv(data[COL_P5]));
-/* EXTSW-END */
+		for (var i = 0; i <= MAX_PORT_ID; ++i)
+			view.push(pv(data[portCol(i)]));
+
 		view.push(
 			(data[COL_VID_DEF].toString() != '0') ? '🌑' : '',
 			['','WAN0','LAN0 (br0)','LAN1 (br1)','LAN2 (br2)','LAN3 (br3)','WAN1'
@@ -784,27 +698,20 @@ REMOVE-END */
 	}
 
 	vlg.dataToFieldValues = function (data) {
-		var values = [data[COL_VID], data[COL_MAP], data[COL_P0], data[COL_P1], data[COL_P2], data[COL_P3], data[COL_P4]];
-/* EXTSW-BEGIN */
-		values.push(data[COL_P5]);
-/* EXTSW-END */
+		var values = [data[COL_VID], data[COL_MAP]];
+		for (var i = 0; i <= MAX_PORT_ID; ++i)
+			values.push(data[portCol(i)]);
+
 		values.push((data[COL_VID_DEF] != 0) ? 1 : 0, data[COL_BRI]);
 		return values;
 	}
 
 	vlg.fieldValuesToData = function(row) {
 		var f = fields.getAll(row);
-		var data = [f[COL_VID].value,
-			f[COL_MAP].value,
-			parseInt(f[COL_P0].value, 10) || 0,
-			parseInt(f[COL_P1].value, 10) || 0,
-			parseInt(f[COL_P2].value, 10) || 0,
-			parseInt(f[COL_P3].value, 10) || 0,
-			parseInt(f[COL_P4].value, 10) || 0
-		];
-/* EXTSW-BEGIN */
-		data.push(parseInt(f[COL_P5].value, 10) || 0);
-/* EXTSW-END */
+		var data = [f[COL_VID].value, f[COL_MAP].value];
+		for (var i = 0; i <= MAX_PORT_ID; ++i)
+			data.push(parseInt(f[portCol(i)].value, 10) || 0);
+
 		data.push(f[COL_VID_DEF].checked ? 1 : 0, f[COL_BRI].value);
 		return data;
 	}
@@ -914,14 +821,8 @@ REMOVE-END */
 		for (var i = 0; i <= MAX_VLAN_ID ; i++)
 			f[COL_VID].options[i].disabled = (this.countVID(i) > 0);
 
-		f[COL_P0].value = '0';
-		f[COL_P1].value = '0';
-		f[COL_P2].value = '0';
-		f[COL_P3].value = '0';
-		f[COL_P4].value = '0';
-/* EXTSW-BEGIN */
-		f[COL_P5].value = '0';
-/* EXTSW-END */
+		for (var i = 0; i <= MAX_PORT_ID; ++i)
+			f[portCol(i)].value = '0';
 		f[COL_VID_DEF].checked = 0;
 		if (this.countDefaultVID() > 0)
 			f[COL_VID_DEF].disabled = 1;
@@ -955,7 +856,7 @@ function verifyFields(focused, quiet) {
 
 		for (var i = 0; i < data.length; ++i) {
 			/* port columns */
-			for (var col = COL_P0; col <= COL_P4; ++col) {
+			for (var col = COL_P0; col < COL_VID_DEF; ++col) {
 				if (data[i][col] == 2) { /* only Tag */
 					data[i][col] = 1; /* downgrade Tag -> On */
 					changed = true;
@@ -1044,31 +945,12 @@ function save() {
 
 	for (i = 0; i < d.length; ++i) {
 		p = '';
-		p += (d[i][COL_P0].toString() != '0') ? COL_P0N : '';
-		p += (((trunk_vlan_supported || PORT_VLAN_SUPPORT_OVERRIDE)) && (d[i][COL_P0].toString() == '2')) ? 't' : '';
-		p += trailingSpace(p);
-
-		p += (d[i][COL_P1].toString() != '0') ? COL_P1N : '';
-		p += (((trunk_vlan_supported || PORT_VLAN_SUPPORT_OVERRIDE)) && (d[i][COL_P1].toString() == '2')) ? 't' : '';
-		p += trailingSpace(p);
-
-		p += (d[i][COL_P2].toString() != '0') ? COL_P2N : '';
-		p += (((trunk_vlan_supported || PORT_VLAN_SUPPORT_OVERRIDE)) && (d[i][COL_P2].toString() == '2')) ? 't' : '';
-		p += trailingSpace(p);
-
-		p += (d[i][COL_P3].toString() != '0') ? COL_P3N : '';
-		p += (((trunk_vlan_supported || PORT_VLAN_SUPPORT_OVERRIDE)) && (d[i][COL_P3].toString() == '2')) ? 't' : '';
-		p += trailingSpace(p);
-
-		p += (d[i][COL_P4].toString() != '0') ? COL_P4N : '';
-		p += (((trunk_vlan_supported || PORT_VLAN_SUPPORT_OVERRIDE)) && (d[i][COL_P4].toString() == '2')) ? 't' : '';
-		p += trailingSpace(p);
-
-/* EXTSW-BEGIN */
-		p += (d[i][COL_P5].toString() != '0') ? COL_P5N : '';
-		p += (((trunk_vlan_supported || PORT_VLAN_SUPPORT_OVERRIDE)) && (d[i][COL_P5].toString() == '2')) ? 't' : '';
-		p += trailingSpace(p);
-/* EXTSW-END */
+		for (j = 0; j <= MAX_PORT_ID; ++j) {
+			var col = portCol(j);
+			p += (d[i][col].toString() != '0') ? portColName(j) : '';
+			p += (((trunk_vlan_supported || PORT_VLAN_SUPPORT_OVERRIDE)) && (d[i][col].toString() == '2')) ? 't' : '';
+			p += trailingSpace(p);
+		}
 
 		p += (d[i][COL_VID_DEF].toString() != '0') ? (SWITCH_INTERNAL_PORT+'*') : SWITCH_INTERNAL_PORT;
 

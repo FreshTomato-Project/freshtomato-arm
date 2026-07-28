@@ -1,0 +1,275 @@
+// This file Copyright © Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0-only), GPLv3 (SPDX: GPL-3.0-only),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
+
+#include "VariantHelpers.h"
+
+#include <cmath>
+#include <cstdint>
+#include <limits>
+#include <mutex>
+#include <string_view>
+
+#include <QUrl>
+
+#include <libtransmission/serializer.h>
+#include <libtransmission/web-utils.h>
+
+#include "Application.h" // qApp
+#include "Speed.h"
+#include "Torrent.h"
+
+namespace trqt::variant_helpers
+{
+
+bool change(double& setme, double const& value)
+{
+    bool const changed = std::fabs(setme - value) > std::numeric_limits<double>::epsilon();
+
+    if (changed)
+    {
+        setme = value;
+    }
+
+    return changed;
+}
+
+bool change(Speed& setme, tr_variant const* value)
+{
+    auto const byps = getValue<int>(value);
+    return byps && change(setme, Speed{ *byps, Speed::Units::Byps });
+}
+
+bool change(TorrentHash& setme, tr_variant const* value)
+{
+    auto const hash_string = getValue<std::string_view>(value);
+    return hash_string && change(setme, TorrentHash{ *hash_string });
+}
+
+bool change(Peer& setme, tr_variant const* value)
+{
+    auto changed = false;
+
+    auto pos = size_t{ 0 };
+    auto key = tr_quark{};
+    tr_variant* child = nullptr;
+    while (tr_variantDictChild(const_cast<tr_variant*>(value), pos++, &key, &child))
+    {
+        switch (key)
+        {
+#define HANDLE_KEY(key, field) \
+    case TR_KEY_##key: \
+        changed = change(setme.field, child) || changed; \
+        break;
+
+            HANDLE_KEY(address, address)
+            HANDLE_KEY(client_is_choked, client_is_choked)
+            HANDLE_KEY(client_is_interested, client_is_interested)
+            HANDLE_KEY(client_name, client_name)
+            HANDLE_KEY(flag_str, flags)
+            HANDLE_KEY(is_downloading_from, is_downloading_from)
+            HANDLE_KEY(is_encrypted, is_encrypted)
+            HANDLE_KEY(is_incoming, is_incoming)
+            HANDLE_KEY(is_uploading_to, is_uploading_to)
+            HANDLE_KEY(peer_is_choked, peer_is_choked)
+            HANDLE_KEY(peer_is_interested, peer_is_interested)
+            HANDLE_KEY(port, port)
+            HANDLE_KEY(progress, progress)
+            HANDLE_KEY(rate_to_client, rate_to_client)
+            HANDLE_KEY(rate_to_peer, rate_to_peer)
+#undef HANDLE_KEY
+        default:
+            break;
+        }
+    }
+
+    return changed;
+}
+
+bool change(TorrentFile& setme, tr_variant const* value)
+{
+    auto changed = false;
+
+    auto pos = size_t{ 0 };
+    auto key = tr_quark{};
+    tr_variant* child = nullptr;
+    while (tr_variantDictChild(const_cast<tr_variant*>(value), pos++, &key, &child))
+    {
+        switch (key)
+        {
+#define HANDLE_KEY(key) \
+    case TR_KEY_##key: \
+        changed = change(setme.key, child) || changed; \
+        break;
+
+            HANDLE_KEY(priority)
+            HANDLE_KEY(wanted)
+#undef HANDLE_KEY
+#define HANDLE_KEY(key, field) \
+    case TR_KEY_##key: \
+        changed = change(setme.field, child) || changed; \
+        break;
+
+            HANDLE_KEY(bytes_completed, have)
+            HANDLE_KEY(length, size)
+            HANDLE_KEY(name, filename)
+#undef HANDLE_KEY
+        default:
+            break;
+        }
+    }
+
+    return changed;
+}
+
+bool change(TrackerStat& setme, tr_variant const* value)
+{
+    bool changed = false;
+    bool site_changed = false;
+
+    auto pos = size_t{ 0 };
+    auto key = tr_quark{};
+    tr_variant* child = nullptr;
+    while (tr_variantDictChild(const_cast<tr_variant*>(value), pos++, &key, &child))
+    {
+        bool field_changed = false;
+
+        switch (key)
+        {
+#define HANDLE_KEY(key) \
+    case TR_KEY_##key: \
+        field_changed = change(setme.key, child); \
+        break;
+            HANDLE_KEY(announce)
+            HANDLE_KEY(announce_state)
+            HANDLE_KEY(download_count)
+            HANDLE_KEY(has_announced)
+            HANDLE_KEY(has_scraped)
+            HANDLE_KEY(id)
+            HANDLE_KEY(is_backup)
+            HANDLE_KEY(last_announce_peer_count)
+            HANDLE_KEY(last_announce_result)
+            HANDLE_KEY(last_announce_start_time)
+            HANDLE_KEY(last_announce_succeeded)
+            HANDLE_KEY(last_announce_time)
+            HANDLE_KEY(last_announce_timed_out)
+            HANDLE_KEY(last_scrape_result)
+            HANDLE_KEY(last_scrape_start_time)
+            HANDLE_KEY(last_scrape_succeeded)
+            HANDLE_KEY(last_scrape_time)
+            HANDLE_KEY(last_scrape_timed_out)
+            HANDLE_KEY(leecher_count)
+            HANDLE_KEY(next_announce_time)
+            HANDLE_KEY(next_scrape_time)
+            HANDLE_KEY(scrape_state)
+            HANDLE_KEY(seeder_count)
+            HANDLE_KEY(sitename)
+            HANDLE_KEY(tier)
+
+#undef HANDLE_KEY
+        default:
+            break;
+        }
+
+        if (field_changed)
+        {
+            site_changed |= key == TR_KEY_announce || key == TR_KEY_sitename;
+        }
+
+        changed = true;
+    }
+
+    if (site_changed && !setme.announce.isEmpty() && trApp != nullptr)
+    {
+        if (setme.sitename.isEmpty())
+        {
+            auto const announce_str = setme.announce.toStdString();
+            if (auto const parsed = tr_urlParse(announce_str))
+            {
+                auto const sitename = parsed->sitename;
+                setme.sitename = QString::fromUtf8(std::data(sitename), std::size(sitename));
+            }
+        }
+
+        setme.announce = trApp->intern(setme.announce);
+        trApp->load_favicon(setme.announce);
+    }
+
+    return changed;
+}
+
+///
+
+void variantInit(tr_variant* init_me, bool value)
+{
+    *init_me = value;
+}
+
+void variantInit(tr_variant* init_me, int64_t value)
+{
+    *init_me = value;
+}
+
+void variantInit(tr_variant* init_me, int value)
+{
+    *init_me = value;
+}
+
+void variantInit(tr_variant* init_me, double value)
+{
+    *init_me = value;
+}
+
+void variantInit(tr_variant* init_me, QByteArray const& value)
+{
+    *init_me = std::string_view{ value.constData(), static_cast<size_t>(value.size()) };
+}
+
+void variantInit(tr_variant* init_me, QString const& value)
+{
+    *init_me = value.toStdString();
+}
+
+void variantInit(tr_variant* init_me, std::string_view value)
+{
+    *init_me = value;
+}
+
+namespace
+{
+bool toInt(tr_variant const& src, int* tgt)
+{
+    if (auto const val = src.value_if<int64_t>())
+    {
+        if (*val < std::numeric_limits<int>::min() || *val > std::numeric_limits<int>::max())
+        {
+            return false;
+        }
+
+        *tgt = static_cast<int>(*val);
+        return true;
+    }
+
+    return false;
+}
+
+tr_variant fromInt(int const& val)
+{
+    return static_cast<int64_t>(val);
+}
+} // namespace
+
+void register_qt_converters()
+{
+    static auto once = std::once_flag{};
+    std::call_once(
+        once,
+        []
+        {
+            using namespace libtransmission::serializer;
+            Converters::add(toInt, fromInt);
+        });
+}
+
+} // namespace trqt::variant_helpers

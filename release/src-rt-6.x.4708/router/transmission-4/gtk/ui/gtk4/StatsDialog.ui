@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface domain="transmission-gtk">
+  <requires lib="gtk" version="4.0"/>
+  <object class="GtkDialog" id="StatsDialog">
+    <property name="title" translatable="yes">Statistics</property>
+    <child internal-child="content_area">
+      <object class="GtkBox" id="dialog_layout">
+        <property name="orientation">vertical</property>
+        <property name="spacing">6</property>
+        <property name="css-classes">tr-dialog-content</property>
+        <property name="vexpand">1</property>
+        <child>
+          <object class="GtkBox" id="dialog_content_layout">
+            <property name="orientation">vertical</property>
+            <property name="spacing">6</property>
+            <child>
+              <object class="GtkFrame">
+                <child type="label">
+                  <object class="GtkLabel" id="current_session_section_label">
+                    <property name="label" translatable="yes">Current Session</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkGrid" id="current_session_section_layout">
+                    <property name="row-spacing">6</property>
+                    <property name="column-spacing">12</property>
+                    <child>
+                      <object class="GtkLabel" id="current_uploaded_label">
+                        <property name="label" translatable="yes">Uploaded:</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">0</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="current_uploaded_value_label">
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <accessibility>
+                          <relation name="labelled-by">current_uploaded_label</relation>
+                        </accessibility>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="row">0</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="current_downloaded_label">
+                        <property name="label" translatable="yes">Downloaded:</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">1</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="current_downloaded_value_label">
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <accessibility>
+                          <relation name="labelled-by">current_downloaded_label</relation>
+                        </accessibility>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="row">1</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="current_ratio_label">
+                        <property name="label" translatable="yes">Ratio:</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">2</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="current_ratio_value_label">
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <accessibility>
+                          <relation name="labelled-by">current_ratio_label</relation>
+                        </accessibility>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="row">2</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="current_duration_label">
+                        <property name="label" translatable="yes">Duration:</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">3</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="current_duration_value_label">
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <accessibility>
+                          <relation name="labelled-by">current_duration_label</relation>
+                        </accessibility>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="row">3</property>
+                        </layout>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkFrame">
+                <child type="label">
+                  <object class="GtkLabel" id="total_section_label">
+                    <property name="label" translatable="yes">Total</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                    </attributes>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkGrid" id="total_section_layout">
+                    <property name="row-spacing">6</property>
+                    <property name="column-spacing">12</property>
+                    <child>
+                      <object class="GtkLabel" id="start_count_label">
+                        <property name="can-focus">1</property>
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">0</property>
+                          <property name="column-span">2</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="total_uploaded_label">
+                        <property name="label" translatable="yes">Uploaded:</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">1</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="total_uploaded_value_label">
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <accessibility>
+                          <relation name="labelled-by">total_uploaded_label</relation>
+                        </accessibility>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="row">1</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="total_downloaded_label">
+                        <property name="label" translatable="yes">Downloaded:</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">2</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="total_downloaded_value_label">
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <accessibility>
+                          <relation name="labelled-by">total_downloaded_label</relation>
+                        </accessibility>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="row">2</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="total_ratio_label">
+                        <property name="label" translatable="yes">Ratio:</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">3</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="total_ratio_value_label">
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <accessibility>
+                          <relation name="labelled-by">total_ratio_label</relation>
+                        </accessibility>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="row">3</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="total_duration_label">
+                        <property name="label" translatable="yes">Duration:</property>
+                        <property name="xalign">0</property>
+                        <layout>
+                          <property name="column">0</property>
+                          <property name="row">4</property>
+                        </layout>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="total_duration_value_label">
+                        <property name="hexpand">1</property>
+                        <property name="label">...</property>
+                        <property name="selectable">1</property>
+                        <property name="xalign">0</property>
+                        <accessibility>
+                          <relation name="labelled-by">total_duration_label</relation>
+                        </accessibility>
+                        <layout>
+                          <property name="column">1</property>
+                          <property name="row">4</property>
+                        </layout>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child internal-child="action_area">
+      <object class="GtkBox" id="dialog_buttons">
+        <property name="css-classes">tr-button-box</property>
+        <property name="spacing">6</property>
+        <child>
+          <object class="GtkButton" id="reset_button">
+            <property name="label" translatable="yes">_Reset</property>
+            <property name="focusable">1</property>
+            <property name="receives-default">1</property>
+            <property name="use-underline">1</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkButton" id="close_button">
+            <property name="label" translatable="yes">_Close</property>
+            <property name="focusable">1</property>
+            <property name="receives-default">1</property>
+            <property name="use-underline">1</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="1">reset_button</action-widget>
+      <action-widget response="close">close_button</action-widget>
+    </action-widgets>
+  </object>
+  <object class="GtkSizeGroup" id="labels_width_group">
+    <widgets>
+      <widget name="current_uploaded_label"/>
+      <widget name="current_downloaded_label"/>
+      <widget name="current_ratio_label"/>
+      <widget name="current_duration_label"/>
+      <widget name="total_uploaded_label"/>
+      <widget name="total_downloaded_label"/>
+      <widget name="total_ratio_label"/>
+      <widget name="total_duration_label"/>
+    </widgets>
+  </object>
+</interface>

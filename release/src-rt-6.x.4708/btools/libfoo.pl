@@ -223,7 +223,7 @@ sub fixDyn
 	fixDynDep("minidlna", "libid3tag.so.0.16.4");
 	fixDynDep("minidlna", "libexif.so.12");
 	fixDynDep("minidlna", "libFLAC.so.14.0.0");
-	fixDynDep("minidlna", "libsqlite3.so.3.53.1");
+	fixDynDep("minidlna", "libsqlite3.so.3.53.3");
 	fixDynDep("mysql", "libz.so.1");
 	fixDynDep("mysqld", "libz.so.1");
 	fixDynDep("mysqldump", "libz.so.1");
@@ -290,7 +290,7 @@ sub fixDyn
 	}
 	fixDynDep("php-cgi", "libpng16.so.16.58.0");
 	fixDynDep("php-cgi", "libiconv.so.2.7.1");
-	fixDynDep("php-cgi", "libsqlite3.so.3.53.1");
+	fixDynDep("php-cgi", "libsqlite3.so.3.53.3");
 	if ($openssldir eq "openssl-3.0") {
 		fixDynDep("php-cgi", "libcurl.so.4.8.0");
 	}
@@ -311,7 +311,7 @@ sub fixDyn
 	}
 	fixDynDep("php-cli", "libpng16.so.16.58.0");
 	fixDynDep("php-cli", "libiconv.so.2.7.1");
-	fixDynDep("php-cli", "libsqlite3.so.3.53.1");
+	fixDynDep("php-cli", "libsqlite3.so.3.53.3");
 	if ($openssldir eq "openssl-3.0") {
 		fixDynDep("php-cli", "libcurl.so.4.8.0");
 	}
@@ -332,7 +332,7 @@ sub fixDyn
 	}
 	fixDynDep("php-fpm", "libpng16.so.16.58.0");
 	fixDynDep("php-fpm", "libiconv.so.2.7.1");
-	fixDynDep("php-fpm", "libsqlite3.so.3.53.1");
+	fixDynDep("php-fpm", "libsqlite3.so.3.53.3");
 	if ($openssldir eq "openssl-3.0") {
 		fixDynDep("php-fpm", "libcurl.so.4.8.0");
 	}
@@ -402,7 +402,7 @@ sub fixDyn
 # avahi
 	fixDynDep("avahi-daemon", "libavahi-core.so.7.1.0");
 	fixDynDep("avahi-daemon", "libavahi-common.so.3.5.4");
-	fixDynDep("avahi-daemon", "libexpat.so.1.12.0");
+	fixDynDep("avahi-daemon", "libexpat.so.1.12.2");
 	fixDynDep("avahi-daemon", "libdaemon.so.0.5.0");
 
 	fixDynDep("xtables-legacy-multi", "libxtables.so");
@@ -730,7 +730,7 @@ if ($is_arm ne "y") { # MIPS only (ARM - bigger)
 	genSO("${root}/usr/lib/libavformat.so.54", "${router}/ffmpeg/libavformat/libavformat.a", "${stripshared}", "-L${router}/ffmpeg/libavutil -L${router}/ffmpeg/libavcodec -L${router}/zlib");
 }
 
-genSO("${root}/usr/lib/libexpat.so.1.12.0", "${router}/expat/static/libexpat.a", "${stripshared}");
+genSO("${root}/usr/lib/libexpat.so.1.12.2", "${router}/expat/static/libexpat.a", "${stripshared}");
 genSO("${root}/usr/lib/libavutil.so.51", "${router}/ffmpeg/libavutil/libavutil.a", "${stripshared}", "-L${router}/zlib");
 genSO("${root}/usr/lib/libzebra.so", "${router}/zebra/lib/libzebra.a", "${stripshared}");
 genSO("${root}/usr/lib/libnfnetlink.so.0.2.0", "${router}/libnfnetlink/src/.libs/libnfnetlink.a", "${stripshared}");

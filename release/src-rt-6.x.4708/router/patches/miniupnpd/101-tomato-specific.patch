@@ -1,6 +1,6 @@
 --- miniupnpd/configure
 +++ miniupnpd/configure
-@@ -144,11 +144,11 @@
+@@ -220,11 +220,12 @@
  	OS_VERSION=$(cat ./os.astlinux)
  fi
  
@@ -12,13 +12,14 @@
 -	OS_VERSION="Tomato $TOMATO_VER"
 +	TOMATO_VER=`cat ../shared/tomato_version | cut -d' ' -f1,2`
 +	OS_VERSION="FreshTomato $TOMATO_VER"
++	PKG_CONFIG=
  fi
  
  # OpenEmbedded special case
-@@ -468,8 +468,8 @@
- 		FW=iptables
+@@ -557,19 +558,18 @@
  		;;
  	Tomato)
+ 		OS_FAMILY=Linux
 -		OS_NAME=UPnP
 -		OS_URL=http://tomatousb.org/
 +		OS_NAME=FreshTomato
@@ -26,7 +27,11 @@
  		echo "" >> ${CONFIGFILE}
  		echo "#ifndef TOMATO" >> ${CONFIGFILE}
  		echo "#define TOMATO" >> ${CONFIGFILE}
-@@ -481,6 +481,7 @@
+ 		echo "#endif" >> ${CONFIGFILE}
+ 		echo "" >> ${CONFIGFILE}
+-		echo "#ifdef LINUX26" >> ${CONFIGFILE}
+ 		echo "#define USE_IFACEWATCHER 1" >> ${CONFIGFILE}
+-		echo "#endif" >> ${CONFIGFILE}
  		echo "#ifdef TCONFIG_IPV6" >> ${CONFIGFILE}
  		echo "#define ENABLE_IPV6" >> ${CONFIGFILE}
  		echo "#endif" >> ${CONFIGFILE}
@@ -34,61 +39,43 @@
  		FW=iptables
  		;;
  	Darwin)
-@@ -570,8 +571,14 @@
+@@ -662,8 +662,14 @@
  				fi
  				if [ "$IPTABLES_143" = "1" ] ; then
- 					echo "LDLIBS += ${IPTABLESPATH}/libiptc/.libs/libip4tc.o" >> config.mk
-+					if [ "$TCONFIG_IPV6" = "y" ]; then
-+						echo "LDLIBS += ${IPTABLESPATH}/libiptc/.libs/libip6tc.o" >> config.mk
+ 					echo "LDLIBS += ${IPTABLESPATH}/libiptc/.libs/libip4tc.o" >> ${CONFIG_MK}
++					if [ "$OS_NAME" = "FreshTomato" ] && [ "$TCONFIG_IPV6" = "y" ]; then
++						echo "LDLIBS += ${IPTABLESPATH}/libiptc/.libs/libip6tc.o" >> ${CONFIG_MK}
 +					fi
  				else
- 					echo "LDLIBS += ${IPTABLESPATH}/libiptc/libiptc.a" >> config.mk
-+					if [ "$TCONFIG_IPV6" = "y" ]; then
-+						echo "LDLIBS += ${IPTABLESPATH}/libiptc/libip6tc.a" >> config.mk
+ 					echo "LDLIBS += ${IPTABLESPATH}/libiptc/libiptc.a" >> ${CONFIG_MK}
++					if [ "$OS_NAME" = "FreshTomato" ] && [ "$TCONFIG_IPV6" = "y" ]; then
++						echo "LDLIBS += ${IPTABLESPATH}/libiptc/libip6tc.a" >> ${CONFIG_MK}
 +					fi
  				fi
  			else
  				# OpenWrt
 --- miniupnpd/Makefile.linux
 +++ miniupnpd/Makefile.linux
-@@ -21,27 +21,29 @@
- # ./configure them and build them then miniupnpd will build using :
- # $ IPTABLESPATH=/path/to/iptables-1.4.1 make
- #
-+include ../common.mak
-+
- CONFIG_OPTIONS ?= $(cat .configure.cache)
- CONFIG_OPTIONS += --firewall=iptables
- #CFLAGS = -O -g -DDEBUG
+@@ -37,7 +37,7 @@
  CFLAGS ?= -Os
--CFLAGS += -fno-strict-aliasing
--CFLAGS += -fno-common
+ CFLAGS += -fno-strict-aliasing
+ CFLAGS += -fno-common
 -CFLAGS += -fstack-protector -fPIE
--CFLAGS += -D_FORTIFY_SOURCE=2
-+#CFLAGS += -fno-strict-aliasing
-+#CFLAGS += -fno-common
 +#CFLAGS += -fstack-protector -fPIE
-+#CFLAGS += -D_FORTIFY_SOURCE=2
- CPPFLAGS += -D_GNU_SOURCE
  CFLAGS += -Wall
  CFLAGS += -Wextra -Wstrict-prototypes -Wdeclaration-after-statement
  #CFLAGS += -Wno-missing-field-initializers
- #CFLAGS += -ansi	# iptables headers does use typeof which is a gcc extension
--LDFLAGS += -Wl,-z,now -Wl,-z,relro -pie
-+LDFLAGS ?= -Wl,-z,now -Wl,-z,relro -pie
- CC ?= gcc
- RM = rm -f
+@@ -48,7 +48,7 @@
  INSTALL = install
  STRIP ?= strip
- PKG_CONFIG ?= pkg-config
  CP = cp
 -DOXYGEN ?= doxygen
 +#DOXYGEN ?= doxygen
  
- DEPFLAGS = -MM -MG -MT $(patsubst %.d,%.o,$@) -MT $@
- # -M : with system headers, -MM : without
-@@ -52,7 +54,7 @@
- MANINSTALLDIR = $(INSTALLPREFIX)/share/man/man8
+ DEPDIR := .depend
+ DEPFLAGS = -MMD -MP -MF $(@:%.o=$(DEPDIR)/%.d) -MT $@
+@@ -65,7 +65,7 @@
+ SYSTEMDUNITDIR = $(LIBDIR)/systemd/system
  
  include config.mk
 -include $(SRCDIR)/gitrev.mk
@@ -96,44 +83,15 @@
  include $(SRCDIR)/objects.mk
  
  # sources in netfilter/ directory
-@@ -85,14 +87,14 @@
+@@ -80,7 +80,7 @@
  
- # OpenWrt packager disables https server for IGD v2 and hardcodes libuuid support
- ifeq ($(TARGET_OPENWRT),)
--LDLIBS += $(shell $(PKG_CONFIG) --static --libs-only-l libssl)
-+LDLIBS += $(if $(TCONFIG_HTTPS),$(shell $(PKG_CONFIG) --static --libs-only-l libssl))
+ #LDLIBS += -lnfnetlink
  
--TEST := $(shell $(PKG_CONFIG) --exists uuid && echo 1)
--ifeq ($(TEST),1)
--LDLIBS += $(shell $(PKG_CONFIG) --static --libs-only-l uuid)
--else
--$(info please install uuid-dev package / libuuid)
--endif # ($(TEST),1)
-+#TEST := $(shell $(PKG_CONFIG) --exists uuid && echo 1)
-+#ifeq ($(TEST),1)
-+#LDLIBS += $(shell $(PKG_CONFIG) --static --libs-only-l uuid)
-+#else
-+#$(info please install uuid-dev package / libuuid)
-+#endif # ($(TEST),1)
- endif # ($(TARGET_OPENWRT,)
- 
- ifneq ($(shell ldd --version | grep GLIBC),)
-@@ -107,10 +109,11 @@
- 
- TESTUPNPDESCGENOBJS = testupnpdescgen.o upnpdescgen.o
- 
--EXECUTABLES = miniupnpd testupnpdescgen testgetifstats \
--              testupnppermissions miniupnpdctl testgetifaddr \
--              testgetroute testasyncsendto testportinuse \
--              testssdppktgen testminissdp
+-EXECUTABLES = miniupnpd miniupnpdctl
 +EXECUTABLES = miniupnpd
-+#EXECUTABLES = miniupnpd testupnpdescgen testgetifstats \
-+#              testupnppermissions miniupnpdctl testgetifaddr \
-+#              testgetroute testasyncsendto testportinuse \
-+#              testssdppktgen testminissdp
  
- .PHONY:	all clean install depend dox
- 
+ ifeq ($(TESTS), 1)
+ EXECUTABLES += testupnpdescgen testgetifstats \
 --- miniupnpd/netfilter/iptcrdr.c
 +++ miniupnpd/netfilter/iptcrdr.c
 @@ -14,8 +14,12 @@
@@ -181,3 +139,39 @@
  #include <libiptc/libip6tc.h>
  #include "tiny_nf_nat.h"
  
+--- miniupnpd/netfilter/iptpinhole.c
++++ miniupnpd/netfilter/iptpinhole.c
+@@ -174,7 +174,11 @@
+                          struct ip6t_entry * e)
+ {
+ 	IP6TC_HANDLE h;
++#ifdef BCMARM
+ 	xt_chainlabel chainlabel;
++#else
++	ipt_chainlabel chainlabel;
++#endif
+ 
+ 	h = ip6tc_init(table);
+ 	if(!h) {
+@@ -331,7 +335,11 @@
+ 	const struct ip6t_entry_match *match = NULL;
+ 	/*const struct ip6t_entry_target *target = NULL;*/
+ 	unsigned int index;
++#ifdef BCMARM
+ 	xt_chainlabel chainlabel;
++#else
++	ipt_chainlabel chainlabel;
++#endif
+ 
+ 	p = get_pinhole(uid);
+ 	if(!p)
+--- miniupnpd/testifacewatcher.c
++++ miniupnpd/testifacewatcher.c
+@@ -2,6 +2,7 @@
+ 
+ #include <syslog.h>
+ #include <signal.h>
++#include <stdio.h>
+ 
+ #include "ifacewatcher.h"
+ #include "miniupnpdtypes.h"

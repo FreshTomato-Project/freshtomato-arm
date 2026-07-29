@@ -1,4 +1,5 @@
-const { humanReadableArgName } = require('./argument.js');
+import { humanReadableArgName } from './argument.js';
+import { stripVTControlCharacters } from 'node:util';
 
 /**
  * TypeScript import types for JSDoc, used by Visual Studio Code IntelliSense and `npm run typescript-checkJS`
@@ -9,7 +10,7 @@ const { humanReadableArgName } = require('./argument.js');
  */
 
 // Although this is a class, methods are static in style to allow override using subclass or just functions.
-class Help {
+export class Help {
   constructor() {
     this.helpWidth = undefined;
     this.minWidthToWrap = 40;
@@ -533,7 +534,7 @@ class Help {
    * @returns {number}
    */
   displayWidth(str) {
-    return stripColor(str).length;
+    return stripVTControlCharacters(str).length;
   }
 
   /**
@@ -728,20 +729,3 @@ class Help {
     return wrappedLines.join('\n');
   }
 }
-
-/**
- * Strip style ANSI escape sequences from the string. In particular, SGR (Select Graphic Rendition) codes.
- *
- * @param {string} str
- * @returns {string}
- * @package
- */
-
-function stripColor(str) {
-  // eslint-disable-next-line no-control-regex
-  const sgrPattern = /\x1b\[\d*(;\d*)*m/g;
-  return str.replace(sgrPattern, '');
-}
-
-exports.Help = Help;
-exports.stripColor = stripColor;

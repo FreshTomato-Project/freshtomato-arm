@@ -76,7 +76,7 @@ The two most used option types are a boolean option, and an option which takes i
 Example file: [split.js](./examples/split.js)
 
 ```js
-const { program } = require('commander');
+import { program } from 'commander';
 
 program
   .option('--first')
@@ -91,10 +91,10 @@ console.log(program.args[0].split(options.separator, limit));
 ```
 
 ```console
-$ node split.js -s / --fits a/b/c
+$ node split.js -s - --fits a-b-c
 error: unknown option '--fits'
 (Did you mean --first?)
-$ node split.js -s / --first a/b/c
+$ node split.js -s - --first a-b-c
 [ 'a' ]
 ```
 
@@ -103,7 +103,7 @@ Here is a more complete program using a subcommand and with descriptions for the
 Example file: [string-util.js](./examples/string-util.js)
 
 ```js
-const { Command } = require('commander');
+import { Command } from 'commander';
 const program = new Command();
 
 program
@@ -138,7 +138,7 @@ Options:
   -s, --separator <char>  separator character (default: ",")
   -h, --help              display help for command
 
-$ node string-util.js split --separator=/ a/b/c
+$ node string-util.js split --separator=- a-b-c
 [ 'a', 'b', 'c' ]
 ```
 
@@ -147,11 +147,10 @@ More samples can be found in the [examples](https://github.com/tj/commander.js/t
 ## Declaring _program_ variable
 
 Commander exports a global object which is convenient for quick programs.
-This is used in the examples in this README for brevity.
+This is used in some examples in this README for brevity.
 
 ```js
-// CommonJS (.cjs)
-const { program } = require('commander');
+import { program } from 'commander';
 ```
 
 For larger programs which may use commander in multiple ways, including unit testing, it is better to create a local `Command` object to use.
@@ -276,10 +275,7 @@ cheese: stilton
 ### Other option types, negatable boolean and boolean|value
 
 You can define a boolean option long name with a leading `no-` to set the option value to `false` when used.
-Defined alone, this also makes the option `true` by default.
-
-If you define `--foo` first, adding `--no-foo` does not change the default value from what it would
-otherwise be.
+Defined alone without a matching positive option, this also makes the option `true` by default.
 
 Example file: [options-negatable.js](./examples/options-negatable.js)
 
@@ -558,7 +554,7 @@ Configuration options can be passed with the call to `.command()` and `.addComma
 remove the command from the generated help output. Specifying `isDefault: true` will run the subcommand if no other
 subcommand is specified. (Example file: [defaultCommand.js](./examples/defaultCommand.js).)
 
-You can add alternative names for a command with `.alias()`. (Example file: [alias.js](./examples/alias.js).)
+You can add alternative names for a command with `.alias()`. (Example file: [alias.cjs](./examples/alias.cjs).)
 
 `.command()` automatically copies the inherited settings from the parent command to the newly created subcommand. This is only done during creation; any later setting changes to the parent are not inherited.
 
@@ -1060,7 +1056,7 @@ node -r ts-node/register pm.ts
 This factory function creates a new command. It is exported and may be used instead of using `new`, like:
 
 ```js
-const { createCommand } = require('commander');
+import { createCommand } from 'commander';
 const program = createCommand();
 ```
 
@@ -1163,7 +1159,7 @@ There is more information available about:
 
 ## Support
 
-The current version of Commander is fully supported on Long Term Support versions of Node.js, and requires at least v20.
+The current version of Commander is fully supported on Long Term Support versions of Node.js, and requires at least v22.12.0.
 
 Older major versions of Commander receive security updates for 12 months. For more see: [Release Policy](./docs/release-policy.md).
 

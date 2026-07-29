@@ -1,16 +1,17 @@
-const EventEmitter = require('node:events').EventEmitter;
-const childProcess = require('node:child_process');
-const path = require('node:path');
-const fs = require('node:fs');
-const process = require('node:process');
+import { EventEmitter } from 'node:events';
+import childProcess from 'node:child_process';
+import path from 'node:path';
+import fs from 'node:fs';
+import process from 'node:process';
+import { stripVTControlCharacters } from 'node:util';
 
-const { Argument, humanReadableArgName } = require('./argument.js');
-const { CommanderError } = require('./error.js');
-const { Help, stripColor } = require('./help.js');
-const { Option, DualOptions } = require('./option.js');
-const { suggestSimilar } = require('./suggestSimilar');
+import { Argument, humanReadableArgName } from './argument.js';
+import { CommanderError } from './error.js';
+import { Help } from './help.js';
+import { Option, DualOptions } from './option.js';
+import { suggestSimilar } from './suggestSimilar.js';
 
-class Command extends EventEmitter {
+export class Command extends EventEmitter {
   /**
    * Initialize a new `Command`.
    *
@@ -70,7 +71,7 @@ class Command extends EventEmitter {
         useColor() ?? (process.stdout.isTTY && process.stdout.hasColors?.()),
       getErrHasColors: () =>
         useColor() ?? (process.stderr.isTTY && process.stderr.hasColors?.()),
-      stripColor: (str) => stripColor(str),
+      stripColor: (str) => stripVTControlCharacters(str),
     };
 
     this._hidden = false;
@@ -674,17 +675,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
     const name = option.attributeName();
 
     // store default value
-    if (option.negate) {
-      // --no-foo is special and defaults foo to true, unless a --foo option is already defined
-      const positiveLongFlag = option.long.replace(/^--no-/, '--');
-      if (!this._findOption(positiveLongFlag)) {
-        this.setOptionValueWithSource(
-          name,
-          option.defaultValue === undefined ? true : option.defaultValue,
-          'default',
-        );
-      }
-    } else if (option.defaultValue !== undefined) {
+    if (option.defaultValue !== undefined) {
       this.setOptionValueWithSource(name, option.defaultValue, 'default');
     }
 
@@ -1125,7 +1116,29 @@ Expecting one of '${allowedValues.join("', '")}'`);
   }
 
   _prepareForParse() {
+    // Save the state the first time, then restore the state before each subsequent parse.
     if (this._savedState === null) {
+      // Do the special default of lone negated option to true, now that we have all the options.
+      // Filter for negated options that have not been processed already.
+      this.options
+        .filter(
+          (option) =>
+            option.negate &&
+            option.defaultValue === undefined &&
+            this.getOptionValue(option.attributeName()) === undefined,
+        )
+        .forEach((option) => {
+          // check for lone negated option: --no-foo without a --foo option
+          const positiveLongFlag = option.long.replace(/^--no-/, '--');
+          if (!this._findOption(positiveLongFlag)) {
+            this.setOptionValueWithSource(
+              option.attributeName(),
+              true,
+              'default',
+            );
+          }
+        });
+
       this.saveStateBeforeParse();
     } else {
       this.restoreStateBeforeParse();
@@ -1201,7 +1214,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
 
   _executeSubCommand(subcommand, args) {
     args = args.slice();
-    let launchWithNode = false; // Use node for source targets so do not need to get permissions correct, and on Windows.
     const sourceExt = ['.js', '.ts', '.tsx', '.mjs', '.cjs'];
 
     function findFile(baseDir, baseName) {
@@ -1262,7 +1274,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       executableFile = localFile || executableFile;
     }
 
-    launchWithNode = sourceExt.includes(path.extname(executableFile));
+    const launchWithNode = sourceExt.includes(path.extname(executableFile));
 
     let proc;
     if (process.platform !== 'win32') {
@@ -2148,8 +2160,10 @@ Expecting one of '${allowedValues.join("', '")}'`);
 
     const expected = this.registeredArguments.length;
     const s = expected === 1 ? '' : 's';
+    const received = receivedArgs.length;
     const forSubcommand = this.parent ? ` for '${this.name()}'` : '';
-    const message = `error: too many arguments${forSubcommand}. Expected ${expected} argument${s} but got ${receivedArgs.length}.`;
+    const details = receivedArgs.join(', ');
+    const message = `error: too many arguments${forSubcommand}. Expected ${expected} argument${s} but got ${received}: ${details}.`;
     this.error(message, { code: 'commander.excessArguments' });
   }
 
@@ -2405,12 +2419,12 @@ Expecting one of '${allowedValues.join("', '")}'`);
 
   /**
    * Set the name of the command from script filename, such as process.argv[1],
-   * or require.main.filename, or __filename.
+   * or import.meta.filename.
    *
    * (Used internally and public although not documented in README.)
    *
    * @example
-   * program.nameFromFilename(require.main.filename);
+   * program.nameFromFilename(import.meta.filename);
    *
    * @param {string} filename
    * @return {Command}
@@ -2426,7 +2440,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
    * Get or set the directory for searching for executable subcommands of this command.
    *
    * @example
-   * program.executableDir(__dirname);
+   * program.executableDir(import.meta.dirname);
    * // or
    * program.executableDir('subcommands');
    *
@@ -2746,10 +2760,12 @@ function incrementNodeInspectorPort(args) {
 }
 
 /**
+ * Exported for using from tests, not otherwise used outside this file.
+ *
  * @returns {boolean | undefined}
  * @package
  */
-function useColor() {
+export function useColor() {
   // Test for common conventions.
   // NB: the observed behaviour is in combination with how author adds color! For example:
   //   - we do not test NODE_DISABLE_COLORS, but util:styletext does
@@ -2772,6 +2788,3 @@ function useColor() {
     return true;
   return undefined;
 }
-
-exports.Command = Command;
-exports.useColor = useColor; // exporting for tests

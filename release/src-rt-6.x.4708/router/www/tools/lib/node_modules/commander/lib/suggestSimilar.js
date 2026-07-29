@@ -24,7 +24,7 @@ function editDistance(a, b) {
   // fill matrix
   for (let j = 1; j <= b.length; j++) {
     for (let i = 1; i <= a.length; i++) {
-      let cost = 1;
+      let cost;
       if (a[i - 1] === b[j - 1]) {
         cost = 0;
       } else {
@@ -53,7 +53,7 @@ function editDistance(a, b) {
  * @returns {string}
  */
 
-function suggestSimilar(word, candidates) {
+export function suggestSimilar(word, candidates) {
   if (!candidates || candidates.length === 0) return '';
   // remove possible duplicates
   candidates = Array.from(new Set(candidates));
@@ -97,5 +97,3 @@ function suggestSimilar(word, candidates) {
   }
   return '';
 }
-
-exports.suggestSimilar = suggestSimilar;

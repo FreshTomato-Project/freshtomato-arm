@@ -30,7 +30,7 @@
 #ifdef HAVE_SYS_SYSMACROS_H
 #include <sys/sysmacros.h>
 #endif
-#ifdef HAVE_LINUX_FSVERITY_H
+#if defined(HAVE_LINUX_FSVERITY_H) && defined(HAVE_FS_IOC_READ_VERITY_METADATA)
 #include <linux/fsverity.h>
 #include <linux/fs.h>
 #endif
@@ -414,7 +414,7 @@ static ssize_t my_pread(int fd, void *buf, size_t count, off_t offset)
 }
 #endif /* !defined HAVE_PREAD64 && !defined HAVE_PREAD */
 
-static errcode_t write_all(ext2_file_t e2_file, ext2_off_t off, const char *buf, unsigned int n_bytes) {
+static errcode_t write_all(ext2_file_t e2_file, __u64 off, const char *buf, unsigned int n_bytes) {
 	errcode_t err = ext2fs_file_llseek(e2_file, off, EXT2_SEEK_SET, NULL);
 	if (err)
 		return err;
@@ -569,7 +569,7 @@ out:
 }
 #endif /* FS_IOC_FIEMAP */
 
-#ifdef HAVE_LINUX_FSVERITY_H
+#if defined(HAVE_LINUX_FSVERITY_H) && defined(HAVE_FS_IOC_READ_VERITY_METADATA)
 static inline off_t round_up(off_t n, off_t blksz, off_t bias)
 {
   return ((n - bias + (blksz - 1)) & ~(blksz - 1)) + bias;
@@ -738,7 +738,7 @@ static errcode_t copy_file(ext2_filsys fs, int fd, struct stat *statbuf,
 		err = copy_file_chunk(fs, fd, e2_file, 0, statbuf->st_size, buf,
 				      zerobuf);
 
-#ifdef HAVE_LINUX_FSVERITY_H
+#if defined(HAVE_LINUX_FSVERITY_H) && defined(HAVE_FS_IOC_READ_VERITY_METADATA)
 	if (!err && (flags & EXT4_VERITY_FL))
 		err = copy_fs_verity(fs, fd, e2_file, statbuf->st_size);
 #endif

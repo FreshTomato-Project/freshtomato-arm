@@ -1,6 +1,6 @@
 AC_INIT
 AC_CONFIG_SRCDIR([version.h])
-AC_PREREQ([2.71])
+AC_PREREQ([2.72])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADERS([lib/config.h])
 AH_BOTTOM([#include <dirpaths.h>])
@@ -943,7 +943,7 @@ dnl End of configuration options
 dnl
 AC_SUBST(BINARY_TYPE)
 AC_PROG_MAKE_SET
-CHECK_GNU_MAKE
+AX_CHECK_GNU_MAKE
 AC_PATH_PROG(LN, ln, ln)
 AC_PROG_MKDIR_P
 dnl
@@ -1996,6 +1996,24 @@ OS_IO_FILE=""
   ;;
 esac]
 AC_SUBST(OS_IO_FILE)
+
+dnl Check for fsverity ioctl
+if test "${ac_cv_header_linux_fsverity_h}" = "yes"; then
+   AC_MSG_CHECKING([for FS_IOC_READ_VERITY_METADATA ioctl])
+   AC_PREPROC_IFELSE(
+   [AC_LANG_PROGRAM([[
+#include <linux/fsverity.h>
+#ifndef FS_IOC_READ_VERITY_METADATA
+# error "FS_IOC_READ_VERITY_METADATA not available"
+#endif
+]], [])], [
+   AC_DEFINE([HAVE_FS_IOC_READ_VERITY_METADATA], [1], [Define to 1 if FS_IOC_READ_VERITY_METADATA ioctl is available])
+   AC_MSG_RESULT([yes])
+   ],
+   [
+   AC_MSG_RESULT([no])
+   ])
+fi
 
 dnl
 dnl Make our output files, being sure that we create the some miscellaneous 

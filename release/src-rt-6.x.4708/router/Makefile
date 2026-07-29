@@ -1708,7 +1708,7 @@ pppd-clean:
 
 pptpd/Makefile:
 	$(call patch_files,pptpd)
-	cd pptpd && \
+	cd pptpd && autoreconf -fsi && \
 		CFLAGS="-Wall $(EXTRACFLAGS) -ffunction-sections -fdata-sections" \
 		LDFLAGS="-Wl,--gc-sections" \
 		$(CONFIGURE) --prefix=$(INSTALLDIR)/pptpd --enable-bcrelay --disable-dependency-tracking
@@ -3016,7 +3016,7 @@ openvpn/Makefile:
 		$(CONFIGURE) --prefix=/usr --bindir=/usr/sbin --libdir=/usr/lib $(if $(TCONFIG_WOLFSSL),--with-crypto-library=wolfssl,--with-crypto-library=openssl --with-openssl-engine=no) \
 			--disable-selinux --disable-systemd --disable-pkcs11 --disable-dco \
 			$(if $(TOMATO_EXPERIMENTAL),,--disable-debug) --disable-plugin-auth-pam --disable-plugin-down-root --disable-unit-tests --disable-dependency-tracking \
-			$(if $(or $(TCONFIG_BCMARM),$(TCONFIG_AIO)),--enable-management,--disable-management) --enable-comp-stub \
+			$(if $(or $(TCONFIG_BCMARM),$(TCONFIG_AIO)),--enable-management,--disable-management) \
 			--enable-iproute2 ac_cv_lib_resolv_gethostbyname=no \
 			--disable-lzo --disable-lz4 $(if $(TCONFIG_BCMARM),,$(if $(TCONFIG_AIO),,--enable-small))
 	@touch openvpn/.conf

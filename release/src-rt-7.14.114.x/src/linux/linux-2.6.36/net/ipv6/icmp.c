@@ -369,7 +369,14 @@ void icmpv6_send(struct sk_buff *skb, u8 type, u8 code, __u32 info)
 	 *	Never answer to a ICMP packet.
 	 */
 	if (is_ineligible(skb)) {
-		LIMIT_NETDEBUG(KERN_DEBUG "icmpv6_send: no reply to icmp error\n");
+		LIMIT_NETDEBUG(KERN_DEBUG
+			       "icmpv6_send: no reply to icmp error "
+			       "[%pI6 > %pI6] attempted=%u/%u "
+			       "hlim=%u len=%u dev=%s\n",
+			       &hdr->saddr, &hdr->daddr,
+			       type, code,
+			       hdr->hop_limit, skb->len,
+			       skb->dev ? skb->dev->name : "?");
 		return;
 	}
 

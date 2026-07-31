@@ -771,7 +771,7 @@ static void wait_skb_queue_empty(struct sk_buff_head *q)
 }
 
 // precondition: never called in_interrupt
-static void usbnet_terminate_urbs(struct usbnet *dev)
+void usbnet_terminate_urbs(struct usbnet *dev)
 {
 	DECLARE_WAITQUEUE(wait, current);
 	int temp;
@@ -791,6 +791,7 @@ static void usbnet_terminate_urbs(struct usbnet *dev)
 	set_current_state(TASK_RUNNING);
 	remove_wait_queue(&dev->wait, &wait);
 }
+EXPORT_SYMBOL_GPL(usbnet_terminate_urbs);
 
 int usbnet_stop (struct net_device *net)
 {

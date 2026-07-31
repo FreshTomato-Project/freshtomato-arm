@@ -19,6 +19,7 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
+#include <linux/delay.h>
 #include <linux/workqueue.h>
 #include <linux/slab.h>
 #include <linux/mii.h>
@@ -286,12 +287,56 @@ response_error:
 	return -EDOM;
 }
 
+
+/*
+ * Recover RNDIS traffic after the transmit queue times out.
+ * The actual recovery runs from usbnet's deferred event worker.
+ */
+static void rndis_tx_timeout(struct net_device *net)
+{
+	struct usbnet *dev = netdev_priv(net);
+
+	netdev_warn(net, "TX timeout, scheduling link recovery\n");
+	usbnet_defer_kevent(dev, EVENT_LINK_RESET);
+}
+
+/*
+ * Quiesce outstanding USB requests and restart the network data path.
+ * This is link recovery; it does not reset the USB device itself.
+ */
+static int rndis_link_recover(struct usbnet *dev)
+{
+	struct net_device *net = dev->net;
+	int retval = 0;
+
+	netdev_warn(net, "starting link recovery\n");
+
+	netif_carrier_off(net);
+	usbnet_terminate_urbs(dev);
+
+	netif_device_detach(net);
+	msleep(20);
+	netif_device_attach(net);
+
+	if (dev->driver_info->reset) {
+		retval = dev->driver_info->reset(dev);
+		if (retval < 0)
+			netdev_warn(net, "minidriver reset failed: %d\n", retval);
+	}
+
+	netif_carrier_on(net);
+	netif_wake_queue(net);
+
+	netdev_warn(net, "link recovery complete\n");
+	return retval;
+}
+
 /* same as usbnet_netdev_ops but MTU change not allowed */
 static const struct net_device_ops rndis_netdev_ops = {
 	.ndo_open		= usbnet_open,
 	.ndo_stop		= usbnet_stop,
 	.ndo_start_xmit		= usbnet_start_xmit,
-	.ndo_tx_timeout		= usbnet_tx_timeout,
+	.ndo_tx_timeout		= rndis_tx_timeout,
 	.ndo_set_mac_address 	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
 };
@@ -610,6 +655,7 @@ static const struct driver_info	rndis_info = {
 	.status =	rndis_status,
 	.rx_fixup =	rndis_rx_fixup,
 	.tx_fixup =	rndis_tx_fixup,
+	.link_reset =	rndis_link_recover,
 };
 
 static const struct driver_info	rndis_poll_status_info = {
@@ -621,6 +667,7 @@ static const struct driver_info	rndis_poll_status_info = {
 	.status =	rndis_status,
 	.rx_fixup =	rndis_rx_fixup,
 	.tx_fixup =	rndis_tx_fixup,
+	.link_reset =	rndis_link_recover,
 };
 
 static const struct driver_info	zte_rndis_info = {
@@ -632,6 +679,7 @@ static const struct driver_info	zte_rndis_info = {
 	.status =	rndis_status,
 	.rx_fixup =	rndis_rx_fixup,
 	.tx_fixup =	rndis_tx_fixup,
+	.link_reset =	rndis_link_recover,
 };
 
 /*-------------------------------------------------------------------------*/

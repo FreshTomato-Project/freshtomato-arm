@@ -1,8 +1,8 @@
 /*
  * Downsampling (Arm Neon)
  *
- * Copyright (C) 2020, Arm Limited.  All Rights Reserved.
- * Copyright (C) 2024-2026, D. R. Commander.  All Rights Reserved.
+ * Copyright (C) 2020, Arm Limited.
+ * Copyright (C) 2024-2026, D. R. Commander.
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -21,17 +21,9 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#define JPEG_INTERNALS
-#include "../../src/jinclude.h"
-#include "../../src/jpeglib.h"
-#include "../../src/jsimd.h"
-#include "../../src/jdct.h"
-#include "../../src/jsimddct.h"
-#include "../jsimd.h"
+#include "../jsimdint.h"
 #include "align.h"
 #include "neon-compat.h"
-
-#include <arm_neon.h>
 
 
 ALIGN(16) static const uint8_t jsimd_h2_downsample_consts[] = {
@@ -75,10 +67,11 @@ ALIGN(16) static const uint8_t jsimd_h2_downsample_consts[] = {
  * without smoothing.
  */
 
-void jsimd_h2v1_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
-                                JDIMENSION v_samp_factor,
-                                JDIMENSION width_in_blocks,
-                                JSAMPARRAY input_data, JSAMPARRAY output_data)
+HIDDEN void
+jsimd_h2v1_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
+                           JDIMENSION v_samp_factor,
+                           JDIMENSION width_in_blocks, JSAMPARRAY input_data,
+                           JSAMPARRAY output_data)
 {
   JSAMPROW inptr, outptr;
   /* Load expansion mask to pad remaining elements of last DCT block. */
@@ -108,7 +101,7 @@ void jsimd_h2v1_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
     /* Load components in last DCT block into a table. */
     uint8x16_t components =
       vld1q_u8(inptr + (width_in_blocks - 1) * 2 * DCTSIZE);
-#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
+#if SIMD_ARCHITECTURE == ARM64
     /* Pad the empty elements with the value of the last component. */
     components = vqtbl1q_u8(components, expand_mask);
 #else
@@ -131,10 +124,11 @@ void jsimd_h2v1_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
  * without smoothing.
  */
 
-void jsimd_h2v2_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
-                                JDIMENSION v_samp_factor,
-                                JDIMENSION width_in_blocks,
-                                JSAMPARRAY input_data, JSAMPARRAY output_data)
+HIDDEN void
+jsimd_h2v2_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
+                           JDIMENSION v_samp_factor,
+                           JDIMENSION width_in_blocks, JSAMPARRAY input_data,
+                           JSAMPARRAY output_data)
 {
   JSAMPROW inptr0, inptr1, outptr;
   /* Load expansion mask to pad remaining elements of last DCT block. */
@@ -174,7 +168,7 @@ void jsimd_h2v2_downsample_neon(JDIMENSION image_width, int max_v_samp_factor,
       vld1q_u8(inptr0 + (width_in_blocks - 1) * 2 * DCTSIZE);
     uint8x16_t components_r1 =
       vld1q_u8(inptr1 + (width_in_blocks - 1) * 2 * DCTSIZE);
-#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
+#if SIMD_ARCHITECTURE == ARM64
     /* Pad the empty elements with the value of the last component. */
     components_r0 = vqtbl1q_u8(components_r0, expand_mask);
     components_r1 = vqtbl1q_u8(components_r1, expand_mask);

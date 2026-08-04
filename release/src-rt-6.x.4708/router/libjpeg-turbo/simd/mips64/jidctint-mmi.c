@@ -1,10 +1,8 @@
 /*
- * Loongson MMI optimizations for libjpeg-turbo
+ * Accurate Integer Inverse DCT (64-bit MMI)
  *
  * Copyright (C) 2014-2015, 2018, 2020, 2025, D. R. Commander.
- *                                            All Rights Reserved.
  * Copyright (C) 2016-2017, Loongson Technology Corporation Limited, BeiJing.
- *                          All Rights Reserved.
  * Authors:  ZhuChen     <zhuchen@loongson.cn>
  *           CaiWanwei   <caiwanwei@loongson.cn>
  *           SunZhangzhi <sunzhangzhi-cq@loongson.cn>
@@ -28,8 +26,6 @@
  *    misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
  */
-
-/* ACCUATE INTEGER INVERSE DCT */
 
 #include "jsimd_mmi.h"
 
@@ -536,8 +532,9 @@ static uint64_t const_value[] = {
   _mm_store_si64((__m64 *)(output_buf[ctr + 3] + output_col), col3); \
 }
 
-void jsimd_idct_islow_mmi(void *dct_table, JCOEFPTR coef_block,
-                          JSAMPARRAY output_buf, JDIMENSION output_col)
+HIDDEN void
+jsimd_idct_islow_mmi(void *dct_table, JCOEFPTR coef_block,
+                     JSAMPARRAY output_buf, JDIMENSION output_col)
 {
   __m64 tmp0, tmp1, tmp2, tmp3;
   __m64 tmp0l, tmp0h, tmp1l, tmp1h, tmp2l, tmp2h, tmp3l, tmp3h;

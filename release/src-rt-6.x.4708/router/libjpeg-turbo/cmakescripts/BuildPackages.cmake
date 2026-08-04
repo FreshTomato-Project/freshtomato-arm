@@ -40,6 +40,11 @@ message(STATUS "RPM architecture = ${RPMARCH}, DEB architecture = ${DEBARCH}")
 boolean_number(CMAKE_POSITION_INDEPENDENT_CODE)
 
 configure_file(release/makerpm.in pkgscripts/makerpm)
+if(NOT WITH_JNA)
+  set(RPM_WITH_JNA %{nil})
+else()
+  set(RPM_WITH_JNA ${WITH_JNA})
+endif()
 configure_file(release/rpm.spec.in pkgscripts/rpm.spec @ONLY)
 
 add_custom_target(rpm pkgscripts/makerpm
@@ -95,8 +100,8 @@ elseif(CPU_TYPE STREQUAL "i386")
   set(INST_NAME ${INST_NAME}-x86)
 endif()
 
-if(WITH_JAVA)
-  set(INST_DEFS ${INST_DEFS} -DJAVA)
+if(WITH_JNA)
+  set(INST_DEFS ${INST_DEFS} -DJNA)
 endif()
 
 if(GENERATOR_IS_MULTI_CONFIG)
@@ -115,8 +120,8 @@ configure_file(win/projectTargets.cmake.in
 configure_file(win/${INST_ID}/projectTargets-release.cmake.in
   win/${CMAKE_PROJECT_NAME}Targets-release.cmake @ONLY)
 
-if(WITH_JAVA)
-  set(JAVA_DEPEND turbojpeg-java)
+if(WITH_JNA)
+  set(JNA_DEPEND turbojpeg-jna)
 endif()
 if(WITH_TURBOJPEG)
   set(TURBOJPEG_DEPEND turbojpeg turbojpeg-static tjbench)
@@ -124,7 +129,7 @@ endif()
 add_custom_target(installer
   makensis -nocd ${INST_DEFS} installer.nsi
   DEPENDS jpeg jpeg-static rdjpgcom wrjpgcom cjpeg djpeg jpegtran
-    ${JAVA_DEPEND} ${TURBOJPEG_DEPEND}
+    ${JNA_DEPEND} ${TURBOJPEG_DEPEND}
   SOURCES installer.nsi)
 
 endif() # WIN32

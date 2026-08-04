@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2009-2014, 2017-2019, 2022-2026 D. R. Commander.
- *                                               All Rights Reserved.
+ * Copyright (C) 2009-2014, 2017-2019, 2022-2026 D. R. Commander
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -84,10 +83,10 @@ static void usage(char *progName)
 }
 
 static const char *subNameLong[TJ_NUMSAMP] = {
-  "4:4:4", "4:2:2", "4:2:0", "GRAY", "4:4:0", "4:1:1", "4:4:1"
+  "4:4:4", "4:2:2", "4:2:0", "GRAY", "4:4:0", "4:1:1", "4:4:1", "4:1:0", "2:4"
 };
 static const char *subName[TJ_NUMSAMP] = {
-  "444", "422", "420", "GRAY", "440", "411", "441"
+  "444", "422", "420", "GRAY", "440", "411", "441", "410", "24"
 };
 
 static const char *pixFormatStr[TJ_NUMPF] = {
@@ -673,7 +672,8 @@ static void decompTest(tjhandle handle, unsigned char *jpegBuf,
     if (subsamp == TJSAMP_444 || subsamp == TJSAMP_GRAY ||
         ((subsamp == TJSAMP_411 || subsamp == TJSAMP_441) && sf[i].num == 1 &&
          (sf[i].denom == 2 || sf[i].denom == 1)) ||
-        (subsamp != TJSAMP_411 && subsamp != TJSAMP_441 && sf[i].num == 1 &&
+        (subsamp != TJSAMP_411 && subsamp != TJSAMP_441 &&
+         subsamp != TJSAMP_410 && subsamp != TJSAMP_24 && sf[i].num == 1 &&
          (sf[i].denom == 4 || sf[i].denom == 2 || sf[i].denom == 1)) ||
         (subsamp == TJSAMP_420 && sf[i].num == 1 && sf[i].denom == 8 &&
          !doYUV))
@@ -723,6 +723,9 @@ static void doTest(int w, int h, const int *formats, int nformats, int subsamp,
   TRY_TJ(chandle, tj3Set(chandle, TJPARAM_SUBSAMP, subsamp));
 
   for (pfi = 0; pfi < nformats; pfi++) {
+    if (formats[pfi] == TJPF_CMYK &&
+        (subsamp == TJSAMP_410 || subsamp == TJSAMP_24))
+      continue;
     for (i = 0; i < 2; i++) {
       TRY_TJ(chandle, tj3Set(chandle, TJPARAM_BOTTOMUP, i == 1));
       TRY_TJ(dhandle, tj3Set(dhandle, TJPARAM_BOTTOMUP, i == 1));
@@ -781,15 +784,22 @@ static void overflowTest(void)
 
   size = tj3JPEGBufSize(26755, 26755, TJSAMP_444);
   CHECKSIZE(tj3JPEGBufSize());
+  size = tj3JPEGBufSize(65536, 65536, TJSAMP_444);
+  CHECKSIZE(tj3JPEGBufSize());
   ulsize = tjBufSize(26755, 26755, TJSAMP_444);
   CHECKSIZEUL(tjBufSize());
   ulsize = TJBUFSIZE(26755, 26755);
+  CHECKSIZEUL(TJBUFSIZE());
+  ulsize = TJBUFSIZE(65536, 65536);
   CHECKSIZEUL(TJBUFSIZE());
   size = tj3YUVBufSize(37838, 1, 37838, TJSAMP_444);
   CHECKSIZE(tj3YUVBufSize());
   size = tj3YUVBufSize(37837, 3, 37837, TJSAMP_444);
   CHECKSIZE(tj3YUVBufSize());
   size = tj3YUVBufSize(37837, -1, 37837, TJSAMP_444);
+  CHECKSIZE(tj3YUVBufSize());
+  size = tj3YUVBufSize(1024 * 1024 * 1024, 1024 * 1024 * 1024,
+                       1024 * 1024 * 1024, TJSAMP_420);
   CHECKSIZE(tj3YUVBufSize());
   ulsize = tjBufSizeYUV2(37838, 1, 37838, TJSAMP_444);
   CHECKSIZEUL(tjBufSizeYUV2());
@@ -1004,15 +1014,19 @@ static void cmyk_to_rgb(int c, int m, int y, int k, int *r, int *g, int *b,
 }
 
 static int cmpBitmap(void *buf, int width, int pitch, int height, int pf,
-                     int bottomUp, int gray2rgb, int targetPrecision)
+                     int bottomUp, int gray2rgb, int targetPrecision,
+                     const char *ext)
 {
   int roffset = tjRedOffset[pf];
   int goffset = tjGreenOffset[pf];
   int boffset = tjBlueOffset[pf];
   int aoffset = tjAlphaOffset[pf];
   int ps = tjPixelSize[pf];
-  int i, j;
-  int targetMaxSample = (1 << targetPrecision) - 1;
+  int targetMaxSample, i, j;
+
+  if (!strcasecmp(ext, "bmp"))
+    targetPrecision = 8;
+  targetMaxSample = (1 << targetPrecision) - 1;
 
   for (j = 0; j < height; j++) {
     int row = bottomUp ? height - j - 1 : j;
@@ -1026,12 +1040,39 @@ static int cmpBitmap(void *buf, int width, int pitch, int height, int pf,
       if (precision != targetPrecision) {
         long halfMaxSample = maxSample / 2;
 
-        r = (int)((r * ((1 << targetPrecision) - 1) + halfMaxSample) /
-                  maxSample);
-        g = (int)((g * ((1 << targetPrecision) - 1) + halfMaxSample) /
-                  maxSample);
-        b = (int)((b * ((1 << targetPrecision) - 1) + halfMaxSample) /
-                  maxSample);
+        /* The expected results are slightly different with PNG files, because
+         * the samples are scaled up to 8 or 16 bits of data precision by the
+         * PNG writer and scaled down to the target data precision by the
+         * reader.
+         */
+        if (!strcasecmp(ext, "png")) {
+          if (precision <= 8) {
+            r = (int)((r * 255 + halfMaxSample) / maxSample);
+            r = (int)((r * ((1 << targetPrecision) - 1) + 127) / 255);
+            g = (int)((g * 255 + halfMaxSample) / maxSample);
+            g = (int)((g * ((1 << targetPrecision) - 1) + 127) / 255);
+            b = (int)((b * 255 + halfMaxSample) / maxSample);
+            b = (int)((b * ((1 << targetPrecision) - 1) + 127) / 255);
+          } else {
+            unsigned int rtemp =
+              (unsigned int)((r * 65535U + halfMaxSample) / maxSample);
+            unsigned int gtemp =
+              (unsigned int)((g * 65535U + halfMaxSample) / maxSample);
+            unsigned int btemp =
+              (unsigned int)((b * 65535U + halfMaxSample) / maxSample);
+
+            r = (int)((rtemp * ((1 << targetPrecision) - 1) + 32767) / 65535);
+            g = (int)((gtemp * ((1 << targetPrecision) - 1) + 32767) / 65535);
+            b = (int)((btemp * ((1 << targetPrecision) - 1) + 32767) / 65535);
+          }
+        } else {
+          r = (int)((r * ((1 << targetPrecision) - 1) + halfMaxSample) /
+                    maxSample);
+          g = (int)((g * ((1 << targetPrecision) - 1) + halfMaxSample) /
+                    maxSample);
+          b = (int)((b * ((1 << targetPrecision) - 1) + halfMaxSample) /
+                    maxSample);
+        }
       }
 
       if (pf == TJPF_GRAY) {
@@ -1085,6 +1126,26 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
     loadHeight = 0, retval = 0, pixelFormat = pf;
   void *buf = NULL;
   char *md5ref;
+  char *colorPNGRefs[17] = {
+    "", "", "17aa360ae532ae6e91b2a28d38bd624a",
+    "e2a50ec3401ad862738d6987c6ceb7a1", "463085239d02088e0dc797ec548d8ca2",
+    "6568db6ab8cca36e28c49d54a5cf72d2", "7ef966e63e71c9a1d36fc7b063a6b188",
+    "9b729cea39a6da8927c7d3e42fa8aa2a", "82795201e05fd48c3992d1a7277ff291",
+    "80c1ea7e0d9d6a0a8d12722bc349f94c", "6a13b4aefcc08f136952cb77f934c969",
+    "c459ba1d57d66b5025798cba6f9cb137", "ce7e67e24d223120ba49f81278549389",
+    "1ebb0a8fc1d7d1b291f07a1743710427", "b68fd59466d37a4405fef22f50708c3e",
+    "06941dae98e471279433de7edb9fe4e5", "8df69d8b7ddd4fc45675c1404f8301df"
+  };
+  char *grayPNGRefs[17] = {
+    "", "", "36b39208ebecab7e44d3e7d16540d9dd",
+    "a23ea89e91a33e47d487da5e51aaf73c", "9fd24370306a37faab455f8569e364f1",
+    "8190d5e4e51adeb7345b735b6dbdc07c", "8842cd8a1d8ee88cdf8f4ee3ec35ef9f",
+    "7e8f8c89d62ccc14e062024f47896c78", "412f0ac480f413d39a36c8cd3f0ffff5",
+    "d7d3588dc714e41e537acda1327dceaa", "1d18b75a701fae306e78d2c8d29ee8cd",
+    "e65d72d45858b7f6edd22d49285086dc", "33ed8ea0a2c3faa1e24a766e0706f241",
+    "8da798e493c3f0d335278dc69004444b", "f7c4aa691f459aef9e9796f2f8b10f3e",
+    "7e601698088be2559538efc750b978a5", "0580aea16346e6afb4317399539bf75e"
+  };
   char *colorPPMRefs[17] = {
     "", "", "0bad09d9ef38eda566848fb7c0b7fd0a",
     "7ef2c87261a8bd6838303b541563cf27", "28a37cf9636ff6bb9ed6b206bdac60db",
@@ -1116,7 +1177,10 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
     md5ref = (pf == TJPF_GRAY ? "51976530acf75f02beddf5d21149101d" :
                                 "6d659071b9bfcdee2def22cb58ddadca");
     maxTargetPrecision = 8;
-  } else
+  } else if (!strcasecmp(ext, "png"))
+    md5ref = (pf == TJPF_GRAY ? grayPNGRefs[precision] :
+                                colorPNGRefs[precision]);
+  else
     md5ref = (pf == TJPF_GRAY ? grayPPMRefs[precision] :
                                 colorPPMRefs[precision]);
 
@@ -1168,8 +1232,8 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
       retval = -1;  goto bailout;
     }
     pitch = PAD(width * tjPixelSize[pf], align);
-    if (!cmpBitmap(buf, width, pitch, height, pf, bottomUp, 0,
-                   !strcasecmp(ext, "bmp") ? 8 : targetPrecision)) {
+    if (!cmpBitmap(buf, width, pitch, height, pf, bottomUp, 0, targetPrecision,
+                   ext)) {
       printf("\n   Pixel data in %s is bogus\n", filename);
       printf("   (target data precision = %d)\n", targetPrecision);
       retval = -1;  goto bailout;
@@ -1193,7 +1257,7 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
       }
       pitch = PAD(width * tjPixelSize[pf], align);
       if (!cmpBitmap(buf, width, pitch, height, pf, bottomUp, 1,
-                     !strcasecmp(ext, "bmp") ? 8 : targetPrecision)) {
+                     targetPrecision, ext)) {
         printf("\n   Converting %s to RGB failed\n", filename);
         printf("   (target data precision = %d)\n", targetPrecision);
         retval = -1;  goto bailout;
@@ -1216,7 +1280,7 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
       }
       pitch = PAD(width * tjPixelSize[pf], align);
       if (!cmpBitmap(buf, width, pitch, height, pf, bottomUp, 1,
-                     !strcasecmp(ext, "bmp") ? 8 : targetPrecision)) {
+                     targetPrecision, ext)) {
         printf("\n   Converting %s to CMYK failed\n", filename);
         printf("   (target data precision = %d)\n", targetPrecision);
         retval = -1;  goto bailout;
@@ -1276,6 +1340,12 @@ static int bmpTest(void)
         printf("OK.\n");
       }
 
+      printf("%s Top-Down PNG (row alignment = %d samples)  ...  ",
+             pixFormatStr[format], align);
+      if (doBmpTest("png", width, align, height, format, 0) == -1)
+        return -1;
+      printf("OK.\n");
+
       printf("%s Top-Down PPM (row alignment = %d samples)  ...  ",
              pixFormatStr[format], align);
       if (doBmpTest("ppm", width, align, height, format, 0) == -1)
@@ -1289,6 +1359,12 @@ static int bmpTest(void)
           return -1;
         printf("OK.\n");
       }
+
+      printf("%s Bottom-Up PNG (row alignment = %d samples)  ...  ",
+             pixFormatStr[format], align);
+      if (doBmpTest("png", width, align, height, format, 1) == -1)
+        return -1;
+      printf("OK.\n");
 
       printf("%s Bottom-Up PPM (row alignment = %d samples)  ...  ",
              pixFormatStr[format], align);
@@ -1356,6 +1432,10 @@ int main(int argc, char *argv[])
     doTest(35, 39, _4sampleFormats, num4bf, TJSAMP_411, "test");
     doTest(39, 41, _3sampleFormats, 2, TJSAMP_441, "test");
     doTest(41, 35, _4sampleFormats, num4bf, TJSAMP_441, "test");
+    doTest(35, 41, _3sampleFormats, 2, TJSAMP_410, "test");
+    doTest(39, 35, _4sampleFormats, num4bf, TJSAMP_410, "test");
+    doTest(41, 39, _3sampleFormats, 2, TJSAMP_24, "test");
+    doTest(35, 41, _4sampleFormats, num4bf, TJSAMP_24, "test");
   }
   doTest(39, 41, _onlyGray, 1, TJSAMP_GRAY, "test");
   if (!lossless) {
@@ -1371,6 +1451,8 @@ int main(int argc, char *argv[])
     doTest(48, 48, _onlyRGB, 1, TJSAMP_440, "test_yuv0");
     doTest(48, 48, _onlyRGB, 1, TJSAMP_411, "test_yuv0");
     doTest(48, 48, _onlyRGB, 1, TJSAMP_441, "test_yuv0");
+    doTest(48, 48, _onlyRGB, 1, TJSAMP_410, "test_yuv0");
+    doTest(48, 48, _onlyRGB, 1, TJSAMP_24, "test_yuv0");
     doTest(48, 48, _onlyRGB, 1, TJSAMP_GRAY, "test_yuv0");
     doTest(48, 48, _onlyGray, 1, TJSAMP_GRAY, "test_yuv0");
   }

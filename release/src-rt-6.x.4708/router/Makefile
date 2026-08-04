@@ -1945,6 +1945,7 @@ flac-clean:
 	$(call unpatch_files,flac)
 
 libjpeg-turbo/build/Makefile:
+	$(call patch_files,libjpeg-turbo)
 	@rm -rf libjpeg-turbo/build && rm -f libjpeg-turbo/jconfig.h && mkdir -p libjpeg-turbo/build
 	cd libjpeg-turbo/build && $(call CMAKE_CrossOptions, crosscompiled.cmake) && \
 		cmake -DCMAKE_TOOLCHAIN_FILE=crosscompiled.cmake \
@@ -1976,6 +1977,7 @@ libjpeg-turbo-clean:
 	@rm -rf libjpeg-turbo/build
 	@rm -rf libjpeg-turbo/staged
 	@rm -f libjpeg-turbo/jconfig.h
+	$(call unpatch_files,libjpeg-turbo)
 
 libexif/stamp-h1:
 	cd libexif && autoreconf -fsi && \

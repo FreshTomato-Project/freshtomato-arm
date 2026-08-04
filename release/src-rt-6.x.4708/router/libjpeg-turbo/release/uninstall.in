@@ -1,5 +1,4 @@
-# Copyright (C) 2009-2011, 2013, 2016, 2020 D. R. Commander.
-#                                           All Rights Reserved.
+# Copyright (C) 2009-2011, 2013, 2016, 2020 D. R. Commander
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -107,6 +106,7 @@ if [ "$PREFIX" = "@CMAKE_INSTALL_DEFAULT_PREFIX@" -a -h "$PREFIX/doc" ]; then
 	rm $PREFIX/doc 2>&1 || EXITSTATUS=-1
 fi
 rmdir $PREFIX 2>&1 || EXITSTATUS=-1
+rmdir /Library/Documentation/$PKGNAME/jna 2>&1 || EXITSTATUS=-1
 rmdir /Library/Documentation/$PKGNAME 2>&1 || EXITSTATUS=-1
 
 if [ -d $RECEIPT ]; then

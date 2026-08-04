@@ -1,3 +1,9 @@
+version 2.94
+	Record that CVE-2026-12969 has been allocated to the
+	buffer OOB read in find_soa() which is fixed in git commit
+	14094e88beca519c53151184cc4553656672b54f, released at 2.93.
+	Thanks to do litli for spotting this.
+	
 version 2.93
 	Fix a corner-case in DNSSEC validation with wildcards. If we have
 	a wildcard record *.example.com and receive a query for

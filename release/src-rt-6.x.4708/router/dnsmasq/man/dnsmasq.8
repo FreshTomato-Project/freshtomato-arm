@@ -868,7 +868,7 @@ will be logged. If this coincides with DNS not functioning, it
 is necessary to disable the feature. As at version 2.91, 0x20 encoding
 is disabled by default, and must be enabled with --do-0x20-encode. The default
 may change in the future, so to be sure of its status after an upgrade, set --do-0x20-encode
-or --no-0x20-encode in your config. --no-0x20-encode overrides --do-x20-encode or a future default
+or --no-0x20-encode in your config. --no-0x20-encode overrides --do-0x20-encode or a future default
 0x20-encode enable.
 .TP
 .B --use-stale-cache[=<max TTL excess in s>]
@@ -1329,7 +1329,7 @@ have exactly the same effect as
 options containing the same information. /etc/ethers is re-read when 
 dnsmasq receives SIGHUP. IPv6 addresses are NOT read from /etc/ethers.
 .TP
-.B \-O, --dhcp-option=[tag:<tag>,[tag:<tag>,]][encap:<opt>,][vi-encap:<enterprise>,][vendor:[<vendor-class>],][<opt>|option:<opt-name>|option6:<opt>|option6:<opt-name>],[<value>[,<value>]]
+.B \-O, --dhcp-option=[tag:<tag>,[tag:<tag>,]][encap:<opt>,][vi-encap:<enterprise>,][vendor:[<vendor-class>],][<opt>|option:<opt>|option:<opt-name>|option4:<opt>|option4:<optname>|option6:<opt>|option6:<opt-name>],[<value>[,<value>]]
 Send various extra options to DHCP clients. By default,
 dnsmasq sends some standard options to DHCP clients, the netmask and
 broadcast address are set to the same as the host running dnsmasq, and
@@ -1348,6 +1348,13 @@ For example, to set the default route option to 192.168.4.4, use
 and to set the time-server address to 192.168.0.4, use
 \fB--dhcp-option=42,192.168.0.4\fP or
 \fB--dhcp-option=option:ntp-server,192.168.0.4\fP.
+
+The above examples are backwards compatible, for consistency with IPV6, the time-server example
+may also be given as
+\fB--dhcp-option=option:42,192.168.0.4\fP or
+\fB--dhcp-option=option4:42,192.168.0.4\fP or
+\fB--dhcp-option=option4:ntp-server,192.168.0.4\fP
+
 The special address 0.0.0.0 means "the address of the system running dnsmasq".
 
 An option without data is valid, and includes just the option without data.
@@ -1372,7 +1379,8 @@ described in RFC 3442.
 IPv6 options are specified using the \fBoption6:\fP
 keyword, followed by the option number or option name. The IPv6 option
 name space is disjoint from the IPv4 option name space. IPv6 addresses
-in options must be bracketed with square brackets, eg. \fB --dhcp-option=option6:ntp-server,[1234::56]\fP. 
+in options must be bracketed with square brackets, eg. \fB --dhcp-option=option6:sntp-server,[1234::56]\fP or
+ --dhcp-option=option6:31,[1234::56]. 
 For IPv6, [::] means "the global address of
 the machine running dnsmasq", whilst [fd00::] is replaced with the
 ULA, if it exists, and [fe80::] with the link-local address. The vendorclass option
@@ -2706,7 +2714,7 @@ IPv4 and IPv6 addresses from /etc/hosts (and
 and 
 .B --interface-name
 and
-.B ---dynamic-host
+.B --dynamic-host
 provided the address falls into one of the subnets specified in the
 .B --auth-zone.
 .PP

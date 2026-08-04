@@ -869,7 +869,7 @@ Om detta sammanfaller med att DNS inte fungerar, är det
 nödvändigt att inaktivera funktionen. I version 2.91 är 0x20-kodning
 inaktiverad som standard och måste aktiveras med --do-0x20-encode. Standardinställningen
 kan komma att ändras i framtiden, så för att vara säker på dess status efter en uppgradering, ställ in --do-0x20-encode
-eller --no-0x20-encode i din konfiguration. --no-0x20-encode åsidosätter --do-x20-encode eller en framtida standardinställning
+eller --no-0x20-encode i din konfiguration. --no-0x20-encode åsidosätter --do-0x20-encode eller en framtida standardinställning
 0x20-encode enable.
 .TP
 .B --use-stale-cache[=<max TTL excess in s>]
@@ -2732,7 +2732,7 @@ IPv4- och IPv6-adresser från /etc/hosts (och
 och 
 .B --interface-name
 och
-.B ---dynamic-host
+.B --dynamic-host
 förutsatt att adressen faller inom ett av de subnät som anges i
 .B --auth-zone.
 .PP

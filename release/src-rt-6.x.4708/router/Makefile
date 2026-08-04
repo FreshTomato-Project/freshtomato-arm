@@ -4252,9 +4252,9 @@ libffi: libffi/stamp-h1
 
 libffi-install:
 ifeq ($(TCONFIG_IRQBALANCE),y)
-	install -D $(TOP)/libffi/.libs/libffi.so.8.3.1 $(INSTALLDIR)/libffi/usr/lib/libffi.so.8.3.1
-	$(STRIP) $(INSTALLDIR)/libffi/usr/lib/libffi.so.8.3.1
-	cd $(INSTALLDIR)/libffi/usr/lib && ln -sf libffi.so.8.3.1 libffi.so.8 && ln -sf libffi.so.8.3.1 libffi.so
+	install -D $(TOP)/libffi/.libs/libffi.so.8.4.1 $(INSTALLDIR)/libffi/usr/lib/libffi.so.8.4.1
+	$(STRIP) $(INSTALLDIR)/libffi/usr/lib/libffi.so.8.4.1
+	cd $(INSTALLDIR)/libffi/usr/lib && ln -sf libffi.so.8.4.1 libffi.so.8 && ln -sf libffi.so.8.4.1 libffi.so
 endif
 	@true
 

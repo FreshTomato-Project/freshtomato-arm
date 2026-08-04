@@ -774,7 +774,7 @@ genSO("${root}/usr/lib/libe2p.so.2.3", "${router}/e2fsprogs/lib/libe2p.a", "${st
 genSO("${root}/usr/lib/libcom_err.so.2.1", "${router}/e2fsprogs/lib/libcom_err.a", "${stripshared}", "-L${router}/e2fsprogs/lib");
 
 #genSO("${root}/usr/lib/libipset.so.11.1.0", "${router}/ipset/lib/.libs/libipset.a", "${stripshared}"); # (deleted)
-#genSO("${root}/usr/lib/libffi.so.8.2.0", "${router}/libffi/.libs/libffi.a", "${stripshared}"); # (deleted)
+#genSO("${root}/usr/lib/libffi.so.8.4.1", "${router}/libffi/.libs/libffi.a", "${stripshared}"); # (deleted)
 
 # do not add (!): libcap-ng, libzip, libsqlite3, libebtc, libiptc, libxtables, libip4tc, libip6tc, libglib-1, libglib-2, ...
 

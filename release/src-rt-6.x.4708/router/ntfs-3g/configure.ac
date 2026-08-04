@@ -24,8 +24,8 @@
 
 # Autoconf
 AC_PREREQ(2.59)
-AC_INIT([ntfs-3g],[2026.2.25],[ntfs-3g-devel@lists.sf.net])
-LIBNTFS_3G_VERSION="89"
+AC_INIT([ntfs-3g],[2026.7.7],[ntfs-3g-devel@lists.sf.net])
+LIBNTFS_3G_VERSION="90"
 AC_CONFIG_SRCDIR([src/ntfs-3g.c])
 
 # Environment
@@ -546,7 +546,7 @@ AC_SYS_LARGEFILE
 # The dlopen API might be in libc or in libdl.  Check libc first, then
 # fall back to libdl.
 LIBDL=""
-if test "x${disable_external_plugins}" = "xno"; then
+if test "x${disable_plugins}" = "xno"; then
 	AC_CHECK_LIB(c, dlopen, ,
 		[AC_CHECK_LIB(dl, dlopen, [LIBDL="-ldl"],
 			[AC_MSG_ERROR(["Unable to find libdl (required for external plugin support)"])])])

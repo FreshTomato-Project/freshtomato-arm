@@ -1325,7 +1325,7 @@ class BuildTarget(Target):
     @lru_cache(maxsize=None)
     def get_transitive_link_deps_mapping(self, prefix: str) -> T.Mapping[str, str]:
         result: T.Dict[str, str] = {}
-        for i in self.link_targets:
+        for i in itertools.chain(self.link_targets, self.link_whole_targets):
             mapping = i.get_link_deps_mapping(prefix)
             #we are merging two dictionaries, while keeping the earlier one dominant
             result_tmp = mapping.copy()
@@ -2422,9 +2422,6 @@ class StaticLibrary(BuildTarget):
                     if v:
                         suffix = 'ma'
         return (prefix, suffix)
-
-    def get_link_deps_mapping(self, prefix: str) -> T.Mapping[str, str]:
-        return {}
 
     def get_default_install_dir(self) -> T.Tuple[str, str]:
         return self.environment.get_static_lib_dir(), '{libdir_static}'

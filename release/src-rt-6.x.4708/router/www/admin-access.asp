@@ -176,17 +176,23 @@ function verifyFields(focused, quiet) {
 	if (b) {
 		if (!v_port(a, quiet || !ok)) ok = 0;
 		if ((a.value == 80) || (a.value == 443)) {
-			ferror.set(a, 'Ports 80 and 443 are not allowed for remote GUI access', quiet || !ok);
-			ok = 0;
+			if (!quiet && (!confirm('WARNING: Exposing remote management on standard ports (80 or 443) significantly increases the risk of automated attacks and unauthorized access.\n\nDo you want to proceed and accept this risk?') || !confirm('Are you sure you want to accept the risk of using port 80/443?'))) {
+				ferror.set(a, 'Action cancelled: Standard port risk not accepted.', quiet || !ok);
+				ok = 0;
+			}
 		}
 		if (a.value == E('_http_lanport').value) {
-			ferror.set(a, 'Ports for local and remote GUI access cannot be the same', quiet || !ok);
-			ok = 0;
+			if (!quiet && !confirm('WARNING: Using the same port for both local and remote HTTP access can be confusing or risky.\n\nDo you want to proceed and accept this configuration?')) {
+				ferror.set(a, 'Action cancelled: Matching HTTP port risk not accepted.', quiet || !ok);
+				ok = 0;
+			}
 		}
 /* HTTPS-BEGIN */
 		if (a.value == E('_https_lanport').value) {
-			ferror.set(a, 'Ports for local and remote GUI access cannot be the same', quiet || !ok);
-			ok = 0;
+			if (!quiet && !confirm('WARNING: Using the same port for both local and remote HTTPS access can be confusing or risky.\n\nDo you want to proceed and accept this configuration?')) {
+				ferror.set(a, 'Action cancelled: Matching HTTPS port risk not accepted.', quiet || !ok);
+				ok = 0;
+			}
 		}
 /* HTTPS-END */
 	}
@@ -481,7 +487,7 @@ function init() {
 				        (nvram.remote_mgt_https == 1) ? 2 :
 /* HTTPS-END */
 				        1) : 0 },
-				{ title: 'Port', indent: 2, name: 'http_wanport', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp;<small>not allowed: 80 and 443<\/small>', value: fixPort(nvram.http_wanport, 8080) },
+				{ title: 'Port', indent: 2, name: 'http_wanport', type: 'text', maxlen: 5, size: 7, suffix: '&nbsp;<small>Usage of port 80 or 443 is NOT recommended and HIGHLY discouraged<\/small>', value: fixPort(nvram.http_wanport, 8080) },
 /* HTTPS-BEGIN */
 			null,
 			{ title: 'SSL Certificate', rid: 'row_sslcert' },

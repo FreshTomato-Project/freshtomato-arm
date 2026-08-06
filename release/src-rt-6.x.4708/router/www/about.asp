@@ -50,6 +50,7 @@ function init() {
 	<b>FreshTomato project page: </b><a href="https://freshtomato.org" class="new_window"> https://freshtomato.org</a><br>
 	<b>Forums about Tomato</b> - EN: <a href="https://www.linksysinfo.org/index.php?forums/tomato-firmware.33/" class="new_window">https://linksysinfo.org</a> PL: <a href="https://openlinksys.info" class="new_window">https://openlinksys.info</a><br>
 	<b>Source code: </b><a href="https://github.com/FreshTomato-Project" class="new_window"> https://github.com</a><br><br><hr><br>
+<!-- OPTSIZE-BEGIN -->
 
 <!-- / / / -->
 
@@ -156,6 +157,7 @@ function init() {
 	<b>"Toastman" features:</b><br>
 	- Configurable QOS class names<br>
 	- Comprehensive QOS rule examples set by default<br>
+	- TC-ATM overhead calculation - patch by tvlz<br>
 	- GPT support for HDD by Yaniv Hamo<br>
 	- Tools-System refresh timer<br>
 	<i>Copyright (C) 2011 Toastman</i><br>
@@ -187,6 +189,20 @@ function init() {
 <!-- OPENVPN-END -->
 <!-- VPN-END -->
 
+	<b>"Tiomo" features:</b><br>
+	- IMQ based QOS Ingress<br>
+	- Incoming Class Bandwidth pie chart<br>
+	<i>Copyright (C) 2012 Tiomo</i><br>
+	<br>
+
+<!-- SDHC-BEGIN -->
+	<b>"Slodki" feature:</b><br>
+	- SDHC integration and GUI<br>
+	<i>Copyright (C) 2009 Tomasz Słodkowicz</i><br>
+	<a href="http://gemini.net.pl/~slodki/tomato-sdhc.html" class="new_window">tomato-sdhc</a><br>
+	<br>
+<!-- SDHC-END -->
+
 <!-- NGINX-BEGIN -->
 	<b>Tomato-hyzoom feature:</b><br>
 	- MySQL Server integration and GUI<br>
@@ -207,7 +223,9 @@ function init() {
 <!-- IPERF-BEGIN -->
 	- IPerf integration<br>
 <!-- IPERF-END -->
+<!-- TERMLIB-BEGIN -->
 	- termlib based system command line<br>
+<!-- TERMLIB-END -->
 <!-- OPENVPN-BEGIN -->
 	- OpenVPN client config generator<br>
 <!-- OPENVPN-END -->
@@ -216,6 +234,7 @@ function init() {
 	<i>Copyright (C) 2017-2019 Michał Obrembski</i><br>
 	<a href="mailto:michal.o@szerszen.com">michal.o@szerszen.com</a><br>
 	<br>
+<!-- OPTSIZE-END -->
 
 	<b>A special thank you to everyone whose name isn't listed here — for your patches, new device support, bug reports, fixes, testing, and all the contributions that keep FreshTomato alive and improving. Your help means a lot! 🍅</b>
 </div>

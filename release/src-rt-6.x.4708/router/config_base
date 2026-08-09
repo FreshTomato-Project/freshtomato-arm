@@ -58,7 +58,6 @@ TCONFIG_SAMBASRV=y
 # TCONFIG_FANCTRL is not set
 # TCONFIG_NAND is not set
 # TCONFIG_UFSDA is not set
-# TCONFIG_UFSDN is not set
 # TCONFIG_TUXERA is not set
 # TCONFIG_TUX_HFS is not set
 # TCONFIG_BCMARM is not set

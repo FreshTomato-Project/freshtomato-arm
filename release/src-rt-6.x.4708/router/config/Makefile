@@ -1,124 +1,57 @@
-# Makefile for uClibc
-#
-# Copyright (C) 2002 Erik Andersen <andersen@codepoet.org>
-#
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Library General Public License as published by the Free
-# Software Foundation; either version 2 of the License, or (at your option) any
-# later version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Library General Public License for more
-# details.
-#
-# You should have received a copy of the GNU Library General Public License
-# along with this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+HOSTCC ?= gcc
 
-TOPDIR=../../
-#include $(TOPDIR)Rules.mak
+HOSTCFLAGS ?= -O2
+HOSTCFLAGS += -Wall -DKBUILD_NO_NLS -DLOCALE -I.
 
-all: ncurses conf mconf
+HOSTNCURSES = $(shell sh lxdialog/check-lxdialog.sh -ccflags)
+HOSTLOADLIBES_MCONF = $(shell sh lxdialog/check-lxdialog.sh -ldflags $(HOSTCC))
 
-LIBS = -lncurses
-ifeq (/usr/include/ncurses/ncurses.h, $(wildcard /usr/include/ncurses/ncurses.h))
-	HOSTNCURSES += -I/usr/include/ncurses -DCURSES_LOC="<ncurses.h>"
-else
-ifeq (/usr/include/ncurses/curses.h, $(wildcard /usr/include/ncurses/curses.h))
-	HOSTNCURSES += -I/usr/include/ncurses -DCURSES_LOC="<ncurses/curses.h>"
-else
-ifeq (/usr/local/include/ncurses/ncurses.h, $(wildcard /usr/local/include/ncurses/ncurses.h))
-	HOSTCFLAGS += -I/usr/local/include/ncurses -DCURSES_LOC="<ncurses.h>"
-else
-ifeq (/usr/local/include/ncurses/curses.h, $(wildcard /usr/local/include/ncurses/curses.h))
-	HOSTCFLAGS += -I/usr/local/include/ncurses -DCURSES_LOC="<ncurses/curses.h>"
-else
-ifeq (/usr/include/ncurses.h, $(wildcard /usr/include/ncurses.h))
-	HOSTNCURSES += -DCURSES_LOC="<ncurses.h>"
-else
-	HOSTNCURSES += -DCURSES_LOC="<curses.h>"
-endif
-endif
-endif
-endif
-endif
+CONF_OBJS := \
+	conf.o \
+	zconf.tab.o
 
-CONF_SRC  =conf.c
-MCONF_SRC =mconf.c checklist.c menubox.c textbox.c yesno.c inputbox.c util.c msgbox.c
-SHARED_SRC=zconf.tab.c
-SHARED_DEPS:=lkc.h lkc_proto.h lkc_defs.h expr.h zconf.tab.h
-CONF_OBJS =$(patsubst %.c,%.o, $(CONF_SRC))
-MCONF_OBJS=$(patsubst %.c,%.o, $(MCONF_SRC))
-SHARED_OBJS=$(patsubst %.c,%.o, $(SHARED_SRC))
+MCONF_OBJS := \
+	mconf.o \
+	zconf.tab.o \
+	lxdialog/checklist.o \
+	lxdialog/inputbox.o \
+	lxdialog/menubox.o \
+	lxdialog/textbox.o \
+	lxdialog/util.o \
+	lxdialog/yesno.o
 
-conf: $(CONF_OBJS) $(SHARED_OBJS) 
-	$(HOSTCC) $(NATIVE_LDFLAGS) $^ -o $@
+.PHONY: all clean
 
-mconf: $(MCONF_OBJS) $(SHARED_OBJS)
-	$(HOSTCC) $(NATIVE_LDFLAGS) $^ -o $@ $(LIBS)
+all: conf mconf
 
-$(CONF_OBJS): %.o : %.c $(SHARED_DEPS)
-	$(HOSTCC) $(HOSTCFLAGS) -I. -c $< -o $@
+conf: $(CONF_OBJS)
+	$(HOSTCC) $(NATIVE_LDFLAGS) -o $@ $^
 
-$(MCONF_OBJS): %.o : %.c $(SHARED_DEPS)
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTNCURSES) -I. -c $< -o $@
+mconf: $(MCONF_OBJS)
+	$(HOSTCC) $(NATIVE_LDFLAGS) -o $@ $^ $(HOSTLOADLIBES_MCONF)
 
-lkc_defs.h: lkc_proto.h
-	@sed < $< > $@ 's/P(\([^,]*\),.*/#define \1 (\*\1_p)/'
+conf.o: conf.c lkc.h lkc_proto.h expr.h
+	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ $<
 
-###
-# The following requires flex/bison
-# By default we use the _shipped versions, uncomment the 
-# following line if you are modifying the flex/bison src.
-#LKC_GENPARSER := 1
+mconf.o: mconf.c lkc.h lkc_proto.h expr.h lxdialog/dialog.h
+	$(HOSTCC) $(HOSTCFLAGS) $(HOSTNCURSES) -c -o $@ $<
 
-ifdef LKC_GENPARSER
+zconf.tab.o: zconf.tab.c zconf.lex.c \
+	     lkc.h lkc_proto.h expr.h list.h \
+	     confdata.c expr.c symbol.c menu.c util.c kconf_id.c
+	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ zconf.tab.c
 
-%.tab.c %.tab.h: %.y
-	bison -t -d -v -b $* -p $(notdir $*) $<
-
-lex.%.c: %.l
-	flex -P$(notdir $*) -o$@ $<
-else
-
-lex.zconf.o: lex.zconf.c $(SHARED_DEPS)
-	$(HOSTCC) $(HOSTCFLAGS) -I. -c $< -o $@
-
-lex.zconf.c: lex.zconf.c_shipped
-	cp lex.zconf.c_shipped lex.zconf.c
-
-zconf.tab.o: zconf.tab.c lex.zconf.c confdata.c expr.c symbol.c menu.c $(SHARED_DEPS)
-	$(HOSTCC) $(HOSTCFLAGS) -I. -c $< -o $@
+lxdialog/%.o: lxdialog/%.c lxdialog/dialog.h
+	$(HOSTCC) $(HOSTCFLAGS) $(HOSTNCURSES) -c -o $@ $<
 
 zconf.tab.c: zconf.tab.c_shipped
-	cp zconf.tab.c_shipped zconf.tab.c
+	cp $< $@
 
-zconf.tab.h: zconf.tab.h_shipped
-	cp zconf.tab.h_shipped zconf.tab.h
-endif
-
-.PHONY: ncurses
-
-ncurses:
-	@echo "int main() { return 0; }" > lxtemp.c
-	@if $(HOSTCC) lxtemp.c $(LIBS) ; then \
-		rm -f lxtemp.c a.out; \
-	else \
-		rm -f lxtemp.c; \
-		echo -e "\007" ;\
-		echo ">> Unable to find the Ncurses libraries." ;\
-		echo ">>" ;\
-		echo ">> You must have Ncurses installed in order" ;\
-		echo ">> to use 'make menuconfig'" ;\
-		echo ">>" ;\
-		echo ">> Maybe you want to try 'make config', which" ;\
-		echo ">> doesn't depend on the Ncurses libraries." ;\
-		echo ;\
-		exit 1 ;\
-	fi
+zconf.lex.c: zconf.lex.c_shipped
+	cp $< $@
 
 clean:
-	rm -f *.o *~ core $(TARGETS) $(MCONF_OBJS) $(CONF_OBJS) \
-		conf mconf zconf.tab.c zconf.tab.h lex.zconf.c lkc_defs.h
-
+	rm -f \
+		conf mconf \
+		*.o lxdialog/*.o \
+		zconf.tab.c zconf.lex.c

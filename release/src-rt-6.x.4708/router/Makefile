@@ -956,17 +956,20 @@ endif
 
 CONFIG_IN := config/config.in
 
-config/conf config/mconf:
-	@$(MAKE) -C config
+config/conf:
+	@$(MAKE) -C config conf
+
+config/mconf:
+	@$(MAKE) -C config mconf
 
 rconf: config/conf
-	@config/conf $(CONFIG_IN)
+	@CONFIG_= config/conf --oldaskconfig $(CONFIG_IN)
 
 rmconf: config/mconf
-	@config/mconf $(CONFIG_IN)
+	@NCURSES_NO_UTF8_ACS=1 CONFIG_= config/mconf $(CONFIG_IN)
 
 roldconf: config/conf
-	@config/conf -o $(CONFIG_IN)
+	@CONFIG_= config/conf --oldconfig $(CONFIG_IN)
 	@$(MAKE) prebuilt-clean libbcmcrypto-clean dhcpv6-clean dnsmasq-clean $(IPROUTE_TARGET)-clean
 	@$(MAKE) cstats-clean httpd-clean mdu-clean mssl-clean nvram$(BCMEX)-clean rc-clean rstats-clean shared-clean wanuptime-clean
 ifeq ($(TCONFIG_BCMARM),y)

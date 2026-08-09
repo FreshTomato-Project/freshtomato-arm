@@ -11,6 +11,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "lkc.h"
+
 #define printd(mask, fmt...) if (cdebug & (mask)) printf(fmt)
 
 #define PRINTD		0x0001
@@ -20,97 +22,130 @@ int cdebug = PRINTD;
 
 extern int zconflex(void);
 static void zconfprint(const char *err, ...);
+static void zconf_error(const char *err, ...);
 static void zconferror(const char *err);
-static bool zconf_endtoken(int token, int starttoken, int endtoken);
+static bool zconf_endtoken(const struct kconf_id *id, int starttoken, int endtoken);
 
-struct symbol *symbol_hash[257];
+struct symbol *symbol_hash[SYMBOL_HASHSIZE];
 
-#define YYERROR_VERBOSE
+static struct menu *current_menu, *current_entry;
+
 %}
-%expect 36
+%expect 32
 
 %union
 {
-	int token;
 	char *string;
+	struct file *file;
 	struct symbol *symbol;
 	struct expr *expr;
 	struct menu *menu;
+	const struct kconf_id *id;
 }
 
-%token T_MAINMENU
-%token T_MENU
-%token T_ENDMENU
-%token T_SOURCE
-%token T_CHOICE
-%token T_ENDCHOICE
-%token T_COMMENT
-%token T_CONFIG
-%token T_HELP
+%token <id>T_MAINMENU
+%token <id>T_MENU
+%token <id>T_ENDMENU
+%token <id>T_SOURCE
+%token <id>T_CHOICE
+%token <id>T_ENDCHOICE
+%token <id>T_COMMENT
+%token <id>T_CONFIG
+%token <id>T_MENUCONFIG
+%token <id>T_HELP
 %token <string> T_HELPTEXT
-%token T_IF
-%token T_ENDIF
-%token T_DEPENDS
-%token T_REQUIRES
-%token T_OPTIONAL
-%token T_PROMPT
-%token T_DEFAULT
-%token T_TRISTATE
-%token T_BOOLEAN
-%token T_INT
-%token T_HEX
+%token <id>T_IF
+%token <id>T_ENDIF
+%token <id>T_DEPENDS
+%token <id>T_OPTIONAL
+%token <id>T_PROMPT
+%token <id>T_TYPE
+%token <id>T_DEFAULT
+%token <id>T_SELECT
+%token <id>T_IMPLY
+%token <id>T_RANGE
+%token <id>T_VISIBLE
+%token <id>T_OPTION
+%token <id>T_ON
 %token <string> T_WORD
-%token <string> T_STRING
+%token <string> T_WORD_QUOTE
 %token T_UNEQUAL
-%token T_EOF
-%token T_EOL
+%token T_LESS
+%token T_LESS_EQUAL
+%token T_GREATER
+%token T_GREATER_EQUAL
 %token T_CLOSE_PAREN
 %token T_OPEN_PAREN
-%token T_ON
+%token T_EOL
 
 %left T_OR
 %left T_AND
 %left T_EQUAL T_UNEQUAL
+%left T_LESS T_LESS_EQUAL T_GREATER T_GREATER_EQUAL
 %nonassoc T_NOT
 
 %type <string> prompt
-%type <string> source
 %type <symbol> symbol
 %type <expr> expr
 %type <expr> if_expr
-%type <token> end
+%type <id> end
+%type <id> option_name
+%type <menu> if_entry menu_entry choice_entry
+%type <string> symbol_option_arg word_opt
+
+%destructor {
+	fprintf(stderr, "%s:%d: missing end statement for this entry\n",
+		$$->file->name, $$->lineno);
+	if (current_menu == $$)
+		menu_end_menu();
+} if_entry menu_entry choice_entry
 
 %{
-#define LKC_DIRECT_LINK
-#include "lkc.h"
+/* Include zconf_id.c here so it can see the token constants. */
+#include "kconf_id.c"
 %}
+
 %%
-input:	  /* empty */
-	| input block
+input: nl start | start;
+
+start: mainmenu_stmt stmt_list | stmt_list;
+
+stmt_list:
+	  /* empty */
+	| stmt_list common_stmt
+	| stmt_list choice_stmt
+	| stmt_list menu_stmt
+	| stmt_list end			{ zconf_error("unexpected end statement"); }
+	| stmt_list T_WORD error T_EOL	{ zconf_error("unknown statement \"%s\"", $2); }
+	| stmt_list option_name error T_EOL
+{
+	zconf_error("unexpected option \"%s\"", $2->name);
+}
+	| stmt_list error T_EOL		{ zconf_error("invalid statement"); }
 ;
 
-block:	  common_block
-	| choice_stmt
-	| menu_stmt
-	| T_MAINMENU prompt nl_or_eof
-	| T_ENDMENU		{ zconfprint("unexpected 'endmenu' statement"); }
-	| T_ENDIF		{ zconfprint("unexpected 'endif' statement"); }
-	| T_ENDCHOICE		{ zconfprint("unexpected 'endchoice' statement"); }
-	| error nl_or_eof	{ zconfprint("syntax error"); yyerrok; }
+option_name:
+	T_DEPENDS | T_PROMPT | T_TYPE | T_SELECT | T_IMPLY | T_OPTIONAL | T_RANGE | T_DEFAULT | T_VISIBLE
 ;
 
-common_block:
-	  if_stmt
+common_stmt:
+	  T_EOL
+	| if_stmt
 	| comment_stmt
 	| config_stmt
+	| menuconfig_stmt
 	| source_stmt
-	| nl_or_eof
+;
+
+option_error:
+	  T_WORD error T_EOL		{ zconf_error("unknown option \"%s\"", $1); }
+	| error T_EOL			{ zconf_error("invalid option"); }
 ;
 
 
-/* config entry */
+/* config/menuconfig entry */
 
-config_entry_start: T_CONFIG T_WORD
+config_entry_start: T_CONFIG T_WORD T_EOL
 {
 	struct symbol *sym = sym_lookup($2, 0);
 	sym->flags |= SYMBOL_OPTIONAL;
@@ -118,77 +153,116 @@ config_entry_start: T_CONFIG T_WORD
 	printd(DEBUG_PARSE, "%s:%d:config %s\n", zconf_curname(), zconf_lineno(), $2);
 };
 
-config_stmt: config_entry_start T_EOL config_option_list
+config_stmt: config_entry_start config_option_list
 {
+	menu_end_entry();
+	printd(DEBUG_PARSE, "%s:%d:endconfig\n", zconf_curname(), zconf_lineno());
+};
+
+menuconfig_entry_start: T_MENUCONFIG T_WORD T_EOL
+{
+	struct symbol *sym = sym_lookup($2, 0);
+	sym->flags |= SYMBOL_OPTIONAL;
+	menu_add_entry(sym);
+	printd(DEBUG_PARSE, "%s:%d:menuconfig %s\n", zconf_curname(), zconf_lineno(), $2);
+};
+
+menuconfig_stmt: menuconfig_entry_start config_option_list
+{
+	if (current_entry->prompt)
+		current_entry->prompt->type = P_MENU;
+	else
+		zconfprint("warning: menuconfig statement without prompt");
 	menu_end_entry();
 	printd(DEBUG_PARSE, "%s:%d:endconfig\n", zconf_curname(), zconf_lineno());
 };
 
 config_option_list:
 	  /* empty */
-	| config_option_list config_option T_EOL
-	| config_option_list depends T_EOL
+	| config_option_list config_option
+	| config_option_list symbol_option
+	| config_option_list depends
 	| config_option_list help
+	| config_option_list option_error
 	| config_option_list T_EOL
-{ };
+;
 
-config_option: T_TRISTATE prompt_stmt_opt
+config_option: T_TYPE prompt_stmt_opt T_EOL
 {
-	menu_set_type(S_TRISTATE);
-	printd(DEBUG_PARSE, "%s:%d:tristate\n", zconf_curname(), zconf_lineno());
+	menu_set_type($1->stype);
+	printd(DEBUG_PARSE, "%s:%d:type(%u)\n",
+		zconf_curname(), zconf_lineno(),
+		$1->stype);
 };
 
-config_option: T_BOOLEAN prompt_stmt_opt
+config_option: T_PROMPT prompt if_expr T_EOL
 {
-	menu_set_type(S_BOOLEAN);
-	printd(DEBUG_PARSE, "%s:%d:boolean\n", zconf_curname(), zconf_lineno());
-};
-
-config_option: T_INT prompt_stmt_opt
-{
-	menu_set_type(S_INT);
-	printd(DEBUG_PARSE, "%s:%d:int\n", zconf_curname(), zconf_lineno());
-};
-
-config_option: T_HEX prompt_stmt_opt
-{
-	menu_set_type(S_HEX);
-	printd(DEBUG_PARSE, "%s:%d:hex\n", zconf_curname(), zconf_lineno());
-};
-
-config_option: T_STRING prompt_stmt_opt
-{
-	menu_set_type(S_STRING);
-	printd(DEBUG_PARSE, "%s:%d:string\n", zconf_curname(), zconf_lineno());
-};
-
-config_option: T_PROMPT prompt if_expr
-{
-	menu_add_prop(P_PROMPT, $2, NULL, $3);
+	menu_add_prompt(P_PROMPT, $2, $3);
 	printd(DEBUG_PARSE, "%s:%d:prompt\n", zconf_curname(), zconf_lineno());
 };
 
-config_option: T_DEFAULT symbol if_expr
+config_option: T_DEFAULT expr if_expr T_EOL
 {
-	menu_add_prop(P_DEFAULT, NULL, $2, $3);
-	printd(DEBUG_PARSE, "%s:%d:default\n", zconf_curname(), zconf_lineno());
+	menu_add_expr(P_DEFAULT, $2, $3);
+	if ($1->stype != S_UNKNOWN)
+		menu_set_type($1->stype);
+	printd(DEBUG_PARSE, "%s:%d:default(%u)\n",
+		zconf_curname(), zconf_lineno(),
+		$1->stype);
 };
+
+config_option: T_SELECT T_WORD if_expr T_EOL
+{
+	menu_add_symbol(P_SELECT, sym_lookup($2, 0), $3);
+	printd(DEBUG_PARSE, "%s:%d:select\n", zconf_curname(), zconf_lineno());
+};
+
+config_option: T_IMPLY T_WORD if_expr T_EOL
+{
+	menu_add_symbol(P_IMPLY, sym_lookup($2, 0), $3);
+	printd(DEBUG_PARSE, "%s:%d:imply\n", zconf_curname(), zconf_lineno());
+};
+
+config_option: T_RANGE symbol symbol if_expr T_EOL
+{
+	menu_add_expr(P_RANGE, expr_alloc_comp(E_RANGE,$2, $3), $4);
+	printd(DEBUG_PARSE, "%s:%d:range\n", zconf_curname(), zconf_lineno());
+};
+
+symbol_option: T_OPTION symbol_option_list T_EOL
+;
+
+symbol_option_list:
+	  /* empty */
+	| symbol_option_list T_WORD symbol_option_arg
+{
+	const struct kconf_id *id = kconf_id_lookup($2, strlen($2));
+	if (id && id->flags & TF_OPTION)
+		menu_add_option(id->token, $3);
+	else
+		zconfprint("warning: ignoring unknown option %s", $2);
+	free($2);
+};
+
+symbol_option_arg:
+	  /* empty */		{ $$ = NULL; }
+	| T_EQUAL prompt	{ $$ = $2; }
+;
 
 /* choice entry */
 
-choice: T_CHOICE
+choice: T_CHOICE word_opt T_EOL
 {
-	struct symbol *sym = sym_lookup(NULL, 0);
-	sym->flags |= SYMBOL_CHOICE;
+	struct symbol *sym = sym_lookup($2, SYMBOL_CHOICE);
+	sym->flags |= SYMBOL_AUTO;
 	menu_add_entry(sym);
-	menu_add_prop(P_CHOICE, NULL, NULL, NULL);
+	menu_add_expr(P_CHOICE, NULL, NULL);
 	printd(DEBUG_PARSE, "%s:%d:choice\n", zconf_curname(), zconf_lineno());
 };
 
-choice_entry: choice T_EOL choice_option_list
+choice_entry: choice choice_option_list
 {
-	menu_end_entry();
-	menu_add_menu();
+	$$ = menu_add_menu();
 };
 
 choice_end: end
@@ -199,56 +273,64 @@ choice_end: end
 	}
 };
 
-choice_stmt:
-	  choice_entry choice_block choice_end T_EOL
-	| choice_entry choice_block
-{
-	printf("%s:%d: missing 'endchoice' for this 'choice' statement\n", current_menu->file->name, current_menu->lineno);
-	zconfnerrs++;
-};
+choice_stmt: choice_entry choice_block choice_end
+;
 
 choice_option_list:
 	  /* empty */
-	| choice_option_list choice_option T_EOL
-	| choice_option_list depends T_EOL
+	| choice_option_list choice_option
+	| choice_option_list depends
 	| choice_option_list help
 	| choice_option_list T_EOL
+	| choice_option_list option_error
 ;
 
-choice_option: T_PROMPT prompt if_expr
+choice_option: T_PROMPT prompt if_expr T_EOL
 {
-	menu_add_prop(P_PROMPT, $2, NULL, $3);
+	menu_add_prompt(P_PROMPT, $2, $3);
 	printd(DEBUG_PARSE, "%s:%d:prompt\n", zconf_curname(), zconf_lineno());
 };
 
-choice_option: T_OPTIONAL
+choice_option: T_TYPE prompt_stmt_opt T_EOL
+{
+	if ($1->stype == S_BOOLEAN || $1->stype == S_TRISTATE) {
+		menu_set_type($1->stype);
+		printd(DEBUG_PARSE, "%s:%d:type(%u)\n",
+			zconf_curname(), zconf_lineno(),
+			$1->stype);
+	} else
+		YYERROR;
+};
+
+choice_option: T_OPTIONAL T_EOL
 {
 	current_entry->sym->flags |= SYMBOL_OPTIONAL;
 	printd(DEBUG_PARSE, "%s:%d:optional\n", zconf_curname(), zconf_lineno());
 };
 
-choice_option: T_DEFAULT symbol
+choice_option: T_DEFAULT T_WORD if_expr T_EOL
 {
-	menu_add_prop(P_DEFAULT, NULL, $2, NULL);
-	//current_choice->prop->def = $2;
-	printd(DEBUG_PARSE, "%s:%d:default\n", zconf_curname(), zconf_lineno());
+	if ($1->stype == S_UNKNOWN) {
+		menu_add_symbol(P_DEFAULT, sym_lookup($2, 0), $3);
+		printd(DEBUG_PARSE, "%s:%d:default\n",
+			zconf_curname(), zconf_lineno());
+	} else
+		YYERROR;
 };
 
 choice_block:
 	  /* empty */
-	| choice_block common_block
+	| choice_block common_stmt
 ;
 
 /* if entry */
 
-if: T_IF expr
+if_entry: T_IF expr nl
 {
 	printd(DEBUG_PARSE, "%s:%d:if\n", zconf_curname(), zconf_lineno());
 	menu_add_entry(NULL);
-	//current_entry->prompt = menu_add_prop(T_IF, NULL, NULL, $2);
 	menu_add_dep($2);
-	menu_end_entry();
-	menu_add_menu();
+	$$ = menu_add_menu();
 };
 
 if_end: end
@@ -259,34 +341,35 @@ if_end: end
 	}
 };
 
-if_stmt:
-	  if T_EOL if_block if_end T_EOL
-	| if T_EOL if_block
-{
-	printf("%s:%d: missing 'endif' for this 'if' statement\n", current_menu->file->name, current_menu->lineno);
-	zconfnerrs++;
-};
+if_stmt: if_entry if_block if_end
+;
 
 if_block:
 	  /* empty */
-	| if_block common_block
+	| if_block common_stmt
 	| if_block menu_stmt
 	| if_block choice_stmt
 ;
 
+/* mainmenu entry */
+
+mainmenu_stmt: T_MAINMENU prompt nl
+{
+	menu_add_prompt(P_MENU, $2, NULL);
+};
+
 /* menu entry */
 
-menu: T_MENU prompt
+menu: T_MENU prompt T_EOL
 {
 	menu_add_entry(NULL);
-	menu_add_prop(P_MENU, $2, NULL, NULL);
+	menu_add_prompt(P_MENU, $2, NULL);
 	printd(DEBUG_PARSE, "%s:%d:menu\n", zconf_curname(), zconf_lineno());
 };
 
-menu_entry: menu T_EOL depends_list
+menu_entry: menu visibility_list depends_list
 {
-	menu_end_entry();
-	menu_add_menu();
+	$$ = menu_add_menu();
 };
 
 menu_end: end
@@ -297,43 +380,32 @@ menu_end: end
 	}
 };
 
-menu_stmt:
-	  menu_entry menu_block menu_end T_EOL
-	| menu_entry menu_block
-{
-	printf("%s:%d: missing 'endmenu' for this 'menu' statement\n", current_menu->file->name, current_menu->lineno);
-	zconfnerrs++;
-};
+menu_stmt: menu_entry menu_block menu_end
+;
 
 menu_block:
 	  /* empty */
-	| menu_block common_block
+	| menu_block common_stmt
 	| menu_block menu_stmt
 	| menu_block choice_stmt
-	| menu_block error T_EOL		{ zconfprint("invalid menu option"); yyerrok; }
 ;
 
-source: T_SOURCE prompt
+source_stmt: T_SOURCE prompt T_EOL
 {
-	$$ = $2;
 	printd(DEBUG_PARSE, "%s:%d:source %s\n", zconf_curname(), zconf_lineno(), $2);
-};
-
-source_stmt: source T_EOL
-{
-	zconf_nextfile($1);
+	zconf_nextfile($2);
 };
 
 /* comment entry */
 
-comment: T_COMMENT prompt
+comment: T_COMMENT prompt T_EOL
 {
 	menu_add_entry(NULL);
-	menu_add_prop(P_COMMENT, $2, NULL, NULL);
+	menu_add_prompt(P_COMMENT, $2, NULL);
 	printd(DEBUG_PARSE, "%s:%d:comment\n", zconf_curname(), zconf_lineno());
 };
 
-comment_stmt: comment T_EOL depends_list
+comment_stmt: comment depends_list
 {
 	menu_end_entry();
 };
@@ -348,62 +420,69 @@ help_start: T_HELP T_EOL
 
 help: help_start T_HELPTEXT
 {
-	current_entry->sym->help = $2;
+	current_entry->help = $2;
 };
 
 /* depends option */
 
-depends_list:	  /* empty */
-		| depends_list depends T_EOL
-		| depends_list T_EOL
-{ };
+depends_list:
+	  /* empty */
+	| depends_list depends
+	| depends_list T_EOL
+	| depends_list option_error
+;
 
-depends: T_DEPENDS T_ON expr
+depends: T_DEPENDS T_ON expr T_EOL
 {
 	menu_add_dep($3);
 	printd(DEBUG_PARSE, "%s:%d:depends on\n", zconf_curname(), zconf_lineno());
-}
-	| T_DEPENDS expr
+};
+
+/* visibility option */
+
+visibility_list:
+	  /* empty */
+	| visibility_list visible
+	| visibility_list T_EOL
+;
+
+visible: T_VISIBLE if_expr
 {
-	menu_add_dep($2);
-	printd(DEBUG_PARSE, "%s:%d:depends\n", zconf_curname(), zconf_lineno());
-}
-	| T_REQUIRES expr
-{
-	menu_add_dep($2);
-	printd(DEBUG_PARSE, "%s:%d:requires\n", zconf_curname(), zconf_lineno());
+	menu_add_visibility($2);
 };
 
 /* prompt statement */
 
 prompt_stmt_opt:
 	  /* empty */
-	| prompt
+	| prompt if_expr
 {
-	menu_add_prop(P_PROMPT, $1, NULL, NULL);
-}
-	| prompt T_IF expr
-{
-	menu_add_prop(P_PROMPT, $1, NULL, $3);
+	menu_add_prompt(P_PROMPT, $1, $2);
 };
 
 prompt:	  T_WORD
-	| T_STRING
+	| T_WORD_QUOTE
 ;
 
-end:	  T_ENDMENU		{ $$ = T_ENDMENU; }
-	| T_ENDCHOICE		{ $$ = T_ENDCHOICE; }
-	| T_ENDIF		{ $$ = T_ENDIF; }
+end:	  T_ENDMENU T_EOL	{ $$ = $1; }
+	| T_ENDCHOICE T_EOL	{ $$ = $1; }
+	| T_ENDIF T_EOL		{ $$ = $1; }
 ;
 
-nl_or_eof:
-	T_EOL | T_EOF;
+nl:
+	  T_EOL
+	| nl T_EOL
+;
 
 if_expr:  /* empty */			{ $$ = NULL; }
 	| T_IF expr			{ $$ = $2; }
 ;
 
 expr:	  symbol				{ $$ = expr_alloc_symbol($1); }
+	| symbol T_LESS symbol			{ $$ = expr_alloc_comp(E_LTH, $1, $3); }
+	| symbol T_LESS_EQUAL symbol		{ $$ = expr_alloc_comp(E_LEQ, $1, $3); }
+	| symbol T_GREATER symbol		{ $$ = expr_alloc_comp(E_GTH, $1, $3); }
+	| symbol T_GREATER_EQUAL symbol		{ $$ = expr_alloc_comp(E_GEQ, $1, $3); }
 	| symbol T_EQUAL symbol			{ $$ = expr_alloc_comp(E_EQUAL, $1, $3); }
 	| symbol T_UNEQUAL symbol		{ $$ = expr_alloc_comp(E_UNEQUAL, $1, $3); }
 	| T_OPEN_PAREN expr T_CLOSE_PAREN	{ $$ = $2; }
@@ -413,31 +492,47 @@ expr:	  symbol				{ $$ = expr_alloc_symbol($1); }
 ;
 
 symbol:	  T_WORD	{ $$ = sym_lookup($1, 0); free($1); }
-	| T_STRING	{ $$ = sym_lookup($1, 1); free($1); }
+	| T_WORD_QUOTE	{ $$ = sym_lookup($1, SYMBOL_CONST); free($1); }
 ;
+
+word_opt: /* empty */			{ $$ = NULL; }
+	| T_WORD
 
 %%
 
 void conf_parse(const char *name)
 {
+	struct symbol *sym;
+	int i;
+
 	zconf_initscan(name);
 
 	sym_init();
-	menu_init();
-	rootmenu.prompt = menu_add_prop(P_MENU, "Broadcom Linux Router Configuration", NULL, NULL);
+	_menu_init();
+	rootmenu.prompt = menu_add_prompt(P_MENU, "Linux Kernel Configuration", NULL);
 
-	//zconfdebug = 1;
+	if (getenv("ZCONF_DEBUG"))
+		zconfdebug = 1;
 	zconfparse();
 	if (zconfnerrs)
 		exit(1);
+	if (!modules_sym)
+		modules_sym = sym_find( "n" );
+
+	rootmenu.prompt->text = _(rootmenu.prompt->text);
+	rootmenu.prompt->text = sym_expand_string_value(rootmenu.prompt->text);
+
 	menu_finalize(&rootmenu);
-
-	modules_sym = sym_lookup("MODULES", 0);
-
-	sym_change_count = 1;
+	for_all_symbols(i, sym) {
+		if (sym_check_deps(sym))
+			zconfnerrs++;
+	}
+	if (zconfnerrs)
+		exit(1);
+	sym_set_change_count(1);
 }
 
-const char *zconf_tokenname(int token)
+static const char *zconf_tokenname(int token)
 {
 	switch (token) {
 	case T_MENU:		return "menu";
@@ -446,20 +541,26 @@ const char *zconf_tokenname(int token)
 	case T_ENDCHOICE:	return "endchoice";
 	case T_IF:		return "if";
 	case T_ENDIF:		return "endif";
+	case T_DEPENDS:		return "depends";
+	case T_VISIBLE:		return "visible";
 	}
 	return "<token>";
-} 
+}
 
-static bool zconf_endtoken(int token, int starttoken, int endtoken)
+static bool zconf_endtoken(const struct kconf_id *id, int starttoken, int endtoken)
 {
-	if (token != endtoken) {
-		zconfprint("unexpected '%s' within %s block", zconf_tokenname(token), zconf_tokenname(starttoken));
+	if (id->token != endtoken) {
+		zconf_error("unexpected '%s' within %s block",
+			id->name, zconf_tokenname(starttoken));
 		zconfnerrs++;
 		return false;
 	}
 	if (current_menu->file != current_file) {
-		zconfprint("'%s' in different file than '%s'", zconf_tokenname(token), zconf_tokenname(starttoken));
-		zconfprint("location of the '%s'", zconf_tokenname(starttoken));
+		zconf_error("'%s' in different file than '%s'",
+			id->name, zconf_tokenname(starttoken));
+		fprintf(stderr, "%s:%d: location of the '%s'\n",
+			current_menu->file->name, current_menu->lineno,
+			zconf_tokenname(starttoken));
 		zconfnerrs++;
 		return false;
 	}
@@ -477,12 +578,24 @@ static void zconfprint(const char *err, ...)
 	fprintf(stderr, "\n");
 }
 
-static void zconferror(const char *err)
+static void zconf_error(const char *err, ...)
 {
-	fprintf(stderr, "%s:%d: %s\n", zconf_curname(), zconf_lineno(), err);
+	va_list ap;
+
+	zconfnerrs++;
+	fprintf(stderr, "%s:%d: ", zconf_curname(), zconf_lineno());
+	va_start(ap, err);
+	vfprintf(stderr, err, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
 }
 
-void print_quoted_string(FILE *out, const char *str)
+static void zconferror(const char *err)
+{
+	fprintf(stderr, "%s:%d: %s\n", zconf_curname(), zconf_lineno() + 1, err);
+}
+
+static void print_quoted_string(FILE *out, const char *str)
 {
 	const char *p;
 	int len;
@@ -499,17 +612,15 @@ void print_quoted_string(FILE *out, const char *str)
 	putc('"', out);
 }
 
-void print_symbol(FILE *out, struct menu *menu)
+static void print_symbol(FILE *out, struct menu *menu)
 {
 	struct symbol *sym = menu->sym;
 	struct property *prop;
 
-	//sym->flags |= SYMBOL_PRINTED;
-
 	if (sym_is_choice(sym))
-		fprintf(out, "choice\n");
+		fprintf(out, "\nchoice\n");
 	else
-		fprintf(out, "config %s\n", sym->name);
+		fprintf(out, "\nconfig %s\n", sym->name);
 	switch (sym->type) {
 	case S_BOOLEAN:
 		fputs("  boolean\n", out);
@@ -537,48 +648,59 @@ void print_symbol(FILE *out, struct menu *menu)
 		case P_PROMPT:
 			fputs("  prompt ", out);
 			print_quoted_string(out, prop->text);
-			if (prop->def) {
-				fputc(' ', out);
-				if (prop->def->flags & SYMBOL_CONST)
-					print_quoted_string(out, prop->def->name);
-				else
-					fputs(prop->def->name, out);
-			}
-			if (!expr_is_yes(E_EXPR(prop->visible))) {
+			if (!expr_is_yes(prop->visible.expr)) {
 				fputs(" if ", out);
-				expr_fprint(E_EXPR(prop->visible), out);
+				expr_fprint(prop->visible.expr, out);
 			}
 			fputc('\n', out);
 			break;
 		case P_DEFAULT:
 			fputs( "  default ", out);
-			print_quoted_string(out, prop->def->name);
-			if (!expr_is_yes(E_EXPR(prop->visible))) {
+			expr_fprint(prop->expr, out);
+			if (!expr_is_yes(prop->visible.expr)) {
 				fputs(" if ", out);
-				expr_fprint(E_EXPR(prop->visible), out);
+				expr_fprint(prop->visible.expr, out);
 			}
 			fputc('\n', out);
 			break;
 		case P_CHOICE:
 			fputs("  #choice value\n", out);
 			break;
+		case P_SELECT:
+			fputs( "  select ", out);
+			expr_fprint(prop->expr, out);
+			fputc('\n', out);
+			break;
+		case P_IMPLY:
+			fputs( "  imply ", out);
+			expr_fprint(prop->expr, out);
+			fputc('\n', out);
+			break;
+		case P_RANGE:
+			fputs( "  range ", out);
+			expr_fprint(prop->expr, out);
+			fputc('\n', out);
+			break;
+		case P_MENU:
+			fputs( "  menu ", out);
+			print_quoted_string(out, prop->text);
+			fputc('\n', out);
+			break;
 		default:
 			fprintf(out, "  unknown prop %d!\n", prop->type);
 			break;
 		}
 	}
-	if (sym->help) {
-		int len = strlen(sym->help);
-		while (sym->help[--len] == '\n')
-			sym->help[len] = 0;
-		fprintf(out, "  help\n%s\n", sym->help);
+	if (menu->help) {
+		int len = strlen(menu->help);
+		while (menu->help[--len] == '\n')
+			menu->help[len] = 0;
+		fprintf(out, "  help\n%s\n", menu->help);
 	}
-	fputc('\n', out);
 }
 
 void zconfdump(FILE *out)
 {
-	//struct file *file;
 	struct property *prop;
 	struct symbol *sym;
 	struct menu *menu;
@@ -589,11 +711,6 @@ void zconfdump(FILE *out)
 			print_symbol(out, menu);
 		else if ((prop = menu->prompt)) {
 			switch (prop->type) {
-			//case T_MAINMENU:
-			//	fputs("\nmainmenu ", out);
-			//	print_quoted_string(out, prop->text);
-			//	fputs("\n", out);
-			//	break;
 			case P_COMMENT:
 				fputs("\ncomment ", out);
 				print_quoted_string(out, prop->text);
@@ -604,22 +721,14 @@ void zconfdump(FILE *out)
 				print_quoted_string(out, prop->text);
 				fputs("\n", out);
 				break;
-			//case T_SOURCE:
-			//	fputs("\nsource ", out);
-			//	print_quoted_string(out, prop->text);
-			//	fputs("\n", out);
-			//	break;
-			//case T_IF:
-			//	fputs("\nif\n", out);
 			default:
 				;
 			}
-			if (!expr_is_yes(E_EXPR(prop->visible))) {
+			if (!expr_is_yes(prop->visible.expr)) {
 				fputs("  depends ", out);
-				expr_fprint(E_EXPR(prop->visible), out);
+				expr_fprint(prop->visible.expr, out);
 				fputc('\n', out);
 			}
-			fputs("\n", out);
 		}
 
 		if (menu->list)
@@ -637,7 +746,8 @@ void zconfdump(FILE *out)
 	}
 }
 
-#include "lex.zconf.c"
+#include "zconf.lex.c"
+#include "util.c"
 #include "confdata.c"
 #include "expr.c"
 #include "symbol.c"

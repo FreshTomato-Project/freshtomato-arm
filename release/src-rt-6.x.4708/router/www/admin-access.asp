@@ -34,6 +34,15 @@ function bridgeHasManagementAddress(i) {
 	return (nvram['lan'+i+'_ifname'] == 'br'+i) && (ip != '') && (ip != '0.0.0.0');
 }
 
+function bridgeListenerNames() {
+	var names = [];
+
+	for (var i = 1; i <= MAX_BRIDGE_ID; i++)
+		names.push('LAN'+i);
+
+	return names.join(' / ');
+}
+
 var xmenus = [['Status','status'],['Bandwidth','bwm'],['IP Traffic','ipt'],['Tools','tools'],['Basic','basic'],['Advanced','advanced'],['Port Forwarding','forward'],['QoS','qos'],['Misc','misc'],
 /* USB-BEGIN */
               ['USB and NAS','nas'],
@@ -435,6 +444,9 @@ function earlyInit() {
 
 function init() {
 	var c;
+
+	E('http_lan_listener_names').innerHTML = bridgeListenerNames();
+
 	if (((c = cookie.get(cprefix+'_notes_vis')) != null) && (c == '1'))
 		toggleVisibility(cprefix, 'notes');
 
@@ -688,7 +700,7 @@ function init() {
 	These files are appended to the automatically generated configuration files resulting from the settings in the GUI.<br><br>
 	<i>Web Admin:</i><br>
 	<ul>
-		<li><b>Listen on LAN1 / LAN2 / LAN3</b> - enable/disable httpd listening interfaces. (by default communication is allowed! Please use <a href="admin-scripts.asp">Firewall script</a> to add your own rules, ie. br0 = private network, br1 = IOT)</li>
+		<li><b>Listen on <span id="http_lan_listener_names"></span></b> - enable/disable httpd listening interfaces. (by default communication is allowed! Please use <a href="admin-scripts.asp">Firewall script</a> to add your own rules, ie. br0 = private network, br1 = IOT)</li>
 	</ul>
 </div>
 

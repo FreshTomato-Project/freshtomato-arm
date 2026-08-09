@@ -70,7 +70,7 @@ config TCONFIG_OPTIMIZE_SIZE_MORE
 
 config TCONFIG_TRXKEY
 	bool "Include Asus New TRX Key (allow upgrade to AsusWRT via GUI)"
-	default y
+	default n
 
 endmenu
 
@@ -115,7 +115,7 @@ config TCONFIG_L7PAT
 
 config TCONFIG_BONDING
 	bool "Include bonding module and link aggregation script"
-	default y
+	default n
 
 config TCONFIG_PROXY
 	bool "udpxy and igmpproxy"
@@ -189,7 +189,7 @@ config TCONFIG_WOLFSSLMIN
 
 config TCONFIG_KEYGEN
 	bool "TLS keys generator in GUI for VPN Server"
-	default y
+	default n
 
 config TCONFIG_HAVEGED
 	bool "Haveged, an entrophy daemon"
@@ -373,11 +373,11 @@ config TCONFIG_QRCODE
 
 config TCONFIG_TERMLIB
 	bool "Termlib based tools-shell.asp"
-	default y
+	default n
 
 config TCONFIG_ADVTHEMES
 	bool "Advanced Themes similar to AdvancedTomato"
-	default y
+	default n
 
 config TCONFIG_FANCTRL
 	bool "FANCTRL"

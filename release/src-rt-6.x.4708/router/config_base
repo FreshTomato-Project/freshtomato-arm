@@ -1,100 +1,124 @@
 #
-# The baseline configuration for Tomato USB.
-# All other build configurations are derived from this.
+# Shared baseline configuration for FreshTomato.
+# Platform- and target-specific features are enabled by the build makefiles.
 #
+
+# Build and target configuration
 TCONFIG_OPTIMIZE_SHARED_LIBS=y
-TCONFIG_L2TP=y
-TCONFIG_PPTP=y
-# TCONFIG_PPTPD is not set
+# TCONFIG_BCMARM is not set
+# TCONFIG_MIPSR2 is not set
+# TCONFIG_BCMWL6 is not set
+# TCONFIG_BCMWL6A is not set
+# TCONFIG_BCM7 is not set
+# TCONFIG_BCM714 is not set
+# TCONFIG_BCMSMP is not set
+# TCONFIG_NVRAM_32K is not set
+# TCONFIG_NVRAM_64K is not set
+# TCONFIG_NVRAM_128K is not set
+# TCONFIG_DRAM_512M is not set
+# TCONFIG_AIO is not set
+# TCONFIG_OPTIMIZE_SIZE is not set
+# TCONFIG_OPTIMIZE_SIZE_MORE is not set
+# TCONFIG_TRXKEY is not set
+
+# Networking and routing
 # TCONFIG_MULTIWAN is not set
-TCONFIG_HTTPS=y
-TCONFIG_CIFS=y
-# TCONFIG_BRCM_NAND_JFFS2 is not set
-TCONFIG_JFFS2=y
-TCONFIG_JFFSV1=y
-TCONFIG_DDNS=y
-TCONFIG_L7=y
-TCONFIG_L7PAT=y
 # TCONFIG_IPV6 is not set
 # TCONFIG_EBTABLES is not set
 # TCONFIG_EMF is not set
+# TCONFIG_CTF is not set
+# TCONFIG_BCMNAT is not set
+# TCONFIG_ZEBRA is not set
+TCONFIG_L7=y
+TCONFIG_L7PAT=y
+# TCONFIG_BONDING is not set
+# TCONFIG_PROXY is not set
+# TCONFIG_MDNS is not set
+# TCONFIG_CONNTRACK_TOOL is not set
+
+# VPN, security and cryptography
+TCONFIG_L2TP=y
+TCONFIG_PPTP=y
+# TCONFIG_PPTPD is not set
+# TCONFIG_OPENVPN is not set
+# TCONFIG_WIREGUARD is not set
+# TCONFIG_IPSEC is not set
+# TCONFIG_TINC is not set
+TCONFIG_HTTPS=y
+# TCONFIG_DNSSEC is not set
+# TCONFIG_OPENSSL30 is not set
+# TCONFIG_OPENSSL11 is not set
+# TCONFIG_WOLFSSL is not set
+# TCONFIG_WOLFSSLMIN is not set
+# TCONFIG_KEYGEN is not set
+# TCONFIG_HAVEGED is not set
+
+# DNS and network services
+TCONFIG_DDNS=y
+# TCONFIG_DNSCRYPT is not set
+# TCONFIG_STUBBY is not set
+# TCONFIG_TOR is not set
+# TCONFIG_NOCAT is not set
+# TCONFIG_NGINX is not set
+# TCONFIG_SNMP is not set
+
+# Storage, filesystems and USB
 TCONFIG_USB=y
+TCONFIG_CIFS=y
+TCONFIG_JFFS2=y
+TCONFIG_JFFSV1=y
+# TCONFIG_BRCM_NAND_JFFS2 is not set
+# TCONFIG_NAND is not set
 # TCONFIG_MEDIA_SERVER is not set
 TCONFIG_FTP=y
 # TCONFIG_FTP_SSL is not set
 TCONFIG_SAMBASRV=y
 # TCONFIG_USB_EXTRAS is not set
 # TCONFIG_NTFS is not set
-# TCONFIG_OPENVPN is not set
-# TCONFIG_WIREGUARD is not set
-# TCONFIG_ZFS is not set
-# TCONFIG_BT is not set
-# TCONFIG_BBT is not set
-# TCONFIG_TR_EXTRAS is not set
-# TCONFIG_NFS is not set
-# TCONFIG_NOCAT is not set
-# TCONFIG_NGINX is not set
-# TCONFIG_SNMP is not set
 # TCONFIG_HFS is not set
-# TCONFIG_UPS is not set
-# TCONFIG_NANO is not set
-# TCONFIG_AIO is not set
-# TCONFIG_DNSCRYPT is not set
-# TCONFIG_STUBBY is not set
-# TCONFIG_NVRAM_64K is not set
-# TCONFIG_NVRAM_128K is not set
-# TCONFIG_DRAM_512M is not set
-# TCONFIG_TOR is not set
-# TCONFIG_MICROSD is not set
-# TCONFIG_USBAP is not set
-# TCONFIG_REMOVE_USBAPP is not set
-# TCONFIG_CTF is not set
-# TCONFIG_DNSSEC is not set
-# TCONFIG_TINC is not set
-# TCONFIG_OPENSSL11 is not set
-# TCONFIG_OPENSSL30 is not set
-# TCONFIG_WOLFSSL is not set
-# TCONFIG_WOLFSSLMIN is not set
-# TCONFIG_FANCTRL is not set
-# TCONFIG_NAND is not set
+# TCONFIG_ZFS is not set
+# TCONFIG_UFSD is not set
 # TCONFIG_UFSDA is not set
 # TCONFIG_TUXERA is not set
 # TCONFIG_TUX_HFS is not set
-# TCONFIG_BCMARM is not set
-# TCONFIG_BCMWL6A is not set
-# TCONFIG_BCMWL6 is not set
-# TCONFIG_BCM7 is not set
-# TCONFIG_BCM714 is not set
-# TCONFIG_DHDAP is not set
-# TCONFIG_GMAC3 is not set
-# TCONFIG_5301X is not set
-# TCONFIG_BCMDCS is not set
-# TCONFIG_TRAFFIC_MGMT_RSSI_POLICY is not set
-# TCONFIG_TOAD is not set
-# TCONFIG_BCMSMP is not set
+# TCONFIG_UPS is not set
+# TCONFIG_MICROSD is not set
+# TCONFIG_SDHC is not set
+# TCONFIG_USBAP is not set
+# TCONFIG_REMOVE_USBAPP is not set
+# TCONFIG_NFS is not set
+# TCONFIG_RAID is not set
+
+# Applications and utilities
+# TCONFIG_BT is not set
+# TCONFIG_BBT is not set
+# TCONFIG_TR_EXTRAS is not set
+# TCONFIG_NANO is not set
+# TCONFIG_IPERF is not set
+# TCONFIG_QRCODE is not set
+# TCONFIG_TERMLIB is not set
+# TCONFIG_ADVTHEMES is not set
+# TCONFIG_FANCTRL is not set
+# TCONFIG_IRQBALANCE is not set
+
+# Broadcom wireless and hardware
+# TCONFIG_AC66U is not set
+# TCONFIG_R6300V1 is not set
+# TCONFIG_WNDR4500V1 is not set
+# TCONFIG_WNDR4500V2 is not set
 # TCONFIG_AC3200 is not set
 # TCONFIG_AC5300 is not set
+# TCONFIG_DHDAP is not set
+# TCONFIG_GMAC3 is not set
 # TCONFIG_PROXYSTA is not set
 # TCONFIG_DPSTA is not set
 # TCONFIG_GROCTRL is not set
 # TCONFIG_BCMFA is not set
+# TCONFIG_5301X is not set
+# TCONFIG_BCMDCS is not set
+# TCONFIG_TRAFFIC_MGMT_RSSI_POLICY is not set
+# TCONFIG_TOAD is not set
 # TCONFIG_BCMBSD is not set
 # TCONFIG_ROAM is not set
-# TCONFIG_FANCTRL is not set
-# TCONFIG_IPERF is not set
-# TCONFIG_QRCODE is not set
-TCONFIG_KEYGEN=y
-TCONFIG_TERMLIB=y
-# TCONFIG_NVRAM_32K is not set
-TCONFIG_BONDING=y
-# TCONFIG_OPTIMIZE_SIZE is not set
-# TCONFIG_OPTIMIZE_SIZE_MORE is not set
-TCONFIG_ADVTHEMES=y
 # TCONFIG_BLINK is not set
-# TCONFIG_MDNS is not set
-# TCONFIG_CONNTRACK_TOOL is not set
-# TCONFIG_IRQBALANCE is not set
-TCONFIG_TRXKEY=y
-# TCONFIG_PROXY is not set
-# TCONFIG_HAVEGED is not set
 # TCONFIG_EXTSW is not set

@@ -287,6 +287,16 @@ what:
 
 define RouterOptions
 	@( \
+	sed -i "/TCONFIG_ADVTHEMES/d" $(1); \
+	echo "TCONFIG_ADVTHEMES=y" >>$(1); \
+	sed -i "/TCONFIG_BONDING/d" $(1); \
+	echo "TCONFIG_BONDING=y" >>$(1); \
+	sed -i "/TCONFIG_KEYGEN/d" $(1); \
+	echo "TCONFIG_KEYGEN=y" >>$(1); \
+	sed -i "/TCONFIG_TERMLIB/d" $(1); \
+	echo "TCONFIG_TERMLIB=y" >>$(1); \
+	sed -i "/TCONFIG_TRXKEY/d" $(1); \
+	echo "TCONFIG_TRXKEY=y" >>$(1); \
 	sed -i "/TCONFIG_EMF/d" $(1); \
 	if [ "$(SLIM)" = "y" ]; then \
 		echo "# TCONFIG_EMF is not set" >>$(1); \

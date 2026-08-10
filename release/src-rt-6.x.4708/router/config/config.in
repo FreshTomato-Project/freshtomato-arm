@@ -15,6 +15,7 @@ config TCONFIG_BCMARM
 
 config TCONFIG_MIPSR2
 	bool "MIPS R2 flag"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_BCMWL6
@@ -38,6 +39,7 @@ config TCONFIG_BCM714
 
 config TCONFIG_BCMSMP
 	bool "BCM SMP"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_NVRAM_32K
@@ -50,10 +52,12 @@ config TCONFIG_NVRAM_64K
 
 config TCONFIG_NVRAM_128K
 	bool "NVRAM_128K"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_DRAM_512M
 	bool "DRAM_512M"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_AIO
@@ -70,6 +74,7 @@ config TCONFIG_OPTIMIZE_SIZE_MORE
 
 config TCONFIG_TRXKEY
 	bool "Include Asus New TRX Key (allow upgrade to AsusWRT via GUI)"
+	depends on TCONFIG_BCMARM
 	default n
 
 endmenu
@@ -98,6 +103,7 @@ config TCONFIG_CTF
 
 config TCONFIG_BCMNAT
 	bool "Broadcom FastNAT (bcm_nat)"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_ZEBRA
@@ -176,6 +182,7 @@ config TCONFIG_OPENSSL30
 
 config TCONFIG_OPENSSL11
 	bool "OpenSSL 1.1.x"
+	depends on !TCONFIG_OPENSSL30
 	default n
 
 config TCONFIG_WOLFSSL
@@ -296,18 +303,22 @@ config TCONFIG_ZFS
 
 config TCONFIG_UFSD
 	bool "Paragon NTFS driver for Asus routers"
+	depends on !TCONFIG_BCMARM && TCONFIG_USB
 	default n
 
 config TCONFIG_UFSDA
 	bool "Paragon NTFS driver for Asus routers"
+	depends on TCONFIG_BCMARM && TCONFIG_USB
 	default n
 
 config TCONFIG_TUXERA
 	bool "Tuxera NTFS driver for Asus routers"
+	depends on TCONFIG_BCMARM && TCONFIG_USB
 	default n
 
 config TCONFIG_TUX_HFS
 	bool "Tuxera HFS/HFS+ driver for Asus routers"
+	depends on TCONFIG_BCMARM && TCONFIG_USB
 	default n
 
 config TCONFIG_UPS
@@ -322,6 +333,7 @@ config TCONFIG_MICROSD
 
 config TCONFIG_SDHC
 	bool "SDHC/MMC mod for WRT54G/GL"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_USBAP
@@ -393,70 +405,87 @@ menu "Broadcom wireless and hardware"
 
 config TCONFIG_AC66U
 	bool "Flag to distinguish RT-AC66U from RT-N66U"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_R6300V1
 	bool "Flag to distinguish Netgear R6300 v1 from WNDR4500 v1 and WNDR4500 v2"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_WNDR4500V1
 	bool "Flag to distinguish Netgear WNDR4500 v1 from R6300 v1 and WNDR4500 v2"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_WNDR4500V2
 	bool "Flag to distinguish Netgear WNDR4500 v2 from R6300 v1 and WNDR4500 v1"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_AC3200
 	bool "Tri-Band router (AC3200 or more)"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_AC5300
 	bool "Tri-Band router SDK 7.14 (AC5300)"
+	depends on TCONFIG_BCM714
 	default n
 
 config TCONFIG_DHDAP
 	bool "BCM7 dhdap"
+	depends on TCONFIG_BCM7
 	default n
 
 config TCONFIG_GMAC3
 	bool "BCM7 gmac3"
+	depends on TCONFIG_BCM7
 	default n
 
 config TCONFIG_PROXYSTA
 	bool "Proxy STA"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_DPSTA
 	bool "BCM7 dpsta"
+	depends on TCONFIG_BCM7
 	default n
 
 config TCONFIG_GROCTRL
 	bool "GRO Control"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_BCMFA
 	bool "BCM FA"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_5301X
 	bool "BCM 5301x"
+	depends on TCONFIG_BCMARM
 	default y
 
 config TCONFIG_BCMDCS
 	bool "Broadcom Dynamic Channel Selection"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_TRAFFIC_MGMT_RSSI_POLICY
 	bool "Traffic Management RSSI policy"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_TOAD
 	bool "Traffic Ordering Agent Daemon"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_BCMBSD
 	bool "Brcm Band Steer Selection"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_ROAM

@@ -34,7 +34,7 @@ config TCONFIG_BCM7
 
 config TCONFIG_BCM714
 	bool "BCM SDK 7.14"
-	depends on TCONFIG_BCMARM
+	depends on TCONFIG_BCM7
 	default n
 
 config TCONFIG_BCMSMP
@@ -432,7 +432,7 @@ config TCONFIG_WNDR4500V2
 
 config TCONFIG_AC3200
 	bool "Tri-Band router (AC3200 or more)"
-	depends on TCONFIG_BCMARM
+	depends on TCONFIG_BCM7
 	default n
 
 config TCONFIG_AC5300
@@ -456,8 +456,8 @@ config TCONFIG_PROXYSTA
 	default n
 
 config TCONFIG_DPSTA
-	bool "BCM7 dpsta"
-	depends on TCONFIG_BCM7
+	bool "Broadcom dpsta"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_GROCTRL
@@ -472,22 +472,22 @@ config TCONFIG_BCMFA
 
 config TCONFIG_5301X
 	bool "BCM 5301x"
-	depends on TCONFIG_BCMARM
+	depends on TCONFIG_BCM7
 	default y
 
 config TCONFIG_BCMDCS
 	bool "Broadcom Dynamic Channel Selection"
-	depends on TCONFIG_BCMARM
+	depends on TCONFIG_BCM7
 	default n
 
 config TCONFIG_TRAFFIC_MGMT_RSSI_POLICY
 	bool "Traffic Management RSSI policy"
-	depends on TCONFIG_BCMARM
+	depends on TCONFIG_BCM7
 	default n
 
 config TCONFIG_TOAD
 	bool "Traffic Ordering Agent Daemon"
-	depends on TCONFIG_BCMARM
+	depends on TCONFIG_BCM7
 	default n
 
 config TCONFIG_BCMBSD
@@ -505,6 +505,7 @@ config TCONFIG_BLINK
 
 config TCONFIG_EXTSW
 	bool "Add RTL8365MB switch support (RT-AC88U)"
+	depends on TCONFIG_BCM714
 	default n
 
 endmenu

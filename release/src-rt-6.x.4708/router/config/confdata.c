@@ -607,6 +607,64 @@ static struct conf_printer header_printer_cb =
 	.print_comment = header_print_comment,
 };
 
+
+/*
+ * FreshTomato compatibility header printer.
+ *
+ * The legacy router Kconfig implementation generated shared/tomato_config.h
+ * together with .config. Keep that behaviour while using the newer Kconfig
+ * parser.
+ */
+static void
+tomato_header_print_symbol(FILE *fp, struct symbol *sym, const char *value, void *arg)
+{
+	const char *prefix = CONFIG_;
+
+	switch (sym->type) {
+	case S_BOOLEAN:
+	case S_TRISTATE:
+		switch (*value) {
+		case 'n':
+			fprintf(fp, "#undef %s%s\n", prefix, sym->name);
+			fprintf(fp, "  #define IF_%s%s(...)\n", prefix, sym->name);
+			fprintf(fp, "  #define IF_NOT_%s%s(...) __VA_ARGS__\n", prefix, sym->name);
+			break;
+		case 'm':
+			fprintf(fp, "#define %s%s__MODULE 1\n", prefix, sym->name);
+			fprintf(fp, "  #define IF_%s%s__MODULE(...) __VA_ARGS__\n", prefix, sym->name);
+			fprintf(fp, "  #define IF_%s%s(...) __VA_ARGS__\n", prefix, sym->name);
+			fprintf(fp, "  #define IF_NOT_%s%s(...)\n", prefix, sym->name);
+			break;
+		default:
+			fprintf(fp, "#define %s%s 1\n", prefix, sym->name);
+			fprintf(fp, "  #define IF_%s%s(...) __VA_ARGS__\n", prefix, sym->name);
+			fprintf(fp, "  #define IF_NOT_%s%s(...)\n", prefix, sym->name);
+			break;
+		}
+		break;
+	case S_HEX:
+		if (value[0] != '0' || (value[1] != 'x' && value[1] != 'X'))
+			fprintf(fp, "#define %s%s 0x%s\n", prefix, sym->name, value);
+		else
+			fprintf(fp, "#define %s%s %s\n", prefix, sym->name, value);
+		break;
+	case S_STRING:
+		fprintf(fp, "#define %s%s %s\n", prefix, sym->name, value);
+		break;
+	case S_INT:
+		fprintf(fp, "#define %s%s %s\n", prefix, sym->name, value);
+		break;
+	default:
+		break;
+	}
+}
+
+static struct conf_printer tomato_header_printer_cb =
+{
+	.print_symbol = tomato_header_print_symbol,
+	.print_comment = header_print_comment,
+};
+
 /*
  * Tristate printer
  *
@@ -740,7 +798,7 @@ next_menu:
 
 int conf_write(const char *name)
 {
-	FILE *out;
+	FILE *out, *out_h = NULL;
 	struct symbol *sym;
 	struct menu *menu;
 	const char *basename;
@@ -782,6 +840,18 @@ int conf_write(const char *name)
 	if (!out)
 		return 1;
 
+	if (!name || !name[0]) {
+		out_h = fopen(".tmpconfig.h", "w");
+		if (!out_h) {
+			fclose(out);
+			return 1;
+		}
+		fprintf(out_h,
+			"/*\n"
+			" * Automatically generated C config: don't edit\n"
+			" */\n");
+	}
+
 	conf_write_heading(out, &kconfig_printer_cb, NULL);
 
 	if (!conf_get_changed())
@@ -798,6 +868,8 @@ int conf_write(const char *name)
 				     "#\n"
 				     "# %s\n"
 				     "#\n", str);
+			if (out_h)
+				header_print_comment(out_h, str, NULL);
 		} else if (!(sym->flags & SYMBOL_CHOICE)) {
 			sym_calc_value(sym);
 			if (!(sym->flags & SYMBOL_WRITE))
@@ -805,6 +877,8 @@ int conf_write(const char *name)
 			sym->flags &= ~SYMBOL_WRITE;
 
 			conf_write_symbol(out, sym, &kconfig_printer_cb, NULL);
+			if (out_h)
+				conf_write_symbol(out_h, sym, &tomato_header_printer_cb, NULL);
 		}
 
 next:
@@ -822,6 +896,11 @@ next:
 		}
 	}
 	fclose(out);
+	if (out_h) {
+		fclose(out_h);
+		if (rename(".tmpconfig.h", "shared/tomato_config.h"))
+			return 1;
+	}
 
 	if (*tmpname) {
 		strcat(dirname, basename);

@@ -257,6 +257,7 @@ config TCONFIG_JFFSV1
 
 config TCONFIG_BRCM_NAND_JFFS2
 	bool "JFFS Support on BRCM Nand Flash Partition"
+	depends on TCONFIG_NAND
 	default n
 
 config TCONFIG_NAND
@@ -295,10 +296,12 @@ config TCONFIG_NTFS
 
 config TCONFIG_HFS
 	bool "HFS/HFS+ filesystem support"
+	depends on TCONFIG_USB
 	default n
 
 config TCONFIG_ZFS
 	bool "zfs"
+	depends on TCONFIG_BCMARM && TCONFIG_USB
 	default n
 
 config TCONFIG_UFSD
@@ -318,7 +321,7 @@ config TCONFIG_TUXERA
 
 config TCONFIG_TUX_HFS
 	bool "Tuxera HFS/HFS+ driver for Asus routers"
-	depends on TCONFIG_BCMARM && TCONFIG_USB
+	depends on TCONFIG_BCMARM && TCONFIG_USB && TCONFIG_HFS
 	default n
 
 config TCONFIG_UPS

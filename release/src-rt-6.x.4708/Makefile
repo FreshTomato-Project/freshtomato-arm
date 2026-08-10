@@ -526,6 +526,14 @@ define RouterOptions
 	if [ "$(TINC)" = "y" ]; then \
 		config_y TCONFIG_TINC; \
 	fi; \
+	ssl_providers=0; \
+	[ "$(OPENSSL11)" = "y" ] && ssl_providers=$$((ssl_providers + 1)); \
+	[ "$(OPENSSL30)" = "y" ] && ssl_providers=$$((ssl_providers + 1)); \
+	if [ "$(WOLFSSL)" = "y" ] || [ "$(WOLFSSLMIN)" = "y" ]; then ssl_providers=$$((ssl_providers + 1)); fi; \
+	if [ "$$ssl_providers" -gt 1 ]; then \
+		echo "ERROR: select only one TLS/SSL provider (OPENSSL11, OPENSSL30 or WOLFSSL/WOLFSSLMIN)" >&2; \
+		exit 1; \
+	fi; \
 	if [ "$(OPENSSL11)" = "y" ]; then \
 		config_y TCONFIG_OPENSSL11; \
 	fi; \

@@ -108,6 +108,7 @@ config TCONFIG_BCMNAT
 
 config TCONFIG_ZEBRA
 	bool "Zebra"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_L7
@@ -133,6 +134,7 @@ config TCONFIG_MDNS
 
 config TCONFIG_CONNTRACK_TOOL
 	bool "Conntrack Userspace Tool"
+	depends on TCONFIG_BCMARM
 	default n
 
 endmenu
@@ -400,10 +402,12 @@ config TCONFIG_ADVTHEMES
 
 config TCONFIG_FANCTRL
 	bool "FANCTRL"
+	depends on TCONFIG_BCMARM
 	default n
 
 config TCONFIG_IRQBALANCE
 	bool "irqbalance Tool"
+	depends on TCONFIG_BCMARM
 	default n
 
 endmenu

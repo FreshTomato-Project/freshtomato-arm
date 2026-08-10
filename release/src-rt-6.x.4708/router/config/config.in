@@ -378,7 +378,7 @@ config TCONFIG_BBT
 config TCONFIG_TR_EXTRAS
 	bool "Transmission extra tools"
 	default n
-	depends on TCONFIG_BT
+	depends on TCONFIG_BBT
 
 config TCONFIG_NANO
 	bool "NANO - user-friendly file editor"

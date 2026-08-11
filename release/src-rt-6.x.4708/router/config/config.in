@@ -30,6 +30,10 @@ config TCONFIG_BCMWL6A
 config TCONFIG_BCM7
 	bool "BCM SDK 7"
 	depends on TCONFIG_BCMARM
+	select TCONFIG_5301X
+	select TCONFIG_BCMDCS
+	select TCONFIG_TRAFFIC_MGMT_RSSI_POLICY
+	select TCONFIG_TOAD
 	default n
 
 config TCONFIG_BCM714
@@ -477,7 +481,7 @@ config TCONFIG_BCMFA
 config TCONFIG_5301X
 	bool "BCM 5301x"
 	depends on TCONFIG_BCM7
-	default y
+	default n
 
 config TCONFIG_BCMDCS
 	bool "Broadcom Dynamic Channel Selection"

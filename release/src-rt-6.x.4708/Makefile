@@ -477,15 +477,11 @@ define RouterOptions
 		config_y TCONFIG_BCMWL6A; \
 		if [ "$(BCM7)" = "y" ]; then \
 			config_y TCONFIG_BCM7; \
-			config_y TCONFIG_TOAD; \
-			config_y TCONFIG_BCMDCS; \
-			config_y TCONFIG_TRAFFIC_MGMT_RSSI_POLICY; \
 			if [ "$(GMAC3)" = "y" ]; then \
 				config_y TCONFIG_GMAC3; \
 			else \
 				config_n TCONFIG_GMAC3; \
 			fi; \
-			config_y TCONFIG_5301X; \
 		fi; \
 		if [ "$(BCM714)" = "y" ]; then \
 			config_y TCONFIG_BCM714; \

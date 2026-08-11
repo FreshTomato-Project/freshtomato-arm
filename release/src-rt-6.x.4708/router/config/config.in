@@ -285,7 +285,7 @@ config TCONFIG_MEDIA_SERVER
 
 config TCONFIG_FTP
 	bool "FTP Server"
-	depends on TCONFIG_USB
+	depends on TCONFIG_USB && !TCONFIG_REMOVE_USBAPP
 	default y
 
 config TCONFIG_FTP_SSL
@@ -295,7 +295,7 @@ config TCONFIG_FTP_SSL
 
 config TCONFIG_SAMBASRV
 	bool "Samba File Sharing"
-	depends on TCONFIG_USB
+	depends on TCONFIG_USB && !TCONFIG_REMOVE_USBAPP
 	default y
 
 config TCONFIG_USB_EXTRAS

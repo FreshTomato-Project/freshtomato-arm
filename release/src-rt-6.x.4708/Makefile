@@ -455,9 +455,6 @@ define RouterOptions
 		config_y TCONFIG_USBAP; \
 		if [ "$(NO_USBAPP)" = "y" ]; then \
 			config_y TCONFIG_REMOVE_USBAPP; \
-			config_n TCONFIG_FTP; \
-			config_n TCONFIG_FTP_SSL; \
-			config_n TCONFIG_SAMBASRV; \
 		fi; \
 	fi; \
 	if [ "$(ASUS_TRX)" = "RT-AC66U" ]; then \

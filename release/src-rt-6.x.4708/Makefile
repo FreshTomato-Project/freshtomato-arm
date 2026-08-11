@@ -293,9 +293,7 @@ define RouterOptions
 		grep -q -e "^$$1=y$$" -e "^# $$1 is not set$$" $(1) || { echo "ERROR: $$1 missing from $(1)" >&2; exit 1; }; \
 		sed -i "s/^$$1=y$$/# $$1 is not set/" $(1); \
 	}; \
-	config_y TCONFIG_ADVTHEMES; \
 	config_y TCONFIG_BONDING; \
-	config_y TCONFIG_TERMLIB; \
 	config_y TCONFIG_TRXKEY; \
 	if [ "$(SLIM)" = "y" ]; then \
 		config_n TCONFIG_EMF; \
@@ -357,7 +355,6 @@ define RouterOptions
 	fi; \
 	if [ "$(NO_JFFS)" = "y" ]; then \
 		config_n TCONFIG_JFFS2; \
-		config_n TCONFIG_JFFSV1; \
 	fi; \
 	if [ "$(NO_CIFS)" = "y" ]; then \
 		config_n TCONFIG_CIFS; \

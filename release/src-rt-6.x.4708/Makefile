@@ -473,8 +473,6 @@ define RouterOptions
 	fi; \
 	if [ "$(ARM)" = "y" ]; then \
 		config_y TCONFIG_BCMARM; \
-		config_y TCONFIG_BCMWL6; \
-		config_y TCONFIG_BCMWL6A; \
 		if [ "$(BCM7)" = "y" ]; then \
 			config_y TCONFIG_BCM7; \
 			if [ "$(GMAC3)" = "y" ]; then \

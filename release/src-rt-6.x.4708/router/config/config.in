@@ -180,6 +180,11 @@ config TCONFIG_HTTPS
 	bool "HTTPS"
 	default y
 
+config TCONFIG_ADBLOCK
+	bool "Adblock"
+	depends on TCONFIG_HTTPS
+	default y
+
 config TCONFIG_DNSSEC
 	bool "DNSSEC"
 	default n

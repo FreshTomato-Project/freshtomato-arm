@@ -40,7 +40,8 @@ config TCONFIG_BCM7
 
 config TCONFIG_BCM714
 	bool "BCM SDK 7.14"
-	depends on TCONFIG_BCM7
+	depends on TCONFIG_BCMARM
+	select TCONFIG_BCM7
 	default n
 
 config TCONFIG_BCMSMP

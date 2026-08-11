@@ -475,17 +475,17 @@ define RouterOptions
 		config_y TCONFIG_BCMARM; \
 		if [ "$(BCM7)" = "y" ]; then \
 			config_y TCONFIG_BCM7; \
-			if [ "$(GMAC3)" = "y" ]; then \
-				config_y TCONFIG_GMAC3; \
-			else \
-				config_n TCONFIG_GMAC3; \
-			fi; \
 		fi; \
 		if [ "$(BCM714)" = "y" ]; then \
 			config_y TCONFIG_BCM714; \
 		else \
 			config_n TCONFIG_BCM714; \
 		fi; \
+	fi; \
+	if [ "$(GMAC3)" = "y" ]; then \
+		config_y TCONFIG_GMAC3; \
+	else \
+		config_n TCONFIG_GMAC3; \
 	fi; \
 	if [ "$(DHDAP)" = "y" ]; then \
 		config_y TCONFIG_DHDAP; \

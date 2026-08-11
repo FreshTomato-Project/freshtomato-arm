@@ -21,6 +21,22 @@ config TCONFIG_MIPSR2
 	depends on !TCONFIG_BCMARM
 	default n
 
+choice
+	prompt "MIPS target family"
+	depends on !TCONFIG_BCMARM
+	optional
+
+config TCONFIG_MIPS_RT
+	bool "MIPS RT"
+
+config TCONFIG_MIPS_RTN
+	bool "MIPS RT-N"
+
+config TCONFIG_MIPS_RTAC
+	bool "MIPS RT-AC"
+
+endchoice
+
 config TCONFIG_BCMWL6
 	bool "BCM WL 6"
 	default n
@@ -432,7 +448,7 @@ menu "Broadcom wireless and hardware"
 
 choice
 	prompt "MIPS RT-AC model discriminator"
-	depends on !TCONFIG_BCMARM && TCONFIG_BCMWL6
+	depends on TCONFIG_MIPS_RTAC && TCONFIG_BCMWL6
 	optional
 
 config TCONFIG_AC66U

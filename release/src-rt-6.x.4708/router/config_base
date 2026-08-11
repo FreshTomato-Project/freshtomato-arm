@@ -38,6 +38,8 @@ TCONFIG_L7PAT=y
 # TCONFIG_BONDING is not set
 # TCONFIG_PROXY is not set
 # TCONFIG_MDNS is not set
+TCONFIG_DMZ=y
+TCONFIG_DMZMAC=y
 # TCONFIG_CONNTRACK_TOOL is not set
 
 # VPN, security and cryptography

@@ -156,6 +156,15 @@ config TCONFIG_MDNS
 	bool "MDNS Support"
 	default n
 
+config TCONFIG_DMZ
+	bool "DMZ host forwarding"
+	default y
+
+config TCONFIG_DMZMAC
+	bool "DMZ target by MAC address (DHCP reservation)"
+	depends on TCONFIG_DMZ
+	default y
+
 config TCONFIG_CONNTRACK_TOOL
 	bool "Conntrack Userspace Tool"
 	depends on TCONFIG_BCMARM

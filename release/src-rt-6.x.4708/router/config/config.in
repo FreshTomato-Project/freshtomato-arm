@@ -318,20 +318,24 @@ config TCONFIG_ZFS
 	depends on TCONFIG_BCMARM && TCONFIG_USB
 	default n
 
+choice
+	prompt "NTFS filesystem driver"
+	depends on TCONFIG_USB && TCONFIG_NTFS
+	optional
+
 config TCONFIG_UFSD
 	bool "Paragon NTFS driver for Asus routers"
-	depends on !TCONFIG_BCMARM && TCONFIG_USB && TCONFIG_NTFS
-	default n
+	depends on !TCONFIG_BCMARM
 
 config TCONFIG_UFSDA
 	bool "Paragon NTFS driver for Asus routers"
-	depends on TCONFIG_BCMARM && TCONFIG_USB && TCONFIG_NTFS
-	default n
+	depends on TCONFIG_BCMARM
 
 config TCONFIG_TUXERA
 	bool "Tuxera NTFS driver for Asus routers"
-	depends on TCONFIG_BCMARM && TCONFIG_USB && TCONFIG_NTFS
-	default n
+	depends on TCONFIG_BCMARM
+
+endchoice
 
 config TCONFIG_TUX_HFS
 	bool "Tuxera HFS/HFS+ driver for Asus routers"

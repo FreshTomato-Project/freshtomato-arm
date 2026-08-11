@@ -482,14 +482,6 @@ define RouterOptions
 			config_n TCONFIG_BCM714; \
 		fi; \
 	fi; \
-	if [ "$(GMAC3)" = "y" ]; then \
-		config_y TCONFIG_GMAC3; \
-	else \
-		config_n TCONFIG_GMAC3; \
-	fi; \
-	if [ "$(DHDAP)" = "y" ]; then \
-		config_y TCONFIG_DHDAP; \
-	fi; \
 	if [ "$(AC3200)" = "y" ]; then \
 		config_y TCONFIG_AC3200; \
 	fi; \

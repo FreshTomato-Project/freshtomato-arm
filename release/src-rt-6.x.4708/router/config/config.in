@@ -449,17 +449,14 @@ config TCONFIG_AC3200
 config TCONFIG_AC5300
 	bool "Tri-Band router SDK 7.14 (AC5300)"
 	depends on TCONFIG_BCM714
+	select TCONFIG_AC3200
 	default n
 
 config TCONFIG_DHDAP
-	bool "BCM7 dhdap"
-	depends on TCONFIG_BCM7
-	default n
+	def_bool TCONFIG_BCM7
 
 config TCONFIG_GMAC3
-	bool "BCM7 gmac3"
-	depends on TCONFIG_BCM7
-	default n
+	def_bool TCONFIG_BCM7
 
 config TCONFIG_PROXYSTA
 	bool "Proxy STA"

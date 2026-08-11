@@ -70,6 +70,7 @@ config TCONFIG_OPTIMIZE_SIZE
 
 config TCONFIG_OPTIMIZE_SIZE_MORE
 	bool "Flag to optimize code even more"
+	depends on TCONFIG_OPTIMIZE_SIZE
 	default n
 
 config TCONFIG_TRXKEY

@@ -361,7 +361,6 @@ define RouterOptions
 	fi; \
 	if [ "$(NO_HTTPS)" = "y" ]; then \
 		config_n TCONFIG_HTTPS; \
-		config_n TCONFIG_ADBLOCK; \
 	fi; \
 	if [ "$(NO_ADBLOCK)" = "y" ]; then \
 		config_n TCONFIG_ADBLOCK; \

@@ -34,6 +34,7 @@ config TCONFIG_MIPS_RTN
 
 config TCONFIG_MIPS_RTAC
 	bool "MIPS RT-AC"
+	select TCONFIG_BCMWL6
 
 endchoice
 
@@ -448,7 +449,7 @@ menu "Broadcom wireless and hardware"
 
 choice
 	prompt "MIPS RT-AC model discriminator"
-	depends on TCONFIG_MIPS_RTAC && TCONFIG_BCMWL6
+	depends on TCONFIG_MIPS_RTAC
 	optional
 
 config TCONFIG_AC66U
@@ -532,9 +533,7 @@ config TCONFIG_ROAM
 	default n
 
 config TCONFIG_BLINK
-	bool "wireless lan LED blink & bridge LED status (on or off) - for RT-N and RT-AC branch"
-	depends on !TCONFIG_BCMARM
-	default n
+	def_bool TCONFIG_MIPS_RTN || TCONFIG_MIPS_RTAC
 
 config TCONFIG_EXTSW
 	bool "Add RTL8365MB switch support (RT-AC88U)"

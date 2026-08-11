@@ -15,11 +15,6 @@ config TCONFIG_BCMARM
 	select TCONFIG_TERMLIB
 	default n
 
-config TCONFIG_MIPSR2
-	bool "MIPS R2 flag"
-	depends on !TCONFIG_BCMARM
-	default n
-
 choice
 	prompt "MIPS target family"
 	depends on !TCONFIG_BCMARM
@@ -35,6 +30,14 @@ config TCONFIG_MIPS_RTAC
 	bool "MIPS RT-AC"
 
 endchoice
+
+config TCONFIG_MIPS
+	def_bool TCONFIG_MIPS_RT || TCONFIG_MIPS_RTN || TCONFIG_MIPS_RTAC
+
+config TCONFIG_MIPSR2
+	bool "MIPS R2 flag"
+	depends on TCONFIG_MIPS
+	default n
 
 config TCONFIG_BCMWL6
 	def_bool TCONFIG_BCMARM || TCONFIG_MIPS_RTAC
@@ -124,12 +127,12 @@ config TCONFIG_CTF
 
 config TCONFIG_BCMNAT
 	bool "Broadcom FastNAT (bcm_nat)"
-	depends on !TCONFIG_BCMARM
+	depends on TCONFIG_MIPS
 	default n
 
 config TCONFIG_ZEBRA
 	bool "Zebra"
-	depends on !TCONFIG_BCMARM
+	depends on TCONFIG_MIPS
 	default n
 
 config TCONFIG_L7

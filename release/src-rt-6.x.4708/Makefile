@@ -457,11 +457,6 @@ define RouterOptions
 			config_y TCONFIG_REMOVE_USBAPP; \
 		fi; \
 	fi; \
-	if [ "$(ASUS_TRX)" = "RT-AC66U" ]; then \
-		config_y TCONFIG_AC66U; \
-	else \
-		config_n TCONFIG_AC66U; \
-	fi; \
 	if [ "$(CTF)" = "y" ]; then \
 		config_y TCONFIG_CTF; \
 	fi; \

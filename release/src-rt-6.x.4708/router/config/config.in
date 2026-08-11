@@ -12,7 +12,6 @@ config TCONFIG_OPTIMIZE_SHARED_LIBS
 config TCONFIG_BCMARM
 	bool "BCM ARM"
 	select TCONFIG_BCMWL6
-	select TCONFIG_BCMWL6A
 	default n
 
 config TCONFIG_MIPSR2
@@ -25,9 +24,7 @@ config TCONFIG_BCMWL6
 	default n
 
 config TCONFIG_BCMWL6A
-	bool "BCM SDK 6.37"
-	depends on TCONFIG_BCMARM && TCONFIG_BCMWL6
-	default n
+	def_bool TCONFIG_BCMARM && TCONFIG_BCMWL6
 
 config TCONFIG_BCM7
 	bool "BCM SDK 7"
@@ -349,7 +346,7 @@ config TCONFIG_UPS
 
 config TCONFIG_MICROSD
 	bool "Support SD card (RT-N66u only)"
-	depends on TCONFIG_USB
+	depends on !TCONFIG_BCMARM && TCONFIG_USB
 	default n
 
 config TCONFIG_SDHC
@@ -513,6 +510,7 @@ config TCONFIG_ROAM
 
 config TCONFIG_BLINK
 	bool "wireless lan LED blink & bridge LED status (on or off) - for RT-N and RT-AC branch"
+	depends on !TCONFIG_BCMARM
 	default n
 
 config TCONFIG_EXTSW

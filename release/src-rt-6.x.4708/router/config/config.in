@@ -415,25 +415,24 @@ endmenu
 
 menu "Broadcom wireless and hardware"
 
+choice
+	prompt "MIPS RT-AC model discriminator"
+	depends on !TCONFIG_BCMARM && TCONFIG_BCMWL6
+	optional
+
 config TCONFIG_AC66U
 	bool "Flag to distinguish RT-AC66U from RT-N66U"
-	depends on !TCONFIG_BCMARM
-	default n
 
 config TCONFIG_R6300V1
 	bool "Flag to distinguish Netgear R6300 v1 from WNDR4500 v1 and WNDR4500 v2"
-	depends on !TCONFIG_BCMARM
-	default n
 
 config TCONFIG_WNDR4500V1
 	bool "Flag to distinguish Netgear WNDR4500 v1 from R6300 v1 and WNDR4500 v2"
-	depends on !TCONFIG_BCMARM
-	default n
 
 config TCONFIG_WNDR4500V2
 	bool "Flag to distinguish Netgear WNDR4500 v2 from R6300 v1 and WNDR4500 v1"
-	depends on !TCONFIG_BCMARM
-	default n
+
+endchoice
 
 config TCONFIG_AC3200
 	bool "Tri-Band router (AC3200 or more)"

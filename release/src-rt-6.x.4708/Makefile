@@ -140,13 +140,14 @@ lowercase_B = $(shell echo $(B) | tr A-Z a-z)
 
 beta = $(if $(filter $(TOMATO_EXPERIMENTAL),1),-beta,)
 
-branch_rev = "K26ARM"
-ifeq ($(CONFIG_BCM714),y)
+ifeq ($(ARM_SDK),6)
+ branch_rev = "K26ARM"
+else ifeq ($(ARM_SDK),7)
+ branch_rev = "K26ARM7"
+else ifeq ($(ARM_SDK),714)
  branch_rev = "K26ARM714"
 else
- ifeq ($(CONFIG_BCM7),y)
-  branch_rev = "K26ARM7"
- endif
+ $(error Unsupported ARM_SDK='$(ARM_SDK)' (expected 6, 7 or 714))
 endif
 
 ifneq ($(V2),)
@@ -477,14 +478,14 @@ define RouterOptions
 	fi; \
 	if [ "$(ARM)" = "y" ]; then \
 		config_y TCONFIG_BCMARM; \
-		if [ "$(BCM7)" = "y" ]; then \
-			config_y TCONFIG_BCM7; \
-		fi; \
-		if [ "$(BCM714)" = "y" ]; then \
-			config_y TCONFIG_BCM714; \
-		else \
-			config_n TCONFIG_BCM714; \
-		fi; \
+		config_n TCONFIG_BCM7; \
+		config_n TCONFIG_BCM714; \
+		case "$(ARM_SDK)" in \
+			6) ;; \
+			7) config_y TCONFIG_BCM7 ;; \
+			714) config_y TCONFIG_BCM714 ;; \
+			*) echo "ERROR: unsupported ARM_SDK='$(ARM_SDK)' (expected 6, 7 or 714)" >&2; exit 1 ;; \
+		esac; \
 	fi; \
 	if [ "$(AC3200)" = "y" ]; then \
 		config_y TCONFIG_AC3200; \

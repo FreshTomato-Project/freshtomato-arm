@@ -1,4 +1,5 @@
 export LINUXDIR := $(SRCBASE)/linux/linux-2.6
+export ARM_SDK := 6
 
 EXTRA_CFLAGS := -DLINUX26 -DCONFIG_BCMWL5 -DCONFIG_BCMWL6 -DCONFIG_BCMWL6A -DPART_JFFS2_GAP=0UL -pipe -fno-strict-aliasing
 

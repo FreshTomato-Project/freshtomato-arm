@@ -310,7 +310,6 @@ define RouterOptions
 		config_range TCONFIG_BRIDGE_COUNT "$(BRIDGE_COUNT)" 1 16; \
 	fi; \
 	config_y TCONFIG_BONDING; \
-	config_y TCONFIG_TRXKEY; \
 	if [ "$(SLIM)" = "y" ]; then \
 		config_n TCONFIG_EMF; \
 	else \

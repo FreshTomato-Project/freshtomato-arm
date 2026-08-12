@@ -203,36 +203,40 @@ ug.onClick = function(cell) {
 
 function verifyFields(focused, quiet) {
 	var enable = (E('_f_enable_upnp').checked || E('_f_enable_pcp_pmp').checked);
+	var anyLan = 0;
 
 	E('_f_upnp_allow_third_party').disabled = !enable;
 	E('_upnp_custom').disabled = !enable;
 
-	for (var i = 0 ; i <= MAX_BRIDGE_ID ; i++) {
+	for (var i = 0; i <= MAX_BRIDGE_ID; ++i) {
 		var j = (i == 0) ? '' : i.toString();
-		E('_f_upnp_lan'+j).disabled = ((nvram['lan'+j+'_ifname'].length < 1) || !enable);
-		if (E('_f_upnp_lan'+j).disabled)
-			E('_f_upnp_lan'+j).checked = 0;
+		var lan = E('_f_upnp_lan'+j);
+		lan.disabled = ((nvram['lan'+j+'_ifname'].length < 1) || !enable);
+		if (lan.disabled)
+			lan.checked = 0;
+		else if (lan.checked)
+			anyLan = 1;
 	}
 
-	if ((enable) && (!E('_f_upnp_lan').checked) && (!E('_f_upnp_lan1').checked) && (!E('_f_upnp_lan2').checked) && (!E('_f_upnp_lan3').checked)) {
+	if (enable && !anyLan) {
 		if ((E('_f_enable_pcp_pmp').checked) || (E('_f_enable_upnp').checked)) {
 			var m = 'Must be enabled on at least one LAN interface if no custom configuration is used, otherwise the service will not run';
 			ferror.set('_f_enable_pcp_pmp', m, quiet);
 			ferror.set('_f_enable_upnp', m, 1);
-			ferror.set('_f_upnp_lan', m, 1);
-			ferror.set('_f_upnp_lan1', m, 1);
-			ferror.set('_f_upnp_lan2', m, 1);
-			ferror.set('_f_upnp_lan3', m, 1);
+			for (var i = 0; i <= MAX_BRIDGE_ID; ++i) {
+				var j = (i == 0) ? '' : i.toString();
+				ferror.set('_f_upnp_lan'+j, m, 1);
+			}
 		}
 		return 1;
 	}
 	else {
 		ferror.clear('_f_enable_pcp_pmp');
 		ferror.clear('_f_enable_upnp');
-		ferror.clear('_f_upnp_lan');
-		ferror.clear('_f_upnp_lan1');
-		ferror.clear('_f_upnp_lan2');
-		ferror.clear('_f_upnp_lan3');
+		for (var i = 0; i <= MAX_BRIDGE_ID; ++i) {
+			var j = (i == 0) ? '' : i.toString();
+			ferror.clear('_f_upnp_lan'+j);
+		}
 	}
 
 	return 1;
@@ -252,10 +256,10 @@ function save() {
 
 	fom.upnp_secure.value = fom._f_upnp_allow_third_party.checked ? 0 : 1;
 
-	fom.upnp_lan.value = fom._f_upnp_lan.checked ? 1 : 0;
-	fom.upnp_lan1.value = fom._f_upnp_lan1.checked ? 1 : 0;
-	fom.upnp_lan2.value = fom._f_upnp_lan2.checked ? 1 : 0;
-	fom.upnp_lan3.value = fom._f_upnp_lan3.checked ? 1 : 0;
+	for (var i = 0; i <= MAX_BRIDGE_ID; ++i) {
+		var j = (i == 0) ? '' : i.toString();
+		fom['upnp_lan'+j].value = fom['_f_upnp_lan'+j].checked ? 1 : 0;
+	}
 
 	fom._nofootermsg.value = 0;
 
@@ -296,10 +300,12 @@ function init() {
 <input type="hidden" name="_nofootermsg" value="">
 <input type="hidden" name="upnp_enable">
 <input type="hidden" name="upnp_secure">
-<input type="hidden" name="upnp_lan">
-<input type="hidden" name="upnp_lan1">
-<input type="hidden" name="upnp_lan2">
-<input type="hidden" name="upnp_lan3">
+<script>
+	for (var i = 0; i <= MAX_BRIDGE_ID; ++i) {
+		var j = (i == 0) ? '' : i.toString();
+		W('<input type="hidden" name="upnp_lan'+j+'">');
+	}
+</script>
 <input type="hidden" name="remove_proto">
 <input type="hidden" name="remove_eport">
 
@@ -318,17 +324,20 @@ function init() {
 <div class="section-title">UPnP IGD &amp; PCP/NAT-PMP Service Settings</div>
 <div class="section">
 	<script>
-		createFieldTable('', [
+		var f = [
 			{ title: 'Enable UPnP IGD', name: 'f_enable_upnp', type: 'checkbox', suffix: ' <small>This protocol is often used by Microsoft-compatible systems<\/small>', value: (nvram.upnp_enable & 1) },
 			{ title: 'Enable PCP/NAT-PMP', name: 'f_enable_pcp_pmp', type: 'checkbox', suffix: ' <small>These protocols are often used by Apple-compatible systems<\/small>', value: (nvram.upnp_enable & 2) },
-			{ title: 'Enabled on' },
-				{ title: 'LAN0', indent: 2, name: 'f_upnp_lan', type: 'checkbox', value: (nvram.upnp_lan == 1) },
-				{ title: 'LAN1', indent: 2, name: 'f_upnp_lan1', type: 'checkbox', value: (nvram.upnp_lan1 == 1) },
-				{ title: 'LAN2', indent: 2, name: 'f_upnp_lan2', type: 'checkbox', value: (nvram.upnp_lan2 == 1) },
-				{ title: 'LAN3', indent: 2, name: 'f_upnp_lan3', type: 'checkbox', value: (nvram.upnp_lan3 == 1) },
+			{ title: 'Enabled on' }
+		];
+		for (var i = 0; i <= MAX_BRIDGE_ID; ++i) {
+			var j = (i == 0) ? '' : i.toString();
+			f.push({ title: 'LAN'+i, indent: 2, name: 'f_upnp_lan'+j, type: 'checkbox', value: (nvram['upnp_lan'+j] == 1) });
+		}
+		f.push(
 			{ title: 'Allow third-party forwarding', name: 'f_upnp_allow_third_party', type: 'checkbox', suffix: ' <small>Allow adding port forwards for non-requesting IP addresses<\/small>', value: (nvram.upnp_secure == 0) },
 			{ title: 'Custom Configuration', name: 'upnp_custom', type: 'textarea', value: nvram.upnp_custom }
-		]);
+		);
+		createFieldTable('', f);
 	</script>
 </div>
 

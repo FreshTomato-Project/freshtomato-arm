@@ -280,7 +280,7 @@ what:
 # USB ("USB"|"")
 # JFFSv1 | NO_JFFS
 # NO_CIFS NO_SAMBA NO_HTTPS NO_ADBLOCK NO_DMZ NO_DMZMAC NO_XXTP NO_LIBOPT NOWL
-# ARM DHDAP SAMBA3 OPENVPN DO_OPTIMIZE_SIZE NO_BONDING WIREGUARD IPV6SUPP EBTABLES NTFS UFSD MEDIASRV BBEXTRAS USBEXTRAS BCM57 SLIM NOCAT NGINX TINC CTF FANCTRL HAVEGED
+# DHDAP SAMBA3 OPENVPN DO_OPTIMIZE_SIZE NO_BONDING WIREGUARD IPV6SUPP EBTABLES NTFS UFSD MEDIASRV BBEXTRAS USBEXTRAS BCM57 SLIM NOCAT NGINX TINC CTF FANCTRL HAVEGED
 # GMAC3 DNSSEC NFS BTCLIENT BTGUI TR_EXTRAS SNMP HFS UPS DNSCRYPT STUBBY PPTPD TOR IPSEC RAID MICROSD USBAP NO_USBAPP NANO MWAN_MAX BRIDGE_COUNT OPENSSL11 OPENSSL30 WOLFSSL WOLFSSLMIN PROXY KEYGEN NO_KEYGEN AIO
 # IPERF AC3200 BSD BCMSMP PROXYSTA DPSTA GRO BCMFA NAND BRCM_NAND_JFFS2 CONNTRACK_TOOL CRASH_LOG MDNS IRQBALANCE ROAM NO_TRXKEY AC5300 EXTSW
 
@@ -476,17 +476,15 @@ define RouterOptions
 	if [ "$(NAND)" = "y" ]; then \
 		config_y TCONFIG_NAND; \
 	fi; \
-	if [ "$(ARM)" = "y" ]; then \
-		config_y TCONFIG_BCMARM; \
-		config_n TCONFIG_BCM7; \
-		config_n TCONFIG_BCM714; \
-		case "$(ARM_SDK)" in \
-			6) ;; \
-			7) config_y TCONFIG_BCM7 ;; \
-			714) config_y TCONFIG_BCM714 ;; \
-			*) echo "ERROR: unsupported ARM_SDK='$(ARM_SDK)' (expected 6, 7 or 714)" >&2; exit 1 ;; \
-		esac; \
-	fi; \
+	config_y TCONFIG_BCMARM; \
+	config_n TCONFIG_BCM7; \
+	config_n TCONFIG_BCM714; \
+	case "$(ARM_SDK)" in \
+		6) ;; \
+		7) config_y TCONFIG_BCM7 ;; \
+		714) config_y TCONFIG_BCM714 ;; \
+		*) echo "ERROR: unsupported ARM_SDK='$(ARM_SDK)' (expected 6, 7 or 714)" >&2; exit 1 ;; \
+	esac; \
 	if [ "$(AC3200)" = "y" ]; then \
 		config_y TCONFIG_AC3200; \
 	fi; \
@@ -827,20 +825,18 @@ define KernelConfig
 		echo "CONFIG_DEBUG_FS=y" >>$(1); \
 		sed -i "/CONFIG_USB_MON/d" $(1); \
 		echo "CONFIG_USB_MON=m" >>$(1); \
-		if [ "$(ARM)" = "y" ]; then \
-			sed -i "/CONFIG_GCOV_KERNEL/d" $(1); \
-			echo "# CONFIG_GCOV_KERNEL is not set" >>$(1); \
-			sed -i "/CONFIG_L2TP_DEBUGFS/d" $(1); \
-			echo "# CONFIG_L2TP_DEBUGFS is not set" >>$(1); \
-			sed -i "/CONFIG_JBD_DEBUG/d" $(1); \
-			echo "# CONFIG_JBD_DEBUG is not set" >>$(1); \
-			sed -i "/CONFIG_JBD2_DEBUG/d" $(1); \
-			echo "# CONFIG_JBD2_DEBUG is not set" >>$(1); \
-			sed -i "/CONFIG_LKDTM/d" $(1); \
-			echo "# CONFIG_LKDTM is not set" >>$(1); \
-			sed -i "/CONFIG_DYNAMIC_DEBUG/d" $(1); \
-			echo "# CONFIG_DYNAMIC_DEBUG is not set" >>$(1); \
-		fi; \
+		sed -i "/CONFIG_GCOV_KERNEL/d" $(1); \
+		echo "# CONFIG_GCOV_KERNEL is not set" >>$(1); \
+		sed -i "/CONFIG_L2TP_DEBUGFS/d" $(1); \
+		echo "# CONFIG_L2TP_DEBUGFS is not set" >>$(1); \
+		sed -i "/CONFIG_JBD_DEBUG/d" $(1); \
+		echo "# CONFIG_JBD_DEBUG is not set" >>$(1); \
+		sed -i "/CONFIG_JBD2_DEBUG/d" $(1); \
+		echo "# CONFIG_JBD2_DEBUG is not set" >>$(1); \
+		sed -i "/CONFIG_LKDTM/d" $(1); \
+		echo "# CONFIG_LKDTM is not set" >>$(1); \
+		sed -i "/CONFIG_DYNAMIC_DEBUG/d" $(1); \
+		echo "# CONFIG_DYNAMIC_DEBUG is not set" >>$(1); \
 	fi; \
 	if [ "$(NOWL)" = "y" ]; then \
 		sed -i "/CONFIG_WL=m/d" $(1); \

@@ -29,7 +29,7 @@
 
 #define ASIZE(array)		(sizeof(array) / sizeof(array[0]))
 
-#define BRIDGE_COUNT		4
+#define BRIDGE_COUNT		TCONFIG_BRIDGE_COUNT
 
 #define	MTD_DEV(arg)		"/dev/mtd"#arg
 #define	MTD_BLKDEV(arg)		"/dev/mtdblock"#arg
@@ -112,11 +112,7 @@ extern const char *tomato_shortver;
 #define	IPV6_6RD_DHCP		7
 #endif
 
-#ifdef TCONFIG_MULTIWAN
-#define MWAN_MAX		4
-#else
-#define MWAN_MAX		2
-#endif
+#define MWAN_MAX		TCONFIG_MWAN_MAX
 
 #ifdef TCONFIG_EXTSW
 #define MAX_PORT_ID		5

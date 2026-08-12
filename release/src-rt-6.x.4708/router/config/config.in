@@ -105,9 +105,15 @@ endmenu
 
 menu "Networking and routing"
 
-config TCONFIG_MULTIWAN
-	bool "MultiWAN support"
-	default n
+config TCONFIG_MWAN_MAX
+	int "Maximum number of WAN interfaces"
+	range 1 8
+	default 2
+
+config TCONFIG_BRIDGE_COUNT
+	int "Number of LAN bridges"
+	range 1 16
+	default 4
 
 config TCONFIG_IPV6
 	bool "IPv6 Support"

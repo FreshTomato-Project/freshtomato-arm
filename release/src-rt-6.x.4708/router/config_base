@@ -26,7 +26,8 @@ TCONFIG_OPTIMIZE_SHARED_LIBS=y
 # TCONFIG_TRXKEY is not set
 
 # Networking and routing
-# TCONFIG_MULTIWAN is not set
+TCONFIG_MWAN_MAX=2
+TCONFIG_BRIDGE_COUNT=4
 # TCONFIG_IPV6 is not set
 # TCONFIG_EBTABLES is not set
 # TCONFIG_EMF is not set

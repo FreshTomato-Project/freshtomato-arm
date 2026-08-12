@@ -93,7 +93,7 @@ config TCONFIG_OPTIMIZE_SIZE
 
 config TCONFIG_OPTIMIZE_SIZE_MORE
 	bool "Flag to optimize code even more"
-	depends on TCONFIG_OPTIMIZE_SIZE
+	depends on TCONFIG_OPTIMIZE_SIZE && TCONFIG_MIPS
 	default n
 
 config TCONFIG_TRXKEY

@@ -379,7 +379,6 @@ define RouterOptions
 	fi; \
 	if [ "$(NO_DMZ)" = "y" ]; then \
 		config_n TCONFIG_DMZ; \
-		config_n TCONFIG_DMZMAC; \
 	elif [ "$(NO_DMZMAC)" = "y" ]; then \
 		config_n TCONFIG_DMZMAC; \
 	fi; \

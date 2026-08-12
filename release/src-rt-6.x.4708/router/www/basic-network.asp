@@ -45,8 +45,12 @@ function refresh_sta_list() {
 
 var lg = new TomatoGrid();
 lg.setup = function() {
-	this.init('lan-grid', '', 4, [
-		{ type: 'select', options: [[0,'0'],[1,'1'],[2,'2'],[3,'3']], prefix: '<div class="centered">', suffix: '<\/div>' },
+	var bridge_options = [];
+	for (var i = 0; i <= MAX_BRIDGE_ID; ++i)
+		bridge_options.push([i, i.toString()]);
+
+	this.init('lan-grid', '', MAX_BRIDGE_ID + 1, [
+		{ type: 'select', options: bridge_options, prefix: '<div class="centered">', suffix: '<\/div>' },
 		{ type: 'checkbox', prefix: '<div class="centered">', suffix: '<\/div>' },
 		{ type: 'text', maxlen: 15, size: 17 },
 		{ type: 'text', maxlen: 15, size: 17 },

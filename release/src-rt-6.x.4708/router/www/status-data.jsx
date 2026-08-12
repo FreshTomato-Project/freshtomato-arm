@@ -153,14 +153,12 @@ stats.ip6_duid = ((typeof(sysinfo.ip6_duid) != 'undefined') ? sysinfo.ip6_duid :
 stats.ip6_wan = ((typeof(sysinfo.ip6_wan) != 'undefined') ? sysinfo.ip6_wan : '')+'';
 stats.ip6_wan_dns1 = ((typeof(sysinfo.ip6_wan_dns1) != 'undefined') ? sysinfo.ip6_wan_dns1 : '')+'';
 stats.ip6_wan_dns2 = ((typeof(sysinfo.ip6_wan_dns2) != 'undefined') ? sysinfo.ip6_wan_dns2 : '')+'';
-stats.ip6_lan = ((typeof(sysinfo.ip6_lan) != 'undefined') ? sysinfo.ip6_lan : '')+'';
-stats.ip6_lan_ll = ((typeof(sysinfo.ip6_lan_ll) != 'undefined') ? sysinfo.ip6_lan_ll : '')+'';
-stats.ip6_lan1 = ((typeof(sysinfo.ip6_lan1) != 'undefined') ? sysinfo.ip6_lan1 : '')+'';
-stats.ip6_lan1_ll = ((typeof(sysinfo.ip6_lan1_ll) != 'undefined') ? sysinfo.ip6_lan1_ll : '')+'';
-stats.ip6_lan2 = ((typeof(sysinfo.ip6_lan2) != 'undefined') ? sysinfo.ip6_lan2 : '')+'';
-stats.ip6_lan2_ll = ((typeof(sysinfo.ip6_lan2_ll) != 'undefined') ? sysinfo.ip6_lan2_ll : '')+'';
-stats.ip6_lan3 = ((typeof(sysinfo.ip6_lan3) != 'undefined') ? sysinfo.ip6_lan3 : '')+'';
-stats.ip6_lan3_ll = ((typeof(sysinfo.ip6_lan3_ll) != 'undefined') ? sysinfo.ip6_lan3_ll : '')+'';
+for (var bridgeId = 0; bridgeId <= MAX_BRIDGE_ID; ++bridgeId) {
+	var bridgeSuffix = (bridgeId == 0) ? '' : bridgeId.toString();
+	var ip6Lan = 'ip6_lan'+bridgeSuffix;
+	stats[ip6Lan] = ((typeof(sysinfo[ip6Lan]) != 'undefined') ? sysinfo[ip6Lan] : '')+'';
+	stats[ip6Lan+'_ll'] = ((typeof(sysinfo[ip6Lan+'_ll']) != 'undefined') ? sysinfo[ip6Lan+'_ll'] : '')+'';
+}
 /* IPV6-END */
 
 /* WL stats */

@@ -271,7 +271,9 @@ function init() {
 <div class="section">
 	<script>
 		var lan_arr = nvram.smbd_ifnames.split(' ');
-		var smbd_lan = [0,0,0,0];
+		var smbd_lan = [];
+		for (var i = 0; i <= MAX_BRIDGE_ID; ++i)
+			smbd_lan.push(0);
 		for (var i = 0; i <= MAX_BRIDGE_ID; ++i) {
 			for (var j = 0; j < lan_arr.length; ++j) {
 				if (lan_arr[j] == 'br'+i.toString())
@@ -279,15 +281,15 @@ function init() {
 			}
 		}
 
-		createFieldTable('', [
+		var f = [
 			{ title: 'Enable on Start', name: 'smbd_enable', type: 'select', options: [['0', 'No'],['1', 'Yes, no Authentication'],['2', 'Yes, Authentication required']], value: nvram.smbd_enable },
 			{ title: 'Username', indent: 2, name: 'smbd_user', type: 'text', maxlen: 50, size: 32, value: nvram.smbd_user },
 			{ title: 'Password', indent: 2, name: 'smbd_passwd', type: 'password', maxlen: 50, size: 32, peekaboo: 1, value: nvram.smbd_passwd },
-			null,
-			{ title: 'LAN0', name: 'f_smbd_lan0', type: 'checkbox', value: smbd_lan[0] == 1 },
-			{ title: 'LAN1', name: 'f_smbd_lan1', type: 'checkbox', value: smbd_lan[1] == 1 },
-			{ title: 'LAN2', name: 'f_smbd_lan2', type: 'checkbox', value: smbd_lan[2] == 1 },
-			{ title: 'LAN3', name: 'f_smbd_lan3', type: 'checkbox', value: smbd_lan[3] == 1 },
+			null
+		];
+		for (var i = 0; i <= MAX_BRIDGE_ID; ++i)
+			f.push({ title: 'LAN'+i, name: 'f_smbd_lan'+i, type: 'checkbox', value: smbd_lan[i] == 1 });
+		f.push(
 			{ title: 'Samba protocol version', name: 'smbd_protocol', type: 'select', options: [['0','SMBv1'],['1','SMBv2'],['2','SMBv1 + SMBv2']], value: nvram.smbd_protocol },
 /* BCMARM-BEGIN */
 			{ title: 'Disable GRO', name: 'f_gro_disable', type: 'checkbox', value: nvram.gro_disable == 1 },
@@ -303,7 +305,8 @@ function init() {
 				{ suffix: '&nbsp; Master Browser &nbsp;&nbsp;&nbsp;', name: 'f_smbd_master', type: 'checkbox', value: nvram.smbd_master == 1 },
 				{ suffix: '&nbsp; WINS Server &nbsp;', name: 'f_smbd_wins', type: 'checkbox', value: (nvram.smbd_wins == 1) && (nvram.wan_wins == '' || nvram.wan_wins == '0.0.0.0') }
 			] }
-		]);
+		);
+		createFieldTable('', f);
 	</script>
 </div>
 
@@ -321,7 +324,7 @@ function init() {
 <script>writeToggleSectionTitle('Notes', 'notes');</script>
 <div class="section" id="sesdiv_notes" style="display:none">
 	<ul>
-		<li><b>LAN0, LAN1, LAN2, LAN3</b> - list of router interface names Samba will bind to.
+		<li><b>LANx</b> - list of router interface names Samba will bind to.
 			<ul>
 				<li>You can override these bindings, using ie. <i>'interfaces = eth1'</i> in custom configuration.</li>
 				<li>The <i>'bind interfaces only = yes'</i> directive is always set.</li>

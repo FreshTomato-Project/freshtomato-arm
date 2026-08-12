@@ -1199,6 +1199,9 @@ setprofile:
 		cp config_current .config
 
 	@$(MAKE) -C router oldconfig
+	@cp -f $(LINUXDIR)/.config $(LINUXDIR)/config_current
+	@cp -f router/busybox/.config router/busybox/config_current
+	@cp -f router/.config router/config_current
 
 include help.mak
 

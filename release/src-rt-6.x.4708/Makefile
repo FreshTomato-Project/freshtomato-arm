@@ -552,9 +552,6 @@ define RouterOptions
 		config_y TCONFIG_WOLFSSL; \
 		config_y TCONFIG_WOLFSSLMIN; \
 	fi; \
-	if [ "$(FANCTRL)" = "y" ]; then \
-		config_y TCONFIG_FANCTRL; \
-	fi; \
 	if [ "$(IPERF)" = "y" ]; then \
 		config_y TCONFIG_IPERF; \
 	fi; \
@@ -567,9 +564,6 @@ define RouterOptions
 	if [ "$(BRCM_NAND_JFFS2)" = "y" ]; then \
 		config_y TCONFIG_BRCM_NAND_JFFS2; \
 	fi; \
-	if [ "$(CONNTRACK_TOOL)" = "y" ]; then \
-		config_y TCONFIG_CONNTRACK_TOOL; \
-	fi; \
 	if [ "$(MDNS)" = "y" ]; then \
 		config_y TCONFIG_MDNS; \
 	fi; \
@@ -579,17 +573,26 @@ define RouterOptions
 	if [ "$(QRCODE)" = "y" ]; then \
 		config_y TCONFIG_QRCODE; \
 	fi; \
+	if [ "$(FANCTRL)" = "y" ]; then \
+		config_y TCONFIG_FANCTRL; \
+	fi; \
+	if [ "$(OPTIMIZE_SIZE_MORE)" = "y" ]; then \
+		config_y TCONFIG_OPTIMIZE_SIZE_MORE; \
+	fi; \
+	if [ "$(CONNTRACK_TOOL)" = "y" ]; then \
+		config_y TCONFIG_CONNTRACK_TOOL; \
+	fi; \
 	if [ "$(IRQBALANCE)" = "y" ]; then \
 		config_y TCONFIG_IRQBALANCE; \
 	fi; \
 	if [ "$(NO_TRXKEY)" = "y" ]; then \
 		config_n TCONFIG_TRXKEY; \
 	fi; \
-	if [ "$(HAVEGED)" = "y" ]; then \
-		config_y TCONFIG_HAVEGED; \
-	fi; \
 	if [ "$(EXTSW)" = "y" ]; then \
 		config_y TCONFIG_EXTSW; \
+	fi; \
+	if [ "$(HAVEGED)" = "y" ]; then \
+		config_y TCONFIG_HAVEGED; \
 	fi; \
 	)
 endef

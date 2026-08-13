@@ -140,14 +140,14 @@ lowercase_B = $(shell echo $(B) | tr A-Z a-z)
 
 beta = $(if $(filter $(TOMATO_EXPERIMENTAL),1),-beta,)
 
-ifeq ($(ARM_SDK),6)
+ifeq ($(TARGET_VARIANT),SDK6)
  branch_rev = "K26ARM"
-else ifeq ($(ARM_SDK),7)
+else ifeq ($(TARGET_VARIANT),SDK7)
  branch_rev = "K26ARM7"
-else ifeq ($(ARM_SDK),714)
+else ifeq ($(TARGET_VARIANT),SDK714)
  branch_rev = "K26ARM714"
 else
- $(error Unsupported ARM_SDK='$(ARM_SDK)' (expected 6, 7 or 714))
+ $(error Unsupported TARGET_VARIANT='$(TARGET_VARIANT)' for TARGET_PLATFORM='$(TARGET_PLATFORM)')
 endif
 
 ifneq ($(V2),)
@@ -309,6 +309,21 @@ define RouterOptions
 	if [ -n "$(BRIDGE_COUNT)" ]; then \
 		config_range TCONFIG_BRIDGE_COUNT "$(BRIDGE_COUNT)" 1 16; \
 	fi; \
+	config_n TCONFIG_BCMARM; \
+	config_n TCONFIG_BCM7; \
+	config_n TCONFIG_BCM714; \
+	config_n TCONFIG_MIPS_RT; \
+	config_n TCONFIG_MIPS_RTN; \
+	config_n TCONFIG_MIPS_RTAC; \
+	case "$(TARGET_PLATFORM):$(TARGET_VARIANT)" in \
+		ARM:SDK6) config_y TCONFIG_BCMARM ;; \
+		ARM:SDK7) config_y TCONFIG_BCMARM; config_y TCONFIG_BCM7 ;; \
+		ARM:SDK714) config_y TCONFIG_BCMARM; config_y TCONFIG_BCM714 ;; \
+		MIPS:RT) config_y TCONFIG_MIPS_RT ;; \
+		MIPS:RTN) config_y TCONFIG_MIPS_RTN ;; \
+		MIPS:RTAC) config_y TCONFIG_MIPS_RTAC ;; \
+		*) echo "ERROR: unsupported target platform '$(TARGET_PLATFORM):$(TARGET_VARIANT)'" >&2; exit 1 ;; \
+	esac; \
 	config_y TCONFIG_BONDING; \
 	if [ "$(SLIM)" = "y" ]; then \
 		config_n TCONFIG_EMF; \
@@ -475,15 +490,6 @@ define RouterOptions
 	if [ "$(NAND)" = "y" ]; then \
 		config_y TCONFIG_NAND; \
 	fi; \
-	config_y TCONFIG_BCMARM; \
-	config_n TCONFIG_BCM7; \
-	config_n TCONFIG_BCM714; \
-	case "$(ARM_SDK)" in \
-		6) ;; \
-		7) config_y TCONFIG_BCM7 ;; \
-		714) config_y TCONFIG_BCM714 ;; \
-		*) echo "ERROR: unsupported ARM_SDK='$(ARM_SDK)' (expected 6, 7 or 714)" >&2; exit 1 ;; \
-	esac; \
 	if [ "$(AC3200)" = "y" ]; then \
 		config_y TCONFIG_AC3200; \
 	fi; \

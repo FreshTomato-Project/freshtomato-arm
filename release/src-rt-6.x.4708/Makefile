@@ -365,7 +365,9 @@ define RouterOptions
 		if [ "$(NTFS)" = "y" ]; then \
 			config_y TCONFIG_NTFS; \
 		fi; \
-		if [ "$(UFSD)" = "ASUS" ]; then \
+		if [ "$(UFSD)" = "y" ]; then \
+			config_y TCONFIG_UFSD; \
+		elif [ "$(UFSD)" = "ASUS" ]; then \
 			config_y TCONFIG_UFSDA; \
 		fi; \
 		if [ "$(TUXERA)" = "y" ]; then \

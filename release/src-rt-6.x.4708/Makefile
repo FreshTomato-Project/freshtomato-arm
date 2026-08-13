@@ -311,6 +311,12 @@ define RouterOptions
 		else \
 			config_range TCONFIG_MWAN_MAX "2" 1 8; \
 		fi; \
+	elif [ "$(TARGET_PLATFORM)" = "ARM" ]; then \
+		if [ "$(NVRAM_64K)" = "y" ] || [ "$(NVRAM_128K)" = "y" ] || [ "$(NVRAM_SIZE)" = "60" ] || [ "$(NVRAM_SIZE)" = "64" ]; then \
+			config_range TCONFIG_MWAN_MAX "4" 1 8; \
+		else \
+			config_range TCONFIG_MWAN_MAX "2" 1 8; \
+		fi; \
 	fi; \
 	if [ -n "$(BRIDGE_COUNT)" ]; then \
 		config_range TCONFIG_BRIDGE_COUNT "$(BRIDGE_COUNT)" 1 16; \

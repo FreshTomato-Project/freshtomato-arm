@@ -318,7 +318,7 @@ define RouterOptions
 	case "$(TARGET_PLATFORM):$(TARGET_VARIANT)" in \
 		ARM:SDK6) config_y TCONFIG_BCMARM ;; \
 		ARM:SDK7) config_y TCONFIG_BCMARM; config_y TCONFIG_BCM7 ;; \
-		ARM:SDK714) config_y TCONFIG_BCMARM; config_y TCONFIG_BCM714 ;; \
+		ARM:SDK714) config_y TCONFIG_BCMARM; config_y TCONFIG_BCM7; config_y TCONFIG_BCM714 ;; \
 		MIPS:RT) config_y TCONFIG_MIPS_RT ;; \
 		MIPS:RTN) config_y TCONFIG_MIPS_RTN ;; \
 		MIPS:RTAC) config_y TCONFIG_MIPS_RTAC ;; \

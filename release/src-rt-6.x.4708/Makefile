@@ -324,6 +324,18 @@ define RouterOptions
 		MIPS:RTAC) config_y TCONFIG_MIPS_RTAC ;; \
 		*) echo "ERROR: unsupported target platform '$(TARGET_PLATFORM):$(TARGET_VARIANT)'" >&2; exit 1 ;; \
 	esac; \
+	if [ "$(AIO)" = "y" ]; then \
+		config_y TCONFIG_AIO; \
+	fi; \
+	if [ "$(TARGET_PLATFORM)" = "MIPS" ]; then \
+		if [ "$(AIO)" = "y" ]; then \
+			config_n TCONFIG_OPTIMIZE_SIZE; \
+		else \
+			config_y TCONFIG_OPTIMIZE_SIZE; \
+		fi; \
+	elif [ "$(DO_OPTIMIZE_SIZE)" = "y" ]; then \
+		config_y TCONFIG_OPTIMIZE_SIZE; \
+	fi; \
 	config_y TCONFIG_BONDING; \
 	if [ "$(SLIM)" = "y" ]; then \
 		config_n TCONFIG_EMF; \
@@ -471,12 +483,6 @@ define RouterOptions
 	fi; \
 	if [ "$(MICROSD)" = "y" ]; then \
 		config_y TCONFIG_MICROSD; \
-	fi; \
-	if [ "$(AIO)" = "y" ]; then \
-		config_y TCONFIG_AIO; \
-	fi; \
-	if [ "$(DO_OPTIMIZE_SIZE)" = "y" ]; then \
-		config_y TCONFIG_OPTIMIZE_SIZE; \
 	fi; \
 	if [ "$(USBAP)" = "y" ]; then \
 		config_y TCONFIG_USBAP; \

@@ -891,11 +891,8 @@ void restart_wl(void)
 #endif
 
 	for (br = 0; br < BRIDGE_COUNT; br++) {
-		char bridge[2] = "0";
-		if (br != 0)
-			bridge[0] += br;
-		else
-			memset(bridge, 0, sizeof(bridge));
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		strlcpy(tmp, "lan", sizeof(tmp));
 		strlcat(tmp, bridge, sizeof(tmp));
@@ -1050,11 +1047,8 @@ void stop_lan_wl(void)
 #endif
 
 	for (br = 0; br < BRIDGE_COUNT; br++) {
-		char bridge[2] = "0";
-		if (br !=0 )
-			bridge[0] += br;
-		else
-			memset(bridge, 0, sizeof(bridge));
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		strlcpy(tmp, "lan", sizeof(tmp));
 		strlcat(tmp, bridge, sizeof(tmp));
@@ -1119,11 +1113,8 @@ void start_lan_wl(void)
 	foreach_wif(0, NULL, set_wlmac);
 
 	for (br = 0; br < BRIDGE_COUNT; br++) {
-		char bridge[2] = "0";
-		if (br != 0)
-			bridge[0] += br;
-		else
-			memset(bridge, 0, sizeof(bridge));
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		strlcpy(tmp, "lan", sizeof(tmp));
 		strlcat(tmp, bridge, sizeof(tmp));
@@ -1610,11 +1601,8 @@ void start_lan(void)
 #endif
 
 	for (br = 0; br <= BRIDGE_COUNT; br++) {
-		char bridge[2] = "0";
-		if (br != 0)
-			bridge[0] += br;
-		else
-			memset(bridge, 0, sizeof(bridge));
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		if ((sfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 			return;
@@ -1888,11 +1876,8 @@ void stop_lan(void)
 #endif
 
 	for (br = 0; br < BRIDGE_COUNT; br++) {
-		char bridge[2] = "0";
-		if (br != 0)
-			bridge[0] += br;
-		else
-			memset(bridge, 0, sizeof(bridge));
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		strlcpy(tmp, "lan", sizeof(tmp));
 		strlcat(tmp, bridge, sizeof(tmp));

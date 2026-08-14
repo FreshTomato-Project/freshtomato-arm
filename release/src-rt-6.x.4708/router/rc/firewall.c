@@ -570,9 +570,8 @@ static void ipt_account(void) {
 	char br;
 
 	for (br = 0 ; br < BRIDGE_COUNT; br++) {
-		char bridge[2];
-		bridge[0] = br ? '0' + br : '\0';
-		bridge[1] = '\0';
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		snprintf(lanN_ifname, sizeof(lanN_ifname), "lan%s_ifname", bridge);
 
@@ -1144,9 +1143,8 @@ static void filter_input(void)
 
 	if (nvram_get_int("fw_strict_input")) {
 		for (br = 0; br < BRIDGE_COUNT; br++) {
-			char bridge[2];
-			bridge[0] = br ? '0' + br : '\0';
-			bridge[1] = '\0';
+			char bridge[12];
+			get_bridge_suffix(br, bridge, sizeof(bridge));
 
 			snprintf(lanN_ifname, sizeof(lanN_ifname), "lan%s_ifname", bridge);
 			if (strncmp(nvram_safe_get(lanN_ifname), "br", 2) == 0) {
@@ -1154,9 +1152,8 @@ static void filter_input(void)
 					if (br == br2)
 						continue;
 
-					char bridge2[2];
-					bridge2[0] = br2 ? '0' + br2 : '\0';
-					bridge2[1] = '\0';
+					char bridge2[12];
+					get_bridge_suffix(br2, bridge2, sizeof(bridge2));
 
 					snprintf(lanN_ifname2, sizeof(lanN_ifname2), "lan%s_ifname", bridge2);
 					if (strncmp(nvram_safe_get(lanN_ifname2), "br", 2) == 0) {
@@ -1393,9 +1390,8 @@ static void filter_forward(void)
 	}
 
 	for (br = 0; br < BRIDGE_COUNT; br++) {
-		char bridge[2];
-		bridge[0] = br ? '0' + br : '\0';
-		bridge[1] = '\0';
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		snprintf(lanN_ifname, sizeof(lanN_ifname), "lan%s_ifname", bridge);
 		if (strncmp(nvram_safe_get(lanN_ifname), "br", 2) == 0) {
@@ -1406,9 +1402,8 @@ static void filter_forward(void)
 				if (lanAccess[((br)+(br2) * BRIDGE_COUNT)] == '1')
 					continue;
 
-				char bridge2[2];
-				bridge2[0] = br2 ? '0' + br2 : '\0';
-				bridge2[1] = '\0';
+				char bridge2[12];
+				get_bridge_suffix(br2, bridge2, sizeof(bridge2));
 
 				snprintf(lanN_ifname2, sizeof(lanN_ifname2), "lan%s_ifname", bridge2);
 
@@ -1475,9 +1470,8 @@ static void filter_forward(void)
 #endif
 
 	for (br = 0; br < BRIDGE_COUNT; br++) {
-		char bridge[2];
-		bridge[0] = br ? '0' + br : '\0';
-		bridge[1] = '\0';
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		snprintf(lanN_ifname, sizeof(lanN_ifname), "lan%s_ifname", bridge);
 		if (strncmp(nvram_safe_get(lanN_ifname), "br", 2) == 0)

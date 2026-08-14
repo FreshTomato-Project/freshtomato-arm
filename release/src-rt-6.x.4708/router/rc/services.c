@@ -1370,9 +1370,8 @@ void start_upnp(void)
 	fprintf(f, "%s\n", nvram_safe_get("upnp_custom"));
 
 	for (br = 0; br < BRIDGE_COUNT; br++) {
-		char bridge[2];
-		bridge[0] = br ? '0' + br : '\0';
-		bridge[1] = '\0';
+		char bridge[12];
+		get_bridge_suffix(br, bridge, sizeof(bridge));
 
 		snprintf(lanN_ipaddr, sizeof(lanN_ipaddr), "lan%s_ipaddr", bridge);
 		snprintf(lanN_netmask, sizeof(lanN_netmask), "lan%s_netmask", bridge);
@@ -1808,9 +1807,8 @@ void start_igmp_proxy(void)
 			}
 
 			for (br = 0; br < BRIDGE_COUNT; br++) {
-				char bridge[2];
-				bridge[0] = br ? '0' + br : '\0';
-				bridge[1] = '\0';
+				char bridge[12];
+				get_bridge_suffix(br, bridge, sizeof(bridge));
 
 				snprintf(lanN_ifname, sizeof(lanN_ifname), "lan%s_ifname", bridge);
 				snprintf(multicast_lanN, sizeof(multicast_lanN), "multicast_lan%s", bridge);

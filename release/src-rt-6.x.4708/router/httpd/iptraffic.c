@@ -46,20 +46,9 @@ static void iptraffic_conntrack_init(void)
 	const char conntrack[] = "/proc/net/ip_conntrack";
 
 	for(br = 0; br < BRIDGE_COUNT; br++) {
-		char bridge[12];
-		get_bridge_suffix(br, bridge, sizeof(bridge));
-
-		memset(sa, 0, sizeof(sa));
-		snprintf(sa, sizeof(sa), "lan%s_ifname", bridge);
-
-		if (strcmp(nvram_safe_get(sa), "") != 0) {
-			memset(sa, 0, sizeof(sa));
-			snprintf(sa, sizeof(sa), "lan%s_ipaddr", bridge);
-			rip[br] = inet_addr(nvram_safe_get(sa));
-
-			memset(sa, 0, sizeof(sa));
-			snprintf(sa, sizeof(sa), "lan%s_netmask", bridge);
-			mask[br] = inet_addr(nvram_safe_get(sa));
+		if (*bridge_nvram_get(br, "ifname", sa, sizeof(sa))) {
+			rip[br] = inet_addr(bridge_nvram_get(br, "ipaddr", sa, sizeof(sa)));
+			mask[br] = inet_addr(bridge_nvram_get(br, "netmask", sa, sizeof(sa)));
 			lan[br] = rip[br] & mask[br];
 		}
 		else {

@@ -1880,6 +1880,22 @@ static void set_dualband_network_defaults(void)
 }
 #endif /* CONFIG_BCMWL6A */
 
+#ifdef CONFIG_BCMWL6A
+/*
+ * Set the common USB port map and boot defaults used by WL6 models.
+ * @return  none
+ */
+static void set_usb_boot_defaults(void)
+{
+	nvram_set("usb_usb3", "0");
+	nvram_set("xhci_ports", "1-1");
+	nvram_set("ehci_ports", "2-1 2-2");
+	nvram_set("ohci_ports", "3-1 3-2");
+	nvram_set("boot_wait", "on");
+	nvram_set("wait_time", "3");
+}
+#endif /* CONFIG_BCMWL6A */
+
 static int init_nvram(void)
 {
 	int model;
@@ -4937,15 +4953,7 @@ static int init_nvram(void)
 			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
 			nvram_set("wl0_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -4991,15 +4999,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi country settings */
 #ifdef TCONFIG_BCMSMP	/* dual core */
@@ -5090,15 +5090,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -5139,15 +5131,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -5193,15 +5177,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -5242,15 +5218,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -5294,15 +5262,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -5349,15 +5309,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -5407,15 +5359,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -5459,15 +5403,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -5966,15 +5902,7 @@ static int init_nvram(void)
 			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -6212,15 +6140,7 @@ static int init_nvram(void)
 			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap","3");
@@ -6457,15 +6377,7 @@ static int init_nvram(void)
 			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap", "3");
@@ -6701,15 +6613,7 @@ static int init_nvram(void)
 			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap","3");
@@ -7454,15 +7358,7 @@ static int init_nvram(void)
 			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap","3");
@@ -7722,15 +7618,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap","3");
@@ -7999,15 +7887,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap","3");
@@ -8760,15 +8640,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 			nvram_set("blink_wl", "0"); /* disable blink by default for WS880 */
 
 			/* wifi settings/channels */
@@ -9298,15 +9170,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for wl1 (1:) 5G - eth2 for EA6350v1 and/or wl1 (1:) 2,4G - eth2 for EA6200 */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi country settings */
 			nvram_set("0:regrev", "12");
@@ -9391,15 +9255,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap","3");
@@ -9611,15 +9467,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap","3");
@@ -9828,15 +9676,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			nvram_set("wl0_bw_cap","3");
@@ -10133,15 +9973,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* set WL mac for wl1 (1:) - 5GHz low - eth2 */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			/* wl0 (0:) - 2,4GHz */
@@ -10211,15 +10043,7 @@ static int init_nvram(void)
 			nvram_set("1:macaddr", s);				/* set WL mac for wl1 (1:) - 5GHz low - eth2 */
 			nvram_set("wl1_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			/* wl0 (0:) - 2,4GHz */
@@ -10293,15 +10117,7 @@ static int init_nvram(void)
 			nvram_set("2:macaddr", s);				/* set WL mac for wl2 (2:) - 5GHz high - eth3 */
 			nvram_set("wl2_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			/* wl0 (0:) - 2,4GHz */
@@ -10443,15 +10259,7 @@ static int init_nvram(void)
 			nvram_set("2:macaddr", s);				/* fix WL mac for wl2 (2:) - 5GHz high (second one) - eth3 */
 			nvram_set("wl2_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			/* wl0 (1:) - 2,4GHz */
@@ -10766,15 +10574,7 @@ static int init_nvram(void)
 			nvram_set("2:macaddr", s);				/* fix WL mac for wl2 (2:) - 5GHz low - eth3 */
 			nvram_set("wl2_hwaddr", s);
 
-			/* usb3.0 settings */
-			nvram_set("usb_usb3", "0");
-			nvram_set("xhci_ports", "1-1");
-			nvram_set("ehci_ports", "2-1 2-2");
-			nvram_set("ohci_ports", "3-1 3-2");
-
-			/* misc settings */
-			nvram_set("boot_wait", "on");
-			nvram_set("wait_time", "3");
+			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
 			/* wl0 (1:) - 2,4GHz */

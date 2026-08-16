@@ -902,8 +902,7 @@ void restart_wl(void)
 					/* ignore disabled wl vifs */
 					if (strncmp(ifname, "wl", 2) == 0 && strchr(ifname, '.')) {
 						char nv[40];
-						snprintf(nv, sizeof(nv) - 1, "%s_bss_enabled", ifname);
-						if (!nvram_get_int(nv))
+						if (!prefix_nvram_get_int(ifname, "bss_enabled", nv, sizeof(nv) - 1))
 							continue;
 						if (get_ifname_unit(ifname, &unit, &subunit) < 0)
 							continue;
@@ -1114,8 +1113,7 @@ void start_lan_wl(void)
 					/* ignore disabled wl vifs */
 					if (strncmp(ifname, "wl", 2) == 0 && strchr(ifname, '.')) {
 						char nv[40];
-						snprintf(nv, sizeof(nv) - 1, "%s_bss_enabled", ifname);
-						if (!nvram_get_int(nv))
+						if (!prefix_nvram_get_int(ifname, "bss_enabled", nv, sizeof(nv) - 1))
 							continue;
 						if (get_ifname_unit(ifname, &unit, &subunit) < 0)
 							continue;
@@ -1596,8 +1594,7 @@ void start_lan(void)
 
 					/* ignore disabled wl vifs */
 					if (strncmp(ifname, "wl", 2) == 0 && strchr(ifname, '.')) {
-						snprintf(nv, sizeof(nv) - 1, "%s_bss_enabled", ifname);
-						if (!nvram_get_int(nv))
+						if (!prefix_nvram_get_int(ifname, "bss_enabled", nv, sizeof(nv) - 1))
 							continue;
 						if (get_ifname_unit(ifname, &unit, &subunit) < 0)
 							continue;

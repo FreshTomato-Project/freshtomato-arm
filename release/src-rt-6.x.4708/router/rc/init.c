@@ -2021,6 +2021,33 @@ static void set_5g_rxgain_defaults(void)
 	nvram_set("1:rxgains5gtrisoa2", "5");
 }
 
+/*
+ * Set common 5 GHz calibration defaults shared by selected AC models.
+ * @return  none
+ */
+static void set_common_5g_calibration_defaults(void)
+{
+	set_5g_rxgain_defaults();
+	nvram_set("1:sar2g", "18");
+	nvram_set("1:sar5g", "15");
+	nvram_set("1:sb20in40hrpo", "0");
+	nvram_set("1:sb20in40lrpo", "0");
+	nvram_set("1:sb20in80and160hr5ghpo", "0");
+	nvram_set("1:sb20in80and160hr5glpo", "0");
+	nvram_set("1:sb20in80and160hr5gmpo", "0");
+	nvram_set("1:sb20in80and160lr5ghpo", "0");
+	nvram_set("1:sb20in80and160lr5glpo", "0");
+	nvram_set("1:sb20in80and160lr5gmpo", "0");
+	nvram_set("1:sb40and80hr5ghpo", "0");
+	nvram_set("1:sb40and80hr5glpo", "0");
+	nvram_set("1:sb40and80hr5gmpo", "0");
+	nvram_set("1:sb40and80lr5ghpo", "0");
+	nvram_set("1:sb40and80lr5glpo", "0");
+	nvram_set("1:sb40and80lr5gmpo", "0");
+	nvram_set("1:sromrev", "11");
+	nvram_set("1:subband5gver", "4");
+}
+
 static int init_nvram(void)
 {
 	int model;
@@ -8421,25 +8448,7 @@ static int init_nvram(void)
 			nvram_set("1:rxgains2gtrisoa0", "0");
 			nvram_set("1:rxgains2gtrisoa1", "0");
 			nvram_set("1:rxgains2gtrisoa2", "0");
-			set_5g_rxgain_defaults();
-			nvram_set("1:sar2g", "18");
-			nvram_set("1:sar5g", "15");
-			nvram_set("1:sb20in40hrpo", "0");
-			nvram_set("1:sb20in40lrpo", "0");
-			nvram_set("1:sb20in80and160hr5ghpo", "0");
-			nvram_set("1:sb20in80and160hr5glpo", "0");
-			nvram_set("1:sb20in80and160hr5gmpo", "0");
-			nvram_set("1:sb20in80and160lr5ghpo", "0");
-			nvram_set("1:sb20in80and160lr5glpo", "0");
-			nvram_set("1:sb20in80and160lr5gmpo", "0");
-			nvram_set("1:sb40and80hr5ghpo", "0");
-			nvram_set("1:sb40and80hr5glpo", "0");
-			nvram_set("1:sb40and80hr5gmpo", "0");
-			nvram_set("1:sb40and80lr5ghpo", "0");
-			nvram_set("1:sb40and80lr5glpo", "0");
-			nvram_set("1:sb40and80lr5gmpo", "0");
-			nvram_set("1:sromrev", "11");
-			nvram_set("1:subband5gver", "4");
+			set_common_5g_calibration_defaults();
 			nvram_set("1:subvid", "0x14e4");
 			nvram_set("1:tempcorrx", "0x3f");
 			nvram_set("1:tempoffset", "255");
@@ -8936,25 +8945,7 @@ static int init_nvram(void)
 			nvram_set("1:pdoffset80ma2", "0x0100");
 			nvram_set("1:phycal_tempdelta", "0");
 			nvram_set("1:rxchain", "7");
-			set_5g_rxgain_defaults();
-			nvram_set("1:sar2g", "18");
-			nvram_set("1:sar5g", "15");
-			nvram_set("1:sb20in40hrpo", "0");
-			nvram_set("1:sb20in40lrpo", "0");
-			nvram_set("1:sb20in80and160hr5ghpo", "0");
-			nvram_set("1:sb20in80and160hr5glpo", "0");
-			nvram_set("1:sb20in80and160hr5gmpo", "0");
-			nvram_set("1:sb20in80and160lr5ghpo", "0");
-			nvram_set("1:sb20in80and160lr5glpo", "0");
-			nvram_set("1:sb20in80and160lr5gmpo", "0");
-			nvram_set("1:sb40and80hr5ghpo", "0");
-			nvram_set("1:sb40and80hr5glpo", "0");
-			nvram_set("1:sb40and80hr5gmpo", "0");
-			nvram_set("1:sb40and80lr5ghpo", "0");
-			nvram_set("1:sb40and80lr5glpo", "0");
-			nvram_set("1:sb40and80lr5gmpo", "0");
-			nvram_set("1:sromrev", "11");
-			nvram_set("1:subband5gver", "4");
+			set_common_5g_calibration_defaults();
 			nvram_set("1:tempoffset", "0");
 			nvram_set("1:temps_hysteresis", "5");
 			nvram_set("1:temps_period", "5");
@@ -9103,25 +9094,7 @@ static int init_nvram(void)
 			nvram_set("1:pdoffset80ma2", "0");
 			nvram_set("1:phycal_tempdelta", "0");
 			nvram_set("1:rxchain", "7");
-			set_5g_rxgain_defaults();
-			nvram_set("1:sar2g", "18");
-			nvram_set("1:sar5g", "15");
-			nvram_set("1:sb20in40hrpo", "0");
-			nvram_set("1:sb20in40lrpo", "0");
-			nvram_set("1:sb20in80and160hr5ghpo", "0");
-			nvram_set("1:sb20in80and160hr5glpo", "0");
-			nvram_set("1:sb20in80and160hr5gmpo", "0");
-			nvram_set("1:sb20in80and160lr5ghpo", "0");
-			nvram_set("1:sb20in80and160lr5glpo", "0");
-			nvram_set("1:sb20in80and160lr5gmpo", "0");
-			nvram_set("1:sb40and80hr5ghpo", "0");
-			nvram_set("1:sb40and80hr5glpo", "0");
-			nvram_set("1:sb40and80hr5gmpo", "0");
-			nvram_set("1:sb40and80lr5ghpo", "0");
-			nvram_set("1:sb40and80lr5glpo", "0");
-			nvram_set("1:sb40and80lr5gmpo", "0");
-			nvram_set("1:sromrev", "11");
-			nvram_set("1:subband5gver", "4");
+			set_common_5g_calibration_defaults();
 			nvram_set("1:tempoffset", "0");
 			nvram_set("1:temps_hysteresis", "5");
 			nvram_set("1:temps_period", "5");

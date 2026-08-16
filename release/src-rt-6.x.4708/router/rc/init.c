@@ -1856,6 +1856,18 @@ REBOOT: /* do a simple reboot */
 	}
 }
 
+/*
+ * Set the common dual-band wireless interface NVRAM mapping.
+ * @return  none
+ */
+static void set_dualband_wireless_ifnames(void)
+{
+	nvram_set("wl_ifnames", "eth1 eth2");
+	nvram_set("wl_ifname", "eth1");
+	nvram_set("wl0_ifname", "eth1");
+	nvram_set("wl1_ifname", "eth2");
+}
+
 #ifdef CONFIG_BCMWL6A
 /*
  * Set the common LAN, WAN and wireless mappings used by dual-band WL6 models.
@@ -1871,10 +1883,7 @@ static void set_dualband_network_defaults(void)
 	nvram_set("wan_ifnames", "vlan2");
 	nvram_set("wan_ifnameX", "vlan2");
 	nvram_set("wandevs", "vlan2");
-	nvram_set("wl_ifnames", "eth1 eth2");
-	nvram_set("wl_ifname", "eth1");
-	nvram_set("wl0_ifname", "eth1");
-	nvram_set("wl1_ifname", "eth2");
+	set_dualband_wireless_ifnames();
 	nvram_set("wl0_vifnames", "wl0.1 wl0.2 wl0.3");
 	nvram_set("wl1_vifnames", "wl1.1 wl1.2 wl1.3");
 }
@@ -2375,10 +2384,7 @@ static int init_nvram(void)
 				nvram_set("wan_ifnames", "vlan2");
 				nvram_set("wan_ifnameX", "vlan2");
 				nvram_set("wandevs", "vlan2");
-				nvram_set("wl_ifnames", "eth1 eth2");
-				nvram_set("wl_ifname", "eth1");
-				nvram_set("wl0_ifname", "eth1");
-				nvram_set("wl1_ifname", "eth2");
+				set_dualband_wireless_ifnames();
 			}
 			break;
 		case MODEL_F7D4302: /* N600 Dual Band and Fast Ethernet BCM5325E */
@@ -2393,10 +2399,7 @@ static int init_nvram(void)
 				nvram_set("wan_ifnames", "vlan2");
 				nvram_set("wan_ifnameX", "vlan2");
 				nvram_set("wandevs", "vlan2");
-				nvram_set("wl_ifnames", "eth1 eth2");
-				nvram_set("wl_ifname", "eth1");
-				nvram_set("wl0_ifname", "eth1");
-				nvram_set("wl1_ifname", "eth2");
+				set_dualband_wireless_ifnames();
 			}
 			break;
 		case MODEL_F5D8235v3: /* N300 and Gigabit BCM53115 */
@@ -2518,10 +2521,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 		}
 		break;
 	case MODEL_E4200:
@@ -2534,10 +2534,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 
 #ifdef TCONFIG_BLINK /* RTN/RTAC */
 			/* fix MAC addresses */
@@ -2856,10 +2853,7 @@ static int init_nvram(void)
 			nvram_set("wan_ifnameX", "vlan2");
 			nvram_set("wan_ifnames", "vlan2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("wl0_bw_cap", "3");
 			nvram_set("wl0_chanspec", "1l");
 			nvram_set("wl1_bw_cap", "7");
@@ -2885,10 +2879,7 @@ static int init_nvram(void)
 			nvram_set("wan_ifnameX", "vlan2");
 			nvram_set("wan_ifnames", "vlan2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("wl0_bw_cap", "3");
 			nvram_set("wl0_chanspec", "1l");
 			nvram_set("wl1_bw_cap", "7");
@@ -3023,10 +3014,7 @@ static int init_nvram(void)
 			nvram_set("qtdc1_sz", "10");
 			nvram_set("lan_ifnames", "vlan2 eth1 eth2");
 			nvram_set("landevs", "vlan2 wl0 wl1");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 #else
 			nvram_set("lan_ifnames", "vlan2 eth1");
 			nvram_set("landevs", "vlan2 wl0");
@@ -3059,10 +3047,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("landevs", "vlan1 wl0 wl1");
 			nvram_set("wandevs", "vlan2");
 
@@ -3231,10 +3216,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("landevs", "vlan1 wl0 wl1");
 			nvram_set("wandevs", "vlan2");
 
@@ -3615,10 +3597,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("landevs", "vlan1 wl0 wl1");
 			nvram_set("wandevs", "vlan2");
 
@@ -3880,10 +3859,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("landevs", "vlan1 wl0 wl1");
 			nvram_set("wandevs", "vlan2");
 
@@ -4069,10 +4045,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("landevs", "vlan1 wl0 wl1");
 			nvram_set("wandevs", "vlan2");
 
@@ -4258,10 +4231,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("wl0_bw_cap", "7");
 			nvram_set("wl0_chanspec", "36/80");
 			nvram_set("wl1_bw_cap", "3");
@@ -4307,10 +4277,7 @@ static int init_nvram(void)
 			nvram_set("wan_ifnames", "vlan1");
 			nvram_set("lan_ifnames", "vlan2 eth1 eth2");
 			nvram_set("landevs", "vlan2 wl0 wl1");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 
 			/* fix MAC addresses */
 			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s)); /* get et0 MAC address for LAN */
@@ -4386,10 +4353,7 @@ static int init_nvram(void)
 			nvram_set("wan_ifnames", "vlan2");
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("landevs", "vlan1 wl0 wl1");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 
 			/* fix MAC addresses */
 			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s)); /* get et0 MAC address for LAN */
@@ -4437,10 +4401,7 @@ static int init_nvram(void)
 			nvram_set("wan_ifnames", "vlan2");
 			nvram_set("wan_ifnameX", "vlan2");
 			nvram_set("wandevs", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 
 			/* fix MAC addresses */
 			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s)); 	/* get et0 MAC address for LAN */
@@ -4492,10 +4453,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 		}
 
 		/* Set Key Parameters for Wireless Interfaces: SB (Southbridge) and PCI, to configure HW (as Netgear intends)
@@ -4581,10 +4539,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 		}
 
 		/* Set Key Parameters for Wireless Interfaces: SB (Southbridge) and PCI, to configure HW (as Netgear intends)
@@ -4670,10 +4625,7 @@ static int init_nvram(void)
 		if (!nvram_match("t_fix1", (char *)name)) {
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifnameX", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 		}
 
 		/* Set Key Parameters for Wireless Interfaces: SB (Southbridge) and PCI, to configure HW (as Netgear intends)
@@ -4838,10 +4790,7 @@ static int init_nvram(void)
 			nvram_set("wan_ifnames", "vlan2");
 			nvram_set("wan_ifnameX", "vlan2");
 			nvram_set("wandevs", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 
 			/* fix MAC addresses */
 			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s)); 	/* get et0 MAC address for LAN */
@@ -4894,10 +4843,7 @@ static int init_nvram(void)
 			nvram_set("wan_ifnames", "vlan2");
 			nvram_set("wan_ifnameX", "vlan2");
 			nvram_set("wandevs", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 
 			/* fix MAC addresses */
 			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s)); 	/* get et0 MAC address for LAN */
@@ -9721,10 +9667,7 @@ static int init_nvram(void)
 			nvram_set("wan_ifnames", "vlan2");
 			nvram_set("wan_ifnameX", "vlan2");
 			nvram_set("wandevs", "vlan2");
-			nvram_set("wl_ifnames", "eth1 eth2");
-			nvram_set("wl_ifname", "eth1");
-			nvram_set("wl0_ifname", "eth1");
-			nvram_set("wl1_ifname", "eth2");
+			set_dualband_wireless_ifnames();
 			nvram_set("wl0_vifnames", "wl0.1 wl0.2 wl0.3");
 			nvram_set("wl1_vifnames", "wl1.1 wl1.2 wl1.3");
 

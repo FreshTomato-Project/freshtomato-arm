@@ -6038,17 +6038,7 @@ static int init_nvram(void)
 			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_pci_sg_wifi_country_defaults();
@@ -6495,17 +6485,7 @@ static int init_nvram(void)
 			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_pci_sg_wifi_country_defaults();
@@ -6738,17 +6718,7 @@ static int init_nvram(void)
 			nvram_set("wait_time", "3");
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_pci_sg_wifi_country_defaults();
@@ -6993,17 +6963,7 @@ static int init_nvram(void)
 			nvram_set("wait_time", "3");
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_pci_sg_wifi_country_defaults();
@@ -7231,17 +7191,7 @@ static int init_nvram(void)
 			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_pci_sg_wifi_country_defaults();
@@ -7488,17 +7438,7 @@ static int init_nvram(void)
 			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_sg_wifi_country_defaults();
@@ -7754,17 +7694,7 @@ static int init_nvram(void)
 			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* misc wifi settings */
 			nvram_set("wl0_vreqd", "0"); /* do not enable vhtmode and vht_features for 2G NON-AC PHY */
@@ -8030,17 +7960,7 @@ static int init_nvram(void)
 			nvram_set("wait_time", "3");
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* misc wifi settings */
 			nvram_set("wl0_vreqd", "0"); /* do not enable vhtmode and vht_features for 2G NON-AC PHY */
@@ -8499,17 +8419,7 @@ static int init_nvram(void)
 			nvram_set("blink_wl", "0"); /* disable blink by default for WS880 */
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_sg_wifi_country_defaults();
@@ -9104,17 +9014,7 @@ static int init_nvram(void)
 			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_sg_wifi_country_defaults();
@@ -9313,17 +9213,7 @@ static int init_nvram(void)
 			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_sg_wifi_country_defaults();
@@ -9519,17 +9409,7 @@ static int init_nvram(void)
 			set_usb_boot_defaults();
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_sg_wifi_country_defaults();
@@ -9758,17 +9638,7 @@ static int init_nvram(void)
 			nvram_set("wait_time", "3");
 
 			/* wifi settings/channels */
-			nvram_set("wl0_bw_cap","3");
-			nvram_set("wl0_chanspec","6u");
-			nvram_set("wl0_channel","6");
-			nvram_set("wl0_nbw","40");
-			nvram_set("wl0_nctrlsb", "upper");
-			nvram_set("wl1_bw_cap", "7");
-			nvram_set("wl1_chanspec", "36/80");
-			nvram_set("wl1_channel", "36");
-			nvram_set("wl1_nbw","80");
-			nvram_set("wl1_nbw_cap","3");
-			nvram_set("wl1_nctrlsb", "lower");
+			set_ac_wifi_channel_defaults();
 
 			/* wifi country settings */
 			set_sg_wifi_country_defaults();

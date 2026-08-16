@@ -561,11 +561,6 @@ static void usblp_cleanup(struct usblp *usblp)
 {
 	printk(KERN_INFO "usblp%d: removed\n", usblp->minor);
 
-        /* Added by PaN */
-        remove_proc_entry("usblpid", usblp_dir);
-        remove_proc_entry(MODULE_NAME, NULL);
-        /* End PaN */
-
 	kfree(usblp->readbuf);
 	kfree(usblp->device_id_string);
 	kfree(usblp->statusbuf);
@@ -1419,6 +1414,7 @@ static int usblp_probe(struct usb_interface *intf,
                 usblpid_file = create_proc_read_entry("usblpid", 0444, usblp_dir, proc_read_usblpid, NULL);
                 if(usblpid_file == NULL) {
                         remove_proc_entry(MODULE_NAME, NULL);
+                        usblp_dir = NULL;
 
                         goto outpan;
                 }
@@ -1616,6 +1612,18 @@ static void usblp_disconnect(struct usb_interface *intf)
         if(pan_count > 0)       // tmp fix
                 --pan_count;
 
+        /* Added py pedro */
+        if (pan_count == 0) {
+                if (usblpid_file) {
+                        remove_proc_entry("usblpid", usblp_dir);
+                        usblpid_file = NULL;
+                }
+                if (usblp_dir) {
+                        remove_proc_entry(MODULE_NAME, NULL);
+                        usblp_dir = NULL;
+                }
+        }
+        /* End pedro */
 	wake_up(&usblp->wwait);
 	wake_up(&usblp->rwait);
 	usb_set_intfdata(intf, NULL);

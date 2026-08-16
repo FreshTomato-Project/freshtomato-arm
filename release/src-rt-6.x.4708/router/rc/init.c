@@ -1857,6 +1857,40 @@ REBOOT: /* do a simple reboot */
 }
 
 /*
+ * Set dual-band MAC defaults in the unit-based wireless NVRAM namespace.
+ * @param mac      caller scratch buffer; updated to the final 5 GHz MAC
+ * @param mac_len  size of the caller scratch buffer
+ * @return         none
+ */
+static void set_dualband_unit_mac_defaults(char *mac, size_t mac_len)
+{
+	strlcpy(mac, nvram_safe_get("et0macaddr"), mac_len);	/* get et0 MAC address for LAN */
+	inc_mac(mac, +2, mac_len);				/* MAC + 1 will be for WAN */
+	nvram_set("0:macaddr", mac);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
+	nvram_set("wl0_hwaddr", mac);
+	inc_mac(mac, +4, mac_len);				/* do not overlap with VIFs */
+	nvram_set("1:macaddr", mac);				/* fix WL mac for 5G */
+	nvram_set("wl1_hwaddr", mac);
+}
+
+/*
+ * Set dual-band MAC defaults in the PCI-path wireless NVRAM namespace.
+ * @param mac      caller scratch buffer; updated to the final 5 GHz MAC
+ * @param mac_len  size of the caller scratch buffer
+ * @return         none
+ */
+static void set_dualband_pci_mac_defaults(char *mac, size_t mac_len)
+{
+	strlcpy(mac, nvram_safe_get("et0macaddr"), mac_len);	/* get et0 MAC address for LAN */
+	inc_mac(mac, +2, mac_len);				/* MAC + 1 will be for WAN */
+	nvram_set("pci/1/1/macaddr", mac);			/* fix WL mac for 2,4G */
+	nvram_set("wl0_hwaddr", mac);
+	inc_mac(mac, +4, mac_len);				/* do not overlap with VIFs */
+	nvram_set("pci/2/1/macaddr", mac);			/* fix WL mac for 5G */
+	nvram_set("wl1_hwaddr", mac);
+}
+
+/*
  * Set the common dual-band wireless interface NVRAM mapping.
  * @return  none
  */
@@ -3052,13 +3086,7 @@ static int init_nvram(void)
 			nvram_set("wandevs", "vlan2");
 
 			/* fix MAC addresses for N66U and AC66U */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			/* wifi settings/channels */
 #ifdef TCONFIG_BCMWL6
@@ -3413,13 +3441,7 @@ static int init_nvram(void)
 			set_defaults(dir865l_pci_2_1_params, "pci/2/1/%s");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 5G (eth1) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 2,4G (eth2) */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			/* wifi settings/channels */
 			/* 5G settings */
@@ -3602,13 +3624,7 @@ static int init_nvram(void)
 			nvram_set("wandevs", "vlan2");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			nvram_set("lan_invert", "1");
 
@@ -3864,13 +3880,7 @@ static int init_nvram(void)
 			nvram_set("wandevs", "vlan2");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			nvram_set("lan_invert", "1");
 
@@ -4050,13 +4060,7 @@ static int init_nvram(void)
 			nvram_set("wandevs", "vlan2");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			nvram_set("lan_invert", "1");
 
@@ -4959,13 +4963,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5040,13 +5038,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5068,13 +5060,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5101,13 +5087,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5129,13 +5109,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5160,13 +5134,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5194,13 +5162,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5234,13 +5196,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5265,13 +5221,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5298,13 +5248,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for wl0 (0:) 5G - eth1 for F9K1113v2 */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for wl1 (1:) 2.4G - eth2 for F9K1113v2 */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			/* 5G settings */
 			nvram_set("wl0_bw_cap", "7");
@@ -5522,13 +5466,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for wl0 (0:) 5G - eth1 for F9K1113v2 and/or wl0 (0:) 5G - eth1 for F9K1113v2 */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for wl1 (1:) 2.4G - eth2 for F9K1113v2 and/or wl1 (1:) 2,4G - eth2 for F9K1113v2 */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			/* 5G settings */
 			nvram_set("wl0_bw_cap", "7");
@@ -5748,13 +5686,7 @@ static int init_nvram(void)
 			nvram_unset("et1macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -5973,13 +5905,7 @@ static int init_nvram(void)
 			nvram_unset("et1macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -6197,13 +6123,7 @@ static int init_nvram(void)
 			nvram_unset("et1macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -6420,13 +6340,7 @@ static int init_nvram(void)
 			nvram_unset("et1macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -6642,13 +6556,7 @@ static int init_nvram(void)
 			nvram_unset("et1macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			/* usb3.0 settings */
 			nvram_set("usb_usb3", "0");
@@ -6887,13 +6795,7 @@ static int init_nvram(void)
 			nvram_unset("et3macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			/* usb3.0 settings */
 			nvram_set("usb_usb3", "0");
@@ -7126,13 +7028,7 @@ static int init_nvram(void)
 			nvram_unset("et1macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_pci_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -7373,13 +7269,7 @@ static int init_nvram(void)
 			nvram_unset("et1macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -7629,13 +7519,7 @@ static int init_nvram(void)
 			nvram_unset("et1macaddr");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G (do not use the same MAC address like for LAN) */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -7863,13 +7747,7 @@ static int init_nvram(void)
 			if (nvram_match("boardrev", "0x1101")) {
 
 				/* fix MAC addresses */
-				strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-				inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-				nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G */
-				nvram_set("wl0_hwaddr", s);
-				inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-				nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-				nvram_set("wl1_hwaddr", s);
+				set_dualband_unit_mac_defaults(s, sizeof(s));
 
 				/* wifi country settings */
 				set_sg_wifi_country_defaults();
@@ -7877,13 +7755,7 @@ static int init_nvram(void)
 			else { /* Case DIR868L rev A1/B1 */
 
 				/* fix MAC addresses */
-				strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-				inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-				nvram_set("pci/1/1/macaddr", s);			/* fix WL mac for 2,4G */
-				nvram_set("wl0_hwaddr", s);
-				inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-				nvram_set("pci/2/1/macaddr", s);			/* fix WL mac for 5G */
-				nvram_set("wl1_hwaddr", s);
+				set_dualband_pci_mac_defaults(s, sizeof(s));
 
 				/* wifi country settings */
 				set_pci_sg_wifi_country_defaults();
@@ -8353,13 +8225,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 			nvram_set("blink_wl", "0"); /* disable blink by default for WS880 */
@@ -8867,13 +8733,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for wl0 (0:) 2,4G - eth1 for EA6350v1 and/or wl0 (0:) 5G - eth1 for EA6200 */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for wl1 (1:) 5G - eth2 for EA6350v1 and/or wl1 (1:) 2,4G - eth2 for EA6200 */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -8949,13 +8809,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -9148,13 +9002,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -9344,13 +9192,7 @@ static int init_nvram(void)
 			set_dualband_network_defaults();
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			set_usb_boot_defaults();
 
@@ -9562,13 +9404,7 @@ static int init_nvram(void)
 			nvram_set("wl1_vifnames", "wl1.1 wl1.2 wl1.3");
 
 			/* fix MAC addresses */
-			strlcpy(s, nvram_safe_get("et0macaddr"), sizeof(s));	/* get et0 MAC address for LAN */
-			inc_mac(s, +2, sizeof(s));				/* MAC + 1 will be for WAN */
-			nvram_set("0:macaddr", s);				/* fix WL mac for 2,4G */
-			nvram_set("wl0_hwaddr", s);
-			inc_mac(s, +4, sizeof(s));				/* do not overlap with VIFs */
-			nvram_set("1:macaddr", s);				/* fix WL mac for 5G */
-			nvram_set("wl1_hwaddr", s);
+			set_dualband_unit_mac_defaults(s, sizeof(s));
 
 			/* usb3.0 settings */
 			nvram_set("usb_usb3", "0");

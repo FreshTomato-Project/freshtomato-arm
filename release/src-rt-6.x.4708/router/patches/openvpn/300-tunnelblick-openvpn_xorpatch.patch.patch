@@ -20,7 +20,7 @@
                  link_socket_write_post_size_adjust(&size, size_delta, &c->c2.to_link);
 --- openvpn/src/openvpn/options.c
 +++ openvpn/src/openvpn/options.c
-@@ -832,6 +832,9 @@
+@@ -836,6 +836,9 @@
      o->resolve_retry_seconds = RESOLV_RETRY_INFINITE;
      o->resolve_in_advance = false;
      o->proto_force = -1;
@@ -30,7 +30,7 @@
      o->occ = true;
  #ifdef ENABLE_MANAGEMENT
      o->management_log_history_cache = 250;
-@@ -975,6 +978,9 @@
+@@ -979,6 +983,9 @@
  {
      setenv_str_i(es, "remote", e->remote, i);
      setenv_str_i(es, "remote_port", e->remote_port, i);
@@ -40,7 +40,7 @@
  
      if (e->http_proxy_options)
      {
-@@ -1611,6 +1617,9 @@
+@@ -1615,6 +1621,9 @@
      SHOW_BOOL(bind_ipv6_only);
      SHOW_INT(connect_retry_seconds);
      SHOW_INT(connect_timeout);
@@ -50,7 +50,7 @@
  
      if (o->http_proxy_options)
      {
-@@ -6667,6 +6676,46 @@
+@@ -6674,6 +6683,46 @@
          }
          options->proto_force = proto_force;
      }
@@ -99,7 +99,7 @@
          struct http_proxy_options *ho;
 --- openvpn/src/openvpn/options.h
 +++ openvpn/src/openvpn/options.h
-@@ -119,6 +119,9 @@
+@@ -121,6 +121,9 @@
      int connect_retry_seconds;
      int connect_retry_seconds_max;
      int connect_timeout;
@@ -181,7 +181,7 @@
  /*
   * Some Posix/Win32 differences.
   */
-@@ -613,32 +617,55 @@
+@@ -611,32 +615,55 @@
  
  /* read a TCP or UDP packet from link */
  static inline int
@@ -241,7 +241,7 @@
  }
  
  /*
-@@ -732,8 +759,31 @@
+@@ -730,8 +757,31 @@
  
  /* write a TCP or UDP packet to link */
  static inline ssize_t

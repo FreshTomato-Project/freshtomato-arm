@@ -410,6 +410,9 @@ define RouterOptions
 	if [ "$(NO_BONDING)" = "y" ]; then \
 		config_n TCONFIG_BONDING; \
 	fi; \
+	if [ "$(NO_ZEBRA)" = "y" ]; then \
+		config_n TCONFIG_ZEBRA; \
+	fi; \
 	if [ "$(NO_JFFS)" = "y" ]; then \
 		config_n TCONFIG_JFFS2; \
 	fi; \
@@ -547,6 +550,9 @@ define RouterOptions
 	fi; \
 	if [ "$(ROAM)" = "y" ]; then \
 		config_y TCONFIG_ROAM; \
+	fi; \
+	if [ "$(BCMNAT)" = "y" ]; then \
+		config_y TCONFIG_BCMNAT; \
 	fi; \
 	if [ "$(BCMSMP)" = "y" ]; then \
 		config_y TCONFIG_BCMSMP; \

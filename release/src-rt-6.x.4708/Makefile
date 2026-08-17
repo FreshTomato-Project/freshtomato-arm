@@ -455,6 +455,10 @@ define RouterOptions
 		echo "ERROR: FTPSSL requires FTP; remove NO_FTP or FTPSSL" >&2; \
 		exit 1; \
 	fi; \
+	if [ "$(FTPSSL)" = "y" ] && { [ "$(WOLFSSL)" = "y" ] || [ "$(WOLFSSLMIN)" = "y" ]; }; then \
+		echo "ERROR: FTPSSL is not supported with WOLFSSL/WOLFSSLMIN" >&2; \
+		exit 1; \
+	fi; \
 	if [ "$(FTPSSL)" = "y" ]; then \
 		config_y TCONFIG_FTP_SSL; \
 	fi; \

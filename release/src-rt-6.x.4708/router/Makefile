@@ -295,21 +295,22 @@ obj-$(TCONFIG_IPERF)		+= iperf
 obj-$(TCONFIG_BCMBSD)		+= bsd
 obj-$(TCONFIG_HAVEGED)		+= haveged
 
-ifneq ($(TCONFIG_HTTPS),)
- ifeq ($(TCONFIG_WOLFSSL),y)
-  export SSL_TARGET = wolfssl
+ifeq ($(TCONFIG_WOLFSSL),y)
+ export SSL_TARGET = wolfssl
+else
+ ifeq ($(TCONFIG_OPENSSL30),y)
+  export OPENSSLDIR = openssl-3.0
  else
-  ifeq ($(TCONFIG_OPENSSL30),y)
-   export OPENSSLDIR = openssl-3.0
+  ifeq ($(TCONFIG_OPENSSL11),y)
+   export OPENSSLDIR = openssl-1.1
   else
-   ifeq ($(TCONFIG_OPENSSL11),y)
-    export OPENSSLDIR = openssl-1.1
-   else
-    export OPENSSLDIR = openssl
-   endif
+   export OPENSSLDIR = openssl
   endif
-  export SSL_TARGET = $(OPENSSLDIR)
  endif
+ export SSL_TARGET = $(OPENSSLDIR)
+endif
+
+ifneq ($(TCONFIG_HTTPS),)
  obj-y				+= $(SSL_TARGET)
 else
  obj-y				+= cyassl
@@ -331,7 +332,7 @@ else
  export LIBCURL_TARGET = libcurl-8.17
 endif
 
-obj-y				+= $(SSL_TARGET) mssl httpd dropbear
+obj-y				+= mssl httpd dropbear
 obj-y				+= $(if $(or $(TCONFIG_BCMARM),$(TCONFIG_BBT),$(TCONFIG_NGINX)),zlib $(LIBCURL_TARGET),) mdu
 obj-y				+= $(if $(TCONFIG_DNSSEC),$(if $(TCONFIG_HTTPS),gmp nettle)) dnsmasq
 obj-$(TCONFIG_DNSCRYPT)		+= zlib libsodium dnscrypt

@@ -39,7 +39,7 @@
 #include <sys/sysinfo.h>
 #include <wlutils.h>
 #include <bcmdevs.h>
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 #include <bcmparams.h>
 #endif
 
@@ -95,7 +95,7 @@ static void restore_defaults(void)
 	struct nvram_tuple *t;
 #endif
 	int restore_defaults = 0;
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 	struct sysinfo info;
 #endif
 
@@ -122,7 +122,7 @@ static void restore_defaults(void)
 	nvram_set("os_version", tomato_version);
 	nvram_set("os_date", tomato_buildtime);
 
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 	/* Adjust et and wl thresh value after reset (for wifi-driver and et_linux.c) */
 	if (restore_defaults) {
 		memset(&info, 0, sizeof(struct sysinfo));
@@ -150,10 +150,10 @@ static void restore_defaults(void)
 #endif
 		}
 	}
-#endif /* TCONFIG_BLINK || TCONFIG_BCMARM */
+#endif /* TCONFIG_RTNPLUS */
 }
 
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 static void set_defaults(struct nvram_tuple *t, char *strprefix)
 {
 	char buf[256];
@@ -171,7 +171,7 @@ static void set_defaults(struct nvram_tuple *t, char *strprefix)
 		t++;
 	}
 }
-#endif /* TCONFIG_BLINK || TCONFIG_BCMARM */
+#endif /* TCONFIG_RTNPLUS */
 
 #ifdef CONFIG_BCMWL6A
 /* assign none-exist value */
@@ -892,7 +892,7 @@ static int init_vlan_ports(void)
 	int dirty = 0;
 	int model = get_model();
 
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 	char vlanports[] = "vlanXXXXports";
 	char vlanhw[] = "vlanXXXXhwname";
 	char vlanvid[] = "vlanXXXXvid";
@@ -919,18 +919,18 @@ static int init_vlan_ports(void)
 			}
 		}
 	}
-#endif /* TCONFIG_BLINK || TCONFIG_BCMARM */
+#endif /* TCONFIG_RTNPLUS */
 
 	switch (model) {
 
 #ifndef CONFIG_BCMWL6A
 
-#if !defined(TCONFIG_BLINK) && !defined(TCONFIG_BCMARM) /* RT only */
+#ifndef TCONFIG_RTNPLUS /* RT only */
 	case MODEL_RTN12:
 		dirty |= check_nv("vlan0ports", "3 2 1 0 5*"); /* L1 L2 L3 L4 CPU */
 		dirty |= check_nv("vlan1ports", "4 5"); /* WAN CPU */
 		break;
-#endif /* !TCONFIG_BLINK && !TCONFIG_BCMARM */
+#endif /* !TCONFIG_RTNPLUS */
 	case MODEL_WRT54G:
 		switch (check_hw_type()) {
 		case HW_BCM5352E: /* G v4, GS v3, v4 */
@@ -10665,14 +10665,14 @@ static void sysinit(void)
 
 	eval("buttons");
 
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 #ifdef TCONFIG_BCMARM
 	/* stealth mode */
 	if (nvram_match("stealth_mode", "0")) /* start blink_br only if stealth mode is off */
 #endif
 		/* enable LED for LAN / Bridge */
 		eval("blink_br");
-#endif /* TCONFIG_BLINK || TCONFIG_BCMARM */
+#endif /* TCONFIG_RTNPLUS */
 
 	if (!noconsole)
 		xstart("console");

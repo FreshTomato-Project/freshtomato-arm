@@ -36,7 +36,7 @@ OBJS = shutils.o wl.o wl_linux.o linux_timer.o defaults.o id.o misc.o \
        led.o version.o base64.o files.o strings.o process.o
 
 # RT-N+
-ifeq ($(or $(TCONFIG_BLINK),$(TCONFIG_BCMARM)),y)
+ifeq ($(TCONFIG_RTNPLUS),y)
  OBJS += nvparse.o
 endif
 

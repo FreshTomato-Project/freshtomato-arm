@@ -871,7 +871,7 @@ void asp_sysinfo(int argc, char **argv)
 	char system_type[64];
 	char cpuclk[32];
 	char cfe_version[16];
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 	char wl_tempsense[256];
 #endif
 
@@ -888,7 +888,7 @@ void asp_sysinfo(int argc, char **argv)
 	get_cpuinfo(system_type, sizeof(system_type), cpuclk, sizeof(cpuclk));
 #endif
 
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 	get_wl_tempsense(wl_tempsense, sizeof(wl_tempsense));
 #endif
 
@@ -918,7 +918,7 @@ void asp_sysinfo(int argc, char **argv)
 #ifdef TCONFIG_BCMARM
 	           "\tcputemp: '%s',\n"
 #endif
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 	           "\twlsense: '%s',\n"
 #endif
 	           "\tcfeversion: '%s'",
@@ -936,7 +936,7 @@ void asp_sysinfo(int argc, char **argv)
 #ifdef TCONFIG_BCMARM
 	           cputemp,
 #endif
-#if defined(TCONFIG_BLINK) || defined(TCONFIG_BCMARM) /* RT-N+ */
+#ifdef TCONFIG_RTNPLUS /* RT-N+ */
 	           wl_tempsense,
 #endif
 	           cfe_version);
@@ -1247,7 +1247,7 @@ void asp_statfs(int argc, char **argv)
 
 	/* used for /cifs/, /jffs/... if it returns squashfs type, assume it's not mounted */
 	if ((statfs(argv[0], &sf) != 0) || (sf.f_type == 0x73717368)
-#if defined(TCONFIG_BCMARM) || defined(TCONFIG_BLINK)
+#ifdef TCONFIG_RTNPLUS
 	    || (sf.f_type == 0x71736873)
 #endif
 	) {

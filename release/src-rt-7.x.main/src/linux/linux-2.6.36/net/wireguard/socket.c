@@ -353,6 +353,11 @@ int wg_socket_init(struct wg_device *wg, u16 port)
 	struct net *net;
 	int ret;
 	int retries = 0;
+#if IS_ENABLED(CONFIG_IPV6)
+	bool ipv6_mod, use_ipv6;
+	int disable_ipv6_all = -1;
+	int disable_ipv6_dflt = -1;
+#endif
 
 	struct udp_tunnel_sock_cfg cfg = {
 		.sk_user_data = wg,
@@ -384,32 +389,84 @@ int wg_socket_init(struct wg_device *wg, u16 port)
 	if (unlikely(!net))
 		return -ENONET;
 
+
 #if IS_ENABLED(CONFIG_IPV6)
+	ipv6_mod = ipv6_mod_enabled();
+
+	if (net->ipv6.devconf_all)
+		disable_ipv6_all = net->ipv6.devconf_all->disable_ipv6;
+	if (net->ipv6.devconf_dflt)
+		disable_ipv6_dflt = net->ipv6.devconf_dflt->disable_ipv6;
+
+	/*
+	 * On this legacy kernel ipv6_mod_enabled() is backed by a synthetic
+	 * ipv6_stub and does not prove that PF_INET6 is actually registered
+	 * or that IPv6 is enabled at runtime.
+	 */
+	use_ipv6 = ipv6_mod &&
+		   net->ipv6.devconf_all &&
+		   net->ipv6.devconf_dflt &&
+		   !disable_ipv6_all &&
+		   !disable_ipv6_dflt;
+
+	printk(KERN_DEBUG "%s: WGDIAG socket init: requested_port=%u "
+		"ipv6_mod_enabled=%d disable_ipv6(all/default)=%d/%d "
+		"use_ipv6=%d\n",
+		wg->dev->name, port, ipv6_mod,
+		disable_ipv6_all, disable_ipv6_dflt, use_ipv6);
+
 retry:
 #endif
 
 	ret = udp_sock_create(net, &port4, &new4);
 	if (ret < 0) {
-		pr_err("%s: Could not create IPv4 socket\n", wg->dev->name);
+		pr_err("%s: WGDIAG IPv4 socket create failed: ret=%d\n",
+		       wg->dev->name, ret);
 		goto out;
 	}
+	printk(KERN_DEBUG "%s: WGDIAG IPv4 socket ready: port=%u\n",
+		wg->dev->name, ntohs(inet_sk(new4->sk)->inet_sport));
+
 	set_sock_opts(new4);
 	setup_udp_tunnel_sock(net, new4, &cfg);
 
 #if IS_ENABLED(CONFIG_IPV6)
-	if (ipv6_mod_enabled()) {
+	if (use_ipv6) {
 		port6.local_udp_port = inet_sk(new4->sk)->inet_sport;
+		printk(KERN_DEBUG "%s: WGDIAG creating IPv6 socket: port=%u\n",
+			wg->dev->name, ntohs(port6.local_udp_port));
+
 		ret = udp_sock_create(net, &port6, &new6);
 		if (ret < 0) {
-			udp_tunnel_sock_release(new4);
-			if (ret == -EADDRINUSE && !port && retries++ < 100)
+			if (ret == -EADDRINUSE && !port && retries++ < 100) {
+				udp_tunnel_sock_release(new4);
 				goto retry;
-			pr_err("%s: Could not create IPv6 socket\n",
-			       wg->dev->name);
-			goto out;
+			}
+
+			if (ret == -EAFNOSUPPORT ||
+			    ret == -EPROTONOSUPPORT) {
+				printk(KERN_DEBUG "%s: WGDIAG IPv6 socket unavailable: "
+					"ret=%d; continuing IPv4-only\n",
+					wg->dev->name, ret);
+				new6 = NULL;
+			} else {
+				udp_tunnel_sock_release(new4);
+				pr_err("%s: WGDIAG IPv6 socket create failed: "
+				       "ret=%d port=%u retries=%d\n",
+				       wg->dev->name, ret,
+				       ntohs(port6.local_udp_port), retries);
+				goto out;
+			}
+		} else {
+			printk(KERN_DEBUG "%s: WGDIAG IPv6 socket ready: port=%u\n",
+				wg->dev->name,
+				ntohs(port6.local_udp_port));
+			set_sock_opts(new6);
+			setup_udp_tunnel_sock(net, new6, &cfg);
 		}
-		set_sock_opts(new6);
-		setup_udp_tunnel_sock(net, new6, &cfg);
+	} else {
+		printk(KERN_DEBUG "%s: WGDIAG IPv6 socket skipped; using IPv4-only\n",
+			wg->dev->name);
 	}
 #endif
 

@@ -39,6 +39,7 @@
 
 
 #include "rc.h"
+#include <defaults.h>
 
 #ifndef TCONFIG_BCMARM
  #include <sys/time.h>
@@ -66,30 +67,6 @@ const char avahicfg[]      = "avahi-daemon.conf";
 const char avahisrvpath[]  = "/etc/avahi/services";
 const char avahicfgalt[]   = "/etc/avahi/avahi-daemon_alt.conf";
 #endif /* TCONFIG_MDNS */
-
-#ifdef TCONFIG_BCMARM
- extern struct nvram_tuple rstats_defaults[];
-#endif /* TCONFIG_BCMARM */
-
-#ifdef TCONFIG_BCMARM
- extern struct nvram_tuple cstats_defaults[];
-#endif /* TCONFIG_BCMARM */
-
-#if defined(TCONFIG_FTP) && defined(TCONFIG_BCMARM)
- extern struct nvram_tuple ftp_defaults[];
-#endif /* TCONFIG_FTP && TCONFIG_BCMARM */
-
-#if defined(TCONFIG_SNMP) && defined(TCONFIG_BCMARM)
- extern struct nvram_tuple snmp_defaults[];
-#endif /* TCONFIG_SNMP && TCONFIG_BCMARM */
-
-#ifdef TCONFIG_BCMARM
- extern struct nvram_tuple upnp_defaults[];
-#endif /* TCONFIG_BCMARM */
-
-#ifdef TCONFIG_BCMBSD
- extern struct nvram_tuple bsd_defaults[];
-#endif /* TCONFIG_BCMBSD */
 
 /* Pop an alarm to recheck pids in 500 msec */
 static const struct itimerval pop_tv = { {0, 0}, {0, 500 * 1000} };
@@ -204,7 +181,6 @@ static void start_porthealth(void)
 
 void add_rstats_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	struct nvram_tuple *t;
 
 	/* Restore defaults if necessary */
@@ -213,14 +189,10 @@ void add_rstats_defaults(void)
 			nvram_set(t->name, t->value);
 		}
 	}
-#else
-	eval("nvram", "rstats_defaults", "--add");
-#endif /* TCONFIG_BCMARM */
 }
 
 void del_rstats_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	if (nvram_match("rstats_enable", "0")) {
 		struct nvram_tuple *t;
 
@@ -229,14 +201,10 @@ void del_rstats_defaults(void)
 			nvram_unset(t->name);
 		}
 	}
-#else
-	eval("nvram", "rstats_defaults", "--del");
-#endif /* TCONFIG_BCMARM */
 }
 
 void add_cstats_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	struct nvram_tuple *t;
 
 	/* Restore defaults if necessary */
@@ -245,14 +213,10 @@ void add_cstats_defaults(void)
 			nvram_set(t->name, t->value);
 		}
 	}
-#else
-	eval("nvram", "cstats_defaults", "--add");
-#endif /* TCONFIG_BCMARM */
 }
 
 void del_cstats_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	if (nvram_match("cstats_enable", "0")) {
 		struct nvram_tuple *t;
 
@@ -261,15 +225,11 @@ void del_cstats_defaults(void)
 			nvram_unset(t->name);
 		}
 	}
-#else
-	eval("nvram", "cstats_defaults", "--del");
-#endif /* TCONFIG_BCMARM */
 }
 
 #ifdef TCONFIG_FTP
 void add_ftp_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	struct nvram_tuple *t;
 
 	/* Restore defaults if necessary */
@@ -278,14 +238,10 @@ void add_ftp_defaults(void)
 			nvram_set(t->name, t->value);
 		}
 	}
-#else
-	eval("nvram", "ftp_defaults", "--add");
-#endif /* TCONFIG_BCMARM */
 }
 
 void del_ftp_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	if (nvram_match("ftp_enable", "0")) {
 		struct nvram_tuple *t;
 
@@ -294,16 +250,12 @@ void del_ftp_defaults(void)
 			nvram_unset(t->name);
 		}
 	}
-#else
-	eval("nvram", "ftp_defaults", "--del");
-#endif /* TCONFIG_BCMARM */
 }
 #endif /* TCONFIG_FTP */
 
 #ifdef TCONFIG_SNMP
 void add_snmp_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	struct nvram_tuple *t;
 
 	/* Restore defaults if necessary */
@@ -312,14 +264,10 @@ void add_snmp_defaults(void)
 			nvram_set(t->name, t->value);
 		}
 	}
-#else
-	eval("nvram", "snmp_defaults", "--add");
-#endif /* TCONFIG_BCMARM */
 }
 
 void del_snmp_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	if (nvram_match("snmp_enable", "0")) {
 		struct nvram_tuple *t;
 
@@ -328,15 +276,11 @@ void del_snmp_defaults(void)
 			nvram_unset(t->name);
 		}
 	}
-#else
-	eval("nvram", "snmp_defaults", "--del");
-#endif /* TCONFIG_BCMARM */
 }
 #endif /* TCONFIG_SNMP */
 
 void add_upnp_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	struct nvram_tuple *t;
 
 	/* Restore defaults if necessary */
@@ -345,14 +289,10 @@ void add_upnp_defaults(void)
 			nvram_set(t->name, t->value);
 		}
 	}
-#else
-	eval("nvram", "upnp_defaults", "--add");
-#endif /* TCONFIG_BCMARM */
 }
 
 void del_upnp_defaults(void)
 {
-#ifdef TCONFIG_BCMARM
 	if (nvram_match("upnp_enable", "0")) {
 		struct nvram_tuple *t;
 
@@ -361,9 +301,6 @@ void del_upnp_defaults(void)
 			nvram_unset(t->name);
 		}
 	}
-#else
-	eval("nvram", "upnp_defaults", "--del");
-#endif /* TCONFIG_BCMARM */
 }
 
 #ifdef TCONFIG_BCMBSD

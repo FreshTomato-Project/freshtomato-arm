@@ -84,7 +84,7 @@
 #include <sys/sysmacros.h>
 #include <mtd/mtd-user.h>
 
-#define HTTP_MAX_LISTENERS	16
+#define HTTP_MAX_LISTENERS	((4 * BRIDGE_COUNT) + (2 * MWAN_MAX) + 4)
 #define SERVER_NAME		"httpd"
 #define PROTOCOL		"HTTP/1.0"
 #define RFC1123FMT		"%a, %d %b %Y %H:%M:%S GMT"

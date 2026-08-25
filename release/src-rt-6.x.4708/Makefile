@@ -1188,6 +1188,7 @@ endif
 	@$(MAKE) setprofile N=$(TPROFILE) B=$(B) DESC="$(BUILD_DESC)" USB="$(USB)"
 ifneq ($(CONFIG_ONLY),y)
 ifeq ($(CONFIG_SHARED_ONLY),y)
+	@$(MAKE) -C router busybox
 	@$(MAKE) -C router shared
 else
 	@$(MAKE) all

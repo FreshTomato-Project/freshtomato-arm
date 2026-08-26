@@ -119,7 +119,9 @@ const aspapi_t aspapi[] = {
 	{ "dns",			asp_dns				},
 	{ "ident",			asp_ident			},
 	{ "lanip",			asp_lanip			},
+#ifdef TCONFIG_L7
 	{ "layer7",			asp_layer7			},
+#endif
 	{ "link_uptime",		asp_link_uptime			},
 	{ "netdev",			asp_netdev			},
 
@@ -717,7 +719,9 @@ static const nvset_t nvset_list[] = {
 	{ "ct_udp_timeout",		V_LENGTH(5, 15)			},
 	{ "ct_timeout",			V_LENGTH(5, 15)			},
 	{ "nf_ttl",			V_LENGTH(1, 6)			},
+#ifdef TCONFIG_L7
 	{ "nf_l7in",			V_01				},
+#endif
 	{ "nf_sip",			V_01				},
 	{ "ct_hashsize",		V_NUM				},
 	{ "nf_rtsp",			V_01				},

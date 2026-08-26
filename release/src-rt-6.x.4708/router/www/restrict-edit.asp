@@ -21,7 +21,9 @@
 
 //	<% nvram(''); %>
 
+/* L7-BEGIN */
 //	<% layer7(); %>
+/* L7-END */
 
 //	<% nvramseq("rrules", "rrule%d", 0, 99); %>
 
@@ -47,10 +49,12 @@ rule[3] *= 1;
 rule[4] *= 1;
 rule[8] *= 1;
 
+/* L7-BEGIN */
 layer7.sort();
 for (i = 0; i < layer7.length; ++i)
 	layer7[i] = [layer7[i],layer7[i]];
 layer7.unshift(['','Layer 7 (disabled)']);
+/* L7-END */
 
 var ipp2p = [[0,'IPP2P (disabled)'],[0xFFFF,'All IPP2P Filters'],[1,'AppleJuice'],[2,'Ares'],[4,'BitTorrent'],[8,'Direct Connect'],[16,'eDonkey'],[32,'Gnutella'],
              [64,'Kazaa'],[128,'Mute'],[4096,'PPLive/UUSee'],[256,'SoulSeek'],[512,'Waste'],[1024,'WinMX'],[2048,'XDCC'],[8192,'Xunlei/QQCyclone']];
@@ -144,7 +148,12 @@ bpg.setup = function() {
 		{ type: 'select', prefix: '<div class="box2">', suffix: '<\/div>', options: [['a','Any Port'],['d','Dst Port'],['s','Src Port'],['x','Src or Dst']] },
 		{ type: 'text', prefix: '<div class="box3">', suffix: '<\/div>', maxlen: 32 },
 		{ type: 'select', prefix: '<div class="box4">', suffix: '<\/div>', options: ipp2p },
+/* L7-BEGIN */
 		{ type: 'select', prefix: '<div class="box5">', suffix: '<\/div>', options: layer7 },
+/* L7-END */
+/* L7-NO-BEGIN */
+		{ type: 'custom', custom: '<input type="hidden" value="">' },
+/* L7-NO-END */
 		{ type: 'select', prefix: '<div class="box6">', suffix: '<\/div>', options: [[0,'Any Address'],[1,'Dst IP'],[2,'Src IP']] },
 		{ type: 'text', prefix: '<div class="box7">', suffix: '<\/div>', maxlen: 64 }
 		] } ] );
@@ -226,8 +235,10 @@ bpg.dataToView = function(data) {
 			}
 		}
 	}
+/* L7-BEGIN */
 	else if (data[4] != '')
 		s += ', L7: '+data[4];
+/* L7-END */
 
 	return [s];
 }

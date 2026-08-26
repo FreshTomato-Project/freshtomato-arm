@@ -18,7 +18,10 @@
 
 <script>
 
-//	<% nvram("ct_tcp_timeout,ct_udp_timeout,ct_timeout,ct_max,ct_hashsize,nf_l7in,nf_ttl,nf_sip,nf_rtsp,nf_pptp,nf_h323,nf_ftp,fw_nat_tuning,ipsec_pass"); %>
+//	<% nvram("ct_tcp_timeout,ct_udp_timeout,ct_timeout,ct_max,ct_hashsize,nf_ttl,nf_sip,nf_rtsp,nf_pptp,nf_h323,nf_ftp,fw_nat_tuning,ipsec_pass"); %>
+/* L7-BEGIN */
+//	<% nvram("nf_l7in"); %>
+/* L7-END */
 
 var checker = null;
 var timer = new TomatoTimer(check);
@@ -135,7 +138,9 @@ function save() {
 	fom.ct_tcp_timeout.value = tcp.join(' ');
 	fom.ct_udp_timeout.value = udp.join(' ');
 	fom.ct_timeout.value = ct.join(' ');
+/* L7-BEGIN */
 	fom.nf_l7in.value = fom._f_l7in.checked ? 1 : 0;
+/* L7-END */
 	fom.nf_sip.value = fom._f_sip.checked ? 1 : 0;
 	fom.nf_rtsp.value = fom._f_rtsp.checked ? 1 : 0;
 	fom.nf_pptp.value = fom._f_pptp.checked ? 1 : 0;
@@ -174,7 +179,9 @@ function save() {
 <input type="hidden" name="ct_tcp_timeout" value="">
 <input type="hidden" name="ct_udp_timeout" value="">
 <input type="hidden" name="ct_timeout" value="">
+<!-- L7-BEGIN -->
 <input type="hidden" name="nf_l7in" value="">
+<!-- L7-END -->
 <input type="hidden" name="nf_ttl">
 <input type="hidden" name="nf_rtsp">
 <input type="hidden" name="nf_pptp">
@@ -285,8 +292,10 @@ function save() {
 				{suffix: '&nbsp; Large', name: '_fw_nat_tuning', id: '_fw_nat_tun_3', type: 'radio', value: nvram.fw_nat_tuning == '2' } ]},
 			{ title: 'TTL Adjust', multi: [
 				{ name: 'f_nf_ttl', type: 'select', options: v, value: nvram.nf_ttl.substr(0, 2) == 'c:' ? '' : nvram.nf_ttl },
-				{ name: 'f_ttl_val', type: 'text', maxlen: 3, size: 6, value: nvram.nf_ttl.substr(0, 2) == 'c:' ?  nvram.nf_ttl.substr(2, 5) : '' } ] },
-			{ title: 'Inbound Layer 7', name: 'f_l7in',type: 'checkbox', value: nvram.nf_l7in != '0' }
+				{ name: 'f_ttl_val', type: 'text', maxlen: 3, size: 6, value: nvram.nf_ttl.substr(0, 2) == 'c:' ?  nvram.nf_ttl.substr(2, 5) : '' } ] }
+/* L7-BEGIN */
+			,{ title: 'Inbound Layer 7', name: 'f_l7in', type: 'checkbox', value: nvram.nf_l7in != '0' }
+/* L7-END */
 		]);
 	</script>
 </div>

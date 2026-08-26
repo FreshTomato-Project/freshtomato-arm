@@ -22,7 +22,9 @@
 
 //	<% nvram("qos_enable,qos_mode,qos_classnames,qos_orules,qos_cake_prio_mode,qos_classify"); %>
 
+/* L7-BEGIN */
 //	<% layer7(); %>
+/* L7-END */
 
 function show() {
 	elem.setInnerHTML('notice_container', '<div id="notice">'+isup.notice_iptables.replace(/\n/g, '<br>')+'<\/div><br style="clear:both">');
@@ -58,10 +60,12 @@ var dscp = [['','DSCP (any)'],['0x00','BE'],['0x08','CS1'],['0x10','CS2'],['0x18
 for (var i = 1; i < dscp.length - 1; ++i)
 	dscp[i][1] = 'DSCP Class '+dscp[i][1];
 
+/* L7-BEGIN */
 layer7.sort();
 for (i = 0; i < layer7.length; ++i)
 	layer7[i] = [layer7[i],layer7[i]];
 layer7.unshift(['', 'Layer 7 (disabled)']);
+/* L7-END */
 
 var class1 = [[-1,'Disabled']];
 for (i = 0; i < 10; ++i)
@@ -120,7 +124,12 @@ qosg.setup = function() {
 			{ type: 'text', maxlen: 130, prefix: '<div class="x2c">', suffix: '<\/div>' },
 
 			{ type: 'select', prefix: '<div class="x3a">', suffix: '<\/div>', options: ipp2p },
+/* L7-BEGIN */
 			{ type: 'select', prefix: '<div class="x3b">', suffix: '<\/div>', options: layer7 },
+/* L7-END */
+/* L7-NO-BEGIN */
+			{ type: 'custom', custom: '<input type="hidden" value="">' },
+/* L7-NO-END */
 
 			{ type: 'select', prefix: '<div class="x4a">', suffix: '<\/div>', options: dscp },
 			{ type: 'text', maxlen: 4, prefix: '<div class="x4b">', suffix: '<\/div>' },
@@ -189,8 +198,10 @@ qosg.dataToView = function(data) {
 			}
 
 	}
+/* L7-BEGIN */
 	else if (data[6] != '')
 		b.push('L7: '+data[6]);
+/* L7-END */
 
 	if (data[9] != '') {
 		s = dscpClass(data[9]);

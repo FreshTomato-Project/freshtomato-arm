@@ -1084,7 +1084,9 @@ struct nvram_tuple router_defaults[] = {
 	{ "ct_max",			""				},
 	{ "ct_hashsize",		"2048"				},
 	{ "nf_ttl",			"0"				},
+#ifdef TCONFIG_L7
 	{ "nf_l7in",			"1"				},
+#endif
 	{ "nf_sip",			"0"				},
 	{ "nf_rtsp",			"0"				},
 	{ "nf_pptp",			"1"				},

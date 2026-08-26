@@ -341,6 +341,7 @@ int ipt_ipp2p(const char *v, char *opt, const size_t buf_sz)
 	return 1;
 }
 
+#ifdef TCONFIG_L7
 char **layer7_in;
 
 /* This L7 matches inbound traffic, caches the results, then the L7 outbound
@@ -429,6 +430,7 @@ int ipt_layer7(const char *v, char *opt, const size_t buf_sz)
 
 	return 1;
 }
+#endif /* TCONFIG_L7 */
 
 /*
  * Remove existing cstats ipt_account rules from the live FORWARD chain.
@@ -1354,7 +1356,9 @@ static void filter_forward(void)
 	if (is_anywanup()) {
 		ipt_restrictions();
 
+#ifdef TCONFIG_L7
 		ipt_layer7_inbound();
+#endif
 	}
 
 	ipt_webmon();
@@ -2046,7 +2050,9 @@ int start_firewall(void)
 	modprobe_r("ip6t_REJECT");
 #endif
 
+#ifdef TCONFIG_L7
 	modprobe_r("xt_layer7");
+#endif
 	modprobe_r("xt_recent");
 	modprobe_r("xt_HL");
 	modprobe_r("xt_length");

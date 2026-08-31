@@ -1,6 +1,6 @@
 --- miniupnpd/upnpsoap.c
 +++ miniupnpd/upnpsoap.c
-@@ -854,6 +854,16 @@ GetSpecificPortMappingEntry(struct upnphttp * h, const char * action, const char
+@@ -920,6 +920,16 @@ GetSpecificPortMappingEntry(struct upnphttp * h, const char * action, const char
  #ifdef ENABLE_PCP
  		hide_pcp_nonce(desc);
  #endif
@@ -17,7 +17,7 @@
  		bodylen = snprintf(body, sizeof(body), resp,
  				action, ns/*SERVICE_TYPE_WANIPC*/,
  				(unsigned int)iport, int_ip, desc, leaseduration,
-@@ -1124,6 +1134,16 @@ GetGenericPortMappingEntry(struct upnphttp * h, const char * action, const char
+@@ -1208,6 +1218,16 @@ GetGenericPortMappingEntry(struct upnphttp * h, const char * action, const char
  #ifdef ENABLE_PCP
  		hide_pcp_nonce(desc);
  #endif

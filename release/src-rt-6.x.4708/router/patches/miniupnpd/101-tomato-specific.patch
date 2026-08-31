@@ -139,9 +139,7 @@
  #include <libiptc/libip6tc.h>
  #include "tiny_nf_nat.h"
  
---- miniupnpd/netfilter/iptpinhole.c
-+++ miniupnpd/netfilter/iptpinhole.c
-@@ -174,7 +174,11 @@
+@@ -170,7 +174,11 @@
                           struct ip6t_entry * e)
  {
  	IP6TC_HANDLE h;
@@ -153,7 +151,7 @@
  
  	h = ip6tc_init(table);
  	if(!h) {
-@@ -331,7 +335,11 @@
+@@ -327,7 +335,11 @@
  	const struct ip6t_entry_match *match = NULL;
  	/*const struct ip6t_entry_target *target = NULL;*/
  	unsigned int index;

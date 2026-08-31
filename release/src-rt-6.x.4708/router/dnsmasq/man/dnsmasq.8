@@ -174,12 +174,18 @@ Specify an alternate path for dnsmasq to record its process-id in. Normally /var
 .B \-u, --user=<username>
 Specify the userid to which dnsmasq will change after startup. Dnsmasq must normally be started as root, but it will drop root 
 privileges after startup by changing id to another user. Normally this user is "nobody" but that 
-can be over-ridden with this switch.
+can be over-ridden with this switch. 
 .TP
 .B \-g, --group=<groupname> 
 Specify the group which dnsmasq will run
 as. The default is "dip", if available, to facilitate access to
-/etc/ppp/resolv.conf which is not normally world readable.
+/etc/ppp/resolv.conf which is not normally world readable. If "dip" is not available, the default becomes
+the main group associated with the uid specified by
+.B --user
+, or "nobody".
+Specifying
+.B --group
+without an argument inhibits any change to the gid of the process, even to the defaults.
 .TP
 .B \-v, --version
 Print the version number.
@@ -1041,7 +1047,10 @@ options. If the lease time is given, then leases
 will be given for that length of time. The lease time is in seconds,
 or minutes (eg 45m) or hours (eg 1h) or days (2d) or weeks (1w) or "infinite". If not given,
 the default lease time is one hour for IPv4 and one day for IPv6. The
-minimum lease time is two minutes. For IPv6 ranges, the lease time
+minimum lease time is two minutes. An explicitly configured lease time also
+affects IPv6 router advertisements: it acts as a ceiling on the advertised
+prefix lifetimes. For constructed ranges it also acts as a floor, unless the
+prefix is being deprecated. For IPv6 ranges, the lease time
 maybe "deprecated"; this sets the preferred lifetime sent in a DHCP
 lease or router advertisement to zero, which causes clients to use
 other addresses, if available, for new connections as a prelude to renumbering.
@@ -1912,7 +1921,12 @@ DNSMASQ_CLIENT_ID if the host provided a client-id.
 
 DNSMASQ_CIRCUIT_ID, DNSMASQ_SUBSCRIBER_ID, DNSMASQ_REMOTE_ID if a
 DHCP relay-agent added any of these options.
- 
+
+DNSMASQ_CPEWAN_OUI, DNSMASQ_CPEWAN_SERIAL, DNSMASQ_CPEWAN_CLASS from
+an RFC3925 Vendor-Identifying Vendor-Specific Information Option
+containing the Broadband Forum enterprise number and options
+defined in TR-069.
+
 If the client provides vendor-class, DNSMASQ_VENDOR_CLASS.
 
 For IPv6 only:
@@ -1935,7 +1949,17 @@ only  supplied for
 since these data are not held in dnsmasq's lease
 database.
 
-
+Please note that the environment options DNSMASQ_USER_CLASS0..DNSMASQ_USER_CLASSn, 
+DNSMASQ_VENDOR_CLASS0..DNSMASQ_VENDOR_CLASSn,
+DNSMASQ_VENDOR_CLASS,
+DNSMASQ_CIRCUIT_ID, DNSMASQ_SUBSCRIBER_ID, DNSMASQ_REMOTE_ID,
+DNSMASQ_CPEWAN_OUI, DNSMASQ_CPEWAN_SERIAL, DNSMASQ_CPEWAN_CLASS,
+DNSMASQ_MUD_URL all contain values which are derived directly from untrusted data recieved
+from clients. Be very careful with quoting when using these values, lest an attacker sends
+a vendor class of "rm -rf /". Note also that the RFCs defining these options tend to simply
+define them an opaque data: the implication but not the letter of the definition is
+printable strings. In practise, dnsmasq passes all octets except zero, which is treated
+as a terminator.
 
 All file descriptors are
 closed except stdin, which is open to /dev/null, and stdout and stderr which capture output for logging by dnsmasq. 

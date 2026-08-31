@@ -7,11 +7,10 @@ from .. import mparser
 from .exceptions import InvalidCode, InvalidArguments
 from .helpers import flatten, resolve_second_level_holders
 from .operator import MesonOperator
-from ..mesonlib import HoldableObject, MesonBugException
+from ..mesonlib import HoldableObject, MesonBugException, SimpleABC, SubProject, ROOT_SUBPROJECT
 import textwrap
 
 import typing as T
-from abc import ABCMeta
 from contextlib import AbstractContextManager
 
 if T.TYPE_CHECKING:
@@ -32,9 +31,6 @@ TYPE_key_resolver = T.Callable[[mparser.BaseNode], str]
 TYPE_op_arg = T.TypeVar('TYPE_op_arg', bound='TYPE_var', contravariant=True)
 TYPE_op_func = T.Callable[[TYPE_op_arg, TYPE_op_arg], TYPE_var]
 TYPE_method_func = T.Callable[['InterpreterObject', T.List[TYPE_var], TYPE_kwargs], TYPE_var]
-
-
-SubProject = T.NewType('SubProject', str)
 
 class InterpreterObject:
     TRIVIAL_OPERATORS: T.Dict[
@@ -106,7 +102,7 @@ class InterpreterObject:
         # Current node set during a method call. This can be used as location
         # when printing a warning message during a method call.
         self.current_node:  mparser.BaseNode = None
-        self.subproject = subproject or SubProject('')
+        self.subproject = subproject or ROOT_SUBPROJECT
 
     # The type of the object that can be printed to the user
     def display_name(self) -> str:
@@ -125,7 +121,13 @@ class InterpreterObject:
             if not getattr(method, 'no-second-level-holder-flattening', False):
                 args, kwargs = resolve_second_level_holders(args, kwargs)
             return method(self, args, kwargs)
-        raise InvalidCode(f'Unknown method "{method_name}" in object {self} of type {type(self).__name__}.')
+
+        ustr = f'Unknown method "{method_name}" in object {self} of type {type(self).__name__}.'
+        from difflib import get_close_matches
+        close_matches = get_close_matches(method_name, self.METHODS)
+        if close_matches:
+            ustr += f' Did you mean "{close_matches[0]}"?'
+        raise InvalidCode(ustr)
 
     def operator_call(self, operator: MesonOperator, other: TYPE_var) -> TYPE_var:
         if operator in self.TRIVIAL_OPERATORS:
@@ -215,7 +217,7 @@ class ObjectHolder(InterpreterObject, T.Generic[InterpreterObjectTypeVar]):
     def __repr__(self) -> str:
         return f'<[{type(self).__name__}] holds [{type(self.held_object).__name__}]: {self.held_object!r}>'
 
-class IterableObject(metaclass=ABCMeta):
+class IterableObject(metaclass=SimpleABC):
     '''Base class for all objects that can be iterated over in a foreach loop'''
 
     def iter_tuple_size(self) -> T.Optional[int]:
@@ -231,3 +233,7 @@ class IterableObject(metaclass=ABCMeta):
 class ContextManagerObject(MesonInterpreterObject, AbstractContextManager):
     def __init__(self, subproject: 'SubProject') -> None:
         super().__init__(subproject=subproject)
+
+
+class DefaultObject(MesonInterpreterObject):
+    """A default value to a keyword argument."""

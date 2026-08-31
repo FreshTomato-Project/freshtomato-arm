@@ -12,8 +12,9 @@ from . import ExtensionModule, ModuleReturnValue, ModuleObject, ModuleInfo
 from .. import build, mesonlib, mlog, dependencies
 from ..options import OptionKey
 from ..cmake import TargetOptions, cmake_defines_to_args
+from ..dependencies.cmake import CMakeDependency
 from ..interpreter import SubprojectHolder
-from ..interpreter.type_checking import REQUIRED_KW, INSTALL_DIR_KW, INCLUDE_TYPE, NoneType, in_set_validator
+from ..interpreter.type_checking import NATIVE_KW, REQUIRED_KW, INSTALL_DIR_KW, INCLUDE_TYPE, NoneType, in_set_validator
 from ..interpreterbase import (
     FeatureNew,
 
@@ -22,7 +23,6 @@ from ..interpreterbase import (
 
     InvalidArguments,
     InterpreterException,
-    SubProject,
 
     typed_pos_args,
     typed_kwargs,
@@ -59,6 +59,7 @@ if T.TYPE_CHECKING:
 
         options: T.Optional[CMakeSubprojectOptions]
         cmake_options: T.List[str]
+        native: mesonlib.MachineChoice
 
     class TargetKW(TypedDict):
 
@@ -104,7 +105,6 @@ endmacro()
 
 class CMakeSubproject(ModuleObject):
     def __init__(self, subp: SubprojectHolder):
-        assert isinstance(subp, SubprojectHolder)
         assert subp.cm_interpreter is not None
         super().__init__()
         self.subp = subp
@@ -272,8 +272,16 @@ class CmakeModule(ExtensionModule):
         if not cmakebin.found():
             return False
 
-        p, stdout, stderr = mesonlib.Popen_safe(cmakebin.get_command() + ['--system-information', '-G', 'Ninja'])[0:3]
-        if p.returncode != 0:
+        # Try different CMake generators since specifying no generator may fail
+        # in cygwin for some reason
+        for gen in CMakeDependency.class_cmake_generators:
+            cmd = cmakebin.get_command() + ['--system-information']
+            if gen:
+                cmd += ['-G', gen]
+            p, stdout, stderr = mesonlib.Popen_safe(cmd)[0:3]
+            if p.returncode == 0:
+                break
+        else:
             mlog.log(f'error retrieving cmake information: returnCode={p.returncode} stdout={stdout} stderr={stderr}')
             return False
 
@@ -418,6 +426,7 @@ class CmakeModule(ExtensionModule):
     @typed_kwargs(
         'cmake.subproject',
         REQUIRED_KW,
+        NATIVE_KW.evolve(since='1.12.0'),
         KwargInfo('options', (CMakeSubprojectOptions, NoneType), since='0.55.0'),
         KwargInfo(
             'cmake_options',
@@ -431,13 +440,14 @@ class CmakeModule(ExtensionModule):
     def subproject(self, state: ModuleState, args: T.Tuple[str], kwargs_: Subproject) -> T.Union[SubprojectHolder, CMakeSubproject]:
         if kwargs_['cmake_options'] and kwargs_['options'] is not None:
             raise InterpreterException('"options" cannot be used together with "cmake_options"')
-        subp_name = SubProject(args[0])
+        subp_name = mesonlib.SubProject(args[0])
         kw: kwargs.DoSubproject = {
             'required': kwargs_['required'],
             'options': kwargs_['options'],
             'cmake_options': kwargs_['cmake_options'],
             'default_options': {},
             'version': [],
+            'for_machine': kwargs_['native'],
         }
         subp = self.interpreter.do_subproject(subp_name, kw, force_method='cmake')
         if not subp.found():

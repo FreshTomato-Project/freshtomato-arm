@@ -9,6 +9,7 @@ import typing as T
 from . import ExtensionModule, ModuleInfo
 from ..build import CustomTarget, CustomTargetIndex, GeneratedList
 from ..compilers.compilers import lang_suffixes
+from ..interpreter.decorators import apply_machine_map
 from ..interpreter.interpreterobjects import extract_required_kwarg
 from ..interpreter.type_checking import NoneType, REQUIRED_KW, DISABLER_KW, NATIVE_KW
 from ..interpreterbase import (
@@ -179,11 +180,11 @@ class LexHolder(ObjectHolder[LexGenerator]):
         target = CustomTarget(
             f'codegen-lex-{name}-{for_machine.get_lower_case_name()}',
             self.interpreter.subdir,
-            self.interpreter.subproject,
             self.interpreter.environment,
             command,
             [input],
             outputs,
+            self.interpreter.current_build_project(),
             backend=self.interpreter.backend,
             description='Generating lexer {{}} with {}'.format(self.held_object.name),
         )
@@ -254,11 +255,11 @@ class YaccHolder(ObjectHolder[YaccGenerator]):
         target = CustomTarget(
             f'codegen-yacc-{name}-{for_machine.get_lower_case_name()}',
             self.interpreter.subdir,
-            self.interpreter.subproject,
             self.interpreter.environment,
             command,
             [input],
             outputs,
+            self.interpreter.current_build_project(),
             backend=self.interpreter.backend,
             description='Generating parser {{}} with {}'.format(self.held_object.name),
         )
@@ -297,6 +298,7 @@ class CodeGenModule(ExtensionModule):
         DISABLER_KW,
         NATIVE_KW
     )
+    @apply_machine_map
     @disablerIfNotFound
     def lex_method(self, state: ModuleState, args: T.Tuple, kwargs: FindLexKwargs) -> LexGenerator:
         disabled, required, feature = extract_required_kwarg(kwargs, state.subproject)
@@ -308,7 +310,6 @@ class CodeGenModule(ExtensionModule):
         if kwargs['implementations']:
             names = kwargs['implementations']
         else:
-            assert state.environment.machines[kwargs['native']] is not None, 'for mypy'
             if state.environment.machines[kwargs['native']].system == 'windows':
                 names.append('win_flex')
             names.extend(['flex', 'reflex', 'lex'])
@@ -376,6 +377,7 @@ class CodeGenModule(ExtensionModule):
         DISABLER_KW,
         NATIVE_KW,
     )
+    @apply_machine_map
     @disablerIfNotFound
     def yacc_method(self, state: ModuleState, args: T.Tuple, kwargs: FindYaccKwargs) -> YaccGenerator:
         disabled, required, feature = extract_required_kwarg(kwargs, state.subproject)
@@ -386,7 +388,6 @@ class CodeGenModule(ExtensionModule):
         if kwargs['implementations']:
             names = kwargs['implementations']
         else:
-            assert state.environment.machines[kwargs['native']] is not None, 'for mypy'
             if state.environment.machines[kwargs['native']].system == 'windows':
                 names = ['win_bison', 'bison', 'yacc']
             else:
@@ -411,7 +412,7 @@ class CodeGenModule(ExtensionModule):
                     node=state.current_node)
             return YaccGenerator(name, bin, kwargs['native'])
 
-        yacc_args: T.List[str] = ['@INPUT@', '-o', '@OUTPUT0@']
+        yacc_args: T.List[str] = []
 
         impl = T.cast('YaccImpls', bin.name)
         if impl == 'yacc' and isinstance(bin, ExternalProgram):
@@ -433,6 +434,7 @@ class CodeGenModule(ExtensionModule):
                          'output location be configurable, and may not work.',
                          fatal=False)
             yacc_args.append('-H')
+        yacc_args.extend(['-o', '@OUTPUT0@', '@INPUT@'])
         return YaccGenerator(name, bin, kwargs['native'], T.cast('ImmutableListProtocol[str]', yacc_args))
 
 

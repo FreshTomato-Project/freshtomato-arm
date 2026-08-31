@@ -32,10 +32,9 @@ from . import WrapMode
 from .. import coredata
 from ..mesonlib import (
     DirectoryLock, DirectoryLockAction, quiet_git, GIT, ProgressBar, MesonException,
-    windows_proof_rmtree, Popen_safe
+    windows_proof_rmtree, Popen_safe, SubProject,
 )
 from ..interpreterbase import FeatureNew
-from ..interpreterbase import SubProject
 from .. import mesonlib
 
 if T.TYPE_CHECKING:
@@ -197,7 +196,7 @@ class WrapNotFoundException(WrapException):
     pass
 
 class PackageDefinition:
-    def __init__(self, name: str, subprojects_dir: str, type_: T.Optional[str] = None, values: T.Optional[T.Dict[str, str]] = None):
+    def __init__(self, name: SubProject, subprojects_dir: str, type_: T.Optional[str] = None, values: T.Optional[T.Dict[str, str]] = None):
         self.name = name
         self.subprojects_dir = subprojects_dir
         self.type = type_
@@ -224,17 +223,17 @@ class PackageDefinition:
         self.provided_deps[self.name.lower()] = None
 
     @staticmethod
-    def from_values(name: str, subprojects_dir: str, type_: str, values: T.Dict[str, str]) -> PackageDefinition:
+    def from_values(name: SubProject, subprojects_dir: str, type_: str, values: T.Dict[str, str]) -> PackageDefinition:
         return PackageDefinition(name, subprojects_dir, type_, values)
 
     @staticmethod
     def from_directory(filename: str) -> PackageDefinition:
-        name = os.path.basename(filename)
+        name = SubProject(os.path.basename(filename))
         subprojects_dir = os.path.dirname(filename)
         return PackageDefinition(name, subprojects_dir)
 
     @staticmethod
-    def from_wrap_file(filename: str, subproject: SubProject = SubProject('')) -> PackageDefinition:
+    def from_wrap_file(filename: str, subproject: SubProject = mesonlib.ROOT_SUBPROJECT) -> PackageDefinition:
         config, type_, values = PackageDefinition._parse_wrap(filename)
         if 'diff_files' in values:
             FeatureNew('Wrap files with diff_files', '0.63.0').use(subproject)
@@ -254,21 +253,21 @@ class PackageDefinition:
             for i, p in enumerate(fname.parts):
                 if i % 2 == 0:
                     if p == '..':
-                        raise WrapException('wrap-redirect filename cannot contain ".."')
+                        raise WrapException(f"wrap-redirect filename {values['filename']!r} cannot contain '..'")
                 else:
                     if p != 'subprojects':
-                        raise WrapException('wrap-redirect filename must be in the form foo/subprojects/bar.wrap')
+                        raise WrapException(f"wrap-redirect filename {values['filename']!r} must be in the form foo/subprojects/bar.wrap")
             if fname.suffix != '.wrap':
-                raise WrapException('wrap-redirect filename must be a .wrap file')
+                raise WrapException(f"wrap-redirect filename {values['filename']!r} must be a .wrap file")
             fname = Path(subprojects_dir, fname)
             if not fname.is_file():
-                raise WrapException(f'wrap-redirect {fname} filename does not exist')
+                raise WrapException(f"wrap-redirect filename {values['filename']!r} does not exist")
             wrap = PackageDefinition.from_wrap_file(str(fname), subproject)
             wrap.original_filename = filename
             wrap.redirected = True
             return wrap
 
-        name = os.path.basename(filename)[:-5]
+        name = SubProject(os.path.basename(filename)[:-5])
         wrap = PackageDefinition.from_values(name, subprojects_dir, type_, values)
         wrap.original_filename = filename
         wrap.parse_provide_section(config)
@@ -367,7 +366,7 @@ def verbose_git(cmd: T.List[str], workingdir: str, check: bool = False) -> bool:
 class Resolver:
     source_dir: str
     subdir: str
-    subproject: SubProject = SubProject('')
+    subproject: SubProject = mesonlib.ROOT_SUBPROJECT
     wrap_mode: WrapMode = WrapMode.default
     wrap_frontend: bool = False
     allow_insecure: bool = False
@@ -382,7 +381,7 @@ class Resolver:
         self.provided_programs: T.Dict[str, PackageDefinition] = {}
         self.wrapdb: T.Dict[str, T.Any] = {}
         self.wrapdb_provided_deps: T.Dict[str, str] = {}
-        self.wrapdb_provided_programs: T.Dict[str, str] = {}
+        self.wrapdb_provided_programs: T.Dict[str, SubProject] = {}
         self.loaded_dirs: T.Set[str] = set()
         self.load_wraps()
         self.load_netrc()
@@ -503,8 +502,11 @@ class Resolver:
         wrap = self.wraps.get(subp_name)
         return wrap.provided_deps.get(depname) if wrap else None
 
-    def find_program_provider(self, names: T.List[str]) -> T.Optional[str]:
+    def find_program_provider(self, names: list[str | mesonlib.File]) -> T.Optional[SubProject]:
         for name in names:
+            # A File is always a local program, i.e., a script file in the source tree
+            if isinstance(name, mesonlib.File):
+                continue
             wrap = self.provided_programs.get(name)
             if wrap:
                 return wrap.name
@@ -518,7 +520,12 @@ class Resolver:
         if wrap is None:
             wrap = self.get_from_wrapdb(packagename)
             if wrap is None:
-                raise WrapNotFoundException(f'Neither a subproject directory nor a {packagename}.wrap file was found.')
+                ustr = f'Neither a subproject directory nor a {packagename}.wrap file was found.'
+                from difflib import get_close_matches
+                close_matches = get_close_matches(packagename, self.wraps.keys())
+                if close_matches:
+                    ustr += f' Did you mean "{close_matches[0]}"?'
+                raise WrapNotFoundException(ustr)
         self.wrap = wrap
         self.directory = self.wrap.directory
         self.dirname = os.path.join(self.wrap.subprojects_dir, self.wrap.directory)

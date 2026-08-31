@@ -16,7 +16,7 @@ from .. import mlog
 from .. import mesonlib
 from .. import options
 from ..mesonlib import (
-    HoldableObject,
+    HoldableObject, SimpleABC,
     EnvironmentException, MesonBugException, MesonException,
     Popen_safe_logged, LibType, TemporaryDirectoryWinProof,
 )
@@ -101,7 +101,7 @@ clib_langs = ('objcpp', 'cpp', 'objc', 'c', 'nasm', 'fortran')
 # This must be sorted, see sort_clink().
 clink_langs = ('rust', 'd', 'cuda') + clib_langs
 
-SUFFIX_TO_LANG = dict(itertools.chain(*(
+SUFFIX_TO_LANG: T.Mapping[str, Language] = dict(itertools.chain(*(
     [(suffix, lang) for suffix in v] for lang, v in lang_suffixes.items())))
 
 # Languages that should use LDFLAGS arguments when linking.
@@ -111,7 +111,7 @@ LANGUAGES_USING_CPPFLAGS = {'c', 'cpp', 'objc', 'objcpp'}
 soregex = re.compile(r'.*\.so(\.[0-9]+)?(\.[0-9]+)?(\.[0-9]+)?$')
 
 # Environment variables that each lang uses.
-CFLAGS_MAPPING: T.Mapping[str, str] = {
+CFLAGS_MAPPING: T.Mapping[Language, str] = {
     'c': 'CFLAGS',
     'cpp': 'CXXFLAGS',
     'cuda': 'CUFLAGS',
@@ -127,7 +127,7 @@ CFLAGS_MAPPING: T.Mapping[str, str] = {
 
 # All these are only for C-linkable languages; see `clink_langs` above.
 
-def sort_clink(lang: str) -> int:
+def sort_clink(lang: Language) -> int:
     '''
     Sorting function to sort the list of languages according to
     reversed(compilers.clink_langs) and append the unknown langs in the end.
@@ -344,8 +344,8 @@ def get_base_compile_args(target: 'BuildTarget', compiler: 'Compiler', env: 'Env
         crt_val = env.coredata.get_option_for_target(target, 'b_vscrt')
         assert isinstance(crt_val, str)
         try:
-            args += compiler.get_crt_compile_args(crt_val, env)
-        except AttributeError:
+            args += compiler.get_crt_compile_args(crt_val)
+        except EnvironmentException:
             pass
     except KeyError:
         pass
@@ -356,6 +356,8 @@ def get_base_link_args(target: 'BuildTarget',
                        env: 'Environment') -> T.List[str]:
     args: T.List[str] = []
     build_dir = env.get_build_dir()
+    if env.coredata.get_option_for_target(target, 'werror'):
+        args.extend(linker.get_linker_fatal_warnings())
     try:
         if env.coredata.get_option_for_target(target, 'b_lto'):
             if env.coredata.get_option_for_target(target, 'werror'):
@@ -432,10 +434,10 @@ def get_base_link_args(target: 'BuildTarget',
         crt_val = env.coredata.get_option_for_target(target, 'b_vscrt')
         assert isinstance(crt_val, str)
         try:
-            crtargs = linker.get_crt_link_args(crt_val, env)
+            crtargs = linker.get_crt_link_args(crt_val)
             assert isinstance(crtargs, list)
             args += crtargs
-        except AttributeError:
+        except EnvironmentException:
             pass
     except KeyError:
         pass
@@ -454,6 +456,75 @@ class RunResult(HoldableObject):
     cached: bool = False
 
 
+class LinkerOptionStyle(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def wrap(self, group: T.List[str]) -> T.List[str]:
+        ...
+
+
+@dataclass
+class PrefixArgumentLinkerOptionStyle(LinkerOptionStyle):
+    """
+    Represents a linker option style where each linker argument is preceded by a separate argument representing
+    the compiler's pass-through option, like Clang: ['-Xlinker', 'arg1', '-Xlinker', 'arg2'] passes ['arg1', 'arg2'] to the
+    linker.
+    """
+
+    prefix_arg: str
+
+    def wrap(self, group: T.List[str]) -> T.List[str]:
+        return [compiler_arg for linker_arg in group for compiler_arg in [self.prefix_arg, linker_arg]]
+
+
+@dataclass
+class SimplePrefixLinkerOptionStyle(LinkerOptionStyle):
+    """
+    Represents a linker option style where each linker argument is prefixed with the compiler's pass-through
+    option as part of the same argument, like DMD: ['-L=arg1', '-L=arg2'] passes ['arg1', 'arg2'] to the linker.
+    """
+
+    prefix: str
+
+    def wrap(self, group: T.List[str]) -> T.List[str]:
+        return [self.prefix + linker_arg for linker_arg in group]
+
+
+class LinkerArgumentWrapException(MesonException):
+    pass
+
+
+@dataclass
+class ManyInOneLinkerOptionStyle(LinkerOptionStyle):
+    """
+    Represents a linker option style where multiple linker arguments are passed as a single argument to the
+    compiler combined with a prefix, like GCC: ['-Wl,arg1,arg2'] passes ['arg1', 'arg2'] to the linker.
+    """
+
+    prefix: str
+    separator: str
+
+    fallback: T.Optional[LinkerOptionStyle] = None
+
+    def wrap(self, group: T.List[str]) -> T.List[str]:
+        for el in group:
+            if self.separator not in el:
+                continue
+
+            if self.fallback is not None:
+                return self.fallback.wrap(group)
+
+            full = ''
+            if len(group) > 1:
+                full = f' (part of arguments list {group!r})'
+            stripped = f'{self.prefix}{el}'
+            raise LinkerArgumentWrapException(f'Cannot wrap linker argument {el!r}{full} for compiler interface: '
+                                              f'would result in {stripped!r}, which the compiler would interpret as '
+                                              f'multiple linker arguments since it treats {self.separator!r} as the '
+                                              'separator.')
+
+        return [self.prefix + self.separator.join(group)]
+
+
 @dataclass
 class CompileResult(HoldableObject):
 
@@ -467,7 +538,7 @@ class CompileResult(HoldableObject):
     output_name: T.Optional[str] = field(default=None, init=False)
     cached: bool = field(default=False, init=False)
 
-class Compiler(HoldableObject, metaclass=abc.ABCMeta):
+class Compiler(HoldableObject, metaclass=SimpleABC):
 
     # Libraries to ignore in find_library() since they are provided by the
     # compiler or the C library. Currently only used for MSVC.
@@ -476,7 +547,7 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
     # manually searched.
     internal_libs: T.List[str] = []
 
-    LINKER_PREFIX: T.Union[None, str, T.List[str]] = None
+    LINKER_OPTION_STYLE: T.Optional[LinkerOptionStyle] = None
 
     # If the compiler is used to fire a separate linking step, environment
     # variables like CFLAGS have to be passed to the linking step as well.
@@ -1111,6 +1182,9 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
     def get_optimization_link_args(self, optimization_level: str) -> T.List[str]:
         return self.linker.get_optimization_link_args(optimization_level)
 
+    def get_linker_fatal_warnings(self) -> T.List[str]:
+        return self.linker.fatal_warnings()
+
     def get_soname_args(self, prefix: str, shlib_name: str, suffix: str, soversion: str,
                         darwin_versions: T.Tuple[str, str]) -> T.List[str]:
         return self.linker.get_soname_args(
@@ -1122,7 +1196,7 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         # per-project link arguments.  Link args added from the env (LDFLAGS)
         # override all the defaults but not the per-target link args.
         return build.get_project_link_args(self, target) \
-            + build.get_global_link_args(self, self.for_machine) \
+            + build.get_global_link_args(self, target) \
             + self.environment.coredata.get_external_link_args(self.for_machine, self.get_language())
 
     def get_target_link_args(self, target: 'BuildTarget') -> T.List[str]:
@@ -1160,7 +1234,7 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         """
         return []
 
-    def get_crt_val(self, crt_val: str, env: Environment) -> str:
+    def get_crt_val(self, crt_val: str) -> str:
         if crt_val in options.MSCRT_VALS:
             return crt_val
         assert crt_val in {'from_buildtype', 'static_from_buildtype'}
@@ -1172,7 +1246,8 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
             rel = 'mt'
 
         # Match what build type flags used to do.
-        buildtype = env.coredata.optstore.get_value_for('buildtype')
+        buildtype = self.environment.coredata.optstore.get_value_for('buildtype')
+        assert isinstance(buildtype, str), 'for mypy'
         if buildtype == 'plain':
             return 'none'
         elif buildtype == 'debug':
@@ -1183,10 +1258,10 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
             assert buildtype == 'custom'
             raise EnvironmentException('Requested C runtime based on buildtype, but buildtype is "custom".')
 
-    def get_crt_compile_args(self, crt_val: str, env: Environment) -> T.List[str]:
+    def get_crt_compile_args(self, crt_val: str) -> T.List[str]:
         raise EnvironmentException('This compiler does not support Windows CRT selection')
 
-    def get_crt_link_args(self, crt_val: str, env: Environment) -> T.List[str]:
+    def get_crt_link_args(self, crt_val: str) -> T.List[str]:
         raise EnvironmentException('This compiler does not support Windows CRT selection')
 
     def get_compile_only_args(self) -> T.List[str]:
@@ -1365,7 +1440,9 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         :return: a tuple of arguments, the first is the executable and compiler
             arguments, the second is linker arguments
         """
-        return self.exelist_no_ccache + self.get_always_args() + self.get_output_args(binname) + [sourcename], []
+        cargs = list(self.environment.coredata.get_external_args(self.for_machine, self.language))
+        largs = list(self.environment.coredata.get_external_link_args(self.for_machine, self.language))
+        return self.exelist_no_ccache + self.get_always_args() + self.get_output_args(binname) + [sourcename] + cargs, largs
 
     @abc.abstractmethod
     def _sanity_check_source_code(self) -> str:
@@ -1383,9 +1460,8 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         :param command: The string list of commands to run
         :return: The list of commands wrapped by the exe_wrapper if it is needed, otherwise the original commands
         """
-        if self.is_cross and self.environment.has_exe_wrapper():
-            assert self.environment.exe_wrapper is not None, 'for mypy'
-            return self.environment.exe_wrapper.get_command() + command
+        if self.is_cross and (exe_wrapper := self.environment.get_exe_wrapper()):
+            return exe_wrapper.get_command() + command
         return command
 
     def _run_sanity_check(self, cmdlist: T.List[str], work_dir: str) -> None:
@@ -1438,6 +1514,10 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
 
     def get_no_stdinc_args(self) -> T.List[str]:
         """Arguments to turn off default inclusion of standard libraries."""
+        return []
+
+    def get_no_stdlib_link_args(self) -> T.List[str]:
+        """Arguments to turn off default linking to standard libraries."""
         return []
 
     def get_warn_args(self, level: str) -> T.List[str]:
@@ -1616,3 +1696,15 @@ class Compiler(HoldableObject, metaclass=abc.ABCMeta):
         if 'none' not in value:
             value = ['none'] + value
         std.choices = value
+
+    def get_crt_static(self) -> bool:
+        """Is this target using static CRT?"""
+        raise EnvironmentException(f'{self.get_id()} does not support static CRT')
+
+    def get_target_libdir(self) -> str:
+        """Where is the libdir for the current machine located"""
+        raise EnvironmentException(f'{self.get_id()} does not support Rust target libdir')
+
+    def get_show_dep_args(self) -> T.List[str]:
+        """Arguments for printing depfile information in MSVC compatible format"""
+        return []

@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 import argparse
 import ast
+import copy
 import enum
 import sys
 import stat
@@ -27,18 +28,16 @@ import json
 import dataclasses
 
 from mesonbuild import mlog
-from .core import MesonException, HoldableObject
+from .core import MesonException, MesonBugException, HoldableObject, ExecutableSerialisation
 
 if T.TYPE_CHECKING:
-    from typing_extensions import Literal, Protocol
+    from typing_extensions import Literal, Protocol, Self
 
     from .._typing import ImmutableListProtocol
     from ..build import ConfigurationData
     from ..cmdline import StrOrBytesPath
     from ..environment import Environment
     from ..compilers.compilers import Compiler
-    from ..interpreterbase.baseobjects import SubProject
-    from .. import programs
 
     class _EnvPickleLoadable(Protocol):
 
@@ -48,29 +47,47 @@ if T.TYPE_CHECKING:
 
         version: str
 
+    class Comparable(Protocol):
+        """Protocol for annotating comparable types."""
+        def __eq__(self, other: object) -> bool: ...
+        def __ne__(self, other: object) -> bool: ...
+        def __lt__(self, other: Self) -> bool: ...
+        def __le__(self, other: Self) -> bool: ...
+        def __ge__(self, other: Self) -> bool: ...
+        def __gt__(self, other: Self) -> bool: ...
+
     # A generic type for pickle_load. This allows any type that has either a
     # .version or a .environment to be passed.
     _PL = T.TypeVar('_PL', bound=T.Union[_EnvPickleLoadable, _VerPickleLoadable])
 
+    FileLike = T.TypeVar('FileLike', bound='File' | str)
+
 FileOrString = T.Union['File', str]
 
+_P = T.ParamSpec('_P')
 _T = T.TypeVar('_T')
 _U = T.TypeVar('_U')
 
 __all__ = [
     'GIT',
+    'ROOT_SUBPROJECT',
+    'SimpleABC',
     'python_command',
     'NoProjectVersion',
     'project_meson_versions',
     'SecondLevelHolder',
+    'SubProject',
     'File',
     'FileMode',
     'GitException',
     'LibType',
     'MachineChoice',
+    'ThreeMachineChoice',
     'EnvironmentException',
     'FileOrString',
     'GitException',
+    'InstallScript',
+    'InstallScriptFailure',
     'dump_conf_header',
     'OrderedSet',
     'PerMachine',
@@ -78,6 +95,7 @@ __all__ = [
     'PerThreeMachine',
     'PerThreeMachineDefaultable',
     'ProgressBar',
+    'Range',
     'RealPathAction',
     'TemporaryDirectoryWinProof',
     'Version',
@@ -120,6 +138,7 @@ __all__ = [
     'is_debianlike',
     'is_dragonflybsd',
     'is_freebsd',
+    'is_fuchsia',
     'is_haiku',
     'is_hurd',
     'is_irix',
@@ -135,6 +154,7 @@ __all__ = [
     'is_wsl',
     'iter_regexin_iter',
     'join_args',
+    'late_property',
     'lazy_property',
     'listify',
     'listify_array_value',
@@ -161,7 +181,10 @@ __all__ = [
     'substring_is_in_list',
     'typeslistify',
     'unique_list',
+    'unwrap',
+    'unwrap_err',
     'verbose_git',
+    'version_check_to_range',
     'version_compare',
     'version_compare_condition_with_min',
     'version_compare_many',
@@ -171,6 +194,9 @@ __all__ = [
     'windows_proof_rmtree',
 ]
 
+SubProject = T.NewType('SubProject', str)
+
+ROOT_SUBPROJECT = SubProject('')
 
 class NoProjectVersion:
     pass
@@ -178,7 +204,7 @@ class NoProjectVersion:
 # TODO: this is such a hack, this really should be either in coredata or in the
 # interpreter
 # {subproject: project_meson_version}
-project_meson_versions: T.Dict[str, T.Union[str, NoProjectVersion]] = {}
+project_meson_versions: T.Dict[str, T.Union[Range[Version], NoProjectVersion]] = {}
 
 
 from glob import glob
@@ -204,8 +230,7 @@ class GitException(MesonException):
 
 GIT = shutil.which('git')
 def git(cmd: T.List[str], workingdir: StrOrBytesPath, check: bool = False, **kwargs: T.Any) -> T.Tuple[subprocess.Popen[str], str, str]:
-    assert GIT is not None, 'Callers should make sure it exists'
-    cmd = [GIT, *cmd]
+    cmd = [unwrap(GIT, 'Callers should make sure it exists'), *cmd]
     p, o, e = Popen_safe(cmd, cwd=workingdir, **kwargs)
     if check and p.returncode != 0:
         raise GitException('Git command failed: ' + str(cmd), e)
@@ -248,7 +273,9 @@ def set_meson_command(mainfile: str) -> None:
         mlog.log(f'meson_command is {_meson_command!r}')
 
 
-def get_meson_command() -> T.Optional['ImmutableListProtocol[str]']:
+def get_meson_command() -> ImmutableListProtocol[str]:
+    if _meson_command is None:
+        raise MesonBugException('Attempting to use meson_command before it is set')
     return _meson_command
 
 
@@ -263,7 +290,7 @@ def is_ascii_string(astring: T.Union[str, bytes]) -> bool:
     return True
 
 
-def check_direntry_issues(direntry_array: T.Union[T.Iterable[T.Union[str, bytes]], str, bytes]) -> None:
+def check_direntry_issues(direntry_array: T.Iterable[object]) -> None:
     import locale
     # Warn if the locale is not UTF-8. This can cause various unfixable issues
     # such as os.stat not being able to decode filenames with unicode in them.
@@ -274,15 +301,46 @@ def check_direntry_issues(direntry_array: T.Union[T.Iterable[T.Union[str, bytes]
         if isinstance(direntry_array, (str, bytes)):
             direntry_array = [direntry_array]
         for de in direntry_array:
-            if is_ascii_string(de):
-                continue
-            mlog.warning(textwrap.dedent(f'''
-                You are using {e!r} which is not a Unicode-compatible
-                locale but you are trying to access a file system entry called {de!r} which is
-                not pure ASCII. This may cause problems.
-                '''))
+            if isinstance(de, (str, bytes)) and not is_ascii_string(de):
+                mlog.warning(textwrap.dedent(f'''
+                    You are using {e!r} which is not a Unicode-compatible
+                    locale but you are trying to access a file system entry called {de!r} which is
+                    not pure ASCII. This may cause problems.
+                    '''))
 
-class SecondLevelHolder(HoldableObject, metaclass=abc.ABCMeta):
+
+class SimpleABC(type):
+    '''Lightweight replacement for ``abc.ABCMeta``.
+
+    Supports ``@abc.abstractmethod`` but omits virtual subclass
+    registration and ``__subclasshook__``. This way, ``isinstance()``
+    goes through the C fast path. '''
+
+    __abstractmethods__: T.FrozenSet[str]
+
+    def __new__(mcs, name: str, bases: T.Tuple[type, ...],
+                namespace: T.Dict[str, T.Any], **kwargs: T.Any) -> SimpleABC:
+        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        abstracts = {n for n, v in namespace.items()
+                     if getattr(v, '__isabstractmethod__', False)}
+        for base in bases:
+            for n in getattr(base, '__abstractmethods__', ()):
+                if getattr(getattr(cls, n, None), '__isabstractmethod__', False):
+                    abstracts.add(n)
+        cls.__abstractmethods__ = frozenset(abstracts)
+        return cls
+
+    def __call__(cls, *args: T.Any, **kwargs: T.Any) -> T.Any:
+        if cls.__abstractmethods__:
+            raise TypeError(
+                f"Can't instantiate abstract class {cls.__name__} without an "
+                f"implementation for abstract method"
+                f"{'s' if len(cls.__abstractmethods__) > 1 else ''} "
+                f"{', '.join(repr(m) for m in sorted(cls.__abstractmethods__))}")
+        return super().__call__(*args, **kwargs)
+
+
+class SecondLevelHolder(HoldableObject, metaclass=SimpleABC):
     ''' A second level object holder. The primary purpose
         of such objects is to hold multiple objects with one
         default option. '''
@@ -478,8 +536,8 @@ def get_compiler_for_source(compilers: T.Iterable['Compiler'], src: 'FileOrStrin
     raise MesonException(f'No specified compiler can handle file {src!s}')
 
 
-def classify_unity_sources(compilers: T.Iterable['Compiler'], sources: T.Sequence['FileOrString']) -> T.Dict['Compiler', T.List['FileOrString']]:
-    compsrclist: T.Dict['Compiler', T.List['FileOrString']] = {}
+def classify_unity_sources(compilers: T.Iterable['Compiler'], sources: T.List[FileLike]) -> T.Dict['Compiler', T.List[FileLike]]:
+    compsrclist: T.Dict['Compiler', T.List[FileLike]] = {}
     for src in sources:
         comp = get_compiler_for_source(compilers, src)
         if comp not in compsrclist:
@@ -489,7 +547,7 @@ def classify_unity_sources(compilers: T.Iterable['Compiler'], sources: T.Sequenc
     return compsrclist
 
 
-MACHINE_NAMES = ['build', 'host']
+MACHINE_NAMES = ['build', 'host', 'target']
 MACHINE_PREFIXES = ['build.', '']
 
 
@@ -510,6 +568,23 @@ class MachineChoice(enum.IntEnum):
 
     def get_prefix(self) -> str:
         return MACHINE_PREFIXES[self.value]
+
+
+class ThreeMachineChoice(enum.IntEnum):
+
+    """Enum class representing any of the three abstract machine names:
+    the build, host, and target, machines.
+    """
+
+    BUILD = MachineChoice.BUILD.value
+    HOST = MachineChoice.HOST.value
+    TARGET = 2
+
+    def __str__(self) -> str:
+        return f'{self.get_lower_case_name()} machine'
+
+    def get_lower_case_name(self) -> str:
+        return MACHINE_NAMES[self.value]
 
 
 @dataclasses.dataclass(eq=False, order=False)
@@ -541,6 +616,14 @@ class PerMachine(T.Generic[_T]):
         self.build = build
         self.host = host
 
+    def __copy__(self) -> PerMachine[_T]:
+        build = copy.copy(self.build)
+        if self.host is self.build:
+            host = build
+        else:
+            host = copy.copy(self.host)
+        return PerMachine(build, host)
+
 
 @dataclasses.dataclass(eq=False, order=False)
 class PerThreeMachine(PerMachine[_T]):
@@ -553,14 +636,20 @@ class PerThreeMachine(PerMachine[_T]):
 
     target: _T
 
-    def miss_defaulting(self) -> "PerThreeMachineDefaultable[T.Optional[_T]]":
+    def __getitem__(self, machine: MachineChoice | ThreeMachineChoice) -> _T:
+        return [self.build, self.host, self.target][machine.value]
+
+    def __setitem__(self, machine: MachineChoice | ThreeMachineChoice, val: _T) -> None:
+        setattr(self, machine.get_lower_case_name(), val)
+
+    def miss_defaulting(self) -> "PerThreeMachineDefaultable[_T]":
         """Unset definition duplicated from their previous to None
 
         This is the inverse of ''default_missing''. By removing defaulted
         machines, we can elaborate the original and then redefault them and thus
         avoid repeating the elaboration explicitly.
         """
-        unfreeze: PerThreeMachineDefaultable[T.Optional[_T]] = PerThreeMachineDefaultable()
+        unfreeze: PerThreeMachineDefaultable[_T] = PerThreeMachineDefaultable()
         unfreeze.build = self.build
         unfreeze.host = self.host
         unfreeze.target = self.target
@@ -572,6 +661,20 @@ class PerThreeMachine(PerMachine[_T]):
 
     def matches_build_machine(self, machine: MachineChoice) -> bool:
         return self.build == self[machine]
+
+    def __copy__(self) -> PerMachine[_T]:
+        build = copy.copy(self.build)
+        if self.host is self.build:
+            host = build
+        else:
+            host = copy.copy(self.host)
+
+        if self.target is self.host:
+            target = host
+        else:
+            target = copy.copy(self.target)
+
+        return PerThreeMachine(build, host, target)
 
 
 @dataclasses.dataclass(eq=False, order=False)
@@ -588,8 +691,8 @@ class PerMachineDefaultable(PerMachine[T.Optional[_T]]):
         This allows just specifying nothing in the native case, and just host in the
         cross non-compiler case.
         """
-        assert self.build is not None, 'Cannot fill in missing when all fields are empty'
-        return PerMachine(self.build, self.host if self.host is not None else self.build)
+        build = unwrap(self.build, 'Cannot fill in missing when all fields are empty')
+        return PerMachine(build, self.host if self.host is not None else build)
 
     @classmethod
     def default(cls, is_cross: bool, build: _T, host: _T) -> PerMachine[_T]:
@@ -620,42 +723,58 @@ class PerThreeMachineDefaultable(PerMachineDefaultable[T.Optional[_T]], PerThree
         cross non-compiler case, and just target in the native-built
         cross-compiler case.
         """
-        assert self.build is not None, 'Cannot default a PerMachine when all values are None'
-        host = self.host if self.host is not None else self.build
+        build = unwrap(self.build, 'Cannot fill in missing when all fields are empty')
+        host = self.host if self.host is not None else build
         target = self.target if self.target is not None else host
-        return PerThreeMachine(self.build, host, target)
+        return PerThreeMachine(build, host, target)
 
+@dataclasses.dataclass(eq=False)
+class InstallScriptFailure:
+
+    name: str
+    reason: str
+    tag: T.Optional[str] = None
+
+    subproject = ROOT_SUBPROJECT
+
+InstallScript = T.Union[ExecutableSerialisation, InstallScriptFailure]
+
+_PLATFORM_SYSTEM_LOWER = platform.system().lower()
+_PLATFORM_RELEASE_LOWER = platform.release().lower()
 
 def is_sunos() -> bool:
-    return platform.system().lower() == 'sunos'
+    return _PLATFORM_SYSTEM_LOWER == 'sunos'
 
 
 def is_osx() -> bool:
-    return platform.system().lower() == 'darwin'
+    return _PLATFORM_SYSTEM_LOWER == 'darwin'
 
 
 def is_linux() -> bool:
-    return platform.system().lower() == 'linux'
+    return _PLATFORM_SYSTEM_LOWER == 'linux'
 
 
 def is_android() -> bool:
-    return platform.system().lower() == 'android'
+    return _PLATFORM_SYSTEM_LOWER == 'android'
+
+
+def is_fuchsia() -> bool:
+    return _PLATFORM_SYSTEM_LOWER == 'fuchsia'
 
 
 def is_haiku() -> bool:
-    return platform.system().lower() == 'haiku'
+    return _PLATFORM_SYSTEM_LOWER == 'haiku'
 
 
 def is_openbsd() -> bool:
-    return platform.system().lower() == 'openbsd'
+    return _PLATFORM_SYSTEM_LOWER == 'openbsd'
 
 
 def is_windows() -> bool:
-    platname = platform.system().lower()
-    return platname == 'windows'
+    return _PLATFORM_SYSTEM_LOWER == 'windows'
 
 def is_wsl() -> bool:
-    return is_linux() and 'microsoft' in platform.release().lower()
+    return is_linux() and 'microsoft' in _PLATFORM_RELEASE_LOWER
 
 def is_cygwin() -> bool:
     return sys.platform == 'cygwin'
@@ -666,18 +785,18 @@ def is_debianlike() -> bool:
 
 
 def is_dragonflybsd() -> bool:
-    return platform.system().lower() == 'dragonfly'
+    return _PLATFORM_SYSTEM_LOWER == 'dragonfly'
 
 
 def is_netbsd() -> bool:
-    return platform.system().lower() == 'netbsd'
+    return _PLATFORM_SYSTEM_LOWER == 'netbsd'
 
 
 def is_freebsd() -> bool:
-    return platform.system().lower() == 'freebsd'
+    return _PLATFORM_SYSTEM_LOWER == 'freebsd'
 
 def is_irix() -> bool:
-    return platform.system().startswith('irix')
+    return _PLATFORM_SYSTEM_LOWER == 'irix'
 
 def is_hurd() -> bool:
     return platform.system().lower() == 'gnu'
@@ -855,10 +974,10 @@ class Version:
                 for m in _VERSION_TOK_RE.finditer(s)]
 
     def __str__(self) -> str:
-        return '{} (V={})'.format(self._s, str(self._v))
+        return self._s
 
     def __repr__(self) -> str:
-        return f'<Version: {self._s}>'
+        return f'<Version: {self._s!r} V={self._v!r}>'
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, Version):
@@ -932,7 +1051,7 @@ def _version_extract_cmpop(vstr2: str) -> T.Tuple[T.Callable[[T.Any, T.Any], boo
     else:
         cmpop = operator.eq
 
-    return (cmpop, vstr2)
+    return (cmpop, vstr2.strip())
 
 
 def version_compare(vstr1: str, vstr2: str) -> bool:
@@ -953,45 +1072,126 @@ def version_compare_many(vstr1: str, conditions: T.Union[str, T.Iterable[str]]) 
     return not not_found, not_found, found
 
 
+_V = T.TypeVar('_V', bound='Comparable')
+
+@dataclasses.dataclass(order=False)
+class Range(T.Generic[_V]):
+    min: T.Optional[_V] = None
+    min_eq: bool = False
+    max: T.Optional[_V] = None
+    max_eq: bool = False
+    is_empty: bool = False
+
+    def __str__(self) -> str:
+        if self.is_empty:
+            return '(empty)'
+        if self.min is not None and self.max is not None and self.min == self.max:
+            return f'== {self.min}'
+        parts = []
+        if self.min is not None:
+            parts.append(f'>{"=" if self.min_eq else ""} {self.min}')
+        if self.max is not None:
+            parts.append(f'<{"=" if self.max_eq else ""} {self.max}')
+        return ', '.join(parts) if parts else '(any)'
+
+    def __contains__(self, x: _V) -> bool:
+        if self.is_empty:
+            return False
+        if self.min is not None and (x < self.min if self.min_eq else x <= self.min):
+            return False
+        if self.max is not None and (x > self.max if self.max_eq else x >= self.max):
+            return False
+        return True
+
+    def __post_init__(self) -> None:
+        if self.min is None or self.max is None:
+            return
+        self.is_empty = False
+        if self.min < self.max:
+            return
+        if self.min == self.max and self.min_eq and self.max_eq:
+            return
+        self.min = None
+        self.max = None
+        self.is_empty = True
+
+    def _intersect_min(self, v: _V, eq: bool) -> None:
+        if self.min is None or v > self.min:
+            self.min, self.min_eq = v, eq
+        elif v == self.min:
+            self.min_eq = eq and self.min_eq
+
+    def _intersect_max(self, v: _V, eq: bool) -> None:
+        if self.max is None or v < self.max:
+            self.max, self.max_eq = v, eq
+        elif v == self.max:
+            self.max_eq = eq and self.max_eq
+
+    def intersect(self, x: Range[_V]) -> Range[_V]:
+        if x.is_empty:
+            return copy.copy(x)
+        result = copy.copy(self)
+        if self.is_empty:
+            return result
+        if x.min is not None:
+            result._intersect_min(x.min, x.min_eq)
+        if x.max is not None:
+            result._intersect_max(x.max, x.max_eq)
+        result.__post_init__()
+        return result
+
+    def always(self, inner: Range[_V]) -> T.Optional[bool]:
+        """Check if inner is always true or always false given self.
+
+        Returns True if inner is always satisfied by any value in self,
+        False if no value in self satisfies inner, None if indeterminate."""
+        narrowed = self.intersect(inner)
+        if narrowed.is_empty:
+            return False
+        if narrowed == self:
+            return True
+        return None
+
+
+# note that Range is immutable, so no need to have Range() | None
+def version_check_to_range(checks: T.List[str], start: Range[Version] = Range()) -> Range[Version]:
+    for x in checks:
+        op, v = _version_extract_cmpop(x)
+        if op is operator.ge:
+            r = Range(min=Version(v), min_eq=True)
+        elif op is operator.gt:
+            r = Range(min=Version(v), min_eq=False)
+        elif op is operator.le:
+            r = Range(max=Version(v), max_eq=True)
+        elif op is operator.lt:
+            r = Range(max=Version(v), max_eq=False)
+        elif op is operator.eq:
+            r = Range(min=Version(v), max=Version(v), min_eq=True, max_eq=True)
+        elif op is operator.ne:
+            v_ = Version(v)
+            # Do the best that we can, remove the extrema
+            r = Range()
+            if v_ == start.min:
+                r = Range(min=v_, min_eq=False)
+            if v_ == start.max:
+                r = r.intersect(Range(max=v_, max_eq=False))
+        start = start.intersect(r)
+    return start
+
+
 # determine if the minimum version satisfying the condition |condition| exceeds
 # the minimum version for a feature |minimum|
-def version_compare_condition_with_min(condition: str, minimum: str) -> bool:
-    if condition.startswith('>='):
-        cmpop = operator.le
-        condition = condition[2:]
-    elif condition.startswith('<='):
-        return False
-    elif condition.startswith('!='):
-        return False
-    elif condition.startswith('=='):
-        cmpop = operator.le
-        condition = condition[2:]
-    elif condition.startswith('='):
-        cmpop = operator.le
-        condition = condition[1:]
-    elif condition.startswith('>'):
-        cmpop = operator.lt
-        condition = condition[1:]
-    elif condition.startswith('<'):
-        return False
+def version_compare_condition_with_min(condition: T.Union[str, Range[Version]], minimum: str) -> bool:
+    if isinstance(condition, str):
+        condition = version_check_to_range([condition])
+
+    if condition.min is None:
+        # A < constraint on the project version (max is not None) or a full
+        # range should always include versions older than minimum, return False.
+        # is_empty=True instead behaves like an absurdly high min and returns True.
+        return condition.is_empty
     else:
-        cmpop = operator.le
-
-    # Declaring a project(meson_version: '>=0.46') and then using features in
-    # 0.46.0 is valid, because (knowing the meson versioning scheme) '0.46.0' is
-    # the lowest version which satisfies the constraint '>=0.46'.
-    #
-    # But this will fail here, because the minimum version required by the
-    # version constraint ('0.46') is strictly less (in our version comparison)
-    # than the minimum version needed for the feature ('0.46.0').
-    #
-    # Map versions in the constraint of the form '0.46' to '0.46.0', to embed
-    # this knowledge of the meson versioning scheme.
-    condition = condition.strip()
-    if re.match(r'^\d+.\d+$', condition):
-        condition += '.0'
-
-    return T.cast('bool', cmpop(Version(minimum), Version(condition)))
+        return Version(minimum) <= condition.min
 
 def search_version(text: str) -> str:
     # Usually of the type 4.1.4 but compiler output may contain
@@ -1175,6 +1375,7 @@ if is_windows():
     _whitespace = ' \t\n\r'
     _find_unsafe_char = re.compile(fr'[{_whitespace}"]').search
 
+    @lru_cache(maxsize=4096)
     def quote_arg(arg: str) -> str:
         if arg and not _find_unsafe_char(arg):
             return arg
@@ -1232,6 +1433,7 @@ if is_windows():
 
         return result
 else:
+    @lru_cache(maxsize=4096)
     def quote_arg(arg: str) -> str:
         return shlex.quote(arg)
 
@@ -1812,7 +2014,7 @@ def Popen_safe_logged(args: T.List[str], msg: str = 'Called', **kwargs: T.Any) -
     return p, o, e
 
 
-def iter_regexin_iter(regexiter: T.Iterable[str], initer: T.Iterable[str | programs.Program]) -> T.Optional[str]:
+def iter_regexin_iter(regexiter: T.Iterable[str], initer: T.Iterable[object]) -> T.Optional[str]:
     '''
     Takes each regular expression in @regexiter and tries to search for it in
     every item in @initer. If there is a match, returns that match.
@@ -1828,7 +2030,7 @@ def iter_regexin_iter(regexiter: T.Iterable[str], initer: T.Iterable[str | progr
     return None
 
 
-def _substitute_values_check_errors(command: T.List[str | programs.Program], values: T.Dict[str, T.Union[str, T.List[str]]]) -> None:
+def _substitute_values_check_errors(command: T.Sequence[object], values: T.Dict[str, T.Union[str, T.List[str]]]) -> None:
     # Error checking
     inregex: T.List[str] = ['@INPUT([0-9]+)?@', '@PLAINNAME@', '@BASENAME@']
     outregex: T.List[str] = ['@OUTPUT([0-9]+)?@', '@OUTDIR@']
@@ -1868,7 +2070,9 @@ def _substitute_values_check_errors(command: T.List[str | programs.Program], val
                 raise MesonException(m.format(match2.group(), len(values['@OUTPUT@'])))
 
 
-def substitute_values(command: T.List[str | programs.Program], values: T.Dict[str, T.Union[str, T.List[str]]]) -> T.List[str | programs.Program]:
+def substitute_values(command: T.List[_T],
+                      values: T.Dict[str, T.Union[str, T.List[str]]]
+                      ) -> T.List[_T]:
     '''
     Substitute the template strings in the @values dict into the list of
     strings @command and return a new list. For a full list of the templates,
@@ -1907,7 +2111,7 @@ def substitute_values(command: T.List[str | programs.Program], values: T.Dict[st
             return v[0]
         return v
 
-    outcmd: T.List[str | programs.Program] = []
+    outcmd: T.List[_T] = []
     for vv in command:
         if not isinstance(vv, str):
             outcmd.append(vv)
@@ -1915,22 +2119,27 @@ def substitute_values(command: T.List[str | programs.Program], values: T.Dict[st
             # Append values that are exactly a template string.
             # This is faster than a string replace, and makes it
             # possible to special case @INPUT@ and @OUTPUT@ too
+
+            # We have to do a bunch of casting here because mypy doesn't realize
+            # that if we're adding str to this list then we got string inputs,
+            # and attempting to set the return type to `_T | str` causes
+            # problems elswhere, so let's contain the pain here.
             if vv == '@INPUT@':
                 inputs = values['@INPUT@']
                 assert isinstance(inputs, list)
-                outcmd += inputs
+                outcmd += T.cast('list[_T]', inputs)
             elif vv == '@OUTPUT@':
                 outputs = values['@OUTPUT@']
                 assert isinstance(outputs, list)
-                outcmd += outputs
+                outcmd += T.cast('list[_T]', outputs)
             else:
                 o = values[vv]
                 assert isinstance(o, str), 'for mypy'
-                outcmd.append(o)
+                outcmd.append(T.cast('_T', o))
         else:
             # Substitute everything else with replacement
             assert values
-            outcmd.append(value_rx.sub(replace, vv))
+            outcmd.append(T.cast('_T', value_rx.sub(replace, vv)))
 
     return outcmd
 
@@ -2191,7 +2400,7 @@ class LibType(enum.IntEnum):
     PREFER_STATIC = 3
 
 
-class ProgressBarFallback:  # lgtm [py/iter-returns-non-self]
+class ProgressBarFallback(T.Generic[_T]):
     '''
     Fallback progress bar implementation when tqdm is not foundclass OptionType(enum.IntEnum):
 
@@ -2251,7 +2460,7 @@ _BUILTIN_NAMES = {
     fallback, it is safe to ignore the 'Iterator does not return self from
     __iter__ method' warning.
     '''
-    def __init__(self, iterable: T.Optional[T.Iterable[str]] = None, total: T.Optional[int] = None,
+    def __init__(self, iterable: T.Optional[T.Iterable[_T]] = None, total: T.Optional[int] = None,
                  bar_type: T.Optional[str] = None, desc: T.Optional[str] = None,
                  disable: T.Optional[bool] = None):
         if iterable is not None:
@@ -2269,10 +2478,10 @@ _BUILTIN_NAMES = {
 
     # Pretend to be an iterator when called as one and don't print any
     # progress
-    def __iter__(self) -> T.Iterator[str]:
+    def __iter__(self) -> T.Iterator[_T]:
         return self.iterable
 
-    def __next__(self) -> str:
+    def __next__(self) -> _T:
         return next(self.iterable)
 
     def print_dot(self) -> None:
@@ -2398,11 +2607,11 @@ def get_wine_shortpath(winecmd: T.List[str], wine_paths: T.List[str],
     return wine_path
 
 
-def run_once(func: T.Callable[..., _T]) -> T.Callable[..., _T]:
+def run_once(func: T.Callable[_P, _T]) -> T.Callable[_P, _T]:
     ret: T.List[_T] = []
 
     @wraps(func)
-    def wrapper(*args: T.Any, **kwargs: T.Any) -> _T:
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
         if ret:
             return ret[0]
 
@@ -2413,9 +2622,9 @@ def run_once(func: T.Callable[..., _T]) -> T.Callable[..., _T]:
     return wrapper
 
 
-def generate_list(func: T.Callable[..., T.Generator[_T, None, None]]) -> T.Callable[..., T.List[_T]]:
+def generate_list(func: T.Callable[_P, T.Generator[_T, None, None]]) -> T.Callable[_P, T.List[_T]]:
     @wraps(func)
-    def wrapper(*args: T.Any, **kwargs: T.Any) -> T.List[_T]:
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> T.List[_T]:
         return list(func(*args, **kwargs))
 
     return wrapper
@@ -2515,6 +2724,28 @@ class lazy_property(T.Generic[_T]):
         return value
 
 
+class late_property(T.Generic[_T]):
+    """Descriptor that allows setting a property late and erroring if it's
+    accessed early.
+
+    This property allows a more ergonomically typed equivalent of
+    self.value: T | None = None, since you then don't need to worry about
+    whether self.value is None.
+    """
+
+    def __init__(self) -> None:
+        self.__name: str | None = None
+
+    def __set_name__(self, owner: object, name: str) -> None:
+        if self.__name is None:
+            self.__name = name
+        else:
+            assert self.__name == name
+
+    def __get__(self, instance: T.Any, cls: type) -> _T:
+        raise MesonBugException(f'Attempted to access attribute {self.__name} before it is set')
+
+
 def get_subproject_dir(directory: str = '.') -> T.Optional[str]:
     """Get the name of the subproject directory for a specific project.
 
@@ -2594,3 +2825,38 @@ def pathname_sort_key(key: str) -> tuple[tuple[bool, tuple[int | str, ...]], ...
 
     return tuple((key.count('/') <= idx, alphanum_key(x))
                  for idx, x in enumerate(key.split('/')))
+
+
+def unwrap(value: _T | None, msg: str | None = None) -> _T:
+    """Remove None from a union type when it is a Meson bug.
+
+    This is used for cases where None being in the Union is a bug in Meson
+    itself.
+
+    :param value: The Union
+    :param msg: A message to print when a buggy value occurs, defaults to None
+    :raises MesonBugException: When None is in value
+    :return: The value union with None removed
+    """
+    if value is not None:
+        return value
+    raise MesonBugException(msg or 'Unexpected None value')
+
+
+def unwrap_err(value: _T | None, msg: str) -> _T:
+    """Remove None from a union type when it is not a Meson bug.
+
+    This is for cases where None is possible, but it represents a problem
+    outside of Meson itself.
+
+    For example, a missing external program, or a read only file system, or a
+    missing file
+
+    :param value: The Union to remove None from
+    :param msg: The message to print when None is found
+    :raises MesonException: When None is found in the union
+    :return: The Union with None removed
+    """
+    if value is not None:
+        return value
+    raise MesonException(msg)

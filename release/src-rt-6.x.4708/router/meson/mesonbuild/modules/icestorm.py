@@ -20,8 +20,8 @@ if T.TYPE_CHECKING:
 
     class ProjectKwargs(TypedDict):
 
-        sources: T.List[T.Union[mesonlib.FileOrString, build.GeneratedTypes]]
-        constraint_file: T.Union[mesonlib.FileOrString, build.GeneratedTypes]
+        sources: T.List[str | build.TargetSources]
+        constraint_file: str | build.TargetSources
 
 class IceStormModule(ExtensionModule):
 
@@ -54,42 +54,43 @@ class IceStormModule(ExtensionModule):
         )
     )
     def project(self, state: ModuleState,
-                args: T.Tuple[str, T.List[T.Union[mesonlib.FileOrString, build.GeneratedTypes]]],
+                args: T.Tuple[str, T.List[str | build.TargetSources]],
                 kwargs: ProjectKwargs) -> ModuleReturnValue:
         if not self.tools:
             self.detect_tools(state)
         proj_name, arg_sources = args
         all_sources = self.interpreter.source_strings_to_files(
             list(itertools.chain(arg_sources, kwargs['sources'])))
+        constraint_file = self.interpreter.source_strings_to_files([kwargs['constraint_file']])[0]
 
         blif_target = build.CustomTarget(
             f'{proj_name}_blif',
             state.subdir,
-            state.subproject,
             state.environment,
             [self.tools['yosys'], '-q', '-p', 'synth_ice40 -blif @OUTPUT@', '@INPUT@'],
             all_sources,
             [f'{proj_name}.blif'],
+            state.current_build_project,
         )
 
         asc_target = build.CustomTarget(
             f'{proj_name}_asc',
             state.subdir,
-            state.subproject,
             state.environment,
             [self.tools['arachne'], '-q', '-d', '1k', '-p', '@INPUT@', '-o', '@OUTPUT@'],
-            [kwargs['constraint_file'], blif_target],
+            [constraint_file, blif_target],
             [f'{proj_name}.asc'],
+            state.current_build_project,
         )
 
         bin_target = build.CustomTarget(
             f'{proj_name}_bin',
             state.subdir,
-            state.subproject,
             state.environment,
             [self.tools['icepack'], '@INPUT@', '@OUTPUT@'],
             [asc_target],
             [f'{proj_name}.bin'],
+            state.current_build_project,
             build_by_default=True,
         )
 
@@ -98,8 +99,8 @@ class IceStormModule(ExtensionModule):
             [self.tools['iceprog'], bin_target],
             [],
             state.subdir,
-            state.subproject,
             state.environment,
+            state.current_build_project,
         )
 
         time_target = build.RunTarget(
@@ -107,8 +108,8 @@ class IceStormModule(ExtensionModule):
             [self.tools['icetime'], bin_target],
             [],
             state.subdir,
-            state.subproject,
             state.environment,
+            state.current_build_project,
         )
 
         return ModuleReturnValue(

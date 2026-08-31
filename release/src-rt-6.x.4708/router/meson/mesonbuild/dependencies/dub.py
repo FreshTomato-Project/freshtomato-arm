@@ -359,7 +359,7 @@ class DubDependency(ExternalDependency):
             if len(self.version_reqs) > 1:
                 mlog.error('Multiple version requirements are not supported for raw dub dependencies.')
                 mlog.error("Please specify only an exact version like '1.2.3'")
-                raise DependencyException('Multiple version requirements are not solvable for raw dub depencies')
+                raise DependencyException('Multiple version requirements are not solvable for raw dub dependencies')
             elif len(self.version_reqs) == 1:
                 pack_spec += '@' + self.version_reqs[0]
 

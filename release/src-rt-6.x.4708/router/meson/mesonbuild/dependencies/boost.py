@@ -606,7 +606,7 @@ class BoostDependency(SystemDependency):
         try:
             crt_val = self.env.coredata.optstore.get_value_for('b_vscrt')
             assert isinstance(crt_val, str)
-            vscrt = self.clib_compiler.get_crt_compile_args(crt_val, self.env)[0]
+            vscrt = self.clib_compiler.get_crt_compile_args(crt_val)[0]
         except (KeyError, IndexError, AttributeError):
             pass
 
@@ -635,6 +635,19 @@ class BoostDependency(SystemDependency):
             return []
         abitag = libs[0].abitag
         libs = [x for x in libs if x.abitag == abitag]
+
+        # Assume that we are building against the latest Python version
+        # and that the other ones are only there for backwards compatibility.
+        # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1141440
+        no_python_libs = []
+        python_libs = []
+        for l in libs:
+            if l.is_python_lib():
+                python_libs.append(l)
+            else:
+                no_python_libs.append(l)
+        sorted_pylibs = sorted(python_libs, key=lambda l: l.name, reverse=True)
+        libs = no_python_libs + sorted_pylibs[:1]
 
         return libs
 

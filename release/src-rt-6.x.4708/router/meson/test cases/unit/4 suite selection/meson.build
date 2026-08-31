@@ -15,3 +15,7 @@ test('mainprj-successful_test',
 test('mainprj-successful_test_no_suite',
   executable('no_suite_test', 'successful_test.c'),
   suite : [])
+
+test('buggy',
+  executable('failing_test_name_collision', 'failing_test.c'),
+  suite : 'fail')

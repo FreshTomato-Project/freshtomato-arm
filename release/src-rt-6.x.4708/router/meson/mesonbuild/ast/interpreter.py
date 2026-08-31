@@ -60,7 +60,7 @@ from ..mparser import (
 if T.TYPE_CHECKING:
     from .visitor import AstVisitor
     from ..interpreter import Interpreter
-    from ..interpreterbase import SubProject, TYPE_var, TYPE_nvar
+    from ..interpreterbase import TYPE_var, TYPE_nvar
     from ..mparser import (
         AndNode,
         ComparisonNode,
@@ -71,6 +71,7 @@ if T.TYPE_CHECKING:
         TestCaseClauseNode,
         UMinusNode,
     )
+    from ..mesonlib import SubProject
 
 _T = T.TypeVar('_T')
 _V = T.TypeVar('_V')
@@ -241,6 +242,7 @@ class AstInterpreter(InterpreterBase):
                            'is_disabler': self.func_do_nothing,
                            'is_variable': self.func_do_nothing,
                            'disabler': self.func_do_nothing,
+                           'default': self.func_do_nothing,
                            'jar': self.func_do_nothing,
                            'warning': self.func_do_nothing,
                            'shared_module': self.func_do_nothing,

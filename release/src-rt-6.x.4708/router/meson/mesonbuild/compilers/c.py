@@ -22,7 +22,7 @@ from .mixins.arm import ArmCompiler, ArmclangCompiler
 from .mixins.visualstudio import MSVCCompiler, ClangClCompiler
 from .mixins.gnu import GnuCompiler, GnuCStds
 from .mixins.gnu import gnu_common_warning_args, gnu_c_warning_args
-from .mixins.intel import IntelGnuLikeCompiler, IntelVisualStudioLikeCompiler
+from .mixins.intel import IntelGnuLikeCompiler, IntelLLVMLikeCompiler, IntelVisualStudioLikeCompiler
 from .mixins.clang import ClangCompiler, ClangCStds
 from .mixins.elbrus import ElbrusCompiler
 from .mixins.pgi import PGICompiler
@@ -75,7 +75,7 @@ class CCompiler(CLikeCompiler, Compiler):
         return ['-nostdinc']
 
     def _sanity_check_source_code(self) -> str:
-        return 'int main(void) { int class=0; return class; }\n'
+        return '#include <stddef.h>\nint main(void) { int class=0; return class; }\n'
 
     def has_header_symbol(self, hname: str, symbol: str, prefix: str, *,
                           extra_args: T.Union[None, T.List[str], T.Callable[['CompileCheckMode'], T.List[str]]] = None,
@@ -391,7 +391,7 @@ class IntelCCompiler(IntelGnuLikeCompiler, CCompiler):
         return args
 
 
-class IntelLLVMCCompiler(ClangCCompiler):
+class IntelLLVMCCompiler(IntelLLVMLikeCompiler, ClangCCompiler):
 
     id = 'intel-llvm'
 

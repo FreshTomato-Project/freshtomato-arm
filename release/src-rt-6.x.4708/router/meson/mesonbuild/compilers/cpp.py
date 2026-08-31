@@ -9,7 +9,7 @@ import typing as T
 
 from .. import options
 from .. import mlog
-from ..mesonlib import MesonException, version_compare
+from ..mesonlib import MesonException, version_compare, lazy_property
 
 from .compilers import (
     gnu_winlibs,
@@ -25,7 +25,7 @@ from .mixins.ti import TICompiler
 from .mixins.arm import ArmCompiler, ArmclangCompiler
 from .mixins.visualstudio import MSVCCompiler, ClangClCompiler
 from .mixins.gnu import GnuCompiler, GnuCPPStds, gnu_common_warning_args, gnu_cpp_warning_args
-from .mixins.intel import IntelGnuLikeCompiler, IntelVisualStudioLikeCompiler
+from .mixins.intel import IntelGnuLikeCompiler, IntelLLVMLikeCompiler, IntelVisualStudioLikeCompiler
 from .mixins.clang import ClangCompiler, ClangCPPStds
 from .mixins.elbrus import ElbrusCompiler
 from .mixins.pgi import PGICompiler
@@ -48,7 +48,7 @@ else:
 ALL_STDS = ['c++98', 'c++0x', 'c++03', 'c++1y', 'c++1z', 'c++11', 'c++14', 'c++17']
 ALL_STDS += ['c++2a', 'c++2b', 'c++2c', 'c++20', 'c++23', 'c++26']
 ALL_STDS += [f'gnu{std[1:]}' for std in ALL_STDS]
-ALL_STDS += ['vc++11', 'vc++14', 'vc++17', 'vc++20', 'vc++latest', 'c++latest']
+ALL_STDS += ['vc++11', 'vc++14', 'vc++17', 'vc++20', 'vc++23', 'vc++latest', 'c++latest']
 
 
 def non_msvc_eh_options(eh: str, args: T.List[str]) -> None:
@@ -89,7 +89,7 @@ class CPPCompiler(CLikeCompiler, Compiler):
         return []
 
     def _sanity_check_source_code(self) -> str:
-        return 'class breakCCompiler;int main(void) { return 0; }\n'
+        return '#include <stddef.h>\nclass breakCCompiler;int main(void) { return 0; }\n'
 
     def get_compiler_check_args(self, mode: CompileCheckMode) -> T.List[str]:
         # -fpermissive allows non-conforming code to compile which is necessary
@@ -184,7 +184,8 @@ class _StdCPPLibMixin(CompilerMixinBase):
 
     """Detect whether to use libc++ or libstdc++."""
 
-    def language_stdlib_provider(self, env: Environment) -> str:
+    @lazy_property
+    def language_stdlib_provider(self) -> str:
         # https://stackoverflow.com/a/31658120
         header = 'version' if self.has_header('version', '')[0] else 'ciso646'
         is_libcxx = self.has_header_symbol(header, '_LIBCPP_VERSION', '')[0]
@@ -197,7 +198,6 @@ class _StdCPPLibMixin(CompilerMixinBase):
 
         As an optimization, this method will cache the value, to avoid building the same values over and over
 
-        :param env: An Environment object
         :raises MesonException: If a stdlib cannot be determined
         """
 
@@ -207,7 +207,7 @@ class _StdCPPLibMixin(CompilerMixinBase):
         # fortran.
         search_dirs = [f'-L{d}' for d in self.get_compiler_dirs('libraries')]
 
-        lib = self.language_stdlib_provider(self.environment)
+        lib = self.language_stdlib_provider
         if self.find_library(lib, []) is not None:
             return search_dirs + [f'-l{lib}']
 
@@ -317,7 +317,7 @@ class ClangCPPCompiler(_StdCPPLibMixin, ClangCPPStds, ClangCompiler, CPPCompiler
             if self.defines.get(macro) is not None:
                 return []
 
-        if self.language_stdlib_provider(self.environment) == 'stdc++':
+        if self.language_stdlib_provider == 'stdc++':
             return ['-D_GLIBCXX_ASSERTIONS=1']
 
         return ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST']
@@ -532,7 +532,7 @@ class GnuCPPCompiler(_StdCPPLibMixin, GnuCPPStds, GnuCompiler, CPPCompiler):
 
         # For GCC, we can assume that the libstdc++ version is the same as
         # the compiler itself. Anything else isn't supported.
-        if self.language_stdlib_provider(self.environment) == 'stdc++':
+        if self.language_stdlib_provider == 'stdc++':
             return ['-D_GLIBCXX_ASSERTIONS=1']
         else:
             # One can use -stdlib=libc++ with GCC, it just (as of 2025) requires
@@ -764,7 +764,7 @@ class IntelCPPCompiler(IntelGnuLikeCompiler, CPPCompiler):
         return []
 
 
-class IntelLLVMCPPCompiler(ClangCPPCompiler):
+class IntelLLVMCPPCompiler(IntelLLVMLikeCompiler, ClangCPPCompiler):
 
     id = 'intel-llvm'
 
@@ -942,7 +942,7 @@ class VisualStudioCPPCompiler(CPP11AsCPP14Mixin, VisualStudioLikeCPPCompilerMixi
     def get_cpp_modules_args(self) -> T.List[str]:
         return ['/interface']
 
-class ClangClCPPCompiler(CPP11AsCPP14Mixin, VisualStudioLikeCPPCompilerMixin, ClangClCompiler, CPPCompiler):
+class ClangClCPPCompiler(VisualStudioLikeCPPCompilerMixin, ClangClCompiler, CPPCompiler):
 
     id = 'clang-cl'
 
@@ -955,8 +955,25 @@ class ClangClCPPCompiler(CPP11AsCPP14Mixin, VisualStudioLikeCPPCompilerMixin, Cl
         ClangClCompiler.__init__(self, target)
 
     def get_options(self) -> 'MutableKeyedOptionDictType':
-        cpp_stds = ['none', 'c++11', 'vc++11', 'c++14', 'vc++14', 'c++17', 'vc++17', 'c++20', 'vc++20', 'c++latest']
+        cpp_stds = list(self.VC_VERSION_MAP) + ['c++23', 'vc++23']
         return self._get_options_impl(super().get_options(), cpp_stds)
+
+    def get_option_std_args(self, target: BuildTarget, subproject: T.Optional[str] = None) -> T.List[str]:
+        std = self.get_compileropt_value('std', target, subproject)
+        assert isinstance(std, str)
+        if std == 'none':
+            return []
+        # c++latest and vc++latest have no /clang:-std= equivalent
+        if std in {'c++latest', 'vc++latest'}:
+            args = ['/std:c++latest']
+            if std == 'c++latest':
+                args.append('/permissive-')
+            return args
+        # vc++ variants: permissive mode, strip 'vc++' prefix to get clang std name
+        if std.startswith('vc++'):
+            return [f'/clang:-std=c++{std[4:]}']
+        # c++ variants: strict conformance mode
+        return [f'/clang:-std={std}', '/permissive-']
 
     def get_cpp_modules_args(self) -> T.List[str]:
         # clang-cl does not support /interface.

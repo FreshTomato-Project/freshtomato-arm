@@ -2,17 +2,21 @@
 # Copyright 2013-2021 The Meson development team
 
 from __future__ import annotations
+from dataclasses import dataclass
+from enum import Enum
 
 from .. import mesonlib, mparser
 from .exceptions import InterpreterException, InvalidArguments
-from ..options import UserOption
+from ..mesonlib import HoldableObject
 
 
 import collections.abc
 import typing as T
 
 if T.TYPE_CHECKING:
-    from .baseobjects import TYPE_var, TYPE_kwargs, SubProject
+    from .baseobjects import TYPE_var, TYPE_kwargs
+    from ..mesonlib import SubProject
+
 
 def flatten(args: T.Union['TYPE_var', T.List['TYPE_var']]) -> T.List['TYPE_var']:
     if isinstance(args, mparser.StringNode):
@@ -60,8 +64,46 @@ def stringifyUserArguments(args: TYPE_var, subproject: SubProject, quote: bool =
         l = ['{} : {}'.format(stringifyUserArguments(k, subproject, True),
                               stringifyUserArguments(v, subproject, True)) for k, v in args.items()]
         return '{%s}' % ', '.join(l)
-    elif isinstance(args, UserOption):
+    elif isinstance(args, Feature):
         from .decorators import FeatureNew
         FeatureNew.single_use('User option in string format', '1.3.0', subproject)
-        return stringifyUserArguments(args.printable_value(), subproject)
+        return str(args)
     raise InvalidArguments('Value other than strings, integers, bools, options, dictionaries and lists thereof.')
+
+
+class FeatureValue(Enum):
+    ENABLED = 'enabled'
+    DISABLED = 'disabled'
+    AUTO = 'auto'
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass
+class Feature(HoldableObject):
+    name: str
+    value: FeatureValue
+
+    def is_enabled(self) -> bool:
+        return self.value is FeatureValue.ENABLED
+
+    def is_disabled(self) -> bool:
+        return self.value is FeatureValue.DISABLED
+
+    def is_auto(self) -> bool:
+        return self.value is FeatureValue.AUTO
+
+    def with_value(self, value: FeatureValue) -> Feature:
+        if value is self.value:
+            return self
+        return Feature(self.name, value)
+
+    def as_enabled(self) -> Feature:
+        return self.with_value(FeatureValue.ENABLED)
+
+    def as_disabled(self) -> Feature:
+        return self.with_value(FeatureValue.DISABLED)
+
+    def __str__(self) -> str:
+        return str(self.value)

@@ -7,12 +7,15 @@ from __future__ import annotations
 
 import collections
 import dataclasses
+import glob
 import os
+import re
 import typing as T
+from pathlib import PurePath
 
 
 from . import version
-from ..mesonlib import MesonException, lazy_property, Version
+from ..mesonlib import MesonException, lazy_property, MachineChoice
 from .. import mlog
 
 if T.TYPE_CHECKING:
@@ -44,6 +47,23 @@ def fixup_meson_varname(name: str) -> str:
     :return: the fixed name
     """
     return name.replace('-', '_')
+
+
+_BRACKET_ESCAPE_RE = re.compile(r'\[(.)\]')
+
+
+def _glob_has_wildcard(s: str) -> bool:
+    """Strip single-character bracket expressions (``[X]``) from *s*, so
+       that the result can be fed to glob.has_magic() without those
+       escapes being mistaken for wildcards."""
+    return glob.has_magic(_BRACKET_ESCAPE_RE.sub('', s))
+
+
+def _remove_simple_globs(s: str) -> str:
+    """Strip single-character bracket expressions (``[X]``) from *s*, so
+       that the result can be fed to glob.has_magic() without those
+       escapes being mistaken for wildcards."""
+    return _BRACKET_ESCAPE_RE.sub(r'\1', s)
 
 
 class DefaultValue:
@@ -287,24 +307,14 @@ class Dependency:
     features: T.List[str] = dataclasses.field(default_factory=list)
 
     @lazy_property
-    def meson_version(self) -> T.List[str]:
-        return version.convert(self.version)
+    def accepts_version(self) -> T.Callable[[str], bool]:
+        # The value of the property is the function that checks the validity
+        # of a given package version, so dep.accepts_version(v) works.
+        return version.cargo_parse(self.version)
 
     @lazy_property
     def api(self) -> str:
-        # Extract wanted API version from version constraints.
-        api = set()
-        for v in self.meson_version:
-            if v.startswith(('>=', '==')):
-                api.add(version.api(v[2:].strip()))
-            elif v.startswith('='):
-                api.add(version.api(v[1:].strip()))
-        if not api:
-            return ''
-        elif len(api) == 1:
-            return api.pop()
-        else:
-            raise MesonException(f'Cannot determine minimum API version from {self.version}.')
+        return version.api(self.version)
 
     def update_version(self, v: str) -> None:
         self.version = v
@@ -313,7 +323,7 @@ class Dependency:
         except AttributeError:
             pass
         try:
-            delattr(self, 'meson_version')
+            delattr(self, 'accepts_version')
         except AttributeError:
             pass
 
@@ -438,6 +448,7 @@ class Example(BuildTarget):
     def from_raw(cls, raw: raw.BuildTarget, pkg: Package) -> Self:
         name = raw["name"]
         return _raw_to_dataclass(raw, cls, f'Example entry {name}',
+                                 ignored_fields=['doc-scrape-examples'],
                                  path=DefaultValue(f'examples/{name}.rs'),
                                  edition=DefaultValue(pkg.edition),
                                  test=DefaultValue(False),
@@ -523,11 +534,40 @@ class Manifest:
     features: T.Dict[str, T.List[str]] = dataclasses.field(default_factory=dict)
     target: T.Dict[str, T.Dict[str, Dependency]] = dataclasses.field(default_factory=dict)
     lints: T.List[Lint] = dataclasses.field(default_factory=list)
-
-    # missing: profile
+    # Kept in raw form: Meson does not implement [patch], it only validates it
+    # for the entry-point crate (see validate_patch).
+    patch: object = None
+    profile: object = None
 
     def __post_init__(self) -> None:
         self.features.setdefault('default', [])
+
+    def machines_from(self, parent_machine: MachineChoice, is_cross: bool,
+                      bin: bool = False) -> T.Iterable[MachineChoice]:
+        """Return the machines this manifest should be built for based on the machine
+           for the package that depended on this one."""
+        assert is_cross or parent_machine == MachineChoice.HOST
+        if self.lib is None:
+            if bin and self.bin:
+                yield parent_machine
+            return
+
+        if not is_cross:
+            yield parent_machine
+            return
+
+        need_build = False
+        need_host = False
+        for crate_type in self.lib.crate_type:
+            if crate_type == 'proc-macro' or parent_machine == MachineChoice.BUILD:
+                need_build = True
+            else:
+                need_host = True
+
+        if need_build:
+            yield MachineChoice.BUILD
+        if need_host:
+            yield MachineChoice.HOST
 
     @lazy_property
     def system_dependencies(self) -> T.Dict[str, SystemDependency]:
@@ -604,6 +644,10 @@ class Workspace:
     # A workspace can also have a root package.
     root_package: T.Optional[Manifest] = None
 
+    # Top-level [patch] table, kept in raw form (see Manifest.validate_patch).
+    patch: object = None
+    profile: object = None
+
     @lazy_property
     def inheritable(self) -> T.Dict[str, object]:
         # the whole lints table is inherited.  Do not add package, dependencies
@@ -617,8 +661,35 @@ class Workspace:
         ws = _raw_to_dataclass(raw['workspace'], cls, 'Workspace')
         if 'package' in raw:
             ws.root_package = Manifest.from_raw(raw, path, ws, '.')
-        if not ws.default_members:
-            ws.default_members = ['.'] if ws.root_package else ws.members
+            ws.patch = ws.root_package.patch
+            ws.profile = ws.root_package.profile
+        else:
+            ws.patch = raw.get('patch')
+            ws.profile = raw.get('profile')
+
+        ws.members = list(PurePath(m).as_posix() for m in ws.members)
+        if ws.default_members:
+            ws.default_members = list(PurePath(m).as_posix() for m in ws.default_members)
+        else:
+            ws.default_members = ['.'] if ws.root_package else list(ws.members)
+
+        def expand(entries: T.List[str], keep_glob_results: bool) -> T.List[str]:
+            result: T.List[str] = []
+            for entry in entries:
+                if not _glob_has_wildcard(entry):
+                    result.append(_remove_simple_globs(entry))
+                    continue
+
+                if keep_glob_results:
+                    result.extend(PurePath(exp).as_posix()
+                                  for exp in glob.glob(entry, root_dir=path)
+                                  if os.path.isdir(os.path.join(path, exp)))
+            return result
+
+        # meson-specific behavior for glob members: they are allowed as
+        # arguments to cargo.package(), but never built by default
+        ws.members = expand(ws.members, keep_glob_results=True)
+        ws.default_members = expand(ws.default_members, keep_glob_results=False)
         return ws
 
 
@@ -665,10 +736,34 @@ class CargoLock:
         for pkg in self.package:
             versions[pkg.name].append(pkg)
         for pkg_versions in versions.values():
-            pkg_versions.sort(reverse=True, key=lambda pkg: Version(pkg.version))
+            pkg_versions.sort(reverse=True, key=lambda pkg: version.SemVer(pkg.version))
         return versions
 
     @classmethod
     def from_raw(cls, raw: raw.CargoLock) -> Self:
         return _raw_to_dataclass(raw, cls, 'Cargo.lock',
                                  package=ConvertValue(lambda x: [CargoLockPackage.from_raw(p) for p in x]))
+
+
+def validate_patch(patch: object, resolved: T.Mapping[str, str]) -> T.Iterator[str]:
+    # Meson does not implement [patch]; recognize entries that simply point
+    # at a package Meson already builds from the workspace ('resolved' maps
+    # each such package name to its path), and warn for everything else.
+    # This is only done for the top-level Cargo.toml, since Cargo ignores
+    # [patch] in a dependency's manifest too.
+    if not patch:
+        return
+    if not isinstance(patch, dict):
+        yield '[patch] format not recognized'
+    elif list(patch.keys()) != ['crates-io']:
+        yield 'Found [patch] for a registry other than crates.io'
+    elif not isinstance(patch['crates-io'], dict):
+        yield '[patch.crates-io] format not recognized'
+    else:
+        for name, value in patch['crates-io'].items():
+            if not isinstance(value, dict) or not isinstance(value.get('path'), str):
+                yield f'Unrecognized [patch.crates-io] entry {name!r}'
+            elif resolved.get(name) == os.path.normpath(value['path']):
+                continue
+            else:
+                yield f'[patch.crates-io] entry {name!r} is not for a dependency'

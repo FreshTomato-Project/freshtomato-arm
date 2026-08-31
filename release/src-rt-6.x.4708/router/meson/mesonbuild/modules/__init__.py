@@ -58,6 +58,8 @@ class ModuleState:
         self.global_args = interpreter.build.global_args.host
         self.project_args = interpreter.current_build_project().project_args.host
         self.current_node = interpreter.current_node
+        self.machine_map = interpreter.build.machine_map
+        self.current_build_project = interpreter.current_build_project()
 
     def get_include_args(self, include_dirs: T.Iterable[T.Union[str, build.IncludeDirs]], implicit: bool = False, prefix: str = '-I') -> T.List[str]:
         srcdir = self.environment.get_source_dir()
@@ -90,7 +92,8 @@ class ModuleState:
     def find_tool(self, name: str, depname: str, varname: str, required: bool = True,
                   wanted: T.Optional[str] = None, native: bool = True) -> Program:
         # Look in overrides in case it's built as subproject
-        progobj = self._interpreter.program_from_overrides([name], [])
+        for_machine = MachineChoice.BUILD if native else MachineChoice.HOST
+        progobj = self._interpreter.program_from_overrides([name], for_machine, [])
         if progobj is not None:
             return progobj
 
@@ -272,11 +275,11 @@ def is_module_library(fname: mesonlib.FileOrString) -> bool:
 
 
 class ModuleReturnValue:
-    def __init__(self, return_value: T.Optional['TYPE_var'],
-                 new_objects: T.Sequence[T.Union['TYPE_var', 'mesonlib.ExecutableSerialisation']]) -> None:
+    def __init__(self, return_value: T.Optional[TYPE_var],
+                 new_objects: T.Sequence[T.Union[TYPE_var, mesonlib.InstallScript]]) -> None:
         self.return_value = return_value
         assert isinstance(new_objects, list)
-        self.new_objects: T.List[T.Union['TYPE_var', 'mesonlib.ExecutableSerialisation']] = new_objects
+        self.new_objects: T.List[T.Union[TYPE_var, mesonlib.InstallScript]] = new_objects
 
 class GResourceTarget(build.CustomTarget):
     source_dirs: T.List[str] = []

@@ -19,6 +19,7 @@ from ..interpreter.type_checking import ENV_KW, ENV_METHOD_KW, ENV_SEPARATOR_KW,
 from ..interpreterbase import (MesonInterpreterObject, FeatureNew, FeatureDeprecated, FeatureBroken,
                                typed_pos_args,  noArgsFlattening, noPosargs, noKwargs,
                                typed_kwargs, KwargInfo, InterpreterException, InterpreterObject)
+from .decorators import apply_machine_map
 from .primitives import MesonVersionString
 from .type_checking import NATIVE_KW, NoneType
 
@@ -99,10 +100,7 @@ class MesonMain(MesonInterpreterObject):
                 # this without completely rewriting install script handling.
                 # This is complicated by the fact that the install target
                 # depends on all.
-                if isinstance(a, build.CustomTargetIndex):
-                    a.target.build_by_default = True
-                else:
-                    a.build_by_default = True
+                a.get_target().build_by_default = True
             else:
                 script_args.extend(a.get_command())
                 new = True
@@ -128,9 +126,10 @@ class MesonMain(MesonInterpreterObject):
     @InterpreterObject.method('add_install_script')
     def add_install_script_method(
             self,
-            args: T.Tuple[T.Union[str, mesonlib.File, build.Executable, Program],
-                          T.List[T.Union[str, mesonlib.File, build.BuildTargetTypes, Program]]],
+            args: T.Tuple[T.Union[str, mesonlib.File, build.Executable, Program], T.List[build.CommandTypes]],
             kwargs: 'AddInstallScriptKW') -> None:
+        if self.interpreter.current_build_project().for_machine is MachineChoice.BUILD:
+            return
         script_args = self._process_script_args('add_install_script', args[1])
         script = self._find_source_script('add_install_script', args[0], script_args, allow_built_program=True)
         script.skip_if_destdir = kwargs['skip_if_destdir']
@@ -150,6 +149,8 @@ class MesonMain(MesonInterpreterObject):
             args: T.Tuple[T.Union[str, mesonlib.File, Program],
                           T.List[T.Union[str, mesonlib.File, Program]]],
             kwargs: 'TYPE_kwargs') -> None:
+        if self.interpreter.current_build_project().for_machine is MachineChoice.BUILD:
+            return
         script_args = self._process_script_args('add_postconf_script', args[1])
         script = self._find_source_script('add_postconf_script', args[0], script_args)
         self.build.postconf_scripts.append(script)
@@ -269,7 +270,7 @@ class MesonMain(MesonInterpreterObject):
 
     def _can_run_host_binaries_impl(self) -> bool:
         return not (
-            self.build.environment.is_cross_build() and
+            self.build.machine_map.host is not self.build.machine_map.build and
             self.build.environment.need_exe_wrapper() and
             self.build.environment.exe_wrapper is None
         )
@@ -278,11 +279,12 @@ class MesonMain(MesonInterpreterObject):
     @noKwargs
     @InterpreterObject.method('is_cross_build')
     def is_cross_build_method(self, args: T.List['TYPE_var'], kwargs: 'TYPE_kwargs') -> bool:
-        return self.build.environment.is_cross_build()
+        return self.build.machine_map.host is not self.build.machine_map.build
 
     @typed_pos_args('meson.get_compiler', str)
     @typed_kwargs('meson.get_compiler', NATIVE_KW)
     @InterpreterObject.method('get_compiler')
+    @apply_machine_map
     def get_compiler_method(self, args: T.Tuple[str], kwargs: 'NativeKW') -> 'Compiler':
         from ..compilers.compilers import all_languages
         lang = args[0]
@@ -324,9 +326,11 @@ class MesonMain(MesonInterpreterObject):
 
     @FeatureNew('meson.override_find_program', '0.46.0')
     @typed_pos_args('meson.override_find_program', str, (mesonlib.File, Program, build.Executable))
-    @noKwargs
+    @typed_kwargs('meson.override_find_program', NATIVE_KW.evolve(since='1.12.0'))
     @InterpreterObject.method('override_find_program')
-    def override_find_program_method(self, args: T.Tuple[str, T.Union[mesonlib.File, Program, build.Executable]], kwargs: 'TYPE_kwargs') -> None:
+    @apply_machine_map
+    def override_find_program_method(self, args: T.Tuple[str, T.Union[mesonlib.File, Program, build.Executable]],
+                                     kwargs: NativeKW) -> None:
         name, exe = args
         if isinstance(exe, mesonlib.File):
             abspath = exe.absolute_path(self.interpreter.environment.source_dir,
@@ -334,10 +338,10 @@ class MesonMain(MesonInterpreterObject):
             if not os.path.exists(abspath):
                 raise InterpreterException(f'Tried to override {name} with a file that does not exist.')
             prog = ExternalProgram(name, command=[abspath], silent=True)
-            exe = build.LocalProgram(prog, self.interpreter.project_version)
+            exe = build.LocalProgram(prog, self.interpreter.project_version, file=exe)
         elif isinstance(exe, build.Executable):
             exe = build.LocalProgram(exe, self.interpreter.project_version)
-        self.interpreter.add_find_program_override(name, exe)
+        self.interpreter.add_find_program_override(name, exe, kwargs['native'])
 
     @typed_kwargs(
         'meson.override_dependency',
@@ -347,6 +351,7 @@ class MesonMain(MesonInterpreterObject):
     @typed_pos_args('meson.override_dependency', str, dependencies.Dependency)
     @FeatureNew('meson.override_dependency', '0.54.0')
     @InterpreterObject.method('override_dependency')
+    @apply_machine_map
     def override_dependency_method(self, args: T.Tuple[str, dependencies.Dependency], kwargs: 'FuncOverrideDependency') -> None:
         name, dep = args
         if not name:
@@ -462,6 +467,7 @@ class MesonMain(MesonInterpreterObject):
     @typed_pos_args('meson.get_external_property', str, optargs=[object])
     @typed_kwargs('meson.get_external_property', NATIVE_KW)
     @InterpreterObject.method('get_external_property')
+    @apply_machine_map
     def get_external_property_method(self, args: T.Tuple[str, T.Optional[object]], kwargs: 'NativeKW') -> object:
         propname, fallback = args
         return self.__get_external_property_impl(propname, fallback, kwargs['native'])
@@ -470,6 +476,7 @@ class MesonMain(MesonInterpreterObject):
     @typed_pos_args('meson.has_external_property', str)
     @typed_kwargs('meson.has_external_property', NATIVE_KW)
     @InterpreterObject.method('has_external_property')
+    @apply_machine_map
     def has_external_property_method(self, args: T.Tuple[str], kwargs: 'NativeKW') -> bool:
         prop_name = args[0]
         return prop_name in self.interpreter.environment.properties[kwargs['native']]

@@ -14,10 +14,11 @@ from .compilers import (
     clike_debug_args,
     Compiler,
     CompileCheckMode,
+    ManyInOneLinkerOptionStyle,
 )
 from .mixins.clike import CLikeCompiler
 from .mixins.gnu import GnuCompiler,  gnu_optimization_args
-from .mixins.intel import IntelGnuLikeCompiler, IntelVisualStudioLikeCompiler
+from .mixins.intel import IntelGnuLikeCompiler, IntelLLVMLikeCompiler, IntelVisualStudioLikeCompiler
 from .mixins.clang import ClangCompiler
 from .mixins.elbrus import ElbrusCompiler
 from .mixins.pgi import PGICompiler
@@ -343,10 +344,15 @@ class ElbrusFortranCompiler(ElbrusCompiler, FortranCompiler):
     def get_module_outdir_args(self, path: str) -> T.List[str]:
         return ['-J' + path]
 
+    def language_stdlib_only_link_flags(self) -> T.List[str]:
+        # No need to add search paths here, because LCC ships everything
+        # (C, C++, Fortran) and always knows where to look for its stuff
+        return ['-lgfortran', '-lm']
+
 
 class G95FortranCompiler(FortranCompiler):
 
-    LINKER_PREFIX = '-Wl,'
+    LINKER_OPTION_STYLE = ManyInOneLinkerOptionStyle('-Wl,', ',')
     id = 'g95'
 
     def __init__(self, exelist: T.List[str], version: str, for_machine: MachineChoice,
@@ -367,7 +373,7 @@ class G95FortranCompiler(FortranCompiler):
 
 class SunFortranCompiler(FortranCompiler):
 
-    LINKER_PREFIX = '-Wl,'
+    LINKER_OPTION_STYLE = ManyInOneLinkerOptionStyle('-Wl,', ',')
     id = 'sun'
 
     def get_dependency_gen_args(self, outtarget: str, outfile: str) -> T.List[str]:
@@ -437,7 +443,7 @@ class IntelFortranCompiler(IntelGnuLikeCompiler, FortranCompiler):
         return ['-gen-dep=' + outtarget, '-gen-depformat=make']
 
 
-class IntelLLVMFortranCompiler(IntelFortranCompiler):
+class IntelLLVMFortranCompiler(IntelLLVMLikeCompiler, IntelFortranCompiler):
 
     id = 'intel-llvm'
 

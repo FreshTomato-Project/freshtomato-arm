@@ -874,11 +874,16 @@ class ComputeLineLengths(FullAstVisitor):
 
 class SubdirFetcher(FullAstVisitor):
 
-    def __init__(self, current_dir: Path):
+    def __init__(self, current_dir: Path, fetch_subprojects: bool):
         self.current_dir = current_dir
+        self.fetch_subprojects = fetch_subprojects
         self.subdirs: T.List[Path] = []
 
     def visit_FunctionNode(self, node: mparser.FunctionNode) -> None:
+        if self.fetch_subprojects and node.func_name.value == 'subproject':
+            if node.args.arguments and isinstance(node.args.arguments[0], mparser.StringNode):
+                subdir = node.args.arguments[0].value
+                self.subdirs.append(self.current_dir / 'subprojects' / subdir)
         if node.func_name.value == 'subdir':
             if node.args.arguments and isinstance(node.args.arguments[0], mparser.StringNode):
                 subdir = node.args.arguments[0].value
@@ -888,8 +893,9 @@ class SubdirFetcher(FullAstVisitor):
 
 class Formatter:
 
-    def __init__(self, configuration_file: T.Optional[Path], use_editor_config: bool, fetch_subdirs: bool):
+    def __init__(self, configuration_file: T.Optional[Path], use_editor_config: bool, fetch_subdirs: bool, fetch_subprojects: bool = False):
         self.fetch_subdirs = fetch_subdirs
+        self.fetch_subprojects = fetch_subprojects
         self.use_editor_config = use_editor_config
         self.config = self.load_configuration(configuration_file)
         self.current_config = self.config
@@ -974,7 +980,7 @@ class Formatter:
 
         ast = mparser.Parser(code, source_file.as_posix()).parse()
         if self.fetch_subdirs:
-            subdir_fetcher = SubdirFetcher(self.current_dir)
+            subdir_fetcher = SubdirFetcher(self.current_dir, self.fetch_subprojects)
             ast.accept(subdir_fetcher)
             self.subdirs = subdir_fetcher.subdirs
 
@@ -1014,7 +1020,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '-r', '--recursive',
         action='store_true',
-        help='recurse subdirs (requires --check-only or --inplace option)',
+        help='recurse subdirs (requires --check-only, --check-diff or --inplace option)',
+    )
+    parser.add_argument(
+        '-s', '--subprojects',
+        action='store_true',
+        help='recurse subprojects (requires --recursive)',
     )
     parser.add_argument(
         '-c', '--configuration',
@@ -1056,8 +1067,10 @@ def get_meson_format(sources: T.List[Path]) -> T.Optional[Path]:
 def run(options: argparse.Namespace) -> int:
     if options.output and len(options.sources) != 1:
         raise MesonException('--output argument implies having exactly one source file')
-    if options.recursive and not (options.inplace or options.check_only):
-        raise MesonException('--recursive argument requires either --inplace or --check-only option')
+    if options.recursive and not (options.inplace or options.check_only or options.check_diff):
+        raise MesonException('--recursive argument requires one of --inplace, --check-diff or --check-only')
+    if options.subprojects and not options.recursive:
+        raise MesonException('--subprojects argument requires --recursive option')
 
     from_stdin = len(options.sources) == 1 and options.sources[0].name == '-' and options.sources[0].parent == Path()
     if options.recursive and from_stdin:
@@ -1074,7 +1087,8 @@ def run(options: argparse.Namespace) -> int:
     if not options.configuration:
         options.configuration = get_meson_format(sources)
 
-    formatter = Formatter(options.configuration, options.editor_config, options.recursive)
+    formatter = Formatter(options.configuration, options.editor_config, options.recursive, options.subprojects)
+    err = 0
 
     while sources:
         src_file = sources.pop(0)
@@ -1102,13 +1116,15 @@ def run(options: argparse.Namespace) -> int:
                 raise MesonException(f'Unable to write to {src_file}') from e
         elif options.check_only or options.check_diff:
             if code != formatted:
+                err = 1
                 if options.check_diff:
                     diff = difflib.unified_diff(code.splitlines(), formatted.splitlines(),
                                                 str(src_file), str(src_file),
                                                 '(original)', '(reformatted)',
                                                 lineterm='')
                     print('\n'.join(diff))
-                return 1
+                else:
+                    break
         elif options.output:
             try:
                 with options.output.open('w', encoding='utf-8', newline=formatter.current_config.newline) as of:
@@ -1118,7 +1134,7 @@ def run(options: argparse.Namespace) -> int:
         else:
             print(formatted, end='')
 
-    return 0
+    return err
 
 # TODO: remove empty newlines when more than N (2...)
 # TODO: magic comment to prevent formatting

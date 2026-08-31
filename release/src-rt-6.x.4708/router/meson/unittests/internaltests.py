@@ -28,6 +28,7 @@ import mesonbuild.modules.gnome
 import mesonbuild.scripts.env2mfile
 from mesonbuild import coredata
 from mesonbuild.compilers.c import ClangCCompiler, GnuCCompiler
+from mesonbuild.compilers.compilers import ManyInOneLinkerOptionStyle
 from mesonbuild.compilers.cpp import VisualStudioCPPCompiler
 from mesonbuild.compilers.d import DmdDCompiler
 from mesonbuild.compilers.detect import detect_c_compiler
@@ -36,8 +37,9 @@ from mesonbuild.linkers import linkers
 from mesonbuild.interpreterbase import typed_pos_args, InvalidArguments, ObjectHolder
 from mesonbuild.interpreterbase import typed_pos_args, InvalidArguments, typed_kwargs, ContainerTypeInfo, KwargInfo
 from mesonbuild.mesonlib import (
-    LibType, MachineChoice, PerMachine, Version, is_windows, is_osx,
+    LibType, MachineChoice, PerMachine, SimpleABC, Version, is_windows, is_osx,
     is_cygwin, is_openbsd, search_version, MesonException, python_command,
+    version_check_to_range,
 )
 from mesonbuild.options import OptionKey
 from mesonbuild.interpreter.type_checking import in_set_validator, NoneType
@@ -51,6 +53,22 @@ from run_tests import get_fake_env, get_fake_options
 from .helpers import *
 
 class InternalTests(unittest.TestCase):
+
+    def test_machine_info_is_ohos(self):
+        def machine(system: str, subsystem: str) -> mesonbuild.envconfig.MachineInfo:
+            return mesonbuild.envconfig.MachineInfo(
+                system=system, cpu_family='aarch64', cpu='aarch64',
+                endian='little', kernel='linux', subsystem=subsystem)
+
+        # OHOS is modelled as an Android subsystem.
+        ohos = machine('android', 'ohos')
+        self.assertTrue(ohos.is_ohos())
+        self.assertTrue(ohos.is_android())
+
+        # Plain Android is not OHOS.
+        self.assertFalse(machine('android', 'android').is_ohos())
+        # A non-Android system with an 'ohos' subsystem is not OHOS either.
+        self.assertFalse(machine('linux', 'ohos').is_ohos())
 
     def test_version_number(self):
         self.assertEqual(search_version('foobar 1.2.3'), '1.2.3')
@@ -74,6 +92,56 @@ class InternalTests(unittest.TestCase):
             Default locale: en_US, platform encoding: UTF-8
             OS name: "linux", version: "5.12.17", arch: "amd64", family: "unix"'''),
             '3.8.1')
+
+    def test_simple_abc(self):
+        from abc import abstractmethod
+
+        # The whole point is for isinstance() to stay on the C fast path
+        self.assertNotIn('__instancecheck__', vars(SimpleABC))
+        self.assertNotIn('__subclasscheck__', vars(SimpleABC))
+
+        class A(metaclass=SimpleABC):
+            @abstractmethod
+            def foo(self): ...
+
+        class B(A, metaclass=SimpleABC):
+            def foo(self):
+                return 1
+
+            @abstractmethod
+            def bar(self): ...
+
+        class C(B):
+            def foo(self):
+                return 2
+
+        class D(B):
+            def bar(self):
+                return 3
+
+        self.assertEqual(A.__abstractmethods__, frozenset({'foo'}))
+        with self.assertRaises(TypeError):
+            A()
+
+        self.assertEqual(B.__abstractmethods__, frozenset({'bar'}))
+        self.assertTrue(issubclass(B, A))
+        with self.assertRaises(TypeError):
+            B()
+
+        self.assertEqual(C.__abstractmethods__, frozenset({'bar'}))
+        self.assertTrue(issubclass(C, A))
+        self.assertTrue(issubclass(C, B))
+        with self.assertRaises(TypeError):
+            # subclass inheriting SimpleABC
+            C()
+
+        self.assertEqual(D.__abstractmethods__, frozenset())
+        self.assertTrue(issubclass(D, A))
+        self.assertTrue(issubclass(D, B))
+        self.assertTrue(issubclass(D, D))
+        self.assertIsInstance(D(), A)
+        self.assertIsInstance(D(), B)
+        self.assertIsInstance(D(), D)
 
     def test_mode_symbolic_to_bits(self):
         modefunc = mesonbuild.mesonlib.FileMode.perms_s_to_bits
@@ -223,19 +291,24 @@ class InternalTests(unittest.TestCase):
         cc = VisualStudioCPPCompiler([], [], '20.00', MachineChoice.HOST, env, 'x64', linker=linker)
 
         a = cc.compiler_args(cc.get_always_args())
-        self.assertEqual(a.to_native(copy=True), ['/nologo', '/showIncludes', '/utf-8', '/Zc:__cplusplus'])
+        self.assertEqual(a.to_native(copy=True), ['/nologo', '/utf-8', '/Zc:__cplusplus'])
 
         # Ensure /source-charset: removes /utf-8
         a.append('/source-charset:utf-8')
-        self.assertEqual(a.to_native(copy=True), ['/nologo', '/showIncludes', '/Zc:__cplusplus', '/source-charset:utf-8'])
+        self.assertEqual(a.to_native(copy=True), ['/nologo', '/Zc:__cplusplus', '/source-charset:utf-8'])
 
         # Ensure /execution-charset: removes /utf-8
         a = cc.compiler_args(cc.get_always_args() + ['/execution-charset:utf-8'])
-        self.assertEqual(a.to_native(copy=True), ['/nologo', '/showIncludes', '/Zc:__cplusplus', '/execution-charset:utf-8'])
+        self.assertEqual(a.to_native(copy=True), ['/nologo', '/Zc:__cplusplus', '/execution-charset:utf-8'])
 
         # Ensure /validate-charset- removes /utf-8
         a = cc.compiler_args(cc.get_always_args() + ['/validate-charset-'])
-        self.assertEqual(a.to_native(copy=True), ['/nologo', '/showIncludes', '/Zc:__cplusplus', '/validate-charset-'])
+        self.assertEqual(a.to_native(copy=True), ['/nologo', '/Zc:__cplusplus', '/validate-charset-'])
+
+        # /showIncludes is needed for build dependency tracking in Ninja
+        # See: https://ninja-build.org/manual.html#_deps
+        a = cc.compiler_args(cc.get_show_dep_args())
+        self.assertEqual(a.to_native(copy=True), ['/showIncludes'])
 
 
     def test_msvc_unix_args_to_native(self):
@@ -273,7 +346,7 @@ class InternalTests(unittest.TestCase):
     def test_compiler_args_class_gnuld(self):
         ## Test --start/end-group
         env = get_fake_env()
-        linker = linkers.GnuBFDDynamicLinker([], env, MachineChoice.HOST, '-Wl,', [])
+        linker = linkers.GnuBFDDynamicLinker([], env, MachineChoice.HOST, ManyInOneLinkerOptionStyle('-Wl,', ','), [])
         gcc = GnuCCompiler([], [], 'fake', MachineChoice.HOST, env, linker=linker)
         ## Ensure that the fake compiler is never called by overriding the relevant function
         gcc.get_default_include_dirs = lambda: ['/usr/include', '/usr/share/include', '/usr/local/include']
@@ -303,7 +376,7 @@ class InternalTests(unittest.TestCase):
     def test_compiler_args_remove_system(self):
         ## Test --start/end-group
         env = get_fake_env()
-        linker = linkers.GnuBFDDynamicLinker([], env, MachineChoice.HOST, '-Wl,', [])
+        linker = linkers.GnuBFDDynamicLinker([], env, MachineChoice.HOST, ManyInOneLinkerOptionStyle('-Wl,', ','), [])
         gcc = GnuCCompiler([], [], 'fake', MachineChoice.HOST, env, linker=linker)
         ## Ensure that the fake compiler is never called by overriding the relevant function
         gcc.get_default_include_dirs = lambda: ['/usr/include', '/usr/share/include', '/usr/local/include']
@@ -721,33 +794,36 @@ class InternalTests(unittest.TestCase):
                         for lib in ('pthread', 'm', 'c', 'dl', 'rt'):
                             self.assertNotIn(f'lib{lib}.a', link_arg, msg=link_args)
 
-    def test_program_version(self):
+    def test_program_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             script_path = Path(tmpdir) / 'script.py'
             script_path.write_text('import sys\nprint(sys.argv[1])\n', encoding='utf-8')
             script_path.chmod(0o755)
 
-            for output, expected in {
-                    '': None,
-                    '1': None,
-                    '1.2.4': '1.2.4',
-                    '1 1.2.4': '1.2.4',
-                    'foo version 1.2.4': '1.2.4',
-                    'foo 1.2.4.': '1.2.4',
-                    'foo 1.2.4': '1.2.4',
-                    'foo 1.2.4 bar': '1.2.4',
-                    'foo 10.0.0': '10.0.0',
-                    '50 5.4.0': '5.4.0',
-                    'This is perl 5, version 40, subversion 0 (v5.40.0)': '5.40.0',
-                    'git version 2.48.0.rc1': '2.48.0',
-            }.items():
-                prog = ExternalProgram('script', command=[python_command, str(script_path), output], silent=True)
+            inputs: list[tuple[str, str | None]] = [
+                ('',  None),
+                ('1',  None),
+                ('1.2.4',  '1.2.4'),
+                ('1 1.2.4',  '1.2.4'),
+                ('foo version 1.2.4',  '1.2.4'),
+                ('foo 1.2.4.',  '1.2.4'),
+                ('foo 1.2.4',  '1.2.4'),
+                ('foo 1.2.4 bar',  '1.2.4'),
+                ('foo 10.0.0',  '10.0.0'),
+                ('50 5.4.0',  '5.4.0'),
+                ('This is perl 5, version 40, subversion 0 (v5.40.0)',  '5.40.0'),
+                ('git version 2.48.0.rc1',  '2.48.0'),
+            ]
 
-                if expected is None:
-                    with self.assertRaisesRegex(MesonException, 'Could not find a version number'):
-                        prog.get_version()
-                else:
-                    self.assertEqual(prog.get_version(), expected)
+            for output, expected in inputs:
+                prog = ExternalProgram('script', command=python_command + [str(script_path), output], silent=True)
+
+                with self.subTest(output=output, expected=expected):
+                    if expected is None:
+                        with self.assertRaisesRegex(MesonException, 'Could not find a version number'):
+                            prog.get_version()
+                    else:
+                        self.assertEqual(prog.get_version(), expected)
 
     def test_version_compare(self):
         comparefunc = mesonbuild.mesonlib.version_compare_many
@@ -1412,7 +1488,7 @@ class InternalTests(unittest.TestCase):
 
         with self.subTest('use before available'), \
                 mock.patch('sys.stdout', io.StringIO()) as out, \
-                mock.patch('mesonbuild.mesonlib.project_meson_versions', {'': '0.1'}):
+                mock.patch('mesonbuild.mesonlib.project_meson_versions', {'': version_check_to_range(['>=0.1'])}):
             # With Meson 0.1 it should trigger the "introduced" warning but not the "deprecated" warning
             _(None, mock.Mock(subproject=''), [], {'input': 'foo'})
             self.assertRegex(out.getvalue(), r'WARNING:.*introduced.*input arg in testfunc. It\'s awesome, use it')
@@ -1420,14 +1496,14 @@ class InternalTests(unittest.TestCase):
 
         with self.subTest('no warnings should be triggered'), \
                 mock.patch('sys.stdout', io.StringIO()) as out, \
-                mock.patch('mesonbuild.mesonlib.project_meson_versions', {'': '1.5'}):
+                mock.patch('mesonbuild.mesonlib.project_meson_versions', {'': version_check_to_range(['>=1.5'])}):
             # With Meson 1.5 it shouldn't trigger any warning
             _(None, mock.Mock(subproject=''), [], {'input': 'foo'})
             self.assertNotRegex(out.getvalue(), r'WARNING:.*')
 
         with self.subTest('use after deprecated'), \
                 mock.patch('sys.stdout', io.StringIO()) as out, \
-                mock.patch('mesonbuild.mesonlib.project_meson_versions', {'': '2.0'}):
+                mock.patch('mesonbuild.mesonlib.project_meson_versions', {'': version_check_to_range(['>=2.0'])}):
             # With Meson 2.0 it should trigger the "deprecated" warning but not the "introduced" warning
             _(None, mock.Mock(subproject=''), [], {'input': 'foo'})
             self.assertRegex(out.getvalue(), r'WARNING:.*deprecated.*input arg in testfunc. It\'s terrible, don\'t use it')
@@ -1458,7 +1534,7 @@ class InternalTests(unittest.TestCase):
 
         _(None, mock.Mock(), tuple(), dict(native=True))
 
-    @mock.patch('mesonbuild.mesonlib.project_meson_versions', {'': '1.0'})
+    @mock.patch('mesonbuild.mesonlib.project_meson_versions', {'': version_check_to_range(['>=1.0'])})
     def test_typed_kwarg_since_values(self) -> None:
         @typed_kwargs(
             'testfunc',
@@ -1486,84 +1562,84 @@ class InternalTests(unittest.TestCase):
 
         with self.subTest('deprecated array string value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'input': ['foo']})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*deprecated since '0.9': "testfunc" keyword argument "input" value "foo".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*deprecated since '0.9': "testfunc" keyword argument "input" value "foo".*""")
 
         with self.subTest('new array string value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'input': ['bar']})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "input" value "bar".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "input" value "bar".*""")
 
         with self.subTest('deprecated dict string value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'output': {'foo': 'a'}})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*deprecated since '0.9': "testfunc" keyword argument "output" value "foo".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*deprecated since '0.9': "testfunc" keyword argument "output" value "foo".*""")
 
         with self.subTest('deprecated dict string value with msg'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'output': {'foo2': 'a'}})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*deprecated since '0.9': "testfunc" keyword argument "output" value "foo2" in dict keys. don't use it.*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*deprecated since '0.9': "testfunc" keyword argument "output" value "foo2" in dict keys. don't use it.*""")
 
         with self.subTest('new dict string value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'output': {'bar': 'b'}})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "output" value "bar".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "output" value "bar".*""")
 
         with self.subTest('new dict string value with msg'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'output': {'bar2': 'a'}})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "output" value "bar2" in dict keys. use this.*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "output" value "bar2" in dict keys. use this.*""")
 
         with self.subTest('new string type'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'foo': 'foo'})
-            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "foo" of type str.*""")
+            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "foo" of type str.*""")
 
         with self.subTest('new array of string type'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'foo': ['foo']})
-            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '1.0'.*introduced in '1.2': "testfunc" keyword argument "foo" of type array\[str\].*""")
+            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '>= 1.0'.*introduced in '1.2': "testfunc" keyword argument "foo" of type array\[str\].*""")
 
         with self.subTest('new dict of string type'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'foo': {'plop': 'foo'}})
-            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '1.0'.*introduced in '1.3': "testfunc" keyword argument "foo" of type dict\[str\].*""")
+            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '>= 1.0'.*introduced in '1.3': "testfunc" keyword argument "foo" of type dict\[str\].*""")
 
         with self.subTest('deprecated int value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'foo': 1})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*deprecated since '0.8': "testfunc" keyword argument "foo" of type int.*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*deprecated since '0.8': "testfunc" keyword argument "foo" of type int.*""")
 
         with self.subTest('deprecated array int value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'foo': [1]})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*deprecated since '0.9': "testfunc" keyword argument "foo" of type array\[int\].*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*deprecated since '0.9': "testfunc" keyword argument "foo" of type array\[int\].*""")
 
         with self.subTest('new list[str] value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'tuple': ['foo', 42]})
-            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "tuple" of type array\[str\].*""")
-            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '1.0'.*introduced in '1.2': "testfunc" keyword argument "tuple" of type array\[int\].*""")
+            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "tuple" of type array\[str\].*""")
+            self.assertRegex(out.getvalue(), r"""WARNING: Project targets '>= 1.0'.*introduced in '1.2': "testfunc" keyword argument "tuple" of type array\[int\].*""")
 
         with self.subTest('deprecated array string value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'input': 'foo'})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*deprecated since '0.9': "testfunc" keyword argument "input" value "foo".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*deprecated since '0.9': "testfunc" keyword argument "input" value "foo".*""")
 
         with self.subTest('new array string value'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'input': 'bar'})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "input" value "bar".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "input" value "bar".*""")
 
         with self.subTest('non string union'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'install_dir': False})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*deprecated since '0.9': "testfunc" keyword argument "install_dir" value "False".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*deprecated since '0.9': "testfunc" keyword argument "install_dir" value "False".*""")
 
         with self.subTest('deprecated string union'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'mode': 'deprecated'})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*deprecated since '1.0': "testfunc" keyword argument "mode" value "deprecated".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*deprecated since '1.0': "testfunc" keyword argument "mode" value "deprecated".*""")
 
         with self.subTest('new string union'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'mode': 'since'})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "mode" value "since".*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "mode" value "since".*""")
 
         with self.subTest('new container'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'dict': ['a=b']})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*introduced in '1.9': "testfunc" keyword argument "dict" of type list.*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*introduced in '1.9': "testfunc" keyword argument "dict" of type list.*""")
 
         with self.subTest('new container set to default'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {'new_dict': {}})
-            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "new_dict" of type dict.*""")
+            self.assertRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "new_dict" of type dict.*""")
 
         with self.subTest('new container default'), mock.patch('sys.stdout', io.StringIO()) as out:
             _(None, mock.Mock(subproject=''), [], {})
-            self.assertNotRegex(out.getvalue(), r"""WARNING:.Project targets '1.0'.*introduced in '1.1': "testfunc" keyword argument "new_dict" of type dict.*""")
+            self.assertNotRegex(out.getvalue(), r"""WARNING:.Project targets '>= 1.0'.*introduced in '1.1': "testfunc" keyword argument "new_dict" of type dict.*""")
 
     def test_typed_kwarg_evolve(self) -> None:
         k = KwargInfo('foo', str, required=True, default='foo')

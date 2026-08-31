@@ -333,8 +333,8 @@ class CLikeCompiler(Compiler):
             try:
                 crt_val = self.environment.coredata.optstore.get_value_for('b_vscrt')
                 assert isinstance(crt_val, str), 'for mypy'
-                cargs += self.get_crt_compile_args(crt_val, self.environment)
-                largs += self.get_crt_link_args(crt_val, self.environment)
+                cargs += self.get_crt_compile_args(crt_val)
+                largs += self.get_crt_link_args(crt_val)
             except (KeyError, AttributeError):
                 pass
 
@@ -352,7 +352,7 @@ class CLikeCompiler(Compiler):
         if mode is CompileCheckMode.LINK:
             ld_value = self.environment.lookup_binary_entry(self.for_machine, self.language + '_ld')
             if ld_value is not None:
-                largs += self.use_linker_args(ld_value[0], self.version)
+                cargs += self.use_linker_args(ld_value[0], self.version)
 
             # Add LDFLAGS from the env
             sys_ld_args = self.environment.coredata.get_external_link_args(self.for_machine, self.language)
@@ -545,7 +545,12 @@ class CLikeCompiler(Compiler):
             return -1, False
         if res.returncode != 0:
             raise mesonlib.EnvironmentException('Could not run sizeof test binary.')
-        return int(res.stdout), res.cached
+        try:
+            return int(res.stdout), res.cached
+        except ValueError:
+            raise mesonlib.EnvironmentException(
+                f'Could not determine size of {typename}: compiler output was empty or invalid.'
+            )
 
     def _cross_alignment(self, typename: str, prefix: str, *,
                          extra_args: T.Optional[T.List[str]] = None,
@@ -638,7 +643,12 @@ class CLikeCompiler(Compiler):
             raise mesonlib.MesonBugException('Delimiters not found in preprocessor output.')
         define_value = p.stdout[star_idx + len(delim_start):end_idx]
 
-        if define_value == sentinel_undef:
+        # Due to https://developercommunity.visualstudio.com/t/Inconsistent-whitespace-with-standard-pr/11023343,
+        # MSVC can end up producing an unexpected space after the sentinel_undef
+        # string (if building with -std:c11, and if the test source is written
+        # with unix newlines). To avoid treating this as an actual predefined
+        # macro, look for the buggy value as well.
+        if define_value in {sentinel_undef, sentinel_undef + ' '}:
             define_value = None
         else:
             # Merge string literals
@@ -1242,11 +1252,11 @@ class CLikeCompiler(Compiler):
         # TODO: should probably check for macOS?
         return self._find_framework_impl(name, extra_dirs, allow_system)
 
-    def get_crt_compile_args(self, crt_val: str, env: Environment) -> T.List[str]:
+    def get_crt_compile_args(self, crt_val: str) -> T.List[str]:
         # TODO: does this belong here or in GnuLike or maybe PosixLike?
         return []
 
-    def get_crt_link_args(self, crt_val: str, env: Environment) -> T.List[str]:
+    def get_crt_link_args(self, crt_val: str) -> T.List[str]:
         # TODO: does this belong here or in GnuLike or maybe PosixLike?
         return []
 

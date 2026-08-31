@@ -31,7 +31,7 @@ from mesonbuild.options import OptionKey
 from mesonbuild.compilers import (
     detect_c_compiler, detect_cpp_compiler, compiler_from_language,
 )
-from mesonbuild.compilers.c import AppleClangCCompiler
+from mesonbuild.compilers.c import AppleClangCCompiler, ElbrusCompiler
 from mesonbuild.compilers.cpp import AppleClangCPPCompiler
 from mesonbuild.compilers.objc import AppleClangObjCCompiler
 from mesonbuild.compilers.objcpp import AppleClangObjCPPCompiler
@@ -472,6 +472,8 @@ class LinuxlikeTests(BasePlatformTests):
             raise SkipTest('asan not available on Cygwin')
         if is_openbsd():
             raise SkipTest('-fsanitize=address is not supported on OpenBSD')
+        if is_sunos():
+            raise SkipTest('-fsanitize=address is not supported on illumos')
 
         testdir = os.path.join(self.common_test_dir, '1 trivial')
         env = {'CFLAGS': '-fsanitize=address'}
@@ -1024,6 +1026,8 @@ class LinuxlikeTests(BasePlatformTests):
             raise SkipTest('asan not available on Cygwin')
         if is_openbsd():
             raise SkipTest('-fsanitize=address is not supported on OpenBSD')
+        if is_sunos():
+            raise SkipTest('-fsanitize=address is not supported on illumos')
 
         testdir = os.path.join(self.common_test_dir, '1 trivial')
         env = {'CFLAGS': '-fsanitize=address', 'LDFLAGS': '-I.'}
@@ -1656,6 +1660,8 @@ class LinuxlikeTests(BasePlatformTests):
                 if isinstance(comp, (AppleClangCCompiler, AppleClangCPPCompiler,
                                      AppleClangObjCCompiler, AppleClangObjCPPCompiler)):
                     raise SkipTest('AppleClang is currently only supported with ld64')
+                if isinstance(comp, ElbrusCompiler):
+                    raise SkipTest('ElbrusCompiler currently cannot override the linker.')
                 if lang != 'rust' and comp.use_linker_args('bfd', '') == []:
                     raise SkipTest(
                         f'Compiler {comp.id} does not support using alternative linkers')

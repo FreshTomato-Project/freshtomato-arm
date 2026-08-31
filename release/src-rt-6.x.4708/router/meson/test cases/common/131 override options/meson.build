@@ -1,6 +1,8 @@
-project('option override', 'c',
-  default_options : 'unity=on')
+project('option override', 'c')
 
-executable('mustunity', 'one.c', 'two.c')
+# exercise target-level option override
+executable('mustunity', 'one.c', 'two.c',
+  override_options : ['unity=on'])
+
 executable('notunity', 'three.c', 'four.c',
   override_options : ['unity=off'])

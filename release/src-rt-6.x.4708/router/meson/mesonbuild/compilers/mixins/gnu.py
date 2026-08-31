@@ -17,7 +17,7 @@ import typing as T
 from ... import mesonlib
 from ... import mlog
 from ...options import OptionKey, UserStdOption
-from mesonbuild.compilers.compilers import CompileCheckMode
+from mesonbuild.compilers.compilers import CompileCheckMode, ManyInOneLinkerOptionStyle, PrefixArgumentLinkerOptionStyle
 
 if T.TYPE_CHECKING:
     from ..._typing import ImmutableListProtocol
@@ -348,7 +348,7 @@ def gnulike_default_include_dirs(compiler: T.Tuple[str, ...], lang: str) -> 'Imm
     return paths
 
 
-class GnuLikeCompiler(Compiler, metaclass=abc.ABCMeta):
+class GnuLikeCompiler(Compiler, metaclass=mesonlib.SimpleABC):
     """
     GnuLikeCompiler is a common interface to all compilers implementing
     the GNU-style commandline interface. This includes GCC, Clang
@@ -356,7 +356,8 @@ class GnuLikeCompiler(Compiler, metaclass=abc.ABCMeta):
     that the actual concrete subclass define their own implementation.
     """
 
-    LINKER_PREFIX = '-Wl,'
+    LINKER_OPTION_STYLE = ManyInOneLinkerOptionStyle('-Wl,', ',',
+                                                     fallback=PrefixArgumentLinkerOptionStyle('-Xlinker'))
 
     def __init__(self) -> None:
         self.base_options = {

@@ -8,7 +8,6 @@ from __future__ import annotations
 interface.
 """
 
-import abc
 import os
 import typing as T
 
@@ -20,7 +19,6 @@ from mesonbuild.linkers.linkers import ClangClDynamicLinker, MSVCDynamicLinker
 
 if T.TYPE_CHECKING:
     from ...build import BuildTarget
-    from ...environment import Environment
     from .clike import CLikeCompiler as Compiler
 else:
     # This is a bit clever, for mypy we pretend that these mixins descend from
@@ -66,7 +64,7 @@ msvc_optimization_args: T.Dict[str, T.List[str]] = {
 }
 
 
-class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
+class VisualStudioLikeCompiler(Compiler, metaclass=mesonlib.SimpleABC):
 
     """A common interface for all compilers implementing an MSVC-style
     interface.
@@ -89,13 +87,11 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
         'mtd': ['/MTd'],
     }
 
-    # /showIncludes is needed for build dependency tracking in Ninja
-    # See: https://ninja-build.org/manual.html#_deps
     # Assume UTF-8 sources by default, but self.unix_args_to_native() removes it
     # if `/source-charset` is set too.
     # It is also dropped if Visual Studio 2013 or earlier is used, since it would
     # not be supported in that case.
-    always_args = ['/nologo', '/showIncludes', '/utf-8']
+    always_args = ['/nologo', '/utf-8']
     warn_args: T.Dict[str, T.List[str]] = {
         '0': [],
         '1': ['/W2'],
@@ -130,6 +126,12 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
     def get_always_args(self) -> T.List[str]:
         # TODO: use ImmutableListProtocol[str] here instead
         return self.always_args.copy()
+
+    def get_no_stdinc_args(self) -> T.List[str]:
+        return ['/X']
+
+    def get_no_stdlib_link_args(self) -> T.List[str]:
+        return ['/NODEFAULTLIB']
 
     def get_pch_suffix(self) -> str:
         return 'pch'
@@ -317,8 +319,8 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
             return []
         return os.environ['INCLUDE'].split(os.pathsep)
 
-    def get_crt_compile_args(self, crt_val: str, env: Environment) -> T.List[str]:
-        crt_val = self.get_crt_val(crt_val, env)
+    def get_crt_compile_args(self, crt_val: str) -> T.List[str]:
+        crt_val = self.get_crt_val(crt_val)
         return self.crt_args[crt_val]
 
     def has_func_attribute(self, name: str) -> T.Tuple[bool, bool]:
@@ -349,6 +351,11 @@ class VisualStudioLikeCompiler(Compiler, metaclass=abc.ABCMeta):
 
     def get_pie_args(self) -> T.List[str]:
         return []
+
+    def get_show_dep_args(self) -> T.List[str]:
+        # /showIncludes is needed for build dependency tracking in Ninja
+        # See: https://ninja-build.org/manual.html#_deps
+        return ['/showIncludes']
 
 class MSVCCompiler(VisualStudioLikeCompiler):
 

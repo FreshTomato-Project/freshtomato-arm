@@ -81,7 +81,7 @@ class WindowsModule(ExtensionModule):
                 return None
 
             comp = self.detect_compiler(state.environment.coredata.compilers[for_machine])
-            if comp.id in {'msvc', 'clang-cl', 'intel-cl'} or (comp.linker and comp.linker.id in {'link', 'lld-link'}):
+            if comp.linker and comp.linker.id in {'link', 'lld-link'}:
                 rescomp = search_programs(['rc', 'llvm-rc'])
             else:
                 rescomp = search_programs(['windres', 'llvm-windres'])
@@ -119,12 +119,13 @@ class WindowsModule(ExtensionModule):
                           args: T.Tuple[T.List[T.Union[str, mesonlib.File, build.CustomTarget, build.CustomTargetIndex]]],
                           kwargs: 'CompileResources') -> ModuleReturnValue:
         extra_args = kwargs['args'].copy()
-        wrc_depend_files = kwargs['depend_files']
+        wrc_depend_files = state._interpreter.source_strings_to_files(kwargs['depend_files'])
         wrc_depends = kwargs['depends']
         for d in wrc_depends:
             if isinstance(d, build.CustomTarget):
                 extra_args += state.get_include_args([
-                    build.IncludeDirs('', [], False, [self.interpreter.backend.get_target_dir(d)])
+                    build.IncludeDirs('', [], False, state.current_build_project,
+                                      [self.interpreter.backend.get_target_dir(d)])
                 ])
         extra_args += state.get_include_args(kwargs['include_directories'], kwargs['implicit_include_directories'])
 
@@ -152,10 +153,10 @@ class WindowsModule(ExtensionModule):
 
         res_targets: T.List[build.CustomTarget] = []
 
-        def get_names() -> T.Iterable[T.Tuple[str, str, T.Union[str, mesonlib.File, build.CustomTargetIndex]]]:
+        def get_names() -> T.Iterable[T.Tuple[str, str, T.Union[mesonlib.File, build.CustomTargetIndex]]]:
             for src in args[0]:
                 if isinstance(src, str):
-                    yield os.path.join(state.subdir, src), src, src
+                    yield os.path.join(state.subdir, src), src, mesonlib.File.from_source_file(state.environment.source_dir, state.subdir, src)
                 elif isinstance(src, mesonlib.File):
                     yield src.relative_name(), src.fname, src
                 elif isinstance(src, build.CustomTargetIndex):
@@ -185,15 +186,32 @@ class WindowsModule(ExtensionModule):
 
             if rescomp_type == ResourceCompilerType.rc:
                 compiler = self.detect_compiler(state.environment.coredata.compilers[MachineChoice.HOST])
-                if compiler.id in {'msvc', 'clang-cl'}:
+                command.extend(state.environment.get_build_command())
+                command.extend(['--internal', 'rc',
+                                '--rc', *rescomp.get_command(),
+                                '--cl', *compiler.get_exelist(False)])
+
+                if compiler.id in {'msvc', 'clang-cl', 'intel-cl'}:
                     depfile_type = 'msvc'
+                    command.extend(['--Xarg=/showIncludes',
+                                    '--Xarg=/EP',
+                                    '--Xarg=/nologo',
+                                    '--Xarg=/DRC_INVOKED',
+                                    '--Xarg=/Tc@INPUT@',
+                                    ])
+                else:
+                    depfile = f'{output}.d'
+                    depfile_type = 'gcc'
+                    command.extend(['--Xarg=-xc',
+                                    '--Xarg=-E',
+                                    '--Xarg=-MD',
+                                    '--Xarg=-MQ@OUTPUT@',
+                                    '--Xarg=-MF@DEPFILE@',
+                                    '--Xarg=-DRC_INVOKED',
+                                    ])
+            else:
+                command.extend(rescomp.get_command())
 
-                    command.extend(state.environment.get_build_command())
-                    command.extend(['--internal', 'rc',
-                                    '--cl', compiler.get_exelist(False)[0],
-                                    '--rc'])
-
-            command.append(rescomp)
             command.extend(res_args)
 
             # instruct binutils windres to generate a preprocessor depfile
@@ -207,11 +225,11 @@ class WindowsModule(ExtensionModule):
             res_targets.append(build.CustomTarget(
                 name_formatted,
                 state.subdir,
-                state.subproject,
                 state.environment,
                 command,
                 [src],
                 [output],
+                state.current_build_project,
                 depfile=depfile,
                 depfile_type=depfile_type,
                 depend_files=wrc_depend_files,

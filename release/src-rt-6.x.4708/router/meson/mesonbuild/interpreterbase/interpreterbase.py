@@ -14,6 +14,7 @@ from .baseobjects import (
     ObjectHolder,
     IterableObject,
     ContextManagerObject,
+    DefaultObject,
 
     HoldableTypes,
 )
@@ -40,9 +41,10 @@ import typing as T
 import textwrap
 
 if T.TYPE_CHECKING:
-    from .baseobjects import InterpreterObjectTypeVar, SubProject, TYPE_kwargs, TYPE_var
+    from .baseobjects import InterpreterObjectTypeVar, TYPE_kwargs, TYPE_var
     from ..ast import AstVisitor
     from ..interpreter import Interpreter
+    from ..mesonlib import SubProject
 
     HolderMapType = T.Dict[
         T.Union[
@@ -95,9 +97,9 @@ class InterpreterBase:
         # meson.version().compare_version(version_string)
         # If it was part of a if-clause, it is used to temporally override the
         # current meson version target within that if-block.
-        self.tmp_meson_version: T.Optional[str] = None
+        self.tmp_meson_version: T.Optional[mesonlib.Range[mesonlib.Version]] = None
 
-    def handle_meson_version_from_ast(self, strict: bool = True) -> None:
+    def handle_meson_version_from_ast(self) -> None:
         # do nothing in an AST interpreter
         return
 
@@ -295,7 +297,6 @@ class InterpreterBase:
         return self._holderify(v.operator_call(MesonOperator.NOT, None))
 
     def evaluate_if(self, node: mparser.IfClauseNode) -> T.Optional[Disabler]:
-        assert isinstance(node, mparser.IfClauseNode)
         for i in node.ifs:
             # Reset self.tmp_meson_version to know if it gets set during this
             # statement evaluation.
@@ -310,15 +311,19 @@ class InterpreterBase:
             res = result.operator_call(MesonOperator.BOOL, None)
             if not isinstance(res, bool):
                 raise InvalidCode(f'If clause {result!r} does not evaluate to true or false.')
-            if res:
-                prev_meson_version = mesonlib.project_meson_versions[self.subproject]
-                if self.tmp_meson_version:
-                    mesonlib.project_meson_versions[self.subproject] = self.tmp_meson_version
-                try:
+            prev_meson_version = mesonlib.project_meson_versions[self.subproject]
+            if self.tmp_meson_version and isinstance(prev_meson_version, mesonlib.Range):
+                always = prev_meson_version.always(self.tmp_meson_version)
+                if always is not None:
+                    mlog.warning(f"Conditional on version '{self.tmp_meson_version}' always evaluates to {str(always).lower()}",
+                                 location=self.current_node)
+                mesonlib.project_meson_versions[self.subproject] = prev_meson_version.intersect(self.tmp_meson_version)
+            try:
+                if res:
                     self.evaluate_codeblock(i.block)
-                finally:
-                    mesonlib.project_meson_versions[self.subproject] = prev_meson_version
-                return None
+                    return None
+            finally:
+                mesonlib.project_meson_versions[self.subproject] = prev_meson_version
         if not isinstance(node.elseblock, mparser.EmptyNode):
             self.evaluate_codeblock(node.elseblock.block)
         return None
@@ -410,7 +415,6 @@ class InterpreterBase:
         return self._holderify(res)
 
     def evaluate_ternary(self, node: mparser.TernaryNode) -> T.Optional[InterpreterObject]:
-        assert isinstance(node, mparser.TernaryNode)
         result = self.evaluate_statement(node.condition)
         if result is None:
             raise mesonlib.MesonException('Cannot use a void statement as condition for ternary operator.')
@@ -440,13 +444,17 @@ class InterpreterBase:
                 except InvalidArguments as e:
                     raise InvalidArguments(f'f-string: {str(e)}')
             except KeyError:
-                raise InvalidCode(f'Identifier "{var}" does not name a variable.')
+                ustr = f'Identifier "{var}" does not name a variable.'
+                from difflib import get_close_matches
+                close_matches = get_close_matches(var, self.variables.keys())
+                if close_matches:
+                    ustr += f' Did you mean "{close_matches[0]}"?'
+                raise InvalidCode(ustr)
 
         res = re.sub(r'@([_a-zA-Z][_0-9a-zA-Z]*)@', replace, node.value)
         return self._holderify(res)
 
     def evaluate_foreach(self, node: mparser.ForeachClauseNode) -> None:
-        assert isinstance(node, mparser.ForeachClauseNode)
         items = self.evaluate_statement(node.items)
         if not isinstance(items, IterableObject):
             raise InvalidArguments('Items of foreach loop do not support iterating')
@@ -475,7 +483,6 @@ class InterpreterBase:
                 break
 
     def evaluate_plusassign(self, node: mparser.PlusAssignmentNode) -> None:
-        assert isinstance(node, mparser.PlusAssignmentNode)
         varname = node.var_name.value
         addition = self.evaluate_statement(node.value)
         if addition is None:
@@ -489,7 +496,6 @@ class InterpreterBase:
         self.set_variable(varname, new_value)
 
     def evaluate_indexing(self, node: mparser.IndexNode) -> InterpreterObject:
-        assert isinstance(node, mparser.IndexNode)
         iobject = self.evaluate_statement(node.iobject)
         if iobject is None:
             raise InterpreterException('Tried to evaluate indexing on void.')
@@ -520,6 +526,10 @@ class InterpreterBase:
             res = func(node, func_args, kwargs)
             return self._holderify(res) if res is not None else None
         else:
+            from difflib import get_close_matches
+            close_matches = get_close_matches(func_name, self.funcs.keys())
+            if close_matches:
+                raise InvalidCode(f'Unknown function "{func_name}". Did you mean "{close_matches[0]}"?')
             self.unknown_function_called(func_name)
             return None
 
@@ -579,7 +589,6 @@ class InterpreterBase:
                 T.List[InterpreterObject],
                 T.Dict[str, InterpreterObject]
             ]:
-        assert isinstance(args, mparser.ArgumentNode)
         if args.incorrect_order():
             raise InvalidArguments('All keyword arguments must be after positional arguments.')
         self.argument_depth += 1
@@ -604,7 +613,12 @@ class InterpreterBase:
     def expand_default_kwargs(self, kwargs: T.Dict[str, T.Optional[InterpreterObject]]) -> T.Dict[str, T.Optional[InterpreterObject]]:
         if 'kwargs' not in kwargs:
             return kwargs
-        to_expand = _unholder(kwargs.pop('kwargs'))
+
+        kwargs_var = kwargs.pop('kwargs')
+        if isinstance(kwargs_var, DefaultObject):
+            return kwargs
+
+        to_expand = _unholder(kwargs_var)
         if not isinstance(to_expand, dict):
             raise InterpreterException('Value of "kwargs" must be dictionary.')
         if 'kwargs' in to_expand:
@@ -616,7 +630,6 @@ class InterpreterBase:
         return kwargs
 
     def assignment(self, node: mparser.AssignmentNode) -> None:
-        assert isinstance(node, mparser.AssignmentNode)
         if self.argument_depth != 0:
             raise InvalidArguments(textwrap.dedent('''\
                 Tried to assign values inside an argument list.
@@ -651,7 +664,12 @@ class InterpreterBase:
             return self.builtin[varname]
         if varname in self.variables:
             return self.variables[varname]
-        raise InvalidCode(f'Unknown variable "{varname}".')
+        ustr = f'Unknown variable name "{varname}".'
+        from difflib import get_close_matches
+        close_matches = get_close_matches(varname, self.variables.keys())
+        if close_matches:
+            ustr += f' Did you mean "{close_matches[0]}"?'
+        raise InvalidCode(ustr)
 
     def _load_option_file(self) -> None:
         from .. import optinterpreter  # prevent circular import

@@ -9,10 +9,11 @@ import typing as T
 
 from .. import compilers
 from ..build import (CustomTarget, BuildTarget,
-                     CustomTargetIndex, ExtractedObjects, GeneratedList, IncludeDirs,
+                     CustomTargetIndex, ExtractedObjects, GeneratedList, IncludeDirs, LocalProgram,
                      BothLibraries, SharedLibrary, StaticLibrary, Jar, Executable, StructuredSources)
-from ..options import OptionKey, UserFeatureOption
+from ..options import OptionKey
 from ..dependencies import Dependency, DependencyMethods, InternalDependency
+from ..interpreterbase import Feature
 from ..interpreterbase.decorators import KwargInfo, ContainerTypeInfo, FeatureBroken, FeatureDeprecated
 from ..mesonlib import (File, FileMode, MachineChoice, has_path_sep, listify, stringlistify,
                         EnvironmentVariables)
@@ -24,13 +25,14 @@ NoneType: T.Type[None] = type(None)
 if T.TYPE_CHECKING:
     from typing_extensions import Literal
 
-    from ..build import ObjectTypes, GeneratedTypes, BuildTargetTypes
+    from .kwargs import CustomTargetInputs
+    from ..build import ObjectTypes, GeneratedTypes, CommandTypes, TargetSources
     from ..interpreterbase import TYPE_var
     from ..options import ElementaryOptionValues
     from ..mesonlib import EnvInitValueType
     from ..interpreterbase.decorators import FeatureCheckBase
 
-    _FullEnvInitValueType = T.Union[EnvironmentVariables, T.List[str], T.List[T.List[str]], EnvInitValueType, str, None]
+    FullEnvInitValueType = T.Union[EnvironmentVariables, T.List[str], T.List[T.List[str]], EnvInitValueType, str, None]
     PkgConfigDefineType = T.Optional[T.Tuple[T.Tuple[str, str], ...]]
     SourcesVarargsType = T.List[T.Union[str, File, GeneratedTypes, StructuredSources, ExtractedObjects, BuildTarget]]
 
@@ -184,9 +186,9 @@ INSTALL_MODE_KW: KwargInfo[T.List[T.Union[str, bool, int]]] = KwargInfo(
     convertor=_install_mode_convertor,
 )
 
-REQUIRED_KW: KwargInfo[T.Union[bool, UserFeatureOption]] = KwargInfo(
+REQUIRED_KW: KwargInfo[T.Union[bool, Feature]] = KwargInfo(
     'required',
-    (bool, UserFeatureOption),
+    (bool, Feature),
     default=True,
     # TODO: extract_required_kwarg could be converted to a convertor
 )
@@ -241,7 +243,7 @@ def split_equal_string(input: str) -> T.Tuple[str, str]:
 
 # Split _env_convertor() and env_convertor_with_method() to make mypy happy.
 # It does not want extra arguments in KwargInfo convertor callable.
-def env_convertor_with_method(value: _FullEnvInitValueType,
+def env_convertor_with_method(value: FullEnvInitValueType,
                               init_method: Literal['set', 'prepend', 'append'] = 'set',
                               separator: str = os.pathsep) -> EnvironmentVariables:
     if isinstance(value, str):
@@ -254,7 +256,7 @@ def env_convertor_with_method(value: _FullEnvInitValueType,
         return EnvironmentVariables()
     return value
 
-def _env_convertor(value: _FullEnvInitValueType) -> EnvironmentVariables:
+def _env_convertor(value: FullEnvInitValueType) -> EnvironmentVariables:
     return env_convertor_with_method(value)
 
 ENV_KW: KwargInfo[T.Union[EnvironmentVariables, T.List, T.Dict, str, None]] = KwargInfo(
@@ -270,12 +272,12 @@ DEPFILE_KW: KwargInfo[T.Optional[str]] = KwargInfo(
     validator=lambda x: 'Depfile must be a plain filename with a subdirectory' if has_path_sep(x) else None
 )
 
-DEPENDS_KW: KwargInfo[T.List[BuildTargetTypes]] = KwargInfo(
+DEPENDS_KW: KwargInfo[T.List[T.Union[BuildTarget, CustomTarget, CustomTargetIndex, Program]]] = KwargInfo(
     'depends',
-    ContainerTypeInfo(list, (BuildTarget, CustomTarget, CustomTargetIndex)),
+    ContainerTypeInfo(list, (BuildTarget, CustomTarget, CustomTargetIndex, Program)),
     listify=True,
     default=[],
-    since_values={CustomTargetIndex: '1.5.0'},
+    since_values={CustomTargetIndex: '1.5.0', ExternalProgram: '1.12.0'},
 )
 
 DEPEND_FILES_KW: KwargInfo[T.List[T.Union[str, File]]] = KwargInfo(
@@ -285,7 +287,7 @@ DEPEND_FILES_KW: KwargInfo[T.List[T.Union[str, File]]] = KwargInfo(
     default=[],
 )
 
-COMMAND_KW: KwargInfo[T.List[T.Union[str, BuildTargetTypes, Program, File]]] = KwargInfo(
+COMMAND_KW: KwargInfo[T.List[T.Union[str, CommandTypes, Program, File]]] = KwargInfo(
     'command',
     ContainerTypeInfo(list, (str, BuildTarget, CustomTarget, CustomTargetIndex, Program, File), allow_empty=False),
     required=True,
@@ -350,11 +352,22 @@ OUTPUT_KW: KwargInfo[str] = KwargInfo(
     validator=lambda x: _output_validator([x])
 )
 
-CT_INPUT_KW: KwargInfo[T.List[T.Union[str, File, ExternalProgram, BuildTarget, GeneratedTypes, ExtractedObjects]]] = KwargInfo(
+def _local_program_convertor(raw: T.List[T.Union[str, File, BuildTarget, GeneratedTypes, ExtractedObjects, Program]]) -> T.List[CustomTargetInputs]:
+    result: T.List[CustomTargetInputs] = []
+    for i in raw:
+        if isinstance(i, LocalProgram):
+            result.append(i.get_target())
+        else:
+            result.append(i)
+    return result
+
+CT_INPUT_KW: KwargInfo[T.List[T.Union[str, File, BuildTarget, GeneratedTypes, ExtractedObjects, Program]]] = KwargInfo(
     'input',
-    ContainerTypeInfo(list, (str, File, ExternalProgram, BuildTarget, CustomTarget, CustomTargetIndex, ExtractedObjects, GeneratedList)),
+    ContainerTypeInfo(list, (str, File, BuildTarget, CustomTarget, CustomTargetIndex, ExtractedObjects, GeneratedList, Program)),
     listify=True,
     default=[],
+    convertor=_local_program_convertor,
+    since_values={ExternalProgram: '1.12.0'},
 )
 
 CT_INSTALL_TAG_KW: KwargInfo[T.List[T.Union[str, bool]]] = KwargInfo(
@@ -477,7 +490,7 @@ LINK_WHOLE_KW: KwargInfo[T.List[T.Union[BothLibraries, StaticLibrary, CustomTarg
     extra_types={Dependency: lambda _: _LINK_WITH_ERROR}
 )
 
-DEPENDENCY_SOURCES_KW: KwargInfo[T.List[T.Union[str, File, GeneratedTypes]]] = KwargInfo(
+DEPENDENCY_SOURCES_KW: KwargInfo[T.List[str | TargetSources]] = KwargInfo(
     'sources',
     ContainerTypeInfo(list, (str, File, CustomTarget, CustomTargetIndex, GeneratedList)),
     listify=True,
@@ -550,20 +563,21 @@ RUST_ABI_KW: KwargInfo[T.Union[str, None]] = KwargInfo(
     since='1.3.0',
     validator=in_set_validator({'rust', 'c'}))
 
+# this is implicitly an extra link_depends and thus shares the same type
 _VS_MODULE_DEFS_KW: KwargInfo[T.Optional[T.Union[str, File, CustomTarget, CustomTargetIndex]]] = KwargInfo(
     'vs_module_defs',
     (str, File, CustomTarget, CustomTargetIndex, NoneType),
     since_values={CustomTargetIndex: '1.3.0'}
 )
 
-_BASE_LANG_KW: KwargInfo[T.List[str]] = KwargInfo(
+_BASE_LANG_KW: KwargInfo[T.List[T.Union[str, File]]] = KwargInfo(
     'UNKNOWN',
-    ContainerTypeInfo(list, (str)),
+    ContainerTypeInfo(list, (str, File)),
     listify=True,
     default=[],
 )
 
-_LANGUAGE_KWS: T.List[KwargInfo[T.List[str]]] = [
+_LANGUAGE_KWS: T.List[KwargInfo[T.List[str | File]]] = [
     _BASE_LANG_KW.evolve(name=f'{lang}_args')
     for lang in compilers.all_languages - {'rust', 'vala', 'java'}
 ]
@@ -573,10 +587,17 @@ _LANGUAGE_KWS.append(KwargInfo(
 _LANGUAGE_KWS.append(_BASE_LANG_KW.evolve(name='rust_args', since='0.41.0'))
 
 # We need this deprecated values more than the non-deprecated values. So we'll evolve them out elsewhere.
-_JAVA_LANG_KW: KwargInfo[T.List[str]] = _BASE_LANG_KW.evolve(
+_JAVA_LANG_KW: KwargInfo[T.List[str | File]] = _BASE_LANG_KW.evolve(
     name='java_args',
     deprecated='1.3.0',
     deprecated_message='This does not, and never has, done anything. It should be removed'
+)
+
+BUILD_SUBDIR_KW: KwargInfo[str] = KwargInfo(
+    'build_subdir',
+    str,
+    default='',
+    since='1.10.0'
 )
 
 def _objects_validator(vals: T.List[ObjectTypes]) -> T.Optional[str]:
@@ -664,7 +685,7 @@ _ALL_TARGET_KWS: T.List[KwargInfo] = [
                 ('1.1.0', 'generated sources as positional "objects" arguments')
         },
     ),
-    KwargInfo('build_subdir', str, default='', since='1.10.0')
+    BUILD_SUBDIR_KW,
 ]
 
 
@@ -685,6 +706,7 @@ _NAME_PREFIX_KW: KwargInfo[T.Optional[T.Union[str, T.List]]] = KwargInfo(
     (str, NoneType, list),
     validator=_name_validator,
     convertor=lambda x: None if isinstance(x, list) else x,
+    deprecated_values={list: ('1.12.0', 'use the `default()` function instead')},
 )
 
 
@@ -789,6 +811,10 @@ _BUILD_TARGET_KWS: T.List[KwargInfo] = [
         since='0.48.0',
     ),
     KwargInfo('install_rpath', str, default=''),
+    # FIXME: an old comment said that link_depends "doesn't handle generator()
+    # returned objects, since adding them as a link depends would inherently
+    # cause them to be generated twice, since the output needs to be passed
+    # to the ld_args and link_depends".  Is this still true?
     KwargInfo(
         'link_depends',
         ContainerTypeInfo(list, (str, File, CustomTarget, CustomTargetIndex, BuildTarget)),
@@ -823,6 +849,13 @@ def _validate_win_subsystem(value: T.Optional[str]) -> T.Optional[str]:
         if re.fullmatch(r'(boot_application|console|efi_application|efi_boot_service_driver|efi_rom|efi_runtime_driver|native|posix|windows)(,\d+(\.\d+)?)?', value) is None:
             return f'Invalid value for win_subsystem: {value}.'
     return None
+
+_WIN_SUBSYSTEM_KW: KwargInfo[T.Optional[str]] = KwargInfo(
+        'win_subsystem',
+        (str, NoneType),
+        convertor=lambda x: x.lower() if isinstance(x, str) else None,
+        validator=_validate_win_subsystem,
+)
 
 
 def _validate_darwin_versions(darwin_versions: T.List[T.Union[str, int]]) -> T.Optional[str]:
@@ -882,12 +915,6 @@ EXCLUSIVE_EXECUTABLE_KWS: T.List[KwargInfo] = [
     ),
     KwargInfo('pie', (bool, NoneType)),
     KwargInfo(
-        'win_subsystem',
-        (str, NoneType),
-        convertor=lambda x: x.lower() if isinstance(x, str) else None,
-        validator=_validate_win_subsystem,
-    ),
-    KwargInfo(
         'android_exe_type',
         (str, NoneType),
         validator=in_set_validator({'application', 'executable'}),
@@ -900,6 +927,7 @@ EXECUTABLE_KWS = [
     *_BUILD_TARGET_KWS,
     *EXCLUSIVE_EXECUTABLE_KWS,
     _VS_MODULE_DEFS_KW.evolve(since='1.3.0', since_values=None),
+    _WIN_SUBSYSTEM_KW,
     _JAVA_LANG_KW,
 ]
 
@@ -943,6 +971,7 @@ SHARED_LIB_KWS: T.List[KwargInfo] = [
     *_EXCLUSIVE_SHARED_LIB_KWS,
     *_EXCLUSIVE_LIB_KWS,
     _VS_MODULE_DEFS_KW,
+    _WIN_SUBSYSTEM_KW.evolve(since='1.12.0'),
     _JAVA_LANG_KW,
 ]
 
@@ -956,6 +985,7 @@ SHARED_MOD_KWS = [
     *_EXCLUSIVE_SHARED_MOD_KWS,
     *_EXCLUSIVE_LIB_KWS,
     _VS_MODULE_DEFS_KW,
+    _WIN_SUBSYSTEM_KW.evolve(since='1.12.0'),
     _JAVA_LANG_KW,
 ]
 
@@ -981,7 +1011,7 @@ JAR_KWS = [
       for a in _LANGUAGE_KWS],
 ]
 
-_SHARED_STATIC_ARGS: T.List[KwargInfo[T.List[str]]] = [
+_SHARED_STATIC_ARGS: T.List[KwargInfo[T.List[str | File]]] = [
     *[l.evolve(name=l.name.replace('_', '_static_'), since='1.3.0')
       for l in _LANGUAGE_KWS],
     *[l.evolve(name=l.name.replace('_', '_shared_'), since='1.3.0')
@@ -997,10 +1027,11 @@ LIBRARY_KWS = [
     *_EXCLUSIVE_STATIC_LIB_KWS,
     *_SHARED_STATIC_ARGS,
     _VS_MODULE_DEFS_KW,
+    _WIN_SUBSYSTEM_KW,
     _JAVA_LANG_KW,
 ]
 
-# Arguments used by build_Target
+# Arguments used by build_target
 BUILD_TARGET_KWS = [
     *_BUILD_TARGET_KWS,
     *_EXCLUSIVE_SHARED_LIB_KWS,
@@ -1008,6 +1039,8 @@ BUILD_TARGET_KWS = [
     *_EXCLUSIVE_STATIC_LIB_KWS,
     *EXCLUSIVE_EXECUTABLE_KWS,
     *_SHARED_STATIC_ARGS,
+    _VS_MODULE_DEFS_KW.evolve(since='1.12.0'),
+    _WIN_SUBSYSTEM_KW.evolve(since='1.12.0'),
     RUST_ABI_KW.evolve(since='1.10.0'),
     *[a.evolve(deprecated='1.3.0', deprecated_message='The use of "jar" in "build_target()" is deprecated, and this argument is only used by jar()')
       for a in _EXCLUSIVE_JAR_KWS],

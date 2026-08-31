@@ -28,9 +28,8 @@ if T.TYPE_CHECKING:
     from . import dependencies
     from .compilers.compilers import Compiler, CompilerDict, CompileResult, RunResult, CompileCheckMode, Language
     from .dependencies.detect import TV_DepID
-    from .mesonlib import FileOrString
+    from .mesonlib import FileOrString, SubProject
     from .cmake.traceparser import CMakeCacheEntry
-    from .interpreterbase import SubProject
     from .options import ElementaryOptionValues, MutableKeyedOptionDictType
     from .build import BuildTarget
     from .cmdline import SharedCMDOptions
@@ -44,7 +43,7 @@ if T.TYPE_CHECKING:
 #
 # Pip requires that RCs are named like this: '0.1.0.rc1'
 # But the corresponding Git tag needs to be '0.1.0rc1'
-version = '1.11.2'
+version = '1.12.0'
 
 # The next stable version when we are in dev. This is used to allow projects to
 # require meson version >=1.2.0 when using 1.1.99. FeatureNew won't warn when

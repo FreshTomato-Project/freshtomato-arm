@@ -7,3 +7,7 @@ test('subprjfail-failing_test',
 test('subprjfail-failing_test_no_suite',
   executable('failing_test_no_suite', 'failing_test.c'),
   suite : [])
+
+test('buggy',
+  executable('failing_test_name_collision', 'failing_test.c'),
+  suite : 'fail')

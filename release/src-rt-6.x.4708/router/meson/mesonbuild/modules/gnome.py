@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2015-2016 The Meson development team
-# Copyright © 2023-2025 Intel Corporation
+# Copyright © 2023-2026 Intel Corporation
 
 '''This module provides helper functions for Gnome/GLib related
 functionality such as gobject-introspection, gresources and gtk-doc'''
@@ -31,7 +31,7 @@ from ..interpreterbase import noPosargs, noKwargs, FeatureNew, FeatureDeprecated
 from ..interpreterbase import typed_kwargs, KwargInfo, ContainerTypeInfo
 from ..interpreterbase.decorators import typed_pos_args
 from ..mesonlib import (
-    MachineChoice, MesonException, OrderedSet, Popen_safe, join_args, quote_arg
+    InstallScriptFailure, MachineChoice, MesonException, OrderedSet, Popen_safe, join_args, quote_arg
 )
 from ..options import OptionKey
 from ..scripts.gettext import read_linguas
@@ -42,9 +42,12 @@ if T.TYPE_CHECKING:
     from . import ModuleState
     from ..build import BuildTarget
     from ..compilers import Compiler
+    from ..compilers.compilers import Language
     from ..interpreter import Interpreter
+    from ..interpreter.interpreter import CustomTargetSources
+    from ..interpreter.kwargs import CustomTargetInputs, TargetDepends
     from ..interpreterbase import TYPE_var, TYPE_kwargs
-    from ..mesonlib import FileOrString
+    from ..mesonlib import EnvironmentVariables, FileOrString, InstallScript
     from ..programs import Program, CommandList, CommandListEntry
 
     class PostInstall(TypedDict):
@@ -84,6 +87,7 @@ if T.TYPE_CHECKING:
         build_by_default: bool
         dependencies: T.List[Dependency]
         doc_format: T.Optional[str]
+        env: EnvironmentVariables
         export_packages: T.List[str]
         extra_args: T.List[str]
         fatal_warnings: bool
@@ -92,12 +96,14 @@ if T.TYPE_CHECKING:
         include_directories: T.List[T.Union[build.IncludeDirs, str]]
         includes: T.List[T.Union[str, GirTarget]]
         install: bool
-        install_dir_gir: T.Optional[str]
-        install_dir_typelib: T.Optional[str]
+        install_gir: T.Optional[bool]
+        install_dir_gir: T.Union[str, None, Literal[False]]
+        install_typelib: T.Optional[bool]
+        install_dir_typelib: T.Union[str, None, Literal[False]]
         link_with: T.List[T.Union[build.SharedLibrary, build.StaticLibrary]]
         namespace: str
         nsversion: str
-        sources: T.List[T.Union[FileOrString, build.GeneratedTypes]]
+        sources: T.List[str | build.TargetSources]
         symbol_prefix: T.List[str]
 
     class GtkDoc(TypedDict):
@@ -154,7 +160,7 @@ if T.TYPE_CHECKING:
         nostdinc: bool
         prefix: T.Optional[str]
         skip_source: bool
-        sources: T.List[FileOrString]
+        sources: T.List[CustomTargetInputs]
         stdinc: bool
         valist_marshallers: bool
 
@@ -185,7 +191,7 @@ if T.TYPE_CHECKING:
 
     class MkEnums(_MkEnumsCommon):
 
-        sources: T.List[T.Union[FileOrString, build.GeneratedTypes]]
+        sources: T.List[str | build.TargetSources]
         c_template: T.Optional[FileOrString]
         h_template: T.Optional[FileOrString]
         comments: T.Optional[str]
@@ -307,7 +313,7 @@ class GnomeModule(ExtensionModule):
                      once=True, fatal=False)
 
     @staticmethod
-    def _find_tool(state: 'ModuleState', tool: str) -> Program:
+    def _find_tool(state: 'ModuleState', tool: str, required: bool = True) -> Program:
         tool_map = {
             'gio-querymodules': 'gio-2.0',
             'glib-compile-schemas': 'gio-2.0',
@@ -320,7 +326,20 @@ class GnomeModule(ExtensionModule):
         }
         depname = tool_map[tool]
         varname = tool.replace('-', '_')
-        return state.find_tool(tool, depname, varname, native=depname != "gobject-introspection-1.0")
+        return state.find_tool(tool, depname, varname, required=required, native=depname != "gobject-introspection-1.0")
+
+    @staticmethod
+    def _get_install_script(state: ModuleState, name: str, exe: Program, args: T.List[str], skip_if_destdir: bool = True) -> InstallScript:
+        if not exe.found():
+            mlog.warning(f'Program {name} was not found, installation without DESTDIR will fail', fatal=False)
+            return InstallScriptFailure(name, 'Executable was not found')
+        try:
+            install_script = state.backend.get_executable_serialisation([exe, *args])
+            install_script.skip_if_destdir = skip_if_destdir
+            return install_script
+        except MesonException as e:
+            mlog.warning(f'Meson will be unable to run {name}, installation without DESTDIR will fail', fatal=False)
+            return InstallScriptFailure(name, str(e))
 
     @typed_kwargs(
         'gnome.post_install',
@@ -333,46 +352,41 @@ class GnomeModule(ExtensionModule):
     @noPosargs
     @FeatureNew('gnome.post_install', '0.57.0')
     def post_install(self, state: 'ModuleState', args: T.List['TYPE_var'], kwargs: 'PostInstall') -> ModuleReturnValue:
-        rv: T.List['mesonlib.ExecutableSerialisation'] = []
+        rv: T.List[InstallScript] = []
         datadir_abs = os.path.join(state.environment.get_prefix(), state.environment.get_datadir())
         if kwargs['glib_compile_schemas'] and not self.install_glib_compile_schemas:
             self.install_glib_compile_schemas = True
-            prog = self._find_tool(state, 'glib-compile-schemas')
+            prog = self._find_tool(state, 'glib-compile-schemas', required=False)
             schemasdir = os.path.join(datadir_abs, 'glib-2.0', 'schemas')
-            script = state.backend.get_executable_serialisation([prog, schemasdir])
-            script.skip_if_destdir = True
+            script = self._get_install_script(state, 'glib-compile-schemas', prog, [schemasdir])
             rv.append(script)
         for d in kwargs['gio_querymodules']:
             if d not in self.install_gio_querymodules:
                 self.install_gio_querymodules.append(d)
-                prog = self._find_tool(state, 'gio-querymodules')
+                prog = self._find_tool(state, 'gio-querymodules', required=False)
                 moduledir = os.path.join(state.environment.get_prefix(), d)
-                script = state.backend.get_executable_serialisation([prog, moduledir])
-                script.skip_if_destdir = True
+                script = self._get_install_script(state, 'gio-querymodules', prog, [moduledir])
                 rv.append(script)
         if kwargs['gtk_update_icon_cache'] and not self.install_gtk_update_icon_cache:
             self.install_gtk_update_icon_cache = True
             prog = state.find_program('gtk4-update-icon-cache', required=False)
             found = isinstance(prog, Executable) or prog.found()
             if not found:
-                prog = state.find_program('gtk-update-icon-cache')
+                prog = state.find_program('gtk-update-icon-cache', required=False)
             icondir = os.path.join(datadir_abs, 'icons', 'hicolor')
-            script = state.backend.get_executable_serialisation([prog, '-q', '-t', '-f', icondir])
-            script.skip_if_destdir = True
+            script = self._get_install_script(state, 'gtk4-update-icon-cache', prog, ['-q', '-t', '-f', icondir])
             rv.append(script)
         if kwargs['update_desktop_database'] and not self.install_update_desktop_database:
             self.install_update_desktop_database = True
-            prog = state.find_program('update-desktop-database')
+            prog = state.find_program('update-desktop-database', required=False)
             appdir = os.path.join(datadir_abs, 'applications')
-            script = state.backend.get_executable_serialisation([prog, '-q', appdir])
-            script.skip_if_destdir = True
+            script = self._get_install_script(state, 'update-desktop-database', prog, ['-q', appdir])
             rv.append(script)
         if kwargs['update_mime_database'] and not self.install_update_mime_database:
             self.install_update_mime_database = True
-            prog = state.find_program('update-mime-database')
+            prog = state.find_program('update-mime-database', required=False)
             appdir = os.path.join(datadir_abs, 'mime')
-            script = state.backend.get_executable_serialisation([prog, appdir])
-            script.skip_if_destdir = True
+            script = self._get_install_script(state, 'update-mime-database', prog, [appdir])
             rv.append(script)
         return ModuleReturnValue(None, rv)
 
@@ -390,7 +404,7 @@ class GnomeModule(ExtensionModule):
         KwargInfo('gresource_bundle', bool, default=False, since='0.37.0'),
         KwargInfo('source_dir', ContainerTypeInfo(list, str), default=[], listify=True),
     )
-    def compile_resources(self, state: 'ModuleState', args: T.Tuple[str, 'FileOrString'],
+    def compile_resources(self, state: 'ModuleState', args: T.Tuple[str, CustomTargetInputs],
                           kwargs: 'CompileResources') -> 'ModuleReturnValue':
         self.__print_gresources_warning(state)
         glib_version = self._get_native_glib_version(state)
@@ -400,8 +414,14 @@ class GnomeModule(ExtensionModule):
 
         source_dirs = kwargs['source_dir']
         dependencies = kwargs['dependencies']
+        target_name, input_file_arg = args
 
-        target_name, input_file = args
+        input_file: CustomTargetSources
+        if isinstance(input_file_arg, str):
+            input_file = mesonlib.File.from_source_file(state.environment.get_source_dir(),
+                                                        state.subdir, input_file_arg)
+        else:
+            input_file = input_file_arg
 
         # Validate dependencies
         subdirs: T.List[str] = []
@@ -433,13 +453,12 @@ class GnomeModule(ExtensionModule):
                     ifile = os.path.join(input_file.subdir, input_file.fname)
 
             elif isinstance(input_file, (CustomTarget, CustomTargetIndex, GeneratedList)):
+                # TODO: this could be fixed with dyndeps
                 raise MesonException('Resource xml files generated at build-time cannot be used with '
                                      'gnome.compile_resources() in the current version of glib-compile-resources '
                                      'because we need to scan the xml for dependencies due to '
                                      '<https://bugzilla.gnome.org/show_bug.cgi?id=774368>\nUse '
                                      'configure_file() instead to generate it at configure-time.')
-            else:
-                ifile = os.path.join(state.subdir, input_file)
 
             depend_files, depends, subdirs = self._get_gresource_dependencies(
                 state, ifile, source_dirs, dependencies)
@@ -504,11 +523,11 @@ class GnomeModule(ExtensionModule):
         target_c = GResourceTarget(
             name,
             state.subdir,
-            state.subproject,
             state.environment,
             target_cmd,
             [input_file],
             [output],
+            state.current_build_project,
             build_by_default=kwargs['build_by_default'],
             depfile=depfile,
             depend_files=depend_files,
@@ -527,11 +546,11 @@ class GnomeModule(ExtensionModule):
         target_h = GResourceHeaderTarget(
             f'{target_name}_h',
             state.subdir,
-            state.subproject,
             state.environment,
             cmd,
             [input_file],
             [f'{target_name}.h'],
+            state.current_build_project,
             build_by_default=kwargs['build_by_default'],
             extra_depends=depends,
             install=install_header,
@@ -545,7 +564,7 @@ class GnomeModule(ExtensionModule):
     def _get_gresource_dependencies(
             state: 'ModuleState', input_file: str, source_dirs: T.List[str],
             dependencies: T.Sequence[T.Union[mesonlib.File, CustomTarget, CustomTargetIndex]]
-            ) -> T.Tuple[T.List[mesonlib.FileOrString], T.List[T.Union[CustomTarget, CustomTargetIndex]], T.List[str]]:
+            ) -> T.Tuple[T.List[mesonlib.File], T.List[T.Union[CustomTarget, CustomTargetIndex]], T.List[str]]:
 
         cmd = ['glib-compile-resources',
                input_file,
@@ -569,7 +588,7 @@ class GnomeModule(ExtensionModule):
 
         depends: T.List[T.Union[CustomTarget, CustomTargetIndex]] = []
         subdirs: T.List[str] = []
-        dep_files: T.List[mesonlib.FileOrString] = []
+        dep_files: T.List[mesonlib.File] = []
         for resfile in raw_dep_files.copy():
             resbasename = os.path.basename(resfile)
             for dep in dependencies:
@@ -612,15 +631,15 @@ class GnomeModule(ExtensionModule):
                         'keyword argument.')
                 raw_dep_files.remove(resfile)
                 dep_files.append(f)
-        dep_files.extend(raw_dep_files)
+        dep_files.extend(mesonlib.File.from_absolute_file(r) for r in raw_dep_files)
         return dep_files, depends, subdirs
 
     def _get_link_args(self, state: 'ModuleState',
                        lib: T.Union[build.SharedLibrary, build.StaticLibrary],
-                       depends: T.Sequence[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]],
+                       depends: T.Sequence[TargetDepends],
                        include_rpath: bool = False,
                        use_gir_args: bool = False
-                       ) -> T.Tuple[T.List[str], T.List[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]]]:
+                       ) -> T.Tuple[T.List[str], T.List[TargetDepends]]:
         link_command: T.List[str] = []
         new_depends = list(depends)
         # Construct link args
@@ -648,11 +667,11 @@ class GnomeModule(ExtensionModule):
     def _get_dependencies_flags_raw(
             self, deps: T.Sequence[T.Union['Dependency', build.BuildTargetTypes]],
             state: 'ModuleState',
-            depends: T.Sequence[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]],
+            depends: T.Sequence[TargetDepends],
             include_rpath: bool,
             use_gir_args: bool,
             ) -> T.Tuple[OrderedSet[str], OrderedSet[T.Union[str, T.Tuple[str, str]]], OrderedSet[T.Union[str, T.Tuple[str, str]]], OrderedSet[str],
-                         T.List[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]]]:
+                         T.List[TargetDepends]]:
         cflags: OrderedSet[str] = OrderedSet()
         # External linker flags that can't be de-duped reliably because they
         # require two args in order, such as -framework AVFoundation will be stored as a tuple.
@@ -741,13 +760,13 @@ class GnomeModule(ExtensionModule):
     def _get_dependencies_flags(
             self, deps: T.Sequence[T.Union['Dependency', build.BuildTargetTypes]],
             state: 'ModuleState',
-            depends: T.Sequence[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]],
+            depends: T.Sequence[TargetDepends],
             include_rpath: bool = False,
             use_gir_args: bool = False,
             ) -> T.Tuple[OrderedSet[str], T.List[str], T.List[str], OrderedSet[str],
-                         T.List[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]]]:
+                         T.List[TargetDepends]]:
 
-        cflags, internal_ldflags_raw, external_ldflags_raw, gi_includes, depends = self._get_dependencies_flags_raw(deps, state, depends, include_rpath, use_gir_args)
+        cflags, internal_ldflags_raw, external_ldflags_raw, gi_includes, new_depends = self._get_dependencies_flags_raw(deps, state, depends, include_rpath, use_gir_args)
         internal_ldflags: T.List[str] = []
         external_ldflags: T.List[str] = []
 
@@ -763,7 +782,7 @@ class GnomeModule(ExtensionModule):
             else:
                 external_ldflags.extend(ldflag)
 
-        return cflags, internal_ldflags, external_ldflags, gi_includes, depends
+        return cflags, internal_ldflags, external_ldflags, gi_includes, new_depends
 
     def _unwrap_gir_target(self, girtarget: T.Union[Executable, build.StaticLibrary, build.SharedLibrary], state: 'ModuleState'
                            ) -> T.Union[Executable, build.StaticLibrary, build.SharedLibrary]:
@@ -879,8 +898,8 @@ class GnomeModule(ExtensionModule):
         return ret
 
     @staticmethod
-    def _get_girtargets_langs_compilers(girtargets: T.Sequence[build.BuildTarget]) -> T.List[T.Tuple[str, 'Compiler']]:
-        ret: T.List[T.Tuple[str, 'Compiler']] = []
+    def _get_girtargets_langs_compilers(girtargets: T.Sequence[build.BuildTarget]) -> T.List[T.Tuple[Language, 'Compiler']]:
+        ret: T.List[T.Tuple[Language, 'Compiler']] = []
         for girtarget in girtargets:
             for lang, compiler in girtarget.compilers.items():
                 # XXX: Can you use g-i with any other language?
@@ -907,7 +926,7 @@ class GnomeModule(ExtensionModule):
         return ret
 
     @staticmethod
-    def _get_langs_compilers_flags(state: 'ModuleState', langs_compilers: T.List[T.Tuple[str, 'Compiler']]
+    def _get_langs_compilers_flags(state: 'ModuleState', langs_compilers: T.List[T.Tuple[Language, 'Compiler']]
                                    ) -> T.Tuple[T.List[str], T.List[str], T.List[str]]:
         cflags: T.List[str] = []
         internal_ldflags: T.List[str] = []
@@ -969,10 +988,10 @@ class GnomeModule(ExtensionModule):
             state: 'ModuleState',
             girfile: str,
             scan_command: T.Sequence[T.Union['FileOrString', Executable, Program]],
-            generated_files: T.Sequence[T.Union[str, mesonlib.File, build.GeneratedTypes]],
-            depends: T.Sequence[T.Union['FileOrString', build.BuildTarget, 'build.GeneratedTypes', build.StructuredSources]],
+            generated_files: T.Sequence[build.GeneratedTypes],
+            depends: T.Sequence[TargetDepends],
             env_flags: T.Sequence[str],
-            kwargs: T.Dict[str, T.Any]) -> GirTarget:
+            kwargs: GenerateGir) -> GirTarget:
         install = kwargs['install_gir']
         if install is None:
             install = kwargs['install']
@@ -1005,11 +1024,11 @@ class GnomeModule(ExtensionModule):
         return GirTarget(
             girfile,
             state.subdir,
-            state.subproject,
             state.environment,
             scan_command,
             generated_files,
             [girfile],
+            state.current_build_project,
             build_by_default=kwargs['build_by_default'],
             extra_depends=depends,
             install=install,
@@ -1022,8 +1041,8 @@ class GnomeModule(ExtensionModule):
     @staticmethod
     def _make_typelib_target(state: 'ModuleState', typelib_output: str,
                              typelib_cmd: T.Sequence[T.Union[str, CustomTarget, Program]],
-                             generated_files: T.Sequence[T.Union[str, mesonlib.File, build.GeneratedTypes]],
-                             kwargs: T.Dict[str, T.Any]) -> TypelibTarget:
+                             generated_files: T.Sequence[build.GeneratedTypes],
+                             kwargs: GenerateGir) -> TypelibTarget:
         install = kwargs['install_typelib']
         if install is None:
             install = kwargs['install']
@@ -1037,11 +1056,11 @@ class GnomeModule(ExtensionModule):
         return TypelibTarget(
             typelib_output,
             state.subdir,
-            state.subproject,
             state.environment,
             typelib_cmd,
             generated_files,
             [typelib_output],
+            state.current_build_project,
             install=install,
             install_dir=[install_dir],
             install_tag=['typelib'],
@@ -1053,8 +1072,8 @@ class GnomeModule(ExtensionModule):
     def _gather_typelib_includes_and_update_depends(
             state: 'ModuleState',
             deps: T.Sequence[T.Union[Dependency, build.BuildTargetTypes]],
-            depends: T.Sequence[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]]
-            ) -> T.Tuple[T.List[str], T.List[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]]]:
+            depends: T.Sequence[TargetDepends]
+            ) -> T.Tuple[T.List[str], T.List[TargetDepends]]:
         # Need to recursively add deps on GirTarget sources from our
         # dependencies and also find the include directories needed for the
         # typelib generation custom target below.
@@ -1162,8 +1181,10 @@ class GnomeModule(ExtensionModule):
         srcdir = os.path.join(state.environment.get_source_dir(), state.subdir)
         builddir = os.path.join(state.environment.get_build_dir(), state.subdir)
 
-        depends: T.List[T.Union['FileOrString', 'build.GeneratedTypes', build.BuildTarget, build.StructuredSources]] = []
-        depends.extend(gir_dep.sources)
+        depends: T.List[TargetDepends] = []
+        # hack - this cast represents how sources are defined for the
+        # dependency in gobject-introspection's gir/meson.build
+        depends.extend(T.cast('T.List[CustomTarget]', gir_dep.sources))
         depends.extend(girtargets)
 
         langs_compilers = self._get_girtargets_langs_compilers(girtargets)
@@ -1244,9 +1265,8 @@ class GnomeModule(ExtensionModule):
         generated_files = [f for f in libsources if isinstance(f, (GeneratedList, CustomTarget, CustomTargetIndex))]
 
         scan_target = self._make_gir_target(
-            state, girfile, scan_command, generated_files, depends, scan_env_ldflags,
-            # We have to cast here because mypy can't figure this out
-            T.cast('T.Dict[str, T.Any]', kwargs))
+            state, girfile, scan_command, generated_files, depends,
+            scan_env_ldflags, kwargs)
 
         typelib_output = f'{ns}-{nsversion}.typelib'
         typelib_cmd: T.List[T.Union[str, Program, CustomTarget]]
@@ -1256,7 +1276,8 @@ class GnomeModule(ExtensionModule):
         for incdir in typelib_includes:
             typelib_cmd += ["--includedir=" + incdir]
 
-        typelib_target = self._make_typelib_target(state, typelib_output, typelib_cmd, generated_files, T.cast('T.Dict[str, T.Any]', kwargs))
+        typelib_target = self._make_typelib_target(
+            state, typelib_output, typelib_cmd, generated_files, kwargs)
 
         self._devenv_prepend('GI_TYPELIB_PATH', os.path.join(state.environment.get_build_dir(), state.subdir))
 
@@ -1278,13 +1299,13 @@ class GnomeModule(ExtensionModule):
         target_g = CustomTarget(
             targetname,
             state.subdir,
-            state.subproject,
             state.environment,
             cmd,
             [],
             ['gschemas.compiled'],
+            state.current_build_project,
             build_by_default=kwargs['build_by_default'],
-            depend_files=kwargs['depend_files'],
+            depend_files=state._interpreter.source_strings_to_files(kwargs['depend_files']),
             description='Compiling gschemas {}',
         )
         self._devenv_prepend('GSETTINGS_SCHEMA_DIR', os.path.join(state.environment.get_build_dir(), state.subdir))
@@ -1353,8 +1374,8 @@ class GnomeModule(ExtensionModule):
         pot_args: CommandList = [itstool, '-o', pot_file]
         pot_args.extend(pot_sources)
         pottarget = build.RunTarget(f'help-{project_id}-pot', pot_args, [],
-                                    os.path.join(state.subdir, 'C'), state.subproject,
-                                    state.environment)
+                                    os.path.join(state.subdir, 'C'),
+                                    state.environment, state.current_build_project)
         targets.append(pottarget)
 
         for l in langs:
@@ -1381,26 +1402,26 @@ class GnomeModule(ExtensionModule):
                                         mesonlib.FileMode(), state.subproject, install_tag='doc')
                 targets.append(l_data)
 
-            po_file = l + '.po'
-            po_args: CommandList = [
-                msgmerge, '-q', '-o',
-                os.path.join('@SOURCE_ROOT@', l_subdir, po_file),
-                os.path.join('@SOURCE_ROOT@', l_subdir, po_file), pot_file]
+            po_path = os.path.join('@SOURCE_ROOT@', l_subdir, l + '.po')
+            po_args: CommandList = [*state.environment.get_build_command(),
+                                    '--internal', 'exe', '--capture', po_path, '--',
+                                    msgmerge, '-q', po_path, pot_file]
             potarget = build.RunTarget(f'help-{project_id}-{l}-update-po',
-                                       po_args, [pottarget], l_subdir, state.subproject,
-                                       state.environment)
+                                       po_args, [pottarget], l_subdir,
+                                       state.environment, state.current_build_project)
             targets.append(potarget)
             potargets.append(potarget)
 
             gmo_file = project_id + '-' + l + '.gmo'
+            po_file = mesonlib.File.from_source_file(state.environment.source_dir, l_subdir, l + '.po')
             gmotarget = CustomTarget(
                 f'help-{project_id}-{l}-gmo',
                 l_subdir,
-                state.subproject,
                 state.environment,
                 [msgfmt, '@INPUT@', '-o', '@OUTPUT@'],
                 [po_file],
                 [gmo_file],
+                state.current_build_project,
                 install_tag=['doc'],
                 description='Generating yelp doc {}',
             )
@@ -1409,11 +1430,11 @@ class GnomeModule(ExtensionModule):
             mergetarget = CustomTarget(
                 f'help-{project_id}-{l}',
                 l_subdir,
-                state.subproject,
                 state.environment,
                 [itstool, '-m', os.path.join(l_subdir, gmo_file), '--lang', l, '-o', '@OUTDIR@', '@INPUT@'],
                 sources_files,
                 sources,
+                state.current_build_project,
                 extra_depends=[gmotarget],
                 install=True,
                 install_dir=[l_install_dir],
@@ -1423,7 +1444,8 @@ class GnomeModule(ExtensionModule):
             targets.append(mergetarget)
 
         allpotarget = build.AliasTarget(f'help-{project_id}-update-po', potargets,
-                                        state.subdir, state.subproject, state.environment)
+                                        state.subdir, state.environment,
+                                        state.current_build_project)
         targets.append(allpotarget)
 
         return ModuleReturnValue(None, targets)
@@ -1508,8 +1530,7 @@ class GnomeModule(ExtensionModule):
         for tool in ['scan', 'scangobj', 'mkdb', 'mkhtml', 'fixxref']:
             program_name = 'gtkdoc-' + tool
             program = state.find_program(program_name)
-            path = program.get_path()
-            assert path is not None, "This shouldn't be possible since program should be found"
+            path = mesonlib.unwrap(program.get_path())
             t_args.append(f'--{program_name}={path}')
         if namespace:
             t_args.append('--namespace=' + namespace)
@@ -1558,16 +1579,17 @@ class GnomeModule(ExtensionModule):
         custom_target = CustomTarget(
             targetname,
             state.subdir,
-            state.subproject,
             state.environment,
             command + t_args,
             [],
             [f'{modulename}-decl.txt'],
+            state.current_build_project,
             build_always_stale=True,
             extra_depends=new_depends,
             description='Generating gtkdoc {}',
         )
-        alias_target = build.AliasTarget(targetname, [custom_target], state.subdir, state.subproject, state.environment)
+        alias_target = build.AliasTarget(targetname, [custom_target], state.subdir,
+                                         state.environment, state.current_build_project)
         if kwargs['check']:
             check_cmd = state.find_program('gtkdoc-check')
             check_env = ['DOC_MODULE=' + modulename,
@@ -1584,7 +1606,7 @@ class GnomeModule(ExtensionModule):
                         deps: T.List[T.Union[Dependency, build.SharedLibrary, build.StaticLibrary]],
                         state: 'ModuleState',
                         depends: T.Sequence[T.Union[build.BuildTarget, 'build.GeneratedTypes']]) -> T.Tuple[
-                                T.List[str], T.List[T.Union[build.BuildTarget, 'build.GeneratedTypes', 'FileOrString', build.StructuredSources]]]:
+                                T.List[str], T.List[TargetDepends]]:
         args: T.List[str] = []
         cflags = c_args.copy()
         deps_cflags, internal_ldflags, external_ldflags, _gi_includes, new_depends = \
@@ -1643,10 +1665,11 @@ class GnomeModule(ExtensionModule):
             validator=in_set_validator({'all', 'none', 'objects'})),
         INSTALL_DIR_KW.evolve(since='0.46.0')
     )
-    def gdbus_codegen(self, state: 'ModuleState', args: T.Tuple[str, T.Optional[T.Union['FileOrString', build.GeneratedTypes]]],
+    def gdbus_codegen(self, state: 'ModuleState', args: T.Tuple[str, T.Optional[str | build.TargetSources]],
                       kwargs: 'GdbusCodegen') -> ModuleReturnValue:
         namebase = args[0]
-        xml_files: T.List[T.Union['FileOrString', build.GeneratedTypes]] = [args[1]] if args[1] else []
+        xml_files: T.List[build.TargetSources] = \
+            self.interpreter.source_strings_to_files([args[1]]) if args[1] else []
         cmd: CommandList = [self._find_tool(state, 'gdbus-codegen')]
         cmd.extend(kwargs['extra_args'])
 
@@ -1670,7 +1693,7 @@ class GnomeModule(ExtensionModule):
             cmd.extend(['--c-namespace', kwargs['namespace']])
         if kwargs['object_manager']:
             cmd.extend(['--c-generate-object-manager'])
-        xml_files.extend(kwargs['sources'])
+        xml_files.extend(self.interpreter.source_strings_to_files(kwargs['sources']))
         build_by_default = kwargs['build_by_default']
 
         # Annotations are a bit ugly in that they are a list of lists of strings...
@@ -1725,11 +1748,11 @@ class GnomeModule(ExtensionModule):
         cfile_custom_target = CustomTarget(
             output,
             state.subdir,
-            state.subproject,
             state.environment,
             c_cmd,
             xml_files,
             [output],
+            state.current_build_project,
             build_by_default=build_by_default,
             description='Generating gdbus source {}',
         )
@@ -1746,11 +1769,11 @@ class GnomeModule(ExtensionModule):
         hfile_custom_target = CustomTarget(
             output,
             state.subdir,
-            state.subproject,
             state.environment,
             hfile_cmd,
             xml_files,
             [output],
+            state.current_build_project,
             build_by_default=build_by_default,
             extra_depends=depends,
             install=install_header,
@@ -1778,11 +1801,11 @@ class GnomeModule(ExtensionModule):
             docbook_custom_target = CustomTarget(
                 output,
                 state.subdir,
-                state.subproject,
                 state.environment,
                 docbook_cmd,
                 xml_files,
                 outputs,
+                state.current_build_project,
                 build_by_default=build_by_default,
                 extra_depends=depends,
                 description='Generating gdbus docbook {}',
@@ -1800,11 +1823,11 @@ class GnomeModule(ExtensionModule):
             rst_custom_target = CustomTarget(
                 output,
                 state.subdir,
-                state.subproject,
                 state.environment,
                 cmd + ['--output-directory', '@OUTDIR@', '--generate-rst', rst, '@INPUT@'],
                 xml_files,
                 outputs,
+                state.current_build_project,
                 build_by_default=build_by_default,
                 description='Generating gdbus reStructuredText {}',
             )
@@ -1821,11 +1844,11 @@ class GnomeModule(ExtensionModule):
             markdown_custom_target = CustomTarget(
                 output,
                 state.subdir,
-                state.subproject,
                 state.environment,
                 cmd + ['--output-directory', '@OUTDIR@', '--generate-md', markdown, '@INPUT@'],
                 xml_files,
                 outputs,
+                state.current_build_project,
                 build_by_default=build_by_default,
                 description='Generating gdbus markdown {}',
             )
@@ -1860,11 +1883,11 @@ class GnomeModule(ExtensionModule):
         basename = args[0]
 
         c_template = kwargs['c_template']
-        if isinstance(c_template, mesonlib.File):
-            c_template = c_template.absolute_path(state.environment.source_dir, state.environment.build_dir)
+        if isinstance(c_template, str):
+            c_template = mesonlib.File.from_source_file(state.environment.source_dir, state.subdir, c_template)
         h_template = kwargs['h_template']
-        if isinstance(h_template, mesonlib.File):
-            h_template = h_template.absolute_path(state.environment.source_dir, state.environment.build_dir)
+        if isinstance(h_template, str):
+            h_template = mesonlib.File.from_source_file(state.environment.source_dir, state.subdir, h_template)
 
         cmd: T.List[str] = []
         known_kwargs = ['comments', 'eprod', 'fhead', 'fprod', 'ftail',
@@ -1875,28 +1898,27 @@ class GnomeModule(ExtensionModule):
             if kwargs[arg]:                                         # type: ignore
                 cmd += ['--' + arg.replace('_', '-'), kwargs[arg]]  # type: ignore
 
+        sources = self.interpreter.source_strings_to_files(kwargs['sources'])
         targets: T.List[CustomTarget] = []
 
         h_target: T.Optional[CustomTarget] = None
         if h_template is not None:
-            h_output = os.path.basename(os.path.splitext(h_template)[0])
+            h_output = os.path.basename(os.path.splitext(h_template.fname)[0])
             # We always set template as the first element in the source array
             # so --template consumes it.
             h_cmd = cmd + ['--template', '@INPUT@']
-            h_sources: T.List[T.Union[FileOrString, 'build.GeneratedTypes']] = [h_template]
-            h_sources.extend(kwargs['sources'])
+            h_sources: T.List[CustomTargetSources] = [h_template, *sources]
             h_target = self._make_mkenum_impl(
                 state, h_sources, h_output, h_cmd, install=kwargs['install_header'],
                 install_dir=kwargs['install_dir'])
             targets.append(h_target)
 
         if c_template is not None:
-            c_output = os.path.basename(os.path.splitext(c_template)[0])
+            c_output = os.path.basename(os.path.splitext(c_template.fname)[0])
             # We always set template as the first element in the source array
             # so --template consumes it.
             c_cmd = cmd + ['--template', '@INPUT@']
-            c_sources: T.List[T.Union[FileOrString, 'build.GeneratedTypes']] = [c_template]
-            c_sources.extend(kwargs['sources'])
+            c_sources: T.List[CustomTargetSources] = [c_template, *sources]
 
             depends = kwargs['depends'].copy()
             if h_target is not None:
@@ -1908,7 +1930,7 @@ class GnomeModule(ExtensionModule):
         if c_template is None and h_template is None:
             generic_cmd = cmd + ['@INPUT@']
             target = self._make_mkenum_impl(
-                state, kwargs['sources'], basename, generic_cmd,
+                state, sources, basename, generic_cmd,
                 install=kwargs['install_header'],
                 install_dir=kwargs['install_dir'])
             return ModuleReturnValue(target, [target])
@@ -1993,7 +2015,8 @@ class GnomeModule(ExtensionModule):
             }'''))
         c_cmd.append('@INPUT@')
 
-        c_file = self._make_mkenum_impl(state, kwargs['sources'], body_filename, c_cmd)
+        sources = self.interpreter.source_strings_to_files(kwargs['sources'])
+        c_file = self._make_mkenum_impl(state, sources, body_filename, c_cmd)
 
         # .h file generation
         h_cmd = cmd.copy()
@@ -2035,7 +2058,7 @@ class GnomeModule(ExtensionModule):
         h_cmd.append('@INPUT@')
 
         h_file = self._make_mkenum_impl(
-            state, kwargs['sources'], hdr_filename, h_cmd,
+            state, sources, hdr_filename, h_cmd,
             install=kwargs['install_header'],
             install_dir=kwargs['install_dir'])
 
@@ -2044,7 +2067,7 @@ class GnomeModule(ExtensionModule):
     def _make_mkenum_impl(
             self,
             state: 'ModuleState',
-            sources: T.Sequence[T.Union[str, mesonlib.File, build.GeneratedTypes]],
+            sources: T.Sequence[CustomTargetSources],
             output: str,
             cmd: T.List[str],
             *,
@@ -2060,11 +2083,11 @@ class GnomeModule(ExtensionModule):
         return CustomTarget(
             output,
             state.subdir,
-            state.subproject,
             state.environment,
             real_cmd,
             sources,
             [output],
+            state.current_build_project,
             capture=True,
             install=install,
             install_dir=[_install_dir],
@@ -2088,13 +2111,16 @@ class GnomeModule(ExtensionModule):
         KwargInfo('nostdinc', bool, default=False),
         KwargInfo('prefix', (str, NoneType)),
         KwargInfo('skip_source', bool, default=False),
-        KwargInfo('sources', ContainerTypeInfo(list, (str, mesonlib.File), allow_empty=False), listify=True, required=True),
+        KwargInfo('sources', ContainerTypeInfo(list, (str, mesonlib.File, CustomTarget, CustomTargetIndex, GeneratedList), allow_empty=False), listify=True, required=True,
+                  since_values={ContainerTypeInfo(list, (CustomTarget, CustomTargetIndex, GeneratedList), allow_empty=False): '1.12.0'},
+
+                  ),
         KwargInfo('stdinc', bool, default=False),
         KwargInfo('valist_marshallers', bool, default=False),
     )
     def genmarshal(self, state: 'ModuleState', args: T.Tuple[str], kwargs: 'GenMarshal') -> ModuleReturnValue:
         output = args[0]
-        sources = kwargs['sources']
+        sources = self.interpreter.source_strings_to_files(kwargs['sources'])
 
         new_genmarshal = mesonlib.version_compare(self._get_native_glib_version(state), '>= 2.53.3')
 
@@ -2130,11 +2156,11 @@ class GnomeModule(ExtensionModule):
         header = CustomTarget(
             output + '_h',
             state.subdir,
-            state.subproject,
             state.environment,
             h_cmd,
             sources,
             [header_file],
+            state.current_build_project,
             install=install_header,
             install_dir=[kwargs['install_dir']] if kwargs['install_dir'] else [],
             install_tag=['devel'],
@@ -2152,11 +2178,11 @@ class GnomeModule(ExtensionModule):
         body = CustomTarget(
             output + '_c',
             state.subdir,
-            state.subproject,
             state.environment,
             c_cmd,
             sources,
             [f'{output}.c'],
+            state.current_build_project,
             capture=capture,
             depend_files=kwargs['depend_files'],
             extra_depends=extra_deps,
@@ -2230,9 +2256,10 @@ class GnomeModule(ExtensionModule):
         INSTALL_DIR_KW,
         KwargInfo(
             'sources',
-            ContainerTypeInfo(list, (str, GirTarget), allow_empty=False),
+            ContainerTypeInfo(list, (str, mesonlib.File, GirTarget), allow_empty=False),
             listify=True,
             required=True,
+            since_values={ContainerTypeInfo(list, (mesonlib.File), allow_empty=False): '1.12.0'},
         ),
         KwargInfo('vapi_dirs', ContainerTypeInfo(list, str), listify=True, default=[]),
         KwargInfo('metadata_dirs', ContainerTypeInfo(list, str), listify=True, default=[]),
@@ -2252,18 +2279,20 @@ class GnomeModule(ExtensionModule):
         cmd += pkg_cmd
         cmd += ['--metadatadir=' + source_dir]
 
-        inputs = kwargs['sources']
-
-        link_with: T.List[build.LibTypes] = []
-        for i in inputs:
+        inputs: T.List[T.Union[mesonlib.File, GirTarget]] = []
+        link_with: T.List[build.LinkableTargetTypes] = []
+        i: CustomTargetInputs
+        for i in kwargs['sources']:
             if isinstance(i, str):
                 cmd.append(os.path.join(source_dir, i))
+                i = mesonlib.File.from_source_file(state.environment.source_dir, state.subdir, i)
             elif isinstance(i, GirTarget):
                 link_with += self._get_vapi_link_with(i)
                 subdir = os.path.join(state.environment.get_build_dir(),
                                       i.get_subdir())
                 gir_file = os.path.join(subdir, i.get_outputs()[0])
                 cmd.append(gir_file)
+            inputs.append(i)
 
         vapi_output = library + '.vapi'
         datadir = state.environment.coredata.optstore.get_value_for(OptionKey('datadir'))
@@ -2277,11 +2306,11 @@ class GnomeModule(ExtensionModule):
         vapi_target = VapiTarget(
             vapi_output,
             state.subdir,
-            state.subproject,
             state.environment,
-            command=cmd,
-            sources=inputs,
-            outputs=[vapi_output],
+            cmd,
+            inputs,
+            [vapi_output],
+            state.current_build_project,
             extra_depends=vapi_depends,
             install=kwargs['install'],
             install_dir=[install_dir],
@@ -2292,7 +2321,8 @@ class GnomeModule(ExtensionModule):
         # - link with the correct library
         # - include the vapi and dependent vapi files in sources
         # - add relevant directories to include dirs
-        incs = [build.IncludeDirs(state.subdir, ['.'] + vapi_includes, False)]
+        incs = [build.IncludeDirs(state.subdir, ['.'] + vapi_includes, False,
+                state.current_build_project)]
         sources = [vapi_target] + vapi_depends
         rv = InternalDependency(None, incs, [], [], link_with, [], sources, [], [], {}, [], [], [])
         created_values.append(rv)

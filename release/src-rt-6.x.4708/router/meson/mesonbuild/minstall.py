@@ -17,11 +17,13 @@ import re
 
 from . import build, tooldetect
 from .backend.backends import InstallData
-from .mesonlib import (MesonException, Popen_safe, RealPathAction, is_windows,
-                       is_aix, setup_vsenv, path_has_root, pickle_load, is_osx)
+from .mesonlib import (InstallScriptFailure, MesonException, Popen_safe, RealPathAction,
+                       is_windows, is_aix, setup_vsenv, path_has_root, pickle_load, is_osx,
+                       unwrap)
 from .options import OptionKey
 from .scripts import depfixer, destdir_join
 from .scripts.meson_exe import run_exe
+main_file: str | None
 try:
     from __main__ import __file__ as main_file
 except ImportError:
@@ -34,12 +36,12 @@ if T.TYPE_CHECKING:
             InstallDataBase, InstallEmptyDir,
             InstallSymlinkData, TargetInstallData
     )
-    from .mesonlib import FileMode, EnvironOrDict, ExecutableSerialisation
+    from .mesonlib import FileMode, EnvironOrDict, ExecutableSerialisation, InstallScript
 
     try:
         from typing import Protocol
     except AttributeError:
-        from typing_extensions import Protocol  # type: ignore
+        from typing_extensions import Protocol
 
     class ArgumentType(Protocol):
         """Typing information for the object returned by argparse."""
@@ -165,7 +167,11 @@ def set_chown(path: str, user: T.Union[str, int, None] = None,
     if sys.version_info >= (3, 13):
         # pylint: disable=unexpected-keyword-arg
         # cannot handle sys.version_info, https://github.com/pylint-dev/pylint/issues/9622
-        shutil.chown(path, user, group, dir_fd=dir_fd, follow_symlinks=follow_symlinks)  # type: ignore[call-overload]
+        #
+        # Mypy does not understand that the assert above ensures that user,
+        # group is either `None, int | str` or `int | str, None`, so we need to
+        # ignore the warning
+        shutil.chown(path, user, group, dir_fd=dir_fd, follow_symlinks=follow_symlinks)  # type: ignore[arg-type]
     else:
         real_os_chown = os.chown
 
@@ -181,7 +187,10 @@ def set_chown(path: str, user: T.Union[str, int, None] = None,
 
         try:
             os.chown = chown
-            shutil.chown(path, user, group)
+            # Mypy does not understand that the assert above ensures that user,
+            # group is either `None, int | str` or `int | str, None`, so we need to
+            # ignore the warning
+            shutil.chown(path, user, group)  # type: ignore[arg-type]
         finally:
             os.chown = real_os_chown
 
@@ -380,7 +389,7 @@ class Installer:
 
     def should_install(self, d: T.Union[TargetInstallData, InstallEmptyDir,
                                         InstallDataBase, InstallSymlinkData,
-                                        ExecutableSerialisation]) -> bool:
+                                        InstallScript]) -> bool:
         if d.subproject and (d.subproject in self.skip_subprojects or '*' in self.skip_subprojects):
             return False
         if self.tags and d.tag not in self.tags:
@@ -577,6 +586,7 @@ class Installer:
             if is_windows() or destdir != '' or not os.isatty(sys.stdout.fileno()) or not os.isatty(sys.stderr.fileno()):
                 # can't elevate to root except in an interactive unix environment *and* when not doing a destdir install
                 raise
+
             rootcmd = (
                 os.environ.get('MESON_ROOT_CMD')
                 or shutil.which('sudo')
@@ -606,7 +616,8 @@ class Installer:
                     if ans is not None:
                         raise MesonException('Answer not one of [y/n]')
                 if ans == 'y':
-                    os.execlp(rootcmd, rootcmd, sys.executable, main_file, *sys.argv[1:],
+                    mf = unwrap(main_file, 'main_file should only be None on Windows')
+                    os.execlp(rootcmd, rootcmd, sys.executable, mf, *sys.argv[1:],
                               '-C', os.getcwd(), '--no-rebuild')
             raise
 
@@ -695,6 +706,12 @@ class Installer:
             self.set_mode(outfilename, t.install_mode, d.install_umask)
 
     def run_install_script(self, d: InstallData, destdir: str, fullprefix: str) -> None:
+        failing_scripts = [script for script in d.install_scripts if isinstance(script, InstallScriptFailure)]
+        if not destdir and len(failing_scripts) > 0:
+            for script in failing_scripts:
+                self.log(f'ERROR: Failed to run install script {script.name}: {script.reason}')
+            raise MesonException('Install scripts failed to run')
+
         env = {'MESON_SOURCE_ROOT': d.source_dir,
                'MESON_BUILD_ROOT': d.build_dir,
                'MESONINTROSPECT': ' '.join([shlex.quote(x) for x in d.mesonintrospect]),
@@ -708,6 +725,13 @@ class Installer:
             if not self.should_install(i):
                 continue
 
+            name = i.name if isinstance(i, InstallScriptFailure) else ' '.join(i.cmd_args)
+            if destdir and (isinstance(i, InstallScriptFailure) or i.skip_if_destdir):
+                self.log(f'Skipping custom install script because DESTDIR is set {name!r}')
+                continue
+
+            assert not isinstance(i, InstallScriptFailure) # Should part of failing_scripts and thus this is not reached
+
             if i.installdir_map is not None:
                 mapp = i.installdir_map
             else:
@@ -716,10 +740,6 @@ class Installer:
             localenv.update({'MESON_INSTALL_'+k.upper(): os.path.join(d.prefix, v) for k, v in mapp.items()})
             localenv.update({'MESON_INSTALL_DESTDIR_'+k.upper(): get_destdir_path(destdir, fullprefix, v) for k, v in mapp.items()})
 
-            name = ' '.join(i.cmd_args)
-            if i.skip_if_destdir and destdir:
-                self.log(f'Skipping custom install script because DESTDIR is set {name!r}')
-                continue
             self.did_install_something = True  # Custom script must report itself if it does nothing.
             self.log(f'Running custom install script {name!r}')
             try:
@@ -786,7 +806,7 @@ class Installer:
                 self.did_install_something = True
                 try:
                     self.fix_rpath(outname, t.rpath_dirs_to_remove, install_rpath, final_path,
-                                   install_name_mappings, verbose=False)
+                                   install_name_mappings, t.system, verbose=False)
                 except SystemExit as e:
                     if isinstance(e.code, int) and e.code == 0:
                         pass

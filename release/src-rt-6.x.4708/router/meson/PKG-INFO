@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: meson
-Version: 1.11.2
+Version: 1.12.0
 Summary: A high performance build system
 Home-page: https://mesonbuild.com
 Author: Jussi Pakkanen
@@ -18,15 +18,13 @@ Classifier: Operating System :: Microsoft :: Windows
 Classifier: Operating System :: POSIX :: BSD
 Classifier: Operating System :: POSIX :: Linux
 Classifier: Programming Language :: Python :: 3 :: Only
-Classifier: Programming Language :: Python :: 3.7
-Classifier: Programming Language :: Python :: 3.8
-Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Classifier: Topic :: Software Development :: Build Tools
-Requires-Python: >=3.7
+Requires-Python: >=3.10
 License-File: COPYING
 Provides-Extra: ninja
 Requires-Dist: ninja>=1.8.2; extra == "ninja"

@@ -9,11 +9,12 @@ from __future__ import annotations
 import os
 import typing as T
 
-from .. import compilers, environment, mesonlib, options
-from ..build import Executable, Jar, SharedLibrary, SharedModule, StaticLibrary
+from .. import compilers, environment, mesonlib
+from ..build import Executable, Jar, SharedLibrary, SharedModule, StaticLibrary, BuildProject
 from ..compilers import detect_compiler_for
-from ..interpreterbase import InvalidArguments, SubProject, UnknownValue
-from ..mesonlib import MachineChoice
+from ..interpreterbase import InvalidArguments, UnknownValue, Feature
+from ..interpreter import type_checking
+from ..mesonlib import MachineChoice, SubProject
 from ..options import OptionKey
 from ..mparser import BaseNode, ArrayNode, ElementaryNode, IdNode, FunctionNode, StringNode
 from .interpreter import AstInterpreter, IntrospectionBuildTarget, IntrospectionDependency
@@ -24,6 +25,16 @@ if T.TYPE_CHECKING:
     from ..interpreterbase import TYPE_var
     from .visitor import AstVisitor
 
+
+_TARGET_KWARGS: T.Mapping[str, set[str]] = {
+    'executable': {s.name for s in type_checking.EXECUTABLE_KWS},
+    'jar': {s.name for s in type_checking.JAR_KWS},
+    'library': {s.name for s in type_checking.LIBRARY_KWS},
+    'shared library': {s.name for s in type_checking.SHARED_LIB_KWS},
+    'shared module': {s.name for s in type_checking.SHARED_MOD_KWS},
+    'static library': {s.name for s in type_checking.STATIC_LIB_KWS},
+    'both libraries': {s.name for s in type_checking.LIBRARY_KWS},
+}
 
 # TODO: it would be nice to not have to duplicate this
 BUILD_TARGET_FUNCTIONS = [
@@ -56,7 +67,7 @@ class IntrospectionInterpreter(AstInterpreter):
                  backend: str,
                  visitors: T.Optional[T.List[AstVisitor]] = None,
                  cross_file: T.Optional[str] = None,
-                 subproject: SubProject = SubProject(''),
+                 subproject: SubProject = mesonlib.ROOT_SUBPROJECT,
                  subproject_dir: str = 'subprojects',
                  env: T.Optional[environment.Environment] = None):
         options = IntrospectionHelper(cross_file)
@@ -65,6 +76,7 @@ class IntrospectionInterpreter(AstInterpreter):
 
         self.cross_file = cross_file
         self.backend = backend
+        self.build_project = BuildProject(subproject, '', subproject, MachineChoice.HOST, MachineChoice.HOST)
         self.project_data: T.Dict[str, T.Any] = {}
         self.targets: T.List[IntrospectionBuildTarget] = []
         self.dependencies: T.List[IntrospectionDependency] = []
@@ -149,8 +161,8 @@ class IntrospectionInterpreter(AstInterpreter):
     def func_add_languages(self, node: BaseNode, args: T.List[TYPE_var], kwargs: T.Dict[str, TYPE_var]) -> UnknownValue:
         kwargs = self.flatten_kwargs(kwargs)
         required = kwargs.get('required', True)
-        assert isinstance(required, (bool, options.UserFeatureOption, UnknownValue)), 'for mypy'
-        if isinstance(required, options.UserFeatureOption):
+        assert isinstance(required, (bool, Feature, UnknownValue)), 'for mypy'
+        if isinstance(required, Feature):
             required = required.is_enabled()
         if 'native' in kwargs:
             native = kwargs.get('native', False)
@@ -242,18 +254,21 @@ class IntrospectionInterpreter(AstInterpreter):
                 assert extraf_nodes is None
                 extraf_nodes = v
 
+        for_machine = MachineChoice.BUILD if kwargs.get('native', False) else MachineChoice.HOST
+
         # Make sure nothing can crash when creating the build class
-        _kwargs_reduced = {k: v for k, v in kwargs.items() if k in targetclass.known_kwargs and k in {'install', 'build_by_default', 'build_always', 'name_prefix'}}
+        _kwargs_reduced = {k: v for k, v in kwargs.items() if k in _TARGET_KWARGS[targetclass.typename] and k in {'install', 'build_by_default', 'build_always', 'name_prefix'}}
         _kwargs_reduced = {k: v.value if isinstance(v, ElementaryNode) else v for k, v in _kwargs_reduced.items()}
         _kwargs_reduced = {k: v for k, v in _kwargs_reduced.items() if not isinstance(v, (BaseNode, UnknownValue))}
+        _kwargs_reduced['native'] = for_machine
         kwargs_reduced = T.cast('BuildTargetKeywordArguments', _kwargs_reduced)
-        for_machine = MachineChoice.BUILD if kwargs.get('native', False) else MachineChoice.HOST
         objects: T.List[T.Any] = []
         empty_sources: T.List[T.Any] = []
         # Passing the unresolved sources list causes errors
         kwargs_reduced['_allow_no_sources'] = True
-        target = targetclass(name, self.subdir, self.subproject, for_machine, empty_sources, None, objects,
-                             self.environment, self.coredata.compilers[for_machine], kwargs_reduced)
+        target = targetclass(name, self.subdir, for_machine, empty_sources, None, objects,
+                             self.environment, self.coredata.compilers[for_machine],
+                             self.build_project, kwargs_reduced)
         target.process_compilers_late()
 
         build_by_default: T.Union[UnknownValue, bool] = target.build_by_default

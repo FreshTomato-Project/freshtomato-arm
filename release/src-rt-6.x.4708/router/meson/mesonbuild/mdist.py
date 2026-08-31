@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import abc
 import argparse
+import itertools
 import os
 import sys
 import shlex
@@ -22,8 +23,8 @@ from glob import glob
 from pathlib import Path
 from mesonbuild.environment import Environment
 from mesonbuild.tooldetect import detect_ninja
-from mesonbuild.mesonlib import (GIT, MesonException, RealPathAction, get_meson_command, quiet_git,
-                                 windows_proof_rmtree, setup_vsenv, determine_worker_count)
+from mesonbuild.mesonlib import (GIT, MesonException, RealPathAction, SimpleABC, get_meson_command, quiet_git,
+                                 windows_proof_rmtree, setup_vsenv, determine_worker_count, unwrap_err)
 from .options import OptionKey
 from mesonbuild.msetup import add_arguments as msetup_argparse
 from mesonbuild.wrap import wrap
@@ -32,8 +33,7 @@ from .scripts.meson_exe import run_exe
 
 if T.TYPE_CHECKING:
     from ._typing import ImmutableListProtocol
-    from .interpreterbase.baseobjects import SubProject
-    from .mesonlib import ExecutableSerialisation
+    from .mesonlib import ExecutableSerialisation, SubProject
 
 archive_choices = ['bztar', 'gztar', 'xztar', 'zip']
 
@@ -122,7 +122,7 @@ def is_hg(src_root: str) -> bool:
 
 
 @dataclass
-class Dist(metaclass=abc.ABCMeta):
+class Dist(metaclass=SimpleABC):
     dist_name: str
     src_root: str
     bld_root: str
@@ -337,7 +337,8 @@ def check_dist(packagename: str, _meson_command: ImmutableListProtocol[str], ext
         if os.path.exists(p):
             windows_proof_rmtree(p)
         os.mkdir(p)
-    ninja_args = detect_ninja() + [f'-j{num_processes}']
+    ninja = unwrap_err(detect_ninja(), 'Ninja is required but could not be found')
+    ninja_args = ninja + [f'-j{num_processes}']
     shutil.unpack_archive(packagename, unpackdir)
     unpacked_files = glob(os.path.join(unpackdir, '*'))
     assert len(unpacked_files) == 1
@@ -387,7 +388,9 @@ def run(options: argparse.Namespace) -> int:
     bld_root = b.environment.build_dir
     priv_dir = os.path.join(bld_root, 'meson-private')
 
-    dist_name = b.project_name + '-' + b.project_version
+    dist_name = b.project_name
+    if b.project_version is not None:
+        dist_name = f'{dist_name}-{b.project_version}'
 
     archives = determine_archives_to_generate(options)
 
@@ -395,7 +398,7 @@ def run(options: argparse.Namespace) -> int:
     extra_meson_args = []
     if options.include_subprojects:
         subproject_dir = os.path.join(src_root, b.subproject_dir)
-        for sub in b.projects:
+        for sub in set(itertools.chain(b.projects.host, b.projects.build)):
             if sub:
                 directory = wrap.get_directory(subproject_dir, sub)
                 subprojects[sub] = os.path.join(b.subproject_dir, directory)

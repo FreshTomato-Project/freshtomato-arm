@@ -17,6 +17,8 @@ from ..compilers.detect import defaults as compiler_names
 if T.TYPE_CHECKING:
     import argparse
 
+    from ..compilers.compilers import Language
+
 # Note: when adding arguments, please also add them to the completion
 # scripts in $MESONSRC/data/shell-completions/
 def add_arguments(parser: 'argparse.ArgumentParser') -> None:
@@ -326,7 +328,8 @@ def write_machine_file(infos: MachineInfo, ofilename: str, write_system_info: bo
 def detect_language_args_from_envvars(langname: str, envvar_suffix: str = '') -> T.Tuple[T.List[str], T.List[str]]:
     compile_args = []
     if langname in compilers.CFLAGS_MAPPING:
-        compile_args = shlex.split(os.environ.get(compilers.CFLAGS_MAPPING[langname] + envvar_suffix, ''))
+        compile_args = shlex.split(os.environ.get(
+            compilers.CFLAGS_MAPPING[T.cast('Language', langname)] + envvar_suffix, ''))
     if langname in compilers.LANGUAGES_USING_CPPFLAGS:
         cppflags = tuple(shlex.split(os.environ.get('CPPFLAGS' + envvar_suffix, '')))
         lang_compile_args = list(cppflags) + compile_args
@@ -534,7 +537,7 @@ class AndroidDetector:
                 ofile.write("endian = 'little'\n")
 
 
-def run(options: T.Any) -> None:
+def run(options: argparse.Namespace) -> int:
     mlog.notice('This functionality is experimental and subject to change.')
     if options.cross:
         if options.use_for_build:
@@ -551,3 +554,5 @@ def run(options: T.Any) -> None:
         ad.detect_toolchains()
     else:
         raise ValueError("Encountered unreachable code-path")
+
+    return 0

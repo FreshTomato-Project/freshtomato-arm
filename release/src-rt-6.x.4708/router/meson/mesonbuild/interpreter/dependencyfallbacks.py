@@ -8,11 +8,11 @@ from .. import mlog
 from .. import dependencies
 from .. import build
 from ..wrap import WrapMode
-from ..mesonlib import stringlistify, version_compare_many
+from ..mesonlib import stringlistify, version_compare_many, SubProject
 from ..options import OptionKey
 from ..dependencies import Dependency, DependencyException, NotFoundDependency
 from ..interpreterbase import (MesonInterpreterObject, FeatureNew,
-                               InterpreterException, InvalidArguments, SubProject)
+                               InterpreterException, InvalidArguments)
 
 import typing as T
 if T.TYPE_CHECKING:
@@ -137,7 +137,7 @@ class DependencyFallbacksHolder(MesonInterpreterObject):
         return self._get_subproject_dep(subp_name, varname, kwargs)
 
     def _get_subproject(self, subp_name: str) -> T.Optional[SubprojectHolder]:
-        sub = self.interpreter.subprojects.get(subp_name)
+        sub = self.interpreter.subprojects[self.for_machine].get(subp_name)
         if sub and sub.found():
             return sub
         return None
@@ -361,6 +361,7 @@ class DependencyFallbacksHolder(MesonInterpreterObject):
             kwargs['required'] = required and (i == last)
             func_kwargs: DoSubproject = {
                 'required': kwargs['required'],
+                'for_machine': self.for_machine,
                 'cmake_options': [],
                 'default_options': self.default_options,
                 'options': None,

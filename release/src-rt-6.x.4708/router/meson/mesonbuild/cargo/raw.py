@@ -159,6 +159,32 @@ class Workspace(TypedDict):
     dependencies: T.Dict[str, DependencyV]
 
 
+Profile = TypedDict(
+    'Profile',
+    {
+        'opt-level': T.Union[int, str],
+        'debug': T.Union[bool, int, str],
+        'split-debuginfo': str,
+        'strip': T.Union[bool, str],
+        'debug-assertions': bool,
+        'overflow-checks': bool,
+        'lto': T.Union[bool, str],
+        'panic': str,
+        'incremental': bool,
+        'codegen-units': int,
+        'rpath': bool,
+        'inherits': str,
+        'package': T.Dict[str, 'Profile'],
+        'build-override': 'Profile',
+    },
+    total=False,
+)
+"""An entry in the [profile] section.
+
+See https://doc.rust-lang.org/cargo/reference/profiles.html
+"""
+
+
 Manifest = TypedDict(
     'Manifest',
     {
@@ -176,8 +202,9 @@ Manifest = TypedDict(
         'target': T.Dict[str, Target],
         'workspace': Workspace,
         'lints': T.Union[FromWorkspace, T.Dict[str, T.Dict[str, LintV]]],
+        'patch': T.Dict[str, object],
+        'profile': T.Dict[str, Profile],
 
-        # TODO: patch?
         # TODO: replace?
     },
     total=False,

@@ -114,7 +114,7 @@ class RustSystemDependency(InternalDependency):
 
 class RustCompiler(Compiler):
 
-    # rustc doesn't invoke the compiler itself, it doesn't need a LINKER_PREFIX
+    # rustc doesn't invoke the compiler itself, it doesn't need a LINKER_OPTION_STYLE
     language = 'rust'
     id = 'rustc'
 
@@ -167,8 +167,7 @@ class RustCompiler(Compiler):
                                    ) -> T.Tuple[T.List[str], T.List[str]]:
         cmdlist = self.exelist.copy()
         largs: T.List[str] = []
-        assert self.linker is not None, 'for mypy'
-        if self.info.kernel == 'none' and 'ld.' in self.linker.id:
+        if self.info.kernel == 'none' and 'ld.' in self.get_linker_id():
             largs.extend(rustc_link_args(['-nostartfiles']))
         cmdlist.extend(self.get_output_args(binname))
         cmdlist.append(sourcename)
@@ -394,17 +393,17 @@ class RustCompiler(Compiler):
             args.append('--edition=' + std)
         return args
 
-    def get_crt_compile_args(self, crt_val: str, env: Environment) -> T.List[str]:
+    def get_crt_compile_args(self, crt_val: str) -> T.List[str]:
         # Rust handles this for us, we don't need to do anything
         return []
 
-    def get_crt_link_args(self, crt_val: str, env: Environment) -> T.List[str]:
+    def get_crt_link_args(self, crt_val: str) -> T.List[str]:
         if not isinstance(self.linker, VisualStudioLikeLinkerMixin):
             return []
         # Rustc always use non-debug Windows runtime. Inject the one selected
         # by Meson options instead.
         # https://github.com/rust-lang/rust/issues/39016
-        return self.MSVCRT_ARGS[self.get_crt_val(crt_val, env)]
+        return self.MSVCRT_ARGS[self.get_crt_val(crt_val)]
 
     def get_colorout_args(self, colortype: str) -> T.List[str]:
         if colortype in {'always', 'never', 'auto'}:
@@ -469,6 +468,10 @@ class RustCompiler(Compiler):
     @functools.lru_cache(maxsize=None)
     def headerpad_args(self) -> T.List[str]:
         return rustc_link_args(super().headerpad_args())
+
+    @functools.lru_cache(maxsize=None)
+    def get_linker_fatal_warnings(self) -> T.List[str]:
+        return rustc_link_args(super().get_linker_fatal_warnings())
 
     @functools.lru_cache(maxsize=None)
     def get_allow_undefined_link_args(self) -> T.List[str]:

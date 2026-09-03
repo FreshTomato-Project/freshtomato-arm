@@ -1,4 +1,4 @@
-FROM debian:12
+FROM debian:13
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -23,14 +23,15 @@ RUN apt-get update \
   make \
   gettext \
   unzip \
+  python3-setuptools \
   zlib1g-dev \
   libc6 \
   gperf \
   automake \
   groff \
   lib32stdc++6 \
-  libncurses5 \
-  libncurses5-dev \
+  libncurses6 \
+  libncurses-dev \
   gawk \
   gitk \
   zlib1g-dev \
@@ -42,12 +43,10 @@ RUN apt-get update \
   lib32z1-dev \
   pkg-config \
   libssl-dev \
-  automake1.11 \
   libmnl-dev \
   libxml2-dev \
   intltool \
   libglib2.0-dev \
-  libstdc++5 \
   texinfo \
   dos2unix \
   xsltproc \

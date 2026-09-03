@@ -4490,7 +4490,7 @@ samba3/source3/Makefile:
 
 samba3: samba3/source3/Makefile
 	@$(SEP)
-	$(MAKE) -C samba3/source3 all $(PARALLEL_BUILD)
+	$(MAKE) -C samba3/source3 all
 
 samba3-install:
 	@install -D samba3/source3/bin/samba_multicall $(INSTALLDIR)/samba3/usr/bin/samba_multicall

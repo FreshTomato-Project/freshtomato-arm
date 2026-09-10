@@ -5,6 +5,273 @@ FreshTomato-ARM Changelog
 
 
 
+2026.4          2026.09.14
+---------------------------
+
+- Warning: Due to the removal of Mullvad's DoT servers from the list (they are being shut down), Stubby users are asked to check their settings.
+- Note: Due to numerous GUI changes, please use Ctrl+F5 or Ctrl+Shift+R, or clear your browser cache.
+
+Kernel:
+- kernel: compile the dm-mod module and place it in the extras archive (close #286)
+- kernel: wireguard: handle disabled IPv6 on legacy kernels
+- kernel: fix PTY allocation with GCC 7.3
+- kernel: improve ICMPv6 error suppression diagnostics
+- kernel: rndis_host: recover the link after TX timeouts
+- kernel: usb: usblp: remove global proc entries only after last interface disconnects
+
+Toolchain:
+- toolchain: remove no more needed toolchain based on gcc 4.5.3
+- toolchain: add toolchain based on gcc 7.3
+- toolchain: add toolchain based on gcc 7.5.0 and binutils 1.29.1
+- toolchain: remove test toolchain based on gcc 7.3.0
+- toolchain: switch to toolchain based on gcc 7.5.0
+- toolchain: update with 'static_assert', 'timespec_get()' and 'aligned_alloc' added
+
+Updates:
+- adminer: update to adminneo-5.7.1
+- avahi: update to 0.9-rc5
+- busybox: update to 1.38.0
+- dnsmasq: update to v2.93-a9880c5
+- dropbear: update to 2026.94
+- e2fsprogs: update to 1.47.4
+- expat: update to 2.8.4
+- haveged: update to 1.9.26
+- libcurl: update to 8.22.0
+- libevent: update to 2.1.13-stable
+- libffi: update to 3.8.0
+- libjpeg-turbo: update to 3.2.0
+- libjson-c: update to 0.19
+- libsodium: update to latest 1.0.22-stable
+- libubox: update to 17f527f (2026-07-08) snapshot
+- libxml2: update to 2.15.4
+- meson: update to 1.12.0
+- miniupnpd: update to 2.3.11
+- nano: update to 9.2
+- nginx: update to 1.31.5
+- ntfs-3g: update to 2026.7.7
+- openssl: update to 3.0.22
+- openvpn: update to 2.7.7
+- pcre2: update to 10.48
+- php: update to 8.3.33
+- pppd: update to 2.5.3
+- sqlite: update to 3.53.4
+- tinc: update to 1.1.8pre-211e3df (2026-06-27)
+- tor: update to 0.4.9.12
+- transmission: update to 4.1.3 (close #76)
+
+GUI / WWW:
+- GUI: add service name next to Status on page header
+- www: about.asp: show Git commit hash
+- www: admin-access.asp: allow matching local and remote  ports (closes #149)
+- www: admin-access.asp: derive access listener notes from MAX_BRIDGE_ID
+- www: admin-access.asp: fix redirect URL port handling
+- www: advanced-access.asp: derive LAN access bridges from MAX_BRIDGE_ID
+- www: advanced-ctnf.asp: fix L7 NVRAM initialization (closes  #310)
+- www: advanced-dhcpdns.asp: derive DHCP/DNS fields from MAX_* limits
+- www: advanced-dhcpdns.asp: fix dnsmasq configuration check on slow routers
+- www: advanced-firewall.asp: add TCP MSS clamping option
+- www: advanced-firewall.asp: derive multicast bridges from MAX_BRIDGE_ID
+- www: advanced-mac.asp: derive MAC address WAN fields from MAXWAN_NUM
+- www: advanced-mac.asp: fix duplicate MAC address validation
+- www: advanced-pbr.asp: iterate over MAXWAN_NUM in advanced-pbr
+- www: advanced-routing.asp: derive routing interfaces from MAX_* limits
+- www: advanced-tor.asp: derive Tor bridge options from MAX_BRIDGE_ID
+- www: advanced-vlan.asp: derive VLAN controls from MAX_* limits
+- www: advanced-wlanvifs.asp: derive virtual wireless bridges from MAX_BRIDGE_ID
+- www: basic-ddns.asp: derive DDNS WAN controls from MAXWAN_NUM
+- www: basic-network.asp: derive MultiWAN controls from MAXWAN_NUM
+- www: basic-network.asp: prevent gaps in enabled Multi-WAN interfaces
+- www: bwm-common.js: derive bandwidth labels from MAX_* limits
+- www: bwm-graph.svg: fix selected range traffic calculation
+- www: derive LAN bridge grid from MAX_BRIDGE_ID
+- www: disable OUI lookup for NO_HTTPS builds
+- www: forward-dmz.asp: fix validation and remote-access handling
+- www: hide Layer 7 controls when L7 is disabled
+- www: improve switch port labeling and shared port helpers
+- www: make 0.0.0.0 bridges consistently L2-only (closes #218)
+- www: move common page footer to tomato.js
+- www: qos-ctrate.asp: derive QoS connection filters from MAX_BRIDGE_ID
+- www: qos-detailed.asp: derive QoS detail filters from MAX_BRIDGE_ID
+- www: share bandwidth and IP traffic helpers
+- www: share collapsible section helpers
+- www: share grid backup controls
+- www: share IP traffic history code
+- www: share IPv6 address join helper
+- www: share QoS connection viewer helpers
+- www: share traffic statistics administration helpers
+- www: splashd.asp: derive captive portal bridges from MAX_BRIDGE_ID
+- www: status-log.asp: add explicit search operators
+- www: status-overview.asp: add ethernet port description
+- www: status-overview.asp: avoid NaN for bridges without netmask (close #278)
+- www: tools-wol.asp: derive Wake-on-LAN bridges from MAX_BRIDGE_ID
+- www: unify web interface across ARM and MIPS targets
+- www: vpn-pptp.asp: derive PPTP client WAN options from MAXWAN_NUM
+- www: vpn-server.asp: keep DH params disabled when ECDH is enabled
+
+Build:
+- build: add explicit FTPS make option (closes #303)
+- build: add NO_L7 controls to ARM
+- build: add separate Adblock build option
+- build: add shared-only target build mode
+- build: config: disable FTP SSL with WolfSSL
+- build: config: replace MultiWAN with configurable network limits
+- build: config: require base size optimization for extra trimming
+- build: config: require OpenVPN for KEYGEN
+- build: config: tie Transmission extra tools to client binaries
+- build: config: update Kconfig parser to Linux 4.14
+- build: decouple TLS provider selection from HTTPS
+- build: drop stale ARM make-bin options
+- build: fix gcc 7.3 compiler warnings
+- build: Makefile: add autoreconf to pptpd recipe
+- build: Makefile: fix tool paths in CMake cross-compilation config
+- build: make FTPS explicit in existing OpenVPN targets
+- build: prepare for toolchain based on gcc 7.5.0 and binutils 2.29.1
+- build: preserve legacy ARM multi-WAN defaults
+- build: preserve legacy MIPS multi-WAN defaults
+- build: remove dead ARM NO_ZEBRA override
+- build: rom: Makefile: dnscrypt: verify and normalize resolver list
+- build: update GUI optimization tools
+
+Other:
+- Add "Block All Except..." Access Restriction option (closes #33)
+- busybox: add 3 more patches for ntpd applet
+- busybox: fix ntpd server statistics hook
+- busybox: remove unsafe ntpd -t trust mode
+- defaults: expose common defaults helper API
+- dmz: fix LAN bridge detection
+- dmz: make DMZ optional and add MAC target support (closes #179)
+- dnsmasq: check for infinite (non-expiring) leases. Explicitly cast to unsigned long for 64bit time_t on 32bit systems
+- ffmpeg: backport critical security fixes for legacy 0.11.5
+- Fix Docker builds
+- httpd: bwm.c: simplify stats backup selection
+- httpd: cpuinfo.c: replace system() in cpuinfo with eval()
+- httpd: ctnf.c: fix direction of local IPv4 connections
+- httpd: defer final upgrade shutdown until after reboot response
+- httpd: execute OpenVPN helpers without a shell
+- httpd: httpd.c: replace certificate cat system() with _eval()
+- httpd: httpd.c: scale HTTP_MAX_LISTENERS with the LAN/WAN limits
+- httpd: listen on LAN IPv6 link-local address
+- httpd: log.c: allow full syslog downloads (closes #298)
+- httpd: log.c: harden syslog download handling
+- httpd: misc.c: deduplicate IPv6 DNS output
+- httpd: nvram.c: deduplicate NVRAM JavaScript output
+- httpd: nvram.c: honor configured WAN and bridge limits in asp_nvram
+- httpd: stage and validate firmware before destructive upgrade
+- httpd: tomato.c: execute discovery without a shell
+- httpd: track GUI login state per session token (close #56)
+- httpd: usb.c: fix USB device list with storage and printer connected
+- httpd: wl.c: use driver-reported VIF limit in web interface (close #287)
+- libshared: add tc qdisc status helpers
+- libshared: centralize bridge NVRAM naming
+- libshared: centralize WAN NVRAM naming
+- libshared: converge netconf and nvparse sources
+- libshared: converge support data headers
+- libshared: deduplicate prefixed NVRAM reads
+- libshared: ether_atoe(): accept hyphen-separated Ethernet addresses
+- libshared: expand bridge naming helpers
+- libshared: fix ARM guard visibility in netconf and nvparse
+- libshared: fix common header dependencies
+- libshared: include syslog definitions in model detection
+- libshared: make shutils header self-contained
+- libshared: make syslog dependency explicit
+- libshared: move WireGuard status helper to libshared
+- libshared: reuse bridge NVRAM helpers across callers
+- libshared: reuse prefixed NVRAM operations
+- libshared: reuse prefixed NVRAM operations in callers
+- libshared: reuse WAN prefix formatter across callers
+- libshared: simplify WAN face selection
+- lzo: fix a potential 1-byte overrun in LZO1F safe decompressor
+- mdu: add comment about CA bundle
+- mdu: add "Connection: close" to socket path
+- mdu: avoid duplicate DDNS status strings in log formats
+- mdu: clarify custom URL authentication handling
+- mdu: keep connect timeout helper local to non-libcurl path
+- mdu/ddns: change the default useragent to one that works better with IP checkers
+- mdu/ddns: change the logging level from DEBUG to ERROR where required
+- mdu/ddns: do not save DDNS cookie before provider update
+- mdu/ddns: fail PUT body setup when fmemopen fails
+- mdu/ddns: fix parsing DynDNS checkip HTML response
+- mdu/ddns: force IPv4 for HE.net tunnelbroker updates
+- mdu/ddns: get_address(): use ssl for IP checkers
+- mdu/ddns: guard empty custom header in socket request path
+- mdu/ddns: let mdu own external checker address-family selection
+- mdu/ddns: reject truncated request strings
+- mdu/ddns: send libcurl POST bodies with POSTFIELDS
+- mdu/ddns: split IPv4 and IPv6 address checks
+- mdu/ddns: update DNSExit to current API
+- mdu/ddns: use _eval() for route commands
+- mtd: add non-destructive firmware image validation
+- mwwatchdog: skip temporary routes with a single WAN
+- ntpd: retry query socket errors without consuming burst (patch)
+- ntpd: run the -S hook before exiting in -q mode (patch)
+- ntpd: schedule retry after initial DNS lookup failure (patch)
+- nvram: main.c: fix cfg save/restore buffer handling and parsing
+- openssl-1.1: add fix for CVE-2026-63072 and CVE-2026-54874
+- openvpn: disable compression support but still allow limited interoperability with compression-enabled peers
+- others: mwwatchdog: gate on active WAN count, fix mwanJob toggle and PID file release
+- others: mymotd: show Git commit hash
+- qos: make conntrack statistics optional on ARM (closes #309)
+- rc: bwlimit.c: fix severe Samba throughput drop on ARM
+- rc: ddns.c: do not trust saved cookie on cold external checker start
+- rc: dhcp.c: use shared defaults for LAN DHCP fallback
+- rc: dnsmasq.c: add logging when dnsmasq reloads
+- rc: exclude L2-only bridges from dnsmasq and IPv6 (closes #222)
+- rc: firewall.c: clamp TCP MSS on WAN ingress and egress (close #284)
+- rc: firewall.c: reuse bridge prefix formatter in firewall
+- rc: generalize WAN and LAN bridge handling
+- rc: handle existing static routes without retrying (closes #294)
+- rc: handle idempotent IPv6 route operations
+- rc/httpd: use qdisc helpers for qos and bwlimit status
+- rc: network.c: reset static route interface for each entry
+- rc: pptpd.c: clamp TCP MSS in both tunnel directions
+- rc: pptpd.c: place TCP MSS clamp rules in mangle table
+- rc: preserve WAN0 DNS settings in AP-only mode
+- rc: qos.c: create the QOSSIZE chain whenever a size rule needs it
+- rc: report route deletion only after success
+- rc: reuse existing NVRAM naming helpers
+- rc: reuse f_write_string for watchdog scripts
+- rc: reuse WAN protocol and NVRAM helpers
+- rc: reuse wl_nvname in wireless setup
+- rc: services.c: add simple service operation table
+- rc: services.c: also run stubby with custom or alternative configuration with logging (close #283)
+- rc: services.c: centralize service CLI metadata
+- rc: services.c: deduplicate stats daemon shutdown
+- rc: services.c: move local service handlers to metadata dispatcher
+- rc: services.c: move service metadata to private header
+- rc: services.c: print sorted service list on a single line
+- rc: services.c: reuse bridge helpers
+- rc: services.c: start time-dependent services after first ntpd sync
+- rc: services.c: use shared defaults tables directly
+- rc: standardize route-add retry handling
+- rc: track Tor runtime intent separately from boot policy
+- rc: transmission.c: preserve custom blocklists and settings (close #290)
+- rc: usb.c: harden hotplug environment handling
+- rc: usb.c: harden hotplug event handling
+- rc: usb.c: use native utf8 option when mounting VFAT
+- rc: use configured and active Multi-WAN counts where appropriate
+- rc: wan.c: restore gateway host route ordering in preset_wan
+- rc: wan.c: reuse prefixed NVRAM operations
+- rc: wireguard.c: preserve existing routes in main table
+- rc/www: add static IPv6 reservations
+- rc/www: fix dhcpd_static consumers missed by the IPv6 reservations change
+- rom: remove Mullvad DOT servers from the list
+- rom: update mk-ca-bundle.pl script to latest version
+- shared: misc.c: harden foreach_wif() interface list handling
+- switch3g: improve USB serial device detection
+- switch4g: also detect modem with 'connect' option
+- switch4g: fix endless loop in certain conditions
+- switch4g: fix loop IFACE ready/not ready one more time
+- switch4g: improve USB serial DIAG detection
+- switch4g: qmi_wwan: fall back to legacy SIM status before recovery
+- switch4g: support legacy and modern cdc-wdm sysfs layouts
+- tor: add New Identity control action
+- usb: remove obsolete UFSDN configuration
+- wireguard: clarify keepalive roles and fix endpoint ports (closes #276)
+- WireGuard: fix External VPN Provider switching
+- wireguard: fix rx byte/packet accounting
+- wwansignal: parse uqmi responses by JSON field name
+
+
 2026.3          2026.06.21
 ---------------------------
 

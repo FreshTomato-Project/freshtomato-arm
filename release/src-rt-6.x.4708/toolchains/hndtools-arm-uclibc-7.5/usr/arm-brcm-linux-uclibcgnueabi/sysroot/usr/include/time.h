@@ -110,7 +110,7 @@ typedef __timer_t timer_t;
 
 #if !defined __timespec_defined &&				\
     ((defined _TIME_H &&					\
-      (defined __USE_POSIX199309 || defined __USE_MISC)) ||	\
+      (defined __USE_POSIX199309 || defined __USE_MISC || defined __USE_ISOC11)) ||	\
       defined __need_timespec)
 # define __timespec_defined	1
 
@@ -187,6 +187,14 @@ extern clock_t clock (void) __THROW;
 
 /* Return the current time and put it in *TIMER if TIMER is not NULL.  */
 extern time_t time (time_t *__timer) __THROW;
+
+#ifdef __USE_ISOC11
+/* Time base for timespec_get.  */
+# define TIME_UTC 1
+
+/* Set TS to the current calendar time based on BASE.  */
+extern int timespec_get (struct timespec *__ts, int __base) __THROW;
+#endif
 
 #ifdef __UCLIBC_HAS_FLOATS__
 /* Return the difference between TIME1 and TIME0.  */

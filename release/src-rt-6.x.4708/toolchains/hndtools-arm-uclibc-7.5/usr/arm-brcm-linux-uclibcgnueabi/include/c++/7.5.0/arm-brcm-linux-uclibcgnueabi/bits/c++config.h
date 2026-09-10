@@ -650,7 +650,7 @@ namespace std
 /* #undef _GLIBCXX_HAVE_ACOSL */
 
 /* Define to 1 if you have the `aligned_alloc' function. */
-/* #undef _GLIBCXX_HAVE_ALIGNED_ALLOC */
+#define _GLIBCXX_HAVE_ALIGNED_ALLOC 1
 
 /* Define to 1 if you have the `asinf' function. */
 #define _GLIBCXX_HAVE_ASINF 1

@@ -114,29 +114,30 @@ void update_history(linestruct **item, const char *text, bool avoid_duplicates)
 
 	/* If an identical string was found, delete that item. */
 	if (thesame) {
-		linestruct *after = thesame->next;
-
-		/* If the string is at the head of the list, move the head. */
 		if (thesame == *htop)
-			*htop = after;
+			*htop = thesame->next;
+		else
+			thesame->prev->next = thesame->next;
+		thesame->next->prev = thesame->prev;
 
-		unlink_node(thesame);
-		renumber_from(after);
+		free(thesame->data);
+		free(thesame);
+		(*hbot)->lineno--;
 	}
 
 	/* If the history is full, delete the oldest item (the one at the
 	 * head of the list), to make room for a new item at the end. */
-	if ((*hbot)->lineno == MAX_SEARCH_HISTORY + 1) {
-		linestruct *oldest = *htop;
-
+	if ((*hbot)->lineno > MAX_SEARCH_HISTORY) {
 		*htop = (*htop)->next;
-		unlink_node(oldest);
-		renumber_from(*htop);
+		free((*htop)->prev->data);
+		free((*htop)->prev);
+		(*htop)->prev = NULL;
+		(*hbot)->lineno--;
 	}
 
 	/* Store the fresh string in the last item, then create a new item. */
 	(*hbot)->data = mallocstrcpy((*hbot)->data, text);
-	splice_node(*hbot, make_new_node(*hbot));
+	(*hbot)->next = make_new_node(*hbot);
 	*hbot = (*hbot)->next;
 	(*hbot)->data = copy_of("");
 

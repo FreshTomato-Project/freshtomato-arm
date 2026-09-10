@@ -2,7 +2,7 @@
  *   files.c  --  This file is part of GNU nano.                          *
  *                                                                        *
  *   Copyright (C) 1999-2011, 2013-2026 Free Software Foundation, Inc.    *
- *   Copyright (C) 2015-2022, 2025 Benno Schulenberg                      *
+ *   Copyright (C) 2015-2022, 2025, 2026 Benno Schulenberg                *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -1047,7 +1047,7 @@ void execute_command(const char *command)
 		cutbuffer = NULL;
 
 #ifdef ENABLE_MULTIBUFFER
-		if (ISSET(MULTIBUFFER)) {
+		if (ISSET(NEW_BUFFER)) {
 			openfile = openfile->prev;
 			if (openfile->mark)
 				copy_marked_region();
@@ -1082,7 +1082,7 @@ void execute_command(const char *command)
 		close(to_fd[1]);
 
 #ifdef ENABLE_MULTIBUFFER
-		if (ISSET(MULTIBUFFER))
+		if (ISSET(NEW_BUFFER))
 			openfile = openfile->next;
 #endif
 		free_lines(cutbuffer);
@@ -1104,7 +1104,7 @@ void execute_command(const char *command)
 	else
 		read_file(stream, 0, "pipe", TRUE);
 
-	if (should_pipe && !ISSET(MULTIBUFFER)) {
+	if (should_pipe && !ISSET(NEW_BUFFER)) {
 		if (was_lineno)
 			goto_line_posx(was_lineno, 0);
 		add_undo(COUPLE_END, N_("filtering"));
@@ -1151,7 +1151,7 @@ void insert_a_file_or(bool execute)
 	char *given = copy_of("");
 		/* The last answer the user typed at the status-bar prompt. */
 #ifdef ENABLE_MULTIBUFFER
-	bool was_multibuffer = ISSET(MULTIBUFFER);
+	bool was_multibuffer = ISSET(NEW_BUFFER);
 #endif
 
 	/* Display newlines in filenames as ^J. */
@@ -1170,7 +1170,7 @@ void insert_a_file_or(bool execute)
 #ifndef NANO_TINY
 		if (execute) {
 #ifdef ENABLE_MULTIBUFFER
-			if (ISSET(MULTIBUFFER))
+			if (ISSET(NEW_BUFFER))
 				/* TRANSLATORS: The next six messages are prompts. */
 				msg = _("Command to execute in new buffer");
 			else
@@ -1180,7 +1180,7 @@ void insert_a_file_or(bool execute)
 #endif
 		{
 #ifdef ENABLE_MULTIBUFFER
-			if (ISSET(MULTIBUFFER))
+			if (ISSET(NEW_BUFFER))
 #ifndef NANO_TINY
 				if ISSET(NO_CONVERT)
 					msg = _("File to read unconverted into new buffer [from %s]");
@@ -1209,7 +1209,7 @@ void insert_a_file_or(bool execute)
 
 		/* If we're in multibuffer mode and the filename or command is
 		 * blank, open a new buffer instead of canceling. */
-		if (response == -1 || (response == -2 && !ISSET(MULTIBUFFER))) {
+		if (response == -1 || (response == -2 && !ISSET(NEW_BUFFER))) {
 			statusbar(_("Cancelled"));
 			break;
 		} else {
@@ -1227,7 +1227,7 @@ void insert_a_file_or(bool execute)
 			if (function == flip_newbuffer) {
 				/* Allow toggling only when not in view mode. */
 				if (!ISSET(VIEW_MODE))
-					TOGGLE(MULTIBUFFER);
+					TOGGLE(NEW_BUFFER);
 				else
 					beep();
 				continue;
@@ -1262,14 +1262,14 @@ void insert_a_file_or(bool execute)
 			}
 #endif
 			/* If we don't have a file yet, go back to the prompt. */
-			if (response != 0 && (!ISSET(MULTIBUFFER) || response != -2))
+			if (response != 0 && (!ISSET(NEW_BUFFER) || response != -2))
 				continue;
 
 #ifndef NANO_TINY
 			if (execute) {
 #ifdef ENABLE_MULTIBUFFER
 				/* When in multibuffer mode, first open a blank buffer. */
-				if (ISSET(MULTIBUFFER))
+				if (ISSET(NEW_BUFFER))
 					open_buffer("", TRUE);
 #endif
 				/* If the command is not empty, execute it and read its output
@@ -1283,7 +1283,7 @@ void insert_a_file_or(bool execute)
 
 #ifdef ENABLE_MULTIBUFFER
 				/* If this is a new buffer, put the cursor at the top. */
-				if (ISSET(MULTIBUFFER)) {
+				if (ISSET(NEW_BUFFER)) {
 					openfile->current = openfile->filetop;
 					openfile->current_x = 0;
 					openfile->placewewant = 0;
@@ -1294,10 +1294,10 @@ void insert_a_file_or(bool execute)
 			} else
 #endif /* !NANO_TINY */
 				/* Read the file into either current buffer or new buffer. */
-				open_buffer(answer, ISSET(MULTIBUFFER));
+				open_buffer(answer, ISSET(NEW_BUFFER));
 
 #ifdef ENABLE_MULTIBUFFER
-			if (ISSET(MULTIBUFFER)) {
+			if (ISSET(NEW_BUFFER)) {
 #ifdef ENABLE_HISTORIES
 				if (ISSET(POSITIONLOG)) {
 #ifndef NANO_TINY
@@ -1326,9 +1326,9 @@ void insert_a_file_or(bool execute)
 
 #ifdef ENABLE_MULTIBUFFER
 	if (was_multibuffer)
-		SET(MULTIBUFFER);
+		SET(NEW_BUFFER);
 	else
-		UNSET(MULTIBUFFER);
+		UNSET(NEW_BUFFER);
 #endif
 }
 
@@ -1521,10 +1521,10 @@ void init_backup_dir(void)
  * closed by this function, `out` is closed only if `close_out` is true. */
 int copy_file(FILE *inn, FILE *out, bool close_out)
 {
-	int retval = 0;
+	int (*conclude)(FILE *) = (close_out) ? fclose : fflush;
 	char buf[BUFSIZ];
 	size_t charsread;
-	int (*flush_out_fnc)(FILE *) = (close_out) ? fclose : fflush;
+	int retval = 0;
 
 	do {
 		charsread = fread(buf, 1, BUFSIZ, inn);
@@ -1540,7 +1540,7 @@ int copy_file(FILE *inn, FILE *out, bool close_out)
 
 	if (fclose(inn) == EOF)
 		retval = -3;
-	if (flush_out_fnc(out) == EOF)
+	if (conclude(out) == EOF)
 		retval = 4;
 
 	return retval;
@@ -1649,7 +1649,7 @@ bool make_backup_of(char *realname, struct stat fileinfo)
 
 	/* Since this backup is a newly created file, explicitly sync it to
 	 * permanent storage before starting to write out the actual file. */
-	if (fflush(backup_file) == EOF || fsync(fileno(backup_file)) < 0) {
+	if (fsync(fileno(backup_file)) < 0) {
 		fclose(backup_file);
 		goto problem;
 	}
@@ -1752,9 +1752,8 @@ bool write_file(const char *name, FILE *thefile, writing_type method, bool annot
 
 	/* When prepending, first copy the existing file to a temporary file. */
 	if (method == PREPEND) {
-		FILE *source = NULL;
-		FILE *target = NULL;
-		int verdict;
+		FILE *source, *target;
+		int verdict = 5;
 
 		if (is_existing_file && S_ISFIFO(fileinfo.st_mode)) {
 			statusline(ALERT, _("Error writing %s: %s"), realname, "FIFO");
@@ -1770,13 +1769,10 @@ bool write_file(const char *name, FILE *thefile, writing_type method, bool annot
 
 		tempname = safe_tempfile(&target);
 
-		if (tempname == NULL) {
-			statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
+		if (tempname)
+			verdict = copy_file(source, target, TRUE);
+		else
 			fclose(source);
-			goto cleanup_and_exit;
-		}
-
-		verdict = copy_file(source, target, TRUE);
 
 		if (verdict < 0) {
 			statusline(ALERT, _("Error reading %s: %s"), realname, strerror(errno));
@@ -1884,15 +1880,10 @@ bool write_file(const char *name, FILE *thefile, writing_type method, bool annot
 	/* When prepending, append the temporary file to what we wrote above. */
 	if (method == PREPEND) {
 		FILE *source = fopen(tempname, "rb");
-		int verdict;
+		int verdict = -5;
 
-		if (source == NULL) {
-			statusline(ALERT, _("Error reading temp file: %s"), strerror(errno));
-			fclose(thefile);
-			goto cleanup_and_exit;
-		}
-
-		verdict = copy_file(source, thefile, FALSE);
+		if (source)
+			verdict = copy_file(source, thefile, FALSE);
 
 		if (verdict < 0) {
 			statusline(ALERT, _("Error reading temp file: %s"), strerror(errno));
@@ -2050,8 +2041,7 @@ int write_it_out(bool exiting, bool withprompt)
 {
 	char *given;
 		/* The filename we offer, or what the user typed so far. */
-	bool maychange = (openfile->filename[0] == '\0');
-		/* Whether it's okay to save the buffer under a different name. */
+	bool confirm_namechange = (openfile->filename[0] != '\0');
 	writing_type method = OVERWRITE;
 #ifdef ENABLE_EXTRA
 	static bool did_credits = FALSE;
@@ -2183,10 +2173,10 @@ int write_it_out(bool exiting, bool withprompt)
 
 			if (openfile->filename[0] == '\0')
 				do_warning = name_exists;
+			else if (full_answer && full_filename)
+				do_warning = (strcmp(full_answer, full_filename) != 0);
 			else
-				do_warning = (strcmp((full_answer == NULL) ?
-								answer : full_answer, (full_filename == NULL) ?
-								openfile->filename : full_filename) != 0);
+				do_warning = (strcmp(answer, openfile->filename) != 0);
 
 			free(full_filename);
 			free(full_answer);
@@ -2201,14 +2191,14 @@ int write_it_out(bool exiting, bool withprompt)
 					continue;
 				}
 
-				if (!maychange) {
+				if (confirm_namechange) {
 #ifndef NANO_TINY
 					if (exiting || !openfile->mark)
 #endif
 					{
 						if (ask_user(YESORNO, _("Save file under DIFFERENT NAME? ")) != YES)
 							continue;
-						maychange = TRUE;
+						confirm_namechange = FALSE;
 					}
 				}
 

@@ -91,8 +91,8 @@ void splice_node(linestruct *afterthis, linestruct *newnode)
 		afterthis->next->prev = newnode;
 	afterthis->next = newnode;
 
-	/* Update filebot when inserting a node at the end of file. */
-	if (openfile && openfile->filebot == afterthis)
+	/* When the node was inserted after end-of-buffer... */
+	if (afterthis == openfile->filebot)
 		openfile->filebot = newnode;
 }
 
@@ -122,8 +122,8 @@ void unlink_node(linestruct *line)
 	if (line->next)
 		line->next->prev = line->prev;
 
-	/* Update filebot when removing a node at the end of file. */
-	if (openfile && openfile->filebot == line)
+	/* When deleting the node at end-of-buffer... */
+	if (line == openfile->filebot)
 		openfile->filebot = line->prev;
 
 	delete_node(line);
@@ -513,7 +513,7 @@ void usage(void)
 #endif
 #ifdef ENABLE_MULTIBUFFER
 	if (!ISSET(RESTRICTED))
-		print_opt("-F", "--multibuffer", N_("Read a file into a new buffer by default"));
+		print_opt("-F", "--newbuffer", N_("Read a file into a new buffer by default"));
 #endif
 #ifndef NANO_TINY
 	print_opt("-G", "--locking", N_("Use (vim-style) lock files"));
@@ -1744,7 +1744,8 @@ int main(int argc, char **argv)
 	const struct option long_options[] = {
 		{"boldtext", 0, NULL, 'D'},
 #ifdef ENABLE_MULTIBUFFER
-		{"multibuffer", 0, NULL, 'F'},
+		{"multibuffer", 0, NULL, 'F'},  /* Deprecated; remove in 2031. */
+		{"newbuffer", 0, NULL, 'F'},
 #endif
 #ifdef ENABLE_NANORC
 		{"ignorercfiles", 0, NULL, 'I'},
@@ -1901,7 +1902,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef ENABLE_MULTIBUFFER
 			case 'F':
-				SET(MULTIBUFFER);
+				SET(NEW_BUFFER);
 				break;
 #endif
 #ifndef NANO_TINY
@@ -2155,6 +2156,10 @@ int main(int argc, char **argv)
 #ifndef NANO_TINY
 	set_up_sigwinch_handler();
 #endif
+
+	/* Nano is a visual editor -- it needs a screen. */
+	if (!isatty(STDOUT_FILENO))
+		die(_("Standard output is not a terminal\n"));
 
 	/* Curses needs TERM; if it is unset, try falling back to a VT220. */
 	if (getenv("TERM") == NULL)
@@ -2634,7 +2639,7 @@ int main(int argc, char **argv)
 		if (more_than_one)
 			mention_name_and_linecount();
 		if (ISSET(VIEW_MODE))
-			SET(MULTIBUFFER);
+			SET(NEW_BUFFER);
 	}
 #else
 	if (optind < argc)

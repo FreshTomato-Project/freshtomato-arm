@@ -6,7 +6,7 @@
  *   Copyright (C) 2016 Mike Scalora                                      *
  *   Copyright (C) 2016 Sumedh Pendurkar                                  *
  *   Copyright (C) 2018 Marco Diego Aurélio Mesquita                      *
- *   Copyright (C) 2015-2022, 2024 Benno Schulenberg                      *
+ *   Copyright (C) 2015-2022, 2024, 2026 Benno Schulenberg                *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -1084,7 +1084,11 @@ void add_undo(undo_type action, const char *message)
 #endif
 		break;
 	default:
+#ifdef DEBUG
 		die("Bad undo type -- please report a bug\n");
+#else
+		break;
+#endif
 	}
 
 	openfile->last_action = action;
@@ -1133,8 +1137,10 @@ void update_undo(undo_type action)
 	char *textposition;
 	int charlen;
 
+#ifdef DEBUG
 	if (u->type != action)
 		die("Mismatching undo type -- please report a bug\n");
+#endif
 
 	u->newsize = openfile->totsize;
 
@@ -1215,7 +1221,11 @@ void update_undo(undo_type action)
 		u->tail_x = openfile->current_x;
 		break;
 	default:
+#ifdef DEBUG
 		die("Bad undo type -- please report a bug\n");
+#else
+		break;
+#endif
 	}
 }
 #endif /* !NANO_TINY */
@@ -2539,7 +2549,7 @@ void do_spell(void)
 {
 	FILE *stream;
 	char *temp_name;
-	bool okay;
+	bool okay = FALSE;
 
 	ran_a_tool = TRUE;
 
@@ -2548,16 +2558,12 @@ void do_spell(void)
 
 	temp_name = safe_tempfile(&stream);
 
-	if (temp_name == NULL) {
-		statusline(ALERT, _("Error writing temp file: %s"), strerror(errno));
-		return;
-	}
-
 #ifndef NANO_TINY
-	if (openfile->mark)
+	if (temp_name && openfile->mark)
 		okay = write_region_to_file(temp_name, stream, SPECIAL);
 	else
 #endif
+	if (temp_name)
 		okay = write_file(temp_name, stream, SPECIAL, NONOTES);
 
 	if (!okay) {

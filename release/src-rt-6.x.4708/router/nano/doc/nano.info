@@ -11,7 +11,7 @@ File: nano.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The GNU nano text editor
 ************************
 
-This manual documents GNU ‘nano’, version 9.1.
+This manual documents GNU ‘nano’, version 9.2.
 
 * Menu:
 
@@ -417,8 +417,9 @@ File: nano.info,  Node: Command-line options,  Next: Feature toggles,  Prev: The
      converted.)
 
 ‘-F’
-‘--multibuffer’
-     Read a file into a new buffer by default.
+‘--newbuffer’
+     Read a file into a new buffer by default.  (The old form of this
+     option, ‘--multibuffer’, is deprecated.)
 
 ‘-G’
 ‘--locking’
@@ -1071,9 +1072,10 @@ The supported settings in a nanorc file are:
      Enable mouse support, so that mouse clicks can be used to place the
      cursor, set the mark (with two clicks), or execute shortcuts.
 
-‘set multibuffer’
+‘set newbuffer’
      When reading in a file with ‘^R’, insert it into a new buffer by
-     default.
+     default.  (The old form of this option, ‘set multibuffer’, is
+     deprecated.)
 
 ‘set noconvert’
      Don’t convert files from DOS format.
@@ -1496,7 +1498,7 @@ of the Backspace key.
 
 ‘insert’
      Inserts a file into the current buffer (at the current cursor
-     position), or into a new buffer when option ‘multibuffer’ is set.
+     position), or into a new buffer when option ‘newbuffer’ is set.
 
 ‘whereis’
      Starts a forward search for text in the current buffer — or for
@@ -1787,8 +1789,9 @@ of the Backspace key.
      marked region) is piped to the command.
 
 ‘flipnewbuffer’
-     Toggles between inserting into the current buffer and into a new
-     empty buffer.
+     When reading in a file or executing a command, toggles between
+     inserting the result into the current buffer and into a new empty
+     buffer.
 
 ‘flipconvert’
      When reading in a file, toggles between converting and not
@@ -2179,17 +2182,17 @@ Node: Exit status13061
 Node: The help viewer13379
 Node: The file browser13803
 Node: Command-line options14694
-Ref: --speller25199
-Node: Feature toggles31279
-Node: Nanorc files33351
-Node: Settings34904
-Ref: set keycolor39867
-Ref: set matchbrackets42025
-Ref: Whitespace50785
-Node: Syntax highlighting51963
-Node: Rebinding keys59723
-Node: Pico compatibility76593
-Node: Building and its options81136
+Ref: --speller25270
+Node: Feature toggles31350
+Node: Nanorc files33422
+Node: Settings34975
+Ref: set keycolor39938
+Ref: set matchbrackets42096
+Ref: Whitespace50929
+Node: Syntax highlighting52107
+Node: Rebinding keys59867
+Node: Pico compatibility76798
+Node: Building and its options81341
 
 End Tag Table
 

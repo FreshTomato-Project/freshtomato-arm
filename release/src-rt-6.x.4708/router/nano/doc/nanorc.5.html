@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Tue Jun 23 05:29:12 2026 -->
+<!-- CreationDate: Fri Jul 31 06:15:07 2026 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -367,10 +367,12 @@ System, and on the console when gpm is running. Text can
 still be selected through dragging by holding down the Shift
 key.</p>
 
-<p style="margin-left:11%;"><b>set multibuffer</b></p>
+<p style="margin-left:11%;"><b>set newbuffer</b></p>
 
 <p style="margin-left:15%;">When reading in a file with
-<b>^R</b>, insert it into a new buffer by default.</p>
+<b>^R</b>, insert it into a new buffer by default. (The old
+form of this option, <b>set multibuffer</b>, is
+deprecated.)</p>
 
 <p style="margin-left:11%;"><b>set noconvert</b></p>
 
@@ -1042,7 +1044,7 @@ without prompting.</p>
 
 <p style="margin-left:18%;">Inserts a file into the current
 buffer (at the current cursor position), or into a new
-buffer when option <b>multibuffer</b> is set.</p>
+buffer when option <b>newbuffer</b> is set.</p>
 
 <p style="margin-left:15%;"><b>whereis</b></p>
 
@@ -1476,8 +1478,9 @@ piped to the command.</p>
 
 <p style="margin-left:15%;"><b>flipnewbuffer</b></p>
 
-<p style="margin-left:18%;">Toggles between inserting into
-the current buffer and into a new empty buffer.</p>
+<p style="margin-left:18%;">When reading in a file or
+executing a command, toggles between inserting the result
+into the current buffer and into a new empty buffer.</p>
 
 <p style="margin-left:15%;"><b>flipconvert</b></p>
 

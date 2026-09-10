@@ -2935,13 +2935,12 @@ int update_softwrapped_line(linestruct *line)
  * that the relevant line needs to be redrawn. */
 bool line_needs_update(const size_t old_column, const size_t new_column)
 {
-#ifndef NANO_TINY
-	if (openfile->mark)
-		return TRUE;
-#endif
 	if (get_page_start(old_column) == get_page_start(new_column))
+#ifdef NANO_TINY
 		return FALSE;
-#ifndef NANO_TINY
+#else
+		return (openfile->mark != NULL);
+
 	if (united_sidescroll)
 		refresh_needed = TRUE;
 #endif

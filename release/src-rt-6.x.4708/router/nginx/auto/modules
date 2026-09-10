@@ -56,6 +56,23 @@ if [ $NGX_TEST_BUILD_SOLARIS_SENDFILEV = YES ]; then
 fi
 
 
+if [ $CONTROL_API = YES ]; then
+
+    if [ "$NGX_PLATFORM" = win32 ]; then
+        cat << END
+
+$0: --with-control-api is not supported on Windows
+
+END
+        exit 1
+    fi
+
+    have=NGX_CONTROL_API . auto/have
+    CORE_DEPS="$CORE_DEPS $UNIX_CONTROL_API_DEPS"
+    CORE_SRCS="$CORE_SRCS $UNIX_CONTROL_API_SRCS"
+fi
+
+
 if [ $HTTP = YES ]; then
     HTTP_MODULES=
     HTTP_DEPS=
@@ -634,6 +651,17 @@ if [ $HTTP = YES ]; then
         ngx_module_srcs=src/http/modules/ngx_http_status_module.c
         ngx_module_libs=
         ngx_module_link=$HTTP_STATUS
+
+        . auto/module
+    fi
+
+    if [ $HTTP_JSON = YES ]; then
+        ngx_module_name=ngx_http_json_module
+        ngx_module_incs=
+        ngx_module_deps=
+        ngx_module_srcs=src/http/modules/ngx_http_json_module.c
+        ngx_module_libs=
+        ngx_module_link=$HTTP_JSON
 
         . auto/module
     fi

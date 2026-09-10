@@ -394,6 +394,13 @@ static ngx_command_t  ngx_http_core_commands[] = {
       offsetof(ngx_http_core_loc_conf_t, client_body_in_single_buffer),
       NULL },
 
+    { ngx_string("client_body_early_read"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_CONF_1MORE,
+      ngx_http_set_predicate_slot,
+      NGX_HTTP_SRV_CONF_OFFSET,
+      offsetof(ngx_http_core_srv_conf_t, client_body_early_read),
+      NULL },
+
     { ngx_string("sendfile"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF
                         |NGX_CONF_FLAG,
@@ -1428,25 +1435,25 @@ ngx_http_update_location_config(ngx_http_request_t *r)
 
 
 /*
- * NGX_OK       - exact or regex match
+ * NGX_OK       - exact, regex or predicate match
  * NGX_DONE     - auto redirect
  * NGX_AGAIN    - inclusive match
- * NGX_ERROR    - regex error
+ * NGX_ERROR    - regex or predicate error
  * NGX_DECLINED - no match
  */
 
 static ngx_int_t
 ngx_http_core_find_location(ngx_http_request_t *r)
 {
-    ngx_int_t                  rc;
-    ngx_http_core_loc_conf_t  *pclcf;
+    ngx_int_t                   rc;
+    ngx_uint_t                  noregex;
+    ngx_http_core_loc_conf_t   *clcf, *pclcf, **clcfp;
+    ngx_http_variable_value_t  *vv;
 #if (NGX_PCRE)
-    ngx_int_t                  n;
-    ngx_uint_t                 noregex;
-    ngx_http_core_loc_conf_t  *clcf, **clcfp;
+    ngx_int_t                   n;
+#endif
 
     noregex = 0;
-#endif
 
     pclcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
@@ -1454,11 +1461,9 @@ ngx_http_core_find_location(ngx_http_request_t *r)
 
     if (rc == NGX_AGAIN) {
 
-#if (NGX_PCRE)
         clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
         noregex = clcf->noregex;
-#endif
 
         /* look up nested locations */
 
@@ -1500,6 +1505,27 @@ ngx_http_core_find_location(ngx_http_request_t *r)
         }
     }
 #endif
+
+    if (noregex == 0 && pclcf->predicate_locations) {
+
+        for (clcfp = pclcf->predicate_locations; *clcfp; clcfp++) {
+
+            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "test location: \"%V\"", &(*clcfp)->name);
+
+            vv = ngx_http_get_flushed_variable(r, (*clcfp)->predicate - 1);
+
+            if (vv && vv->len && (vv->len != 1 || vv->data[0] != '0')) {
+                r->loc_conf = (*clcfp)->loc_conf;
+
+                /* look up nested locations */
+
+                rc = ngx_http_core_find_location(r);
+
+                return (rc == NGX_ERROR || rc == NGX_DONE) ? rc : NGX_OK;
+            }
+        }
+    }
 
     return rc;
 }
@@ -3129,6 +3155,7 @@ ngx_http_core_location(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
     u_char                    *mod;
     size_t                     len;
     ngx_str_t                 *value, *name;
+    ngx_int_t                  index;
     ngx_uint_t                 i;
     ngx_conf_t                 save;
     ngx_http_module_t         *module;
@@ -3240,6 +3267,20 @@ ngx_http_core_location(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
                 }
             }
 
+        } else if (name->data[0] == '$') {
+
+            clcf->name = *name;
+
+            name->len--;
+            name->data++;
+
+            index = ngx_http_get_variable_index(cf, name);
+            if (index == NGX_ERROR) {
+                return NGX_CONF_ERROR;
+            }
+
+            clcf->predicate = index + 1;
+
         } else {
 
             clcf->name = *name;
@@ -3286,12 +3327,11 @@ ngx_http_core_location(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
 
         len = pclcf->name.len;
 
+        if (!clcf->predicate && !pclcf->predicate
 #if (NGX_PCRE)
-        if (clcf->regex == NULL
-            && ngx_filename_cmp(clcf->name.data, pclcf->name.data, len) != 0)
-#else
-        if (ngx_filename_cmp(clcf->name.data, pclcf->name.data, len) != 0)
+            && clcf->regex == NULL
 #endif
+            && ngx_filename_cmp(clcf->name.data, pclcf->name.data, len) != 0)
         {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                "location \"%V\" is outside location \"%V\"",
@@ -3550,6 +3590,7 @@ ngx_http_core_create_srv_conf(ngx_conf_t *cf)
     cscf->ignore_invalid_headers = NGX_CONF_UNSET;
     cscf->merge_slashes = NGX_CONF_UNSET;
     cscf->underscores_in_headers = NGX_CONF_UNSET;
+    cscf->client_body_early_read = NGX_CONF_UNSET_PTR;
 
     cscf->file_name = cf->conf_file->file.name.data;
     cscf->line = cf->conf_file->line;
@@ -3597,6 +3638,9 @@ ngx_http_core_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_value(conf->underscores_in_headers,
                               prev->underscores_in_headers, 0);
+
+    ngx_conf_merge_ptr_value(conf->client_body_early_read,
+                              prev->client_body_early_read, NULL);
 
     if (conf->server_names.nelts == 0) {
         /* the array has 4 empty preallocated elements, so push cannot fail */
@@ -3656,6 +3700,7 @@ ngx_http_core_create_loc_conf(ngx_conf_t *cf)
      *     clcf->error_pages = NULL;
      *     clcf->client_body_path = NULL;
      *     clcf->regex = NULL;
+     *     clcf->predicate = 0;
      *     clcf->exact_match = 0;
      *     clcf->auto_redirect = 0;
      *     clcf->alias = 0;
@@ -4674,12 +4719,16 @@ ngx_http_core_root(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_memzero(&sc, sizeof(ngx_http_script_compile_t));
     sc.variables = n;
 
+    if (alias
+        && (clcf->predicate
 #if (NGX_PCRE)
-    if (alias && clcf->regex) {
+            || clcf->regex
+#endif
+           ))
+    {
         clcf->alias = NGX_MAX_SIZE_T_VALUE;
         n = 1;
     }
-#endif
 
     if (n) {
         sc.cf = cf;
@@ -5456,7 +5505,7 @@ ngx_http_core_pool_size(ngx_conf_t *cf, void *post, void *data)
 
     if (*sp % NGX_POOL_ALIGNMENT) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                           "the pool size must be a multiple of %uz",
+                           "the pool size must be a multiple of %d",
                            NGX_POOL_ALIGNMENT);
         return NGX_CONF_ERROR;
     }

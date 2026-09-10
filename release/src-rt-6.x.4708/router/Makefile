@@ -2378,13 +2378,13 @@ pcre2: pcre2/build/Makefile
 	@$(MAKE) -C pcre2/build DESTDIR=$(TOP)/pcre2/staged install
 
 pcre2-install:
-	install -D pcre2/staged/usr/lib/libpcre2-8.so.0.15.0 $(INSTALLDIR)/pcre2/usr/lib/libpcre2-8.so.0.15.0
-	$(STRIP) -s $(INSTALLDIR)/pcre2/usr/lib/libpcre2-8.so.0.15.0
-	cd $(INSTALLDIR)/pcre2/usr/lib/ && ln -sf libpcre2-8.so.0.15.0 libpcre2-8.so.0 && ln -sf libpcre2-8.so.0.15.0 libpcre2-8.so
+	install -D pcre2/staged/usr/lib/libpcre2-8.so.0.16.0 $(INSTALLDIR)/pcre2/usr/lib/libpcre2-8.so.0.16.0
+	$(STRIP) -s $(INSTALLDIR)/pcre2/usr/lib/libpcre2-8.so.0.16.0
+	cd $(INSTALLDIR)/pcre2/usr/lib/ && ln -sf libpcre2-8.so.0.16.0 libpcre2-8.so.0 && ln -sf libpcre2-8.so.0.16.0 libpcre2-8.so
 ifeq ($(TCONFIG_AIO),y)
-	install -D pcre2/staged/usr/lib/libpcre2-posix.so.3.0.7 $(INSTALLDIR)/pcre2/usr/lib/libpcre2-posix.so.3.0.7
-	$(STRIP) -s $(INSTALLDIR)/pcre2/usr/lib/libpcre2-posix.so.3.0.7
-	cd $(INSTALLDIR)/pcre2/usr/lib/ && ln -sf libpcre2-posix.so.3.0.7 libpcre2-posix.so.3 && ln -sf libpcre2-posix.so.3.0.7 libpcre2-posix.so
+	install -D pcre2/staged/usr/lib/libpcre2-posix.so.3.0.8 $(INSTALLDIR)/pcre2/usr/lib/libpcre2-posix.so.3.0.8
+	$(STRIP) -s $(INSTALLDIR)/pcre2/usr/lib/libpcre2-posix.so.3.0.8
+	cd $(INSTALLDIR)/pcre2/usr/lib/ && ln -sf libpcre2-posix.so.3.0.8 libpcre2-posix.so.3 && ln -sf libpcre2-posix.so.3.0.8 libpcre2-posix.so
 endif
 
 pcre2-clean:

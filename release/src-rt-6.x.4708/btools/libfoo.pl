@@ -279,8 +279,8 @@ sub fixDyn
 
 	fixDynDep("nginx", "libpcre.so.1.2.13");
 	fixDynDep("nginx", "libpcreposix.so.0.0.7");
-	fixDynDep("nginx", "libpcre2-8.so.0.15.0");
-	fixDynDep("nginx", "libpcre2-posix.so.3.0.7");
+	fixDynDep("nginx", "libpcre2-8.so.0.16.0");
+	fixDynDep("nginx", "libpcre2-posix.so.3.0.8");
 	fixDynDep("nginx", "libwolfssl.so.42.2.0");
 	if ($is_arm ne "y") { # MIPS
 		fixDynDep("php-cgi", "libxml2.so.2.13.7");
@@ -300,8 +300,8 @@ sub fixDyn
 	fixDynDep("php-cgi", "libjpeg.so.8.3.2");
 	fixDynDep("php-cgi", "libpcre.so.1.2.13");
 	fixDynDep("php-cgi", "libpcreposix.so.0.0.7");
-	fixDynDep("php-cgi", "libpcre2-8.so.0.15.0");
-	fixDynDep("php-cgi", "libpcre2-posix.so.3.0.7");
+	fixDynDep("php-cgi", "libpcre2-8.so.0.16.0");
+	fixDynDep("php-cgi", "libpcre2-posix.so.3.0.8");
 	fixDynDep("php-cgi", "libzip.so.5.5");
 	if ($is_arm ne "y") { # MIPS
 		fixDynDep("php-cli", "libxml2.so.2.13.7");
@@ -321,8 +321,8 @@ sub fixDyn
 	fixDynDep("php-cli", "libjpeg.so.8.3.2");
 	fixDynDep("php-cli", "libpcre.so.1.2.13");
 	fixDynDep("php-cli", "libpcreposix.so.0.0.7");
-	fixDynDep("php-cli", "libpcre2-8.so.0.15.0");
-	fixDynDep("php-cli", "libpcre2-posix.so.3.0.7");
+	fixDynDep("php-cli", "libpcre2-8.so.0.16.0");
+	fixDynDep("php-cli", "libpcre2-posix.so.3.0.8");
 	fixDynDep("php-cli", "libzip.so.5.5");
 	if ($is_arm ne "y") { # MIPS
 		fixDynDep("php-fpm", "libxml2.so.2.13.7");
@@ -340,8 +340,8 @@ sub fixDyn
 		fixDynDep("php-fpm", "libcurl.so.4.8.0");
 	}
 	fixDynDep("php-fpm", "libjpeg.so.8.3.2");
-	fixDynDep("php-fpm", "libpcre2-8.so.0.15.0");
-	fixDynDep("php-fpm", "libpcre2-posix.so.3.0.7");
+	fixDynDep("php-fpm", "libpcre2-8.so.0.16.0");
+	fixDynDep("php-fpm", "libpcre2-posix.so.3.0.8");
 	fixDynDep("php-fpm", "libzip.so.5.5");
 
 	if ($openssldir eq "openssl-3.0") {
@@ -423,8 +423,8 @@ sub fixDyn
 
 	fixDynDep("libipset.so.11.1.0", "libmnl.so.0.2.0");
 	fixDynDep("libglib-2.0.so.0.7400.7", "libiconv.so.2.7.1");
-	fixDynDep("libglib-2.0.so.0.7400.7", "libpcre2-8.so.0.15.0");
-	fixDynDep("libglib-2.0.so.0.7400.7", "libpcre2-posix.so.3.0.7");
+	fixDynDep("libglib-2.0.so.0.7400.7", "libpcre2-8.so.0.16.0");
+	fixDynDep("libglib-2.0.so.0.7400.7", "libpcre2-posix.so.3.0.8");
 
 	fixDynDep("benchmark", "libwolfssl.so.42.2.0");
 	fixDynDep("libmssl.so", "libwolfssl.so.42.2.0");
@@ -759,7 +759,7 @@ else {
 	genSO("${root}/usr/lib/libxml2.so.16.1.3", "${router}/libxml2/staged/usr/lib/libxml2.a", "${stripshared}", "-L${router}/zlib");
 }
 genSO("${root}/usr/lib/libpcre.so.1.2.13", "${router}/pcre/.libs/libpcre.a", "${stripshared}");
-genSO("${root}/usr/lib/libpcre2-8.so.0.15.0", "${router}/pcre2/staged/usr/lib/libpcre2-8.a", "${stripshared}");
+genSO("${root}/usr/lib/libpcre2-8.so.0.16.0", "${router}/pcre2/staged/usr/lib/libpcre2-8.a", "${stripshared}");
 #genSO("${root}/usr/lib/libpcre2-posix.so.3.0.7", "${router}/pcre2/staged/usr/lib/libpcre2-posix.a", "${stripshared}"); # (deleted)
 genSO("${root}/usr/lib/libiperf.so.0.0.0", "${router}/iperf/src/.libs/libiperf.a", "${stripshared}");
 genSO("${root}/usr/lib/libncurses.so.6", "${router}/libncurses/lib/libncurses.a", "${stripshared}");

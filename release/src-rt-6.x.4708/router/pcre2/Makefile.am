@@ -23,6 +23,7 @@ dist_doc_DATA = \
   NEWS \
   README \
   SECURITY.md \
+  SUPPORT-LIFECYCLE.md \
   doc/pcre2.txt \
   doc/pcre2-config.txt \
   doc/pcre2grep.txt \
@@ -278,8 +279,8 @@ EXTRA_DIST =
 # These files contain additional m4 macros that are used by autoconf.
 
 EXTRA_DIST += \
-  m4/ax_check_vscript.m4 \
   m4/ax_pthread.m4 \
+  m4/pcre2_check_vscript.m4 \
   m4/pcre2_visibility.m4 \
   m4/pcre2_zos.m4
 
@@ -289,12 +290,39 @@ EXTRA_DIST += \
   NON-AUTOTOOLS-BUILD \
   HACKING
 
+# These are patches containing backports for older versions of PCRE2
+
+EXTRA_DIST += \
+  patches/pcre2-10.37-Remove-real-POSIX.patch \
+  patches/pcre2-10.39-Fix-incorrect-detection.patch \
+  patches/pcre2-10.40-A-Fixed-a-unicode.patch \
+  patches/pcre2-10.40-B-Fixed-an-issue-affecting.patch \
+  patches/pcre2-10.43-Avoid-LIMIT_HEAP-integer.patch \
+  patches/pcre2-10.43-Fix-heapframe-overflow.patch \
+  patches/pcre2-10.44-Fix-incorrect-compiling.patch \
+  patches/pcre2-10.44-Fix-locking-region.patch \
+  patches/pcre2-10.45-Memory-reports-only-compiled.patch \
+  patches/pcre2-10.47-Fix-for-callback.patch \
+  patches/pcre2-10.48-Check-JIT-mode-before-validation.patch \
+  patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch \
+  patches/pcre2-10.48-Fix-JIT-STR_END.patch \
+  patches/pcre2-10.48-Fix-JIT-match-context-reuse.patch \
+  patches/pcre2-10.48-Fix-allocation-byte-sizing.patch \
+  patches/pcre2-10.48-Fix-character-list-generator.patch \
+  patches/pcre2-10.48-Fix-compiler-integer-overflows.patch \
+  patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch \
+  patches/pcre2-10.48-Fix-repeated-substitute-escapes.patch \
+  patches/pcre2-10.48-Fix-scan-prefix-repeat-reset.patch \
+  patches/pcre2-10.48-Keep-escape-error-offset-in-pattern.patch \
+  patches/pcre2-10.48-Write-serialization-padding.patch
+
 # These are support files for building with Bazel or Zig
 
 EXTRA_DIST += \
   BUILD.bazel \
   MODULE.bazel \
-  build.zig
+  build.zig \
+  build.zig.zon
 
 # These are support files for building under VMS
 
@@ -897,11 +925,11 @@ pkgconfig_DATA += libpcre2-32.pc
 endif
 
 
-# Symbol version files for use with GNU and Sun ld.
+# Symbol version template files for use with GNU and Sun ld.
 
 EXTRA_DIST += \
-  src/libpcre2-8.sym src/libpcre2-16.sym src/libpcre2-32.sym \
-  src/libpcre2-posix.sym
+  src/libpcre2-8.sym.in src/libpcre2-16.sym.in src/libpcre2-32.sym.in \
+  src/libpcre2-posix.sym.in
 
 
 # gcov/lcov code coverage reporting

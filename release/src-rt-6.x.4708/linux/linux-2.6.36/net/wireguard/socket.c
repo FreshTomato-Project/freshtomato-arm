@@ -59,21 +59,20 @@ static int send4(struct wg_device *wg, struct sk_buff *skb,
 			if (cache)
 				dst_cache_reset(cache);
 		}
-		ip_route_output_flow(sock_net(sock), &rt, &fl, sock, 0);
-		if (unlikely(endpoint->src_if4 && ((IS_ERR(rt) &&
-			     PTR_ERR(rt) == -EINVAL) || (!IS_ERR(rt) &&
-			     rt->dst.dev->ifindex != endpoint->src_if4)))) {
+		ret = ip_route_output_flow(sock_net(sock), &rt, &fl, sock, 0);
+		if (unlikely(endpoint->src_if4 && (ret == -EINVAL ||
+			     (!ret && rt->dst.dev->ifindex != endpoint->src_if4)))) {
 			endpoint->src4.s_addr = 0;
 			endpoint->src_if4 = 0;
 			fl.fl4_src = 0;
 			if (cache)
 				dst_cache_reset(cache);
-			if (!IS_ERR(rt))
+			if (!ret)
 				ip_rt_put(rt);
-			ip_route_output_flow(sock_net(sock), &rt, &fl, sock, 0);
+			rt = NULL;
+			ret = ip_route_output_flow(sock_net(sock), &rt, &fl, sock, 0);
 		}
-		if (IS_ERR(rt)) {
-			ret = PTR_ERR(rt);
+		if (unlikely(ret)) {
 			net_dbg_ratelimited("%s: No route to %pISpfsc, error %d\n",
 					    wg->dev->name, &endpoint->addr, ret);
 			goto err;

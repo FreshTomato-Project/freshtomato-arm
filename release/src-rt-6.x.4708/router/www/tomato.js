@@ -2530,20 +2530,20 @@ function myName() {
 
 function navi() {
 	var menu = [
-		['Status', 			'status', 0, [
+		['› Status', 			'status', 0, [
 			['Overview',			'overview.asp'],
 			['Device List',			'devices.asp'],
 			['Web Usage',			'webmon.asp'],
 			['Logs',			'log.asp'],
 		]],
-		['Bandwidth', 			'bwm', 0, [
+		['› Bandwidth', 			'bwm', 0, [
 			['Real-Time',			'realtime.asp'],
 			['Last 24 Hours',		'24.asp'],
 			['Daily',			'daily.asp'],
 			['Weekly',			'weekly.asp'],
 			['Monthly',			'monthly.asp'],
 		]],
-		['IP Traffic',			'ipt', 0, [
+		['› IP Traffic',			'ipt', 0, [
 			['Real-Time',			'realtime.asp'],
 			['Last 24 Hours',		'24.asp'],
 			['View Graphs',			'graphs.asp'],
@@ -2551,7 +2551,7 @@ function navi() {
 			['Daily',			'daily.asp'],
 			['Monthly',			'monthly.asp'],
 		]],
-		['Tools', 			'tools', 0, [
+		['› Tools', 			'tools', 0, [
 			['Ping',			'ping.asp'],
 			['Traceroute',			'trace.asp'],
 			['System Commands',		'shell.asp'],
@@ -2565,7 +2565,7 @@ function navi() {
 			['Wake on LAN',			'wol.asp'],
 		]],
 		null,
-		['Basic', 			'basic', 0, [
+		['› Basic', 			'basic', 0, [
 			['Network',			'network.asp'],
 /* IPV6-BEGIN */
 			['IPv6',			'ipv6.asp'],
@@ -2576,7 +2576,7 @@ function navi() {
 			['DHCP Reservation',		'static.asp'],
 			['Wireless Filter',		'wfilter.asp'],
 		]],
-		['Advanced', 			'advanced', 0, [
+		['› Advanced', 			'advanced', 0, [
 			['Conntrack/Netfilter',		'ctnf.asp'],
 			['DHCP/DNS/TFTP',		'dhcpdns.asp'],
 			['Firewall',			'firewall.asp'],
@@ -2597,7 +2597,7 @@ function navi() {
 			['Virtual Wireless',		'wlanvifs.asp'],
 			['Wireless',			'wireless.asp'],
 		]],
-		['Port Forwarding', 		'forward', 0, [
+		['› Port Forwarding', 		'forward', 0, [
 			['Basic',			'basic.asp'],
 /* IPV6-BEGIN */
 			['Basic IPv6',			'basic-ipv6.asp'],
@@ -2606,14 +2606,14 @@ function navi() {
 			['Triggered',			'triggered.asp'],
 			['UPnP IGD & PCP',		'upnp.asp'],
 		]],
-		['QoS',				'qos', 0, [
+		['› QoS',				'qos', 0, [
 			['Basic Settings',		'settings.asp'],
 			['Classification',		'classify.asp'],
 			['View Graphs',			'graphs.asp'],
 			['View Details',		'detailed.asp'],
 			['Transfer Rates',		'ctrate.asp'],
 		]],
-		['Misc',			'misc', 0, [
+		['› Misc',			'misc', 0, [
 			['Access Restriction',		'restrict.asp'],
 			['Bandwidth Limiter',		'bwlimit.asp'],
 /* NOCAT-BEGIN */
@@ -2622,13 +2622,13 @@ function navi() {
 		]],
 /* NGINX-BEGIN */
 		null,
-		['Web Server',			'web', 0, [
+		['› Web Server',			'web', 0, [
 			['Nginx & PHP',			'nginx.asp'],
 			['MySQL Server',		'mysql.asp'],
 		]],
 /* NGINX-END */
 /* USB-BEGIN */
-		['USB and NAS',			'nas', 0, [
+		['› USB and NAS',			'nas', 0, [
 			['USB Support',			'usb.asp'],
 /* FTP-BEGIN */
 			['FTP Server',			'ftp.asp'],
@@ -2648,7 +2648,7 @@ function navi() {
 		]],
 /* USB-END */
 /* VPN-BEGIN */
-		['VPN',					'vpn', 0, [
+		['› VPN',					'vpn', 0, [
 /* OPENVPN-BEGIN */
 			['OpenVPN Server',		'server.asp'],
 			['OpenVPN Client',		'client.asp'],
@@ -2667,7 +2667,7 @@ function navi() {
 		]],
 /* VPN-END */
 		null,
-		['Administration',		'admin', 0, [
+		['› Administration',		'admin', 0, [
 			['Admin Access',		'access.asp'],
 			['TomatoAnon',			'tomatoanon.asp'],
 			['Bandwidth Monitoring',	'bwm.asp'],

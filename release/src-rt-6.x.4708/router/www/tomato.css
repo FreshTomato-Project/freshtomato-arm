@@ -2095,3 +2095,12 @@ span.pptpsvg {
 .svg-color12 {
 	color: #323232;
 }
+
+.indent1 .arrow {
+	display: inline-block;
+	transition: transform .15s ease;
+}
+
+.indent1.open .arrow {
+	transform: rotate(90deg);
+}

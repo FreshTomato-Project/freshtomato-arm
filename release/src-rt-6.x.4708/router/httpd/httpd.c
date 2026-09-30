@@ -1240,6 +1240,8 @@ static void add_listen_socket(const char *addr, int server_port, int do_ipv6, in
 #define HTTPD_FAMILY AF_INET
 #endif
 
+	memset(&sai_stor, 0, sizeof(sai_stor));
+
 	if (listeners.count >= HTTP_MAX_LISTENERS) {
 		logmsg(LOG_ERR, "number of listeners exceeded the max allowed (%d)", HTTP_MAX_LISTENERS);
 		return;

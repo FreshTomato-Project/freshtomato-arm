@@ -93,8 +93,8 @@ function tabSelect(name) {
 			var hidden = (getNvramWifiParameter(name, 'closed') == '1' ) ? 'true' : 'false';
 			var pw = (enc == 'WEP') ? getNvramWifiParameter(name, 'passphrase') : getNvramWifiParameter(name, 'wpa_psk');
 
-			E('wifi-network-ssid').innerHTML = ssid.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-			E('wifi-network-password').innerHTML = pw.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+			E('wifi-network-ssid').textContent = ssid;
+			E('wifi-network-password').textContent = pw;
 			E('password-show-control').style.display = (enc === 'nopass') ? 'none' : 'inline';
 
 			var qrCodeContent = `WIFI:S:${ssid};T:${enc};P:${pw.replaceAll(';', '\\;')};H:${hidden};;`;

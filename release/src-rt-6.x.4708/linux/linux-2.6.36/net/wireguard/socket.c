@@ -365,7 +365,7 @@ int wg_socket_init(struct wg_device *wg, u16 port)
 	};
 	struct socket *new4 = NULL, *new6 = NULL;
 #if IS_ENABLED(CONFIG_IPV6)
-	struct udp_port_cfg port6;
+	struct udp_port_cfg port6 = { 0 };
 #endif
 	struct udp_port_cfg port4 = {
 		.family = AF_INET,

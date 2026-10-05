@@ -396,7 +396,8 @@ void ipt_qos(void)
 #ifdef TCONFIG_BCMARM
 	if (!nvram_get_int("qos_classify")) {
 		disabled_classification_rates = build_disabled_classification_rates(MWAN_MAX);
-		g = buf = strdup(disabled_classification_rates);
+		g = buf = disabled_classification_rates ? strdup(disabled_classification_rates) : NULL;
+		free(disabled_classification_rates);
 	}
 	else
 #endif
@@ -671,7 +672,8 @@ void start_qos(char *prefix)
 #ifdef TCONFIG_BCMARM
 	if (!nvram_get_int("qos_classify")) {
 		disabled_classification_rates = build_disabled_classification_rates(MWAN_MAX);
-		g = buf = strdup(disabled_classification_rates);
+		g = buf = disabled_classification_rates ? strdup(disabled_classification_rates) : NULL;
+		free(disabled_classification_rates);
 	}
 	else
 #endif
@@ -775,7 +777,8 @@ void start_qos(char *prefix)
 #ifdef TCONFIG_BCMARM
 	if (!nvram_get_int("qos_classify")) {
 		disabled_classification_rates = build_disabled_classification_rates(MWAN_MAX);
-		g = buf = strdup(disabled_classification_rates);
+		g = buf = disabled_classification_rates ? strdup(disabled_classification_rates) : NULL;
+		free(disabled_classification_rates);
 	}
 	else
 #endif

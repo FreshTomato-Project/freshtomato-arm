@@ -1919,7 +1919,7 @@ char *get_bridged_interfaces(char *bridge_name)
 	ifnames = nvram_get(bridge);
 
 	if (ifnames)
-		strncpy(interfaces, ifnames, sizeof(interfaces));
+		strlcpy(interfaces, ifnames, sizeof(interfaces));
 	else
 		return NULL;
 

@@ -587,7 +587,7 @@ void generate_mdns_config(void)
 	            ipv6_enabled() ? "yes" : "no");
 
 	for (i = 1; i <= mwan_num; i++) {
-		get_wan_prefix(i, tmp);
+		get_wan_prefix(i, tmp, sizeof(tmp));
 		if ((check_wanup(tmp)) || (i == 1))
 			fprintf(fp, "%s%s", (i == 1 ? "" : ","), get_wanface(tmp));
 	}
@@ -771,7 +771,7 @@ void dns_to_resolv(void)
 		mwan_num = 1;
 
 	for (wan_unit = 1; wan_unit <= mwan_num; ++wan_unit) {
-		get_wan_prefix(wan_unit, wan_prefix);
+		get_wan_prefix(wan_unit, wan_prefix, sizeof(wan_prefix));
 
 		/* skip inactive WAN connections */
 		if ((check_wanup(wan_prefix) == 0) &&
@@ -922,7 +922,7 @@ void start_ipv6_tunnel(void)
 	mwan_num = mwan_active_num();
 
 	for (wan_unit = 1; wan_unit <= mwan_num; ++wan_unit) {
-		get_wan_prefix(wan_unit, wan_prefix);
+		get_wan_prefix(wan_unit, wan_prefix, sizeof(wan_prefix));
 		if (check_wanup(wan_prefix))
 			break;
 	}
@@ -1009,7 +1009,7 @@ void start_6rd_tunnel(void)
 	mwan_num = mwan_active_num();
 
 	for (wan_unit = 1; wan_unit <= mwan_num; ++wan_unit) {
-		get_wan_prefix(wan_unit, wan_prefix);
+		get_wan_prefix(wan_unit, wan_prefix, sizeof(wan_prefix));
 		if (check_wanup(wan_prefix))
 			break;
 	}
@@ -1267,7 +1267,7 @@ void start_upnp(void)
 		upnp_port = 0;
 
 	for (i = 1; i <= mwan_num; i++) {
-		get_wan_prefix(i, tmp);
+		get_wan_prefix(i, tmp, sizeof(tmp));
 		if ((check_wanup(tmp)) || (i == 1))
 			fprintf(f, "ext_ifname=%s\n", get_wanface(tmp));
 	}
@@ -1707,7 +1707,7 @@ void start_igmp_proxy(void)
 				fprintf(fp, "quickleave\n");
 
 			for (wan_unit = 1; wan_unit <= mwan_num; ++wan_unit) {
-				get_wan_prefix(wan_unit, wan_prefix);
+				get_wan_prefix(wan_unit, wan_prefix, sizeof(wan_prefix));
 				if ((check_wanup(wan_prefix)) && (get_wanx_proto(wan_prefix) != WP_DISABLED)) {
 					count++;
 					/*
@@ -3012,13 +3012,13 @@ static int svc_exec_simple(const struct svc_entry *svc, const char *service, int
 		case SVCOP_QOS:
 			if (act_stop) {
 				for (i = 1; i <= (int)mwan_configured; i++) {
-					get_wan_prefix(i, ifname);
+					get_wan_prefix(i, ifname, sizeof(ifname));
 					stop_qos(ifname);
 				}
 			}
 			if (act_start) {
 				for (i = 1; i <= (int)mwan_num; i++) {
-					get_wan_prefix(i, ifname);
+					get_wan_prefix(i, ifname, sizeof(ifname));
 					if ((check_wanup(ifname)) || (i == 1))
 						start_qos(ifname);
 				}
@@ -3266,7 +3266,7 @@ static int svc_exec_simple(const struct svc_entry *svc, const char *service, int
 				rename("/tmp/ppp/wan_log", "/tmp/ppp/wan_log.~");
 				start_wan();
 				for (i = 1; i <= (int)mwan_num; i++) {
-					get_wan_prefix(i, ifname);
+					get_wan_prefix(i, ifname, sizeof(ifname));
 					sleep(5);
 					force_to_dial(ifname);
 				}

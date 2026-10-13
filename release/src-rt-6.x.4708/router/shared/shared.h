@@ -13,6 +13,7 @@
 
 #include <netinet/in.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <errno.h>
 #include <syslog.h>
 #include <net/if.h>

@@ -859,6 +859,7 @@ static const applets_t applets[] = {
 	{ "ppp_event",			pppevent_main			},
 	{ "hotplug",			hotplug_main			},
 	{ "redial",			redial_main			},
+	{ "wanlink",			wanlink_main			},
 	{ "mwanroute",			mwan_route_main			},
 	{ "listen",			listen_main			},
 	{ "service",			service_main			},

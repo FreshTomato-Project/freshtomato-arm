@@ -86,7 +86,7 @@ function updateFilenameDiff() {
 	for (i = 0; i < name.length; i++) {
 		var ch = name.charAt(i);
 		if (i >= b.length || a.charAt(i) != b.charAt(i))
-			html += '<span class="afu-diff">'+escapeText(ch)+'</span>';
+			html += '<span class="afu-diff">'+escapeText(ch)+'<\/span>';
 		else
 			html += escapeText(ch);
 	}
@@ -165,11 +165,11 @@ function earlyInit() {
 				createFieldTable('', [ { title: 'Current Version:',text: '<% version(1); %>' },
 				                       { title: 'Free RAM:',text: '<span id="afu-size"></span>' },
 				                       null,
-				                       { title: 'Erase NVRAM',text: '<input type="checkbox" id="f_reset"> <small>Restore firmware default settings as part of the upgrade</small>' },
+				                       { title: 'Erase NVRAM',text: '<input type="checkbox" id="f_reset"> <small>Restore firmware default settings as part of the upgrade<\/small>' },
 				                       null,
-				                       { title: '&nbsp;',text: 'Select a <a href="https://freshtomato.org/downloads/"> valid firmware</a> to install (.trx or .bin):' },
-				                       { title: 'Current File:',text: '<span id="afu-fname" class="disabled"></span>' },
-				                       { title: 'Upgrade File:',text: '<div id="afu-selected-fname"></div><input type="file" id="afu-file" name="file" class="afu-file-input" onchange="updateFilenameDiff()">' },
+				                       { title: '&nbsp;',text: 'Select a <a href="https://freshtomato.org/downloads/"> valid firmware<\/a> to install (.trx or .bin):' },
+				                       { title: 'Current File:',text: '<span id="afu-fname" class="disabled"><\/span>' },
+				                       { title: 'Upgrade File:',text: '<div id="afu-selected-fname"><\/div><input type="file" id="afu-file" name="file" class="afu-file-input" onchange="updateFilenameDiff()">' },
 				                       { title: '&nbsp;',text: '<input type="button" id="afu-upgrade-button" value="🛠️ Upgrade" onclick="upgrade()">' }
 				]);
 				</script>

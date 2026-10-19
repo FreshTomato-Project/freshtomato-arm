@@ -32,7 +32,7 @@ from ..mesonlib import (
     PerMachine, unique_list, SubProject,
 )
 from .. import coredata, mlog
-from ..wrap.wrap import PackageDefinition
+from ..wrap.wrap import PackageDefinition, WrapType
 
 if T.TYPE_CHECKING:
     from . import raw
@@ -177,18 +177,6 @@ class PackageState:
 
         return args
 
-    def get_env_args(self, rustc: RustCompiler, environment: Environment, subdir: str) -> T.List[str]:
-        """Get environment variable arguments for rustc."""
-        enable_env_set_args = rustc.enable_env_set_args()
-        if enable_env_set_args is None:
-            return []
-
-        env_dict = self.get_env_dict(environment, subdir)
-        env_args = list(enable_env_set_args)
-        for k, v in env_dict.items():
-            env_args.extend(['--env-set', f'{k}={v}'])
-        return env_args
-
     def get_rustc_args(self, environment: Environment, subdir: str, machine: MachineChoice) -> T.List[str]:
         """Get rustc arguments for this package."""
         if not environment.is_cross_build():
@@ -200,7 +188,6 @@ class PackageState:
         args: T.List[str] = []
         args.extend(self.get_lint_args(rustc))
         args.extend(cfg.get_features_args())
-        args.extend(self.get_env_args(rustc, environment, subdir))
         return args
 
     def supported_abis(self) -> T.Set[RUST_ABI]:
@@ -301,10 +288,8 @@ class Interpreter:
         self.build_def_files: T.List[str] = []
         # Cargo packages
         filename = os.path.join(self.environment.get_source_dir(), subdir, 'Cargo.lock')
-        subprojects_dir = os.path.join(self.environment.get_source_dir(), subdir, subprojects_dir)
-        self.cargolock = load_cargo_lock(filename, subprojects_dir)
+        self.cargolock = self.environment.wrap_resolver.get_cargo_lock(subdir)
         if self.cargolock:
-            self.environment.wrap_resolver.merge_wraps(self.cargolock.wraps)
             self.build_def_files.append(filename)
 
     @property
@@ -851,55 +836,53 @@ def _parse_git_url(url: str, branch: T.Optional[str] = None) -> T.Tuple[str, str
     return url, revision, directory
 
 
-def load_cargo_lock(filename: str, subproject_dir: str) -> T.Optional[CargoLock]:
+def load_cargo_lock(filename: str, subproject_dir: str) -> CargoLock:
     """ Convert Cargo.lock into a list of wraps """
 
     # Map directory -> PackageDefinition, to avoid duplicates. Multiple packages
     # can have the same source URL, in that case we have a single wrap that
     # provides multiple dependency names.
-    if os.path.exists(filename):
-        toml = load_toml(filename)
-        raw_cargolock = T.cast('raw.CargoLock', toml)
-        cargolock = CargoLock.from_raw(raw_cargolock)
-        packagefiles_dir = os.path.join(subproject_dir, 'packagefiles')
-        wraps: T.Dict[str, PackageDefinition] = {}
-        for package in cargolock.package:
-            meson_depname = _dependency_name(package.name, version.api(package.version))
-            if package.source is None:
-                # This is project's package, or one of its workspace members.
-                continue
-            elif package.source == 'registry+https://github.com/rust-lang/crates.io-index':
-                checksum = package.checksum
-                if checksum is None:
-                    checksum = cargolock.metadata[f'checksum {package.name} {package.version} ({package.source})']
-                url = f'https://static.crates.io/crates/{package.name}/{package.version}/download'
-                directory = f'{package.name}-{package.version}'
-                name = SubProject(meson_depname)
-                wrap_type = 'file'
-                cfg = {
-                    'directory': directory,
-                    'source_url': url,
-                    'source_filename': f'{directory}.tar.gz',
-                    'source_hash': checksum,
-                    'method': 'cargo',
-                }
-            elif package.source.startswith('git+'):
-                url, revision, directory = _parse_git_url(package.source)
-                name = SubProject(directory)
-                wrap_type = 'git'
-                cfg = {
-                    'url': url,
-                    'revision': revision,
-                    'method': 'cargo',
-                }
-            else:
-                mlog.warning(f'Unsupported source URL in {filename}: {package.source}')
-                continue
-            if os.path.isdir(os.path.join(packagefiles_dir, name)):
-                cfg['patch_directory'] = name
-            if directory not in wraps:
-                wraps[directory] = PackageDefinition.from_values(name, subproject_dir, wrap_type, cfg)
-            wraps[directory].add_provided_dep(meson_depname)
-        cargolock.wraps = {w.name: w for w in wraps.values()}
-        return cargolock
-    return None
+    toml = load_toml(filename)
+    raw_cargolock = T.cast('raw.CargoLock', toml)
+    cargolock = CargoLock.from_raw(raw_cargolock)
+    packagefiles_dir = os.path.join(subproject_dir, 'packagefiles')
+    wraps: T.Dict[str, PackageDefinition] = {}
+    for package in cargolock.package:
+        meson_depname = _dependency_name(package.name, version.api(package.version))
+        if package.source is None:
+            # This is project's package, or one of its workspace members.
+            continue
+        elif package.source == 'registry+https://github.com/rust-lang/crates.io-index':
+            checksum = package.checksum
+            if checksum is None:
+                checksum = cargolock.metadata[f'checksum {package.name} {package.version} ({package.source})']
+            url = f'https://static.crates.io/crates/{package.name}/{package.version}/download'
+            directory = f'{package.name}-{package.version}'
+            name = SubProject(meson_depname)
+            wrap_type = WrapType.FILE
+            cfg = {
+                'directory': directory,
+                'source_url': url,
+                'source_filename': f'{directory}.tar.gz',
+                'source_hash': checksum,
+                'method': 'cargo',
+            }
+        elif package.source.startswith('git+'):
+            url, revision, directory = _parse_git_url(package.source)
+            name = SubProject(directory)
+            wrap_type = WrapType.GIT
+            cfg = {
+                'url': url,
+                'revision': revision,
+                'method': 'cargo',
+            }
+        else:
+            mlog.warning(f'Unsupported source URL in {filename}: {package.source}')
+            continue
+        if os.path.isdir(os.path.join(packagefiles_dir, name)):
+            cfg['patch_directory'] = name
+        if directory not in wraps:
+            wraps[directory] = PackageDefinition.from_values(name, subproject_dir, wrap_type, cfg)
+        wraps[directory].add_provided_dep(meson_depname)
+    cargolock.wraps = {w.name: w for w in wraps.values()}
+    return cargolock

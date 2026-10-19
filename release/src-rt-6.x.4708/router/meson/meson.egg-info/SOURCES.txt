@@ -1720,6 +1720,9 @@ test cases/common/300 built file by path/meson.build
 test cases/common/300 built file by path/test.json
 test cases/common/301 default/meson.build
 test cases/common/301 default/prog.cpp
+test cases/common/302 repeated objects/meson.build
+test cases/common/302 repeated objects/src.c
+test cases/common/302 repeated objects/test.json
 test cases/common/31 define10/config.h.in
 test cases/common/31 define10/meson.build
 test cases/common/31 define10/prog.c
@@ -2916,6 +2919,9 @@ test cases/fortran/22 extract_objects/foo2.f90
 test cases/fortran/22 extract_objects/meson.build
 test cases/fortran/23 preprocess/main.f90
 test cases/fortran/23 preprocess/meson.build
+test cases/fortran/24 both_libraries/main.f90
+test cases/fortran/24 both_libraries/meson.build
+test cases/fortran/24 both_libraries/modsrc.f90
 test cases/fortran/3 module procedure/meson.build
 test cases/fortran/3 module procedure/use_syntax.f90
 test cases/fortran/4 self dependency/meson.build
@@ -4262,6 +4268,8 @@ test cases/unit/136 native subproject introspect/subprojects/recursive-both/recu
 test cases/unit/137 external property nonexisting/meson.build
 test cases/unit/137 external property nonexisting/meson_options.txt
 test cases/unit/137 external property nonexisting/propfile
+test cases/unit/139 introspection unknown dep/meson.build
+test cases/unit/139 introspection unknown dep/meson.options
 test cases/unit/14 testsetup selection/main.c
 test cases/unit/14 testsetup selection/meson.build
 test cases/unit/14 testsetup selection/subprojects/bar/bar.c
@@ -4294,7 +4302,7 @@ test cases/unit/18 pkgconfig static/include/foo.h
 test cases/unit/19 array option/meson.build
 test cases/unit/19 array option/meson_options.txt
 test cases/unit/2 testsetups/buggy.c
-test cases/unit/2 testsetups/envcheck.py
+test cases/unit/2 testsetups/envcheck.c
 test cases/unit/2 testsetups/impl.c
 test cases/unit/2 testsetups/impl.h
 test cases/unit/2 testsetups/meson.build
@@ -4866,6 +4874,11 @@ test cases/vala/9 gir/test.json
 test cases/warning/1 version for string div/meson.build
 test cases/warning/1 version for string div/test.json
 test cases/warning/1 version for string div/a/b.c
+test cases/warning/10 depend_files sandbox violation/meson.build
+test cases/warning/10 depend_files sandbox violation/shared.py
+test cases/warning/10 depend_files sandbox violation/test.json
+test cases/warning/10 depend_files sandbox violation/subprojects/sub/meson.build
+test cases/warning/10 depend_files sandbox violation/subprojects/sub/touch.py
 test cases/warning/2 languages missing native/meson.build
 test cases/warning/2 languages missing native/test.json
 test cases/warning/3 fallback consistency/meson.build

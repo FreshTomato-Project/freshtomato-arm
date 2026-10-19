@@ -27,8 +27,8 @@ import mesonbuild.environment
 import mesonbuild.modules.gnome
 import mesonbuild.scripts.env2mfile
 from mesonbuild import coredata
-from mesonbuild.compilers.c import ClangCCompiler, GnuCCompiler
-from mesonbuild.compilers.compilers import ManyInOneLinkerOptionStyle
+from mesonbuild.compilers.c import ClangCCompiler, GnuCCompiler, VisualStudioCCompiler
+from mesonbuild.compilers.compilers import Compiler, CompileCheckMode, ManyInOneLinkerOptionStyle
 from mesonbuild.compilers.cpp import VisualStudioCPPCompiler
 from mesonbuild.compilers.d import DmdDCompiler
 from mesonbuild.compilers.detect import detect_c_compiler
@@ -38,7 +38,7 @@ from mesonbuild.interpreterbase import typed_pos_args, InvalidArguments, ObjectH
 from mesonbuild.interpreterbase import typed_pos_args, InvalidArguments, typed_kwargs, ContainerTypeInfo, KwargInfo
 from mesonbuild.mesonlib import (
     LibType, MachineChoice, PerMachine, SimpleABC, Version, is_windows, is_osx,
-    is_cygwin, is_openbsd, search_version, MesonException, python_command,
+    is_cygwin, is_openbsd, search_version, MesonException, EnvironmentException, python_command,
     version_check_to_range,
 )
 from mesonbuild.options import OptionKey
@@ -53,6 +53,13 @@ from run_tests import get_fake_env, get_fake_options
 from .helpers import *
 
 class InternalTests(unittest.TestCase):
+
+    def test_cmake_skip_compiler_test_invalid(self):
+        properties = mesonbuild.envconfig.Properties({'cmake_skip_compiler_test': True})
+        with self.assertRaisesRegex(
+                EnvironmentException,
+                '"True" is not a valid value for cmake_skip_compiler_test'):
+            properties.get_cmake_skip_compiler_test()
 
     def test_machine_info_is_ohos(self):
         def machine(system: str, subsystem: str) -> mesonbuild.envconfig.MachineInfo:
@@ -83,6 +90,10 @@ class InternalTests(unittest.TestCase):
         self.assertEqual(search_version('2016.oops 1.2.3'), '1.2.3')
         self.assertEqual(search_version('2016.x'), 'unknown version')
         self.assertEqual(search_version(r'something version is \033[32;2m1.2.0\033[0m.'), '1.2.0')
+
+        self.assertEqual(search_version(r'''(FooBar LLVM-Linux 5.0.0) clang version 21.9.0
+Target: riscv64-unknown-linux-gnu
+Thread model: posix'''), '21.9.0')
 
         # Literal output of mvn
         self.assertEqual(search_version(r'''\
@@ -311,6 +322,25 @@ class InternalTests(unittest.TestCase):
         self.assertEqual(a.to_native(copy=True), ['/showIncludes'])
 
 
+    def test_clike_sanity_check_drops_link_only_args_when_compile_only(self):
+        # When cross-compiling without an exe wrapper, CLikeCompiler's sanity
+        # check only compiles and never links because we can't run the
+        # executable. Therefore, it doesn't make sense for link-only arguments
+        # to be added on the command line. Some compilers warn about unused
+        # command line arguments.
+        env = get_fake_env()
+        linker = linkers.MoldDynamicLinker([], env, MachineChoice.HOST, '-Wl,', [])
+        cc = ClangCCompiler([], [], '14.0.0', MachineChoice.HOST, env, linker=linker)
+        cc.is_cross = True
+
+        with mock.patch.object(env, 'has_exe_wrapper', return_value=False), \
+             mock.patch.object(cc, '_get_basic_compiler_args', return_value=([], ['-fake-cross-link-arg'])), \
+             mock.patch.object(Compiler, '_sanity_check_compile_args', return_value=([], ['-Lfake-ldflags-arg'])):
+            _, largs = cc._sanity_check_compile_args('foo.c', 'foo.exe')
+
+        self.assertEqual(largs, [])
+
+
     def test_msvc_unix_args_to_native(self):
         # joined
         self.assertEqual(MSVCCompiler.unix_args_to_native(['-isystemfoo']), ['/Ifoo'])
@@ -342,6 +372,78 @@ class InternalTests(unittest.TestCase):
         self.assertEqual(ClangClCompiler.unix_args_to_native(['-isystem', 'foo']), ['/clang:-isystemfoo'])
         self.assertEqual(ClangClCompiler.unix_args_to_native(['-idirafter', 'foo']), ['/clang:-idirafterfoo'])
         self.assertEqual(ClangClCompiler.unix_args_to_native(['-iquote', 'foo']), ['/clang:-iquotefoo'])
+
+    def _fake_msvc_cc(self, cflags='-DCFLAG', ldflags='/SUBSYSTEM:CONSOLE'):
+        with mock.patch.dict(os.environ, {'CFLAGS': cflags, 'LDFLAGS': ldflags}):
+            env = get_fake_env()
+        env.add_lang_args('c', VisualStudioCCompiler, MachineChoice.HOST)
+        linker = linkers.MSVCDynamicLinker(env, MachineChoice.HOST, [])
+        return VisualStudioCCompiler([], [], '20.00', MachineChoice.HOST, env, 'x64', linker=linker)
+
+    def _fake_gnu_cc(self, cflags='-DCFLAG', ldflags='-Wl,-O1',
+                     linker_cls=linkers.GnuBFDDynamicLinker):
+        with mock.patch.dict(os.environ, {'CFLAGS': cflags, 'LDFLAGS': ldflags}):
+            env = get_fake_env()
+        env.add_lang_args('c', GnuCCompiler, MachineChoice.HOST)
+        linker = linker_cls([], env, MachineChoice.HOST,
+                            ManyInOneLinkerOptionStyle('-Wl,', ','), [])
+        return GnuCCompiler([], [], 'fake', MachineChoice.HOST, env, linker=linker)
+
+    def assertAfterLink(self, args: T.List[str], flag: str) -> None:
+        '''Assert that a linker-only flag is passed exactly once, after /link.'''
+        self.assertEqual(args.count(flag), 1, f'{flag} not passed exactly once in {args}')
+        self.assertIn('/link', args)
+        self.assertLess(args.index('/link'), args.index(flag), f'{flag} passed before /link in {args}')
+
+    def test_sanity_check_args_msvc(self):
+        cc = self._fake_msvc_cc()
+        args, largs = cc._sanity_check_compile_args('t.c', 't.exe')
+        # external link args are passed once, and after /link
+        self.assertAfterLink(largs, '/SUBSYSTEM:CONSOLE')
+        self.assertNotIn('/SUBSYSTEM:CONSOLE', args)
+        # so are the linker's own always args
+        self.assertAfterLink(largs, '/release')
+        self.assertNotIn('/release', args)
+        # external compile args are passed to the compiler, not to the linker
+        self.assertNotIn('-DCFLAG', largs)
+        self.assertEqual(args.count('-DCFLAG'), 1, args)
+        self.assertIn('/Fet.exe', args)
+
+    def test_sanity_check_args_gnu(self):
+        cc = self._fake_gnu_cc()
+        args, largs = cc._sanity_check_compile_args('t.c', 't.exe')
+        # external args must reach the probe, but only once
+        self.assertEqual(args.count('-DCFLAG'), 1, args)
+        self.assertEqual((args + largs).count('-Wl,-O1'), 1, (args, largs))
+        self.assertIn('-Wl,-O1', largs)
+
+    def test_compiler_check_args_msvc(self):
+        cc = self._fake_msvc_cc()
+        args = cc.build_wrapper_args(None, None, CompileCheckMode.LINK).to_native()
+        # linker-only flags belong after /link, not on the compiler command line
+        self.assertAfterLink(args, '/release')
+        self.assertAfterLink(args, '/SUBSYSTEM:CONSOLE')
+        args = cc.build_wrapper_args(None, None, CompileCheckMode.COMPILE).to_native()
+        self.assertNotIn('/release', args)
+        self.assertNotIn('/link', args)
+
+    def test_compiler_check_args_os2(self):
+        # the linker's always args (-Zomf on OS/2) must reach link mode checks
+        cc = self._fake_gnu_cc(linker_cls=linkers.OS2OmfDynamicLinker)
+        args = cc.build_wrapper_args(None, None, CompileCheckMode.LINK)
+        self.assertEqual(list(args).count('-Zomf'), 1, args)
+        self.assertNotIn('-Zomf', cc.build_wrapper_args(None, None, CompileCheckMode.COMPILE))
+
+    def test_find_library_args_msvc(self):
+        cc = self._fake_msvc_cc()
+
+        def fake_links(code, *, extra_args=None, **kwargs):
+            args = cc.build_wrapper_args(extra_args, None, CompileCheckMode.LINK).to_native()
+            self.assertAfterLink(args, '/release')
+            return (True, False)
+
+        with mock.patch.object(cc, 'links', fake_links):
+            cc.find_library('foo', [])
 
     def test_compiler_args_class_gnuld(self):
         ## Test --start/end-group
@@ -720,6 +822,90 @@ class InternalTests(unittest.TestCase):
             self._test_all_naming(cc, patterns, 'cygwin')
             env.machines.host.system = 'windows'
             self._test_all_naming(cc, patterns, 'windows-mingw')
+
+        self._test_find_library_undefined(cc)
+
+    def _test_find_library_undefined(self, cc):
+        '''
+        find_library checks if its argument both exists and can be
+        linked against, but it must tolerate underlinked static
+        libraries.
+
+        https://github.com/mesonbuild/meson/issues/15601
+        '''
+        def create_static_lib_with_undefined(name):
+            src = name.with_suffix('.c')
+            out = name.with_suffix('.o')
+            with src.open('w', encoding='utf-8') as f:
+                f.write('extern int get_cookie();')
+                f.write('int meson_foobar (void) { return get_cookie(); }')
+            # use of x86_64 is hardcoded in run_tests.py:get_fake_env()
+            if is_osx():
+                subprocess.check_call(['clang', '-c', str(src), '-o', str(out), '-arch', 'x86_64'])
+            else:
+                subprocess.check_call(['gcc', '-c', str(src), '-o', str(out)])
+            subprocess.check_call(['ar', 'csr', str(name), str(out)])
+
+        def create_static_lib_empty(name):
+            with name.open('w', encoding='utf-8') as f:
+                f.write("garbage")
+
+        # The test relies on some open-coded toolchain invocations for
+        # library creation in create_static_lib_with_undefined.
+        if is_windows() or is_cygwin():
+            return
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p1 = Path(tmpdir)
+            create_static_lib_with_undefined(p1 / 'libfoo.a')
+
+            code = 'int meson_foobar (void); int main(void) { return meson_foobar(); }'
+
+            # Check that we always tolerate undefined references in a static
+            # library regardless of the library type.
+            for type in (LibType.STATIC, LibType.PREFER_STATIC, LibType.PREFER_SHARED):
+                found = cc._find_library_real('foo', [tmpdir],
+                                              code,
+                                              type, lib_prefix_warning=True, ignore_system_dirs=False)
+                self.assertEqual(os.path.basename(found[0]), 'libfoo.a')
+
+            # Check that we reject broken static libraries unless we were
+            # told to only find a static library.
+            create_static_lib_empty(p1 / 'libbar.a')
+
+            # We have a broken static library *and* we indicated we want a static
+            # library, so we don't perform a link test.
+            found = cc._find_library_real('bar', [tmpdir],
+                                          code,
+                                          LibType.STATIC, lib_prefix_warning=True, ignore_system_dirs=False)
+            self.assertEqual(os.path.basename(found[0]), 'libbar.a')
+
+            # We have a broken static library we're testing against but we only said
+            # we'd prefer static, not that it must be static: the heuristic
+            # says it likely isn't a special toolchain library, so we perform a
+            # link test.
+            found = cc._find_library_real('bar', [tmpdir],
+                                          code,
+                                          LibType.PREFER_STATIC, lib_prefix_warning=True, ignore_system_dirs=False)
+            self.assertIsNone(found, 'Unexpectedly found a library with PREFER_STATIC, link test expected to reject it')
+
+            # We have a broken static library we're testing against but we only said
+            # we'd prefer shared, not that it must be shared: the heuristic
+            # says it likely isn't a special toolchain library, so we perform a
+            # link test.
+            found = cc._find_library_real('bar', [tmpdir],
+                                          code,
+                                          LibType.PREFER_SHARED, lib_prefix_warning=True, ignore_system_dirs=False)
+            self.assertIsNone(found, 'Unexpectedly found a library with PREFER_SHARED, link test expected to reject it')
+
+            # We asked for a shared library and we only got a broken
+            # static one. We only tolerate them being broken if people
+            # explicitly ask for it w/ static: true, so we perform a link
+            # test.
+            found = cc._find_library_real('bar', [tmpdir],
+                                          code,
+                                          LibType.SHARED, lib_prefix_warning=True, ignore_system_dirs=False)
+            self.assertIsNone(found, 'Unexpectedly found a library with SHARED')
 
     @skipIfNoPkgconfig
     def test_pkgconfig_parse_libs(self):

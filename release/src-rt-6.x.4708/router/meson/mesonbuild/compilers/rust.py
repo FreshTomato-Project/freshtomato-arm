@@ -165,12 +165,9 @@ class RustCompiler(Compiler):
 
     def _sanity_check_compile_args(self, sourcename: str, binname: str
                                    ) -> T.Tuple[T.List[str], T.List[str]]:
-        cmdlist = self.exelist.copy()
-        largs: T.List[str] = []
+        cmdlist, largs = super()._sanity_check_compile_args(sourcename, binname)
         if self.info.kernel == 'none' and 'ld.' in self.get_linker_id():
             largs.extend(rustc_link_args(['-nostartfiles']))
-        cmdlist.extend(self.get_output_args(binname))
-        cmdlist.append(sourcename)
         return cmdlist, largs
 
     def _sanity_check_source_code(self) -> str:
@@ -410,6 +407,9 @@ class RustCompiler(Compiler):
             return [f'--color={colortype}']
         raise MesonException(f'Invalid color type for rust {colortype}')
 
+    def get_external_link_args(self) -> T.List[str]:
+        return rustc_link_args(super().get_external_link_args())
+
     @functools.lru_cache(maxsize=None)
     def get_linker_always_args(self) -> T.List[str]:
         return rustc_link_args(super().get_linker_always_args()) + ['-Cdefault-linker-libraries']
@@ -566,15 +566,6 @@ class RustCompiler(Compiler):
                                    self.environment,
                                    full_version=self.full_version,
                                    linker=self.linker, rustc=self)
-
-    def enable_env_set_args(self) -> T.Optional[T.List[str]]:
-        '''Extra arguments to enable --env-set support in rustc.
-        Returns None if not supported.
-        '''
-        if version_compare(self.version, '>= 1.76') and self.allow_nightly:
-            return ['-Z', 'unstable-options']
-        return None
-
 
 class ClippyRustCompiler(RustCompiler):
 

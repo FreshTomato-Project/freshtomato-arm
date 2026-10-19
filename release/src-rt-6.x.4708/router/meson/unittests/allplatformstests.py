@@ -1655,6 +1655,108 @@ class AllPlatformTests(BasePlatformTests):
             # fails sometimes.
             pass
 
+    @skipIfNoExecutable('git')
+    @skip_if_not_language('rust')
+    def test_dist_subprojects_cargo(self):
+        if self.backend is not Backend.ninja:
+            raise SkipTest('Dist is only supported with Ninja')
+
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                project_dir = os.path.join(tmpdir, 'a')
+                shutil.copytree(os.path.join(self.rust_test_dir, '25 cargo lock'),
+                                project_dir)
+                git_init(project_dir)
+                self.init(project_dir)
+                self._run(self.meson_command + ['dist', '--include-subprojects'], workdir=self.builddir)
+        except PermissionError:
+            # When run under Windows CI, something (virus scanner?)
+            # holds on to the git files so cleaning up the dir
+            # fails sometimes.
+            pass
+
+    @skipIfNoExecutable('git')
+    def test_dist_nested_promoted_subproject(self):
+        '''
+        https://github.com/mesonbuild/meson/issues/12489
+
+        A subproject (e.g. glib) can itself depend on a nested subproject
+        (e.g. gvdb) whose sources are bundled inside the outer subproject's
+        own "subprojects" directory rather than the main project's. Meson
+        promotes the wrap file for such a nested subproject to the main
+        project's subprojects directory (writing a [wrap-redirect] wrap
+        there), but the actual source directory stays nested. `meson dist
+        --include-subprojects` used to look for the nested subproject
+        directly under the main project's subprojects directory (following
+        the promoted wrap file naively) and crashed with a FileNotFoundError
+        because that directory did not exist there.
+        '''
+        if self.backend is not Backend.ninja:
+            raise SkipTest('Dist is only supported with Ninja')
+
+        with tempfile.TemporaryDirectory() as project_dir:
+            with open(os.path.join(project_dir, 'meson.build'), 'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent('''\
+                    project('gtk', version : '1.0')
+                    subproject('glib')
+                    '''))
+
+            glib_dir = os.path.join(project_dir, 'subprojects', 'glib')
+            gvdb_dir = os.path.join(glib_dir, 'subprojects', 'gvdb')
+            os.makedirs(gvdb_dir)
+
+            # glib is a normal subproject with its own wrap file
+            with open(os.path.join(project_dir, 'subprojects', 'glib.wrap'), 'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent('''\
+                    [wrap-file]
+                    directory = glib
+                    '''))
+
+            # Only the main project and glib's wrap file are tracked by git;
+            # glib itself is *not* a git repository, mimicking a subproject
+            # fetched/extracted from a tarball
+            git_init(project_dir)
+
+            with open(os.path.join(glib_dir, 'meson.build'), 'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent('''\
+                    project('glib', version : '1.0')
+                    subproject('gvdb')
+                    '''))
+
+            # gvdb is bundled inside glib's own subprojects directory, with
+            # its sources already extracted there
+            with open(os.path.join(glib_dir, 'subprojects', 'gvdb.wrap'), 'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent('''\
+                    [wrap-file]
+                    directory = gvdb
+                    '''))
+            with open(os.path.join(gvdb_dir, 'meson.build'), 'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent('''\
+                    project('gvdb', version : '1.0')
+                    '''))
+
+            self.init(project_dir)
+            # Configuring writes the promoted [wrap-redirect] wrap file
+            redirect_wrap = os.path.join(project_dir, 'subprojects', 'gvdb.wrap')
+            self.assertPathExists(redirect_wrap)
+            with open(redirect_wrap, encoding='utf-8') as f:
+                self.assertIn('[wrap-redirect]', f.read())
+
+            self._run(self.meson_command + ['dist', '--include-subprojects', '--no-tests',
+                                             '--formats', 'zip'],
+                      workdir=self.builddir)
+
+            zip_distfile = os.path.join(self.distdir, 'gtk-1.0.zip')
+            self.assertPathExists(zip_distfile)
+            z = zipfile.ZipFile(zip_distfile)
+            names = set(z.namelist())
+            # gvdb must end up nested inside glib, where it really lives...
+            self.assertIn('gtk-1.0/subprojects/glib/subprojects/gvdb/meson.build', names)
+            # ... and must not be duplicated (or looked up) directly under the
+            # main project's subprojects directory.
+            self.assertNotIn('gtk-1.0/subprojects/gvdb/meson.build', names)
+            self.assertNotIn('gtk-1.0/subprojects/gvdb.wrap', names)
+
     def create_dummy_subproject(self, project_dir, name):
         path = os.path.join(project_dir, 'subprojects', name)
         os.makedirs(path)
@@ -4138,20 +4240,6 @@ class AllPlatformTests(BasePlatformTests):
                 'version': ['>=1.0.0', '<=99.9.9'],
                 'has_fallback': True,
                 'conditional': True
-            },
-            {
-                'conditional': False,
-                'has_fallback': False,
-                'name': 'unknown',
-                'required': False,
-                'version': 'unknown'
-            },
-            {
-                'conditional': False,
-                'has_fallback': False,
-                'name': 'unknown',
-                'required': False,
-                'version': 'unknown'
             },
         ]
         self.maxDiff = None

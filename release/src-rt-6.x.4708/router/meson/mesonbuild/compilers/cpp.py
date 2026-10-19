@@ -91,11 +91,13 @@ class CPPCompiler(CLikeCompiler, Compiler):
     def _sanity_check_source_code(self) -> str:
         return '#include <stddef.h>\nclass breakCCompiler;int main(void) { return 0; }\n'
 
+    def get_cpp_permissive_args(self) -> T.List[str]:
+        return []
+
     def get_compiler_check_args(self, mode: CompileCheckMode) -> T.List[str]:
-        # -fpermissive allows non-conforming code to compile which is necessary
-        # for many C++ checks. Particularly, the has_header_symbol check is
-        # too strict without this and always fails.
-        return super().get_compiler_check_args(mode) + ['-fpermissive']
+        # Compiler checks must accept non-conforming code. Particularly, the
+        # has_header_symbol check is too strict without this and always fails.
+        return super().get_compiler_check_args(mode) + self.get_cpp_permissive_args()
 
     def has_header_symbol(self, hname: str, symbol: str, prefix: str, *,
                           extra_args: T.Union[None, T.List[str], T.Callable[[CompileCheckMode], T.List[str]]] = None,
@@ -640,13 +642,9 @@ class ElbrusCPPCompiler(ElbrusCompiler, CPPCompiler):
         std_opt.set_versions(cpp_stds, gnu=True)
         return opts
 
-    # Elbrus C++ compiler does not have lchmod, but there is only linker warning, not compiler error.
-    # So we should explicitly fail at this case.
     def has_function(self, funcname: str, prefix: str, *,
                      extra_args: T.Optional[T.List[str]] = None,
                      dependencies: T.Optional[T.List['Dependency']] = None) -> T.Tuple[bool, bool]:
-        if funcname == 'lchmod':
-            return False, False
         return super().has_function(funcname, prefix, extra_args=extra_args, dependencies=dependencies)
 
     # Elbrus C++ compiler does not support RTTI, so don't check for it.
@@ -863,9 +861,8 @@ class VisualStudioLikeCPPCompilerMixin(CompilerMixinBase):
             args.append('/permissive-')
         return args
 
-    def get_compiler_check_args(self, mode: CompileCheckMode) -> T.List[str]:
-        # XXX: this is a hack because so much GnuLike stuff is in the base CPPCompiler class.
-        return Compiler.get_compiler_check_args(self, mode)
+    def get_cpp_permissive_args(self) -> T.List[str]:
+        return ['/permissive']
 
 class CPP11AsCPP14Mixin(CompilerMixinBase):
 
@@ -1000,10 +997,6 @@ class IntelClCPPCompiler(VisualStudioLikeCPPCompilerMixin, IntelVisualStudioLike
             cpp_stds += ['c++20']
         return self._get_options_impl(super().get_options(), cpp_stds)
 
-    def get_compiler_check_args(self, mode: CompileCheckMode) -> T.List[str]:
-        # XXX: this is a hack because so much GnuLike stuff is in the base CPPCompiler class.
-        return IntelVisualStudioLikeCompiler.get_compiler_check_args(self, mode)
-
 
 class IntelLLVMClCPPCompiler(IntelClCPPCompiler):
 
@@ -1092,6 +1085,9 @@ class TICPPCompiler(TICompiler, CPPCompiler):
 
     def get_always_args(self) -> T.List[str]:
         return []
+
+    def get_cpp_permissive_args(self) -> T.List[str]:
+        return ['-fpermissive']
 
     def get_option_link_args(self, target: 'BuildTarget', subproject: T.Optional[str] = None) -> T.List[str]:
         return []

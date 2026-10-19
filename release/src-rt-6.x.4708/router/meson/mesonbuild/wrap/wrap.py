@@ -24,6 +24,7 @@ import json
 import gzip
 
 from base64 import b64encode
+from enum import Enum
 from netrc import netrc
 from pathlib import Path, PurePath
 from functools import lru_cache
@@ -41,6 +42,8 @@ if T.TYPE_CHECKING:
     import http.client
     from typing_extensions import Literal
 
+    from ..cargo.manifest import CargoLock
+
     Method = Literal['meson', 'cmake', 'cargo']
 
 try:
@@ -53,8 +56,6 @@ except ImportError:
 
 REQ_TIMEOUT = 30.0
 WHITELIST_SUBDOMAIN = 'wrapdb.mesonbuild.com'
-
-ALL_TYPES = ['file', 'git', 'hg', 'svn', 'redirect']
 
 if sys.version_info >= (3, 14):
     import tarfile
@@ -189,6 +190,14 @@ def parse_patch_url(patch_url: str) -> T.Tuple[str, str]:
         raise WrapException(f'Invalid wrapdb URL {patch_url}')
 
 
+class WrapType(str, Enum):
+    FILE = 'file'
+    GIT = 'git'
+    HG = 'hg'
+    SVN = 'svn'
+    REDIRECT = 'redirect'
+
+
 class WrapException(MesonException):
     pass
 
@@ -196,7 +205,7 @@ class WrapNotFoundException(WrapException):
     pass
 
 class PackageDefinition:
-    def __init__(self, name: SubProject, subprojects_dir: str, type_: T.Optional[str] = None, values: T.Optional[T.Dict[str, str]] = None):
+    def __init__(self, name: SubProject, subprojects_dir: str, type_: T.Optional[WrapType] = None, values: T.Optional[T.Dict[str, str]] = None):
         self.name = name
         self.subprojects_dir = subprojects_dir
         self.type = type_
@@ -223,7 +232,7 @@ class PackageDefinition:
         self.provided_deps[self.name.lower()] = None
 
     @staticmethod
-    def from_values(name: SubProject, subprojects_dir: str, type_: str, values: T.Dict[str, str]) -> PackageDefinition:
+    def from_values(name: SubProject, subprojects_dir: str, type_: WrapType, values: T.Dict[str, str]) -> PackageDefinition:
         return PackageDefinition(name, subprojects_dir, type_, values)
 
     @staticmethod
@@ -245,7 +254,7 @@ class PackageDefinition:
 
         subprojects_dir = os.path.dirname(filename)
 
-        if type_ == 'redirect':
+        if type_ is WrapType.REDIRECT:
             # [wrap-redirect] have a `filename` value pointing to the real wrap
             # file we should parse instead. It must be relative to the current
             # wrap file location and must be in the form foo/subprojects/bar.wrap.
@@ -287,7 +296,7 @@ class PackageDefinition:
         return wrap
 
     @staticmethod
-    def _parse_wrap(filename: str) -> T.Tuple[configparser.ConfigParser, str, T.Dict[str, str]]:
+    def _parse_wrap(filename: str) -> T.Tuple[configparser.ConfigParser, WrapType, T.Dict[str, str]]:
         try:
             config = configparser.ConfigParser(interpolation=None)
             config.read(filename, encoding='utf-8')
@@ -299,10 +308,10 @@ class PackageDefinition:
         if not wrap_section.startswith('wrap-'):
             raise WrapException(f'{wrap_section!r} is not a valid first section in {filename}')
         type_ = wrap_section[5:]
-        if type_ not in ALL_TYPES:
+        if type_ not in tuple(WrapType):
             raise WrapException(f'Unknown wrap type {type_!r}')
         values = dict(config[wrap_section])
-        return config, type_, values
+        return config, WrapType(type_), values
 
     def parse_provide_section(self, config: configparser.ConfigParser) -> None:
         if config.has_section('provides'):
@@ -346,13 +355,6 @@ class PackageDefinition:
     def add_provided_dep(self, name: str) -> None:
         self.provided_deps[name] = None
 
-def get_directory(subdir_root: str, packagename: str) -> str:
-    fname = os.path.join(subdir_root, packagename + '.wrap')
-    if os.path.isfile(fname):
-        wrap = PackageDefinition.from_wrap_file(fname)
-        return wrap.directory
-    return packagename
-
 def verbose_git(cmd: T.List[str], workingdir: str, check: bool = False) -> bool:
     '''
     Wrapper to convert GitException to WrapException caught in interpreter.
@@ -374,6 +376,7 @@ class Resolver:
 
     def __post_init__(self) -> None:
         self.subdir_root = os.path.join(self.source_dir, self.subdir)
+        self.project_subdir = os.path.relpath(os.path.dirname(self.subdir_root), self.source_dir)
         self.cachedir = os.environ.get('MESON_PACKAGE_CACHE_DIR') or os.path.join(self.subdir_root, 'packagecache')
         self.wraps: T.Dict[str, PackageDefinition] = {}
         self.netrc: T.Optional[netrc] = None
@@ -383,6 +386,7 @@ class Resolver:
         self.wrapdb_provided_deps: T.Dict[str, str] = {}
         self.wrapdb_provided_programs: T.Dict[str, SubProject] = {}
         self.loaded_dirs: T.Set[str] = set()
+        self.cargolocks: T.Dict[str, T.Optional[CargoLock]] = {}
         self.load_wraps()
         self.load_netrc()
         self.load_wrapdb()
@@ -418,7 +422,35 @@ class Resolver:
         # Add provided deps and programs into our lookup tables
         for wrap in self.wraps.values():
             self.add_wrap(wrap)
+        self.get_cargo_lock(self.project_subdir, warn_only=True)
         self.loaded_dirs.add(self.subdir)
+
+    def get_cargo_lock(self, project_subdir: str, warn_only: bool = False) -> T.Optional[CargoLock]:
+        project_subdir = os.path.normpath(os.path.join(self.source_dir, project_subdir))
+        filename = os.path.join(project_subdir, 'Cargo.lock')
+        if filename in self.cargolocks:
+            return self.cargolocks[filename]
+
+        if not os.path.exists(filename):
+            self.cargolocks[filename] = None
+            return None
+
+        from ..cargo.interpreter import load_cargo_lock
+        from ..cargo.toml import TomlImplementationMissing
+        subdir_root = os.path.join(project_subdir, os.path.basename(self.subdir))
+        try:
+            cargolock = load_cargo_lock(filename, subdir_root)
+        except TomlImplementationMissing as e:
+            if not warn_only:
+                raise
+            # Error delayed to the actual usage of a Cargo subproject; do not
+            # cache the failure, so that it can be reported properly then.
+            mlog.warning(f'cannot load Cargo.lock: {e}', fatal=False, once=True)
+            return None
+
+        self.cargolocks[filename] = cargolock
+        self.merge_wraps(cargolock.wraps)
+        return cargolock
 
     def add_wrap(self, wrap: PackageDefinition, ignore_dups: bool = False) -> None:
         for k in wrap.provided_deps.keys():
@@ -485,7 +517,14 @@ class Resolver:
         if self.wrap_mode != WrapMode.nopromote and subdir not in self.loaded_dirs:
             other_resolver = Resolver(self.source_dir, subdir, subproject, self.wrap_mode, self.wrap_frontend, self.allow_insecure, self.silent)
             self.merge_wraps(other_resolver.wraps)
+            self.cargolocks.update(other_resolver.cargolocks)
             self.loaded_dirs.add(subdir)
+
+    def get_directory(self, packagename: str) -> T.Optional[str]:
+        wrap = self.wraps.get(packagename)
+        if wrap:
+            return None if wrap.redirected else wrap.directory
+        return packagename
 
     def find_dep_provider(self, packagename: str) -> T.Tuple[T.Optional[str], T.Optional[str]]:
         # Python's ini parser converts all key values to lowercase.
@@ -590,15 +629,15 @@ class Resolver:
             cached_directory = os.path.join(self.cachedir, self.directory)
             if os.path.isdir(cached_directory):
                 self.copy_tree(cached_directory, self.dirname)
-            elif self.wrap.type == 'file':
+            elif self.wrap.type is WrapType.FILE:
                 self._get_file(packagename)
             else:
                 self.check_can_download()
-                if self.wrap.type == 'git':
+                if self.wrap.type is WrapType.GIT:
                     self._get_git(packagename)
-                elif self.wrap.type == "hg":
+                elif self.wrap.type is WrapType.HG:
                     self._get_hg()
-                elif self.wrap.type == "svn":
+                elif self.wrap.type is WrapType.SVN:
                     self._get_svn()
                 else:
                     raise WrapException(f'Unknown wrap type {self.wrap.type!r}')

@@ -8,6 +8,10 @@ version 2.94
 	constructed DHCPv6/RA - DHCPv6 and RA are inhibited by
 	--no-dhcpv4-interface when using constructed address ranges.
 	Thanks to David Nichols for discovery, diagnosis and patch.
+
+	Fix heap OOB read in zone_status. Thanks to Yaohui Zhu (朱耀辉)
+	for spotting and reporting this. A crafted reply can crash dnsmasq.
+	CNVD-C-2026-590208 applies.
 	
 	
 version 2.93

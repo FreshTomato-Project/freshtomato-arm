@@ -189,7 +189,7 @@
  	      inet_ntop(AF_INET6, &lease->addr6, daemon->addrbuff, ADDRSTRLEN);
  	 
  	      ourprintf(&err, "%s%u %s ", (lease->flags & LEASE_TA) ? "T" : "",
-@@ -1351,4 +1372,67 @@
+@@ -1353,4 +1374,67 @@
  }
  #endif
  

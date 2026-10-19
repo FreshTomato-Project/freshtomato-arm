@@ -436,6 +436,8 @@ static void wg_packet_consume_data_done(struct wg_peer *peer,
 		goto dishonest_packet_peer;
 
 	wg_update_rx_stats(peer, message_data_len(len_before_trim));
+	/* Clear the WG queue link before handing the packet to the network stack. */
+	skb->prev = NULL;
 	napi_gro_receive(&peer->napi, skb);
 	return;
 

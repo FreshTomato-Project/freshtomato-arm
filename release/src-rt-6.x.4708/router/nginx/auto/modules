@@ -124,6 +124,12 @@ if [ $HTTP = YES ]; then
     fi
 
 
+    if [ $HTTP_V2 = YES ]; then
+        HTTP_DEPS="$HTTP_DEPS $HTTP_PRIORITY_DEPS"
+        HTTP_SRCS="$HTTP_SRCS $HTTP_PRIORITY_SRCS"
+    fi
+
+
     # the module order is important
     #     ngx_http_static_module
     #     ngx_http_gzip_static_module
@@ -1449,11 +1455,11 @@ if [ $USE_OPENSSL_QUIC = YES ]; then
 
     . auto/module
 
-    if [ $QUIC_BPF = YES -a $SO_COOKIE_FOUND = YES ]; then
+    if [ $QUIC_BPF = YES ]; then
         ngx_module_type=CORE
         ngx_module_name=ngx_quic_bpf_module
         ngx_module_incs=
-        ngx_module_deps=
+        ngx_module_deps=src/event/quic/ngx_event_quic_bpf.h
         ngx_module_srcs="src/event/quic/ngx_event_quic_bpf.c \
                          src/event/quic/ngx_event_quic_bpf_code.c"
         ngx_module_libs=

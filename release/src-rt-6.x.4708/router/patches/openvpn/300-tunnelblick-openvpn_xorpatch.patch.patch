@@ -1,6 +1,6 @@
 --- openvpn/src/openvpn/forward.c
 +++ openvpn/src/openvpn/forward.c
-@@ -936,7 +936,7 @@
+@@ -959,7 +959,7 @@
      c->c2.buf = c->c2.buffers->read_link_buf;
      ASSERT(buf_init(&c->c2.buf, c->c2.frame.buf.headroom));
  
@@ -9,7 +9,7 @@
  
      if (socket_connection_reset(sock, status))
      {
-@@ -1808,7 +1808,7 @@
+@@ -1831,7 +1831,7 @@
                  socks_preprocess_outgoing_link(c, sock, &to_addr, &size_delta);
  
                  /* Send packet */
@@ -50,7 +50,7 @@
  
      if (o->http_proxy_options)
      {
-@@ -6674,6 +6683,46 @@
+@@ -6672,6 +6681,46 @@
          }
          options->proto_force = proto_force;
      }

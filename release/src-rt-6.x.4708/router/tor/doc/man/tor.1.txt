@@ -1830,7 +1830,26 @@ to building Tor circuits and using them:
 
 // Out of order because it logically belongs before the CircuitBuildTimeout option
 [[LearnCircuitBuildTimeout]] **LearnCircuitBuildTimeout** **0**|**1**::
-    If 0, CircuitBuildTimeout adaptive learning is disabled. (Default: 1)
+    If 0, CircuitBuildTimeout adaptive learning is disabled. (Default: 1) +
+ +
+    If adaptive history contains only abandoned measurements, Tor clears that
+    history and restarts learning with conservative timeout values. This does
+    not change guard selection or guarantee that a stalled path will recover.
+    During continuing circuit-build failures, Tor logs a process-wide expiry
+    summary at most once every five minutes. Hop-stage and channel-state
+    counts are separate totals, not correlated observations. Failed first-hop
+    connections are counted separately as connection_failed; they have not
+    yet started circuit build timing. +
+ +
+    To diagnose persistent failures with fixed timeouts, restart with
+    LearnCircuitBuildTimeout 0 and CircuitBuildTimeout 60 while preserving
+    the existing state file. Purpose-specific timeout rules still apply;
+    a path already failing after 60 seconds might remain unusable. Changing
+    these options in a running process is not equivalent to this restart
+    diagnostic. When reporting failures, share the aggregate expiry/recovery
+    summaries and, if requested, only TotalBuildTimes and
+    CircuitBuildAbandonedCount from state. Do not share the full state file,
+    histogram bins, or circuit path logs by default.
 
 [[CircuitBuildTimeout]] **CircuitBuildTimeout** __NUM__::
     Try for at most NUM seconds when building circuits. If the circuit isn't
@@ -3335,7 +3354,11 @@ on the public Tor network.
 
 [[AuthDirMaxServersPerAddr]] **AuthDirMaxServersPerAddr** __NUM__::
     Authoritative directories only. The maximum number of servers that we will
-    list as acceptable on a single IP address. Set this to "0" for "no limit".
+    list as acceptable on a single IP address. Only servers that we have
+    found reachable at that address count toward the limit, so it is only
+    enforced when AuthDirTestReachability is set, and for IPv6 addresses
+    only when AuthDirHasIPv6Connectivity is set. Set this to "0" for
+    "no limit".
     (Default: 2)
 
 [[AuthDirPinKeys]] **AuthDirPinKeys** **0**|**1**::

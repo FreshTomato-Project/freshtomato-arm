@@ -35,7 +35,6 @@
 #include "feature/nodelist/routerlist.h"
 #include "feature/relay/router.h"
 #include "feature/relay/routerkeys.h"
-#include "feature/stats/rephist.h"
 #include "feature/client/entrynodes.h" /* needed for guardfraction methods */
 #include "feature/nodelist/torcert.h"
 #include "feature/dirauth/voting_schedule.h"
@@ -1562,15 +1561,18 @@ networkstatus_compute_consensus(smartlist_t *votes,
   flags = smartlist_new();
 
   consensus_method = compute_consensus_method(votes);
-  if (consensus_method_is_supported(consensus_method)) {
-    log_info(LD_DIR, "Generating consensus using method %d.",
-             consensus_method);
-  } else {
+  if (!consensus_method_is_supported(consensus_method)) {
     log_warn(LD_DIR, "The other authorities will use consensus method %d, "
              "which I don't support.  Maybe I should upgrade!",
              consensus_method);
     consensus_method = MAX_SUPPORTED_CONSENSUS_METHOD;
+    /* Fall back to the newest method supported by our current options. */
+    while (!consensus_method_is_supported(consensus_method)) {
+      --consensus_method;
+    }
   }
+  log_info(LD_DIR, "Generating consensus using method %d.",
+           consensus_method);
 
   {
     /* It's smarter to initialize these weights to 1, so that later on,
@@ -4410,21 +4412,36 @@ compare_routerinfo_usefulness(const routerinfo_t *first,
  * IP version, specified in <b>family</b>, return a new digestmap_t whose keys
  * are the identity digests of those routers that we're going to exclude for
  * Sybil-like appearance.
+ *
+ * Only routers that we have found reachable at their advertised address in
+ * this family count: anybody can claim an address in a descriptor, and an
+ * unverified claim must not push out the relay that really lives there.
  */
 STATIC digestmap_t *
 get_sybil_list_by_ip_version(const smartlist_t *routers, sa_family_t family)
 {
   const dirauth_options_t *options = dirauth_get_options();
   digestmap_t *omit_as_sybil = digestmap_new();
-  smartlist_t *routers_by_ip = smartlist_new();
+  smartlist_t *routers_by_ip = NULL;
   int addr_count = 0;
   routerinfo_t *last_ri = NULL;
   /* Allow at most this number of Tor servers on a single IP address, ... */
   int max_with_same_addr = options->AuthDirMaxServersPerAddr;
-  if (max_with_same_addr <= 0)
-    max_with_same_addr = INT_MAX;
+  /* Without reachability tests in this family, we can't verify anything. */
+  if (max_with_same_addr <= 0 || !options->AuthDirTestReachability ||
+      (family == AF_INET6 && !options->AuthDirHasIPv6Connectivity)) {
+    return omit_as_sybil;
+  }
 
-  smartlist_add_all(routers_by_ip, routers);
+  routers_by_ip = smartlist_new();
+  SMARTLIST_FOREACH_BEGIN(routers, routerinfo_t *, ri) {
+    const node_t *node = node_get_by_id(ri->cache_info.identity_digest);
+    if (router_is_me(ri) ||
+        (node && (family == AF_INET6 ? node->reached_ipv6_orport :
+                                      node->reached_ipv4_orport))) {
+      smartlist_add(routers_by_ip, ri);
+    }
+  } SMARTLIST_FOREACH_END(ri);
   if (family == AF_INET6)
     smartlist_sort(routers_by_ip, compare_routerinfo_by_ipv6);
   else
@@ -4742,10 +4759,6 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
   routers_sort_by_identity(routers);
   /* Get a digestmap of possible sybil routers, IPv4 or IPv6 */
   digestmap_t *omit_as_sybil = get_all_possible_sybil(routers);
-  DIGESTMAP_FOREACH (omit_as_sybil, sybil_id, void *, ignore) {
-    (void)ignore;
-    rep_hist_make_router_pessimal(sybil_id, now);
-  } DIGESTMAP_FOREACH_END
   /* Count how many have measured bandwidths so we know how to assign flags;
    * this must come before dirserv_compute_performance_thresholds() */
   dirserv_count_measured_bws(routers);

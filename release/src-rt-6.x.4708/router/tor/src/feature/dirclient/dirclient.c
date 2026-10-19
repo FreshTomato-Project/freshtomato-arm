@@ -710,11 +710,6 @@ directory_choose_address_routerstatus(const routerstatus_t *status,
 void
 connection_dir_client_request_failed(dir_connection_t *conn)
 {
-  if (conn->guard_state) {
-    /* We haven't seen a success on this guard state, so consider it to have
-     * failed. */
-    entry_guard_failed(&conn->guard_state);
-  }
   if (!entry_list_is_constrained(get_options()))
     /* We must not set a directory to non-running for HS purposes else we end
      * up flagging nodes from the hashring has unusable. It doesn't have direct
@@ -2273,7 +2268,7 @@ handle_response_fetch_consensus(dir_connection_t *conn,
     }
 
     new_consensus = consensus_diff_apply(consensus_body, consensus_body_len,
-                                         body, body_len);
+                                         body, body_len, true);
     tor_munmap_file(mapped_consensus);
     if (new_consensus == NULL) {
       log_warn(LD_DIR, "Could not apply consensus diff received from server "

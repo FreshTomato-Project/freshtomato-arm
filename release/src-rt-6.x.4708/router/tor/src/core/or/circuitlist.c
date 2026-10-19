@@ -1699,6 +1699,17 @@ circuit_unlink_all_from_channel(channel_t *chan, int reason)
   SMARTLIST_FOREACH_BEGIN(detached, circuit_t *, circ) {
     int mark = 0;
     if (circ->n_chan == chan) {
+      /* An established connection can fail while CREATE is outstanding.
+       * Notify its pending directory requests here: generic circuit cleanup
+       * must not mistake cancellation for a failed connection. */
+      if (!circ->marked_for_close && CIRCUIT_IS_ORIGIN(circ)) {
+        origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
+        if (ocirc->cpath &&
+            ocirc->cpath->state == CPATH_STATE_AWAITING_KEYS) {
+          connection_ap_fail_onehop(ocirc->cpath->extend_info->identity_digest,
+                                    ocirc->build_state);
+        }
+      }
 
       circuit_set_n_circid_chan(circ, 0, NULL);
       mark = 1;
@@ -2172,6 +2183,7 @@ circuit_synchronize_written_or_bandwidth(const circuit_t *c,
 
 /** Mark <b>circ</b> to be closed next time we call
  * circuit_close_all_marked(). Do any cleanup needed:
+ *   - If state is CHAN_WAIT, remove circ from circuits_pending_chans.
  *   - If state is onionskin_pending, remove circ from the onion_pending
  *     list.
  *   - If circ isn't open yet: call circuit_build_failed() if we're
@@ -2254,6 +2266,18 @@ circuit_mark_for_close_, (circuit_t *circ, int reason, int line,
   circ->marked_for_close_file = file;
   circ->marked_for_close_reason = reason;
   circ->marked_for_close_orig_reason = orig_reason;
+
+  if (CIRCUIT_IS_ORIGIN(circ))
+    circuit_build_times_note_connection_failure(TO_ORIGIN_CIRCUIT(circ),
+                                               orig_reason);
+
+  /* Marked circuits must not remain on the pending channel list (waiting for a
+   * n_chan) even before the deferred cleanup in circuit_about_to_free(). */
+  if (circ->state == CIRCUIT_STATE_CHAN_WAIT) {
+    if (circuits_pending_chans) {
+      smartlist_remove(circuits_pending_chans, circ);
+    }
+  }
 
   if (!CIRCUIT_IS_ORIGIN(circ)) {
     or_circuit_t *or_circ = TO_OR_CIRCUIT(circ);
@@ -2364,10 +2388,6 @@ circuit_about_to_free(circuit_t *circ)
       origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
       circuit_build_failed(ocirc); /* take actions if necessary */
     }
-  }
-  if (circ->state == CIRCUIT_STATE_CHAN_WAIT) {
-    if (circuits_pending_chans)
-      smartlist_remove(circuits_pending_chans, circ);
   }
   if (circuits_pending_other_guards) {
     smartlist_remove(circuits_pending_other_guards, circ);

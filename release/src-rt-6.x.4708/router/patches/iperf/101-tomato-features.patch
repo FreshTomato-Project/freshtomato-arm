@@ -19,7 +19,7 @@
  	{"forceflush", no_argument, NULL, OPT_FORCEFLUSH},
  	{"get-server-output", no_argument, NULL, OPT_GET_SERVER_OUTPUT},
  	{"udp-counters-64bit", no_argument, NULL, OPT_UDP_COUNTERS_64BIT},
-@@ -1223,7 +1224,7 @@
+@@ -1221,7 +1222,7 @@
      FILE *ptr_file;
  #endif /* HAVE_SSL */
  
@@ -28,7 +28,7 @@
          switch (flag) {
              case 'p':
  		portno = atoi(optarg);
-@@ -1702,6 +1703,9 @@
+@@ -1701,6 +1702,9 @@
  	    case OPT_LOGFILE:
  		test->logfile = strdup(optarg);
  		break;
@@ -38,7 +38,7 @@
  	    case OPT_FORCEFLUSH:
  		test->forceflush = 1;
  		break;
-@@ -3826,6 +3839,44 @@
+@@ -4002,6 +4006,44 @@
      }
  }
  
@@ -83,7 +83,7 @@
  /**
   * Print intermediate results during a test (interval report).
   * Uses print_interval_results to print the results for each stream,
-@@ -4626,6 +4668,7 @@
+@@ -4802,6 +4844,7 @@
          case STREAM_RUNNING:
              /* print interval results for each stream */
              iperf_print_intermediate(test);
@@ -91,7 +91,7 @@
              break;
          case TEST_END:
          case DISPLAY_RESULTS:
-@@ -5261,6 +5304,18 @@
+@@ -5440,6 +5483,18 @@
      return 0;
  }
  

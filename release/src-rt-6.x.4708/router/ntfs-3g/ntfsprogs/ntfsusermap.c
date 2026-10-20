@@ -425,8 +425,10 @@ static void askmapping(const char *accname, const char *filename,
 			printf("   in directory \"%s\"\n",dir);
 #endif
 		}
-		printf("   file \"%s\" has no mapped %s\n",
-			       filename,(type ? "group" : "owner"));
+		printf("   file%s%s%s has no mapped %s\n",
+				filename ? " \"" : "", filename ? filename : "",
+				filename ? "\"" : "",
+				(type ? "group" : "owner"));
 		printf("By which Linux login should this file be owned ?\n");
 		printf("Enter %s of login, or just press \"enter\" if"
 			" this file\n", (type ? "gid" : "uid"));

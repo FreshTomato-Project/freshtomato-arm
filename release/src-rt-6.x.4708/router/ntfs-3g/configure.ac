@@ -24,8 +24,8 @@
 
 # Autoconf
 AC_PREREQ(2.59)
-AC_INIT([ntfs-3g],[2026.7.7],[ntfs-3g-devel@lists.sf.net])
-LIBNTFS_3G_VERSION="90"
+AC_INIT([ntfs-3g],[2026.9.28],[ntfs-3g-devel@lists.sf.net])
+LIBNTFS_3G_VERSION="91"
 AC_CONFIG_SRCDIR([src/ntfs-3g.c])
 
 # Environment
@@ -526,6 +526,18 @@ darwin*)
 	fi
 	;;
 esac
+
+# Checks for declarations
+AC_CHECK_DECL(
+	[optreset],
+	AC_DEFINE(
+		[HAVE_OPTRESET],
+		[1],
+		[Defined to 1 if the 'optreset' global variable is present.]
+	)
+	,
+	[#include <getopt.h>]
+)
 
 # Checks for library functions.
 AC_FUNC_GETMNTENT

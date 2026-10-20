@@ -1530,6 +1530,7 @@ read_error:
 static int ntfs_device_win32_close(struct ntfs_device *dev)
 {
 	win32_fd *fd = (win32_fd *)dev->d_private;
+	BOOL ntdll;
 	BOOL rvl;
 
 	ntfs_log_trace("Closing device %p.\n", dev);
@@ -1545,7 +1546,8 @@ static int ntfs_device_win32_close(struct ntfs_device *dev)
 		if (!CloseHandle(fd->vol_handle))
 			ntfs_log_trace("CloseHandle() failed for volume.\n");
 	}
-	if (fd->ntdll) {
+	ntdll = fd->ntdll;
+	if (ntdll) {
 		ntfs_device_win32_setlock(fd->handle,FSCTL_UNLOCK_VOLUME);
 		rvl = NtClose(fd->handle) == STATUS_SUCCESS;
 	} else
@@ -1554,7 +1556,7 @@ static int ntfs_device_win32_close(struct ntfs_device *dev)
 	free(fd);
 	if (!rvl) {
 		errno = ntfs_w32error_to_errno(GetLastError());
-		if (fd->ntdll)
+		if (ntdll)
 			ntfs_log_trace("NtClose() failed.\n");
 		else
 			ntfs_log_trace("CloseHandle() failed.\n");

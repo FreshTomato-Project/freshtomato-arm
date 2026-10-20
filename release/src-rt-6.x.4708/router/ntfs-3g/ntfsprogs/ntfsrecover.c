@@ -241,8 +241,8 @@ static int replaceusa(struct BUFFER *buffer, unsigned int lth)
 				}
 		}
 	}
-   return (err);
-   }
+	return (err);
+}
 
 /*
  *		Dynamically allocate an attribute key.
@@ -276,14 +276,19 @@ struct ATTR *getattrentry(unsigned int key, unsigned int lth)
 	if ((low < attrcount) && (attrtable[low]->key == key)) {
 		pa = attrtable[low];
 		if (pa->namelen < lth) {
-			pa = (struct ATTR*)realloc(pa,
+			struct ATTR *tmp;
+
+			tmp = (struct ATTR*)realloc(pa,
 					sizeof(struct ATTR) + lth);
-			attrtable[low] = pa;
+			if (tmp) {
+				pa = tmp;
+				attrtable[low] = pa;
+			}
 		}
 	} else {
 		mid = low + 1;
-                if (!low && attrcount && (attrtable[0]->key > key))
-                   mid = 0;
+		if (!low && attrcount && (attrtable[0]->key > key))
+			mid = 0;
 		pa = (struct ATTR*)malloc(sizeof(struct ATTR) + lth);
 		if (pa) {
 			if (attrcount++) {
@@ -303,10 +308,10 @@ struct ATTR *getattrentry(unsigned int key, unsigned int lth)
 						malloc(sizeof(struct ATTR*));
 				attrtable[0] = pa;
 			}
-		pa->key = key;
-		pa->namelen = 0;
-		pa->type = const_cpu_to_le32(0);
-		pa->inode = 0;
+			pa->key = key;
+			pa->namelen = 0;
+			pa->type = const_cpu_to_le32(0);
+			pa->inode = 0;
 		}
 	}
 	return (pa);
@@ -368,10 +373,10 @@ static const struct BUFFER *read_buffer(CONTEXT *ctx, unsigned int num)
 		buffer->rnum = rnum;
 		if (ctx->vol)
 			got = (ntfs_attr_pread(log_na,(u64)rnum << blockbits,
-                		blocksz, buffer->block.data) == blocksz);
+				blocksz, buffer->block.data) == blocksz);
 		else
 			got = !fseek(ctx->file, loclogblk(ctx, rnum), 0)
-			    && (fread(buffer->block.data, blocksz,
+					&& (fread(buffer->block.data, blocksz,
 						1, ctx->file) == 1);
 		if (got) {
 			char *data = buffer->block.data;
@@ -937,8 +942,8 @@ static u16 searchlikely(const struct BUFFER *buf)
 
 	if (opts)
 		printf("** Error : searchlikely() used for syncing\n");
-        data = buf->block.data;
-   	k = buf->headsz;
+	data = buf->block.data;
+	k = buf->headsz;
 	logr = (const LOG_RECORD*)&data[k];
 	if (!likelyop(logr)) {
 		do {
@@ -969,7 +974,7 @@ static u16 searchlikely(const struct BUFFER *buf)
  */
 
 static u16 firstrecord(int skipped, const struct BUFFER *buf,
-		   const struct BUFFER *prevbuf)
+		const struct BUFFER *prevbuf)
 {
 	const RECORD_PAGE_HEADER *rph;
 	const RECORD_PAGE_HEADER *prevrph;
@@ -1243,7 +1248,7 @@ static int refresh_attributes(const struct ACTION_RECORD *firstaction)
 			i = 24;
 			step = getle16(buf, 8);
 			used = getle16(buf, 12);
-	    		/*
+			/*
 			 * Changed from Win10, formerly we got step = 44.
 			 * The record layout has also changed
 			 */
@@ -1394,8 +1399,9 @@ static void fixup(CONTEXT *ctx, const LOG_RECORD *logr, const char *buf,
 		printf("   free base MFT record, attr 0x%x (%s)\n",
 				attr,attrname(attr));
 		printf("   inode %lld\n",
-		    (((long long)sle64_to_cpu(logr->target_vcn) << clusterbits)
-		    + (le16_to_cpu(logr->cluster_index) << 9)) >> mftrecbits);
+			(((long long)sle64_to_cpu(logr->target_vcn) <<
+			clusterbits) + (le16_to_cpu(logr->cluster_index) << 9))
+			>> mftrecbits);
 		break;
 	case CreateAttribute : /* 5 */
 		pa = getattrentry(attr,0);
@@ -1440,7 +1446,7 @@ static void fixup(CONTEXT *ctx, const LOG_RECORD *logr, const char *buf,
 			break;
 		}
 		break;
-      case UpdateResidentValue : /* 7 */
+	case UpdateResidentValue : /* 7 */
 		/*
 		 * The record offset designates the mft attribute offset,
 		 * offs and length define a right-justified window in this
@@ -1450,7 +1456,7 @@ static void fixup(CONTEXT *ctx, const LOG_RECORD *logr, const char *buf,
 		 * information when it is the first attribute in the
 		 * record.
 		 */
-	 	base = 0x18 - offs; /* p 8 */
+		base = 0x18 - offs; /* p 8 */
 		pa = getattrentry(attr,0);
 		firstpos = 0x30 + (((mftrecsz/512 + 1)*2 - 1 ) | 7) + 1;
 		if (pa
@@ -1460,44 +1466,44 @@ static void fixup(CONTEXT *ctx, const LOG_RECORD *logr, const char *buf,
 		   && (le16_to_cpu(logr->record_offset) == firstpos)) {
 			printf("   set standard information, attr 0x%x\n",attr);
 			showattribute("      ",pa);
-	    		if ((base >= 0) && ((base + 8) <= length))
-	       			showdate("   created  ",
+			if ((base >= 0) && ((base + 8) <= length))
+				showdate("   created  ",
 						feedle64(buf,base));
-	    		if (((base + 8) >= 0) && ((base + 16) <= length))
-	       			showdate("   modified ",
+			if (((base + 8) >= 0) && ((base + 16) <= length))
+				showdate("   modified ",
 						feedle64(buf,base + 8));
-	    		if (((base + 16) >= 0) && ((base + 24) <= length))
-	       			showdate("   changed  ",
+			if (((base + 16) >= 0) && ((base + 24) <= length))
+				showdate("   changed  ",
 						feedle64(buf,base + 16));
-	    		if (((base + 24) >= 0) && ((base + 32) <= length))
-	       			showdate("   read     ",
+			if (((base + 24) >= 0) && ((base + 32) <= length))
+				showdate("   read     ",
 						feedle64(buf,base + 24));
-	    		if (((base + 32) >= 0) && ((base + 36) <= length)) {
-	       			v = feedle32(buf, base + 32);
-	       			printf("   DOS flags 0x%lx\n",
+			if (((base + 32) >= 0) && ((base + 36) <= length)) {
+				v = feedle32(buf, base + 32);
+				printf("   DOS flags 0x%lx\n",
 						(long)le32_to_cpu(v));
-	       		}
-	    		if (((base + 52) >= 0) && ((base + 56) <= length)) {
-	       			v = feedle32(buf, base + 52);
-	       			printf("   security id 0x%lx\n",
+			}
+			if (((base + 52) >= 0) && ((base + 56) <= length)) {
+				v = feedle32(buf, base + 52);
+				printf("   security id 0x%lx\n",
 						(long)le32_to_cpu(v));
-	       		}
-	    		if (((base + 64) >= 0) && ((base + 72) <= length)) {
+			}
+			if (((base + 64) >= 0) && ((base + 72) <= length)) {
 				/*
 				 * This is badly aligned for Sparc when
 				 * stamps not present and base == 52
 				 */
 				memcpy(&w, &buf[base + 64], 8);
-	       			printf("   journal idx 0x%llx\n",
+				printf("   journal idx 0x%llx\n",
 						(long long)le64_to_cpu(w));
-	       		}
-	    	} else {
+			}
+		} else {
 			printf("   set an MFT attribute at offset 0x%x, attr 0x%x\n",
 					(int)offs, attr);
 			if (pa)
 				showattribute("      ",pa);
 		}
-	 	break;
+		break;
 	case UpdateNonResidentValue : /* 8 */
 		printf("   set attr 0x%x (%s)\n",attr,attrname(attr));
 		pa = getattrentry(attr,0);
@@ -1523,10 +1529,10 @@ static void fixup(CONTEXT *ctx, const LOG_RECORD *logr, const char *buf,
 				base = 0;  /* entries */
 			inode = feedle64(buf, base);
 			printf("   inode  %lld\n",
-			     (long long)MREF(le64_to_cpu(inode)));
+				(long long)MREF(le64_to_cpu(inode)));
 			inode = feedle64(buf, base + 16);
 			printf("   parent inode %lld\n",
-			     (long long)MREF(le64_to_cpu(inode)));
+				(long long)MREF(le64_to_cpu(inode)));
 			showname("   file    ",&buf[base + 82],
 							buf[base + 80] & 255);
 			showdate("   date    ",feedle64(buf, base + 32));
@@ -1714,7 +1720,7 @@ static void fixup(CONTEXT *ctx, const LOG_RECORD *logr, const char *buf,
 			printf("   DOS flags 0x%lx\n",(long)le32_to_cpu(v));
 		}
 		break;
-      	case SetBitsInNonResidentBitMap : /* 21 */
+	case SetBitsInNonResidentBitMap : /* 21 */
 	case ClearBitsInNonResidentBitMap : /* 22 */
 		if (action == SetBitsInNonResidentBitMap)
 			printf("   SetBitsInNonResidentBitMap, attr 0x%x\n",
@@ -1814,7 +1820,7 @@ static void fixup(CONTEXT *ctx, const LOG_RECORD *logr, const char *buf,
 		break;
 	case AttributeNamesDump : /* 30 */
 		printf("   AttributeNamesDump, attr 0x%x (%s)\n",
-			       attr,attrname(attr));
+				attr,attrname(attr));
 		i = 8;
 		if (i < length) {
 			unsigned int l;
@@ -1907,7 +1913,7 @@ static void detaillogr(CONTEXT *ctx, const LOG_RECORD *logr)
 				(((long long)sle64_to_cpu(logr->target_vcn)
 					<< clusterbits)
 				+ (le16_to_cpu(logr->cluster_index) << 9))
-					 >> mftrecbits);
+					>> mftrecbits);
 		else
 			printf("target_vcn             %016llx\n",
 				(long long)sle64_to_cpu(logr->target_vcn));
@@ -1937,160 +1943,209 @@ static void detaillogr(CONTEXT *ctx, const LOG_RECORD *logr)
 					(long long)((lcn - baselcn)
 						*clustersz/mftrecsz
 					+ (le16_to_cpu(logr->cluster_index)
-						 >> 1)));
+						>> 1)));
 			} else
 				printf("\n");
 		}
-                /*
-                 *  redo_offset and undo_offset are considered unsafe
+		/*
+		 *  redo_offset and undo_offset are considered unsafe
 		 *  (actually they are safe when you know the logic)
-                 *  2) redo : redo (defined by redo_offset)
-                 *  3) undo : undo (defined by undo_offset)
-                 *  4) extra : unknown data (end of undo to data_length)
-                 */
-         end = le32_to_cpu(logr->client_data_length) + LOG_RECORD_HEAD_SZ;
-         if (logr->redo_length && logr->undo_length)
-            {
-                          /* both undo and redo are present */
-            if (le16_to_cpu(logr->undo_offset) <=
+		 *  2) redo : redo (defined by redo_offset)
+		 *  3) undo : undo (defined by undo_offset)
+		 *  4) extra : unknown data (end of undo to data_length)
+		 */
+		end = le32_to_cpu(logr->client_data_length) +
+			LOG_RECORD_HEAD_SZ;
+		if (logr->redo_length && logr->undo_length) {
+				/* both undo and redo are present */
+			if (le16_to_cpu(logr->undo_offset) <=
 						le16_to_cpu(logr->redo_offset))
-               {
-               undo = sizeof(LOG_RECORD) - 8
+			{
+				undo = sizeof(LOG_RECORD) - 8
 					+ 8*le16_to_cpu(logr->lcns_to_follow);
-               if (logr->redo_offset == logr->undo_offset)
-                  redo = undo;
-               else
-                  redo = undo + ((le16_to_cpu(logr->undo_length) - 1) | 7) + 1;
-               extra = redo + ((le16_to_cpu(logr->redo_length) - 1) | 7) + 1;
-               }
-            else
-               {
-               redo = sizeof(LOG_RECORD) - 8
+				if (logr->redo_offset == logr->undo_offset)
+					redo = undo;
+				else
+					redo = undo + ((le16_to_cpu(logr->
+						undo_length) - 1) | 7) + 1;
+				extra = redo + ((le16_to_cpu(logr->
+					redo_length) - 1) | 7) + 1;
+			}
+			else
+			{
+				redo = sizeof(LOG_RECORD) - 8
 					+ 8*le16_to_cpu(logr->lcns_to_follow);
-               undo = redo + ((le16_to_cpu(logr->redo_length) - 1) | 7) + 1;
-               extra = undo + ((le16_to_cpu(logr->undo_length) - 1) | 7) + 1;
-               }
-            }
-         else
-            if (logr->redo_length)
-               {
-                                  /* redo and not undo */
-               redo = undo = sizeof(LOG_RECORD) - 8
+				undo = redo + ((le16_to_cpu(logr->redo_length) -
+					1) | 7) + 1;
+				extra = undo + ((le16_to_cpu(logr->
+					undo_length) - 1) | 7) + 1;
+			}
+		}
+		else {
+			if (logr->redo_length) {
+					/* redo and not undo */
+				redo = undo = sizeof(LOG_RECORD) - 8
 					+ 8*le16_to_cpu(logr->lcns_to_follow);
-               extra = redo + ((le16_to_cpu(logr->redo_length) - 1) | 7) + 1;
-               }
-            else
-               {
-                                  /* optional undo and not redo */
-               redo = undo = sizeof(LOG_RECORD) - 8
+				extra = redo + ((le16_to_cpu(logr->
+					redo_length) - 1) | 7) + 1;
+			}
+			else
+			{
+					/* optional undo and not redo */
+				redo = undo = sizeof(LOG_RECORD) - 8
 					+ 8*le16_to_cpu(logr->lcns_to_follow);
-               extra = undo + ((le16_to_cpu(logr->undo_length) - 1) | 7) + 1;
-               }
+				extra = undo + ((le16_to_cpu(logr->
+					undo_length) - 1) | 7) + 1;
+			}
+		}
 
-         printf("redo 0x%x (%u) undo 0x%x (%u) extra 0x%x (%d)\n",
-                  redo,(int)(((le16_to_cpu(logr->redo_length) - 1) | 7) + 1),
-                  undo,(int)(((le16_to_cpu(logr->undo_length) - 1) | 7) + 1),
-                  extra,(int)(end > extra ? end - extra : 0));
+		printf("redo 0x%x (%u) undo 0x%x (%u) extra 0x%x (%d)\n",
+			redo,
+			(int)(((le16_to_cpu(logr->redo_length) - 1) | 7) + 1),
+			undo,
+			(int)(((le16_to_cpu(logr->undo_length) - 1) | 7) + 1),
+			extra,
+			(int)(end > extra ? end - extra : 0));
 
-	if (logr->redo_length && (get_redo_offset(logr) != redo))
-		printf("** Unexpected redo offset 0x%x %u (%u)\n",
-			get_redo_offset(logr),(int)redo,
-			(int)le16_to_cpu(logr->lcns_to_follow));
-	if (logr->undo_length && (get_undo_offset(logr) != undo))
-		printf("** Unexpected undo offset 0x%x %u (%u)\n",
-			get_undo_offset(logr),(int)undo,
-			(int)le16_to_cpu(logr->lcns_to_follow));
-	if (get_extra_offset(logr) != extra)
-		printf("** Unexpected extra offset 0x%x %u (%u)\n",
-			get_extra_offset(logr),(int)extra,
-			(int)le16_to_cpu(logr->lcns_to_follow));
+		if (logr->redo_length && (get_redo_offset(logr) != redo))
+			printf("** Unexpected redo offset 0x%x %u (%u)\n",
+				get_redo_offset(logr),(int)redo,
+				(int)le16_to_cpu(logr->lcns_to_follow));
+		if (logr->undo_length && (get_undo_offset(logr) != undo))
+			printf("** Unexpected undo offset 0x%x %u (%u)\n",
+				get_undo_offset(logr),(int)undo,
+				(int)le16_to_cpu(logr->lcns_to_follow));
+		if (get_extra_offset(logr) != extra)
+			printf("** Unexpected extra offset 0x%x %u (%u)\n",
+				get_extra_offset(logr),(int)extra,
+				(int)le16_to_cpu(logr->lcns_to_follow));
 
-         if (extra <= end)
-            {
-                                       /* show redo data */
-            if (logr->redo_length)
-               {
-               if (logr->lcns_to_follow)
-                  {
-                  off = le16_to_cpu(logr->record_offset)
-					+ le16_to_cpu(logr->attribute_offset);
-                  printf("redo data (new data) cluster 0x%llx pos 0x%x :\n",
-                        (long long)sle64_to_cpu(logr->lcn_list[off
-						>> clusterbits]),
-                        (int)(off & (clustersz - 1)));
-                  }
-               else
-			printf("redo data (new data) at offs 0x%x :\n",redo);
-               if ((u32)(redo + le16_to_cpu(logr->redo_length))
-                    <= end)
-                  {
-                  hexdump((const char*)logr
-				+ redo,le16_to_cpu(logr->redo_length));
-                  fixup(ctx, logr, (const char*)logr + redo, TRUE);
-                  }
-               else printf("redo data overflowing from record\n");
-               }
-            else
-               {
-               printf("no redo data (new data)\n");
-               fixup(ctx, logr, (const char*)logr + redo, TRUE);
-               }
+		if (extra <= end)
+		{
+				/* show redo data */
+			if (logr->redo_length)
+			{
+				if (logr->lcns_to_follow)
+				{
+					off = le16_to_cpu(logr->record_offset)
+						+ le16_to_cpu(logr->
+						attribute_offset);
+					printf("redo data (new data) cluster "
+						"0x%llx pos 0x%x :\n",
+						(long long)sle64_to_cpu(logr->
+							lcn_list[off >>
+							clusterbits]),
+						(int)(off & (clustersz - 1)));
+				}
+				else {
+					printf("redo data (new data) at offs "
+						"0x%x :\n",
+						redo);
+				}
 
-                                     /* show undo data */
-            if (logr->undo_length)
-               {
-               if (logr->lcns_to_follow)
-                   {
-                   off = le16_to_cpu(logr->record_offset)
-					+ le16_to_cpu(logr->attribute_offset);
-                   printf("undo data (old data) cluster 0x%llx pos 0x%x :\n",
-                         (long long)sle64_to_cpu(logr->lcn_list[off
-							>> clusterbits]),
-                         (int)(off & (clustersz - 1)));
-                   }
-               else printf("undo data (old data) at offs 0x%x :\n",undo);
-               if ((u32)(undo + le16_to_cpu(logr->undo_length)) <= end)
-                  {
-                  if ((undo + le16_to_cpu(logr->undo_length)) < 2*blocksz)
-                     {
-                     hexdump((const char*)logr
-					+ undo,le16_to_cpu(logr->undo_length));
-                     fixup(ctx, logr, (const char*)logr + undo, FALSE);
-                     }
-                  else printf("undo data overflowing from two blocks\n");
-                  }
-               else printf("undo data overflowing from record\n");
-               }
-            else
-               {
-               printf("no undo data (old data)\n");
-               fixup(ctx, logr, (const char*)logr + undo, FALSE);
-               }
+				if ((u32)(redo + le16_to_cpu(logr->redo_length))
+					<= end)
+				{
+					hexdump((const char*)logr + redo,
+						le16_to_cpu(logr->redo_length));
+					fixup(ctx, logr,
+						(const char*)logr + redo, TRUE);
+				}
+				else {
+					printf("redo data overflowing from "
+						"record\n");
+				}
+			}
+			else
+			{
+				printf("no redo data (new data)\n");
+				fixup(ctx, logr, (const char*)logr + redo,
+					TRUE);
+			}
 
-                                    /* show extra data, if any */
-            if (extra != end)
-               {
-               if (end > blocksz)
-                  printf("invalid extra data size\n");
-               else
-                  {
-                  printf("extra data at offs 0x%x\n",extra);
-                  hexdump((const char*)logr + extra,
-                            end - extra);
-                  }
-               }
-            }
-         else
-            {
-			/* sometimes the designated data overflows */
-            if (logr->redo_length
-              && ((u32)(redo + le16_to_cpu(logr->redo_length)) > end))
-                printf("* redo data overflows from record\n");
-            if (logr->undo_length
-              && ((u32)(undo + le16_to_cpu(logr->undo_length)) > end))
-                printf("* undo data overflows from record\n");
-	    }
-         	break;
+					     /* show undo data */
+			if (logr->undo_length)
+			{
+				if (logr->lcns_to_follow) {
+					off = le16_to_cpu(logr->record_offset) +
+						le16_to_cpu(logr->
+						attribute_offset);
+					printf("undo data (old data) cluster "
+						"0x%llx pos 0x%x :\n",
+					(long long)sle64_to_cpu(logr->lcn_list[
+						off >> clusterbits]),
+					(int)(off & (clustersz - 1)));
+				}
+				else {
+					printf("undo data (old data) at offs "
+						"0x%x :\n",
+						undo);
+				}
+
+				if ((u32)(undo + le16_to_cpu(logr->undo_length))
+					<= end)
+				{
+					if ((undo + le16_to_cpu(logr->
+						undo_length)) < 2*blocksz)
+					{
+						hexdump((const char*)logr +
+							undo,
+							le16_to_cpu(logr->
+							undo_length));
+						fixup(ctx, logr,
+							(const char*)logr +
+							undo, FALSE);
+					}
+					else {
+						printf("undo data overflowing "
+							"from two blocks\n");
+					}
+				}
+				else {
+					printf("undo data overflowing from "
+						"record\n");
+				}
+			}
+			else
+			{
+				printf("no undo data (old data)\n");
+				fixup(ctx, logr, (const char*)logr + undo,
+					FALSE);
+			}
+
+				/* show extra data, if any */
+			if (extra != end)
+			{
+				if (end > blocksz) {
+					printf("invalid extra data size\n");
+				}
+				else
+				{
+					printf("extra data at offs 0x%x\n",
+						extra);
+					hexdump((const char*)logr + extra,
+						end - extra);
+				}
+			}
+		}
+		else
+		{
+				/* sometimes the designated data overflows */
+			if (logr->redo_length
+				&& ((u32)(redo + le16_to_cpu(logr->redo_length))
+				> end))
+			{
+				printf("* redo data overflows from record\n");
+			}
+
+			if (logr->undo_length
+				&& ((u32)(undo + le16_to_cpu(logr->undo_length))
+				> end))
+			{
+				printf("* undo data overflows from record\n");
+			}
+		}
+		break;
 	case LOG_CHECKPOINT :
 		printf("---> checkpoint record\n");
 		printf("redo_operation         %04x %s\n",
@@ -2140,9 +2195,9 @@ BOOL within_lcn_range(const LOG_RECORD *logr)
 	BOOL within;
 
 	within = FALSE;
-   	switch (logr->record_type) {
-      	case LOG_STANDARD :
-         	for (i=0; i<le16_to_cpu(logr->lcns_to_follow); i++) {
+	switch (logr->record_type) {
+	case LOG_STANDARD :
+		for (i=0; i<le16_to_cpu(logr->lcns_to_follow); i++) {
 			lcn = MREF(sle64_to_cpu(logr->lcn_list[i]));
 			if ((lcn >= firstlcn) && (lcn <= lastlcn))
 				within = TRUE;
@@ -2210,7 +2265,7 @@ static void showlogr(CONTEXT *ctx, int k, const LOG_RECORD *logr)
 					" previous %016llx",
 					(long long)sle64_to_cpu(
 						logr->client_previous_lsn));
-				
+
 				if (logr->client_undo_next_lsn)
 					printf(" undo %016llx\n",
 						(long long)sle64_to_cpu(
@@ -2292,7 +2347,7 @@ static TRISTATE enqueue_action(CONTEXT *ctx, const LOG_RECORD *logr,
 	struct ACTION_RECORD *action;
 	TRISTATE state;
 	int err;
- 
+
 	err = 1;
 	state = T_ERR;
 		/* enqueue record */
@@ -2356,9 +2411,10 @@ static TRISTATE enqueue_action(CONTEXT *ctx, const LOG_RECORD *logr,
 				ctx->firstaction = action;
 			}
 			ctx->lastaction = (struct ACTION_RECORD*)NULL;
- 		}
+		}
 		if (opts
-		    && ((s64)(sle64_to_cpu(logr->this_lsn) - synced_lsn) <= 0)) {
+		    && ((s64)(sle64_to_cpu(logr->this_lsn) - synced_lsn) <= 0))
+		{
 			if (optv)
 				printf("* Refreshing attributes\n");
 // should refresh backward ?
@@ -2526,8 +2582,8 @@ static u16 overlapshow(CONTEXT *ctx, u16 k, u32 blk, const struct BUFFER *buf,
 					midbuf = read_buffer(ctx, blk + i);
 					if (midbuf) {
 						memcpy(&fullrec[pos],
-							&midbuf->block
-							    .data[blkheadsz],
+							&midbuf->block.data[
+								blkheadsz],
 							nextspace);
 						pos += nextspace;
 					} else
@@ -2678,8 +2734,8 @@ static u16 forward_rcrd(CONTEXT *ctx, u32 blk, u16 pos,
 					}
 					showlogr(ctx, k, logr);
 					if (!logr->client_data_length) {
-						printf("** Bad"
-						    " client_data_length\n");
+						printf("** Bad "
+							"client_data_length\n");
 						stop = TRUE;
 					}
 					k += size;
@@ -2692,8 +2748,8 @@ static u16 forward_rcrd(CONTEXT *ctx, u32 blk, u16 pos,
 					k = overlapshow(ctx, k, blk,
 								buf, nextbuf);
 					stop = TRUE;
-	       			}
-	    		}
+				}
+			}
 		}
 	} else {
 		printf("** Not a RCRD record, MAGIC 0x%08lx\n",
@@ -2741,7 +2797,8 @@ static void showrest(const RESTART_PAGE_HEADER *rest)
 		} else {
 			if (optt)
 				printf("    chkdsk         %016llx\n",
-				    (long long)sle64_to_cpu(rest->chkdsk_lsn));
+					(long long)sle64_to_cpu(rest->
+					chkdsk_lsn));
 		}
 		resa = (const RESTART_AREA*)
 				&data[le16_to_cpu(rest->restart_area_offset)];
@@ -2776,7 +2833,8 @@ static void showrest(const RESTART_PAGE_HEADER *rest)
 		} else {
 			if (optt)
 				printf("    latest         %016llx\n",
-				    (long long)sle64_to_cpu(resa->current_lsn));
+					(long long)sle64_to_cpu(resa->
+					current_lsn));
 		}
 
 		rcli = (const LOG_CLIENT_RECORD*)
@@ -2786,7 +2844,8 @@ static void showrest(const RESTART_PAGE_HEADER *rest)
 			printf("oldest_lsn             %016llx\n",
 				(long long)sle64_to_cpu(rcli->oldest_lsn));
 			printf("client_restart_lsn     %016llx\n",
-				(long long)sle64_to_cpu(rcli->client_restart_lsn));
+				(long long)sle64_to_cpu(rcli->
+				client_restart_lsn));
 			printf("prev_client            %04x\n",
 				(int)le16_to_cpu(rcli->prev_client));
 			printf("next_client            %04x\n",
@@ -3028,9 +3087,9 @@ static int reset_logfile(CONTEXT *ctx __attribute__((unused)))
 					sizeof(LOG_CLIENT_RECORD));
 		if (!ntfs_mst_pre_write_fixup((NTFS_RECORD*)buffer, blocksz)
 		    && (ntfs_attr_pwrite(log_na, 0,
-                		blocksz, buffer) == blocksz)
+				blocksz, buffer) == blocksz)
 		    && (ntfs_attr_pwrite(log_na, (u64)1 << blockbits,
-                		blocksz, buffer) == blocksz))
+				blocksz, buffer) == blocksz))
 			err = 0;
 		free(buffer);
 	}
@@ -3430,8 +3489,8 @@ static TRISTATE backoverlap(CONTEXT *ctx, int blk,
 }
 
 static TRISTATE backward_rcrd(CONTEXT *ctx, u32 blk, int skipped,
-                  const struct BUFFER *buf, const struct BUFFER *prevbuf,
-                  const struct BUFFER *nextbuf)
+		const struct BUFFER *buf, const struct BUFFER *prevbuf,
+		const struct BUFFER *nextbuf)
 {
 	u16 poslist[75]; /* 4096/sizeof(LOG_RECORD) */
 	const RECORD_PAGE_HEADER *rph;
@@ -3460,13 +3519,14 @@ static TRISTATE backward_rcrd(CONTEXT *ctx, u32 blk, int skipped,
 				hexdump(data,blocksz);
 			if (buf->rnum != blk)
 				printf("* RCRD for block %ld 0x%lx"
-				     " in block %ld (addr 0x%llx)\n",
-				     (long)blk,(long)blk,(long)buf->rnum,
-				     (long long)loclogblk(ctx, blk));
+					" in block %ld (addr 0x%llx)\n",
+					(long)blk,(long)blk,(long)buf->rnum,
+					(long long)loclogblk(ctx, blk));
 			else
-				printf("* RCRD in block %ld 0x%lx (addr 0x%llx)\n",
-				     (long)blk,(long)blk,
-				     (long long)loclogblk(ctx, blk));
+				printf("* RCRD in block %ld 0x%lx (addr "
+					"0x%llx)\n",
+					(long)blk,(long)blk,
+					(long long)loclogblk(ctx, blk));
 		} else {
 			if (optt)
 				printf("block %ld\n",(long)blk);
@@ -3530,7 +3590,7 @@ static TRISTATE backward_rcrd(CONTEXT *ctx, u32 blk, int skipped,
 							stop = TRUE;
 					} else {
 						stop = TRUE;
-					}	  
+					}
 				}
 			}
 		} else {
@@ -3650,7 +3710,7 @@ static int walkback(CONTEXT *ctx, const struct BUFFER *buf, u32 blk,
 							(long)buf->rnum,
 							(long)blk,
 							(long long)loclogblk(
-							    ctx,buf->rnum));
+								ctx,buf->rnum));
 					else
 						printf("\n* block %ld at 0x%llx\n",
 							(long)blk,
@@ -3961,7 +4021,7 @@ static int walk(CONTEXT *ctx)
 
 			endblk = (log_major < 2 ? BASEBLKS : RSTBLKS);
 			if ((nextblk == endblk) && (nextblk < firstblk))
-				 nextblk = firstblk;
+				nextblk = firstblk;
 			if ((blk >= endblk) && (blk > lastblk))
 				done = TRUE;
 		} else
@@ -3985,13 +4045,13 @@ static int walk(CONTEXT *ctx)
 				   than restart */
 				rph = &buf->block.record;
 				if ((s64)(sle64_to_cpu(rph->last_end_lsn)
-					  - committed_lsn) > 0) {
+						- committed_lsn) > 0) {
 					committed_lsn =
 						sle64_to_cpu(rph->last_end_lsn);
 					if (optv)
 						printf("* Restart page was "
-						       "obsolete, updated "
-						       "committed lsn\n");
+							"obsolete, updated "
+							"committed lsn\n");
 				}
 			}
 			if (optv)
@@ -4117,20 +4177,20 @@ static void usage(void)
 	fprintf(stderr,"                (e.g. ntfsrecover /dev/sda1)\n"); 
 	fprintf(stderr,"Advanced : ntfsrecover [-b] [-c first-last] [-i] [-f] [-n] [-p count]\n");
 	fprintf(stderr,"                    [-r first-last] [-t] [-u count] [-v] partition\n");
-	fprintf(stderr,"	   -b : show the full log backward\n");
-	fprintf(stderr,"	   -c : restrict to the actions related to cluster range\n");
-	fprintf(stderr,"	   -i : show invalid (stale) records\n");
-	fprintf(stderr,"	   -f : show the full log forward\n");
-	fprintf(stderr,"	   -h : show this help information\n");
-	fprintf(stderr,"	   -k : kill fast restart data\n");
-	fprintf(stderr,"	   -n : do not apply any modification\n");
-	fprintf(stderr,"	   -p : undo the latest count transaction sets and play one\n");
-	fprintf(stderr,"	   -r : show a range of log blocks forward\n");
-	fprintf(stderr,"	   -s : sync the committed changes (default)\n");
-	fprintf(stderr,"	   -t : show transactions\n");
-	fprintf(stderr,"	   -u : undo the latest count transaction sets\n");
-	fprintf(stderr,"	   -v : show more information (-vv yet more)\n");
-	fprintf(stderr,"	   -V : show version and exit\n");
+	fprintf(stderr,"           -b : show the full log backward\n");
+	fprintf(stderr,"           -c : restrict to the actions related to cluster range\n");
+	fprintf(stderr,"           -i : show invalid (stale) records\n");
+	fprintf(stderr,"           -f : show the full log forward\n");
+	fprintf(stderr,"           -h : show this help information\n");
+	fprintf(stderr,"           -k : kill fast restart data\n");
+	fprintf(stderr,"           -n : do not apply any modification\n");
+	fprintf(stderr,"           -p : undo the latest count transaction sets and play one\n");
+	fprintf(stderr,"           -r : show a range of log blocks forward\n");
+	fprintf(stderr,"           -s : sync the committed changes (default)\n");
+	fprintf(stderr,"           -t : show transactions\n");
+	fprintf(stderr,"           -u : undo the latest count transaction sets\n");
+	fprintf(stderr,"           -v : show more information (-vv yet more)\n");
+	fprintf(stderr,"           -V : show version and exit\n");
 }
 
 /*
@@ -4329,44 +4389,44 @@ static BOOL checkstructs(void)
 	BOOL ok;
 
 	ok = TRUE;
-   	if (sizeof(RECORD_PAGE_HEADER) != 40) {
-      		fprintf(stderr,
+	if (sizeof(RECORD_PAGE_HEADER) != 40) {
+		fprintf(stderr,
 			"* error : bad sizeof(RECORD_PAGE_HEADER) %d\n",
 			(int)sizeof(RECORD_PAGE_HEADER));
 		ok = FALSE;
 	}
 	if (sizeof(LOG_RECORD) != 88) {
-      		fprintf(stderr,
+		fprintf(stderr,
 			"* error : bad sizeof(LOG_RECORD) %d\n",
 			(int)sizeof(LOG_RECORD));
 		ok = FALSE;
 	}
-   	if (sizeof(RESTART_PAGE_HEADER) != 32) {
-      		fprintf(stderr,
+	if (sizeof(RESTART_PAGE_HEADER) != 32) {
+		fprintf(stderr,
 			"* error : bad sizeof(RESTART_PAGE_HEADER) %d\n",
 			(int)sizeof(RESTART_PAGE_HEADER));
 		ok = FALSE;
 	}
-   	if (sizeof(RESTART_AREA) != 48) {
-      		fprintf(stderr,
+	if (sizeof(RESTART_AREA) != 48) {
+		fprintf(stderr,
 			"* error : bad sizeof(RESTART_AREA) %d\n",
 			(int)sizeof(RESTART_AREA));
 		ok = FALSE;
 	}
-   	if (sizeof(ATTR_OLD) != 44) {
-      		fprintf(stderr,
+	if (sizeof(ATTR_OLD) != 44) {
+		fprintf(stderr,
 			"* error : bad sizeof(ATTR_OLD) %d\n",
 			(int)sizeof(ATTR_OLD));
 		ok = FALSE;
 	}
-   	if (sizeof(ATTR_NEW) != 40) {
-      		fprintf(stderr,
+	if (sizeof(ATTR_NEW) != 40) {
+		fprintf(stderr,
 			"* error : bad sizeof(ATTR_NEW) %d\n",
 			(int)sizeof(ATTR_NEW));
 		ok = FALSE;
 	}
 	if (LastAction != 38) {
-      		fprintf(stderr,
+		fprintf(stderr,
 			"* error : bad action list, %d actions\n",
 			(int)LastAction);
 		ok = FALSE;

@@ -1792,17 +1792,21 @@ static runlist *alloc_cluster(struct bitmap *bm,
 	}
 
 	while (items > 0) {
+		runlist *tmp;
 
 		if (runs)
 			hint = 0;
 		rle.length = items;
-		if (find_free_cluster(bm, &rle, nr_vol_clusters, hint) == -1)
-			return NULL;
+		if (find_free_cluster(bm, &rle, nr_vol_clusters, hint) == -1) {
+			goto err;
+		}
 
 		rl_size = (runs + 2) * sizeof(runlist_element);
-		if (!(rl = (runlist *)realloc(rl, rl_size)))
-			return NULL;
+		if (!(tmp = (runlist *)realloc(rl, rl_size))) {
+			goto err;
+		}
 
+		rl = tmp;
 		rl_set(rl + runs, vcn, rle.lcn, rle.length);
 
 		vcn += rle.length;
@@ -1817,6 +1821,11 @@ static runlist *alloc_cluster(struct bitmap *bm,
 		dump_runlist(rl);
 	}
 	return rl;
+err:
+	if (rl) {
+		free(rl);
+	}
+	return NULL;
 }
 
 static int read_all(struct ntfs_device *dev, void *buf, int count)
@@ -2098,8 +2107,20 @@ static void relocate_attribute(ntfs_resize_t *resize)
 		if (!replace_attribute_runlist(resize, rl))
 			free(rl);
 		resize->dirty_inode = DIRTY_INODE;
-	} else
+	} else {
+		/*
+		 * If the MFTMirr needed not be relocated, but the MFT did,
+		 * we will have to update its copy of the MFT later.
+		 */
+		if ((resize->mref == FILE_MFTMirr) && (a->type == AT_DATA)
+				&& (resize->mirr_from == MIRR_NEWMFT)) {
+			resize->mftmir_rl.lcn = rl->lcn;
+			resize->mftmir_rl.length = rl->length;
+			resize->mftmir_old = rl->lcn;
+			resize->dirty_inode = DIRTY_INODE;
+		}
 		free(rl);
+	}
 }
 
 static int is_mftdata(ntfs_resize_t *resize)

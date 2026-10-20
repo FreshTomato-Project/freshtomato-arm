@@ -139,18 +139,35 @@ static int parse_options(int argc, char *argv[])
 	int help = 0;
 	int levels = 0;
 	char *endserial;
+	int previous_optind = 1;
+	int i;
 
 	opterr = 0; /* We'll handle the errors, thank you. */
 
 	while ((c = getopt_long(argc, argv, sopt, lopt, NULL)) != -1) {
+		/* The index of the current option depends on whether optind
+		 * incremented since the last iteration. If it didn't then we're
+		 * still processing more characters in the same argv entry,
+		 * which can happen when multiple options are specfied together,
+		 * e.g. "-Vqn". */
+		const int cur_optind =
+			optind - ((previous_optind == optind) ? 0 : 1);
+
+		BOOL invalid_option = FALSE;
+
+		previous_optind = optind;
+
 		switch (c) {
 		case 1:	/* A non-option argument */
-			if (!err && !opts.device)
-				opts.device = argv[optind-1];
-			else if (!err && !opts.label)
-				opts.label = argv[optind-1];
-			else
+			if (!opts.device)
+				opts.device = argv[cur_optind];
+			else if (!opts.label)
+				opts.label = argv[cur_optind];
+			else {
+				ntfs_log_error("Unknown argument '%s'.\n",
+						argv[cur_optind]);
 				err++;
+			}
 			break;
 		case 'f':
 			opts.force++;
@@ -161,8 +178,11 @@ static int parse_options(int argc, char *argv[])
 		case 'I' :	/* not proposed as a short option letter */
 			if (optarg) {
 				opts.serial = strtoull(optarg, &endserial, 16);
-				if (*endserial)
+				if (*endserial) {
 					ntfs_log_error("Bad hexadecimal serial number.\n");
+					++err;
+					break;
+				}
 			}
 			opts.new_serial |= 2;
 			break;
@@ -170,8 +190,11 @@ static int parse_options(int argc, char *argv[])
 			if (optarg) {
 				opts.serial = strtoull(optarg, &endserial, 16)
 							<< 32;
-				if (*endserial)
+				if (*endserial) {
 					ntfs_log_error("Bad hexadecimal serial number.\n");
+					++err;
+					break;
+				}
 			}
 			opts.new_serial |= 1;
 			break;
@@ -190,16 +213,80 @@ static int parse_options(int argc, char *argv[])
 			ver++;
 			break;
 		case '?':
-			if (strncmp (argv[optind-1], "--log-", 6) == 0) {
-				if (!ntfs_log_parse_option (argv[optind-1]))
+			if (strncmp (argv[cur_optind], "--log-", 6) == 0) {
+				if (!ntfs_log_parse_option (argv[cur_optind])) {
 					err++;
+				}
 				break;
 			}
-			/* fall through */
-		default:
-			ntfs_log_error("Unknown option '%s'.\n", argv[optind-1]);
+
+			ntfs_log_error("Unknown option '%s'.\n",
+					argv[cur_optind]);
 			err++;
+			invalid_option = TRUE;
 			break;
+		default:
+			/* This shouldn't happen unless we add an option without
+			 * adding a case for it. */
+			ntfs_log_error("Unrecognized option '%s'.\n",
+					argv[cur_optind]);
+			err++;
+			invalid_option = TRUE;
+			break;
+		}
+
+		if (invalid_option) {
+			if (previous_optind == cur_optind) {
+				/* The invalid option was in the middle of a
+				 * multi-option cluster. In this case we need to
+				 * advance 'optind' or we'll be stuck parsing
+				 * the same option cluster again and again. */
+				++optind;
+			}
+
+			if (optind && optind < argc) {
+				/* We still have arguments to parse. */
+				argc -= optind - 1;
+				argv = &argv[optind - 1];
+
+				previous_optind = 1;
+#ifdef HAVE_OPTRESET
+				/* In the BSD family of operating systems,
+				 * getopt is reset using the global variable
+				 * 'optreset'. */
+				optreset = 1;
+				optind = 1;
+#elif defined(__GLIBC__)
+				/* Systems using glibc can set 'optind' to 0 to
+				 * reinitialize getopt and wipe all previous
+				 * state. */
+				optind = 0;
+#else
+				/* For any other system we can only assume POSIX
+				 * semantics and there's no documented way to
+				 * reset 'getopt' in POSIX, so we stop option
+				 * parsing here without parsing any more
+				 * arguments. */
+				break;
+#endif /* defined(HAVE_OPTRESET) ... defined(__GLIBC__) ... */
+			}
+			else {
+				break;
+			}
+		}
+	}
+
+	/* Parse any options supplied after option parsing ends. */
+	for (i = optind; i < argc; ++i) {
+		if (!opts.device) {
+			opts.device = argv[i];
+		}
+		else if (!opts.label) {
+			opts.label = argv[i];
+		}
+		else {
+			ntfs_log_error("Unknown argument '%s'.\n", argv[i]);
+			err++;
 		}
 	}
 

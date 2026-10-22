@@ -1,0 +1,19 @@
+--- expat/lib/expat_external.h
++++ expat/lib/expat_external.h
+@@ -128,9 +128,15 @@
+
+ /* Marks a function that Expat still provides but that callers should move off
+    of. */
+-#  if defined(__clang__) || defined(__GNUC__)
++/* The message argument to GCC's deprecated attribute was added in GCC 4.5.
++   Keep supporting earlier GCC releases used by embedded toolchains. */
++#  if defined(__clang__) || (defined(__GNUC__)                               \
++                            && ((__GNUC__ > 4)                                \
++                                || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)))
+ #    define XML_ATTR_DEPRECATED(message)                                       \
+       __attribute__((__deprecated__(message)))
++#  elif defined(__GNUC__)
++#    define XML_ATTR_DEPRECATED(message) __attribute__((__deprecated__))
+ #  elif defined(_MSC_VER)
+ #    define XML_ATTR_DEPRECATED(message) __declspec(deprecated(message))
+ #  else

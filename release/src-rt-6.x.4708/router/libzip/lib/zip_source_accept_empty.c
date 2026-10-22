@@ -1,6 +1,6 @@
 /*
   zip_source_accept_empty.c -- if empty source is a valid archive
-  Copyright (C) 2019-2022 Dieter Baron and Thomas Klausner
+  Copyright (C) 2019-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -35,8 +35,7 @@
 #include "zipint.h"
 
 
-bool
-zip_source_accept_empty(zip_source_t *src) {
+bool zip_source_accept_empty(zip_source_t *src) {
     zip_int64_t ret;
 
     if ((zip_source_supports(src) & ZIP_SOURCE_MAKE_COMMAND_BITMASK(ZIP_SOURCE_ACCEPT_EMPTY)) == 0) {

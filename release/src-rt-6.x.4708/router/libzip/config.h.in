@@ -12,6 +12,7 @@
 #cmakedefine HAVE__FILENO
 #cmakedefine HAVE__FSEEKI64
 #cmakedefine HAVE__FSTAT64
+#cmakedefine HAVE__FTELLI64
 #cmakedefine HAVE__SETMODE
 #cmakedefine HAVE__SNPRINTF
 #cmakedefine HAVE__SNPRINTF_S
@@ -26,6 +27,8 @@
 #cmakedefine HAVE_CLONEFILE
 #cmakedefine HAVE_COMMONCRYPTO
 #cmakedefine HAVE_CRYPTO
+#cmakedefine HAVE_EXPLICIT_BZERO
+#cmakedefine HAVE_EXPLICIT_MEMSET
 #cmakedefine HAVE_FICLONERANGE
 #cmakedefine HAVE_FILENO
 #cmakedefine HAVE_FCHMOD
@@ -40,7 +43,6 @@
 #cmakedefine HAVE_LOCALTIME_R
 #cmakedefine HAVE_LOCALTIME_S
 #cmakedefine HAVE_MEMCPY_S
-#cmakedefine HAVE_MBEDTLS
 #cmakedefine HAVE_MKSTEMP
 #cmakedefine HAVE_OPENSSL
 #cmakedefine HAVE_SETMODE
@@ -68,6 +70,7 @@
 #cmakedefine HAVE_SYS_NDIR_H
 #cmakedefine WORDS_BIGENDIAN
 #cmakedefine HAVE_SHARED
+#cmakedefine LZMA_WINDOW_LIMIT ${LZMA_WINDOW_LIMIT}
 /* END DEFINES */
 #define PACKAGE "@CMAKE_PROJECT_NAME@"
 #define VERSION "@CMAKE_PROJECT_VERSION@"

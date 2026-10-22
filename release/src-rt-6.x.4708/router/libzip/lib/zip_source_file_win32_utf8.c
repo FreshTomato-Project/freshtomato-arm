@@ -1,6 +1,6 @@
 /*
   zip_source_file_win32_ansi.c -- source for Windows file opened by UTF-8 name
-  Copyright (C) 1999-2023 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -33,8 +33,7 @@
 
 #include "zip_source_file_win32.h"
 
-ZIP_EXTERN zip_source_t *
-zip_source_file(zip_t *za, const char *fname, zip_uint64_t start, zip_int64_t len) {
+ZIP_EXTERN zip_source_t *zip_source_file(zip_t *za, const char *fname, zip_uint64_t start, zip_int64_t len) {
     if (za == NULL) {
         return NULL;
     }
@@ -43,8 +42,7 @@ zip_source_file(zip_t *za, const char *fname, zip_uint64_t start, zip_int64_t le
 }
 
 
-ZIP_EXTERN zip_source_t *
-zip_source_file_create(const char *fname, zip_uint64_t start, zip_int64_t length, zip_error_t *error) {
+ZIP_EXTERN zip_source_t *zip_source_file_create(const char *fname, zip_uint64_t start, zip_int64_t length, zip_error_t *error) {
     int size;
     wchar_t *wfname;
     zip_source_t *source;

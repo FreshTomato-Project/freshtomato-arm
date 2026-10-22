@@ -1,6 +1,6 @@
 /*
   zip_source_free.c -- free zip data source
-  Copyright (C) 1999-2022 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -37,10 +37,10 @@
 #include "zipint.h"
 
 
-ZIP_EXTERN void
-zip_source_free(zip_source_t *src) {
-    if (src == NULL)
+ZIP_EXTERN void zip_source_free(zip_source_t *src) {
+    if (src == NULL) {
         return;
+    }
 
     if (src->refcount > 0) {
         src->refcount--;
@@ -67,5 +67,6 @@ zip_source_free(zip_source_t *src) {
         zip_source_free(src->src);
     }
 
+    zip_error_fini(&src->error);
     free(src);
 }

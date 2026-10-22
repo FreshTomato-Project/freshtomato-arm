@@ -1,6 +1,6 @@
 /*
   zip_file_set_encryption.c -- set encryption for file in archive
-  Copyright (C) 2016-2023 Dieter Baron and Thomas Klausner
+  Copyright (C) 2016-2025 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -37,8 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-ZIP_EXTERN int
-zip_file_set_encryption(zip_t *za, zip_uint64_t idx, zip_uint16_t method, const char *password) {
+ZIP_EXTERN int zip_file_set_encryption(zip_t *za, zip_uint64_t idx, zip_uint16_t method, const char *password) {
     zip_entry_t *e;
     char *our_password = NULL;
 
@@ -80,17 +79,17 @@ zip_file_set_encryption(zip_t *za, zip_uint64_t idx, zip_uint16_t method, const 
 
     e->changes->encryption_method = method;
     e->changes->changed |= ZIP_DIRENT_ENCRYPTION_METHOD;
+    if (e->changes->changed & ZIP_DIRENT_PASSWORD) {
+        _zip_crypto_clear(e->changes->password, strlen(e->changes->password));
+        free(e->changes->password);
+    }
     if (password) {
         e->changes->password = our_password;
         e->changes->changed |= ZIP_DIRENT_PASSWORD;
     }
     else {
-        if (e->changes->changed & ZIP_DIRENT_PASSWORD) {
-            _zip_crypto_clear(e->changes->password, strlen(e->changes->password));
-            free(e->changes->password);
-            e->changes->password = e->orig ? e->orig->password : NULL;
-            e->changes->changed &= ~ZIP_DIRENT_PASSWORD;
-        }
+        e->changes->password = e->orig ? e->orig->password : NULL;
+        e->changes->changed &= ~ZIP_DIRENT_PASSWORD;
     }
 
     return 0;

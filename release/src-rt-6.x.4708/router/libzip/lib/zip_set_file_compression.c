@@ -1,6 +1,6 @@
 /*
   zip_set_file_compression.c -- set compression for file in archive
-  Copyright (C) 2012-2023 Dieter Baron and Thomas Klausner
+  Copyright (C) 2012-2025 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -35,8 +35,7 @@
 #include "zipint.h"
 
 
-ZIP_EXTERN int
-zip_set_file_compression(zip_t *za, zip_uint64_t idx, zip_int32_t method, zip_uint32_t flags) {
+ZIP_EXTERN int zip_set_file_compression(zip_t *za, zip_uint64_t idx, zip_int32_t method, zip_uint32_t flags) {
     zip_entry_t *e;
 
     if (idx >= za->nentry) {

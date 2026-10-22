@@ -1,6 +1,6 @@
 /*
   zip_source_compress.c -- (de)compression routines
-  Copyright (C) 2017-2023 Dieter Baron and Thomas Klausner
+  Copyright (C) 2017-2025 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -31,10 +31,10 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "zipint.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-#include "zipint.h"
 
 struct context {
     zip_error_t error;
@@ -119,8 +119,7 @@ zip_source_t *zip_source_compress(zip_t *za, zip_source_t *src, zip_int32_t meth
     return compression_source_new(za, src, method, true, compression_flags);
 }
 
-zip_source_t *
-zip_source_decompress(zip_t *za, zip_source_t *src, zip_int32_t method) {
+zip_source_t *zip_source_decompress(zip_t *za, zip_source_t *src, zip_int32_t method) {
     return compression_source_new(za, src, method, false, 0);
 }
 
@@ -161,7 +160,7 @@ static struct context *context_new(zip_int32_t method, bool compress, zip_uint32
         return NULL;
     }
     zip_error_init(&ctx->error);
-    ctx->can_store = compress ? ZIP_CM_IS_DEFAULT(method) : false;
+    ctx->can_store = compress ? method == ZIP_CM_DEFAULT : false;
     ctx->algorithm = algorithm;
     ctx->method = method;
     ctx->compress = compress;
@@ -180,8 +179,7 @@ static struct context *context_new(zip_int32_t method, bool compress, zip_uint32
 }
 
 
-static void
-context_free(struct context *ctx) {
+static void context_free(struct context *ctx) {
     if (ctx == NULL) {
         return;
     }
@@ -193,8 +191,7 @@ context_free(struct context *ctx) {
 }
 
 
-static zip_int64_t
-compress_read(zip_source_t *src, struct context *ctx, void *data, zip_uint64_t len) {
+static zip_int64_t compress_read(zip_source_t *src, struct context *ctx, void *data, zip_uint64_t len) {
     zip_compression_status_t ret;
     bool end;
     zip_int64_t n;
@@ -314,8 +311,7 @@ compress_read(zip_source_t *src, struct context *ctx, void *data, zip_uint64_t l
 }
 
 
-static zip_int64_t
-compress_callback(zip_source_t *src, void *ud, void *data, zip_uint64_t len, zip_source_cmd_t cmd) {
+static zip_int64_t compress_callback(zip_source_t *src, void *ud, void *data, zip_uint64_t len, zip_source_cmd_t cmd) {
     struct context *ctx;
 
     ctx = (struct context *)ud;
@@ -324,13 +320,13 @@ compress_callback(zip_source_t *src, void *ud, void *data, zip_uint64_t len, zip
     case ZIP_SOURCE_OPEN: {
         zip_stat_t st;
         zip_file_attributes_t attributes;
-        
+
         ctx->size = 0;
         ctx->end_of_input = false;
         ctx->end_of_stream = false;
         ctx->is_stored = false;
         ctx->first_read = -1;
-        
+
         if (zip_source_stat(src, &st) < 0 || zip_source_get_file_attributes(src, &attributes) < 0) {
             zip_error_set_from_source(&ctx->error, src);
             return -1;

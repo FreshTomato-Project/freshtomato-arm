@@ -1,6 +1,6 @@
 /*
   zip_random_uwp.c -- fill the user's buffer with random stuff (UWP version)
-  Copyright (C) 2017-2023 Dieter Baron and Thomas Klausner
+  Copyright (C) 2017-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -46,10 +46,10 @@
 **/
 
 #ifdef __cplusplus
-extern "C"
+extern "C" {
 #endif
-int
-LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     zip_t *za;
     const char *name = "test.zip";
     FILE *fp;
@@ -81,3 +81,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     (void)remove(name);
     return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -1,20 +1,46 @@
+## Tests
+
+### Infrastructure
+
+- Make `ziptool` take command from stdin, one command per line.
+- Add option to `ziptool` to not abort on errors.
+- Find framework for C unit tests.
+- Add test program for testing sources, which takes commands from stdin.
+- Switch existing dedicated test programs to one of the above, where possible.
+
+### CI
+
+- Add CI build with sanitizers enabled.
+
+### Specific Tests
+
+- Add test to add/replace/remove files in torrentzip archives.
+
 ## Fuzzing
 
 - improve AES and PKWARE encryption tests
 - add more
 - review memset() uses
 
-### Torrentzip
+## Torrentzip
 
 - Handle data sources with unknown uncompressed size: if we forced ZIP64 and don't need it, return specific error (so calling code can decide what to do (e. g. clear torrentzip flag and call `zip_close()` again)).
 
 ## Other
 
+- Add central overflow check macros, maybe based on C23 `<stdckdint.h>` with fallback backwards compatibility implementation.
+
+- Integrate website into main repository.
+
 - split `zip_source_t` in main part and reference so we can keep track which reference called open and we can invalidate references if the underlying source gets invalidated (e. g. by `zip_close`).
 
 ## Prefixes
 
-For example for adding extractors for self-extracting zip archives.
+The zip format allows for a prefix before the zip archive.  This is used by some applications to store additional data before the zip archive, e.g. self-extracting archives.  libzip can open such archives, but currently does not support creating such archives and deletes the prefix if the archive is modified.
+
+According to the zip format specification, the offsets in archives with a prefix are relative to the start of the file, not the start of the zip archive itself. 
+
+Suggestions for the API:
 ````c
 zip_set_archive_prefix(struct zip *za, const zip_uint8_t *data, zip_uint64_t length);
 const zip_uint8_t *zip_get_archive_prefix(struct zip *za, zip_uint64_t *lengthp);
@@ -36,6 +62,8 @@ const zip_uint8_t *zip_get_archive_prefix(struct zip *za, zip_uint64_t *lengthp)
 * compression/crypt error messages a la `ZIP_ER_ZLIB` (no detailed info passing)
 
 ## Features
+
+* Let sources create extra fields, remove WinZip AES special case from `zip_dirent_write()`.
 
 * consistently use `_zip_crypto_clear()` for passwords
 * support setting extra fields from `zip_source`

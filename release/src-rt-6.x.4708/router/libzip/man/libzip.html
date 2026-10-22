@@ -96,17 +96,17 @@
     allocate them or access their members directly. This allows extending the
     structures in the future without breaking compatibility.</p>
 <section class="Ss">
-<h2 class="Ss" id="zip_t"><a class="permalink" href="#zip_t">zip_t</a></h2>
+<h2 class="Ss" id="zip_t"><a class="permalink" href="#zip_t"><var class="Vt">zip_t</var></a></h2>
 <p class="Pp">This type represents an opened archive. See
     <a class="Xr" href="zip.html">zip(5)</a>.</p>
 </section>
 <section class="Ss">
-<h2 class="Ss" id="zip_file_t"><a class="permalink" href="#zip_file_t">zip_file_t</a></h2>
+<h2 class="Ss" id="zip_file_t"><a class="permalink" href="#zip_file_t"><var class="Vt">zip_file_t</var></a></h2>
 <p class="Pp">This type represents a file from an archive that has been opened
     for reading. See <a class="Xr" href="zip_file.html">zip_file(5)</a>.</p>
 </section>
 <section class="Ss">
-<h2 class="Ss" id="zip_source_t"><a class="permalink" href="#zip_source_t">zip_source_t</a></h2>
+<h2 class="Ss" id="zip_source_t"><a class="permalink" href="#zip_source_t"><var class="Vt">zip_source_t</var></a></h2>
 <p class="Pp">This type represents a source (or destination) of data. It is used
     in <code class="Nm">libzip</code> for providing data when adding or
     replacing files, accessing data from a file inside an archive, and the data
@@ -114,7 +114,7 @@
     <a class="Xr" href="zip_source.html">zip_source(5)</a>.</p>
 </section>
 <section class="Ss">
-<h2 class="Ss" id="zip_error_t"><a class="permalink" href="#zip_error_t">zip_error_t</a></h2>
+<h2 class="Ss" id="zip_error_t"><a class="permalink" href="#zip_error_t"><var class="Vt">zip_error_t</var></a></h2>
 <p class="Pp">This type represents information about an error. Its type can be
     checked against pre-defined constants and it can be converted to a human
     readable string. See
@@ -149,11 +149,17 @@
 <section class="Sh">
 <h1 class="Sh" id="THREAD_SAFETY"><a class="permalink" href="#THREAD_SAFETY">THREAD
   SAFETY</a></h1>
-<p class="Pp">In general, different zip archives opened by
-    <code class="Nm">libzip</code> are independent of each other and can be used
-    by parallel-running threads without locking. If you want to use an archive
-    from multiple threads, you have to synchronize access to it yourself. If you
-    use an archive as a source for
+<p class="Pp">In general, different <var class="Vt">zip_t</var> objects are
+    independent of each other and can be used by parallel-running threads
+    without locking.</p>
+<p class="Pp">If you want to use one <var class="Vt">zip_t</var> object from
+    multiple threads, you have to synchronize access to it yourself.</p>
+<p class="Pp">Alternatively, if you only want to read from an archive, you can
+    open the archive multiple times to create a separate
+    <var class="Vt">zip_t</var> object for each thread; to avoid making changes
+    by mistake, use the flag <code class="Dv">ZIP_RDONLY</code> when opening the
+    archive.</p>
+<p class="Pp">If you use an archive as a source for
     <a class="Xr" href="zip_file_add.html">zip_file_add(3)</a> or
     <a class="Xr" href="zip_file_replace.html">zip_file_replace(3)</a>, access
     to the target archive must be synchronized with access to the source archive
@@ -381,7 +387,7 @@
 </div>
 <table class="foot">
   <tr>
-    <td class="foot-date">May 5, 2025</td>
+    <td class="foot-date">September 16, 2025</td>
     <td class="foot-os">NiH</td>
   </tr>
 </table>

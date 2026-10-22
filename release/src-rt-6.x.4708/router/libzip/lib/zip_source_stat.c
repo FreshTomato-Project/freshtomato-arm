@@ -1,6 +1,6 @@
 /*
   zip_source_stat.c -- get meta information from zip_source
-  Copyright (C) 2009-2023 Dieter Baron and Thomas Klausner
+  Copyright (C) 2009-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -35,8 +35,7 @@
 #include "zipint.h"
 
 
-ZIP_EXTERN int
-zip_source_stat(zip_source_t *src, zip_stat_t *st) {
+ZIP_EXTERN int zip_source_stat(zip_source_t *src, zip_stat_t *st) {
     if (src->source_closed) {
         return -1;
     }

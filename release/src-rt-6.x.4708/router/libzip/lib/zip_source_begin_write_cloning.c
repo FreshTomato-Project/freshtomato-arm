@@ -1,6 +1,6 @@
 /*
   zip_source_begin_write_cloning.c -- clone part of file for writing
-  Copyright (C) 2017-2022 Dieter Baron and Thomas Klausner
+  Copyright (C) 2017-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -35,8 +35,7 @@
 #include "zipint.h"
 
 
-ZIP_EXTERN int
-zip_source_begin_write_cloning(zip_source_t *src, zip_uint64_t offset) {
+ZIP_EXTERN int zip_source_begin_write_cloning(zip_source_t *src, zip_uint64_t offset) {
     if (ZIP_SOURCE_IS_LAYERED(src)) {
         zip_error_set(&src->error, ZIP_ER_OPNOTSUPP, 0);
         return -1;

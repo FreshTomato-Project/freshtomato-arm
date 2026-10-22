@@ -1,6 +1,6 @@
 /*
   zip_set_name.c -- rename helper function
-  Copyright (C) 1999-2022 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -38,8 +38,7 @@
 #include "zipint.h"
 
 
-int
-_zip_set_name(zip_t *za, zip_uint64_t idx, const char *name, zip_flags_t flags) {
+int _zip_set_name(zip_t *za, zip_uint64_t idx, const char *name, zip_flags_t flags) {
     zip_entry_t *e;
     zip_string_t *str;
     bool same_as_orig;
@@ -58,14 +57,21 @@ _zip_set_name(zip_t *za, zip_uint64_t idx, const char *name, zip_flags_t flags) 
     }
 
     if (name && name[0] != '\0') {
-        /* TODO: check for string too long */
-        if ((str = _zip_string_new((const zip_uint8_t *)name, (zip_uint16_t)strlen(name), flags, &za->error)) == NULL)
+        size_t name_len = strlen(name);
+        if (name_len > ZIP_UINT16_MAX) {
+            zip_error_set(&za->error, ZIP_ER_INVAL, 0);
             return -1;
-        if ((flags & ZIP_FL_ENCODING_ALL) == ZIP_FL_ENC_GUESS && _zip_guess_encoding(str, ZIP_ENCODING_UNKNOWN) == ZIP_ENCODING_UTF8_GUESSED)
+        }
+        if ((str = _zip_string_new((const zip_uint8_t *)name, (zip_uint16_t)name_len, flags, &za->error)) == NULL) {
+            return -1;
+        }
+        if ((flags & ZIP_FL_ENCODING_ALL) == ZIP_FL_ENC_GUESS && _zip_guess_encoding(str, ZIP_ENCODING_UNKNOWN) == ZIP_ENCODING_UTF8_GUESSED) {
             str->encoding = ZIP_ENCODING_UTF8_KNOWN;
+        }
     }
-    else
+    else {
         str = NULL;
+    }
 
     /* TODO: encoding flags needed for CP437? */
     if ((i = _zip_name_locate(za, name, 0, NULL)) >= 0 && (zip_uint64_t)i != idx) {
@@ -82,10 +88,12 @@ _zip_set_name(zip_t *za, zip_uint64_t idx, const char *name, zip_flags_t flags) 
 
     e = za->entry + idx;
 
-    if (e->orig)
+    if (e->orig) {
         same_as_orig = _zip_string_equal(e->orig->filename, str);
-    else
+    }
+    else {
         same_as_orig = false;
+    }
 
     if (!same_as_orig && e->changes == NULL) {
         if ((e->changes = _zip_dirent_clone(e->orig)) == NULL) {

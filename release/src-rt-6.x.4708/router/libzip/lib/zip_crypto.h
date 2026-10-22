@@ -1,6 +1,6 @@
 /*
   zip_crypto.h -- crypto definitions
-  Copyright (C) 2017-2022 Dieter Baron and Thomas Klausner
+  Copyright (C) 2017-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -45,8 +45,6 @@
 #include "zip_crypto_gnutls.h"
 #elif defined(HAVE_OPENSSL)
 #include "zip_crypto_openssl.h"
-#elif defined(HAVE_MBEDTLS)
-#include "zip_crypto_mbedtls.h"
 #else
 #error "no crypto backend found"
 #endif

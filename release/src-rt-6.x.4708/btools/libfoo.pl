@@ -302,7 +302,7 @@ sub fixDyn
 	fixDynDep("php-cgi", "libpcreposix.so.0.0.7");
 	fixDynDep("php-cgi", "libpcre2-8.so.0.16.1");
 	fixDynDep("php-cgi", "libpcre2-posix.so.3.0.9");
-	fixDynDep("php-cgi", "libzip.so.5.5");
+	fixDynDep("php-cgi", "libzip.so.5.6");
 	if ($is_arm ne "y") { # MIPS
 		fixDynDep("php-cli", "libxml2.so.2.13.7");
 	}
@@ -323,7 +323,7 @@ sub fixDyn
 	fixDynDep("php-cli", "libpcreposix.so.0.0.7");
 	fixDynDep("php-cli", "libpcre2-8.so.0.16.1");
 	fixDynDep("php-cli", "libpcre2-posix.so.3.0.9");
-	fixDynDep("php-cli", "libzip.so.5.5");
+	fixDynDep("php-cli", "libzip.so.5.6");
 	if ($is_arm ne "y") { # MIPS
 		fixDynDep("php-fpm", "libxml2.so.2.13.7");
 	}
@@ -342,7 +342,7 @@ sub fixDyn
 	fixDynDep("php-fpm", "libjpeg.so.8.3.2");
 	fixDynDep("php-fpm", "libpcre2-8.so.0.16.1");
 	fixDynDep("php-fpm", "libpcre2-posix.so.3.0.9");
-	fixDynDep("php-fpm", "libzip.so.5.5");
+	fixDynDep("php-fpm", "libzip.so.5.6");
 
 	if ($openssldir eq "openssl-3.0") {
 		fixDynDep("curl", "libcurl.so.4.8.0");

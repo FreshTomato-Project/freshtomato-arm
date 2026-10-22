@@ -1,6 +1,6 @@
 /*
   zip_discard.c -- discard and free struct zip
-  Copyright (C) 1999-2022 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -33,6 +33,7 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "zipint.h"
 
@@ -41,18 +42,21 @@
    frees the space allocated to a zipfile struct, and closes the
    corresponding file. */
 
-void
-zip_discard(zip_t *za) {
+void zip_discard(zip_t *za) {
     zip_uint64_t i;
 
-    if (za == NULL)
+    if (za == NULL) {
         return;
+    }
 
     if (za->src) {
         zip_source_close(za->src);
         zip_source_free(za->src);
     }
 
+    if (za->default_password != NULL) {
+        _zip_crypto_clear(za->default_password, strlen(za->default_password));
+    }
     free(za->default_password);
     _zip_string_free(za->comment_orig);
     _zip_string_free(za->comment_changes);
@@ -60,8 +64,9 @@ zip_discard(zip_t *za) {
     _zip_hash_free(za->names);
 
     if (za->entry) {
-        for (i = 0; i < za->nentry; i++)
+        for (i = 0; i < za->nentry; i++) {
             _zip_entry_finalize(za->entry + i);
+        }
         free(za->entry);
     }
 

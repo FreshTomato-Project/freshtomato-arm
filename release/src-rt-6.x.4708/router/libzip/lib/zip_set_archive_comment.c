@@ -1,6 +1,6 @@
 /*
   zip_set_archive_comment.c -- set archive comment
-  Copyright (C) 2006-2023 Dieter Baron and Thomas Klausner
+  Copyright (C) 2006-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -37,8 +37,7 @@
 #include "zipint.h"
 
 
-ZIP_EXTERN int
-zip_set_archive_comment(zip_t *za, const char *comment, zip_uint16_t len) {
+ZIP_EXTERN int zip_set_archive_comment(zip_t *za, const char *comment, zip_uint16_t len) {
     zip_string_t *cstr;
 
     if (ZIP_IS_RDONLY(za)) {
@@ -56,8 +55,9 @@ zip_set_archive_comment(zip_t *za, const char *comment, zip_uint16_t len) {
     }
 
     if (len > 0) {
-        if ((cstr = _zip_string_new((const zip_uint8_t *)comment, len, ZIP_FL_ENC_GUESS, &za->error)) == NULL)
+        if ((cstr = _zip_string_new((const zip_uint8_t *)comment, len, ZIP_FL_ENC_GUESS, &za->error)) == NULL) {
             return -1;
+        }
 
         if (_zip_guess_encoding(cstr, ZIP_ENCODING_UNKNOWN) == ZIP_ENCODING_CP437) {
             _zip_string_free(cstr);
@@ -65,8 +65,9 @@ zip_set_archive_comment(zip_t *za, const char *comment, zip_uint16_t len) {
             return -1;
         }
     }
-    else
+    else {
         cstr = NULL;
+    }
 
     _zip_string_free(za->comment_changes);
     za->comment_changes = NULL;

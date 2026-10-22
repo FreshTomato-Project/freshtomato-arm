@@ -1,6 +1,6 @@
 /*
   zip_source_open.c -- open zip_source (prepare for reading)
-  Copyright (C) 2009-2022 Dieter Baron and Thomas Klausner
+  Copyright (C) 2009-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -34,8 +34,7 @@
 
 #include "zipint.h"
 
-ZIP_EXTERN int
-zip_source_open(zip_source_t *src) {
+ZIP_EXTERN int zip_source_open(zip_source_t *src) {
     if (src->source_closed) {
         return -1;
     }
@@ -66,10 +65,13 @@ zip_source_open(zip_source_t *src) {
         }
     }
 
+    /* TODO: Move the next four lines to into the else branch above, or better yet to zip_source_close()?
+       They should probably only happen when ZIP_SOURCE_IS_OPEN_READING(src) changes, so other references that have the source open are not affected. */
     src->eof = false;
     src->had_read_error = false;
     _zip_error_clear(&src->error);
     src->bytes_read = 0;
+
     src->open_count++;
 
     return 0;

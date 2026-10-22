@@ -1,0 +1,148 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "fseek",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/regress/fseek",
+            "args": [
+                "test.zip",
+                "0",
+                "8"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/regress/data",
+            "environment": [],
+            "externalConsole": false,
+            "console": "integratedTerminal",
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for lldb",
+                    "text": "command script import lldb.macosx.heap",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "test sandbox",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/regress/ziptool_regress",
+            "args": [
+                "--",
+                "encrypt.zip",
+                "get_extra",
+                "0",
+                "0",
+                "l",
+                "get_extra",
+                "0",
+                "0",
+                "c",
+                "get_extra",
+                "0",
+                "1",
+                "l",
+                "get_extra",
+                "0",
+                "1",
+                "c",
+                "get_extra",
+                "0",
+                "2",
+                "l"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/regress/sandbox",
+            "environment": [],
+            "externalConsole": false,
+            "console": "integratedTerminal",
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "test sandbox 2",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/regress/ziptool_regress",
+            "args": [
+                "--",
+                "hmac-error.zip",
+                "set_password",
+                "1234",
+                "cat",
+                "0"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/regress/sandbox_hmac",
+            "environment": [],
+            "externalConsole": false,
+            "console": "integratedTerminal",
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "test ext4fs",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/mnt/build/regress/ziptool_regress",
+            "args": [
+                "--",
+                "testcomment.zip",
+                "set_archive_comment",
+                ""
+            ],
+            "stopAtEntry": false,
+            "cwd": "/mnt/build/regress/sandbox",
+            "environment": [],
+            "externalConsole": false,
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "stopAtEntry": true,
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

@@ -1,3 +1,25 @@
+# 1.12.1 [2026-10-14]
+
+* Protect against denial of service attack (advisory GHSA-m3wq-j48p-jxwh, actually fixed in 1.12).
+* Fix compile issues.
+* Fix adding and replacing files in torrentzip archives.
+* Fix error handling in `zip_source_filep_create()`.
+
+# 1.12 [2026-10-07]
+
+* Keep order of local extra fields, even if an identical extra field is present in the central directory.
+* Add `zip_source_at_eof()` and `ZIP_SOURCE_AT_EOF`.
+* Consistently report CRC and decryption errors when reading exactly to end-of-file.
+* Remove Mbed TLS support - the required functions were made private.
+* Make non-random tests work on macOS and Windows by using a special version of libzip.
+* Securely clear passwords and key material before freeing it.
+* Use SipHash hash function with per-table random keys. This prevents hash flooding attacks.
+* Add compile time option to limit LZMA window size.
+* Add more comprehensive fuzzers for metadata and write code paths.
+* Fix `zip_source_is_seekable()`.
+* Fix setting incorrect WinZIP AES version in some cases.
+* Further improvements to overall stability and other minor adjustments have been made.
+
 # 1.11.4 [2025-05-23]
 
 * Use separate cmake package files for library and programs.
@@ -45,7 +67,7 @@
 * Restore support for torrentzip.
 * Add warnings when using deprecated functions.
 * Allow keeping files for empty archives.
-* Support mbedTLS>=3.3.0.
+* Support Mbed TLS>=3.3.0.
 * Support OpenSSL 3.
 * Use ISO C secure library functions, if available.
 
@@ -134,7 +156,7 @@
 * Fix bug in AES encryption affecting certain file sizes
 * Keep file permissions when modifying zip archives
 * Support systems with small stack size.
-* Support mbed TLS as crypto backend.
+* Support Mbed TLS as crypto backend.
 * Add nullability annotations.
 
 

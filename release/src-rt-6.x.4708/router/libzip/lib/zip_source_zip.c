@@ -1,6 +1,6 @@
 /*
   zip_source_zip.c -- create data source from zip file
-  Copyright (C) 1999-2023 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2025 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -32,6 +32,7 @@
 */
 
 
+/* LCOV_EXCL_START */
 #include <stdlib.h>
 
 #define _ZIP_COMPILING_DEPRECATED
@@ -42,11 +43,11 @@ ZIP_EXTERN zip_source_t *zip_source_zip_create(zip_t *srcza, zip_uint64_t srcidx
         zip_error_set(error, ZIP_ER_INVAL, 0);
         return NULL;
     }
-    
+
     if (len == 0) {
         len = -1;
     }
-    
+
     if (start == 0 && len == -1) {
         flags |= ZIP_FL_COMPRESSED;
     }
@@ -61,3 +62,4 @@ ZIP_EXTERN zip_source_t *zip_source_zip_create(zip_t *srcza, zip_uint64_t srcidx
 ZIP_EXTERN zip_source_t *zip_source_zip(zip_t *za, zip_t *srcza, zip_uint64_t srcidx, zip_flags_t flags, zip_uint64_t start, zip_int64_t len) {
     return zip_source_zip_create(srcza, srcidx, flags, start, len, &za->error);
 }
+/* LCOV_EXCL_STOP */

@@ -2560,13 +2560,13 @@ libzip/build/Makefile:
 			-DENABLE_COMMONCRYPTO=FALSE \
 			-DENABLE_GNUTLS=FALSE \
 			-DENABLE_OPENSSL=FALSE \
-			-DENABLE_MBEDTLS=FALSE \
 			-DENABLE_BZIP2=FALSE \
 			-DENABLE_LZMA=FALSE \
 			-DENABLE_ZSTD=FALSE \
 			-DENABLE_WINDOWS_CRYPTO=FALSE \
 			-DBUILD_TOOLS=FALSE \
 			-DBUILD_REGRESS=FALSE \
+			-DBUILD_OSSFUZZ=FALSE \
 			-DBUILD_EXAMPLES=FALSE \
 			-DBUILD_DOC=FALSE \
 			-DZLIB_INCLUDE_DIR="$(TOP)/zlib/staged/usr/include" \
@@ -2579,8 +2579,8 @@ libzip: libzip/build/Makefile
 	@$(MAKE) -C libzip/build DESTDIR=$(TOP)/libzip/staged install
 
 libzip-install:
-	install -D libzip/build/lib/libzip.so.5.5 $(INSTALLDIR)/libzip/usr/lib/libzip.so.5.5
-	cd $(INSTALLDIR)/libzip/usr/lib/ && $(STRIP) libzip.so.5.5 && ln -sf libzip.so.5.5 libzip.so && ln -sf libzip.so.5.5 libzip.so.5
+	install -D libzip/build/lib/libzip.so.5.6 $(INSTALLDIR)/libzip/usr/lib/libzip.so.5.6
+	cd $(INSTALLDIR)/libzip/usr/lib/ && $(STRIP) libzip.so.5.6 && ln -sf libzip.so.5.6 libzip.so && ln -sf libzip.so.5.6 libzip.so.5
 
 libzip-clean:
 	@rm -rf libzip/build

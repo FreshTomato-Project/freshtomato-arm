@@ -21,7 +21,8 @@
 
 mkdir build
 cd build
-cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_GNUTLS=OFF -DENABLE_MBEDTLS=OFF -DENABLE_OPENSSL=ON -DBUILD_TOOLS=OFF -DHAVE_CRYPTO=ON ..
+# Limit LZMA window size to 1GiB to avoid OOM errors during fuzzing.
+cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_GNUTLS=OFF -DENABLE_OPENSSL=ON -DBUILD_TOOLS=OFF -DHAVE_CRYPTO=ON -DLIMIT_LZMA_WINDOW=1073741824 ..
 make -j$(nproc)
 
 for fuzzer in $(make list-fuzzers | sed -n 's/^FUZZERS: //p')

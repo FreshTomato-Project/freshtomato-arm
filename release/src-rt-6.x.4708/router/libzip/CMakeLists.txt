@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 if (${CMAKE_VERSION} VERSION_LESS "3.17.0")
@@ -6,7 +6,7 @@ if (${CMAKE_VERSION} VERSION_LESS "3.17.0")
 endif()
 
 project(libzip
-  VERSION 1.11.4
+  VERSION 1.12.1
   LANGUAGES C)
 
 if(NOT libzip_VERSION_PATCH)
@@ -15,7 +15,6 @@ endif()
 
 option(ENABLE_COMMONCRYPTO "Enable use of CommonCrypto" ON)
 option(ENABLE_GNUTLS "Enable use of GnuTLS" ON)
-option(ENABLE_MBEDTLS "Enable use of mbed TLS" ON)
 option(ENABLE_OPENSSL "Enable use of OpenSSL" ON)
 option(ENABLE_WINDOWS_CRYPTO "Enable use of Windows cryptography libraries" ON)
 
@@ -24,6 +23,10 @@ option(ENABLE_LZMA "Enable use of LZMA" ON)
 option(ENABLE_ZSTD "Enable use of Zstandard" ON)
 
 option(ENABLE_FDOPEN "Enable zip_fdopen, which is not allowed in Microsoft CRT secure libraries" ON)
+
+option(ENABLE_COVERAGE "Enable code coverage reporting of test suite" OFF)
+
+option(LIMIT_LZMA_WINDOW "Set limit for LZMA window size. Without a limit, LZMA compression can use up to 4GiB of memory" OFF)
 
 option(BUILD_TOOLS "Build tools in the src directory (zipcmp, zipmerge, ziptool)" ON)
 option(BUILD_REGRESS "Build regression tests" ON)
@@ -48,9 +51,6 @@ endif()
 if(ENABLE_GNUTLS)
   find_package(Nettle 3.0)
   find_package(GnuTLS)
-endif()
-if(ENABLE_MBEDTLS)
-  find_package(MbedTLS 1.0)
 endif()
 if(ENABLE_OPENSSL)
   find_package(OpenSSL)
@@ -103,6 +103,7 @@ check_function_exists(_fdopen HAVE__FDOPEN)
 check_function_exists(_fileno HAVE__FILENO)
 check_function_exists(_fseeki64 HAVE__FSEEKI64)
 check_function_exists(_fstat64 HAVE__FSTAT64)
+check_function_exists(_ftelli64 HAVE__FTELLI64)
 check_function_exists(_setmode HAVE__SETMODE)
 check_function_exists(_stat64 HAVE__STAT64)
 check_symbol_exists(_snprintf stdio.h HAVE__SNPRINTF)
@@ -238,6 +239,20 @@ if(ENABLE_LZMA)
   find_package(LibLZMA 5.2)
   if(LIBLZMA_FOUND)
     set(HAVE_LIBLZMA 1)
+    if(LIMIT_LZMA_WINDOW)
+      if(LIMIT_LZMA_WINDOW MATCHES "^[0-9]+$")
+        if(LIMIT_LZMA_WINDOW LESS 524288 OR LIMIT_LZMA_WINDOW GREATER 4294967295)
+          message(FATAL_ERROR "-- LZMA window limit must be between 524288 and 4294967295")
+        else()
+          message(STATUS "Limiting LZMA window size to ${LIMIT_LZMA_WINDOW} bytes")
+          set(LZMA_WINDOW_LIMIT ${LIMIT_LZMA_WINDOW} CACHE INTERNAL "Limit for LZMA window size")
+        endif()
+      else()
+        message(FATAL_ERROR "-- LZMA window limit must be a number between 524288 and 4294967295")
+      endif()
+    else()
+      set(LZMA_WINDOW_LIMIT UINT64_MAX CACHE INTERNAL "Limit for LZMA window size")
+    endif()
   else()
     message(WARNING "-- lzma library not found; lzma/xz support disabled")
   endif(LIBLZMA_FOUND)
@@ -269,13 +284,10 @@ elseif (OPENSSL_FOUND)
 elseif (GNUTLS_FOUND AND NETTLE_FOUND)
   set(HAVE_CRYPTO 1)
   set(HAVE_GNUTLS 1)
-elseif (MBEDTLS_FOUND)
-  set(HAVE_CRYPTO 1)
-  set(HAVE_MBEDTLS 1)
 endif()
 
-if ((ENABLE_COMMONCRYPTO OR ENABLE_GNUTLS OR ENABLE_MBEDTLS OR ENABLE_OPENSSL OR ENABLE_WINDOWS_CRYPTO) AND NOT HAVE_CRYPTO)
-  message(WARNING "-- neither Common Crypto, GnuTLS, mbed TLS, OpenSSL, nor Windows Cryptography found; AES support disabled")
+if ((ENABLE_COMMONCRYPTO OR ENABLE_GNUTLS OR ENABLE_OPENSSL OR ENABLE_WINDOWS_CRYPTO) AND NOT HAVE_CRYPTO)
+  message(WARNING "-- neither Common Crypto, GnuTLS, OpenSSL, nor Windows Cryptography found; AES support disabled")
 endif()
 
 if(MSVC)
@@ -290,13 +302,18 @@ if(WIN32)
 endif(WIN32)
 
 # rpath handling: use rpath in installed binaries
-if(NOT CMAKE_SYSTEM_NAME MATCHES Linux)
+if((NOT CMAKE_SYSTEM_NAME MATCHES Linux) AND (NOT CMAKE_SYSTEM_NAME MATCHES OHOS))
   set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
 # for code completion frameworks
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+if(ENABLE_COVERAGE)
+  find_program(LCOV lcov REQUIRED)
+  find_program(GENHTML genhtml REQUIRED)
+endif()
 
 # Testing
 ENABLE_TESTING()
@@ -325,6 +342,7 @@ if(BUILD_REGRESS AND NOT NIHTEST)
 endif()
 
 if(BUILD_REGRESS)
+  include(CTest)
   add_subdirectory(regress)
 endif()
 
@@ -478,7 +496,6 @@ if(LIBZIP_DO_INSTALL)
   install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindNettle.cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Findzstd.cmake
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindMbedTLS.cmake
     DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/cmake/libzip/modules
   )

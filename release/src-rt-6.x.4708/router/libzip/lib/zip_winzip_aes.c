@@ -1,6 +1,6 @@
 /*
   zip_winzip_aes.c -- Winzip AES de/encryption backend routines
-  Copyright (C) 2017-2022 Dieter Baron and Thomas Klausner
+  Copyright (C) 2017-2024 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -50,8 +50,7 @@ struct _zip_winzip_aes {
     int pad_offset;
 };
 
-static bool
-aes_crypt(zip_winzip_aes_t *ctx, zip_uint8_t *data, zip_uint64_t length) {
+static bool aes_crypt(zip_winzip_aes_t *ctx, zip_uint8_t *data, zip_uint64_t length) {
     zip_uint64_t i, j;
 
     for (i = 0; i < length; i++) {
@@ -74,8 +73,7 @@ aes_crypt(zip_winzip_aes_t *ctx, zip_uint8_t *data, zip_uint64_t length) {
 }
 
 
-zip_winzip_aes_t *
-_zip_winzip_aes_new(const zip_uint8_t *password, zip_uint64_t password_length, const zip_uint8_t *salt, zip_uint16_t encryption_method, zip_uint8_t *password_verify, zip_error_t *error) {
+zip_winzip_aes_t *_zip_winzip_aes_new(const zip_uint8_t *password, zip_uint64_t password_length, const zip_uint8_t *salt, zip_uint16_t encryption_method, zip_uint8_t *password_verify, zip_error_t *error) {
     zip_winzip_aes_t *ctx;
     zip_uint8_t buffer[2 * (MAX_KEY_LENGTH / 8) + WINZIP_AES_PASSWORD_VERIFY_LENGTH];
     zip_uint16_t key_size = 0; /* in bits */
@@ -105,22 +103,27 @@ _zip_winzip_aes_new(const zip_uint8_t *password, zip_uint64_t password_length, c
         return NULL;
     }
 
+    ctx->aes = NULL;
+    ctx->hmac = NULL;
     memset(ctx->counter, 0, sizeof(ctx->counter));
+    memset(ctx->pad, 0, sizeof(ctx->pad));
     ctx->pad_offset = ZIP_CRYPTO_AES_BLOCK_LENGTH;
 
     if (!_zip_crypto_pbkdf2(password, password_length, salt, key_length / 2, PBKDF2_ITERATIONS, buffer, 2 * key_length + WINZIP_AES_PASSWORD_VERIFY_LENGTH)) {
-        free(ctx);
+        zip_error_set(error, ZIP_ER_INTERNAL, 0);
+        _zip_crypto_clear(buffer, sizeof(buffer));
+        _zip_winzip_aes_free(ctx);
         return NULL;
     }
 
     if ((ctx->aes = _zip_crypto_aes_new(buffer, key_size, error)) == NULL) {
-        _zip_crypto_clear(ctx, sizeof(*ctx));
-        free(ctx);
+        _zip_crypto_clear(buffer, sizeof(buffer));
+        _zip_winzip_aes_free(ctx);
         return NULL;
     }
     if ((ctx->hmac = _zip_crypto_hmac_new(buffer + key_length, key_length, error)) == NULL) {
-        _zip_crypto_aes_free(ctx->aes);
-        free(ctx);
+        _zip_crypto_clear(buffer, sizeof(buffer));
+        _zip_winzip_aes_free(ctx);
         return NULL;
     }
 
@@ -128,35 +131,34 @@ _zip_winzip_aes_new(const zip_uint8_t *password, zip_uint64_t password_length, c
         (void)memcpy_s(password_verify, WINZIP_AES_PASSWORD_VERIFY_LENGTH, buffer + (2 * key_size / 8), WINZIP_AES_PASSWORD_VERIFY_LENGTH);
     }
 
+    _zip_crypto_clear(buffer, sizeof(buffer));
+
     return ctx;
 }
 
 
-bool
-_zip_winzip_aes_encrypt(zip_winzip_aes_t *ctx, zip_uint8_t *data, zip_uint64_t length) {
+bool _zip_winzip_aes_encrypt(zip_winzip_aes_t *ctx, zip_uint8_t *data, zip_uint64_t length) {
     return aes_crypt(ctx, data, length) && _zip_crypto_hmac(ctx->hmac, data, length);
 }
 
 
-bool
-_zip_winzip_aes_decrypt(zip_winzip_aes_t *ctx, zip_uint8_t *data, zip_uint64_t length) {
+bool _zip_winzip_aes_decrypt(zip_winzip_aes_t *ctx, zip_uint8_t *data, zip_uint64_t length) {
     return _zip_crypto_hmac(ctx->hmac, data, length) && aes_crypt(ctx, data, length);
 }
 
 
-bool
-_zip_winzip_aes_finish(zip_winzip_aes_t *ctx, zip_uint8_t *hmac) {
+bool _zip_winzip_aes_finish(zip_winzip_aes_t *ctx, zip_uint8_t *hmac) {
     return _zip_crypto_hmac_output(ctx->hmac, hmac);
 }
 
 
-void
-_zip_winzip_aes_free(zip_winzip_aes_t *ctx) {
+void _zip_winzip_aes_free(zip_winzip_aes_t *ctx) {
     if (ctx == NULL) {
         return;
     }
 
     _zip_crypto_aes_free(ctx->aes);
     _zip_crypto_hmac_free(ctx->hmac);
+    _zip_crypto_clear(ctx, sizeof(*ctx));
     free(ctx);
 }

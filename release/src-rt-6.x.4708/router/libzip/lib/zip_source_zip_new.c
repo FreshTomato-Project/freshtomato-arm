@@ -38,7 +38,7 @@
 
 static void _zip_file_attributes_from_dirent(zip_file_attributes_t *attributes, zip_dirent_t *de);
 
-ZIP_EXTERN zip_source_t *zip_source_zip_file(zip_t* za, zip_t *srcza, zip_uint64_t srcidx, zip_flags_t flags, zip_uint64_t start, zip_int64_t len, const char *password) {
+ZIP_EXTERN zip_source_t *zip_source_zip_file(zip_t *za, zip_t *srcza, zip_uint64_t srcidx, zip_flags_t flags, zip_uint64_t start, zip_int64_t len, const char *password) {
     return zip_source_zip_file_create(srcza, srcidx, flags, start, len, password, &za->error);
 }
 
@@ -96,11 +96,23 @@ ZIP_EXTERN zip_source_t *zip_source_zip_file_create(zip_t *srcza, zip_uint64_t s
         return NULL;
     }
 
-    have_size = (st.valid & ZIP_STAT_SIZE) != 0;
-    /* overflow or past end of file */
-    if (len >= 0 && ((start > 0 && start + len < start) || (have_size && start + len > st.size))) {
+    /* Check for overflow of end. */
+    if (len > 0 && start > 0 && start + len < start) {
         zip_error_set(error, ZIP_ER_INVAL, 0);
         return NULL;
+    }
+
+    have_size = (st.valid & ZIP_STAT_SIZE) != 0;
+    if (have_size) {
+        /* Check that start and end are within the size of the file. */
+        if (start > st.size) {
+            zip_error_set(error, ZIP_ER_INVAL, 0);
+            return NULL;
+        }
+        if (len > 0 && start + len > st.size) {
+            zip_error_set(error, ZIP_ER_INVAL, 0);
+            return NULL;
+        }
     }
 
     if (len == -1) {
@@ -116,7 +128,7 @@ ZIP_EXTERN zip_source_t *zip_source_zip_file_create(zip_t *srcza, zip_uint64_t s
         }
     }
     else {
-           data_len = len;
+        data_len = len;
     }
 
     if (have_size) {
@@ -156,24 +168,30 @@ ZIP_EXTERN zip_source_t *zip_source_zip_file_create(zip_t *srcza, zip_uint64_t s
     }
     if (empty_data) {
         src = zip_source_buffer_with_attributes_create(NULL, 0, 0, &attributes, error);
+        /* If we created source buffer above, we want the window source to take ownership of it. */
+        take_ownership = true;
+        /* if we created a buffer source above, then treat it as if
+           reading the changed data - that way we don't need add another
+           special case to the code below that wraps it in the window
+           source */
+        changed_data = true;
     }
     else {
         src = NULL;
     }
 
-
-    /* If we created source buffer above, we want the window source to take ownership of it. */
-    take_ownership = src != NULL;
-    /* if we created a buffer source above, then treat it as if
-       reading the changed data - that way we don't need add another
-       special case to the code below that wraps it in the window
-       source */
-    changed_data = changed_data || (src != NULL);
-
     if (partial_data && !needs_decrypt && !needs_decompress) {
         struct zip_stat st2;
         zip_t *source_archive;
         zip_uint64_t source_index;
+
+        if (start + (zip_uint64_t)data_len > st.comp_size) {
+            zip_error_set(error, ZIP_ER_INCONS, MAKE_DETAIL_WITH_INDEX(ZIP_ER_DETAIL_STORED_SIZE_MISMATCH, srcidx));
+            if (take_ownership) {
+                zip_source_free(src);
+            }
+            return NULL;
+        }
 
         if (changed_data) {
             if (src == NULL) {
@@ -200,9 +218,14 @@ ZIP_EXTERN zip_source_t *zip_source_zip_file_create(zip_t *srcza, zip_uint64_t s
             st2.valid |= ZIP_STAT_MTIME;
         }
 
-        if ((src = _zip_source_window_new(src, start, data_len, &st2, ZIP_STAT_NAME, &attributes, &de->last_mod, source_archive, source_index, take_ownership, error)) == NULL) {
+        s2 = _zip_source_window_new(src, start, data_len, &st2, ZIP_STAT_NAME, &attributes, &de->last_mod, source_archive, source_index, take_ownership, error);
+        if (s2 == NULL) {
+            if (take_ownership) {
+                zip_source_free(src);
+            }
             return NULL;
         }
+        src = s2;
     }
     /* here we restrict src to file data, so no point in doing it for
        source that already represents only the file data */
@@ -210,6 +233,9 @@ ZIP_EXTERN zip_source_t *zip_source_zip_file_create(zip_t *srcza, zip_uint64_t s
         /* this branch is executed only for archive sources; we know
            that stat data come from the archive too, so it's safe to
            assume that st has a comp_size specified */
+        if (take_ownership) {
+            zip_source_free(src);
+        }
         if (st.comp_size > ZIP_INT64_MAX) {
             zip_error_set(error, ZIP_ER_INVAL, 0);
             return NULL;
@@ -219,7 +245,7 @@ ZIP_EXTERN zip_source_t *zip_source_zip_file_create(zip_t *srcza, zip_uint64_t s
            attributes and to have a source that positions the read
            offset properly before each read for multiple zip_file_t
            referring to the same underlying source */
-        if ((src =  _zip_source_window_new(srcza->src, 0, (zip_int64_t)st.comp_size, &st, ZIP_STAT_NAME, &attributes, &de->last_mod, srcza, srcidx, take_ownership, error)) == NULL) {
+        if ((src = _zip_source_window_new(srcza->src, 0, (zip_int64_t)st.comp_size, &st, ZIP_STAT_NAME, &attributes, &de->last_mod, srcza, srcidx, take_ownership, error)) == NULL) {
             return NULL;
         }
     }
@@ -235,9 +261,14 @@ ZIP_EXTERN zip_source_t *zip_source_zip_file_create(zip_t *srcza, zip_uint64_t s
            attributes and to have a source that positions the read
            offset properly before each read for multiple zip_file_t
            referring to the same underlying source */
-        if ((src = _zip_source_window_new(src, 0, data_len, &st, ZIP_STAT_NAME, &attributes, &de->last_mod, NULL, 0, take_ownership, error)) == NULL) {
+        s2 = _zip_source_window_new(src, 0, data_len, &st, ZIP_STAT_NAME, &attributes, &de->last_mod, NULL, 0, take_ownership, error);
+        if (s2 == NULL) {
+            if (take_ownership) {
+                zip_source_free(src);
+            }
             return NULL;
         }
+        src = s2;
     }
 
     /* In all cases, src is a window source and therefore is owned by this function. */
@@ -301,8 +332,7 @@ ZIP_EXTERN zip_source_t *zip_source_zip_file_create(zip_t *srcza, zip_uint64_t s
     return src;
 }
 
-static void
-_zip_file_attributes_from_dirent(zip_file_attributes_t *attributes, zip_dirent_t *de) {
+static void _zip_file_attributes_from_dirent(zip_file_attributes_t *attributes, zip_dirent_t *de) {
     zip_file_attributes_init(attributes);
     attributes->valid = ZIP_FILE_ATTRIBUTES_ASCII | ZIP_FILE_ATTRIBUTES_HOST_SYSTEM | ZIP_FILE_ATTRIBUTES_EXTERNAL_FILE_ATTRIBUTES | ZIP_FILE_ATTRIBUTES_GENERAL_PURPOSE_BIT_FLAGS;
     attributes->ascii = de->int_attrib & 1;

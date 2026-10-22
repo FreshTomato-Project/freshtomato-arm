@@ -1,6 +1,6 @@
 /*
   zip_source_pkware_encode.c -- Traditional PKWARE encryption routines
-  Copyright (C) 2009-2024 Dieter Baron and Thomas Klausner
+  Copyright (C) 2009-2025 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <info@libzip.org>
@@ -31,11 +31,12 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "zipint.h"
+
+#include "zip_random.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-#include "zipint.h"
 
 struct trad_pkware {
     char *password;
@@ -52,8 +53,7 @@ static zip_int64_t pkware_encrypt(zip_source_t *, void *, void *, zip_uint64_t, 
 static void trad_pkware_free(struct trad_pkware *);
 static struct trad_pkware *trad_pkware_new(const char *password, zip_error_t *error);
 
-zip_source_t *
-zip_source_pkware_encode(zip_t *za, zip_source_t *src, zip_uint16_t em, int flags, const char *password) {
+zip_source_t *zip_source_pkware_encode(zip_t *za, zip_source_t *src, zip_uint16_t em, int flags, const char *password) {
     struct trad_pkware *ctx;
     zip_source_t *s2;
 
@@ -94,8 +94,7 @@ zip_source_pkware_encode(zip_t *za, zip_source_t *src, zip_uint16_t em, int flag
 }
 
 
-static int
-encrypt_header(zip_source_t *src, struct trad_pkware *ctx) {
+static int encrypt_header(zip_source_t *src, struct trad_pkware *ctx) {
     zip_uint8_t *header;
 
     if ((ctx->buffer = _zip_buffer_new(NULL, ZIP_CRYPTO_PKWARE_HEADERLEN)) == NULL) {
@@ -121,8 +120,7 @@ encrypt_header(zip_source_t *src, struct trad_pkware *ctx) {
 }
 
 
-static zip_int64_t
-pkware_encrypt(zip_source_t *src, void *ud, void *data, zip_uint64_t length, zip_source_cmd_t cmd) {
+static zip_int64_t pkware_encrypt(zip_source_t *src, void *ud, void *data, zip_uint64_t length, zip_source_cmd_t cmd) {
     struct trad_pkware *ctx;
     zip_int64_t n;
     zip_uint64_t buffer_n;
@@ -130,6 +128,9 @@ pkware_encrypt(zip_source_t *src, void *ud, void *data, zip_uint64_t length, zip
     ctx = (struct trad_pkware *)ud;
 
     switch (cmd) {
+    case ZIP_SOURCE_AT_EOF:
+        return ctx->eof;
+
     case ZIP_SOURCE_OPEN:
         ctx->eof = false;
 
@@ -215,7 +216,7 @@ pkware_encrypt(zip_source_t *src, void *ud, void *data, zip_uint64_t length, zip
         return sizeof(ctx->dostime);
 
     case ZIP_SOURCE_SUPPORTS:
-        return zip_source_make_command_bitmap(ZIP_SOURCE_OPEN, ZIP_SOURCE_READ, ZIP_SOURCE_CLOSE, ZIP_SOURCE_STAT, ZIP_SOURCE_ERROR, ZIP_SOURCE_FREE, ZIP_SOURCE_GET_FILE_ATTRIBUTES, ZIP_SOURCE_GET_DOS_TIME, -1);
+        return zip_source_make_command_bitmap(ZIP_SOURCE_AT_EOF, ZIP_SOURCE_OPEN, ZIP_SOURCE_READ, ZIP_SOURCE_CLOSE, ZIP_SOURCE_STAT, ZIP_SOURCE_ERROR, ZIP_SOURCE_FREE, ZIP_SOURCE_GET_FILE_ATTRIBUTES, ZIP_SOURCE_GET_DOS_TIME, -1);
 
     case ZIP_SOURCE_ERROR:
         return zip_error_to_data(&ctx->error, data, length);
@@ -230,8 +231,7 @@ pkware_encrypt(zip_source_t *src, void *ud, void *data, zip_uint64_t length, zip
 }
 
 
-static struct trad_pkware *
-trad_pkware_new(const char *password, zip_error_t *error) {
+static struct trad_pkware *trad_pkware_new(const char *password, zip_error_t *error) {
     struct trad_pkware *ctx;
 
     if ((ctx = (struct trad_pkware *)malloc(sizeof(*ctx))) == NULL) {
@@ -251,12 +251,12 @@ trad_pkware_new(const char *password, zip_error_t *error) {
 }
 
 
-static void
-trad_pkware_free(struct trad_pkware *ctx) {
+static void trad_pkware_free(struct trad_pkware *ctx) {
     if (ctx == NULL) {
         return;
     }
 
+    _zip_crypto_clear(ctx->password, strlen(ctx->password));
     free(ctx->password);
     _zip_buffer_free(ctx->buffer);
     zip_error_fini(&ctx->error);

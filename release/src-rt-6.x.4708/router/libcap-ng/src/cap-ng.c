@@ -177,7 +177,7 @@ struct cap_ng
 	struct __user_cap_header_struct hdr;
 	cap_data_t data;
 	capng_states_t state;
-	__le32 rootid;
+	uid_t rootid;  // Host endian; only the V3 xattr field is little endian
 	__u32 bounds[VFS_CAP_U32];
 	__u32 ambient[VFS_CAP_U32];
 	unsigned char bounds_state_changed;
@@ -241,6 +241,45 @@ static int gid_in_list(const gid_t *gids, size_t count, gid_t gid)
 			return 1;
 	}
 	return 0;
+}
+
+/*
+ * get_passwd - resolve an account into private storage for a transition.
+ * @uid: target user ID.
+ * @pw: destination account record.
+ *
+ * Returns the allocated string buffer backing @pw, or NULL on lookup or
+ * allocation failure. The caller must retain it until group setup is done.
+ * getpwuid() storage can be overwritten by another thread's account lookup;
+ * thread-local capability state does not protect that libc-owned storage.
+ */
+static char *get_passwd(uid_t uid, struct passwd *pw)
+{
+	long hint = sysconf(_SC_GETPW_R_SIZE_MAX);
+	size_t size = hint > 0 ? (size_t)hint : 1024;
+
+	for (;;) {
+		struct passwd *result;
+		char *buf = malloc(size);
+		int rc;
+
+		if (buf == NULL)
+			return NULL;
+		rc = getpwuid_r(uid, pw, buf, size, &result);
+		if (rc == 0 && result != NULL)
+			return buf;
+		free(buf);
+		if (rc != ERANGE) {
+			errno = rc;
+			return NULL;
+		}
+		/* NSS records can exceed the initial sysconf size suggestion. */
+		if (size > SIZE_MAX / 2) {
+			errno = ENOMEM;
+			return NULL;
+		}
+		size *= 2;
+	}
 }
 
 static int get_additional_groups(const struct passwd *pw, gid_t gid,
@@ -428,7 +467,11 @@ static void init(void)
 #if VFS_CAP_REVISION == VFS_CAP_REVISION_1
 	m.vfs_cap_ver = 1;
 #else
-	m.vfs_cap_ver = 2; // Intentionally set to 2 for both 2 & 3
+	/*
+	 * V2 is the default even when V3 is available. The kernel promotes a
+	 * V2 write from a user namespace to V3 and records the namespace root.
+	 */
+	m.vfs_cap_ver = 2;
 #endif
 
 	memset(&m.data, 0, sizeof(cap_data_t));
@@ -520,7 +563,7 @@ void capng_setpid(int pid)
 	m.hdr.pid = pid;
 }
 
-int capng_get_rootid(void)
+uid_t capng_get_rootid(void)
 {
 #ifdef VFS_CAP_REVISION_3
 	return m.rootid;
@@ -529,7 +572,7 @@ int capng_get_rootid(void)
 #endif
 }
 
-int capng_set_rootid(int rootid)
+int capng_set_rootid(uid_t rootid)
 {
 #ifdef VFS_CAP_REVISION_3
 	if (m.state == CAPNG_NEW)
@@ -537,10 +580,8 @@ int capng_set_rootid(int rootid)
 	if (m.state == CAPNG_ERROR)
 		return -1;
 
-	if (rootid < 0 && rootid != CAPNG_UNSET_ROOTID)
-		return -1;
-
 	m.rootid = rootid;
+	/* An explicit root ID needs V3's additional on-disk field. */
 	if (rootid == CAPNG_UNSET_ROOTID)
 		m.vfs_cap_ver = 2;
 	else
@@ -717,7 +758,7 @@ static int load_data(const struct vfs_ns_cap_data *filedata, int size)
 static int load_data(const struct vfs_cap_data *filedata, int size)
 #endif
 {
-	unsigned int magic;
+	unsigned int i, magic, words;
 
 	if (m.cap_ver == 1)
 		return -1;	// Should never get here but just in case
@@ -729,36 +770,38 @@ static int load_data(const struct vfs_cap_data *filedata, int size)
 			m.vfs_cap_ver = 1;
 			if (size != XATTR_CAPS_SZ_1)
 				return -1;
+			words = 1;
 			break;
 		case VFS_CAP_REVISION_2:
 			m.vfs_cap_ver = 2;
 			if (size != XATTR_CAPS_SZ_2)
 				return -1;
+			words = VFS_CAP_U32;
 			break;
 #ifdef VFS_CAP_REVISION_3
 		case VFS_CAP_REVISION_3:
 			m.vfs_cap_ver = 3;
 			if (size != XATTR_CAPS_SZ_3)
 				return -1;
+			words = VFS_CAP_U32;
 			break;
 #endif
 		default:
 			return -1;
 	}
 
-	// Now stuff the data structures
-	m.data.v3[0].permitted = FIXUP(filedata->data[0].permitted);
-	m.data.v3[1].permitted = FIXUP(filedata->data[1].permitted);
-	m.data.v3[0].inheritable = FIXUP(filedata->data[0].inheritable);
-	m.data.v3[1].inheritable = FIXUP(filedata->data[1].inheritable);
-	if (magic & VFS_CAP_FLAGS_EFFECTIVE) {
-		m.data.v3[0].effective =
-			m.data.v3[0].permitted | m.data.v3[0].inheritable;
-		m.data.v3[1].effective =
-			m.data.v3[1].permitted | m.data.v3[1].inheritable;
-	} else {
-		m.data.v3[0].effective = 0;
-		m.data.v3[1].effective = 0;
+	/*
+	 * Revision 1 contains only data[0]. Clear fields omitted by older
+	 * formats before copying the number of words validated above.
+	 */
+	memset(&m.data, 0, sizeof(m.data));
+	m.rootid = CAPNG_UNSET_ROOTID;
+	for (i = 0; i < words; i++) {
+		m.data.v3[i].permitted = FIXUP(filedata->data[i].permitted);
+		m.data.v3[i].inheritable = FIXUP(filedata->data[i].inheritable);
+		if (magic & VFS_CAP_FLAGS_EFFECTIVE)
+			m.data.v3[i].effective = m.data.v3[i].permitted |
+						m.data.v3[i].inheritable;
 	}
 #ifdef VFS_CAP_REVISION_3
 	if (size == XATTR_CAPS_SZ_3) {
@@ -777,9 +820,9 @@ int capng_get_caps_fd(int fd)
 #else
 	int rc;
 #ifdef VFS_CAP_REVISION_3
-	struct vfs_ns_cap_data filedata;
+	struct vfs_ns_cap_data filedata = { 0 };
 #else
-	struct vfs_cap_data filedata;
+	struct vfs_cap_data filedata = { 0 };
 #endif
 	if (m.state == CAPNG_NEW)
 		init();
@@ -1063,18 +1106,22 @@ static int save_data(struct vfs_cap_data *filedata, int *size)
 		filedata->data[0].inheritable = FIXUP(m.data.v3[0].inheritable);
 		filedata->data[1].permitted = FIXUP(m.data.v3[1].permitted);
 		filedata->data[1].inheritable = FIXUP(m.data.v3[1].inheritable);
-		filedata->magic_etc = FIXUP(VFS_CAP_REVISION_2 | eff);
-		*size = XATTR_CAPS_SZ_2;
-	}
 #ifdef VFS_CAP_REVISION_3
-	if (m.vfs_cap_ver == 3) {
-		// Kernel doesn't support namespaces with non-0 rootid
-		if (m.rootid != 0)
-			return -1;
-		filedata->rootid = FIXUP(m.rootid);
-		*size = XATTR_CAPS_SZ_3;
-	}
+		/*
+		 * V3 adds rootid to the V2 capability words. Its revision, rootid,
+		 * and 24-byte size must be written together as one xattr format.
+		 */
+		if (m.vfs_cap_ver == 3) {
+			filedata->magic_etc = FIXUP(VFS_CAP_REVISION_3 | eff);
+			filedata->rootid = FIXUP(m.rootid);
+			*size = XATTR_CAPS_SZ_3;
+		} else
 #endif
+		{
+			filedata->magic_etc = FIXUP(VFS_CAP_REVISION_2 | eff);
+			*size = XATTR_CAPS_SZ_2;
+		}
+	}
 
 	return 0;
 }
@@ -1134,7 +1181,8 @@ int capng_change_id(int uid, int gid, capng_flags_t flag)
 	};
 	unsigned int tmp_caps = 0;
 	int rc, ret;
-	struct passwd *pw = NULL;
+	struct passwd pw;
+	char *pw_buf = NULL;
 	gid_t *gids = NULL, *merged = NULL;
 	size_t gid_cnt = 0, merged_cnt = 0;
 
@@ -1183,7 +1231,13 @@ if (HAVE_PR_CAPBSET_DROP) {
 	}
 }
 #endif
-	if (gid != -1) {
+	/*
+	 * Supplementary groups need SETGID even when the primary gid stays
+	 * unchanged. Keep it through the intermediate capset, then remove only
+	 * the bits added here so caller-requested permitted bits survive.
+	 */
+	if (gid != -1 || (flag & CAPNG_APPLY_STAGED_GROUPS) ||
+	    ((flag & CAPNG_INIT_SUPP_GRP) && uid != -1)) {
 		if (capng_have_capability(CAPNG_EFFECTIVE, CAP_SETGID) == 0) {
 			tmp_caps |= TMP_SETGID_E;
 			capng_update(CAPNG_ADD, CAPNG_EFFECTIVE, CAP_SETGID);
@@ -1230,7 +1284,7 @@ if (HAVE_PR_CAPBSET_DROP) {
 			goto err_out;
 		}
 	}
-	// Apply a caller-prepared bounding set only when it is explicitly dirty.
+	// Apply a caller-prepared bounding set only when it is explicitly dirty
 	if ((flag & CAPNG_APPLY_BOUNDING) && m.bounds_state_changed) {
 		rc = capng_apply(CAPNG_SELECT_BOUNDS);
 		if (rc) {
@@ -1251,8 +1305,8 @@ if (HAVE_PR_CAPBSET_DROP) {
 
 	// Resolve the passwd entry once when natural group setup is requested.
 	if ((flag & CAPNG_INIT_SUPP_GRP) && uid != -1) {
-		pw = getpwuid(uid);
-		if (pw == NULL) {
+		pw_buf = get_passwd(uid, &pw);
+		if (pw_buf == NULL) {
 			ret = -10;
 			goto err_out;
 		}
@@ -1263,10 +1317,10 @@ if (HAVE_PR_CAPBSET_DROP) {
 	if ((flag & CAPNG_INIT_SUPP_GRP) &&
 			(flag & CAPNG_APPLY_STAGED_GROUPS)) {
 		if (uid != -1) {
-			gid_t base_gid = gid != -1 ? (gid_t)gid : pw->pw_gid;
+			gid_t base_gid = gid != -1 ? (gid_t)gid : pw.pw_gid;
 
 			// Build the natural target account group list first.
-			rc = get_additional_groups(pw, base_gid, &gids,
+			rc = get_additional_groups(&pw, base_gid, &gids,
 						   &gid_cnt);
 			if (rc) {
 				ret = -15;
@@ -1286,10 +1340,10 @@ if (HAVE_PR_CAPBSET_DROP) {
 			goto err_out;
 		}
 	} else if ((flag & CAPNG_INIT_SUPP_GRP) && uid != -1) {
-		gid_t base_gid = gid != -1 ? (gid_t)gid : pw->pw_gid;
+		gid_t base_gid = gid != -1 ? (gid_t)gid : pw.pw_gid;
 
 		// Preserve the long-standing initgroups-only behavior.
-		if (initgroups(pw->pw_name, base_gid)) {
+		if (initgroups(pw.pw_name, base_gid)) {
 			ret = -5;
 			goto err_out;
 		}
@@ -1351,6 +1405,7 @@ err_out:
 	prctl(PR_SET_KEEPCAPS, 0, 0, 0, 0);
 out:
 	// Staged gids are one-shot state, so always clear them before return.
+	free(pw_buf);
 	free(gids);
 	free(merged);
 	clear_staged_additional_groups(&m);
@@ -1361,17 +1416,31 @@ int capng_lock(void)
 {
 	int rc = 0;
 
-	// If either fail, return -1 since something is not right
-#ifdef PR_SET_SECUREBITS
-	if (prctl(PR_SET_SECUREBITS,
-			1 << SECURE_NOROOT |
-			1 << SECURE_NOROOT_LOCKED |
-			1 << SECURE_NO_SETUID_FIXUP |
-			1 << SECURE_NO_SETUID_FIXUP_LOCKED, 0, 0, 0) < 0)
+#if defined(PR_GET_SECUREBITS) && defined(PR_SET_SECUREBITS)
+	int securebits;
+	unsigned int locked;
+
+	securebits = prctl(PR_GET_SECUREBITS, 0UL, 0UL, 0UL, 0UL);
+	if (securebits < 0) {
 		rc = -1;
+	} else {
+		/*
+		 * PR_SET_SECUREBITS replaces the complete word. Preserve bits set
+		 * by the caller, including policy bits added by newer kernels.
+		 */
+		locked = (unsigned int)securebits |
+			1U << SECURE_NOROOT |
+			1U << SECURE_NOROOT_LOCKED |
+			1U << SECURE_NO_SETUID_FIXUP |
+			1U << SECURE_NO_SETUID_FIXUP_LOCKED;
+		if (locked != (unsigned int)securebits &&
+			prctl(PR_SET_SECUREBITS, (unsigned long)locked,
+						0UL, 0UL, 0UL) < 0)
+			rc = -1;
+	}
 #endif
 #ifdef PR_SET_NO_NEW_PRIVS
-	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0)
+	if (prctl(PR_SET_NO_NEW_PRIVS, 1UL, 0UL, 0UL, 0UL) < 0)
 		rc += -2;
 #endif
 	return rc;
@@ -1635,6 +1704,8 @@ if (HAVE_PR_CAP_AMBIENT) {
 			// Make it big enough for bounding & ambient set, too
 			size_t buf_size = 180;
 			ptr = malloc(buf_size);
+			if (ptr == NULL)
+				return ptr;
 			if (m.cap_ver == 1) {
 				// 22 * 3 + 1
 				snprintf(ptr, buf_size,

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.1-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * cap_audit.bpf.c - Capture capability checks for a target application
  * Copyright (c) 2026 Red Hat Inc.
@@ -19,7 +19,18 @@
  *   Portions of this code were made with codex 5.2
  */
 
+#ifdef __clang__
+/*
+ * bpftool can emit nameless BTF declarations in vmlinux.h. Clang warns about
+ * those generated declarations even though this program does not use them.
+ */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-declarations"
+#endif
 #include "vmlinux.h"
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #ifndef CAP_OPT_NOAUDIT
 #define CAP_OPT_NOAUDIT 2
@@ -29,11 +40,30 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
+#define CAP_VERSION_1	0x19980330
+#define CAP_VERSION_2	0x20071026
+#define CAP_VERSION_3	0x20080522
+#define CAP_SETPCAP	8
+#define PR_SET_KEEPCAPS	8
+
+struct cap_user_header {
+	__u32 version;
+	int pid;
+};
+
+struct cap_user_data {
+	__u32 effective;
+	__u32 permitted;
+	__u32 inheritable;
+};
+
+const volatile int capset_syscall_nr = -1;
+const volatile int prctl_syscall_nr = -1;
+
 /*
  * BPF overview:
- * The BPF side attaches to capability helpers (cap_capable, ns_capable,
- * capable) and syscall tracepoints to capture capability checks only for a
- * target process tree.
+ * The BPF side attaches to cap_capable and syscall tracepoints to capture
+ * capability checks only for a target process tree.
  *
  * The design challenge is noise filtering: distinguish capability checks
  * caused by the target application from kernel-internal checks running under
@@ -59,24 +89,25 @@
  * the initial exec remain in phase 1 until their own exec transition.
  *
  * raw_syscalls/sys_enter and sys_exit use should_trace_pid() (phase > 0)
- * so syscall context is available the instant the exec gate opens.
+ * so syscall context and completion results are available the instant the
+ * exec gate opens.
  * Capability hooks use should_record_pid() (phase >= 2), so only post-exec
  * capability checks are emitted.
  *
  * For traced tasks, the program builds cap_event records with task identity,
  * syscall context, namespace inode, the CAP_OPT_* flags passed to
- * cap_capable(), and stack id; tracks per-capability statistics; and
- * streams finalized events to userspace through a ring buffer. The cap_opts
- * field carries the CAP_OPT_* flags so userspace can correlate known
- * advisory call sites without treating CAP_OPT_NOAUDIT as a standalone
- * filter. CAP_OPT_NOAUDIT means "do not audit" and is only a confirming
- * signal alongside syscall and capability matching. Fork/exit tracepoints
- * keep the PID filter in sync so children are traced and exits are pruned.
+ * cap_capable(), and streams finalized events through a ring buffer. A syscall
+ * completion event correlates denied checks from one invocation with its raw
+ * kernel return value. Successful capset completion events also carry the
+ * requested masks so userspace can distinguish a current-binary compatibility
+ * constraint from confirmed capability use. The cap_opts field carries the
+ * CAP_OPT_* flags so userspace can identify known advisory call sites without
+ * treating
+ * CAP_OPT_NOAUDIT as a standalone filter. CAP_OPT_NOAUDIT means "do not
+ * audit" and is only a confirming signal alongside syscall and capability
+ * matching. Fork/exit tracepoints keep the PID filter in sync so children
+ * are traced and exits are pruned.
  */
-
-#ifndef PERF_MAX_STACK_DEPTH
-#define PERF_MAX_STACK_DEPTH 127
-#endif
 
 #if !defined(__TARGET_ARCH_x86) && !defined(__TARGET_ARCH_arm64) && \
 	!defined(__TARGET_ARCH_arm) && !defined(__TARGET_ARCH_powerpc) && \
@@ -105,25 +136,31 @@
 
 char LICENSE[] SEC("license") = "GPL";
 
+enum cap_event_type {
+	CAP_EVENT_CHECK,
+	CAP_EVENT_SYSCALL_RESULT,
+	CAP_EVENT_CAPSET,
+	CAP_EVENT_KEEPCAPS,
+	CAP_EVENT_TASK_END,
+};
+
 struct cap_event {
-	__u64 timestamp_ns;
 	__u32 pid;
-	__u32 tid;
-	__u32 uid;
-	__u32 gid;
 	int capability;
 	int result;
 	int syscall_nr;
 	char comm[TASK_COMM_LEN];
-	__u64 stack_id;
 	__u32 targ_ns_inum;
 	__u32 cap_opts;
-};
-
-struct cap_stats {
-	__u64 checks;
-	__u64 granted;
-	__u64 denied;
+	__s64 syscall_ret;
+	__u64 denied_caps;
+	__u64 capset_effective;
+	__u64 capset_permitted;
+	__u64 capset_inheritable;
+	__u32 event_type;
+	__u32 capset_inh_optional;
+	__u32 tid;
+	__u32 keepcaps;
 };
 
 // This sets the limit for how many child processes can be traced.
@@ -147,69 +184,7 @@ struct {
 	__uint(max_entries, 256 * 1024);
 } cap_events SEC(".maps");
 
-// This declares how many unique stack traces to hold. This is used
-// to determine which syscall a capability was requested from. If this
-// fills up, no more stack traces will be collected. This is about
-// 1K per entry. (Default uses 20 MB of memory)
-struct {
-	__uint(type, BPF_MAP_TYPE_STACK_TRACE);
-	__uint(key_size, sizeof(__u32));
-	__uint(value_size, PERF_MAX_STACK_DEPTH * sizeof(__u64));
-	__uint(max_entries, 20000);
-} stack_traces SEC(".maps");
-
-// This declares how many capabilities can be watched. As of the 6.18
-// kernel, it only uses 40. So, 64 is future proof as none have been added
-// in a while.
-struct {
-	__uint(type, BPF_MAP_TYPE_ARRAY);
-	__type(key, __u32);
-	__type(value, struct cap_stats);
-	__uint(max_entries, 64);
-} capability_stats SEC(".maps");
-
-// The cap_events_inflight map uses pid_tgid as the key. There is a race
-// scenario when deep syscall chains that check multiple capabilities
-// or nested function calls where each checks a capability. In these cases
-// because it uses the same pid_tgid, it can overwrite a previous event.
-// example:
-//
-// In kernel, during mount():
-// sys_mount() {
-//  First check
-//  if (!capable(CAP_SYS_ADMIN))  // ← kprobe #1 fires
-//      return -EPERM;
-//
-//  Path resolution might trigger
-//  if (!capable(CAP_DAC_OVERRIDE))  // ← kprobe #2 fires BEFORE kretprobe #1!
-//      return -EACCES;
-//  ... more work ...
-//
-//    return 0;  // ← kretprobe #1 and #2 fire
-//}
-//
-// Statistics are SAFE: The capability_stats map is updated immediately in
-// the kprobe using atomic operations, so counts are always accurate. The
-// probability is higher for complex syscalls like mount, setuid, or network
-// operations.
-//
-// Possible solutions
-// Option 1: Per-CPU Map - change to BPF_MAP_TYPE_PERCPU_HASH. Drawback is
-// it uses a map for each CPU so if 64 cores, map is 64KB of memory.
-//
-// Option 2: Include Stack Pointer in Key -
-// key[0] = bpf_get_current_pid_tgid();
-// key[1] = PT_REGS_SP(ctx);  // Stack pointer makes it unique
-// bpf_map_update_elem(&cap_events_inflight, &key, ev, BPF_ANY);
-//
-// Option 3: Accept the Race (Current Approach)
-// Rationale:
-// * The capability_stats map is always correct (atomic updates)
-// * Individual event details might be wrong, but aggregate data is right
-// * For the tool's purpose (determining required capabilities), statistics
-//   are what matter
-// * Individual events are mainly for debugging/verbose mode
-
+/* Pair capability entry and return probes by thread. */
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__type(key, __u64);
@@ -227,10 +202,22 @@ struct {
 // affect tracing on CPU1. This is just mentioned here because it is
 // an esoteric problem and not likely to show up. But this documents
 // it and a possible solution. The drawback is that it uses more memory.
+struct syscall_state {
+	__u64 denied_caps;
+	__u64 capset_effective;
+	__u64 capset_permitted;
+	__u64 capset_inheritable;
+	__u64 capset_optional_cred;
+	int nr;
+	__u8 capset_valid;
+	__u8 keepcaps_valid;
+	__u8 keepcaps;
+};
+
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__type(key, __u64);
-	__type(value, int);
+	__type(value, struct syscall_state);
 	__uint(max_entries, 4096);
 } current_syscalls SEC(".maps");
 
@@ -265,66 +252,6 @@ static __always_inline int should_record_pid(__u32 pid)
 }
 
 /*
- * record_stats - increment capability check count.
- * @cap: capability number.
- *
- * Increments the "checks" counter for the capability in capability_stats.
- * Out-of-range capability numbers are ignored. Returns nothing.
- */
-static __always_inline void record_stats(int cap)
-{
-	__u32 key;
-	struct cap_stats *stats;
-
-	if (cap < 0 || cap >= 64)
-		return;
-
-	key = (__u32)cap;
-	stats = bpf_map_lookup_elem(&capability_stats, &key);
-	if (stats)
-		__sync_fetch_and_add(&stats->checks, 1);
-	else {
-		struct cap_stats new_stats = { 0 };
-
-		new_stats.checks = 1;
-		if (!bpf_map_update_elem(&capability_stats, &key,
-					 &new_stats, BPF_NOEXIST))
-			return;
-
-		stats = bpf_map_lookup_elem(&capability_stats, &key);
-		if (stats)
-			__sync_fetch_and_add(&stats->checks, 1);
-	}
-}
-
-/*
- * update_result_stats - record whether a capability check succeeded.
- * @cap: capability number from the in-flight event.
- * @ret: return value from the capability helper (0 = granted).
- *
- * Updates the granted/denied counters for the capability when a matching
- * entry already exists. Out-of-range capability numbers are ignored.
- */
-static __always_inline void update_result_stats(int cap, int ret)
-{
-	__u32 key;
-	struct cap_stats *stats;
-
-	if (cap < 0 || cap >= 64)
-		return;
-
-	key = (__u32)cap;
-	stats = bpf_map_lookup_elem(&capability_stats, &key);
-	if (!stats)
-		return;
-
-	if (!ret)
-		__sync_fetch_and_add(&stats->granted, 1);
-	else
-		__sync_fetch_and_add(&stats->denied, 1);
-}
-
-/*
  * read_syscall - fetch the syscall number for the current task.
  * @ctx: pt_regs provided by the kprobe.
  *
@@ -335,12 +262,12 @@ static __always_inline void update_result_stats(int cap, int ret)
 static __always_inline int read_syscall(struct pt_regs *ctx)
 {
 	__u64 pid_tgid;
-	int *nr;
+	struct syscall_state *syscall;
 
 	pid_tgid = bpf_get_current_pid_tgid();
-	nr = bpf_map_lookup_elem(&current_syscalls, &pid_tgid);
-	if (nr)
-		return *nr;
+	syscall = bpf_map_lookup_elem(&current_syscalls, &pid_tgid);
+	if (syscall)
+		return syscall->nr;
 
 #ifdef __TARGET_ARCH_x86
 	return BPF_CORE_READ(ctx, orig_ax);
@@ -355,68 +282,111 @@ static __always_inline int read_syscall(struct pt_regs *ctx)
 #endif
 }
 
-/*
- * fill_event_common - populate the static fields of a cap_event.
- * @ev: event structure to fill.
- * @ctx: pt_regs from the capability hook.
- * @cap: capability number being checked.
- *
- * Captures PID/TID, timestamp, UID/GID, command name, syscall number, and
- * user stack id for the current task.
- */
-static __always_inline void fill_event_common(struct cap_event *ev,
-					      struct pt_regs *ctx, int cap)
+/* Record a denied check against the syscall invocation that contained it. */
+static __always_inline void mark_syscall_denial(int cap)
 {
+	struct syscall_state *syscall;
 	__u64 pid_tgid;
-	__u64 uid_gid;
+
+	if (cap < 0 || cap >= 64)
+		return;
 
 	pid_tgid = bpf_get_current_pid_tgid();
-	ev->pid = pid_tgid >> 32;
-	ev->tid = (__u32)pid_tgid;
-	ev->capability = cap;
-	ev->timestamp_ns = bpf_ktime_get_ns();
-
-	uid_gid = bpf_get_current_uid_gid();
-	ev->uid = uid_gid >> 32;
-	ev->gid = (__u32)uid_gid;
-	bpf_get_current_comm(&ev->comm, sizeof(ev->comm));
-
-	ev->syscall_nr = read_syscall(ctx);
-	ev->stack_id = bpf_get_stackid(ctx, &stack_traces,
-				       BPF_F_USER_STACK);
+	syscall = bpf_map_lookup_elem(&current_syscalls, &pid_tgid);
+	if (syscall)
+		syscall->denied_caps |= 1ULL << cap;
 }
 
 /*
- * stash_event - store a partially filled event until the kretprobe fires.
- * @ev: event to stash.
+ * cap_capset() checks SETPCAP through cap_inh_is_capped() even when the
+ * requested inheritable set is already allowed without that capability.
+ * A granted probe in that case is not a deployment requirement. Identify
+ * it from the kernel's copied arguments, not a racy userspace snapshot or
+ * the initial executable's file xattr (children may use different caps).
  *
- * Keeps the event keyed by pid_tgid in cap_events_inflight so the return
- * probe can finalize result status before emitting to userspace.
+ * Keep the observation unless all reads succeed and new I is a subset of
+ * old I | old P. Compare opaque storage: the same bitwise subset test works
+ * for both kernel_cap_t layouts (u32[2] and u64), on either endianness.
+ * The return probe bounds this annotation to this thread's cap_capset call.
  */
-static __always_inline void stash_event(struct cap_event *ev)
+SEC("kprobe/cap_capset")
+int BPF_KPROBE(trace_cap_capset, struct cred *new,
+	       const struct cred *old, const kernel_cap_t *effective,
+	       const kernel_cap_t *inheritable)
 {
-	__u64 pid_tgid;
+	__u64 pid_tgid = bpf_get_current_pid_tgid();
+	struct syscall_state *syscall;
+	__u64 new_i, old_i, old_p;
 
-	pid_tgid = bpf_get_current_pid_tgid();
-	bpf_map_update_elem(&cap_events_inflight, &pid_tgid, ev,
-			    BPF_ANY);
+	syscall = bpf_map_lookup_elem(&current_syscalls, &pid_tgid);
+	if (!syscall)
+		return 0;
+	syscall->capset_optional_cred = 0;
+	if (bpf_core_type_size(kernel_cap_t) != sizeof(new_i) ||
+	    bpf_probe_read_kernel(&new_i, sizeof(new_i), inheritable) ||
+	    bpf_core_read(&old_i, sizeof(old_i), &old->cap_inheritable) ||
+	    bpf_core_read(&old_p, sizeof(old_p), &old->cap_permitted))
+		return 0;
+	if ((new_i & ~(old_i | old_p)) == 0)
+		syscall->capset_optional_cred = (__u64)old;
+	return 0;
+}
+
+SEC("kretprobe/cap_capset")
+int BPF_KRETPROBE(trace_cap_capset_ret, int ret)
+{
+	__u64 pid_tgid = bpf_get_current_pid_tgid();
+	struct syscall_state *syscall;
+
+	syscall = bpf_map_lookup_elem(&current_syscalls, &pid_tgid);
+	if (syscall)
+		syscall->capset_optional_cred = 0;
+	return 0;
 }
 
 /*
- * submit_event - finalize and emit a stashed event to the ring buffer.
- * @ret: return code from the capability helper (0 = granted).
- *
- * Looks up the in-flight event, copies it to the ring buffer, sets the result
- * flag (1 = granted, 0 = denied), and removes the temporary entry. Returns 0
- * whether or not an event was emitted.
+ * Observe cap_capable only: capable and ns_capable wrappers reach this
+ * common hook and would overwrite the same per-thread in-flight event.
+ * Their boolean return values also have the opposite meaning to its errno.
  */
-static __always_inline int submit_event(int ret)
+SEC("kprobe/cap_capable")
+int BPF_KPROBE(trace_cap_capable, const struct cred *cred,
+	       struct user_namespace *targ_ns, int cap, unsigned int opts)
 {
-	__u64 pid_tgid;
+	struct cap_event ev = { 0 };
+	__u64 pid_tgid = bpf_get_current_pid_tgid();
+	struct syscall_state *syscall;
+
+	ev.pid = pid_tgid >> 32;
+	ev.tid = (__u32)pid_tgid;
+	if (!should_record_pid(ev.pid))
+		return 0;
+
+	ev.capability = cap;
+	ev.cap_opts = opts;
+	ev.syscall_nr = read_syscall(ctx);
+	syscall = bpf_map_lookup_elem(&current_syscalls, &pid_tgid);
+	if (cap == CAP_SETPCAP && syscall && syscall->capset_optional_cred &&
+	    syscall->capset_optional_cred == (__u64)cred &&
+	    targ_ns == BPF_CORE_READ(cred, user_ns))
+		ev.capset_inh_optional = 1;
+	bpf_get_current_comm(&ev.comm, sizeof(ev.comm));
+	if (targ_ns) {
+		struct ns_common *ns = (struct ns_common *)targ_ns;
+
+		ev.targ_ns_inum = BPF_CORE_READ(ns, inum);
+	}
+	bpf_map_update_elem(&cap_events_inflight, &pid_tgid, &ev, BPF_ANY);
+	return 0;
+}
+
+SEC("kretprobe/cap_capable")
+int BPF_KRETPROBE(trace_cap_capable_ret, int ret)
+{
+	__u64 pid_tgid = bpf_get_current_pid_tgid();
 	struct cap_event *stored;
 	struct cap_event *out;
 
-	pid_tgid = bpf_get_current_pid_tgid();
 	stored = bpf_map_lookup_elem(&cap_events_inflight, &pid_tgid);
 	if (!stored)
 		return 0;
@@ -427,6 +397,8 @@ static __always_inline int submit_event(int ret)
 
 	__builtin_memcpy(out, stored, sizeof(*out));
 	out->result = ret ? 0 : 1;
+	if (ret && !out->capset_inh_optional)
+		mark_syscall_denial(stored->capability);
 
 	bpf_ringbuf_submit(out, 0);
 
@@ -436,149 +408,45 @@ cleanup:
 }
 
 /*
- * handle_capable - common logic for capability helper entry probes.
- * @ctx: pt_regs for the probed function.
- * @cap: capability number under evaluation.
- * @targ_ns: optional target namespace pointer (may be NULL).
+ * read_capset_payload - copy capability masks from capset user arguments.
+ * @ctx: raw syscall entry context containing header and data pointers.
+ * @syscall: per-thread syscall state to populate.
  *
- * Filters by PID first; for traced tasks it records a stats increment,
- * populates a cap_event with contextual information, and stashes it so the
- * return probe can attach the result. Returns 0 to indicate the kprobe should
- * allow normal execution to continue.
+ * Marks the payload valid only for a recognized ABI and complete user read.
  */
-static __always_inline int handle_capable(struct pt_regs *ctx, int cap,
-					  struct user_namespace *targ_ns,
-					  unsigned int cap_opts)
+static __always_inline void read_capset_payload(
+			struct trace_event_raw_sys_enter *ctx,
+			struct syscall_state *syscall)
 {
-	struct cap_event ev = { 0 };
-	__u32 pid;
+	struct cap_user_header header;
+	struct cap_user_data data[2] = { 0 };
+	const void *header_ptr = (const void *)ctx->args[0];
+	const void *data_ptr = (const void *)ctx->args[1];
 
-	pid = bpf_get_current_pid_tgid() >> 32;
-	if (!should_record_pid(pid))
-		return 0;
+	if (!header_ptr || !data_ptr)
+		return;
+	if (bpf_probe_read_user(&header, sizeof(header), header_ptr) != 0)
+		return;
 
-	/* Track how many times this capability was inspected. */
-	record_stats(cap);
-	/* Collect task identity, syscall, and stack trace information. */
-	fill_event_common(&ev, ctx, cap);
-	ev.cap_opts = (__u32)cap_opts;
-
-	if (targ_ns) {
-		struct ns_common *ns;
-
-		ns = (struct ns_common *)targ_ns;
-		ev.targ_ns_inum = BPF_CORE_READ(ns, inum);
+	if (header.version == CAP_VERSION_1) {
+		if (bpf_probe_read_user(&data[0], sizeof(data[0]),
+					data_ptr) != 0)
+			return;
+	} else if (header.version == CAP_VERSION_2 ||
+		   header.version == CAP_VERSION_3) {
+		if (bpf_probe_read_user(data, sizeof(data), data_ptr) != 0)
+			return;
+	} else {
+		return;
 	}
 
-	/* Save event so the kretprobe can add the success/failure result. */
-	stash_event(&ev);
-	return 0;
-}
-
-/*
- * trace_cap_capable - entry probe for cap_capable().
- *
- * Delegates to handle_capable(). Arguments mirror the kernel helper and the
- * capability number, namespace pointer, and opts value are recorded for the
- * in-flight event. Returns 0.
- */
-SEC("kprobe/cap_capable")
-int BPF_KPROBE(trace_cap_capable, const struct cred *cred,
-	       struct user_namespace *targ_ns, int cap, unsigned int opts)
-{
-	return handle_capable(ctx, cap, targ_ns, opts);
-}
-
-/*
- * trace_cap_capable_ret - return probe for cap_capable().
- * @ret: kernel return value (0 = granted).
- *
- * Updates result statistics for the capability tied to this pid_tgid and
- * emits the finalized event to userspace. Always returns 0.
- */
-SEC("kretprobe/cap_capable")
-int BPF_KRETPROBE(trace_cap_capable_ret, int ret)
-{
-	__u64 pid_tgid;
-	struct cap_event *stored;
-
-	pid_tgid = bpf_get_current_pid_tgid();
-	stored = bpf_map_lookup_elem(&cap_events_inflight, &pid_tgid);
-	if (stored)
-		update_result_stats(stored->capability, ret);
-
-	return submit_event(ret);
-}
-
-/*
- * trace_ns_capable - entry probe for ns_capable().
- *
- * Uses handle_capable() to capture namespace-aware capability checks. Returns
- * 0.
- */
-SEC("kprobe/ns_capable")
-int BPF_KPROBE(trace_ns_capable, struct user_namespace *ns, int cap)
-{
-	return handle_capable(ctx, cap, ns, 0);
-}
-
-/*
- * trace_ns_capable_ret - return probe for ns_capable().
- * @ret: kernel return value.
- *
- * Emits the stored event with the grant/deny result. Returns 0.
- */
-SEC("kretprobe/ns_capable")
-int BPF_KRETPROBE(trace_ns_capable_ret, int ret)
-{
-	return submit_event(ret);
-}
-
-/*
- * trace_ns_capable_noaudit - entry probe for ns_capable_noaudit().
- *
- * Captures capability checks that bypass kernel audit logging but should be
- * observed by the auditor. Returns 0.
- */
-SEC("kprobe/ns_capable_noaudit")
-int BPF_KPROBE(trace_ns_capable_noaudit, struct user_namespace *ns, int cap)
-{
-	return handle_capable(ctx, cap, ns, 0);
-}
-
-/*
- * trace_ns_capable_noaudit_ret - return probe for ns_capable_noaudit().
- * @ret: kernel return value.
- *
- * Finalizes and emits the stored event. Returns 0.
- */
-SEC("kretprobe/ns_capable_noaudit")
-int BPF_KRETPROBE(trace_ns_capable_noaudit_ret, int ret)
-{
-	return submit_event(ret);
-}
-
-/*
- * trace_capable - entry probe for capable().
- *
- * Handles capability checks that do not involve namespaces. Returns 0.
- */
-SEC("kprobe/capable")
-int BPF_KPROBE(trace_capable, int cap)
-{
-	return handle_capable(ctx, cap, NULL, 0);
-}
-
-/*
- * trace_capable_ret - return probe for capable().
- * @ret: kernel return value.
- *
- * Emits the stored capability event. Returns 0.
- */
-SEC("kretprobe/capable")
-int BPF_KRETPROBE(trace_capable_ret, int ret)
-{
-	return submit_event(ret);
+	syscall->capset_effective = data[0].effective |
+				      ((__u64)data[1].effective << 32);
+	syscall->capset_permitted = data[0].permitted |
+				      ((__u64)data[1].permitted << 32);
+	syscall->capset_inheritable = data[0].inheritable |
+					((__u64)data[1].inheritable << 32);
+	syscall->capset_valid = 1;
 }
 
 /*
@@ -591,29 +459,112 @@ int BPF_KRETPROBE(trace_capable_ret, int ret)
 SEC("tracepoint/raw_syscalls/sys_enter")
 int trace_sys_enter(struct trace_event_raw_sys_enter *ctx)
 {
+	struct syscall_state syscall = { 0 };
 	__u64 pid_tgid;
 	__u32 pid;
-	__u32 id;
 
 	pid_tgid = bpf_get_current_pid_tgid();
 	pid = pid_tgid >> 32;
 	if (!should_trace_pid(pid))
 		return 0;
 
-	id = ctx->id;
-	bpf_map_update_elem(&current_syscalls, &pid_tgid, &id, BPF_ANY);
+	syscall.nr = ctx->id;
+	if (should_record_pid(pid) && ctx->id == capset_syscall_nr)
+		read_capset_payload(ctx, &syscall);
+	if (should_record_pid(pid) && ctx->id == prctl_syscall_nr &&
+	    (int)ctx->args[0] == PR_SET_KEEPCAPS && ctx->args[1] <= 1) {
+		syscall.keepcaps_valid = 1;
+		syscall.keepcaps = ctx->args[1];
+	}
+	bpf_map_update_elem(&current_syscalls, &pid_tgid, &syscall, BPF_ANY);
 	return 0;
 }
 
+static __always_inline void emit_syscall_result(
+				const struct syscall_state *syscall, __s64 ret)
+{
+	struct cap_event *out;
+	__u64 pid_tgid;
+
+	if (syscall->denied_caps == 0)
+		return;
+
+	out = bpf_ringbuf_reserve(&cap_events, sizeof(*out), 0);
+	if (!out)
+		return;
+
+	__builtin_memset(out, 0, sizeof(*out));
+	pid_tgid = bpf_get_current_pid_tgid();
+	out->pid = pid_tgid >> 32;
+	out->syscall_nr = syscall->nr;
+	out->syscall_ret = ret;
+	out->denied_caps = syscall->denied_caps;
+	out->event_type = CAP_EVENT_SYSCALL_RESULT;
+	bpf_ringbuf_submit(out, 0);
+}
+
+/* Emit masks installed by a successful capset call. */
+static __always_inline void emit_capset_result(
+				const struct syscall_state *syscall, __s64 ret)
+{
+	struct cap_event *out;
+	__u64 pid_tgid;
+
+	if (!syscall->capset_valid || ret != 0)
+		return;
+
+	out = bpf_ringbuf_reserve(&cap_events, sizeof(*out), 0);
+	if (!out)
+		return;
+
+	__builtin_memset(out, 0, sizeof(*out));
+	pid_tgid = bpf_get_current_pid_tgid();
+	out->pid = pid_tgid >> 32;
+	out->syscall_nr = syscall->nr;
+	out->syscall_ret = ret;
+	out->capset_effective = syscall->capset_effective;
+	out->capset_permitted = syscall->capset_permitted;
+	out->capset_inheritable = syscall->capset_inheritable;
+	out->event_type = CAP_EVENT_CAPSET;
+	bpf_ringbuf_submit(out, 0);
+}
+
+/* Report keepcaps completion; failed prctls must not change phase tracking. */
+static __always_inline void emit_keepcaps_result(
+				const struct syscall_state *syscall, __s64 ret)
+{
+	struct cap_event *out;
+	__u64 pid_tgid;
+
+	if (!syscall->keepcaps_valid)
+		return;
+	out = bpf_ringbuf_reserve(&cap_events, sizeof(*out), 0);
+	if (!out)
+		return;
+	__builtin_memset(out, 0, sizeof(*out));
+	pid_tgid = bpf_get_current_pid_tgid();
+	out->pid = pid_tgid >> 32;
+	out->tid = (__u32)pid_tgid;
+	out->syscall_nr = syscall->nr;
+	out->syscall_ret = ret;
+	out->keepcaps = syscall->keepcaps;
+	out->event_type = CAP_EVENT_KEEPCAPS;
+	bpf_ringbuf_submit(out, 0);
+}
+
 /*
- * trace_sys_exit - clear syscall tracking on exit.
+ * trace_sys_exit - emit denied-check outcomes and clear syscall tracking.
  * @ctx: raw_syscalls/sys_exit tracepoint context.
  *
- * Removes the stored syscall number for the thread when tracing. Returns 0.
+ * Emits the raw return value when the invocation contained denied capability
+ * checks. A successful capset also emits its requested masks, and keepcaps
+ * prctls emit their result so userspace can pair credential transitions.
+ * Removes the per-thread state before returning 0.
  */
 SEC("tracepoint/raw_syscalls/sys_exit")
 int trace_sys_exit(struct trace_event_raw_sys_exit *ctx)
 {
+	struct syscall_state *syscall;
 	__u64 pid_tgid;
 	__u32 pid;
 
@@ -622,6 +573,12 @@ int trace_sys_exit(struct trace_event_raw_sys_exit *ctx)
 	if (!should_trace_pid(pid))
 		return 0;
 
+	syscall = bpf_map_lookup_elem(&current_syscalls, &pid_tgid);
+	if (syscall) {
+		emit_syscall_result(syscall, ctx->ret);
+		emit_capset_result(syscall, ctx->ret);
+		emit_keepcaps_result(syscall, ctx->ret);
+	}
 	bpf_map_delete_elem(&current_syscalls, &pid_tgid);
 	return 0;
 }
@@ -654,6 +611,24 @@ int trace_sched_process_fork(struct trace_event_raw_sched_process_fork *ctx)
 	return 0;
 }
 
+/* Do not pair keepcaps calls across exec, thread exit, or TID reuse. */
+static __always_inline void emit_task_end(__u32 tid)
+{
+	struct cap_event *out;
+	__u32 pid = bpf_get_current_pid_tgid() >> 32;
+
+	if (!should_record_pid(pid))
+		return;
+	out = bpf_ringbuf_reserve(&cap_events, sizeof(*out), 0);
+	if (!out)
+		return;
+	__builtin_memset(out, 0, sizeof(*out));
+	out->pid = pid;
+	out->tid = tid;
+	out->event_type = CAP_EVENT_TASK_END;
+	bpf_ringbuf_submit(out, 0);
+}
+
 /*
  * trace_sched_process_exec - mark a traced PID as post-exec.
  * @ctx: sched_process_exec tracepoint data.
@@ -668,6 +643,8 @@ int trace_sched_process_exec(struct trace_event_raw_sched_process_exec *ctx)
 	__u8 *val;
 	__u8 new_val = 2;
 
+	/* A non-leader exec changes TID; close the old thread's window. */
+	emit_task_end(ctx->old_pid);
 	pid = bpf_get_current_pid_tgid() >> 32;
 	val = bpf_map_lookup_elem(&target_pids, &pid);
 	if (val)
@@ -688,6 +665,7 @@ int trace_sched_process_exit(struct trace_event_raw_sched_process_template *ctx)
 {
 	__u32 pid;
 
+	emit_task_end((__u32)bpf_get_current_pid_tgid());
 	pid = ctx->pid;
 	bpf_map_delete_elem(&target_pids, &pid);
 

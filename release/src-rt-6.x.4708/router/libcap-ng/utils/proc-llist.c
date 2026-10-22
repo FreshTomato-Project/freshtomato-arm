@@ -1,6 +1,6 @@
 /*
 * proc-llist.c - Minimal linked list library
-* Copyright (c) 2009, 2020 Red Hat Inc.
+* Copyright (c) 2009, 2020, 2026 Red Hat Inc.
 * All Rights Reserved.
 *
 * This software may be freely redistributed and/or modified under the
@@ -102,3 +102,24 @@ lnode *list_find_inode(llist *l, unsigned long i)
 	return NULL;
 }
 
+/*
+ * Continue iterating over entries that share the same inode. netcap records
+ * one node per process/socket pair, so callers need to walk every match.
+ */
+lnode *list_next_inode(llist *l, unsigned long i)
+{
+	register lnode *cur;
+
+	if (l == NULL || l->cur == NULL)
+		return NULL;
+
+	cur = l->cur->next;
+	while (cur) {
+		if (cur->inode == i) {
+			l->cur = cur;
+			return cur;
+		}
+		cur = cur->next;
+	}
+	return NULL;
+}

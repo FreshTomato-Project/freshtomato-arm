@@ -4,15 +4,21 @@ capng_set_rootid \- set namespace root id
 .SH "SYNOPSIS"
 .B #include <cap-ng.h>
 .sp
-int capng_set_rootid(int rootid);
+int capng_set_rootid(uid_t rootid);
 
 .SH "DESCRIPTION"
 
-capng_set_rootid sets the rootid for file capabilities operations. Pass CAPNG_UNSET_ROOTID to clear a previously selected namespace root id and go back to writing regular V2 file capabilities.
+capng_set_rootid sets the root user ID for file capabilities operations. The
+value is host-endian and relative to the caller's user namespace. Pass
+CAPNG_UNSET_ROOTID to clear a previously selected namespace root ID and go
+back to writing regular V2 file capabilities. Other values select V3 file
+capabilities; the kernel validates and maps the user ID when the capabilities
+are written.
 
 .SH "RETURN VALUE"
 
-On success, it returns 0. It returns -1 if there is an internal error, the kernel does not support V3 filesystem capabilities, or an invalid rootid is supplied.
+On success, it returns 0. It returns -1 if there is an internal error or the
+kernel headers used to build the library do not support V3 file capabilities.
 
 .SH "SEE ALSO"
 

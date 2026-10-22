@@ -48,9 +48,9 @@ clean-local:
 	$(RM) -rf __pycache__
 
 check-local:
-	@python3_embed_libs=`python3-config --embed --libs 2>/dev/null`; \
+	@python3_embed_libs=`"$(PYTHON3_CONFIG)" --embed --libs 2>/dev/null`; \
 	if test -z "$$python3_embed_libs"; then \
-		echo "SKIP: python3-config --embed --libs is unavailable"; \
+		echo "SKIP: $(PYTHON3_CONFIG) --embed --libs is unavailable"; \
 		exit 77; \
 	fi; \
 	$(MAKE) clean >/dev/null; \

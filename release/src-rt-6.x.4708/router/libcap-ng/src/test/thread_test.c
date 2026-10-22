@@ -1,12 +1,21 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <cap-ng.h>
 #include <pthread.h>
 
 //#define DEBUG 1
 
 pthread_t thread1, thread2;
+
+static void check_thread_call(int rc, const char *operation)
+{
+	if (rc) {
+		fprintf(stderr, "%s: %s\n", operation, strerror(rc));
+		exit(1);
+	}
+}
 
 void *thread1_main(void *arg)
 {
@@ -58,9 +67,13 @@ int main(void)
 	}
 
 	printf("Testing thread separation of capabilities\n");
-	pthread_create(&thread1, NULL, thread1_main, NULL);
-	pthread_create(&thread2, NULL, thread2_main, NULL);
-	sleep(3);
+	check_thread_call(pthread_create(&thread1, NULL, thread1_main, NULL),
+			  "Creating thread1");
+	check_thread_call(pthread_create(&thread2, NULL, thread2_main, NULL),
+			  "Creating thread2");
+	/* A timed sleep can return before the workers finish their checks. */
+	check_thread_call(pthread_join(thread1, NULL), "Joining thread1");
+	check_thread_call(pthread_join(thread2, NULL), "Joining thread2");
 	return 0;
 }
 

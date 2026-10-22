@@ -26,6 +26,7 @@
 #include <linux/capability.h>
 #include <strings.h>
 #include <stdio.h>
+#include "cap-ng.h"
 
 
 #pragma GCC optimize("O3")
@@ -134,4 +135,3 @@ const char *capng_capability_to_name(unsigned int capability)
 	}
 	return ptr;
 }
-

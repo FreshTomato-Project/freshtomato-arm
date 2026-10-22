@@ -24,8 +24,7 @@
 #include "config.h"
 #include <sys/prctl.h>
 
-void __attribute__ ((constructor)) init(void)
+static void __attribute__ ((constructor)) drop_ambient_init(void)
 {
 	prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0);
 }
-

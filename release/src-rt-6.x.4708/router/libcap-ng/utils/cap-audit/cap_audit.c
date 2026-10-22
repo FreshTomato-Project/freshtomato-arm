@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.1-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * cap-audit - Trace a target process to discover required capabilities.
  * Copyright (c) 2026 Red Hat Inc.
@@ -20,6 +20,7 @@
  */
 
 #include "cap_audit.h"
+#include "cap_audit_path.h"
 
 #include <bpf/bpf.h>
 #include <errno.h>
@@ -29,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -48,9 +50,10 @@
  * When the tool observes a capset syscall from the initial PID, it splits
  * capability accounting into initialization and operational phases. The
  * initialization phase covers all capability checks from process start to
- * the first capset. The operational phase covers everything after. This
- * separation allows the tool to distinguish capabilities needed for one-time
- * setup (binding privileged ports, chroot, loading restricted configuration)
+ * the first capset, plus UID/GID changes bracketed by successful keepcaps
+ * enable/disable calls on the same thread. The operational phase covers
+ * other checks after the first capset. This distinguishes capabilities needed
+ * for one-time setup (binding ports, chroot, loading restricted configuration)
  * from capabilities needed for ongoing operation. Recommendations for
  * programmatic capability dropping use only the operational set, while
  * deployment recommendations (file capabilities, systemd, containers) use
@@ -87,14 +90,6 @@
  * while CAP_OPT_NOAUDIT confirms that the event followed the advisory path
  * rather than a security-gating path on the same syscall.
  *
- * Layer 3 - final drain shutdown backstop:
- * after waitpid() reports that the initial PID has exited, cap-audit does a
- * short final ring-buffer drain before analyzing results. That drain should
- * stay conservative because queued late SYS_ADMIN/SETPCAP checks from the
- * exiting interpreter/runtime are more likely to be teardown chatter than a
- * meaningful application requirement. The shutdown backstop is intentionally
- * limited to the initial PID and only applies during that final drain.
- *
  * PID filtering remains central: parent registers the child immediately after
  * fork(), BPF follows forks/exits to keep the target set precise, and each
  * event carries capability, syscall context, namespace info, and result for
@@ -108,6 +103,35 @@
 
 struct audit_state state;
 int audit_machine = -1;
+
+static char **prepend_execstart_argv(const service_config_t *cfg,
+				     char **args, int arg_count)
+	__attribute_malloc__
+	__attr_dealloc_free
+	__attr_access ((__read_only__, 1))
+	__attr_access ((__read_only__, 2))
+	__wur;
+static int has_service_suffix(const char *path)
+	__attr_access ((__read_only__, 1))
+	__attribute_pure__;
+
+static int read_user_ns_inum(__u32 *inum)
+{
+	struct stat st;
+
+	if (stat("/proc/self/ns/user", &st) != 0) {
+		fprintf(stderr, "Error: failed to read user namespace: %s\n",
+			strerror(errno));
+		return -1;
+	}
+	if (st.st_ino == 0 || st.st_ino > UINT_MAX) {
+		fprintf(stderr, "Error: invalid user namespace inode\n");
+		return -1;
+	}
+
+	*inum = (__u32)st.st_ino;
+	return 0;
+}
 
 static void sig_handler(int sig __attribute__((unused)))
 {
@@ -143,6 +167,38 @@ static int init_capng(void)
 	return 0;
 }
 
+static char **prepend_execstart_argv(const service_config_t *cfg,
+				     char **args, int arg_count)
+{
+	char **argv;
+	int i;
+
+	argv = calloc((size_t)arg_count + 2, sizeof(char *));
+	if (!argv)
+		return NULL;
+
+	argv[0] = cfg->exec_argv[0];
+	for (i = 0; i < arg_count; i++)
+		argv[i + 1] = args[i];
+	argv[arg_count + 1] = NULL;
+
+	return argv;
+}
+
+static int has_service_suffix(const char *path)
+{
+	size_t len;
+	const char suffix[] = ".service";
+	size_t suffix_len = sizeof(suffix) - 1;
+
+	if (!path)
+		return 0;
+
+	len = strlen(path);
+	return len >= suffix_len &&
+	       strcmp(path + len - suffix_len, suffix) == 0;
+}
+
 static int check_auditor_caps(void)
 {
 	if (!capng_have_capability(CAPNG_EFFECTIVE, CAP_BPF) &&
@@ -159,10 +215,6 @@ static int check_auditor_caps(void)
 			"perf events\n");
 		return -1;
 	}
-
-	if (!capng_have_capability(CAPNG_EFFECTIVE, CAP_SYS_PTRACE))
-		fprintf(stderr, "Warning: CAP_SYS_PTRACE not available, stack "
-			"traces may be limited\n");
 
 	return 0;
 }
@@ -193,13 +245,16 @@ static int set_target_pid(pid_t pid)
 static void usage(FILE *out, const char *prog)
 {
 	fprintf(out, "Usage: %s [options] -- command [args...]\n", prog);
+	fprintf(out, "       %s --service FILE [-- command-or-args...]\n", prog);
 	fprintf(out, "Options:\n");
-	fprintf(out, "  -h, --help       Show this help message\n");
-	fprintf(out, "  -v, --verbose    Verbose output\n");
-	fprintf(out, "  -j, --json       JSON output\n");
-	fprintf(out, "  -y, --yaml       YAML output\n");
+	fprintf(out, "  -h, --help          Show this help message\n");
+	fprintf(out, "  -v, --verbose       Verbose output\n");
+	fprintf(out, "  -j, --json          JSON output\n");
+	fprintf(out, "  -y, --yaml          YAML output\n");
+	fprintf(out, "  -s, --service FILE  Simulate a systemd service unit\n");
 }
 
+#ifndef CAP_AUDIT_NO_MAIN
 int main(int argc, char **argv)
 {
 	int err;
@@ -207,6 +262,9 @@ int main(int argc, char **argv)
 	pid_t child;
 	pid_t ret_pid;
 	int wstatus;
+	char *target_path = NULL;
+	char **service_target_argv = NULL;
+	int separator_seen = 0;
 
 	if (argc < 2) {
 		usage(stderr, argv[0]);
@@ -228,7 +286,25 @@ int main(int argc, char **argv)
 		else if (!strcmp(argv[arg_idx], "-y") ||
 			 !strcmp(argv[arg_idx], "--yaml"))
 			state.yaml_output = 1;
+		else if (!strcmp(argv[arg_idx], "-s") ||
+			 !strcmp(argv[arg_idx], "--service")) {
+			char *service_file;
+
+			arg_idx++;
+			if (arg_idx >= argc) {
+				fprintf(stderr,
+					"Error: --service requires a file\n");
+				usage(stderr, argv[0]);
+				return 1;
+			}
+			service_file = strdup(argv[arg_idx]);
+			if (!service_file)
+				return 1;
+			free(state.service_file);
+			state.service_file = service_file;
+		}
 		else if (!strcmp(argv[arg_idx], "--")) {
+			separator_seen = 1;
 			arg_idx++;
 			break;
 		} else {
@@ -240,22 +316,80 @@ int main(int argc, char **argv)
 		arg_idx++;
 	}
 
-	if (arg_idx >= argc) {
+	if (state.service_file) {
+		state.service_cfg = calloc(1, sizeof(*state.service_cfg));
+		if (!state.service_cfg)
+			goto err_target_path;
+
+		if (parse_service_file(state.service_file,
+				       state.service_cfg) != 0)
+			goto err_target_path;
+
+		if (!separator_seen && arg_idx < argc) {
+			fprintf(stderr,
+				"Error: --service command overrides require --\n");
+			usage(stderr, argv[0]);
+			goto err_target_path;
+		}
+
+		if (separator_seen && arg_idx < argc) {
+			if (argv[arg_idx][0] == '-') {
+				if (!state.service_cfg->exec_argv) {
+					fprintf(stderr,
+						"Error: service has no ExecStart executable for argument override\n");
+					goto err_target_path;
+				}
+				service_target_argv =
+				    prepend_execstart_argv(state.service_cfg,
+							   &argv[arg_idx],
+							   argc - arg_idx);
+				if (!service_target_argv)
+					goto err_target_path;
+				state.target_argv = service_target_argv;
+			} else {
+				state.target_argv = &argv[arg_idx];
+			}
+		} else {
+			if (!state.service_cfg->exec_argv) {
+				fprintf(stderr,
+					"Error: service has no ExecStart command\n");
+				goto err_target_path;
+			}
+			state.target_argv = state.service_cfg->exec_argv;
+		}
+	} else if (arg_idx >= argc) {
 		fprintf(stderr, "Error: No command specified\n");
 		usage(stderr, argv[0]);
 		return 1;
+	} else {
+		state.target_argv = &argv[arg_idx];
 	}
 
-	state.target_argv = &argv[arg_idx];
+	/*
+	 * Fail before capability checks, BPF setup, or fork/exec tracing so
+	 * a bad target command is reported directly by cap-audit.
+	 */
+	target_path = resolve_target_command(state.target_argv[0]);
+	if (!target_path) {
+		fprintf(stderr, "Error: target is not executable: %s\n",
+			state.target_argv[0]);
+		if (!state.service_file &&
+		    has_service_suffix(state.target_argv[0]))
+			fprintf(stderr,
+				"Hint: to audit a systemd unit, use --service FILE\n");
+		goto err_target_path;
+	}
+	if (read_user_ns_inum(&state.baseline_user_ns_inum) != 0)
+		goto err_target_path;
 
 	if (init_capng() != 0)
-		return 1;
+		goto err_target_path;
 
 	if (check_auditor_caps() != 0)
-		return 1;
+		goto err_target_path;
 
 	if (set_memlock_rlimit() != 0)
-		return 1;
+		goto err_target_path;
 
 	state.app.exe = strdup(state.target_argv[0]);
 	state.app.prog_type = UNSUPPORTED;
@@ -264,7 +398,8 @@ int main(int argc, char **argv)
 	if (audit_machine < 0) {
 		fprintf(stderr,
 			"Error: unable to determine hardware architecture for syscall lookup. Exiting.\n");
-		return 1;
+		free(state.app.exe);
+		goto err_target_path;
 	}
 	state.app.execve_nr = audit_name_to_syscall("execve", audit_machine);
 	state.app.mmap_nr = audit_name_to_syscall("mmap", audit_machine);
@@ -274,11 +409,23 @@ int main(int argc, char **argv)
 	state.app.mremap_nr = audit_name_to_syscall("mremap", audit_machine);
 	state.app.capset_nr = audit_name_to_syscall("capset", audit_machine);
 
-	state.skel = cap_audit_bpf__open_and_load();
+	state.skel = cap_audit_bpf__open();
 	if (!state.skel) {
-		fprintf(stderr, "Error: Failed to load BPF program: %s\n",
+		fprintf(stderr, "Error: Failed to open BPF program: %s\n",
 			strerror(errno));
-		return 1;
+		free(state.app.exe);
+		goto err_target_path;
+	}
+	state.skel->rodata->capset_syscall_nr = state.app.capset_nr;
+	state.skel->rodata->prctl_syscall_nr =
+		audit_name_to_syscall("prctl", audit_machine);
+	err = cap_audit_bpf__load(state.skel);
+	if (err) {
+		fprintf(stderr, "Error: Failed to load BPF program: %s\n",
+			strerror(-err));
+		cap_audit_bpf__destroy(state.skel);
+		free(state.app.exe);
+		goto err_target_path;
 	}
 
 	err = cap_audit_bpf__attach(state.skel);
@@ -286,7 +433,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Error: Failed to attach BPF programs: %s\n",
 			strerror(-err));
 		cap_audit_bpf__destroy(state.skel);
-		return 1;
+		free(state.app.exe);
+		goto err_target_path;
 	}
 
 	state.rb = ring_buffer__new(bpf_map__fd(state.skel->maps.cap_events),
@@ -295,7 +443,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Error: Failed to create ring buffer: %s\n",
 			strerror(errno));
 		cap_audit_bpf__destroy(state.skel);
-		return 1;
+		free(state.app.exe);
+		goto err_target_path;
 	}
 
 	printf("[*] Capability auditor started\n");
@@ -304,7 +453,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Error: pipe failed: %s\n", strerror(errno));
 		ring_buffer__free(state.rb);
 		cap_audit_bpf__destroy(state.skel);
-		return 1;
+		free(state.app.exe);
+		goto err_target_path;
 	}
 
 	child = fork();
@@ -324,6 +474,13 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 		close(state.sync_pipe[0]);
+		if (state.service_cfg &&
+		    apply_service_config(state.service_cfg) != 0)
+			_exit(1);
+		/*
+		 * The earlier path check is only diagnostic. Repeat lookup here
+		 * so execvp() preserves PATH fallback if a candidate changes.
+		 */
 		execvp(state.target_argv[0], state.target_argv);
 		perror("execvp");
 		exit(1);
@@ -333,7 +490,8 @@ int main(int argc, char **argv)
 		close(state.sync_pipe[1]);
 		ring_buffer__free(state.rb);
 		cap_audit_bpf__destroy(state.skel);
-		return 1;
+		free(state.app.exe);
+		goto err_target_path;
 	}
 
 	state.app.pid = child;
@@ -346,7 +504,7 @@ int main(int argc, char **argv)
 		ring_buffer__free(state.rb);
 		cap_audit_bpf__destroy(state.skel);
 		free(state.app.exe);
-		return 1;
+		goto err_target_path;
 	}
 
 	if (write(state.sync_pipe[1], "1", 1) != 1) {
@@ -357,7 +515,7 @@ int main(int argc, char **argv)
 		ring_buffer__free(state.rb);
 		cap_audit_bpf__destroy(state.skel);
 		free(state.app.exe);
-		return 1;
+		goto err_target_path;
 	}
 	close(state.sync_pipe[1]);
 
@@ -379,9 +537,10 @@ int main(int argc, char **argv)
 	}
 
 	read_system_state(&state.app);
-	inspect_target_file_caps(child);
 	if (state.app.prog_type == PYTHON && state.verbose)
 		printf("[*] Script interpreter: %s\n", state.app.exe);
+	if (state.service_cfg && state.verbose)
+		print_service_config(state.service_cfg);
 	printf("[*] Tracing application: %s (PID %d)\n", state.app.exe, child);
 	printf("[*] Press Ctrl-C to stop\n\n");
 
@@ -412,9 +571,13 @@ int main(int argc, char **argv)
 
 	printf("[*] Analyzing results...\n");
 
-	state.shutting_down = 1;
-	usleep(100000);
+	/*
+	 * The normal exec/memory filters also cover interpreter teardown.
+	 * Drain time says nothing about when a queued check occurred, so do
+	 * not discard SYS_ADMIN/SETPCAP merely because the target has exited.
+	 */
 	ring_buffer__poll(state.rb, 0);
+	finish_cap_events();
 
 	if (state.json_output)
 		output_json();
@@ -426,6 +589,13 @@ int main(int argc, char **argv)
 	ring_buffer__free(state.rb);
 	cap_audit_bpf__destroy(state.skel);
 	free(state.app.exe);
+	free(target_path);
+	free(service_target_argv);
+	if (state.service_cfg) {
+		free_config(state.service_cfg);
+		free(state.service_cfg);
+	}
+	free(state.service_file);
 
 	for (int i = 0; i <= CAP_LAST_CAP; i++) {
 		if (state.app.checks[i].reason)
@@ -434,7 +604,20 @@ int main(int argc, char **argv)
 			free(state.app.checks[i].op_reason);
 		if (state.app.checks[i].denied_syscalls)
 			free(state.app.checks[i].denied_syscalls);
+		if (state.app.checks[i].outcomes)
+			free(state.app.checks[i].outcomes);
 	}
 
 	return 0;
+
+err_target_path:
+	free(target_path);
+	free(service_target_argv);
+	if (state.service_cfg) {
+		free_config(state.service_cfg);
+		free(state.service_cfg);
+	}
+	free(state.service_file);
+	return 1;
 }
+#endif

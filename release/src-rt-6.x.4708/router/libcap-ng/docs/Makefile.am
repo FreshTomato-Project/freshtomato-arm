@@ -33,3 +33,8 @@ man_MANS = capng_clear.3 capng_fill.3 capng_setpid.3 \
 	capng_print_caps_numeric.3 capng_print_caps_text.3 \
 	capng_name_to_capability.3  capng_capability_to_name.3 \
 	capng_save_state.3 capng_restore_state.3 libdrop_ambient.7
+
+dist_check_SCRIPTS = check-manpages.sh
+TESTS = $(dist_check_SCRIPTS)
+TESTS_ENVIRONMENT = srcdir='$(srcdir)' top_srcdir='$(top_srcdir)' \
+	top_builddir='$(top_builddir)'

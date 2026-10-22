@@ -17,6 +17,17 @@ def get_last_cap():
 def main():
     last = get_last_cap()
 
+    if capng.CAPNG_UNSET_ROOTID != 0xffffffff:
+        print("CAPNG_UNSET_ROOTID has the wrong value")
+        sys.exit(1)
+    if capng.capng_set_rootid(0x80000000) == 0:
+        if capng.capng_get_rootid() != 0x80000000:
+            print("Failed high rootid round trip")
+            sys.exit(1)
+        if capng.capng_set_rootid(capng.CAPNG_UNSET_ROOTID) != 0:
+            print("Failed clearing rootid")
+            sys.exit(1)
+
     print("Doing basic bit tests...")
     capng.capng_clear(capng.CAPNG_SELECT_BOTH)
     if capng.capng_have_capabilities(capng.CAPNG_SELECT_BOTH) != capng.CAPNG_NONE:

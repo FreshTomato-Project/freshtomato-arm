@@ -24,6 +24,11 @@
 
 #include "config.h"
 #include <arpa/inet.h>
+#if defined(HAVE_BLUETOOTH_BLUETOOTH_H) && defined(HAVE_BLUETOOTH_HCI_H)
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
+#define HAVE_NETCAP_BLUETOOTH 1
+#endif
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -32,11 +37,14 @@
 #include <linux/inet_diag.h>
 #include <linux/netlink.h>
 #include <linux/sock_diag.h>
+#ifdef HAVE_NETCAP_VSOCK
+#include <sys/socket.h>
 #include <linux/vm_sockets.h>
-#include <limits.h>
 #ifdef HAVE_LINUX_VM_SOCKETS_DIAG_H
 #include <linux/vm_sockets_diag.h>
 #endif
+#endif
+#include <limits.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -45,15 +53,17 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include "cap-ng.h"
 #include "netcap-advanced.h"
+#include "proc-output.h"
 #include "proc-sanitize.h"
+#include "proc-status.h"
 
 /*
  * Overview:
@@ -66,6 +76,10 @@
  *
  * For internet sockets, wildcard binds are expanded onto concrete interface
  * addresses so the rendered tree/JSON can be consumed as an exposure map.
+ * Bluetooth listeners are collected from /proc/net/rfcomm and /proc/net/hci,
+ * with adapter names discovered via /sys/class/bluetooth and controller
+ * addresses resolved through HCI ioctls before ownership is stitched back
+ * through socket inodes gathered from /proc/<pid>/fd.
  * VSOCK listeners are collected via sock_diag when available and fall back to
  * /proc parsing when not, with ownership stitched back through socket inodes.
  * Tree output supports colorized capability/flag severity, with --no-color
@@ -94,13 +108,17 @@ enum plane_kind {
 	PLANE_INET_EXTERNAL,
 	PLANE_INET_LOOPBACK,
 	PLANE_PACKET,
+	PLANE_BLUETOOTH,
 	PLANE_VSOCK,
 	PLANE_COUNT,
 };
 
 #define PLANE_PACKET_NAME	"LINK-LAYER"
+#define PLANE_BLUETOOTH_NAME	"BLUETOOTH"
 /* Keep user-facing key name centralized to avoid legacy regressions. */
 #define DEFENSES_RUNS_AS_KEY	"runs_as_nonroot"
+#define BT_ADAPTER_HEURISTIC	"hci?"
+#define BT_ADDR_UNKNOWN		"*"
 
 enum endpoint_flags {
 	FLAG_WILDCARD_BIND = 1U << 0,
@@ -108,6 +126,7 @@ enum endpoint_flags {
 	FLAG_HYPERVISOR_PLANE = 1U << 4,
 	FLAG_SSH_VSOCK_22 = 1U << 5,
 	FLAG_REUSEPORT = 1U << 6,
+	FLAG_PROXIMITY_PLANE = 1U << 7,
 };
 
 struct strset {
@@ -137,7 +156,7 @@ struct defense_info {
 
 struct process_info {
 	int pid;
-	int uid;
+	uid_t uid;
 	char *comm;
 	char *exe;
 	char *unit;
@@ -163,7 +182,6 @@ struct endpoint {
 	char *label;
 	unsigned int port;
 	unsigned int vsock_cid;
-	int has_vsock;
 	enum plane_kind plane;
 	char *ifname;
 	char *ifaddr;
@@ -200,20 +218,58 @@ struct pidset {
 	size_t used;
 };
 
-struct status_fields {
-	unsigned long no_new_privs;
-	unsigned long seccomp;
-	int seen_no_new_privs;
-	int seen_seccomp;
-};
-
 struct endpoint_attrs {
 	int wildcard;
 	int reuseport;
 };
 
-static void free_process(struct process_info *p);
-static void free_endpoint(struct endpoint *e);
+#ifdef HAVE_NETCAP_BLUETOOTH
+#define BT_ADAPTER_CACHE_MAX	8
+
+struct bt_adapter_info {
+	char name[IF_NAMESIZE];
+	char addr[18];
+};
+
+static struct bt_adapter_info bt_adapters[BT_ADAPTER_CACHE_MAX];
+static size_t bt_adapters_n;
+static int bt_adapters_loaded;
+#endif
+
+static void free_process(struct process_info *p)
+	__attr_access ((__read_write__, 1));
+static void free_endpoint(struct endpoint *e)
+	__attr_access ((__read_write__, 1));
+static int str_is_bdaddr(const char *s)
+	__attr_access ((__read_only__, 1))
+	__attribute_pure__;
+static char *xstrdup(const char *s)
+	__attribute_malloc__
+	__attr_dealloc_free
+	__attr_access ((__read_only__, 1))
+	__wur;
+static int vec_grow(void **v, size_t *cap, size_t item)
+	__attr_access ((__read_write__, 1))
+	__attr_access ((__read_write__, 2))
+	__wur;
+static char *read_first_line(const char *path)
+	__attribute_malloc__
+	__attr_dealloc_free
+	__attr_access ((__read_only__, 1))
+	__wur;
+static char *extract_unit_from_cgroup(int pid)
+	__attribute_malloc__
+	__attr_dealloc_free
+	__wur;
+static char *caps_summary_for_pid(int pid, int *privileged, int *has_amb,
+				  int *has_bnd, char **amb_list)
+	__attribute_malloc__
+	__attr_dealloc_free
+	__attr_access ((__write_only__, 2))
+	__attr_access ((__write_only__, 3))
+	__attr_access ((__write_only__, 4))
+	__attr_access ((__write_only__, 5))
+	__wur;
 
 static int use_color;
 
@@ -338,8 +394,6 @@ static enum cap_severity caps_worst_severity(const char *caps)
 
 static void free_model(struct model *m);
 static void json_escape(const char *s);
-static void print_tree_node(const char *prefix, int is_last,
-	const char *txt, int width);
 static int bind_sort_cmp(const char *a, const char *b);
 static struct inode_proc *lookup_inode(struct model *m, unsigned long inode);
 static void render_interfaces_text(struct model *m);
@@ -635,36 +689,6 @@ static void inode_hash_insert(struct model *m, size_t idx)
 }
 
 /*
- * get_width - choose terminal width for wrapped tree output.
- * @none: function takes no parameters.
- *
- * Returns terminal columns from TIOCGWINSZ or $COLUMNS, else 80.
- * Side effects/assumptions: Operates on in-memory data and may read
- * procfs/netns state; it does not change kernel configuration.
- */
-static int get_width(void)
-{
-	struct winsize ws;
-	const int fds[] = { STDOUT_FILENO, STDERR_FILENO, STDIN_FILENO };
-	const char *env;
-	char *end = NULL;
-	unsigned long v;
-	size_t i;
-
-	for (i = 0; i < sizeof(fds) / sizeof(fds[0]); i++) {
-		if (ioctl(fds[i], TIOCGWINSZ, &ws) == 0 && ws.ws_col)
-			return ws.ws_col;
-	}
-	env = getenv("COLUMNS");
-	if (env) {
-		v = strtoul(env, &end, 10);
-		if (end != env && *end == '\0' && v > 0 && v < 400)
-			return (int)v;
-	}
-	return 80;
-}
-
-/*
  * xstrdup - duplicate @s into a newly allocated string.
  * @s: source string, or NULL.
  *
@@ -831,6 +855,40 @@ static int pidset_test_and_add(struct pidset *ps, int pid)
 	return 0;
 }
 
+static const struct {
+	unsigned int bit;
+	const char *name;
+	const char *color;
+} flag_names[] = {
+	{ FLAG_PROXIMITY_PLANE, "proximity-plane", COLOR_YELLOW },
+	{ FLAG_HYPERVISOR_PLANE, "hypervisor-plane", COLOR_YELLOW },
+	{ FLAG_SSH_VSOCK_22, "ssh-on-vsock-port-22", NULL },
+	{ FLAG_WILDCARD_BIND, "wildcard-bind", COLOR_YELLOW },
+	{ FLAG_REUSEPORT, "reuseport", COLOR_YELLOW },
+	{ FLAG_PRIVILEGED_CAPS, "privileged-caps", NULL },
+};
+
+/* Keep tree and JSON flag selection identical, including VSOCK exclusions. */
+static unsigned int process_flags(const struct process_info *p,
+				  const struct endpoint *e)
+{
+	unsigned int flags = p->has_privileged_caps ? FLAG_PRIVILEGED_CAPS : 0;
+
+	if (e->plane == PLANE_VSOCK) {
+		flags |= FLAG_HYPERVISOR_PLANE;
+		if (e->port == 22)
+			flags |= FLAG_SSH_VSOCK_22;
+	} else {
+		if (e->plane == PLANE_BLUETOOTH)
+			flags |= FLAG_PROXIMITY_PLANE;
+		if (e->wildcard_bind)
+			flags |= FLAG_WILDCARD_BIND;
+		if (e->reuseport)
+			flags |= FLAG_REUSEPORT;
+	}
+	return flags;
+}
+
 /*
  * print_flag_nodes - render endpoint/process flag leaves under "flags" node.
  * @pfx_flags: tree prefix for flag child lines.
@@ -844,43 +902,32 @@ static int pidset_test_and_add(struct pidset *ps, int pid)
 static void print_flag_nodes(const char *pfx_flags, int width,
 	unsigned int flags, enum cap_severity priv_sev)
 {
-	static const struct {
-		unsigned int bit;
-		const char *name;
-		const char *color;
-	} map[] = {
-		{ FLAG_HYPERVISOR_PLANE, "hypervisor-plane", COLOR_YELLOW },
-		{ FLAG_SSH_VSOCK_22, "ssh-on-vsock-port-22", NULL },
-		{ FLAG_WILDCARD_BIND, "wildcard-bind", COLOR_YELLOW },
-		{ FLAG_REUSEPORT, "reuseport", COLOR_YELLOW },
-		{ FLAG_PRIVILEGED_CAPS, "privileged-caps", NULL },
-	};
 	size_t i;
 	size_t n = 0;
 	size_t printed = 0;
 	char node[256];
 
-	for (i = 0; i < sizeof(map) / sizeof(map[0]); i++)
-		if (flags & map[i].bit)
+	for (i = 0; i < sizeof(flag_names) / sizeof(flag_names[0]); i++)
+		if (flags & flag_names[i].bit)
 			n++;
 	if (!n) {
-		print_tree_node(pfx_flags, 1, "(none)", width);
+		proc_tree_print_node(pfx_flags, 1, "(none)", width);
 		return;
 	}
-	for (i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
-		const char *color = map[i].color;
+	for (i = 0; i < sizeof(flag_names) / sizeof(flag_names[0]); i++) {
+		const char *color = flag_names[i].color;
 
-		if (!(flags & map[i].bit))
+		if (!(flags & flag_names[i].bit))
 			continue;
-		if (map[i].bit == FLAG_PRIVILEGED_CAPS)
+		if (flag_names[i].bit == FLAG_PRIVILEGED_CAPS)
 			color = sev_color(priv_sev);
 		if (use_color && color)
-			snprintf(node, sizeof(node), "%s%s%s", color, map[i].name,
+			snprintf(node, sizeof(node), "%s%s%s", color, flag_names[i].name,
 				COLOR_RESET);
 		else
-			snprintf(node, sizeof(node), "%s", map[i].name);
+			snprintf(node, sizeof(node), "%s", flag_names[i].name);
 		printed++;
-		print_tree_node(pfx_flags, printed == n, node, width);
+		proc_tree_print_node(pfx_flags, printed == n, node, width);
 	}
 }
 
@@ -1259,15 +1306,15 @@ static char *caps_summary_for_pid(int pid, int *privileged, int *has_amb,
  * @pid: process ID whose procfs status/attr files are parsed.
  * @uid: process real UID, used for root/non-root interpretation.
  * @d: destination struct receiving caller-freed string fields.
- * @sf: parsed /proc/<pid>/status fields consumed for hardening decode.
+ * @status: parsed /proc/<pid>/status fields consumed for hardening decode.
  *
  * Missing fields are tolerated; function leaves best-effort defaults.
  * Returns no value.
  * Side effects/assumptions: Operates on in-memory data and may read
  * procfs/netns state; it does not change kernel configuration.
  */
-static void parse_status_defenses(int pid, int uid, struct defense_info *d,
-	const struct status_fields *sf)
+static void parse_status_defenses(int pid, uid_t uid, struct defense_info *d,
+	const struct proc_status *status)
 {
 	char path[64];
 
@@ -1276,15 +1323,15 @@ static void parse_status_defenses(int pid, int uid, struct defense_info *d,
 	d->seccomp = xstrdup("disabled");
 	d->lsm_label = NULL;
 
-	if (sf->seen_no_new_privs) {
+	if (status->seen_no_new_privs) {
 		free(d->no_new_privs);
-		d->no_new_privs = xstrdup(sf->no_new_privs ? "yes" : "no");
+		d->no_new_privs = xstrdup(status->no_new_privs ? "yes" : "no");
 	}
-	if (sf->seen_seccomp) {
+	if (status->seen_seccomp) {
 		free(d->seccomp);
-		if (sf->seccomp == 0)
+		if (status->seccomp == 0)
 			d->seccomp = xstrdup("disabled");
-		else if (sf->seccomp == 1)
+		else if (status->seccomp == 1)
 			d->seccomp = xstrdup("strict");
 		else
 			d->seccomp = xstrdup("filter");
@@ -1310,40 +1357,15 @@ static void parse_status_defenses(int pid, int uid, struct defense_info *d,
  */
 static struct process_info *add_process(struct model *m, int pid)
 {
-	char path[64], line[256], comm[64] = "";
+	char path[64];
 	char exepath[PATH_MAX];
-	FILE *f;
 	ssize_t exelen;
-	int uid = -1;
 	int has_amb = 0, has_bnd = 0;
 	char *amb_list = NULL;
-	struct status_fields sf = { 0 };
+	struct proc_status status;
 	struct process_info *p;
 
-	snprintf(path, sizeof(path), "/proc/%d/status", pid);
-	f = fopen(path, "rte");
-	if (!f)
-		return NULL;
-	__fsetlocking(f, FSETLOCKING_BYCALLER);
-	while (fgets(line, sizeof(line), f)) {
-		if (sscanf(line, "Name:\t%63s", comm) == 1)
-			continue;
-		if (sscanf(line, "Uid:\t%d", &uid) == 1)
-			continue;
-		if (sscanf(line, "NoNewPrivs:\t%lu", &sf.no_new_privs) == 1) {
-			sf.seen_no_new_privs = 1;
-			continue;
-		}
-		if (sscanf(line, "Seccomp:\t%lu", &sf.seccomp) == 1) {
-			sf.seen_seccomp = 1;
-			continue;
-		}
-		if (uid >= 0 && comm[0] && sf.seen_no_new_privs &&
-		    sf.seen_seccomp)
-			break;
-	}
-	fclose(f);
-	if (uid < 0)
+	if (proc_read_status(pid, &status) < 0 || !status.seen_uid)
 		return NULL;
 
 	p = calloc(1, sizeof(*p));
@@ -1352,8 +1374,8 @@ static struct process_info *add_process(struct model *m, int pid)
 		return NULL;
 	}
 	p->pid = pid;
-	p->uid = uid;
-	p->comm = xstrdup(comm[0] ? comm : "?");
+	p->uid = status.uid;
+	p->comm = xstrdup(status.seen_name ? status.name : "?");
 	if (sanitize_untrusted_owned(&p->comm) < 0)
 		goto fail;
 	snprintf(path, sizeof(path), "/proc/%d/exe", pid);
@@ -1378,7 +1400,7 @@ static struct process_info *add_process(struct model *m, int pid)
 	p->ambient_caps = amb_list;
 	p->ambient_present = has_amb;
 	p->open_ended_bounding = has_bnd;
-	parse_status_defenses(pid, uid, &p->defenses, &sf);
+	parse_status_defenses(pid, status.uid, &p->defenses, &status);
 	if (!p->comm || (exelen >= 0 && !p->exe) || !p->caps ||
 	    (has_amb && !p->ambient_caps) ||
 	    !p->defenses.runs_as_nonroot ||
@@ -1438,29 +1460,26 @@ static int add_inode_proc(struct model *m, unsigned long inode,
 }
 
 /*
- * probe_reuseport - probe SO_REUSEPORT on a target process socket fd.
+ * dup_target_fd - duplicate one target process fd into this process.
  * @pid: process id owning @fdnum.
- * @fdnum: socket fd number in target process.
+ * @fdnum: fd number inside @pid to duplicate.
  *
  * Uses pidfd_open + pidfd_getfd when supported by the running kernel.
- * Returns 1/0 on successful getsockopt, or -1 when unsupported/inaccessible.
+ * Returns duplicated fd on success, or -1 when unsupported/inaccessible.
  * Side effects/assumptions: Operates on in-memory data and may read
  * procfs/netns state; it does not change kernel configuration.
  */
-static int probe_reuseport(int pid, int fdnum)
+static int dup_target_fd(int pid, int fdnum)
 {
 #if defined(__NR_pidfd_open) && defined(__NR_pidfd_getfd)
 	static int warned_unavail;
 	int pidfd;
 	int dupfd;
-	int val = 0;
-	socklen_t len = sizeof(val);
-	int rc;
 
 	pidfd = syscall(__NR_pidfd_open, pid, 0);
 	if (pidfd < 0) {
 		if (errno == ENOSYS && !warned_unavail) {
-			diag_dbg("pidfd_getfd unavailable; SO_REUSEPORT detection disabled");
+			diag_dbg("pidfd_getfd unavailable; fd inspection disabled");
 			warned_unavail = 1;
 		}
 		return -1;
@@ -1469,25 +1488,41 @@ static int probe_reuseport(int pid, int fdnum)
 	dupfd = syscall(__NR_pidfd_getfd, pidfd, fdnum, 0);
 	if (dupfd < 0) {
 		if (errno == ENOSYS && !warned_unavail) {
-			diag_dbg("pidfd_getfd unavailable; SO_REUSEPORT detection disabled");
+			diag_dbg("pidfd_getfd unavailable; fd inspection disabled");
 			warned_unavail = 1;
 		}
 		close(pidfd);
 		return -1;
 	}
 
-	rc = getsockopt(dupfd, SOL_SOCKET, SO_REUSEPORT, &val, &len);
-	close(dupfd);
 	close(pidfd);
-	if (rc < 0)
-		return -1;
-
-	return val ? 1 : 0;
+	return dupfd;
 #else
 	(void)pid;
 	(void)fdnum;
 	return -1;
 #endif
+}
+
+/*
+ * probe_reuseport_fd - probe SO_REUSEPORT on one duplicated socket fd.
+ * @fd: socket fd already duplicated into this process.
+ *
+ * Returns 1/0 on successful getsockopt, or -1 when unsupported/inaccessible.
+ * Side effects/assumptions: Operates on in-memory data and may read
+ * procfs/netns state; it does not change kernel configuration.
+ */
+static int probe_reuseport_fd(int fd)
+{
+	int val = 0;
+	socklen_t len = sizeof(val);
+	int rc;
+
+	rc = getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, &len);
+	if (rc < 0)
+		return -1;
+
+	return val ? 1 : 0;
 }
 
 /*
@@ -1527,17 +1562,19 @@ static void collect_proc_inodes(struct model *m)
 		if (!fds)
 			continue;
 		while ((fdent = readdir(fds))) {
-			char lpath[128], link[256], *s;
+			char link[256], *s;
 			ssize_t l;
 			unsigned long inode;
 			int fdnum;
+			int dupfd;
 			int reuseport;
 			struct inode_proc *ip;
 
 			if (fdent->d_name[0] == '.')
 				continue;
-			snprintf(lpath, sizeof(lpath), "%s/%s", fdpath, fdent->d_name);
-			l = readlink(lpath, link, sizeof(link) - 1);
+			/* Resolve links in the directory we are enumerating. */
+			l = readlinkat(dirfd(fds), fdent->d_name, link,
+				       sizeof(link) - 1);
 			if (l < 0)
 				continue;
 			link[l] = 0;
@@ -1560,12 +1597,16 @@ static void collect_proc_inodes(struct model *m)
 			fdnum = atoi(fdent->d_name);
 			if (fdnum < 0)
 				continue;
+			dupfd = dup_target_fd(pid, fdnum);
+			if (dupfd < 0)
+				continue;
 			/*
 			 * Probe SO_REUSEPORT here because this is the only stage with both
-			 * target pid and fd number for pidfd_getfd; store on inode_proc so
-			 * endpoint projection can reuse the result later.
+			 * a live target socket and the owning process context; store the
+			 * result on inode_proc so endpoint projection can reuse it later.
 			 */
-			reuseport = probe_reuseport(pid, fdnum);
+			reuseport = probe_reuseport_fd(dupfd);
+			close(dupfd);
 			if (reuseport != 1)
 				continue;
 			ip = lookup_inode(m, inode);
@@ -1596,6 +1637,25 @@ static struct inode_proc *lookup_inode(struct model *m, unsigned long inode)
 	return &m->inode_map[idx];
 }
 
+/* Socket and VSOCK endpoints keep one pointer per PID, in discovery order. */
+static int add_endpoint_processes(struct endpoint *e, const struct inode_proc *ip)
+{
+	size_t i, j;
+
+	for (i = 0; i < ip->n; i++) {
+		for (j = 0; j < e->procs_n; j++)
+			if (e->procs[j]->pid == ip->procs[i]->pid)
+				break;
+		if (j < e->procs_n)
+			continue;
+		if (e->procs_n == e->procs_cap &&
+		    vec_grow((void **)&e->procs, &e->procs_cap, sizeof(*e->procs)))
+			return -1;
+		e->procs[e->procs_n++] = ip->procs[i];
+	}
+	return 0;
+}
+
 /*
  * add_endpoint - add/merge one inet or packet endpoint in @m.
  * @m: model receiving endpoint data.
@@ -1613,11 +1673,11 @@ static int add_endpoint(struct model *m, const char *proto, const char *bind,
 	const char *ifaddr, const struct endpoint_attrs *attrs,
 	struct inode_proc *ip)
 {
-	size_t i, j;
+	size_t i;
 	struct endpoint *e;
 	char label[256];
 
-	if (strchr(bind, ':'))
+	if (strchr(bind, ':') && !str_is_bdaddr(bind))
 		snprintf(label, sizeof(label), "%s:[%s]:%u", proto, bind, port);
 	else
 		snprintf(label, sizeof(label), "%s:%s:%u", proto, bind, port);
@@ -1640,38 +1700,22 @@ static int add_endpoint(struct model *m, const char *proto, const char *bind,
 	e->label = xstrdup(label);
 	e->port = port;
 	e->vsock_cid = 0;
-	e->has_vsock = 0;
 	e->plane = plane;
 	e->ifname = xstrdup(ifname);
 	e->ifaddr = xstrdup(ifaddr);
 	e->wildcard_bind = attrs->wildcard;
 	e->reuseport = attrs->reuseport;
 	if (!e->proto || !e->bind || !e->label || !e->ifname || !e->ifaddr) {
-		free(e->proto);
-		free(e->bind);
-		free(e->label);
-		free(e->ifname);
-		free(e->ifaddr);
+		free_endpoint(e);
 		memset(e, 0, sizeof(*e));
 		return -1;
 	}
 	m->eps_n++;
 add_procs:
-	for (j = 0; j < ip->n; j++) {
-		size_t k;
-		for (k = 0; k < e->procs_n; k++)
-			if (e->procs[k]->pid == ip->procs[j]->pid)
-				goto next;
-		if (e->procs_n == e->procs_cap && vec_grow((void **)&e->procs,
-		    &e->procs_cap, sizeof(struct process_info *)))
-			return -1;
-		e->procs[e->procs_n++] = ip->procs[j];
-next:
-		;
-	}
-	return 0;
+	return add_endpoint_processes(e, ip);
 }
 
+#ifdef HAVE_NETCAP_VSOCK
 /*
  * add_vsock_endpoint - add/merge one VSOCK endpoint in @m.
  * @m: model receiving endpoint data.
@@ -1686,7 +1730,7 @@ next:
 static int add_vsock_endpoint(struct model *m, const char *type,
 	unsigned int cid, unsigned int port, struct inode_proc *ip)
 {
-	size_t i, j;
+	size_t i;
 	struct endpoint *e;
 	char label[128];
 	char cidbuf[32];
@@ -1712,38 +1756,21 @@ static int add_vsock_endpoint(struct model *m, const char *type,
 	e->label = xstrdup(label);
 	e->port = port;
 	e->vsock_cid = cid;
-	e->has_vsock = 1;
 	e->plane = PLANE_VSOCK;
 	e->ifname = xstrdup("");
 	e->ifaddr = xstrdup("");
 	e->reuseport = 0;
 	if (!e->proto || !e->bind || !e->label || !e->ifname || !e->ifaddr) {
-		free(e->proto);
-		free(e->bind);
-		free(e->label);
-		free(e->ifname);
-		free(e->ifaddr);
+		free_endpoint(e);
 		memset(e, 0, sizeof(*e));
 		return -1;
 	}
 	m->eps_n++;
 
 add_procs:
-	for (j = 0; j < ip->n; j++) {
-		size_t k;
-
-		for (k = 0; k < e->procs_n; k++)
-			if (e->procs[k]->pid == ip->procs[j]->pid)
-				goto next;
-		if (e->procs_n == e->procs_cap && vec_grow((void **)&e->procs,
-		    &e->procs_cap, sizeof(struct process_info *)))
-			return -1;
-		e->procs[e->procs_n++] = ip->procs[j];
-next:
-		;
-	}
-	return 0;
+	return add_endpoint_processes(e, ip);
 }
+#endif
 
 /*
  * endpoint_to_ifaces - project one inet bind onto iface/address groupings.
@@ -1940,6 +1967,7 @@ static void parse_packet_file(struct model *m)
 	fclose(f);
 }
 
+#ifdef HAVE_NETCAP_VSOCK
 /*
  * parse_u32_hex_or_dec - parse @s as decimal or hexadecimal u32.
  * @s: numeric token from procfs/netlink text fields.
@@ -1969,10 +1997,222 @@ static int parse_u32_hex_or_dec(const char *s, unsigned int *out)
 	v = strtoul(s, &end, base);
 	if (end == s || *end)
 		return -1;
+	/*
+	 * The caller stores CIDs, ports, and similar procfs fields in u32s.
+	 * Reject oversized text values so they cannot wrap into a false match.
+	 */
+	if (v > UINT_MAX)
+		return -1;
 	*out = (unsigned int)v;
 	return 0;
 }
+#endif
 
+/*
+ * str_is_bdaddr - validate one string as a Bluetooth device address.
+ * @s: text to classify.
+ *
+ * Returns non-zero for XX:XX:XX:XX:XX:XX tokens, else zero.
+ * Side effects/assumptions: Operates on in-memory data and may read
+ * procfs/netns state; it does not change kernel configuration.
+ */
+static int str_is_bdaddr(const char *s)
+{
+	size_t i;
+
+	if (!s || strlen(s) != 17)
+		return 0;
+	for (i = 0; i < 17; i++) {
+		char c = s[i];
+
+		if ((i + 1) % 3 == 0) {
+			if (c != ':')
+				return 0;
+			continue;
+		}
+		if (!((c >= '0' && c <= '9') ||
+		      (c >= 'a' && c <= 'f') ||
+		      (c >= 'A' && c <= 'F')))
+			return 0;
+	}
+	return 1;
+}
+
+#ifdef HAVE_NETCAP_BLUETOOTH
+/*
+ * bt_format_addr - render one controller address into XX:XX:XX:XX:XX:XX.
+ * @bdaddr: kernel Bluetooth address to stringify.
+ * @addr: destination buffer.
+ * @addr_sz: size of @addr in bytes.
+ *
+ * Returns no value.
+ * Side effects/assumptions: Writes a formatted controller address into @addr.
+ */
+static void bt_format_addr(const bdaddr_t *bdaddr, char *addr, size_t addr_sz)
+{
+	snprintf(addr, addr_sz, "%02X:%02X:%02X:%02X:%02X:%02X",
+		bdaddr->b[5], bdaddr->b[4], bdaddr->b[3],
+		bdaddr->b[2], bdaddr->b[1], bdaddr->b[0]);
+}
+
+/*
+ * bt_parse_adapter_dev_id - convert one sysfs adapter name into a device id.
+ * @name: adapter name such as hci0.
+ * @dev_id: destination device index.
+ *
+ * Returns 0 on success, -1 when @name is not an HCI adapter name.
+ * Side effects/assumptions: Operates on in-memory data and does not change
+ * system state.
+ */
+static int bt_parse_adapter_dev_id(const char *name, int *dev_id)
+{
+	unsigned int id;
+	char tail;
+
+	if (sscanf(name, "hci%u%c", &id, &tail) != 1 || id > UINT16_MAX)
+		return -1;
+	*dev_id = (int)id;
+	return 0;
+}
+
+/*
+ * bt_load_adapters - populate the adapter cache from sysfs and HCI ioctls.
+ *
+ * Adapter names come from /sys/class/bluetooth. Each name is resolved to its
+ * BD_ADDR with HCIGETDEVINFO so later procfs parsing can map a single visible
+ * adapter onto HCI and RFCOMM sockets. If the HCI socket or any ioctl fails,
+ * the cache remains empty and lookups fall back to "unknown".
+ * Returns no value.
+ * Side effects/assumptions: Reads sysfs and issues HCI ioctls; it does not
+ * change kernel configuration.
+ */
+static void bt_load_adapters(void)
+{
+	DIR *d;
+	struct dirent *ent;
+	struct bt_adapter_info tmp[BT_ADAPTER_CACHE_MAX];
+	size_t tmp_n = 0;
+	int fd;
+
+	if (bt_adapters_loaded)
+		return;
+	bt_adapters_loaded = 1;
+
+	d = opendir("/sys/class/bluetooth");
+	if (!d)
+		return;
+
+	fd = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI);
+	if (fd < 0)
+		goto out;
+
+	while ((ent = readdir(d))) {
+		struct hci_dev_info di;
+		size_t name_len;
+		int dev_id;
+
+		if (ent->d_name[0] == '.')
+			continue;
+		if (tmp_n == BT_ADAPTER_CACHE_MAX)
+			break;
+		/* Keep complete adapter names so cached identities stay exact. */
+		name_len = strlen(ent->d_name);
+		if (name_len >= sizeof(tmp[tmp_n].name))
+			continue;
+		if (bt_parse_adapter_dev_id(ent->d_name, &dev_id))
+			continue;
+		memset(&di, 0, sizeof(di));
+		di.dev_id = (uint16_t)dev_id;
+		if (ioctl(fd, HCIGETDEVINFO, &di) < 0)
+			goto fail;
+		memcpy(tmp[tmp_n].name, ent->d_name, name_len + 1);
+		bt_format_addr(&di.bdaddr, tmp[tmp_n].addr,
+			sizeof(tmp[tmp_n].addr));
+		tmp_n++;
+	}
+
+	if (tmp_n) {
+		memcpy(bt_adapters, tmp, tmp_n * sizeof(tmp[0]));
+		bt_adapters_n = tmp_n;
+	}
+	close(fd);
+out:
+	closedir(d);
+	return;
+fail:
+	close(fd);
+	bt_adapters_n = 0;
+	closedir(d);
+}
+
+
+/*
+ * bt_resolve_single_adapter - pick the only adapter when the cache is unique.
+ * @name: destination buffer for adapter name.
+ * @name_sz: size of @name in bytes.
+ * @addr: destination buffer for adapter BD_ADDR, or "*".
+ * @addr_sz: size of @addr in bytes.
+ *
+ * Current /proc/net/hci and /proc/net/rfcomm output does not identify the
+ * bound adapter. When exactly one controller is available, use it; otherwise
+ * report the adapter as hci? and the bind address as *.
+ * Returns no value.
+ * Side effects/assumptions: Reads the in-memory adapter cache and does not
+ * change system state.
+ */
+static void bt_resolve_single_adapter(char *name, size_t name_sz,
+	char *addr, size_t addr_sz)
+{
+	bt_load_adapters();
+	if (bt_adapters_n == 1) {
+		snprintf(name, name_sz, "%s", bt_adapters[0].name);
+		snprintf(addr, addr_sz, "%s", bt_adapters[0].addr);
+		return;
+	}
+
+	snprintf(name, name_sz, "%s", BT_ADAPTER_HEURISTIC);
+	snprintf(addr, addr_sz, "%s", BT_ADDR_UNKNOWN);
+}
+
+/*
+ * HCI and RFCOMM expose the same generic socket columns:
+ * sk RefCnt Rmem Wmem User Inode Parent. Neither supplies adapter identity,
+ * channel, or listener state. Keep reporting owned sockets at port 0 and
+ * use the existing single-adapter heuristic; do not guess from socket data.
+ */
+static void parse_bluetooth_file(struct model *m, const char *path,
+				 const char *proto)
+{
+	FILE *f;
+	char line[512];
+	struct endpoint_attrs attrs = { 0, 0 };
+
+	f = fopen(path, "rte");
+	if (!f)
+		return;
+	__fsetlocking(f, FSETLOCKING_BYCALLER);
+	while (fgets(line, sizeof(line), f)) {
+		unsigned long sk, inode, parent;
+		unsigned int refcnt, rmem, wmem, uid;
+		char ifname[IF_NAMESIZE], ifaddr[32];
+		struct inode_proc *ip;
+
+		if (sscanf(line, "%lx %u %u %u %u %lu %lu",
+			   &sk, &refcnt, &rmem, &wmem, &uid, &inode, &parent) != 7)
+			continue;
+		ip = lookup_inode(m, inode);
+		if (!ip)
+			continue;
+		bt_resolve_single_adapter(ifname, sizeof(ifname),
+					 ifaddr, sizeof(ifaddr));
+		add_endpoint(m, proto, ifaddr, 0, PLANE_BLUETOOTH, ifname,
+			     ifaddr, &attrs, ip);
+	}
+	fclose(f);
+}
+#endif
+
+#ifdef HAVE_NETCAP_VSOCK
 /*
  * parse_vsock_file - fallback VSOCK parser using /proc/net/vsock.
  * @m: model receiving parsed VSOCK endpoint/process mappings.
@@ -2223,6 +2463,7 @@ static int parse_vsock_diag(struct model *m)
 	return -1;
 }
 #endif
+#endif
 
 /*
  * parse_diag_messages - consume inet sock_diag replies for @proto/@af.
@@ -2374,7 +2615,7 @@ static void parse_diag_listeners(struct model *m)
 
 /*
  * collect_endpoints - gather all endpoint classes into @m.
- * @m: model receiving inet, diag, packet, and vsock endpoint mappings.
+ * @m: model receiving inet, diag, packet, Bluetooth, and vsock mappings.
  *
  * Data source is current netns procfs/netlink visibility.
  * Returns no value.
@@ -2393,216 +2634,17 @@ static void collect_endpoints(struct model *m)
 	parse_inet_file(m, "/proc/net/raw6", "raw6", AF_INET6);
 	parse_diag_listeners(m);
 	parse_packet_file(m);
+#ifdef HAVE_NETCAP_VSOCK
 	if (parse_vsock_diag(m) < 0) {
 		diag_dbg("vsock diag unavailable (%s), falling back to /proc",
 			strerror(errno));
 		parse_vsock_file(m);
 	}
-}
-
-/*
- * wrap_to - choose a safe wrap index for one output line.
- * @text: source string being wrapped.
- * @from: starting offset in @text.
- * @limit: maximum columns to consume from @from.
- *
- * Returns next index to continue rendering from.
- * Side effects/assumptions: Operates on in-memory data and may read
- * procfs/netns state; it does not change kernel configuration.
- */
-enum color_state {
-	COLOR_STATE_NONE,
-	COLOR_STATE_ORANGE,
-	COLOR_STATE_YELLOW,
-	COLOR_STATE_GREEN,
-};
-
-/*
- * color_state_code - map parser color state to ANSI start sequence.
- * @st: tracked color state carried across wrapped lines.
- *
- * Returns SGR color code for @st, or NULL for default color.
- * Side effects/assumptions: Operates on in-memory data and may read
- * procfs/netns state; it does not change kernel configuration.
- */
-static const char *color_state_code(enum color_state st)
-{
-	switch (st) {
-	case COLOR_STATE_ORANGE:
-		return COLOR_ORANGE;
-	case COLOR_STATE_YELLOW:
-		return COLOR_YELLOW;
-	case COLOR_STATE_GREEN:
-		return COLOR_GREEN;
-	default:
-		return NULL;
-	}
-}
-
-/*
- * skip_ansi_sgr - advance index past one ANSI SGR escape sequence.
- * @text: source string potentially containing SGR escapes.
- * @i: current index, expected at ESC byte when sequence starts.
- *
- * Returns new index after sequence (or unchanged when not at SGR).
- * Side effects/assumptions: Operates on in-memory data and may read
- * procfs/netns state; it does not change kernel configuration.
- */
-static int skip_ansi_sgr(const char *text, int i)
-{
-	if (text[i] != '\033' || text[i + 1] != '[')
-		return i;
-	i += 2;
-	while (text[i] && text[i] != 'm')
-		i++;
-	if (text[i] == 'm')
-		i++;
-	return i;
-}
-
-/*
- * scan_color_state - track active color state across wrapped text spans.
- * @text: source string segment being scanned.
- * @from: start index (inclusive) of rendered segment.
- * @to: end index (exclusive) of rendered segment.
- * @st: incoming color state before scanning @text[@from:@to].
- *
- * Returns resulting color state after processing embedded SGR escapes.
- * Side effects/assumptions: Operates on in-memory data and may read
- * procfs/netns state; it does not change kernel configuration.
- */
-static enum color_state scan_color_state(const char *text, int from, int to,
-	enum color_state st)
-{
-	int i;
-
-	for (i = from; i < to && text[i]; ) {
-		if (text[i] == '\033' && text[i + 1] == '[') {
-			if (strncmp(text + i, COLOR_ORANGE, strlen(COLOR_ORANGE)) == 0) {
-				st = COLOR_STATE_ORANGE;
-				i += strlen(COLOR_ORANGE);
-				continue;
-			}
-			if (strncmp(text + i, COLOR_YELLOW, strlen(COLOR_YELLOW)) == 0) {
-				st = COLOR_STATE_YELLOW;
-				i += strlen(COLOR_YELLOW);
-				continue;
-			}
-			if (strncmp(text + i, COLOR_GREEN, strlen(COLOR_GREEN)) == 0) {
-				st = COLOR_STATE_GREEN;
-				i += strlen(COLOR_GREEN);
-				continue;
-			}
-			if (strncmp(text + i, COLOR_RESET, strlen(COLOR_RESET)) == 0) {
-				st = COLOR_STATE_NONE;
-				i += strlen(COLOR_RESET);
-				continue;
-			}
-			i = skip_ansi_sgr(text, i);
-			continue;
-		}
-		i++;
-	}
-	return st;
-}
-
-static int wrap_to(const char *text, int from, int limit)
-{
-	int i;
-	int vis = 0;
-	int space = -1;
-
-	for (i = from; text[i] && vis < limit; ) {
-		if (text[i] == '\033' && text[i + 1] == '[') {
-			i = skip_ansi_sgr(text, i);
-			continue;
-		}
-		if (text[i] == ' ')
-			space = i;
-		i++;
-		vis++;
-	}
-	if (!text[i])
-		return i;
-	if (space > from)
-		return space;
-	if (i == from)
-		return from + 1;
-	return i;
-}
-
-/*
- * print_tree_node - render one tree node line (with wrapping) to stdout.
- * @prefix: precomputed branch prefix glyphs.
- * @is_last: non-zero when this node is the last child.
- * @txt: node text to render.
- * @width: target display width used for wrapping.
- *
- * Returns no value.
- * Side effects/assumptions: Operates on in-memory data and may read
- * procfs/netns state; it does not change kernel configuration.
- */
-static void print_tree_node(const char *prefix, int is_last, const char *txt,
-	int width)
-{
-	char head[512];
-	char cont[512];
-	int pos = 0;
-	int first = 1;
-	enum color_state st = COLOR_STATE_NONE;
-
-	snprintf(head, sizeof(head), "%s%s", prefix,
-		is_last ? "└─ " : "├─ ");
-	snprintf(cont, sizeof(cont), "%s%s", prefix,
-		is_last ? "   " : "│  ");
-	while (1) {
-		const char *lead = first ? head : cont;
-		int lead_len = strlen(lead);
-		int avail = width - lead_len;
-		int to;
-		const char *code;
-
-		if (avail < 10)
-			avail = 10;
-		if (!txt[pos]) {
-			printf("%s\n", lead);
-			return;
-		}
-		to = wrap_to(txt, pos, avail);
-		printf("%s", lead);
-		code = color_state_code(st);
-		if (!first && code)
-			fputs(code, stdout);
-		printf("%.*s", to - pos, txt + pos);
-		st = scan_color_state(txt, pos, to, st);
-		if (st != COLOR_STATE_NONE)
-			fputs(COLOR_RESET, stdout);
-		putchar('\n');
-		while (txt[to] == ' ')
-			to++;
-		pos = to;
-		first = 0;
-		if (!txt[pos])
-			return;
-	}
-}
-
-/*
- * build_child_prefix - extend tree prefix glyphs for child nodes.
- * @dst: output buffer receiving generated prefix text.
- * @dst_sz: size of @dst in bytes.
- * @prefix: parent prefix string.
- * @parent_is_last: non-zero when parent is the last sibling.
- *
- * Returns no value.
- * Side effects/assumptions: Operates on in-memory data and may read
- * procfs/netns state; it does not change kernel configuration.
- */
-static void build_child_prefix(char *dst, size_t dst_sz, const char *prefix,
-	int parent_is_last)
-{
-	snprintf(dst, dst_sz, "%s%s", prefix,
-		parent_is_last ? "   " : "│  ");
+#endif
+#ifdef HAVE_NETCAP_BLUETOOTH
+	parse_bluetooth_file(m, "/proc/net/rfcomm", "rfcomm");
+	parse_bluetooth_file(m, "/proc/net/hci", "hci");
+#endif
 }
 
 /*
@@ -2651,7 +2693,7 @@ static void format_bind_node(char *dst, size_t dst_sz, const char *bind)
 {
 	if (strcmp(bind, "0.0.0.0") == 0 || strcmp(bind, "::") == 0)
 		snprintf(dst, dst_sz, "*");
-	else if (strchr(bind, ':'))
+	else if (strchr(bind, ':') && !str_is_bdaddr(bind))
 		snprintf(dst, dst_sz, "[%s]", bind);
 	else
 		snprintf(dst, dst_sz, "%s", bind);
@@ -2668,12 +2710,25 @@ static void format_bind_node(char *dst, size_t dst_sz, const char *bind)
  */
 static int bind_sort_cmp(const char *a, const char *b)
 {
-	int a_star = strcmp(a, "0.0.0.0") == 0 || strcmp(a, "::") == 0;
-	int b_star = strcmp(b, "0.0.0.0") == 0 || strcmp(b, "::") == 0;
+	int a_star = strcmp(a, "0.0.0.0") == 0 || strcmp(a, "::") == 0 ||
+		strcmp(a, "*") == 0;
+	int b_star = strcmp(b, "0.0.0.0") == 0 || strcmp(b, "::") == 0 ||
+		strcmp(b, "*") == 0;
 
 	if (a_star != b_star)
 		return a_star ? -1 : 1;
 	return strcmp(a, b);
+}
+
+/* Unknown defense states stay uncolored rather than implying protection. */
+static const char *defense_color(const char *value)
+{
+	if (!strcmp(value, "yes") || !strcmp(value, "filter") ||
+	    !strcmp(value, "strict"))
+		return COLOR_GREEN;
+	if (!strcmp(value, "no") || !strcmp(value, "disabled"))
+		return COLOR_YELLOW;
+	return "";
 }
 
 /*
@@ -2695,21 +2750,30 @@ static void render_tree_process_details(const char *prefix,
 {
 	char pfx_child[256], pfx_def[256], pfx_flags[256];
 	char line[4096];
-	const char *def_nodes[8];
-	char def_buf[8][512];
-	size_t def_n = 0;
+	const struct defense_info *d = &p->defenses;
+	const struct {
+		const char *name, *value, *color;
+	} defenses[] = {
+		{ DEFENSES_RUNS_AS_KEY, d->runs_as_nonroot,
+		  defense_color(d->runs_as_nonroot) },
+		{ "no_new_privs", d->no_new_privs, defense_color(d->no_new_privs) },
+		{ "seccomp", d->seccomp, defense_color(d->seccomp) },
+		{ "lsm", d->lsm_label, !d->lsm_label || !d->lsm_label[0] ? "" :
+		  strstr(d->lsm_label, "unconfined_t") ? COLOR_ORANGE : COLOR_GREEN },
+	};
+	size_t def_n = d->lsm_label ? 4 : 3;
 	size_t ai;
-	unsigned int flags = 0;
+	unsigned int flags = process_flags(p, e);
 	enum cap_severity priv_sev = caps_worst_severity(p->caps);
 
-	snprintf(line, sizeof(line), "%s (pid=%d uid=%d%s%s%s%s)",
-		p->comm, p->pid, p->uid,
+	snprintf(line, sizeof(line), "%s (pid=%d uid=%u%s%s%s%s)",
+		p->comm, p->pid, (unsigned int)p->uid,
 		p->exe ? " exe=" : "",
 		p->exe ? p->exe : "",
 		p->unit ? " unit=" : "",
 		p->unit ? p->unit : "");
-	print_tree_node(prefix, is_last, line, width);
-	build_child_prefix(pfx_child, sizeof(pfx_child), prefix, is_last);
+	proc_tree_print_node(prefix, is_last, line, width);
+	proc_tree_build_child_prefix(pfx_child, sizeof(pfx_child), prefix, is_last);
 
 	if (strcmp(p->caps, "(full)") == 0 || strcmp(p->caps, "(none)") == 0) {
 		const char *c = strcmp(p->caps, "(full)") == 0 ? COLOR_ORANGE :
@@ -2769,7 +2833,7 @@ static void render_tree_process_details(const char *prefix,
 			snprintf(line, sizeof(line), "caps: %s", capsbuf);
 		}
 	}
-	print_tree_node(pfx_child, 0, line, width);
+	proc_tree_print_node(pfx_child, 0, line, width);
 
 	if (p->ambient_caps) {
 		if (use_color)
@@ -2777,77 +2841,23 @@ static void render_tree_process_details(const char *prefix,
 				p->ambient_caps, COLOR_RESET);
 		else
 			snprintf(line, sizeof(line), "ambient: %s", p->ambient_caps);
-		print_tree_node(pfx_child, 0, line, width);
+		proc_tree_print_node(pfx_child, 0, line, width);
 	}
 
-	snprintf(def_buf[def_n], sizeof(def_buf[def_n]),
-		DEFENSES_RUNS_AS_KEY ": %s%s%s",
-		strcmp(p->defenses.runs_as_nonroot, "yes") == 0 && use_color ? COLOR_GREEN :
-		(strcmp(p->defenses.runs_as_nonroot, "no") == 0 && use_color ? COLOR_YELLOW : ""),
-		p->defenses.runs_as_nonroot,
-		use_color && (strcmp(p->defenses.runs_as_nonroot, "yes") == 0 ||
-		 strcmp(p->defenses.runs_as_nonroot, "no") == 0) ? COLOR_RESET : "");
-	def_nodes[def_n] = def_buf[def_n];
-	def_n++;
+	proc_tree_print_node(pfx_child, 0, "defenses", width);
+	proc_tree_build_child_prefix(pfx_def, sizeof(pfx_def), pfx_child, 0);
+	for (ai = 0; ai < def_n; ai++) {
+		char defense[512];
+		const char *color = use_color ? defenses[ai].color : "";
 
-	if (strcmp(p->defenses.no_new_privs, "yes") == 0 && use_color)
-		snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "no_new_privs: %syes%s",
-			COLOR_GREEN, COLOR_RESET);
-	else if (strcmp(p->defenses.no_new_privs, "no") == 0 && use_color)
-		snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "no_new_privs: %sno%s",
-			COLOR_YELLOW, COLOR_RESET);
-	else
-		snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "no_new_privs: %s",
-			p->defenses.no_new_privs);
-	def_nodes[def_n] = def_buf[def_n];
-	def_n++;
-
-	if ((strcmp(p->defenses.seccomp, "filter") == 0 ||
-	     strcmp(p->defenses.seccomp, "strict") == 0) && use_color)
-		snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "seccomp: %s%s%s",
-			COLOR_GREEN, p->defenses.seccomp, COLOR_RESET);
-	else if (strcmp(p->defenses.seccomp, "disabled") == 0 && use_color)
-		snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "seccomp: %sdisabled%s",
-			COLOR_YELLOW, COLOR_RESET);
-	else
-		snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "seccomp: %s",
-			p->defenses.seccomp);
-	def_nodes[def_n] = def_buf[def_n];
-	def_n++;
-
-	if (p->defenses.lsm_label) {
-		if (use_color && strstr(p->defenses.lsm_label, "unconfined_t"))
-			snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "lsm: %s%s%s",
-				COLOR_ORANGE, p->defenses.lsm_label, COLOR_RESET);
-		else if (use_color && p->defenses.lsm_label[0])
-			snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "lsm: %s%s%s",
-				COLOR_GREEN, p->defenses.lsm_label, COLOR_RESET);
-		else
-			snprintf(def_buf[def_n], sizeof(def_buf[def_n]), "lsm: %s",
-				p->defenses.lsm_label);
-		def_nodes[def_n] = def_buf[def_n];
-		def_n++;
+		snprintf(defense, sizeof(defense), "%s: %s%s%s",
+			 defenses[ai].name, color, defenses[ai].value,
+			 color[0] ? COLOR_RESET : "");
+		proc_tree_print_node(pfx_def, ai + 1 == def_n, defense, width);
 	}
-	print_tree_node(pfx_child, 0, "defenses", width);
-	build_child_prefix(pfx_def, sizeof(pfx_def), pfx_child, 0);
-	for (ai = 0; ai < def_n; ai++)
-		print_tree_node(pfx_def, ai + 1 == def_n, def_nodes[ai], width);
 
-	if (e->plane == PLANE_VSOCK) {
-		flags |= FLAG_HYPERVISOR_PLANE;
-		if (e->port == 22)
-			flags |= FLAG_SSH_VSOCK_22;
-	} else {
-		if (e->wildcard_bind)
-			flags |= FLAG_WILDCARD_BIND;
-		if (e->reuseport)
-			flags |= FLAG_REUSEPORT;
-	}
-	if (p->has_privileged_caps)
-		flags |= FLAG_PRIVILEGED_CAPS;
-
-	print_tree_node(pfx_child, 1, "flags", width);
-	build_child_prefix(pfx_flags, sizeof(pfx_flags), pfx_child, 1);
+	proc_tree_print_node(pfx_child, 1, "flags", width);
+	proc_tree_build_child_prefix(pfx_flags, sizeof(pfx_flags), pfx_child, 1);
 	print_flag_nodes(pfx_flags, width, flags, priv_sev);
 }
 
@@ -2865,7 +2875,9 @@ static void render_json_process(struct process_info *p,
 				const struct endpoint *ep,
 				const char *indent)
 {
+	unsigned int flags = process_flags(p, ep);
 	int firstf = 1;
+	size_t i;
 
 	printf("%s{\"comm\": ", indent);
 	json_escape(p->comm);
@@ -2873,7 +2885,8 @@ static void render_json_process(struct process_info *p,
 		printf(", \"exe\": ");
 		json_escape(p->exe);
 	}
-	printf(", \"pid\": %d, \"uid\": %d", p->pid, p->uid);
+	printf(", \"pid\": %d, \"uid\": %u", p->pid,
+		(unsigned int)p->uid);
 	if (p->unit) {
 		printf(", \"unit\": ");
 		json_escape(p->unit);
@@ -2900,261 +2913,158 @@ static void render_json_process(struct process_info *p,
 	}
 	printf("}, \"flags\": [");
 
-	if (ep->plane == PLANE_VSOCK) {
-		json_escape("hypervisor-plane");
-		firstf = 0;
-		if (ep->port == 22) {
-			printf(", ");
-			json_escape("ssh-on-vsock-port-22");
-		}
-	} else {
-		if (ep->wildcard_bind) {
-			if (!firstf)
-				printf(", ");
-			json_escape("wildcard-bind");
-			firstf = 0;
-		}
-		if (ep->reuseport) {
-			if (!firstf)
-				printf(", ");
-			json_escape("reuseport");
-			firstf = 0;
-		}
-	}
-	if (p->has_privileged_caps) {
+	for (i = 0; i < sizeof(flag_names) / sizeof(flag_names[0]); i++) {
+		if (!(flags & flag_names[i].bit))
+			continue;
 		if (!firstf)
 			printf(", ");
-		json_escape("privileged-caps");
+		json_escape(flag_names[i].name);
+		firstf = 0;
 	}
 	printf("]}");
 }
 
 
+/* Endpoints in a displayed port group can repeat owners across ifaddrs. */
+static void render_tree_processes(const char *prefix, int width,
+				 const struct endpoint *eps, size_t count)
+{
+	struct pidset seen;
+	struct process_info *pending = NULL;
+	const struct endpoint *pending_ep = NULL;
+	size_t i, j;
+
+	if (pidset_init(&seen))
+		return;
+	for (i = 0; i < count; i++) {
+		const struct endpoint *e = &eps[i];
+
+		for (j = 0; j < e->procs_n; j++) {
+			struct process_info *p = e->procs[j];
+
+			if (pidset_test_and_add(&seen, p->pid))
+				continue;
+			/*
+			 * A later endpoint may contain only duplicate owners.
+			 * Defer one row so "last" means last visible process,
+			 * not last entry in the underlying endpoint arrays.
+			 */
+			if (pending)
+				render_tree_process_details(prefix, 0, pending,
+							    pending_ep, width);
+			pending = p;
+			pending_ep = e;
+		}
+	}
+	if (pending)
+		render_tree_process_details(prefix, 1, pending, pending_ep, width);
+	pidset_free(&seen);
+}
+
 /*
- * render_tree - print human-readable advanced report as a tree.
- * @m: model to render; endpoint array is sorted in place before printing.
- *
- * Returns no value.
- * Side effects/assumptions: Operates on in-memory data and may read
- * procfs/netns state; it does not change kernel configuration.
+ * endpoint_cmp keeps each plane/interface/protocol/bind/port contiguous.
+ * Walk those ranges directly; interface addresses remain separate in the
+ * model for JSON, but share one owner list per displayed tree port.
  */
 static void render_tree(struct model *m)
 {
-	size_t i;
-	int planes[PLANE_COUNT];
-	size_t plane_n = 0;
-	int width = get_width();
+	size_t i, plane_end;
+	int width = proc_output_width();
 
 	if (m->eps_n > 1)
 		qsort(m->eps, m->eps_n, sizeof(struct endpoint), endpoint_cmp);
-	puts("netcap --advanced");
-
-	for (i = 0; i < PLANE_COUNT; i++) {
-		size_t j;
-		for (j = 0; j < m->eps_n; j++) {
-			if (m->eps[j].plane == (enum plane_kind)i) {
-				planes[plane_n++] = i;
-				break;
-			}
-		}
-	}
-
-	for (i = 0; i < plane_n; i++) {
-		/* Tree level: plane (INET external/loopback, packet, vsock). */
-		int plane = planes[i];
-		int plane_last = (i + 1 == plane_n);
-		char pfx_plane[256] = "";
-		char pfx_iface[256];
+	for (i = 0; i < m->eps_n; i = plane_end) {
+		enum plane_kind plane = m->eps[i].plane;
 		const char *plane_name = plane == PLANE_INET_EXTERNAL ?
 			"INET (external)" :
 			plane == PLANE_INET_LOOPBACK ? "INET (loopback)" :
-			plane == PLANE_PACKET ? PLANE_PACKET_NAME : "VSOCK";
-		size_t j = 0;
+			plane == PLANE_PACKET ? PLANE_PACKET_NAME :
+			plane == PLANE_BLUETOOTH ? PLANE_BLUETOOTH_NAME : "VSOCK";
+		char pfx_iface[256];
+		size_t j, iface_end;
 
-		print_tree_node(pfx_plane, plane_last, plane_name, width);
-		build_child_prefix(pfx_iface, sizeof(pfx_iface), pfx_plane,
-			plane_last);
+		for (plane_end = i + 1; plane_end < m->eps_n &&
+		     m->eps[plane_end].plane == plane; plane_end++)
+			;
+		proc_tree_print_node("", plane_end == m->eps_n, plane_name, width);
+		proc_tree_build_child_prefix(pfx_iface, sizeof(pfx_iface), "",
+					    plane_end == m->eps_n);
 		if (plane == PLANE_VSOCK) {
-			/* VSOCK has no iface/address hierarchy, so print endpoint-first. */
-			for (j = 0; j < m->eps_n; j++) {
-				struct endpoint *e = &m->eps[j];
+			/* VSOCK has no interface/bind hierarchy. */
+			for (j = i; j < plane_end; j++) {
 				char pfx_proc[256];
-				int ep_last;
-				size_t k;
+				int last = j + 1 == plane_end;
 
-				if (e->plane != PLANE_VSOCK)
-					continue;
-				ep_last = 1;
-				for (size_t n = j + 1; n < m->eps_n; n++) {
-					if (m->eps[n].plane == PLANE_VSOCK) {
-						ep_last = 0;
-						break;
-					}
-				}
-				print_tree_node(pfx_iface, ep_last, e->label, width);
-				build_child_prefix(pfx_proc, sizeof(pfx_proc), pfx_iface,
-					ep_last);
-				for (k = 0; k < e->procs_n; k++) {
-					struct process_info *p = e->procs[k];
-					int proc_last = (k + 1 == e->procs_n);
-
-					render_tree_process_details(pfx_proc, proc_last, p, e,
-						width);
-				}
+				proc_tree_print_node(pfx_iface, last, m->eps[j].label,
+						     width);
+				proc_tree_build_child_prefix(pfx_proc, sizeof(pfx_proc),
+							    pfx_iface, last);
+				render_tree_processes(pfx_proc, width, &m->eps[j], 1);
 			}
 			continue;
 		}
+		for (j = i; j < plane_end; j = iface_end) {
+			char pfx_proto[256];
+			size_t k, proto_end;
 
-		while (j < m->eps_n) {
-			/* Tree level: interface grouping within the current plane. */
-			size_t iface_start, iface_end;
-			char iface_line[160];
-			char pfx_iface_child[256];
-			int iface_last;
+			for (iface_end = j + 1; iface_end < plane_end &&
+			     !strcmp(m->eps[iface_end].ifname, m->eps[j].ifname);
+			     iface_end++)
+				;
+			proc_tree_print_node(pfx_iface, iface_end == plane_end,
+					     m->eps[j].ifname, width);
+			proc_tree_build_child_prefix(pfx_proto, sizeof(pfx_proto),
+						    pfx_iface, iface_end == plane_end);
+			for (k = j; k < iface_end; k = proto_end) {
+				const char *proto = m->eps[k].proto;
+				char pfx_bind[256], proto_line[64];
+				size_t b, bind_end;
+				const char *color = use_color &&
+					(!strcmp(proto, "raw") || !strcmp(proto, "raw6") ||
+					 !strcmp(proto, "packet") || !strcmp(proto, "hci")) ?
+					COLOR_YELLOW : "";
 
-			if (m->eps[j].plane != (enum plane_kind)plane) {
-				j++;
-				continue;
-			}
-			iface_start = j;
-			iface_end = j + 1;
-			while (iface_end < m->eps_n &&
-			       m->eps[iface_end].plane == (enum plane_kind)plane &&
-			       strcmp(m->eps[iface_end].ifname,
-				m->eps[iface_start].ifname) == 0)
-				iface_end++;
-			iface_last = 1;
-			if (iface_end < m->eps_n &&
-			    m->eps[iface_end].plane == (enum plane_kind)plane)
-				iface_last = 0;
+				for (proto_end = k + 1; proto_end < iface_end &&
+				     !strcmp(m->eps[proto_end].proto, proto); proto_end++)
+					;
+				snprintf(proto_line, sizeof(proto_line), "%s%s%s",
+					 color, proto, color[0] ? COLOR_RESET : "");
+				proc_tree_print_node(pfx_proto, proto_end == iface_end,
+						     proto_line, width);
+				proc_tree_build_child_prefix(pfx_bind, sizeof(pfx_bind),
+							    pfx_proto, proto_end == iface_end);
+				for (b = k; b < proto_end; b = bind_end) {
+					char pfx_port[256], bind_line[128];
+					size_t p, port_end;
 
-			snprintf(iface_line, sizeof(iface_line), "%s",
-				m->eps[iface_start].ifname);
-			print_tree_node(pfx_iface, iface_last, iface_line, width);
-			build_child_prefix(pfx_iface_child, sizeof(pfx_iface_child),
-				pfx_iface, iface_last);
+					for (bind_end = b + 1; bind_end < proto_end &&
+					     !strcmp(m->eps[bind_end].bind, m->eps[b].bind);
+					     bind_end++)
+						;
+					format_bind_node(bind_line, sizeof(bind_line),
+							 m->eps[b].bind);
+					proc_tree_print_node(pfx_bind, bind_end == proto_end,
+							     bind_line, width);
+					proc_tree_build_child_prefix(pfx_port, sizeof(pfx_port),
+							pfx_bind, bind_end == proto_end);
+					for (p = b; p < bind_end; p = port_end) {
+						char pfx_proc[256], port_line[64];
 
-			{
-				char pfx_proto_root[256];
-
-				snprintf(pfx_proto_root, sizeof(pfx_proto_root), "%s",
-					pfx_iface_child);
-
-				for (j = iface_start; j < iface_end; ) {
-					/* Tree level: protocol grouping on this interface. */
-					size_t proto_start = j, proto_end;
-					char pfx_bind[256];
-					int proto_last;
-
-					proto_end = j + 1;
-					while (proto_end < iface_end &&
-					       strcmp(m->eps[proto_end].proto,
-						m->eps[proto_start].proto) == 0)
-						proto_end++;
-					proto_last = (proto_end == iface_end);
-
-					/* Highlight higher-risk raw/packet protocol families. */
-					if (use_color && (strcmp(m->eps[proto_start].proto, "raw") == 0 ||
-					    strcmp(m->eps[proto_start].proto, "raw6") == 0 ||
-					    strcmp(m->eps[proto_start].proto, "packet") == 0)) {
-						char pbuf[64];
-
-						snprintf(pbuf, sizeof(pbuf), "%s%s%s", COLOR_YELLOW,
-							m->eps[proto_start].proto, COLOR_RESET);
-						print_tree_node(pfx_proto_root, proto_last, pbuf, width);
-					} else {
-						print_tree_node(pfx_proto_root, proto_last,
-							m->eps[proto_start].proto, width);
+						for (port_end = p + 1; port_end < bind_end &&
+						     m->eps[port_end].port == m->eps[p].port;
+						     port_end++)
+							;
+						snprintf(port_line, sizeof(port_line), "%u",
+							 m->eps[p].port);
+						proc_tree_print_node(pfx_port, port_end == bind_end,
+								     port_line, width);
+						proc_tree_build_child_prefix(pfx_proc, sizeof(pfx_proc),
+							pfx_port, port_end == bind_end);
+						render_tree_processes(pfx_proc, width, &m->eps[p],
+								      port_end - p);
 					}
-					build_child_prefix(pfx_bind, sizeof(pfx_bind),
-						pfx_proto_root, proto_last);
-
-					{
-						size_t bi = proto_start;
-
-						while (bi < proto_end) {
-							/* Tree level: bind address (wildcard/specific). */
-							size_t bind_start = bi;
-							size_t bind_end;
-							char bind_line[128], pfx_port[256];
-							int bind_last;
-
-							bind_end = bi + 1;
-							while (bind_end < proto_end &&
-							       strcmp(m->eps[bind_end].bind,
-								m->eps[bind_start].bind) == 0)
-								bind_end++;
-							bind_last = (bind_end == proto_end);
-
-							format_bind_node(bind_line, sizeof(bind_line),
-								m->eps[bind_start].bind);
-							print_tree_node(pfx_bind, bind_last, bind_line, width);
-							build_child_prefix(pfx_port, sizeof(pfx_port),
-								pfx_bind, bind_last);
-
-							for (bi = bind_start; bi < bind_end; ) {
-								/* Tree level: port number under each bind. */
-								size_t port_start = bi;
-								size_t port_end;
-								char pfx_proc[256], port_line[64];
-								int port_last;
-								size_t k;
-								struct pidset seen;
-
-								port_end = bi + 1;
-								while (port_end < bind_end &&
-								       m->eps[port_end].port ==
-									m->eps[port_start].port)
-									port_end++;
-								port_last = (port_end == bind_end);
-
-								snprintf(port_line, sizeof(port_line), "%u",
-									m->eps[port_start].port);
-								print_tree_node(pfx_port, port_last,
-									port_line, width);
-								build_child_prefix(pfx_proc, sizeof(pfx_proc),
-									pfx_port, port_last);
-
-								if (pidset_init(&seen)) {
-									bi = port_end;
-									continue;
-								}
-
-								for (k = port_start; k < port_end; k++) {
-									/* Tree level: process details under the current port. */
-									struct endpoint *e = &m->eps[k];
-									size_t pi;
-
-									for (pi = 0; pi < e->procs_n; pi++) {
-										int seen_rc;
-										struct process_info *p = e->procs[pi];
-										int proc_last;
-
-										/*
-										 * Deduplicate processes that appear under multiple
-										 * endpoints sharing this grouped port.
-										 */
-										seen_rc = pidset_test_and_add(&seen, p->pid);
-										if (seen_rc)
-											continue;
-
-										proc_last = (k + 1 == port_end) &&
-											(pi + 1 == e->procs_n);
-
-										render_tree_process_details(pfx_proc,
-											proc_last, p, e, width);
-									}
-								}
-
-								pidset_free(&seen);
-								bi = port_end;
-							}
-						}
-					}
-					j = proto_end;
 				}
 			}
-			j = iface_end;
 		}
 	}
 }
@@ -3170,7 +3080,6 @@ static void render_interfaces_text(struct model *m)
 	size_t i;
 
 	sort_interfaces(m);
-	puts("netcap --advanced --list-interfaces");
 	for (i = 0; i < m->ifaces_n; i++)
 		printf("%s\n", m->ifaces[i].name);
 }
@@ -3212,6 +3121,7 @@ static void json_escape(const char *s)
 static void render_json(struct model *m)
 {
 	size_t i, j, k, l;
+	int first_plane = 1;
 
 	if (m->eps_n > 1)
 		qsort(m->eps, m->eps_n, sizeof(struct endpoint), endpoint_cmp);
@@ -3221,29 +3131,42 @@ static void render_json(struct model *m)
 	for (i = 0; i < PLANE_COUNT; i++) {
 		const char *pname = i == PLANE_INET_EXTERNAL ? "INET" :
 			i == PLANE_INET_LOOPBACK ? "INET" :
-			i == PLANE_PACKET ? PLANE_PACKET_NAME : "VSOCK";
+			i == PLANE_PACKET ? PLANE_PACKET_NAME :
+			i == PLANE_BLUETOOTH ? PLANE_BLUETOOTH_NAME : "VSOCK";
 		const char *scope = i == PLANE_INET_EXTERNAL ? "external" :
 			i == PLANE_INET_LOOPBACK ? "loopback" : NULL;
 		struct strset seen_ifaces = { 0 };
-		int first_vsock = 1;
 		int first_if = 1;
+#ifdef HAVE_NETCAP_VSOCK
+		int first_vsock = 1;
+#endif
 
+#ifndef HAVE_NETCAP_VSOCK
+		if (i == PLANE_VSOCK)
+			continue;
+#endif
+		if (!first_plane)
+			puts(",");
+		first_plane = 0;
 		printf("    {\"name\": ");
 		json_escape(pname);
 		if (scope) {
 			printf(", \"scope\": ");
 			json_escape(scope);
 		}
+#ifdef HAVE_NETCAP_VSOCK
 		if (i == PLANE_VSOCK)
 			puts(", \"endpoints\": [");
 		else
+#endif
 			puts(", \"ifaces\": [");
 
+#ifdef HAVE_NETCAP_VSOCK
 		if (i == PLANE_VSOCK) {
 			for (j = 0; j < m->eps_n; j++) {
 				struct endpoint *ep = &m->eps[j];
 
-				if (ep->plane != PLANE_VSOCK)
+				if (ep->plane != (enum plane_kind)i)
 					continue;
 				if (!first_vsock)
 					puts(",");
@@ -3271,11 +3194,10 @@ static void render_json(struct model *m)
 				puts("      ]}");
 			}
 			puts("    ]}");
-			if (i + 1 != PLANE_COUNT)
-				puts(",");
 			strset_free(&seen_ifaces);
 			continue;
 		}
+#endif
 
 		for (j = 0; j < m->eps_n; j++) {
 			struct strset seen_addrs = { 0 };
@@ -3352,8 +3274,6 @@ static void render_json(struct model *m)
 		}
 		puts("    ]}");
 		strset_free(&seen_ifaces);
-		if (i + 1 != PLANE_COUNT)
-			puts(",");
 	}
 	puts("  ]");
 	puts("}");

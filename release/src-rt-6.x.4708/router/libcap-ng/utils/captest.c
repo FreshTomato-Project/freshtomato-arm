@@ -1,6 +1,6 @@
 /*
  * captest.c - A program that demonstrates and outputs capabilities
- * Copyright (c) 2009, 2013, 2020 Red Hat Inc.
+ * Copyright (c) 2009, 2013, 2020, 2023 Red Hat Inc.
  * All Rights Reserved.
  *
  * This software may be freely redistributed and/or modified under the
@@ -312,4 +312,3 @@ int main(int argc, char *argv[])
 	}
 	return 0;
 }
-

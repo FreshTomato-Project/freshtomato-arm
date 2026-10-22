@@ -1,3 +1,31 @@
+0.9.6
+- Fix supplementary group changes in capng_change_id
+- Reduce cap-audit size and memory use; builds now require llvm-strip
+- Preserve capability evidence during cap-audit shutdown
+- In cap-audit, fix optional SETPCAP false positives w/o hiding required caps
+- Fix ambient capabilities and capability list handling in cap-audit --service
+- In cap-audit, reject unsupported systemd unit syntax
+- Fix tree branch drawing for repeated socket owners in netcap --advanced
+- Fix utility builds with musl libc
+- Ensure capng_change_id is multi-thread safe
+
+0.9.5
+- Fix broken utility_logic_test when run as a 32 bit app
+- Install the cap-audit man page conditionally
+- Fix V3 file capability usage
+- Preserve existing securebits in capng_lock
+- Make python configuration a little more strict
+
+0.9.4
+- Add bluetooth collection to netcap --advanced
+- Don't drop netcap --advanced if only VSOCK kernel headers are missing
+- In cap-audit, verify executable is being passed
+- Add a systemd simulator to cap-audit: use --service to test a service file
+- Improve cap-audit recommendations by correlating syscall outcomes
+- Allow supplying vmlinux.h for reproducible cap-audit builds
+- Restore --with-python/--without-python as generic Python configure options
+- Fix on-demand bash completion loading for the utilities
+
 0.9.3
 - In cap-audit, split capability analysis across init and runtime phases
 - If vm_sockets.h and others are not available, remove "netcap --advanced"

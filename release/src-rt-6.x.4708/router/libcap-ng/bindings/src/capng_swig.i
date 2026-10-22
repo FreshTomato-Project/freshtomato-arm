@@ -48,6 +48,25 @@ signed
 %enddef
 #define __attribute(X) /*nothing*/
 typedef unsigned __u32;
+typedef unsigned uid_t;
 #define __extension__ /*nothing*/
 %include "./caps.h"
+
+/*
+ * The mutable string-returning APIs allocate their result for
+ * CAPNG_PRINT_BUFFER. SWIG copies that result into a Python string, so release
+ * the original C buffer after converting it.
+ */
+%typemap(ret) char *capng_print_caps_numeric {
+	free($1);
+}
+
+%typemap(ret) char *capng_print_caps_text {
+	free($1);
+}
+
 %include "./capng.h"
+
+/* SWIG does not emit macros containing a C cast. */
+#undef CAPNG_UNSET_ROOTID
+%constant uid_t CAPNG_UNSET_ROOTID = (uid_t)-1;

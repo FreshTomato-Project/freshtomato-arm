@@ -131,8 +131,9 @@ Libcap-ng 0.6 and later has python bindings. (Only python3 is supported from 0.8
        error()
    ```
 
-The one caveat is that printing capabilities from python does not work. But
-you can still manipulate capabilities, though.
+The Python bindings also provide `capng_print_caps_numeric()` and
+`capng_print_caps_text()` for printing capabilities or returning them as a
+Python string.
 
 Ambient Capabilities
 --------------------
@@ -176,13 +177,16 @@ make
 make install
 ```
 
-If you want python bindings, add that option to the configure command. The
-`netcap --advanced` feature also depends on newer Linux kernel headers,
-including `linux/vm_sockets.h`. When those headers are not available, such as
-on older build roots, `configure` will automatically opt out of advanced mode
-and report that in its output while still building the rest of libcap-ng. The
-cap-audit program has to be specifically enabled and defaults to not being
-built. There is also a spec file to use if you are on a rpm based
+Use `--with-python` or `--with-python3` to enable the Python 3 bindings, or
+`--without-python` to disable them. The `netcap --advanced` feature also
+depends on newer Linux kernel headers. When
+the core inet/netlink diag headers are not available, such as on older build
+roots, `configure` will automatically opt out of advanced mode and report that
+in its output while still building the rest of libcap-ng. VSOCK reporting
+additionally depends on `linux/vm_sockets.h`; if only that header is missing,
+`netcap --advanced` is still built and VSOCK endpoints are omitted from its
+reports. The cap-audit program has to be specifically enabled and defaults to
+not being built. There is also a spec file to use if you are on a rpm based
 distribution. To do that, run "make dist" instead of make in the above
 instructions. Then use the resulting tar file with the spec file.
 
@@ -204,7 +208,121 @@ kernels.
 
 cap-audit
 ---------
-As of the 0.9 release of libcap-ng, there is a new utility **cap-audit**. This program can be used to determine the actual capabilities that a program needs. To do this, use it to run the application kind of the way one would use strace. Use '--' to separate the options to cap-audit from the program being audited. You need to use cap-audit as root because it places an eBPF program in the kernel to hook the capability checks to determine what was requested, was it granted, and what syscall did it originate from. When testing a daemon, pass command line options that keep it in the foreground. The following is an example checking sshd: 
+As of the 0.9 release of libcap-ng, there is a new utility **cap-audit**. This
+program can be used to determine the actual capabilities that a program needs.
+To do this, use it to run the application kind of the way one would use
+strace. Use `--` to separate the options to cap-audit from the program being
+audited. Runtime tracing requires root or the `CAP_BPF`, `CAP_PERFMON`, and
+`CAP_SYS_PTRACE` capabilities. When testing a daemon directly, pass command
+line options that keep it in the foreground. The following is an example
+checking sshd:
+
+The `--service` option audits a systemd service unit. It parses and runs
+`ExecStart` while simulating the unit's credentials, capability sets, and
+`NoNewPrivileges` setting. By default, cap-audit traces the unit's `ExecStart`
+command:
+
+```
+cap-audit --service /usr/lib/systemd/system/sshd.service
+```
+
+Arguments beginning with `-` after `--` replace the parsed `ExecStart`
+arguments, while a complete command after `--` replaces `ExecStart` entirely:
+
+```
+cap-audit --service /usr/lib/systemd/system/sshd.service -- -D
+cap-audit --service service-file -- /usr/sbin/sshd -D
+```
+
+This is a focused service simulator rather than a complete systemd execution
+environment. In particular, it does not load `Environment` or
+`EnvironmentFile`; see the cap-audit(8) man page for the supported settings
+and `ExecStart` prefix limitations.
+
+Cap-audit also records the capability masks installed by successful `capset`
+calls. A capability requested by `capset` without a confirmed granted check is
+reported separately under `CAPSET-ONLY CAPABILITIES`; it is not classified as
+required. Deployment snippets retain these capabilities for compatibility with
+the current binary because removing one from the deployment boundary can make
+the application's `capset` fail even when the capability is no longer
+functionally needed. Treat them as application-cleanup candidates: remove the
+capability from the application's setup, exercise representative code paths in
+additional runs, and only then remove it from the deployment boundary. Failed
+`capset` calls do not establish this compatibility constraint.
+
+cap-audit is optional and has to be enabled at build time:
+
+```
+./configure --enable-cap-audit
+```
+
+The build needs clang, llvm-strip, bpftool, libbpf, libaudit, and their
+development headers. Set `LLVM_STRIP=/path/to/llvm-strip` when configuring
+to select a versioned or non-default tool. The build strips DWARF debug
+information from the BPF object before embedding it, while preserving the
+BTF and CO-RE metadata needed to load it.
+
+It also needs a `utils/cap-audit/vmlinux.h` describing the kernel's
+types. By default this is generated from the running kernel's BTF data in
+`/sys/kernel/btf/vmlinux`, so the build host kernel must provide enough BTF and
+tracing metadata for the BPF program to compile.
+
+Reading `/sys/kernel/btf/vmlinux` at build time makes the build depend on the
+host kernel and is therefore not reproducible. To avoid this, a pre-generated
+`vmlinux.h` can be supplied at configure time:
+
+```
+./configure --enable-cap-audit \
+    --with-vmlinux-h=provided \
+    --with-vmlinux-h-path=/path/to/vmlinux.h
+```
+
+`--with-vmlinux-h` selects how `vmlinux.h` is obtained:
+
+* `auto` (default) uses the file given by `--with-vmlinux-h-path` if set, and
+  otherwise generates one from `/sys/kernel/btf/vmlinux`.
+* `provided` requires `--with-vmlinux-h-path` and uses that file as-is,
+  without touching `/sys`.
+* `generated` always generates the file from `/sys/kernel/btf/vmlinux`.
+
+A `vmlinux.h` for the target architecture can be produced ahead of time with:
+
+```
+bpftool btf dump file /sys/kernel/btf/vmlinux format c >vmlinux.h
+```
+
+The kernel used to build and run cap-audit needs the BPF and tracing support
+used by `utils/cap-audit/cap_audit.bpf.c`. On current kernels, check for these
+options in `/proc/config.gz` or `/boot/config-$(uname -r)`:
+
+```
+CONFIG_BPF=y
+CONFIG_BPF_SYSCALL=y
+CONFIG_BPF_EVENTS=y
+CONFIG_DEBUG_INFO_BTF=y
+CONFIG_FTRACE_SYSCALLS=y
+CONFIG_KPROBES=y
+CONFIG_KRETPROBES=y
+CONFIG_KPROBE_EVENTS=y
+CONFIG_PERF_EVENTS=y
+CONFIG_STACKTRACE=y
+CONFIG_TRACEPOINTS=y
+CONFIG_TRACING=y
+```
+
+`CONFIG_FTRACE_SYSCALLS` is needed for the `raw_syscalls/sys_enter` and
+`raw_syscalls/sys_exit` tracepoint types. If it is missing, the generated
+`vmlinux.h` may not contain `struct trace_event_raw_sys_enter` or
+`struct trace_event_raw_sys_exit`, and `cap_audit.bpf.c` will not compile. A
+quick check for the tracepoint structs used by cap-audit is:
+
+```
+bpftool btf dump file /sys/kernel/btf/vmlinux format c |
+grep -E 'struct trace_event_raw_(sys_enter|sys_exit|sched_process_(fork|exec|template))'
+```
+
+`CONFIG_BPF_JIT` is recommended for performance, but it is not required just to
+build cap-audit.
 
 ```
 cap-audit -- /usr/sbin/sshd -D
@@ -281,40 +399,68 @@ REQUIRED CAPABILITIES:
     Checks: 1 granted, 0 denied
     Reason: Used by getxattr (syscall 191)
 
+CAPSET-ONLY CAPABILITIES:
+----------------------------------------------------------------------
+  None
+
 CONDITIONAL CAPABILITIES:
 ----------------------------------------------------------------------
   CAP_DAC_OVERRIDE
     Needed when fs.protected_symlinks = 1 for symlinks in world-writable directories
     Current value: 1 (capability needed)
 
-ATTEMPTED BUT DENIED:
+CAPABILITIES WITH ONLY NOT-GRANTED CHECKS:
 ----------------------------------------------------------------------
   dac_override (#1)
-    Attempts: 2 (all denied)
-    Syscalls: readlink, faccessat2
-    Impact: Application may have reduced functionality
+    Capability checks returning not granted: 2
+    Outcomes of syscall invocations containing such a check:
+      readlink: 1 succeeded
+      faccessat2: 1 succeeded
+    Assessment: Associated syscall outcomes: 2 succeeded. The capability was not
+                granted by those checks, but the associated syscall invocations
+                completed. The capability is not automatically recommended.
+    Recommendation: Not added automatically.
 
   bpf (#39)
-    Attempts: 2 (all denied)
-    Syscalls: prctl
-    Impact: Application may have reduced functionality
+    Capability checks returning not granted: 2
+    Outcomes of syscall invocations containing such a check:
+      prctl: 2 succeeded
+    Assessment: Associated syscall outcomes: 2 succeeded. The capability was not
+                granted by those checks, but the associated syscall invocations
+                completed. The capability is not automatically recommended.
+    Recommendation: Not added automatically.
 
 SUMMARY:
 ----------------------------------------------------------------------
   Total capability checks: 2349
   Required capabilities: 11
   Conditional capabilities: 1
-  Denied operations: 2
+  Successful capset calls: 0
+  Capset-only capabilities: 0
+  Capabilities with only not-granted checks: 2
+    Assessment counts:
+      Omitted after associated syscall success: 2
 
 RECOMMENDATIONS:
 ----------------------------------------------------------------------
+  Capabilities with only not-granted checks:
+    dac_override: Omitted; associated syscalls succeeded
+    bpf: Omitted; associated syscalls succeeded
+    Capabilities in this section are not added automatically. Add one only
+    after confirming that required functionality fails because the capability
+    is absent.
+
   Programmatic solution (C with libcap-ng):
     #include <cap-ng.h>
+    #include <stdio.h>
+    #include <stdlib.h>
     ...
     capng_clear(CAPNG_SELECT_BOTH);
-    capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED, CHOWN, DAC_READ_SEARCH, SETGID, SETUID, NET_BIND_SERVICE, NET_ADMIN, SYS_CHROOT, SYS_ADMIN, SYS_RESOURCE, AUDIT_WRITE, MAC_ADMIN, -1);
-    if (capng_change_id(uid, gid, CAPNG_DROP_SUPP_GRP | CAPNG_CLEAR_BOUNDING))
+    capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED, CAP_CHOWN, CAP_DAC_READ_SEARCH, CAP_SETGID, CAP_SETUID, CAP_NET_BIND_SERVICE, CAP_NET_ADMIN, CAP_SYS_CHROOT, CAP_SYS_ADMIN, CAP_SYS_RESOURCE, CAP_AUDIT_WRITE, CAP_MAC_ADMIN, -1);
+    if (capng_change_id(uid, gid, CAPNG_DROP_SUPP_GRP | CAPNG_CLEAR_BOUNDING)) {
 	perror("capng_change_id");
+	exit(EXIT_FAILURE);
+    }
 
   For systemd service:
     [Service]
@@ -366,4 +512,4 @@ RECOMMENDATIONS:
 Reporting
 ---------
 Report any bugs in this package to:
-https://github.com/stevegrubb/libcap-ng/issue
+https://github.com/stevegrubb/libcap-ng/issues

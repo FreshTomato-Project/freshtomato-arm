@@ -4,15 +4,18 @@ capng_get_rootid \- get namespace root id
 .SH "SYNOPSIS"
 .B #include <cap-ng.h>
 .sp
-int capng_get_rootid(void);
+uid_t capng_get_rootid(void);
 
 .SH "DESCRIPTION"
 
-capng_get_rootid gets the rootid for capabilities operations. This is only applicable for file system operations.
+capng_get_rootid gets the rootid for file capabilities operations. The value
+is a host-endian user ID in the caller's user namespace.
 
 .SH "RETURN VALUE"
 
-If the file is in the init namespace or the kernel does not support V3 file system capabilities, it returns CAPNG_UNSET_ROOTID. Otherwise it return an integer for the namespace root id.
+If V3 file capabilities have not been selected, or the kernel does not
+support them, it returns CAPNG_UNSET_ROOTID. Otherwise it returns the
+namespace root user ID.
 
 .SH "SEE ALSO"
 

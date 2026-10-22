@@ -25,6 +25,8 @@
 #ifndef NETCAP_ADVANCED_H
 #define NETCAP_ADVANCED_H
 
+#include "gcc-attributes.h"
+
 struct netcap_opts {
 	int advanced;
 	int list_interfaces;
@@ -33,6 +35,8 @@ struct netcap_opts {
 	const char *interface;
 };
 
-int netcap_advanced_main(const struct netcap_opts *opts);
+int netcap_advanced_main(const struct netcap_opts *opts)
+	__attr_access ((__read_only__, 1))
+	__wur;
 
 #endif

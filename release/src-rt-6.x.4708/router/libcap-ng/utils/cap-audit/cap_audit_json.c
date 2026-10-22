@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.1-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * cap-audit - Trace a target process to discover required capabilities.
  * Copyright (c) 2026 Red Hat Inc.
@@ -27,6 +27,113 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+static void print_json_denied_syscalls(const struct cap_check *check)
+{
+	size_t i;
+
+	printf("      \"denied_syscalls\": [\n");
+	for (i = 0; i < check->denied_syscall_count; i++) {
+		const char *name;
+		char *name_json;
+
+		name = syscall_name_from_nr(check->denied_syscalls[i]);
+		name_json = json_escape(name ? name : "unknown");
+		if (i > 0)
+			printf(",\n");
+		printf("        {\"number\": %d, \"name\": \"%s\"}",
+		       check->denied_syscalls[i], name_json ? name_json : "");
+		free(name_json);
+	}
+	printf("\n      ],\n");
+}
+
+static void print_json_outcomes(const struct cap_check *check)
+{
+	size_t i;
+
+	printf("      \"assessment\": \"%s\",\n",
+	       denial_assessment_name(assess_cap_denials(check)));
+	printf("      \"syscall_outcomes\": [\n");
+	for (i = 0; i < check->outcome_count; i++) {
+		const struct syscall_outcome *outcome = &check->outcomes[i];
+		enum syscall_outcome_class class;
+		const char *result_name;
+		const char *syscall_name;
+		char *syscall_json;
+		int error;
+
+		class = classify_syscall_outcome(outcome->result);
+		result_name = syscall_result_name(outcome->result);
+		error = syscall_result_errno(outcome->result);
+		syscall_name = syscall_name_from_nr(outcome->syscall_nr);
+		syscall_json = json_escape(syscall_name ? syscall_name : "unknown");
+		if (i > 0)
+			printf(",\n");
+		printf("        {\n");
+		printf("          \"syscall_number\": %d,\n",
+		       outcome->syscall_nr);
+		printf("          \"syscall\": \"%s\",\n",
+		       syscall_json ? syscall_json : "");
+		printf("          \"outcome_class\": \"%s\",\n",
+		       syscall_outcome_class_name(class));
+		printf("          \"raw_return\": %lld,\n",
+		       (long long)outcome->result);
+		if (result_name)
+			printf("          \"return_name\": \"%s\",\n",
+			       result_name);
+		else
+			printf("          \"return_name\": null,\n");
+		if (error > 0)
+			printf("          \"errno\": %d,\n", error);
+		else
+			printf("          \"errno\": null,\n");
+		printf("          \"count\": %lu\n", outcome->count);
+		printf("        }");
+		free(syscall_json);
+	}
+	printf("\n      ]\n");
+}
+
+static void print_json_capset_only(void)
+{
+	int cap;
+	int first_cap = 1;
+
+	printf("  \"capset_only_capabilities\": [\n");
+	for (cap = 0; cap <= CAP_LAST_CAP; cap++) {
+		char *name_json;
+		__u64 mask;
+		int first_set = 1;
+
+		if (!cap_is_capset_only(cap))
+			continue;
+		name_json = json_escape(capng_capability_to_name(cap));
+		if (!first_cap)
+			printf(",\n");
+		printf("    {\n");
+		printf("      \"number\": %d,\n", cap);
+		printf("      \"name\": \"%s\",\n",
+		       name_json ? name_json : "");
+		printf("      \"requested_sets\": [");
+		mask = 1ULL << cap;
+		if (state.app.capset.effective & mask) {
+			printf("\"effective\"");
+			first_set = 0;
+		}
+		if (state.app.capset.permitted & mask) {
+			printf("%s\"permitted\"", first_set ? "" : ", ");
+			first_set = 0;
+		}
+		if (state.app.capset.inheritable & mask)
+			printf("%s\"inheritable\"", first_set ? "" : ", ");
+		printf("]\n");
+		printf("    }");
+		first_cap = 0;
+		free(name_json);
+	}
+	printf("\n  ]");
+}
 
 void output_json(void)
 {
@@ -73,6 +180,10 @@ void output_json(void)
 
 	printf("  \"capability_drop_observed\": %s,\n",
 	       state.capset_observed ? "true" : "false");
+	printf("  \"keepcaps_transition_incomplete\": %s,\n",
+	       state.keepcaps_incomplete ? "true" : "false");
+	printf("  \"successful_capset_calls\": %lu,\n",
+	       state.app.capset.successful_calls);
 
 	printf("  \"required_capabilities\": [\n");
 	first_cap = 1;
@@ -110,7 +221,8 @@ void output_json(void)
 			free(reason_json);
 		}
 	}
-	printf("\n  ]");
+	printf("\n  ],\n");
+	print_json_capset_only();
 
 	if (state.capset_observed) {
 		printf(",\n  \"initialization_capabilities\": [\n");
@@ -196,7 +308,8 @@ void output_json(void)
 		struct cap_check *check = &state.app.checks[i];
 		char *name_json;
 
-		if (cap_total_denied(check) > 0 && cap_total_granted(check) == 0) {
+		if (cap_total_denied(check) > 0 &&
+		    cap_total_granted(check) == 0) {
 			name_json = json_escape(capng_capability_to_name(i));
 			if (!first_denied)
 				printf(",\n");
@@ -204,8 +317,10 @@ void output_json(void)
 			printf("      \"number\": %d,\n", i);
 			printf("      \"name\": \"%s\",\n",
 			       name_json ? name_json : "");
-			printf("      \"attempts\": %lu\n",
+			printf("      \"not_granted_checks\": %lu,\n",
 			       cap_total_denied(check));
+			print_json_denied_syscalls(check);
+			print_json_outcomes(check);
 			printf("    }");
 			first_denied = 0;
 			free(name_json);

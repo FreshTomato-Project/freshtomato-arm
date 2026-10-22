@@ -13,7 +13,9 @@ This function will write the file based capabilities to the extended attributes 
 
 .SH "RETURN VALUE"
 
-This returns 0 on success, -1 if something besides a regular file is passed, and -2 if a non-root namespace id is being used for rootid.
+This returns 0 on success, -1 if something besides a regular file is passed
+or the extended attribute operation fails, and -2 if the file capability data
+cannot be serialized.
 
 .SH "SEE ALSO"
 

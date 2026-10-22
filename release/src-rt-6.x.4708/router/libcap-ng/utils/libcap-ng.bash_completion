@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 Steve Grubb
+
 _pscap()
 {
 	local cur prev
@@ -63,32 +66,43 @@ _filecap()
 	esac
 
 	if [[ "$cur" == /* ]]; then
-		COMPREPLY=( $(compgen -d -- "$cur") $(compgen -f -- "$cur") )
+		# Keep spaces and glob characters within each filename. -f also
+		# includes directories, so a separate -d pass duplicates them.
+		mapfile -t COMPREPLY < <(compgen -f -- "$cur")
 	fi
 }
 
 _cap_audit()
 {
 	local cur prev
-	local opts="-h --help -v --verbose -j --json -y --yaml --"
+	local opts="-h --help -v --verbose -j --json -y --yaml -s --service --"
 
 	COMPREPLY=()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 
 	if [[ "$prev" == "--" ]]; then
-		COMPREPLY=( $(compgen -c -- "$cur") )
+		# Executable names may contain whitespace too.
+		mapfile -t COMPREPLY < <(compgen -c -- "$cur")
 		return 0
 	fi
+
+	case "$prev" in
+	-s|--service)
+		mapfile -t COMPREPLY < <(compgen -f -- "$cur")
+		return 0
+		;;
+	esac
 
 	if [[ "$cur" == -* ]]; then
 		COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 	else
-		COMPREPLY=( $(compgen -c -- "$cur") )
+		mapfile -t COMPREPLY < <(compgen -c -- "$cur")
 	fi
 }
 
 complete -F _pscap pscap
 complete -F _netcap netcap
-complete -F _filecap filecap
-complete -F _cap_audit cap-audit
+# Tell Readline to quote filenames on insertion and append directory slashes.
+complete -o filenames -F _filecap filecap
+complete -o filenames -F _cap_audit cap-audit

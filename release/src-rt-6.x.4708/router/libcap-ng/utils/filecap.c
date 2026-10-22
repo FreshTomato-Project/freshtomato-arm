@@ -1,6 +1,6 @@
 /*
  * filecap.c - A program that lists running processes with capabilities
- * Copyright (c) 2009-10,2012,2017,2020 Red Hat Inc.
+ * Copyright (c) 2009-10,2012,2017-20,2026 Red Hat Inc.
  * All Rights Reserved.
  *
  * This software may be freely redistributed and/or modified under the
@@ -23,11 +23,13 @@
  */
 
 #include "config.h"
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include "cap-ng.h"
+#include "filecap-path.h"
 #include <fcntl.h>
 #include <ftw.h>
 
@@ -38,6 +40,17 @@
 
 static int show_all = 0, header = 0, capabilities = 0, cremove = 0;
 static int single_file = 0;
+
+static int check_file(const char *fpath, const struct stat *sb,
+		      int typeflag_unused, struct FTW *s_unused)
+	__attr_access ((__read_only__, 1))
+	__attr_access ((__read_only__, 2));
+static int scan_path_entry(const char *entry, void *data)
+	__attr_access ((__read_only__, 1))
+	__attr_access ((__read_write__, 2));
+static int scan_path_env(const char *path_env, int nftw_flags)
+	__attr_access ((__read_only__, 1))
+	__wur;
 
 static void usage(void)
 {
@@ -82,7 +95,7 @@ static int check_file(const char *fpath,
 				       "set", "file");
 			}
 
-			int rootid = capng_get_rootid();
+			uid_t rootid = capng_get_rootid();
 			printf("%s %-22s ",
 			       permitted ? "permitted" : "effective",  fpath);
 
@@ -93,12 +106,40 @@ static int check_file(const char *fpath,
 						CAPNG_PERMITTED);
 
 			if (rootid != CAPNG_UNSET_ROOTID)
-				printf(" %d", rootid);
+				printf(" %ju", (uintmax_t)rootid);
 			printf("\n");
 		}
 		close(fd);
-	}
+	} // Ignore open failure since printing a warning clutters output
+	  // There's a lot of non-root unreadble files in /usr
 	return ret;
+}
+
+/*
+ * scan_path_env - walk each PATH element while preserving empty entries.
+ *
+ * Empty PATH components mean the current working directory. strtok() drops
+ * them, which makes the default filecap scan disagree with normal PATH
+ * lookup semantics.
+ */
+struct path_scan_ctx {
+	int nftw_flags;
+};
+
+static int scan_path_entry(const char *entry, void *data)
+{
+	struct path_scan_ctx *ctx = data;
+
+	nftw(entry, check_file, 1024, ctx->nftw_flags);
+	return 0;
+}
+
+static int scan_path_env(const char *path_env, int nftw_flags)
+{
+	struct path_scan_ctx ctx;
+
+	ctx.nftw_flags = nftw_flags;
+	return filecap_foreach_path(path_env, scan_path_entry, &ctx);
 }
 
 
@@ -187,14 +228,8 @@ int main(int argc, char *argv[])
 	if (path == NULL && dir == NULL && show_all == 0) {
 		path_env = getenv("PATH");
 		if (path_env != NULL) {
-			path = strdup(path_env);
-			if (!path)
+			if (scan_path_env(path_env, nftw_flags) < 0)
 				return 1;
-			for (dir=strtok(path,":"); dir!=NULL;
-						dir=strtok(NULL,":")) {
-				nftw(dir, check_file, 1024, nftw_flags);
-			}
-			free(path);
 		}
 	} else if (path == NULL && dir == NULL && show_all == 1) {
 		// Find files
@@ -216,7 +251,13 @@ int main(int argc, char *argv[])
 				strerror(errno));
 			return 1;
 		}
-		if (have_path_stat && fstat(fd, &fbuf) == 0 &&
+		if ((fstat(fd, &fbuf))) {
+			fprintf(stderr, "Could not fstat %s (%s)\n",
+					path, strerror(errno));
+			close(fd);
+			return 1;
+		}
+		if (have_path_stat &&
 		    (fbuf.st_dev != path_sbuf.st_dev ||
 		     fbuf.st_ino != path_sbuf.st_ino)) {
 			fprintf(stderr,

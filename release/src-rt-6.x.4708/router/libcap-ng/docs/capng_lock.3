@@ -22,13 +22,15 @@ Set the PR_NO_SETUID_FIXUP option on for PR_SET_SECUREBITS.
 Set the PR_NO_SETUID_FIXUP_LOCKED option on for PR_SET_SECUREBITS.
 .PP
 It does not enable PR_SET_KEEPCAPS or the KEEP_CAPS/KEEP_CAPS_LOCKED
-securebits; after a successful call those usually remain off unless the
-caller changed them separately.
+securebits. Existing securebits set by the caller are preserved, including
+securebits that were added after this version of libcap-ng was built.
 
 
 .SH "RETURN VALUE"
 
-This returns 0 on success and a negative number on failure. -1 means a failure setting any of the PR_SET_SECUREBITS options. -2 means failure setting PR_SET_NO_NEW_PRIVS. These are additive meaning -3 is a failure of both.
+This returns 0 on success and a negative number on failure. -1 means a failure
+reading or updating the securebits. -2 means failure setting
+PR_SET_NO_NEW_PRIVS. These are additive meaning -3 is a failure of both.
 
 .SH "SEE ALSO"
 

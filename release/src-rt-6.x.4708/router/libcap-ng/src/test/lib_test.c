@@ -51,8 +51,10 @@ static unsigned int get_last_cap(void)
 		if (num > 0) {
 			errno = 0;
 			unsigned int val = strtoul(buf, NULL, 10);
-			if (errno == 0)
+			if (errno == 0) {
+				close(fd);
 				return val;
+			}
 		}
 		close(fd);
 	}
@@ -240,7 +242,7 @@ int main(void)
 		puts("Failed restoring capabilities");
 		abort();
 	}
-	printf("Doing advanced bit tests for %d capabilities...\n", last);
+	printf("Doing advanced bit tests for %u capabilities...\n", last);
 	for (i=0; i<=last; i++) {
 		capng_clear(CAPNG_SELECT_BOTH);
 		rc = capng_update(CAPNG_ADD, CAPNG_EFFECTIVE, i);
@@ -288,7 +290,7 @@ int main(void)
 		}
 		name = capng_capability_to_name(i);
 		if (name == NULL) {
-			printf("Failed converting capability %d to name\n", i);
+			printf("Failed converting capability %u to name\n", i);
 			abort();
 		}
 		if (strcmp(text, name)) {

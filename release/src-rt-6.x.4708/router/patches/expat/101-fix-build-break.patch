@@ -1,6 +1,6 @@
 --- expat/lib/random_dev_urandom.c
 +++ expat/lib/random_dev_urandom.c
-@@ -37,6 +37,10 @@
+@@ -39,6 +39,10 @@
  #  define _POSIX_C_SOURCE 200809L // for O_CLOEXEC
  #endif
  

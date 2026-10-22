@@ -50,6 +50,7 @@
 #include "expat_config.h"
 
 #include <assert.h>
+#include <inttypes.h> // for PRIu64
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -72,7 +73,7 @@
 #  include <wchar.h>
 #endif
 
-#include "../lib/xcsinc.c"
+#include "../lib/xcs.h"
 
 enum ExitCode {
   XMLWF_EXIT_SUCCESS = 0,
@@ -360,23 +361,6 @@ cleanupUserData(XmlwfUserData *userData) {
 }
 
 static int
-xcscmp(const XML_Char *xs, const XML_Char *xt) {
-  while (*xs != 0 && *xt != 0) {
-    if (*xs < *xt)
-      return -1;
-    if (*xs > *xt)
-      return 1;
-    xs++;
-    xt++;
-  }
-  if (*xs < *xt)
-    return -1;
-  if (*xs > *xt)
-    return 1;
-  return 0;
-}
-
-static int
 notationCmp(const void *a, const void *b) {
   const NotationList *const n1 = *(const NotationList *const *)a;
   const NotationList *const n2 = *(const NotationList *const *)b;
@@ -587,12 +571,11 @@ metaLocation(XML_Parser parser) {
     puttc(T('"'), fp);
   }
   ftprintf(fp,
-           T(" byte=\"%") T(XML_FMT_INT_MOD) T("d\"") T(" nbytes=\"%d\"")
-               T(" line=\"%") T(XML_FMT_INT_MOD) T("u\"") T(" col=\"%")
-                   T(XML_FMT_INT_MOD) T("u\""),
-           XML_GetCurrentByteIndex(parser), XML_GetCurrentByteCount(parser),
-           XML_GetCurrentLineNumber(parser),
-           XML_GetCurrentColumnNumber(parser));
+           T(" byte=\"%") T(PRId64) T("\"") T(" nbytes=\"%") T(PRIu64) T("\"")
+               T(" line=\"%") T(PRIu64) T("\"") T(" col=\"%") T(PRIu64) T("\""),
+           XML_GetCurrentByteIndex64(parser), XML_GetCurrentByteCount64(parser),
+           XML_GetCurrentLineNumber64(parser),
+           XML_GetCurrentColumnNumber64(parser));
 }
 
 static void
@@ -933,7 +916,7 @@ usage(const XML_Char *prog, int rc) {
       T("  -w             enable support for [W]indows code pages\n")
       T("  -r             disable memory-mapping and use [r]ead calls instead\n")
       T("  -g BYTES       buffer size to request per call pair to XML_[G]etBuffer and read (default: 8 KiB)\n")
-      T("  -k             when processing multiple files, [k]eep processing after first file with error\n")
+      T("  -k             when processing multiple files, [k]eep processing after first file with error, and make the last error determine the exit code.\n")
       T("\n")
       T("output control arguments:\n")
       T("  -d DIRECTORY   output [d]estination directory\n")
@@ -969,7 +952,7 @@ usage(const XML_Char *prog, int rc) {
       T("  0              the input files are well-formed and the output (if requested) was written successfully\n")
       T("  1              could not allocate data structures, signals a serious problem with execution environment\n")
       T("  2              one or more input files were not well-formed\n")
-      T("  3              could not create an output file\n")
+      T("  3              one or more output files could not be written\n")
       T("  4              command-line argument error\n")
       T("\n")
       T("xmlwf of libexpat is software libre, licensed under the MIT license.\n")
@@ -1194,7 +1177,6 @@ tmain(int argc, XML_Char **argv) {
   }
   for (; i < argc; i++) {
     XML_Char *outName = 0;
-    int result;
     XML_Parser parser;
     if (useNamespaces)
       parser = XML_ParserCreateNS(encoding, NSSEP);
@@ -1350,19 +1332,29 @@ tmain(int argc, XML_Char **argv) {
     }
     if (windowsCodePages)
       XML_SetUnknownEncodingHandler(parser, unknownEncoding, 0);
-    result = XML_ProcessFile(parser, useStdin ? NULL : argv[i], processFlags);
+    const bool processingSuccess
+        = XML_ProcessFile(parser, useStdin ? NULL : argv[i], processFlags);
+    bool closingSuccess = true;
     if (outputDir) {
       if (outputType == 'm')
         metaEndDocument(parser);
-      fclose(userData.fp);
-      if (! result) {
+      closingSuccess = (fclose(userData.fp) == 0);
+      if (! closingSuccess)
+        tperror(outName);
+      if (! processingSuccess || ! closingSuccess) {
         tremove(outName);
       }
       free(outName);
     }
     XML_ParserFree(parser);
-    if (! result) {
-      exitCode = XMLWF_EXIT_NOT_WELLFORMED;
+    if (! processingSuccess || ! closingSuccess) {
+      // NOTE: If both failed, the last error should determine the exit code.
+      //       Failure to close happened after failure to process.
+      if (! closingSuccess)
+        exitCode = XMLWF_EXIT_OUTPUT_ERROR;
+      else if (! processingSuccess)
+        exitCode = XMLWF_EXIT_NOT_WELLFORMED;
+
       cleanupUserData(&userData);
       if (! continueOnError) {
         break;

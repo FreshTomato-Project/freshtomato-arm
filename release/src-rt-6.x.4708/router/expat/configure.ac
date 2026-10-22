@@ -74,7 +74,21 @@ AC_CONFIG_SRCDIR([Makefile.in])
 AC_CONFIG_AUX_DIR([conftools])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_HOST
-AM_INIT_AUTOMAKE
+
+dnl NOTE: Macro `AM_OPTIONAL_AUTOMAKE` is available with Automake >=1.19
+dnl       and serves as a proxy for robust Automake >=1.19 detection here.
+dnl       `dist-bzip3` was introduced with Automake 1.18 already but there
+dnl       is no robust way of checking precisely for Automake >=1.18.
+dnl       Automake >=1.13 is needed for (1) our use of LOG_DRIVER and
+dnl       (2) making it work without asking for parallel tests, explicitly.
+m4_ifdef([AM_OPTIONAL_AUTOMAKE], [
+  AM_INIT_AUTOMAKE([1.19 dist-bzip2 dist-bzip3 dist-lzip dist-xz foreign subdir-objects])
+
+  dnl NOTE: Without this dummy call in the file the `m4_ifdef` above never hits true.
+  AM_OPTIONAL_AUTOMAKE([])
+], [
+  AM_INIT_AUTOMAKE([1.13 dist-bzip2            dist-lzip dist-xz foreign subdir-objects])
+])
 AM_MAINTAINER_MODE([enable])  # to allow argument --disable-maintainer-mode
 
 
@@ -89,9 +103,9 @@ dnl
 dnl If the API changes incompatibly set LIBAGE back to 0
 dnl
 
-LIBCURRENT=13  # sync
-LIBREVISION=4  # with
-LIBAGE=12      # CMakeLists.txt!
+LIBCURRENT=14  # sync
+LIBREVISION=0  # with
+LIBAGE=13      # CMakeLists.txt!
 
 AC_CONFIG_HEADERS([expat_config.h])
 AH_TOP([#ifndef EXPAT_CONFIG_H
@@ -212,8 +226,10 @@ AM_CONDITIONAL([MINGW], [test x${EXPATCFG_ON_MINGW} = xyes])
 dnl Note: Prefix "_INTERNAL_" here means exclusive use inside of file configure.ac
 AM_CONDITIONAL([UNICODE], [echo -- "${CPPFLAGS}${CFLAGS}" | ${FGREP} XML_UNICODE >/dev/null])
 AM_CONDITIONAL([_INTERNAL_UNICODE_WCHAR_T], [echo -- "${CPPFLAGS}${CFLAGS}" | ${FGREP} XML_UNICODE_WCHAR_T >/dev/null])
-AM_CONDITIONAL([_INTERNAL_MIN_SIZE], [echo -- "${CPPFLAGS}${CFLAGS}" | ${FGREP} XML_MIN_SIZE >/dev/null])
 AM_CONDITIONAL([_INTERNAL_LARGE_SIZE], [echo -- "${CPPFLAGS}${CFLAGS}" | ${FGREP} XML_LARGE_SIZE >/dev/null])
+
+AS_IF([echo -- "${CPPFLAGS}${CFLAGS}" | ${FGREP} XML_MIN_SIZE >/dev/null],
+  [AC_MSG_ERROR([Feature XML_MIN_SIZE has been removed. Please open a GitHub issue if you need it back.])])
 
 LT_LIB_M
 
@@ -414,13 +430,11 @@ AS_IF([test "x${with_dev_urandom}" = "xyes"],
 
 
 AC_ARG_ENABLE([xml-attr-info],
-  [AS_HELP_STRING([--enable-xml-attr-info],
-     [Enable retrieving the byte offsets for attribute names and values @<:@default=no@:>@])],
+  [],
   [],
   [enable_xml_attr_info=no])
 AS_IF([test "x${enable_xml_attr_info}" = "xyes"],
-      [AC_DEFINE([XML_ATTR_INFO], 1,
-         [Define to allow retrieving the byte offsets for attribute names and values.])])
+      [AC_MSG_ERROR([Feature --enable-xml-attr-info has been removed. Please open a GitHub issue if you need it back.])])
 
 AC_ARG_ENABLE([xml-context],
   AS_HELP_STRING([--enable-xml-context @<:@COUNT@:>@],
@@ -481,21 +495,12 @@ dnl Configure CMake file templates
 dnl NOTE: The *_TRUE variables read here are Automake conditionals
 dnl       that are either set to "" when enabled or to "#" when disabled
 dnl       (because they are used to dynamically comment out certain things)
-AS_IF([test "x${enable_xml_attr_info}" = xyes],
-  [EXPAT_ATTR_INFO=ON
-   _EXPAT_COMMENT_ATTR_INFO=" "],
-  [EXPAT_ATTR_INFO=OFF
-   _EXPAT_COMMENT_ATTR_INFO="#"])
-AC_SUBST([_EXPAT_COMMENT_ATTR_INFO])
 EXPAT_DTD=ON
 _EXPAT_COMMENT_DTD_OR_GE=" "
 AC_SUBST([_EXPAT_COMMENT_DTD_OR_GE])
 AS_IF([test "x${_INTERNAL_LARGE_SIZE_TRUE}" = x],
   [EXPAT_LARGE_SIZE=ON],
   [EXPAT_LARGE_SIZE=OFF])
-AS_IF([test "x${_INTERNAL_MIN_SIZE_TRUE}" = x],
-  [EXPAT_MIN_SIZE=ON],
-  [EXPAT_MIN_SIZE=OFF])
 EXPAT_NS=ON
 AS_IF([test "x${enable_xml_context}" != xno],
   [EXPAT_CONTEXT_BYTES=${enable_xml_context}],
@@ -511,10 +516,8 @@ LIBDIR_BASENAME="$(basename "${libdir}")"
 SO_MAJOR="$(expr "${LIBCURRENT}" - "${LIBAGE}")"
 SO_MINOR="${LIBAGE}"
 SO_PATCH="${LIBREVISION}"
-AC_SUBST([EXPAT_ATTR_INFO])
 AC_SUBST([EXPAT_DTD])
 AC_SUBST([EXPAT_LARGE_SIZE])
-AC_SUBST([EXPAT_MIN_SIZE])
 AC_SUBST([EXPAT_NS])
 AC_SUBST([EXPAT_CONTEXT_BYTES])
 AC_SUBST([EXPAT_CHAR_TYPE])

@@ -49,13 +49,16 @@ runtests_SOURCES = \
     common.c \
     dummy.c \
     handlers.c \
+    hash_tests.c \
     memcheck.c \
     minicheck.c \
     misc_tests.c \
     ns_tests.c \
     nsalloc_tests.c \
+    props_tests.c \
     runtests.c \
-    structdata.c
+    structdata.c \
+    xcs_tests.c
 
 runtests_LDADD = ../lib/libtestpat.la
 
@@ -69,13 +72,16 @@ EXTRA_DIST = \
     common.h \
     dummy.h \
     handlers.h \
+    hash_tests.h \
+    memcheck.h \
+    minicheck.h \
     misc_tests.h \
     ns_tests.h \
     nsalloc_tests.h \
-    structdata.h \
-    minicheck.h \
-    memcheck.h \
+    props_tests.h \
     README.md \
+    structdata.h \
     udiffer.py \
+    xcs_tests.h \
     xmltest.log.expected \
     xmltest.sh

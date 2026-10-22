@@ -1,7 +1,8 @@
 <?php
 
 const BRANCHES = [
-    ['name' => 'master', 'ref' => 'master', 'version' => [8, 6]],
+    ['name' => 'master', 'ref' => 'master', 'version' => [8, 7]],
+    ['name' => 'PHP-8.6', 'ref' => 'PHP-8.6', 'version' => [8, 6]],
     ['name' => 'PHP-8.5', 'ref' => 'PHP-8.5', 'version' => [8, 5]],
     ['name' => 'PHP-8.4', 'ref' => 'PHP-8.4', 'version' => [8, 4]],
     ['name' => 'PHP-8.3', 'ref' => 'PHP-8.3', 'version' => [8, 3]],
@@ -124,11 +125,10 @@ function select_jobs($repository, $trigger, $nightly, $labels, $php_version, $re
             : ['debug' => [true], 'zts' => [true]];
     }
     if ($all_jobs || !$no_jobs || $test_macos) {
-        $test_arm = version_compare($php_version, '8.4', '>=');
         $jobs['MACOS']['matrix'] = $all_variations
-            ? ['arch' => $test_arm ? ['X64', 'ARM64'] : ['X64'], 'debug' => [true, false], 'zts' => [true, false]]
-            : ['include' => [['arch' => $test_arm ? 'ARM64' : 'X64', 'debug' => true, 'zts' => false]]];
-        $jobs['MACOS']['config']['arm64_version'] = version_compare($php_version, '8.4', '>=') ? '15' : '14';
+            ? ['arch' => ['ARM64'], 'debug' => [true, false], 'zts' => [true, false]]
+            : ['include' => [['arch' => 'ARM64', 'debug' => true, 'zts' => false]]];
+        $jobs['MACOS']['config']['version'] = version_compare($php_version, '8.4', '>=') ? '26' : '15';
     }
     if ($all_jobs || $test_msan) {
         $jobs['MSAN'] = true;

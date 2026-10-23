@@ -1876,15 +1876,16 @@ zlib-clean:
 sqlite/Makefile:
 	cd sqlite && \
 		CFLAGS="-Os $(EXTRACFLAGS) -fPIC $(GCC_CMODE) -DHAVE_ISNAN -ffunction-sections -fdata-sections -I$(TOP)/zlib/staged/usr/include" \
-		LDFLAGS="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib" \
+		LDFLAGS="-Wl,--gc-sections -L$(TOP)/zlib/staged/usr/lib -lm" \
 		$(CONFIGURE) --prefix=/usr --enable-shared --disable-static --enable-threadsafe \
 			--disable-editline --disable-readline --disable-session --disable-fts3 \
-			--disable-fts4 --disable-fts5 --disable-rtree --soname=legacy
+			--disable-fts4 --disable-fts5 --disable-rtree --soname=legacy \
+			--disable-load-extension --disable-math
 
 sqlite: sqlite/Makefile
 	@$(SEP)
-	@$(MAKE) -C $@ all $(PARALLEL_BUILD)
-	@$(MAKE) -C $@ DESTDIR=$(TOP)/sqlite/staged install
+	@$(MAKE) -C $@ libsqlite3.so $(PARALLEL_BUILD)
+	@$(MAKE) -C $@ DESTDIR=$(TOP)/sqlite/staged install-dll install-headers install-pc
 
 sqlite-install:
 ifeq ($(or $(TCONFIG_NGINX),$(TCONFIG_MEDIA_SERVER)),y)

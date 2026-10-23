@@ -3800,7 +3800,7 @@ iperf/stamp-h1:
 		LIBS="-lgcc_s" \
 		ac_cv_func_clock_gettime="no" \
 		ac_cv_func_daemon="no" \
-		$(CONFIGURE) --prefix=/usr --disable-profiling --without-openssl --without-sctp
+		$(CONFIGURE) --prefix=/usr --disable-profiling --without-openssl --without-sctp --disable-shared --enable-static
 	@touch $@
 
 iperf: iperf/stamp-h1
@@ -3808,14 +3808,9 @@ iperf: iperf/stamp-h1
 	$(MAKE) -C iperf
 
 iperf-install:
-	install -D iperf/src/.libs/iperf3 $(INSTALLDIR)/iperf/usr/sbin/iperf
+	install -D iperf/src/iperf3 $(INSTALLDIR)/iperf/usr/sbin/iperf
 	install -d $(INSTALLDIR)/iperf/usr/lib/
-	install iperf/src/.libs/libiperf.so.0.0.0 $(INSTALLDIR)/iperf/usr/lib/libiperf.so.0.0.0
-	$(STRIP) $(INSTALLDIR)/iperf/usr/lib/libiperf.so.0.0.0
 	$(STRIP) $(INSTALLDIR)/iperf/usr/sbin/iperf
-	cd $(INSTALLDIR)/iperf/usr/lib/ && \
-		ln -sf libiperf.so.0.0.0 libiperf.so.0 && \
-		ln -sf libiperf.so.0.0.0 libiperf.so
 
 iperf-clean:
 	-@$(MAKE) -C iperf clean

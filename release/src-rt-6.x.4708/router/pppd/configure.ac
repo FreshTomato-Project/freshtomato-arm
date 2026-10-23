@@ -1,7 +1,8 @@
 AC_PREREQ([2.69])
 AC_INIT([ppp],
-        [2.5.3],
+        [2.5.4],
         [https://github.com/ppp-project/ppp])
+AC_USE_SYSTEM_EXTENSIONS
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 AC_CONFIG_MACRO_DIR([m4])
@@ -93,6 +94,8 @@ AC_CHECK_SIZEOF(unsigned short)
 
 # Checks for library functions.
 AC_CHECK_FUNCS([    \
+    explicit_bzero  \
+    fexecve         \
     mmap            \
     logwtmp         \
     strerror])
@@ -198,11 +201,11 @@ AS_IF([test "x${enable_peap}" != "xno" && test "x${enable_microsoft_extensions}"
 AM_CONDITIONAL([PPP_WITH_PEAP], test "x${enable_peap}" != "xno" && test "x${enable_microsoft_extensions}" != "xno")
 
 #
-# Disable OpenSSL engine support
+# Enable OpenSSL engine support
 AC_ARG_ENABLE([openssl-engine],
-    AS_HELP_STRING([--disable-openssl-engine], [Disable OpenSSL engine support]))
-AS_IF([test "x$enable_openssl_engine" != "xno"], [],
-    AC_DEFINE([OPENSSL_NO_ENGINE], 1, [OpenSSL engine support]))
+    AS_HELP_STRING([--enable-openssl-engine], [Enable OpenSSL engine support]))
+AS_IF([test "x$enable_openssl_engine" = "xyes"],
+    AC_DEFINE([OPENSSL_ENGINE], 1, [Include OpenSSL engine support]))
 
 #
 # Specify runtime directory
@@ -289,11 +292,6 @@ AM_COND_IF([OPENSSL_HAVE_DES],
     AC_DEFINE([OPENSSL_HAVE_DES], 1, [Use DES included with openssl]))
 
 #
-# With libsrp support
-AX_CHECK_SRP([
-    AC_DEFINE([PPP_WITH_SRP], 1, [Support for libsrp authentication module])])
-
-#
 # With libatm support
 AX_CHECK_ATM
 
@@ -349,7 +347,6 @@ $PACKAGE_NAME version $PACKAGE_VERSION
     With libatm..........: ${with_atm:-no}
     With libpam..........: ${with_pam:-no}
     With libpcap.........: ${with_pcap:-no}
-    With libsrp..........: ${with_srp:-no}
     C Compiler...........: $CC $CFLAGS
     Linker...............: $LD $LDFLAGS $LIBS
 

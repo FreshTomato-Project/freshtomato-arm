@@ -134,6 +134,7 @@ char	req_ifname[IFNAMSIZ];	/* requested interface name */
 char	req_vrf[IFNAMSIZ];	/* VRF name to bind with PPP interface */
 #endif
 bool	multilink = 0;		/* Enable multilink operation */
+bool	strict_script_checks = 1; /* Whether strict script checks are enabled. */
 char	*bundle_name = NULL;	/* bundle name for multilink */
 bool	dump_options;		/* print out option values */
 bool	show_options;		/* print all supported options and exit */
@@ -149,7 +150,7 @@ char	path_ipv6down[MAXPATHLEN]; /* pathname of ipv6-down script */
 
 unsigned int  maxoctets = 0;    /* default - no limit */
 session_limit_dir_t maxoctets_dir = PPP_OCTETS_DIRECTION_SUM; /* default - sum of traffic */
-int maxoctets_timeout = 1;   /* default 1 second */ 
+int maxoctets_timeout = 1;   /* default 1 second */
 
 
 extern struct option auth_options[];
@@ -202,6 +203,8 @@ static struct option *find_option(char *name);
 static int process_option(struct option *, char *, char **);
 static int n_arguments(struct option *);
 static int number_option(char *, u_int32_t *, int);
+static int ppp_options_open(const char *, int, int, FILE **);
+static int ppp_options_from_fp(FILE *, const char *, int);
 
 /*
  * Structure to store extra lists of options.
@@ -309,11 +312,11 @@ struct option general_options[] = {
 
     { "connect-delay", o_int, &connect_delay,
       "Maximum time (in ms) to wait after connect script finishes",
-      OPT_PRIO },
+      OPT_PRIO | OPT_LLIMIT, NULL, 0, 0 },
 
     { "unit", o_int, &req_unit,
       "PPP interface unit number to use if possible",
-      OPT_PRIO | OPT_LLIMIT, 0, 0 },
+      OPT_PRIO | OPT_LLIMIT, NULL, 0, 0 },
 
     { "ifname", o_string, req_ifname,
       "Set PPP interface name",
@@ -414,6 +417,16 @@ struct option general_options[] = {
       "Set direction for limit traffic (sum,in,out,max)" },
     { "mo-timeout", o_int, &maxoctets_timeout,
       "Check for traffic limit every N seconds", OPT_PRIO | OPT_LLIMIT | 1 },
+
+    { "strict-script-checks", o_bool, &strict_script_checks,
+      "Enforce strict script TOCTAU checks.", OPT_PRIO | 1 },
+    { "nostrict-script-checks", o_bool, &strict_script_checks,
+      "disables strict script TOCTAU checks.", OPT_PRIV|OPT_PRIO | 0 },
+
+    { "strict-secrets-files", o_bool, &strict_secrets_files,
+      "Enforce strict read checks on secrets files.", OPT_PRIO | 1 },
+    { "nostrict-secrets-files", o_bool, &strict_secrets_files,
+      "Disabled strict read checks on secrets files.", OPT_PRIV|OPT_PRIO | 0 },
 
     /* Dummy option, does nothing */
     { "noipx", o_bool, &noipx_opt, NULL, OPT_NOPRINT | 1 },
@@ -571,14 +584,23 @@ int
 ppp_options_from_file(char *filename, int must_exist, int check_prot, int priv)
 {
     FILE *f;
-    int i, newline, ret, err;
-    struct option *opt;
-    int oldpriv, n;
-    char *oldsource;
+
+    if (!ppp_options_open(filename, must_exist, check_prot, &f))
+	return 0;
+    if (f == NULL)
+	return 1;
+    return ppp_options_from_fp(f, filename, priv);
+}
+
+/*
+ * ppp_options_open - Open a file for options
+ */
+static int
+ppp_options_open(const char *filename, int must_exist, int check_prot, FILE **fp)
+{
     uid_t euid;
-    char *argv[MAXARGS];
-    char args[MAXARGS][MAXWORDLEN];
-    char cmd[MAXWORDLEN];
+    FILE *f;
+    int err;
 
     euid = geteuid();
     if (check_prot && seteuid(getuid()) == -1) {
@@ -589,6 +611,7 @@ ppp_options_from_file(char *filename, int must_exist, int check_prot, int priv)
     err = errno;
     if (check_prot && seteuid(euid) == -1)
 	fatal("unable to regain privileges");
+    *fp = f;
     if (f == NULL) {
 	errno = err;
 	if (!must_exist) {
@@ -599,6 +622,22 @@ ppp_options_from_file(char *filename, int must_exist, int check_prot, int priv)
 	ppp_option_error("Can't open options file %s: %m", filename);
 	return 0;
     }
+    return 1;
+}
+
+/*
+ * Parse options from an open FILE pointer.
+ */
+static int
+ppp_options_from_fp(FILE *f, const char *filename, int priv)
+{
+    int i, newline, ret;
+    struct option *opt;
+    int oldpriv, n;
+    char *oldsource;
+    char *argv[MAXARGS];
+    char args[MAXARGS][MAXWORDLEN];
+    char cmd[MAXWORDLEN];
 
     oldpriv = privileged_option;
     privileged_option = priv;
@@ -1354,7 +1393,7 @@ readable(int fd)
  * \<newline> is ignored.
  */
 int
-getword(FILE *f, char *word, int *newlinep, char *filename)
+getword(FILE *f, char *word, int *newlinep, const char *filename)
 {
     int c, len, escape;
     int quoted, comment;
@@ -1648,9 +1687,9 @@ static int
 callfile(char **argv)
 {
     char *fname, *arg, *p;
-    int l, ok;
-    char *realname;
-
+    size_t l;
+    int ok;
+    FILE *f;
     arg = *argv;
     ok = 1;
     if (arg[0] == '/' || arg[0] == 0)
@@ -1678,15 +1717,19 @@ callfile(char **argv)
     slprintf(fname, l, "%s%s", PPP_PATH_PEERFILES, arg);
     ppp_script_setenv("CALL_FILE", arg, 0);
 
-    if (!ppp_check_access(fname, &realname, 1, 0)) {
+    if (!ppp_options_open(fname, 1, 1, &f)) {
 	free(fname);
 	return 0;
     }
+    if (!ppp_check_access(fileno(f), fname, PPP_FT_DEFAULT)) {
+	free(fname);
+	fclose(f);
+	return 0;
+    }
 
-    ok = ppp_options_from_file(realname, 1, 1, 1);
+    ok = ppp_options_from_fp(f, fname, 1);
 
     free(fname);
-    free(realname);
     return ok;
 }
 
@@ -1733,7 +1776,7 @@ setactivefilter(char **argv)
 #endif
 
 /*
- * setdomain - Set domain name to append to hostname 
+ * setdomain - Set domain name to append to hostname
  */
 static int
 setdomain(char **argv)
@@ -1810,7 +1853,7 @@ loadplugin(char **argv)
 
     if (strchr(arg, '/') == 0) {
 	const char *base = PPP_PATH_PLUGIN;
-	int l = strlen(base) + strlen(arg) + 2;
+	size_t l = strlen(base) + strlen(arg) + 2;
 	path = malloc(l);
 	if (path == 0)
 	    novm("plugin file path");
@@ -1839,7 +1882,7 @@ loadplugin(char **argv)
 		     arg, vers, VERSION);
 	goto errclose;
     }
-    info("Plugin %s loaded.", arg);
+    dbglog("Plugin %s loaded.", arg);
     (*init)();
     if (path != arg)
 	free(path);
@@ -1873,7 +1916,7 @@ user_setenv(char **argv)
 	return 0;
     }
     for (uep = userenv_list; uep != NULL; uep = uep->ue_next) {
-	int nlen = strlen(uep->ue_name);
+	size_t nlen = strlen(uep->ue_name);
 	if (nlen == (eqp - arg) &&
 	    strncmp(arg, uep->ue_name, nlen) == 0)
 	    break;

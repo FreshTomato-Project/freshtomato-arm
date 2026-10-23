@@ -64,6 +64,9 @@
 extern char *strerror();
 #endif
 
+/* check options.c for details */
+bool strict_secrets_files = 1; /* Whether strict checks are enabled on secrets files. */
+
 static void logit(int, const char *, va_list);
 static void log_write(int, char *);
 static void vslp_printer(void *, char *, ...);
@@ -75,98 +78,77 @@ struct buffer_info {
 };
 
 /*
- * Check that a file is owned by root, not writable by group or other,
- * and that all the directories in the path leading to it is likewise
- * owned by root and not writable by group or other.  The real path to
- * the file is returned in *path_to_use, which should be freed after
- * use (real meaning not containing any symlinks or ".." components).
- * If exec is true, check for execute permission, otherwise for read
- * permission.
+ * ppp_explicit_bzero - Erase a buffer without allowing the compiler to
+ * optimize the operation away.
+ */
+void
+ppp_explicit_bzero(void *buf, size_t len)
+{
+#ifdef HAVE_EXPLICIT_BZERO
+    explicit_bzero(buf, len);
+#else
+    volatile unsigned char *p = buf;
+
+    while (len != 0) {
+	*p++ = 0;
+	--len;
+    }
+#endif
+}
+
+/*
+ * Check that a file descriptor is owned by root (Or the effective user), not
+ * writable by group or other.
+ * Note: the path argument is only used for log messages.
  * Returns 1 if OK; if not, prints an error message and returns 0.
  */
 int
-ppp_check_access(const char *path, char **path_to_use, int must_exist, int exec)
+ppp_check_access(int fd, const char *path, ppp_file_type_t filetype)
 {
-    char *rpath, *slash, *part;
     struct stat sbuf;
     int perm;
 
-    /*
-     * Resolve symlinks such that we eliminate a few potential ToCToU
-     * attack avenues (eg, changing symlinks).
-     */
-    rpath = realpath(path, NULL);
-    if (!rpath) {
-	if (errno == ENOMEM)
-	    fatal("Insufficient memory for real path");
-	if (must_exist || errno != ENOENT)
-	    error("Can't access %s: %m", path);
-	return 0;
-    }
-
-    /*
-     * full check the entire path, must be root: owned, and NOT be writable
-     * to group/other (which incorporates FACL bits somehow, so we can ignore
-     * explicit FACL checks).
-     */
-    part = "/";
-    slash = rpath;
-    for (;;) {
-	bool ok = false;
-	const char *pname = (slash? part: "it");
-
-	if (lstat(part, &sbuf) != 0) {
-	    if (must_exist || errno != ENOENT) {
-		if (!slash) {
-		    error("Can't access %v: %m", rpath);
-		} else {
-		    error("Can't use %v, because of error accessing", path);
-		    error("path component %v: %m");
-		}
-	    }
-	    goto err;
-	}
-
-	if (sbuf.st_uid != 0) {
-	    error("Can't safely use %v because %v is not owned by root",
-		  path, pname);
-	    goto err;
-	}
-
-	if (0 != (sbuf.st_mode & (S_IWGRP | S_IWOTH))) {
-	    error("Can't safely use %v because %v is group or other writable",
-		  path, pname);
-	    goto err;
-	}
-
-	if (!slash)
-	    break;
-
-	*slash = '/';
-	part = rpath;
-
-	slash = strchr(slash + 1, '/');
-	if (slash)
-	    *slash = 0;
+    if (fstat(fd, &sbuf) != 0) {
+	error("Can't stat %v: %m", path);
+	goto err;
     }
 
     if (!S_ISREG(sbuf.st_mode)) {
-	error("Can't use %v: not a regular file", rpath);
+	error("Can't use %v: not a regular file", path);
 	goto err;
     }
 
-    perm = exec? S_IXUSR : S_IRUSR;
+    if (sbuf.st_uid != 0 && sbuf.st_uid != geteuid()) {
+
+	error("Can't safely use %v because it is not owned by root (or the effective uid).", path);
+	goto err;
+    }
+
+    if (0 != (sbuf.st_mode & (S_IWGRP | S_IWOTH))) {
+	error("Can't safely use %v because it is group or other writable",
+	      path);
+	goto err;
+    }
+
+    perm = (filetype == PPP_FT_EXEC) ? S_IXUSR : S_IRUSR;
     if ((sbuf.st_mode & perm) == 0) {
-	error("Can't use %v: not %sable by root", rpath,
-	      exec? "execut": "read");
+	error("Can't use %v: not %sable by root", path,
+	      (filetype == PPP_FT_EXEC) ? "execute": "read");
 	goto err;
     }
 
-    *path_to_use = rpath;
+    if ((filetype == PPP_FT_SECRET) && (sbuf.st_mode & (S_IRWXG | S_IRWXO)) != 0) {
+	if (strict_secrets_files) {
+	    error("Can't use %v: secret file has world and/or group access", path);
+	    goto err;
+	} else {
+	    warn("Warning - secret file %v has world and/or group access", path);
+	}
+    }
+
     return 1;
 
  err:
-    free(rpath);
     return 0;
 }
 
@@ -316,6 +298,11 @@ vslprintf(char *buf, int buflen, const char *fmt, va_list args)
 		    val = va_arg(args, unsigned long long);
 		    base = 10;
 		    break;
+		case 'x':
+		case 'X':
+		    val = va_arg(args, unsigned long);
+		    base = 16;
+		    break;
 		default:
 		    OUTCHAR('%');
 		    OUTCHAR('l');
@@ -336,6 +323,11 @@ vslprintf(char *buf, int buflen, const char *fmt, va_list args)
 	    case 'u':
 		val = va_arg(args, unsigned long);
 		base = 10;
+		break;
+	    case 'x':
+	    case 'X':
+		val = va_arg(args, unsigned long);
+		base = 16;
 		break;
 	    default:
 		OUTCHAR('%');
@@ -731,7 +723,7 @@ log_write(int level, char *buf)
 {
     syslog(level, "%s", buf);
     if (log_to_fd >= 0 && (level != LOG_DEBUG || debug)) {
-	int n = strlen(buf);
+	size_t n = strlen(buf);
 
 	if (n > 0 && buf[n-1] == '\n')
 	    --n;
@@ -1171,4 +1163,3 @@ unlock(void)
 	lock_file[0] = 0;
     }
 }
-

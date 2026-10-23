@@ -97,8 +97,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_atm.m4 \
 	$(top_srcdir)/m4/ax_check_openssl.m4 \
 	$(top_srcdir)/m4/ax_check_openssl_func.m4 \
 	$(top_srcdir)/m4/ax_check_pam.m4 \
-	$(top_srcdir)/m4/ax_check_pcap.m4 \
-	$(top_srcdir)/m4/ax_check_srp.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ax_check_pcap.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
 	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
@@ -296,9 +295,6 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SRP_CFLAGS = @SRP_CFLAGS@
-SRP_LDFLAGS = @SRP_LDFLAGS@
-SRP_LIBS = @SRP_LIBS@
 STRIP = @STRIP@
 SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
 SYSTEMD_LIBS = @SYSTEMD_LIBS@

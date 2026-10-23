@@ -93,53 +93,46 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-sbin_PROGRAMS = pppd$(EXEEXT) $(am__EXEEXT_4)
+sbin_PROGRAMS = pppd$(EXEEXT)
 check_PROGRAMS = utest_crypto$(EXEEXT) utest_utils$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
-@WITH_SRP_TRUE@am__append_1 = srp-entry
-@PPP_WITH_SYSTEM_CA_PATH_TRUE@am__append_2 = -DSYSTEM_CA_PATH='"@SYSTEM_CA_PATH@"'
-@LINUX_TRUE@am__append_3 = sys-linux.c
-@LINUX_TRUE@am__append_4 = termios_linux.h
-@LINUX_TRUE@am__append_5 = $(CRYPT_LIBS) $(UTIL_LIBS)
-@SUNOS_TRUE@am__append_6 = sys-solaris.c
-@SUNOS_TRUE@am__append_7 = -I${top_srcdir}/include
-@SUNOS_TRUE@am__append_8 = -lsocket -lnsl
-@PPP_WITH_CHAPMS_TRUE@am__append_9 = chap_ms.c crypto_ms.c
-@PPP_WITH_CHAPMS_TRUE@am__append_10 = utest_chap utest_pppcrypt
-@PPP_WITH_CHAPMS_FALSE@@WITH_SRP_TRUE@am__append_11 = crypto_ms.c
-@PPP_WITH_CHAPMS_FALSE@@WITH_SRP_TRUE@am__append_12 = utest_pppcrypt
-@PPP_WITH_CBCP_TRUE@am__append_13 = cbcp.c
-@PPP_WITH_MPPE_TRUE@am__append_14 = mppe.c
-@PPP_WITH_FILTER_TRUE@am__append_15 = $(PCAP_CFLAGS)
-@PPP_WITH_FILTER_TRUE@am__append_16 = $(PCAP_LDFLAGS)
-@PPP_WITH_FILTER_TRUE@am__append_17 = $(PCAP_LIBS)
-@PPP_WITH_PLUGINS_TRUE@am__append_18 = -DPPPD_PLUGIN_DIR='"@PPPD_PLUGIN_DIR@"'
-@PPP_WITH_PLUGINS_TRUE@am__append_19 = -ldl
-@LINUX_TRUE@@PPP_WITH_PLUGINS_TRUE@am__append_20 = -Wl,-E
-@PPP_WITH_MULTILINK_TRUE@am__append_21 = multilink.c
-@PPP_WITH_TDB_TRUE@am__append_22 = tdb.c spinlock.c
-@PPP_WITH_IPV6CP_TRUE@am__append_23 = ipv6cp.c eui64.c
-@PPP_WITH_PAM_TRUE@am__append_24 = $(PAM_CFLAGS)
-@PPP_WITH_PAM_TRUE@am__append_25 = $(PAM_LIBS) -ldl
-@PPP_WITH_PAM_TRUE@am__append_26 = $(PAM_LDFLAGS)
-@PPP_WITH_EAPTLS_TRUE@am__append_27 = eap-tls.c tls.c
-@PPP_WITH_EAPTLS_FALSE@@PPP_WITH_PEAP_TRUE@am__append_28 = tls.c
-@PPP_WITH_PEAP_TRUE@am__append_29 = peap.c
-@PPP_WITH_PEAP_TRUE@am__append_30 = utest_peap
-@PPP_WITH_OPENSSL_TRUE@am__append_31 = $(OPENSSL_INCLUDES)
-@WITH_SYSTEMD_TRUE@am__append_32 = $(SYSTEMD_CFLAGS)
-@WITH_SYSTEMD_TRUE@am__append_33 = $(SYSTEMD_LIBS)
-@WITH_SRP_TRUE@am__append_34 = $(SRP_CFLAGS)
-@WITH_SRP_TRUE@am__append_35 = $(SRP_LDFLAGS)
-@WITH_SRP_TRUE@am__append_36 = $(SRP_LIBS)
+	$(am__EXEEXT_1) $(am__EXEEXT_2)
+@PPP_WITH_SYSTEM_CA_PATH_TRUE@am__append_1 = -DSYSTEM_CA_PATH='"@SYSTEM_CA_PATH@"'
+@LINUX_TRUE@am__append_2 = sys-linux.c
+@LINUX_TRUE@am__append_3 = termios_linux.h
+@LINUX_TRUE@am__append_4 = $(CRYPT_LIBS) $(UTIL_LIBS)
+@SUNOS_TRUE@am__append_5 = sys-solaris.c
+@SUNOS_TRUE@am__append_6 = -I${top_srcdir}/include
+@SUNOS_TRUE@am__append_7 = -lsocket -lnsl
+@PPP_WITH_CHAPMS_TRUE@am__append_8 = chap_ms.c crypto_ms.c
+@PPP_WITH_CHAPMS_TRUE@am__append_9 = utest_chap utest_pppcrypt
+@PPP_WITH_CBCP_TRUE@am__append_10 = cbcp.c
+@PPP_WITH_MPPE_TRUE@am__append_11 = mppe.c
+@PPP_WITH_FILTER_TRUE@am__append_12 = $(PCAP_CFLAGS)
+@PPP_WITH_FILTER_TRUE@am__append_13 = $(PCAP_LDFLAGS)
+@PPP_WITH_FILTER_TRUE@am__append_14 = $(PCAP_LIBS)
+@PPP_WITH_PLUGINS_TRUE@am__append_15 = -DPPPD_PLUGIN_DIR='"@PPPD_PLUGIN_DIR@"'
+@PPP_WITH_PLUGINS_TRUE@am__append_16 = -ldl
+@LINUX_TRUE@@PPP_WITH_PLUGINS_TRUE@am__append_17 = -Wl,-E
+@PPP_WITH_MULTILINK_TRUE@am__append_18 = multilink.c
+@PPP_WITH_TDB_TRUE@am__append_19 = tdb.c spinlock.c
+@PPP_WITH_IPV6CP_TRUE@am__append_20 = ipv6cp.c eui64.c
+@PPP_WITH_PAM_TRUE@am__append_21 = $(PAM_CFLAGS)
+@PPP_WITH_PAM_TRUE@am__append_22 = $(PAM_LIBS) -ldl
+@PPP_WITH_PAM_TRUE@am__append_23 = $(PAM_LDFLAGS)
+@PPP_WITH_EAPTLS_TRUE@am__append_24 = eap-tls.c tls.c
+@PPP_WITH_EAPTLS_FALSE@@PPP_WITH_PEAP_TRUE@am__append_25 = tls.c
+@PPP_WITH_PEAP_TRUE@am__append_26 = peap.c
+@PPP_WITH_PEAP_TRUE@am__append_27 = utest_peap
+@PPP_WITH_OPENSSL_TRUE@am__append_28 = $(OPENSSL_INCLUDES)
+@WITH_SYSTEMD_TRUE@am__append_29 = $(SYSTEMD_CFLAGS)
+@WITH_SYSTEMD_TRUE@am__append_30 = $(SYSTEMD_LIBS)
 subdir = pppd
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_atm.m4 \
 	$(top_srcdir)/m4/ax_check_openssl.m4 \
 	$(top_srcdir)/m4/ax_check_openssl_func.m4 \
 	$(top_srcdir)/m4/ax_check_pam.m4 \
-	$(top_srcdir)/m4/ax_check_pcap.m4 \
-	$(top_srcdir)/m4/ax_check_srp.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ax_check_pcap.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
 	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
@@ -154,10 +147,7 @@ CONFIG_CLEAN_FILES = pppd.pc
 CONFIG_CLEAN_VPATH_FILES =
 @PPP_WITH_CHAPMS_TRUE@am__EXEEXT_1 = utest_chap$(EXEEXT) \
 @PPP_WITH_CHAPMS_TRUE@	utest_pppcrypt$(EXEEXT)
-@PPP_WITH_CHAPMS_FALSE@@WITH_SRP_TRUE@am__EXEEXT_2 =  \
-@PPP_WITH_CHAPMS_FALSE@@WITH_SRP_TRUE@	utest_pppcrypt$(EXEEXT)
-@PPP_WITH_PEAP_TRUE@am__EXEEXT_3 = utest_peap$(EXEEXT)
-@WITH_SRP_TRUE@am__EXEEXT_4 = srp-entry$(EXEEXT)
+@PPP_WITH_PEAP_TRUE@am__EXEEXT_2 = utest_peap$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" \
 	"$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pppd_includedir)" \
 	"$(DESTDIR)$(pppd_includedir)"
@@ -187,19 +177,18 @@ am__pppd_SOURCES_DIST = auth.c ccp.c chap-md5.c chap.c demand.c eap.c \
 @SUNOS_TRUE@am__objects_2 = pppd-sys-solaris.$(OBJEXT)
 @PPP_WITH_CHAPMS_TRUE@am__objects_3 = pppd-chap_ms.$(OBJEXT) \
 @PPP_WITH_CHAPMS_TRUE@	pppd-crypto_ms.$(OBJEXT)
-@PPP_WITH_CHAPMS_FALSE@@WITH_SRP_TRUE@am__objects_4 = pppd-crypto_ms.$(OBJEXT)
-@PPP_WITH_CBCP_TRUE@am__objects_5 = pppd-cbcp.$(OBJEXT)
-@PPP_WITH_MPPE_TRUE@am__objects_6 = pppd-mppe.$(OBJEXT)
-@PPP_WITH_MULTILINK_TRUE@am__objects_7 = pppd-multilink.$(OBJEXT)
-@PPP_WITH_TDB_TRUE@am__objects_8 = pppd-tdb.$(OBJEXT) \
+@PPP_WITH_CBCP_TRUE@am__objects_4 = pppd-cbcp.$(OBJEXT)
+@PPP_WITH_MPPE_TRUE@am__objects_5 = pppd-mppe.$(OBJEXT)
+@PPP_WITH_MULTILINK_TRUE@am__objects_6 = pppd-multilink.$(OBJEXT)
+@PPP_WITH_TDB_TRUE@am__objects_7 = pppd-tdb.$(OBJEXT) \
 @PPP_WITH_TDB_TRUE@	pppd-spinlock.$(OBJEXT)
-@PPP_WITH_IPV6CP_TRUE@am__objects_9 = pppd-ipv6cp.$(OBJEXT) \
+@PPP_WITH_IPV6CP_TRUE@am__objects_8 = pppd-ipv6cp.$(OBJEXT) \
 @PPP_WITH_IPV6CP_TRUE@	pppd-eui64.$(OBJEXT)
-@PPP_WITH_EAPTLS_TRUE@am__objects_10 = pppd-eap-tls.$(OBJEXT) \
+@PPP_WITH_EAPTLS_TRUE@am__objects_9 = pppd-eap-tls.$(OBJEXT) \
 @PPP_WITH_EAPTLS_TRUE@	pppd-tls.$(OBJEXT)
-@PPP_WITH_EAPTLS_FALSE@@PPP_WITH_PEAP_TRUE@am__objects_11 =  \
+@PPP_WITH_EAPTLS_FALSE@@PPP_WITH_PEAP_TRUE@am__objects_10 =  \
 @PPP_WITH_EAPTLS_FALSE@@PPP_WITH_PEAP_TRUE@	pppd-tls.$(OBJEXT)
-@PPP_WITH_PEAP_TRUE@am__objects_12 = pppd-peap.$(OBJEXT)
+@PPP_WITH_PEAP_TRUE@am__objects_11 = pppd-peap.$(OBJEXT)
 am_pppd_OBJECTS = pppd-auth.$(OBJEXT) pppd-ccp.$(OBJEXT) \
 	pppd-chap-md5.$(OBJEXT) pppd-chap.$(OBJEXT) \
 	pppd-demand.$(OBJEXT) pppd-eap.$(OBJEXT) pppd-ecp.$(OBJEXT) \
@@ -210,31 +199,20 @@ am_pppd_OBJECTS = pppd-auth.$(OBJEXT) pppd-ccp.$(OBJEXT) \
 	pppd-utils.$(OBJEXT) $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
-	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
-	$(am__objects_12)
+	$(am__objects_9) $(am__objects_10) $(am__objects_11)
 pppd_OBJECTS = $(am_pppd_OBJECTS)
 @LINUX_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) \
 @LINUX_TRUE@	$(am__DEPENDENCIES_1)
 @PPP_WITH_FILTER_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 @PPP_WITH_PAM_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 @WITH_SYSTEMD_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
-@WITH_SRP_TRUE@am__DEPENDENCIES_6 = $(am__DEPENDENCIES_1)
-am__DEPENDENCIES_7 = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
+am__DEPENDENCIES_6 = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_4) libppp_crypto.la $(am__DEPENDENCIES_5) \
-	$(am__DEPENDENCIES_6)
-pppd_DEPENDENCIES = $(am__DEPENDENCIES_7)
+	$(am__DEPENDENCIES_4) libppp_crypto.la $(am__DEPENDENCIES_5)
+pppd_DEPENDENCIES = $(am__DEPENDENCIES_6)
 pppd_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(pppd_LDFLAGS) $(LDFLAGS) -o $@
-am__srp_entry_SOURCES_DIST = srp-entry.c
-@WITH_SRP_TRUE@am_srp_entry_OBJECTS = srp_entry-srp-entry.$(OBJEXT)
-srp_entry_OBJECTS = $(am_srp_entry_OBJECTS)
-@WITH_SRP_TRUE@srp_entry_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-@WITH_SRP_TRUE@	$(am__DEPENDENCIES_1)
-srp_entry_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(srp_entry_LDFLAGS) $(LDFLAGS) -o $@
 am_utest_chap_OBJECTS = utest_chap-chap_ms.$(OBJEXT) \
 	utest_chap-utils.$(OBJEXT) utest_chap-crypto_ms.$(OBJEXT)
 utest_chap_OBJECTS = $(am_utest_chap_OBJECTS)
@@ -306,7 +284,6 @@ am__depfiles_remade = ./$(DEPDIR)/libppp_crypto_la-crypto.Plo \
 	./$(DEPDIR)/pppd-sys-solaris.Po ./$(DEPDIR)/pppd-tdb.Po \
 	./$(DEPDIR)/pppd-tls.Po ./$(DEPDIR)/pppd-tty.Po \
 	./$(DEPDIR)/pppd-upap.Po ./$(DEPDIR)/pppd-utils.Po \
-	./$(DEPDIR)/srp_entry-srp-entry.Po \
 	./$(DEPDIR)/utest_chap-chap_ms.Po \
 	./$(DEPDIR)/utest_chap-crypto_ms.Po \
 	./$(DEPDIR)/utest_chap-utils.Po \
@@ -337,13 +314,13 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libppp_crypto_la_SOURCES) $(pppd_SOURCES) \
-	$(srp_entry_SOURCES) $(utest_chap_SOURCES) \
-	$(utest_crypto_SOURCES) $(utest_peap_SOURCES) \
-	$(utest_pppcrypt_SOURCES) $(utest_utils_SOURCES)
+	$(utest_chap_SOURCES) $(utest_crypto_SOURCES) \
+	$(utest_peap_SOURCES) $(utest_pppcrypt_SOURCES) \
+	$(utest_utils_SOURCES)
 DIST_SOURCES = $(libppp_crypto_la_SOURCES) $(am__pppd_SOURCES_DIST) \
-	$(am__srp_entry_SOURCES_DIST) $(utest_chap_SOURCES) \
-	$(utest_crypto_SOURCES) $(utest_peap_SOURCES) \
-	$(utest_pppcrypt_SOURCES) $(utest_utils_SOURCES)
+	$(utest_chap_SOURCES) $(utest_crypto_SOURCES) \
+	$(utest_peap_SOURCES) $(utest_pppcrypt_SOURCES) \
+	$(utest_utils_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -676,9 +653,6 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SRP_CFLAGS = @SRP_CFLAGS@
-SRP_LDFLAGS = @SRP_LDFLAGS@
-SRP_LIBS = @SRP_LIBS@
 STRIP = @STRIP@
 SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
 SYSTEMD_LIBS = @SYSTEMD_LIBS@
@@ -784,14 +758,13 @@ pppd_include_HEADERS = \
 
 # Headers to be distributed, but not installed in /usr/include/pppd
 noinst_HEADERS = chap-md5.h crypto-priv.h eap-tls.h pathnames.h peap.h \
-	pppd-private.h spinlock.h tls.h tdb.h $(am__append_4)
+	pppd-private.h spinlock.h tls.h tdb.h $(am__append_3)
 pppd_SOURCES = auth.c ccp.c chap-md5.c chap.c demand.c eap.c ecp.c \
 	fsm.c ipcp.c lcp.c magic.c main.c event-handler.c options.c \
-	session.c tty.c upap.c utils.c $(am__append_3) $(am__append_6) \
-	$(am__append_9) $(am__append_11) $(am__append_13) \
-	$(am__append_14) $(am__append_21) $(am__append_22) \
-	$(am__append_23) $(am__append_27) $(am__append_28) \
-	$(am__append_29)
+	session.c tty.c upap.c utils.c $(am__append_2) $(am__append_5) \
+	$(am__append_8) $(am__append_10) $(am__append_11) \
+	$(am__append_18) $(am__append_19) $(am__append_20) \
+	$(am__append_24) $(am__append_25) $(am__append_26)
 
 # Things produced by the build process, to be installed but not distributed
 nodist_pppd_include_HEADERS = \
@@ -799,15 +772,13 @@ nodist_pppd_include_HEADERS = \
 
 pppd_CPPFLAGS = -DSYSCONFDIR=\"${sysconfdir}\" \
 	-DPPPD_RUNTIME_DIR='"@PPPD_RUNTIME_DIR@"' \
-	-DPPPD_LOGFILE_DIR='"@PPPD_LOGFILE_DIR@"' $(am__append_2) \
-	$(am__append_7) $(am__append_15) $(am__append_18) \
-	$(am__append_24) $(am__append_31) $(am__append_32) \
-	$(am__append_34)
-pppd_LDFLAGS = $(am__append_16) $(am__append_20) $(am__append_26) \
-	$(am__append_35)
-pppd_LIBS = $(am__append_5) $(am__append_8) $(am__append_17) \
-	$(am__append_19) $(am__append_25) libppp_crypto.la \
-	$(am__append_33) $(am__append_36)
+	-DPPPD_LOGFILE_DIR='"@PPPD_LOGFILE_DIR@"' $(am__append_1) \
+	$(am__append_6) $(am__append_12) $(am__append_15) \
+	$(am__append_21) $(am__append_28) $(am__append_29)
+pppd_LDFLAGS = $(am__append_13) $(am__append_17) $(am__append_23)
+pppd_LIBS = $(am__append_4) $(am__append_7) $(am__append_14) \
+	$(am__append_16) $(am__append_22) libppp_crypto.la \
+	$(am__append_30)
 noinst_LTLIBRARIES = libppp_crypto.la
 libppp_crypto_la_SOURCES = crypto.c ppp-md5.c ppp-md4.c ppp-sha1.c ppp-des.c
 @PPP_WITH_OPENSSL_TRUE@libppp_crypto_la_CPPFLAGS = $(OPENSSL_INCLUDES)
@@ -817,15 +788,9 @@ utest_peap_LDADD = libppp_crypto.la
 utest_chap_LDADD = libppp_crypto.la
 utest_crypto_LDADD = libppp_crypto.la
 utest_pppcrypt_LDADD = libppp_crypto.la
-@WITH_SRP_TRUE@srp_entry_SOURCES = srp-entry.c
-@WITH_SRP_TRUE@srp_entry_CPPFLAGS = $(OPENSSL_INCLUDES) $(SRP_CFLAGS)
-@WITH_SRP_TRUE@srp_entry_LDADD = $(SRP_LIBS) $(OPENSSL_LIBS)
-@WITH_SRP_TRUE@srp_entry_LDFLAGS = $(OPENSSL_LDFLAGS) $(SRP_LDFLAGS)
-@WITH_SRP_TRUE@dist_srp_entry_MANS = srp-entry.8
 pppd_LDADD = $(pppd_LIBS)
 EXTRA_DIST = \
-    ppp.pam \
-    srp-entry.8
+    ppp.pam
 
 TESTS = $(check_PROGRAMS)
 all: config.h pppdconf.h
@@ -952,10 +917,6 @@ pppd$(EXEEXT): $(pppd_OBJECTS) $(pppd_DEPENDENCIES) $(EXTRA_pppd_DEPENDENCIES)
 	@rm -f pppd$(EXEEXT)
 	$(AM_V_CCLD)$(pppd_LINK) $(pppd_OBJECTS) $(pppd_LDADD) $(LIBS)
 
-srp-entry$(EXEEXT): $(srp_entry_OBJECTS) $(srp_entry_DEPENDENCIES) $(EXTRA_srp_entry_DEPENDENCIES) 
-	@rm -f srp-entry$(EXEEXT)
-	$(AM_V_CCLD)$(srp_entry_LINK) $(srp_entry_OBJECTS) $(srp_entry_LDADD) $(LIBS)
-
 utest_chap$(EXEEXT): $(utest_chap_OBJECTS) $(utest_chap_DEPENDENCIES) $(EXTRA_utest_chap_DEPENDENCIES) 
 	@rm -f utest_chap$(EXEEXT)
 	$(AM_V_CCLD)$(utest_chap_LINK) $(utest_chap_OBJECTS) $(utest_chap_LDADD) $(LIBS)
@@ -1019,7 +980,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pppd-tty.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pppd-upap.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pppd-utils.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srp_entry-srp-entry.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utest_chap-chap_ms.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utest_chap-crypto_ms.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utest_chap-utils.Po@am__quote@ # am--include-marker
@@ -1541,20 +1501,6 @@ pppd-peap.obj: peap.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='peap.c' object='pppd-peap.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pppd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pppd-peap.obj `if test -f 'peap.c'; then $(CYGPATH_W) 'peap.c'; else $(CYGPATH_W) '$(srcdir)/peap.c'; fi`
-
-srp_entry-srp-entry.o: srp-entry.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(srp_entry_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT srp_entry-srp-entry.o -MD -MP -MF $(DEPDIR)/srp_entry-srp-entry.Tpo -c -o srp_entry-srp-entry.o `test -f 'srp-entry.c' || echo '$(srcdir)/'`srp-entry.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp_entry-srp-entry.Tpo $(DEPDIR)/srp_entry-srp-entry.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='srp-entry.c' object='srp_entry-srp-entry.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(srp_entry_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o srp_entry-srp-entry.o `test -f 'srp-entry.c' || echo '$(srcdir)/'`srp-entry.c
-
-srp_entry-srp-entry.obj: srp-entry.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(srp_entry_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT srp_entry-srp-entry.obj -MD -MP -MF $(DEPDIR)/srp_entry-srp-entry.Tpo -c -o srp_entry-srp-entry.obj `if test -f 'srp-entry.c'; then $(CYGPATH_W) 'srp-entry.c'; else $(CYGPATH_W) '$(srcdir)/srp-entry.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/srp_entry-srp-entry.Tpo $(DEPDIR)/srp_entry-srp-entry.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='srp-entry.c' object='srp_entry-srp-entry.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(srp_entry_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o srp_entry-srp-entry.obj `if test -f 'srp-entry.c'; then $(CYGPATH_W) 'srp-entry.c'; else $(CYGPATH_W) '$(srcdir)/srp-entry.c'; fi`
 
 utest_chap-chap_ms.o: chap_ms.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(utest_chap_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT utest_chap-chap_ms.o -MD -MP -MF $(DEPDIR)/utest_chap-chap_ms.Tpo -c -o utest_chap-chap_ms.o `test -f 'chap_ms.c' || echo '$(srcdir)/'`chap_ms.c
@@ -2207,7 +2153,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/pppd-tty.Po
 	-rm -f ./$(DEPDIR)/pppd-upap.Po
 	-rm -f ./$(DEPDIR)/pppd-utils.Po
-	-rm -f ./$(DEPDIR)/srp_entry-srp-entry.Po
 	-rm -f ./$(DEPDIR)/utest_chap-chap_ms.Po
 	-rm -f ./$(DEPDIR)/utest_chap-crypto_ms.Po
 	-rm -f ./$(DEPDIR)/utest_chap-utils.Po
@@ -2302,7 +2247,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/pppd-tty.Po
 	-rm -f ./$(DEPDIR)/pppd-upap.Po
 	-rm -f ./$(DEPDIR)/pppd-utils.Po
-	-rm -f ./$(DEPDIR)/srp_entry-srp-entry.Po
 	-rm -f ./$(DEPDIR)/utest_chap-chap_ms.Po
 	-rm -f ./$(DEPDIR)/utest_chap-crypto_ms.Po
 	-rm -f ./$(DEPDIR)/utest_chap-utils.Po

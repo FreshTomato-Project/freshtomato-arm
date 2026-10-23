@@ -2764,6 +2764,12 @@ nginx/stamp-h1:
 			--with-http_v2_module \
 			--with-http_realip_module \
 			--without-http_upstream_zone_module \
+			--without-http_mirror_module \
+			--without-http_split_clients_module \
+			--without-http_empty_gif_module \
+			--without-http_browser_module \
+			--without-http_userid_module \
+			--without-http_memcached_module \
 			$(if $(TCONFIG_WOLFSSL),--with-wolfssl=$(TOP)/wolfssl/staged/usr,) \
 			$(if $(TCONFIG_BCMARM),,--with-libatomic=$(TOP)/libatomic_ops) \
 			$(if $(TCONFIG_IPV6),--with-ipv6,)

@@ -18,6 +18,16 @@
     our @apps_lib_src =
         ( qw(apps.c opt.c s_cb.c s_socket.c app_rand.c bf_prefix.c),
           split(/\s+/, $target{apps_aux_src}) );
+@@ -20,6 +29,9 @@
+   PROGRAMS=openssl
+   SOURCE[openssl]={- join(" ", @apps_init_src) -}
+   SOURCE[openssl]={- join(" ", @apps_openssl_src) -}
++  # ocsp.c uses unpack_revinfo() from ca.c; keep it linked even when
++  # the 'ca' command was removed by the size-reduction patch.
++  SOURCE[openssl]=ca.c
+   INCLUDE[openssl]=.. ../include
+   DEPEND[openssl]=libapps.a ../libssl
+   IF[{- !$disabled{'des'} -}]
 --- openssl-1.1/apps/openssl.c
 +++ openssl-1.1/apps/openssl.c
 @@ -313,9 +313,11 @@ static void list_missing_help(void)
@@ -50,6 +60,15 @@
              fp = &f;
 --- openssl-1.1/apps/progs.pl
 +++ openssl-1.1/apps/progs.pl
+@@ -36,7 +36,7 @@
+     close F;
+ }
+ 
+-@ARGV = sort keys %commands;
++@ARGV = sort grep { $_ ne "ca" } keys %commands;
+ 
+ print <<"EOF";
+ /*
 @@ -104,30 +104,6 @@ foreach my $cmd ( @ARGV ) {
      }
  }

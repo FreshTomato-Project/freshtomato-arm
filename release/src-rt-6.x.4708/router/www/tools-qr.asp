@@ -53,7 +53,7 @@
 
 <script>
 
-//	<% nvram('wl_ssid,wl_security_mode,wl_closed,wl_passphrase,wl_wpa_psk'); %>
+//	<% nvram('wl_ssid,wl_security_mode,wl_closed,wl_passphrase,wl_wpa_psk,wl_radio,wl_net_mode,wl_bss_enabled'); %>
 
 var cprefix = 'tools_qr';
 var tabs = []
@@ -61,6 +61,23 @@ var authMap = {'disabled':'nopass','wep':'WEP','wpa_personal':'WPA','wpa_enterpr
 
 function getNvramWifiParameter(wifiInterface, paramName) {
 	return nvram[wifiInterface+'_'+paramName];
+}
+
+/*
+ * A disabled radio/VIF must not expose its saved PSK through a QR code.
+ * Disabling an interface does not change its security configuration.
+ */
+function wifiInterfaceEnabled(name, uidx) {
+	var primary = name.split('.')[0];
+
+	if (getNvramWifiParameter(primary, 'radio') !== '1' || getNvramWifiParameter(primary, 'net_mode') === 'disabled')
+		return false;
+
+	if (name !== primary && (getNvramWifiParameter(name, 'radio') !== '1' || getNvramWifiParameter(name, 'bss_enabled') === '0' || getNvramWifiParameter(name, 'net_mode') === 'disabled'))
+		return false;
+
+	/* Also suppress QR generation for interfaces that are not up. */
+	return (wl_ifaces[uidx][6] == 1);
 }
 
 function printDiv(divName) {
@@ -88,16 +105,36 @@ function tabSelect(name) {
 
 	for (var i = 0; i < tabs.length; ++i) {
 		if (name == tabs[i][0] ) {
-			var ssid = getNvramWifiParameter(name, 'ssid');
-			var enc = authMap[getNvramWifiParameter(name, 'security_mode')];
+			var ssid = getNvramWifiParameter(name, 'ssid') || '';
+
+			if (!wifiInterfaceEnabled(name, i)) {
+				E('wifi-network-ssid').textContent = ssid;
+				E('wifi-network-password').textContent = '';
+				E('password-show-control').style.display = 'none';
+				E('passwd').style.display = 'none';
+				E('togglePasswordCheckbox').checked = false;
+				E('qrcode').textContent = 'Wireless interface is disabled. No QR code available.';
+				break;
+			}
+
+			var security = getNvramWifiParameter(name, 'security_mode') || '';
+			var enc = authMap[security];
 			var hidden = (getNvramWifiParameter(name, 'closed') == '1' ) ? 'true' : 'false';
-			var pw = (enc == 'WEP') ? getNvramWifiParameter(name, 'passphrase') : getNvramWifiParameter(name, 'wpa_psk');
+			/* Do not read or encode stale passwords for open or Enterprise networks. */
+			var hasPassword = (enc === 'WEP') || (security.indexOf('_personal') != -1);
+			var pw = '';
+			if (hasPassword)
+				pw = getNvramWifiParameter(name, (enc === 'WEP') ? 'passphrase' : 'wpa_psk') || '';
 
 			E('wifi-network-ssid').textContent = ssid;
 			E('wifi-network-password').textContent = pw;
-			E('password-show-control').style.display = (enc === 'nopass') ? 'none' : 'inline';
+			E('password-show-control').style.display = hasPassword ? 'inline' : 'none';
+			if (!hasPassword) {
+				E('passwd').style.display = 'none';
+				E('togglePasswordCheckbox').checked = false;
+			}
 
-			var qrCodeContent = `WIFI:S:${ssid};T:${enc};P:${pw.replaceAll(';', '\\;')};H:${hidden};;`;
+			var qrCodeContent = `WIFI:S:${ssid};T:${enc};`+(hasPassword ? `P:${pw.replaceAll(';', '\\;')};` : '')+`H:${hidden};;`;
 			E('qrcode').replaceChild(showQRCode(qrCodeContent), qrcode.lastChild);
 		}
 	}

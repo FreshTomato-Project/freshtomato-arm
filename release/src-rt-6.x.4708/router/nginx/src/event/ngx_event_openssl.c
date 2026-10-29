@@ -3811,6 +3811,19 @@ failed:
 
 done:
 
+#if (defined BIO_get_ktls_recv && NGX_LINUX)
+
+    /*
+     * with kernel TLS, recv() fails with EIO on a record
+     * other than application data, such as "close notify"
+     */
+
+    if (BIO_get_ktls_recv(SSL_get_rbio(c->ssl->connection)) == 1) {
+        c->ktls_recv = 1;
+    }
+
+#endif
+
     if (c->ssl->shutdown_without_free) {
         c->ssl->shutdown_without_free = 0;
         c->recv = ngx_recv;
@@ -4449,7 +4462,7 @@ ngx_ssl_new_session(ngx_ssl_conn_t *ssl_conn, ngx_ssl_session_t *sess)
 
     /* do not cache too big session */
 
-    if (len > NGX_SSL_MAX_SESSION_SIZE) {
+    if (len <= 0 || len > NGX_SSL_MAX_SESSION_SIZE) {
         return 0;
     }
 

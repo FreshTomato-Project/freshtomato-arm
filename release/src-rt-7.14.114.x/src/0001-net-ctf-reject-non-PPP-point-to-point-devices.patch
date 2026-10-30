@@ -1,0 +1,90 @@
+From e4e1ff402cf13f4c9900fc4ae8f96d2b5d87a81f Mon Sep 17 00:00:00 2001
+From: pedro311 <pedro311@gmail.com>
+Date: Thu, 29 Oct 2026 17:29:11 +0000
+Subject: [PATCH] kernel: net: ctf: reject non-PPP point-to-point devices
+
+Broadcom's conntrack acceleration path assumes IFF_POINTOPOINT
+identifies a PPP device. WireGuard also sets IFF_POINTOPOINT, so
+traffic routed across WireGuard and VLAN interfaces can pass a
+non-PPP net_device to ppp_get_conn_pkt_info().
+
+That helper then casts netdev_priv() to struct ppp and accesses
+fields at incompatible offsets. On SDK6/7/714 this can trigger an
+ARM kernel NULL pointer dereference and panic.
+
+Restrict the conntrack PPP acceleration branch to ARPHRD_PPP
+devices, and validate the concrete PPP netdev_ops before accessing
+private PPP state. Retain the existing error return so unsupported
+devices cannot enter the accelerated PPP path.
+
+This is deliberately a narrow defensive fix. It does not enable
+CTF acceleration for WireGuard or alter its data path.
+
+Ref: https://github.com/FreshTomato-Project/freshtomato-arm/issues/335
+---
+ drivers/net/ppp_generic.c         | 16 ++++++++++++----
+ net/netfilter/nf_conntrack_core.c | 10 +++++++---
+ 2 files changed, 19 insertions(+), 7 deletions(-)
+
+diff --git a/release/src-rt-6.x.4708/linux/linux-2.6.36/drivers/net/ppp_generic.c b/release/src-rt-6.x.4708/linux/linux-2.6.36/drivers/net/ppp_generic.c
+index 122992e..1b0808a 100644
+--- a/release/src-rt-6.x.4708/linux/linux-2.6.36/drivers/net/ppp_generic.c
++++ b/release/src-rt-6.x.4708/linux/linux-2.6.36/drivers/net/ppp_generic.c
+@@ -3087,10 +3087,18 @@ ppp_get_conn_pkt_info(void *pppif, struct ctf_ppp *ctfppp){
+ 	struct ppp *ppp = NULL;
+ 	struct channel *pch = NULL;
+ 
+-	ppp = (struct ppp *)netdev_priv((const struct net_device *)pppif);
+-	if (ppp == NULL){
+-		return (BCME_ERROR);
+-	}
++	struct net_device *dev = (struct net_device *)pppif;
++
++	/*
++	 * IFF_POINTOPOINT also describes non-PPP devices (e.g. WireGuard).
++	 * Only native PPP devices have struct ppp in netdev_priv().
++	 */
++	if (dev == NULL || ctfppp == NULL ||
++	    dev->type != ARPHRD_PPP ||
++	    dev->netdev_ops != &ppp_netdev_ops)
++		return BCME_ERROR;
++
++	ppp = netdev_priv(dev);
+ 
+ 	/* Compressor/Decompressor (MPPE, etc) is running */
+ 	if ((ppp->flags & SC_CCP_UP) &&
+diff --git a/release/src-rt-6.x.4708/linux/linux-2.6.36/net/netfilter/nf_conntrack_core.c b/release/src-rt-6.x.4708/linux/linux-2.6.36/net/netfilter/nf_conntrack_core.c
+index b6110a3..de94589 100644
+--- a/release/src-rt-6.x.4708/linux/linux-2.6.36/net/netfilter/nf_conntrack_core.c
++++ b/release/src-rt-6.x.4708/linux/linux-2.6.36/net/netfilter/nf_conntrack_core.c
+@@ -33,6 +33,7 @@
+ #include <linux/mm.h>
+ #include <linux/nsproxy.h>
+ #include <linux/rculist_nulls.h>
++#include <linux/if_arp.h>
+ 
+ #include <net/netfilter/nf_conntrack.h>
+ #include <net/netfilter/nf_conntrack_l3proto.h>
+@@ -367,13 +368,17 @@ ip_conntrack_ipct_add(struct sk_buff *skb, u_int32_t hooknum,
+ 	}
+ 
+ #if defined(CTF_PPTP) || defined(CTF_L2TP)
+-	if (((skb_dst(skb)->dev->flags & IFF_POINTOPOINT) || (skb->dev->flags & IFF_POINTOPOINT) )) {
++	/* Point-to-point does not imply PPP (WireGuard also sets this flag).
++	 * Only PPP interfaces may enter the PPP acceleration path.
++	 */
++	if (skb_dst(skb)->dev->type == ARPHRD_PPP ||
++	    (skb->dev && skb->dev->type == ARPHRD_PPP)) {
+ 
+ 		/* For pppoe interfaces fill the session id and header add/del actions */
+-		if (skb_dst(skb)->dev->flags & IFF_POINTOPOINT) {
++		if (skb_dst(skb)->dev->type == ARPHRD_PPP) {
+ 			/* Transmit interface and sid will be populated by pppoe module */
+ 			ipc_entry.ppp_ifp = skb_dst(skb)->dev;
+-		} else if (skb->dev->flags & IFF_POINTOPOINT) {
++		} else if (skb->dev && skb->dev->type == ARPHRD_PPP) {
+ 			ipc_entry.ppp_ifp = skb->dev;
+ 		} else{
+ 			ipc_entry.ppp_ifp = NULL;
+-- 
+2.47.3

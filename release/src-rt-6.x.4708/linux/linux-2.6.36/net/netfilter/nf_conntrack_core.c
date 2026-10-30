@@ -33,6 +33,7 @@
 #include <linux/mm.h>
 #include <linux/nsproxy.h>
 #include <linux/rculist_nulls.h>
+#include <linux/if_arp.h>
 
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_l3proto.h>
@@ -369,13 +370,17 @@ ip_conntrack_ipct_add(struct sk_buff *skb, u_int32_t hooknum,
 	}
 
 #if defined(CTF_PPTP) || defined(CTF_L2TP)
-	if (((skb_dst(skb)->dev->flags & IFF_POINTOPOINT) || (skb->dev->flags & IFF_POINTOPOINT) )) {
+	/* Point-to-point does not imply PPP (WireGuard also sets this flag).
+	 * Only PPP interfaces may enter the PPP acceleration path.
+	 */
+	if (skb_dst(skb)->dev->type == ARPHRD_PPP ||
+	    (skb->dev && skb->dev->type == ARPHRD_PPP)) {
 
 		/* For pppoe interfaces fill the session id and header add/del actions */
-		if (skb_dst(skb)->dev->flags & IFF_POINTOPOINT) {
+		if (skb_dst(skb)->dev->type == ARPHRD_PPP) {
 			/* Transmit interface and sid will be populated by pppoe module */
 			ipc_entry.ppp_ifp = skb_dst(skb)->dev;
-		} else if (skb->dev->flags & IFF_POINTOPOINT) {
+		} else if (skb->dev && skb->dev->type == ARPHRD_PPP) {
 			ipc_entry.ppp_ifp = skb->dev;
 		} else{
 			ipc_entry.ppp_ifp = NULL;

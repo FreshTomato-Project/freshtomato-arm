@@ -3087,10 +3087,18 @@ ppp_get_conn_pkt_info(void *pppif, struct ctf_ppp *ctfppp){
 	struct ppp *ppp = NULL;
 	struct channel *pch = NULL;
 
-	ppp = (struct ppp *)netdev_priv((const struct net_device *)pppif);
-	if (ppp == NULL){
-		return (BCME_ERROR);
-	}
+	struct net_device *dev = (struct net_device *)pppif;
+
+	/*
+	 * IFF_POINTOPOINT also describes non-PPP devices (e.g. WireGuard).
+	 * Only native PPP devices have struct ppp in netdev_priv().
+	 */
+	if (dev == NULL || ctfppp == NULL ||
+	    dev->type != ARPHRD_PPP ||
+	    dev->netdev_ops != &ppp_netdev_ops)
+		return BCME_ERROR;
+
+	ppp = netdev_priv(dev);
 
 	/* Compressor/Decompressor (MPPE, etc) is running */
 	if ((ppp->flags & SC_CCP_UP) &&

@@ -545,10 +545,17 @@ static struct tftp_file *check_tftp_fileperm(char *packet, ssize_t *len, char *p
   /* trick to ban moving out of the subtree */
   if (prefix)
     {
-      char *suspect = strstr(namebuff, "/..");
+      char *suspect = namebuff;
 
-      if (suspect && (suspect[3] == '/' || suspect[3] == 0))
-        goto perm;
+      /* Every occurrence has to be checked: a harmless leading match
+         such as "/..data" otherwise hides a later "/../" from here. */
+      while ((suspect = strstr(suspect, "/..")))
+        {
+          if (suspect[3] == '/' || suspect[3] == 0)
+            goto perm;
+
+          suspect += 3;
+        }
     }
   
   if ((fd = open(namebuff, O_RDONLY)) == -1)

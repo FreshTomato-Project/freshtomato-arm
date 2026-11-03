@@ -1113,6 +1113,11 @@ static int print_wlstats(int idx, int unit, int subunit, void *param)
 	if (wl_iovar_getint(ifname, "chanim_enab", (int*)(void*)&chanim_enab) != 0)
 		chanim_enab = 0;
 
+	/* Skip chanim_state on a disabled radio: the driver fails it there
+	 * with BCME_RANGE and logs every failure */
+	if (!get_radio(unit))
+		chanim_enab = 0;
+
 	if (chanim_enab) {
 		if (wl_iovar_getbuf(ifname, "chanim_state", &chanspec, sizeof(chanspec), retbuf, WLC_IOCTL_SMLEN) == 0)
 			interference = *(int*)retbuf;

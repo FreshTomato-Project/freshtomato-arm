@@ -116,7 +116,7 @@ void eaptls_gen_mppe_keys(struct eaptls_session *ets, int client)
     dbglog("EAP-TLS PRF label = %s", prf_label);
     prf_size = strlen(prf_label);
     if (SSL_export_keying_material(ets->ssl, out, sizeof(out), prf_label, prf_size, 
-                                   context, context_len, 0) != 1)
+                                   context, context_len, ets->tls_v13) != 1)
     {
         warn( "EAP-TLS: Failed generating keying material" );
         return;
@@ -985,7 +985,8 @@ int eaptls_send(struct eaptls_session *ets, bool is_server, u_char ** outp)
 	    /* This serves mainly to advance the TLS handshake process. */
             res = SSL_read(ets->ssl, dummy, sizeof(dummy));
 	    if (res >= 0)
-		dbglog("got %d bytes from SSL_read: %.*B", MIN(res, 20), dummy);
+		dbglog("got %d bytes from SSL_read: %.*B",
+		       res, MIN(res, 20), dummy);
         }
 
 	/*

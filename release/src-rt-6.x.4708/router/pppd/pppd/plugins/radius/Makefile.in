@@ -93,8 +93,7 @@ build_triplet = @build@
 host_triplet = @host@
 subdir = pppd/plugins/radius
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_atm.m4 \
-	$(top_srcdir)/m4/ax_check_openssl.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_openssl.m4 \
 	$(top_srcdir)/m4/ax_check_openssl_func.m4 \
 	$(top_srcdir)/m4/ax_check_pam.m4 \
 	$(top_srcdir)/m4/ax_check_pcap.m4 $(top_srcdir)/m4/libtool.m4 \
@@ -145,7 +144,7 @@ am_libradiusclient_la_OBJECTS = libradiusclient_la-avpair.lo \
 	libradiusclient_la-dict.lo libradiusclient_la-ip_util.lo \
 	libradiusclient_la-clientid.lo \
 	libradiusclient_la-sendserver.lo libradiusclient_la-lock.lo \
-	libradiusclient_la-util.lo libradiusclient_la-md5.lo
+	libradiusclient_la-util.lo
 libradiusclient_la_OBJECTS = $(am_libradiusclient_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -191,7 +190,6 @@ am__depfiles_remade = ./$(DEPDIR)/libradiusclient_la-avpair.Plo \
 	./$(DEPDIR)/libradiusclient_la-dict.Plo \
 	./$(DEPDIR)/libradiusclient_la-ip_util.Plo \
 	./$(DEPDIR)/libradiusclient_la-lock.Plo \
-	./$(DEPDIR)/libradiusclient_la-md5.Plo \
 	./$(DEPDIR)/libradiusclient_la-sendserver.Plo \
 	./$(DEPDIR)/libradiusclient_la-util.Plo \
 	./$(DEPDIR)/radattr_la-radattr.Plo \
@@ -253,9 +251,6 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
-ATM_CFLAGS = @ATM_CFLAGS@
-ATM_LDFLAGS = @ATM_LDFLAGS@
-ATM_LIBS = @ATM_LIBS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -435,7 +430,7 @@ radrealms_la_LDFLAGS = $(RADIUS_LDFLAGS)
 radrealms_la_SOURCES = radrealms.c
 libradiusclient_la_SOURCES = \
     avpair.c buildreq.c config.c dict.c ip_util.c \
-	clientid.c sendserver.c lock.c util.c md5.c
+	clientid.c sendserver.c lock.c util.c
 
 libradiusclient_la_CPPFLAGS = $(RADIUS_CPPFLAGS) -DSYSCONFDIR=\"${sysconfdir}\"
 EXTRA_DIST = \
@@ -543,7 +538,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libradiusclient_la-dict.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libradiusclient_la-ip_util.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libradiusclient_la-lock.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libradiusclient_la-md5.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libradiusclient_la-sendserver.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libradiusclient_la-util.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radattr_la-radattr.Plo@am__quote@ # am--include-marker
@@ -639,13 +633,6 @@ libradiusclient_la-util.lo: util.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='util.c' object='libradiusclient_la-util.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libradiusclient_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libradiusclient_la-util.lo `test -f 'util.c' || echo '$(srcdir)/'`util.c
-
-libradiusclient_la-md5.lo: md5.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libradiusclient_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libradiusclient_la-md5.lo -MD -MP -MF $(DEPDIR)/libradiusclient_la-md5.Tpo -c -o libradiusclient_la-md5.lo `test -f 'md5.c' || echo '$(srcdir)/'`md5.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libradiusclient_la-md5.Tpo $(DEPDIR)/libradiusclient_la-md5.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='md5.c' object='libradiusclient_la-md5.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libradiusclient_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libradiusclient_la-md5.lo `test -f 'md5.c' || echo '$(srcdir)/'`md5.c
 
 radattr_la-radattr.lo: radattr.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(radattr_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT radattr_la-radattr.lo -MD -MP -MF $(DEPDIR)/radattr_la-radattr.Tpo -c -o radattr_la-radattr.lo `test -f 'radattr.c' || echo '$(srcdir)/'`radattr.c
@@ -850,7 +837,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/libradiusclient_la-dict.Plo
 	-rm -f ./$(DEPDIR)/libradiusclient_la-ip_util.Plo
 	-rm -f ./$(DEPDIR)/libradiusclient_la-lock.Plo
-	-rm -f ./$(DEPDIR)/libradiusclient_la-md5.Plo
 	-rm -f ./$(DEPDIR)/libradiusclient_la-sendserver.Plo
 	-rm -f ./$(DEPDIR)/libradiusclient_la-util.Plo
 	-rm -f ./$(DEPDIR)/radattr_la-radattr.Plo
@@ -908,7 +894,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/libradiusclient_la-dict.Plo
 	-rm -f ./$(DEPDIR)/libradiusclient_la-ip_util.Plo
 	-rm -f ./$(DEPDIR)/libradiusclient_la-lock.Plo
-	-rm -f ./$(DEPDIR)/libradiusclient_la-md5.Plo
 	-rm -f ./$(DEPDIR)/libradiusclient_la-sendserver.Plo
 	-rm -f ./$(DEPDIR)/libradiusclient_la-util.Plo
 	-rm -f ./$(DEPDIR)/radattr_la-radattr.Plo

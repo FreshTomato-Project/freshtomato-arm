@@ -1726,8 +1726,10 @@ ppp_safe_fork(int infd, int outfd, int errfd)
 	/* Executing in the child */
 	ppp_sys_close();
 #ifdef PPP_WITH_TDB
-	if (pppdb != NULL)
+	if (pppdb != NULL) {
 		tdb_close(pppdb);
+		pppdb = NULL;	/* tdb_close() can't null the caller's pointer */
+	}
 #endif
 
 	/* make sure infd, outfd and errfd won't get tromped on below */
@@ -2004,7 +2006,21 @@ run_program(const char *prog, char * const *args, int must_exist, void (*done)(v
     update_script_environment();
 
     if (strict_script_checks) {
-#ifdef HAVE_FEXECVE
+#if defined(SOL2)
+	/*
+	 * Solaris/illumos can't exec a #! script through its fd:
+	 * fexecve() fails with EFAULT, /dev/fd/N with EACCES, and
+	 * /proc/self/fd/N hangs.  Exec by path instead, but only if
+	 * the path still names the file ppp_check_access() vetted.
+	 */
+	struct stat fst, pst;
+
+	if (fstat(fd, &fst) == 0 && stat(prog, &pst) == 0
+	    && fst.st_dev == pst.st_dev && fst.st_ino == pst.st_ino)
+	    execve(prog, args, script_env);
+	else
+	    errno = ESTALE;
+#elif defined(HAVE_FEXECVE)
 	fexecve(fd, args, script_env);
 #else
 	char fdpath[32];
@@ -2021,7 +2037,9 @@ run_program(const char *prog, char * const *args, int must_exist, void (*done)(v
 	execve(prog, args, script_env);
     }
     /* have to reopen the log, there's nowhere else for the message to go. */
+    ret = errno;	/* reopen_log() may clobber errno */
     reopen_log();
+    errno = ret;
     syslog(LOG_ERR, "Can't execute %s: %m", prog);
     closelog();
     _exit(99);

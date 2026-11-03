@@ -1682,7 +1682,7 @@ pppd/Makefile:
 			--enable-microsoft-extensions --enable-plugins \
 			--disable-openssl-engine --without-openssl \
 			--disable-eaptls --disable-peap --disable-systemd \
-			--without-pam --without-pcap --without-srp --without-atm \
+			--without-pam --without-pcap \
 			--disable-cbcp --disable-mslanman \
 			$(if $(TCONFIG_OPTIMIZE_SIZE_MORE),--disable-multilink,--enable-multilink) \
 			$(if $(TCONFIG_IPV6),--enable-ipv6cp,--disable-ipv6cp)

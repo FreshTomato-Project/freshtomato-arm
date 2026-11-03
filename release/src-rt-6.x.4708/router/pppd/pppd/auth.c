@@ -567,7 +567,7 @@ setupapfile(char **argv)
 	strlcpy(user, u, sizeof(user));
 	explicit_user = 1;
     }
-    if (override_value("passwd", option_priority, fname)) {
+    if (override_value("password", option_priority, fname)) {
 	strlcpy(passwd, p, sizeof(passwd));
 	explicit_passwd = 1;
     }
@@ -790,7 +790,7 @@ link_down(int unit)
 	if (auth_script_state == s_up && auth_script_pid == 0) {
 	    ppp_get_link_stats(NULL);
 	    auth_script_state = s_down;
-	    auth_script(path_auth_down, "auth-up");
+	    auth_script(path_auth_down, "auth-down");
 	}
     }
     if (!mp_on())
@@ -2469,6 +2469,11 @@ have_eaptls_secret_client(char *client, char *server)
     f = fopen(filename, "r");
     if (f == NULL)
 		return 0;
+
+    if (!ppp_check_access(fileno(f), filename, PPP_FT_SECRET)) {
+	fclose(f);
+	return 0;
+    }
 
     ret =
 	scan_authfile_eaptls(f, client, server, clicertfile, servcertfile,

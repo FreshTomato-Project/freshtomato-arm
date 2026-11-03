@@ -93,8 +93,7 @@ host_triplet = @host@
 sbin_PROGRAMS = chat$(EXEEXT)
 subdir = chat
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_atm.m4 \
-	$(top_srcdir)/m4/ax_check_openssl.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_openssl.m4 \
 	$(top_srcdir)/m4/ax_check_openssl_func.m4 \
 	$(top_srcdir)/m4/ax_check_pam.m4 \
 	$(top_srcdir)/m4/ax_check_pcap.m4 $(top_srcdir)/m4/libtool.m4 \
@@ -214,9 +213,6 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
-ATM_CFLAGS = @ATM_CFLAGS@
-ATM_LDFLAGS = @ATM_LDFLAGS@
-ATM_LIBS = @ATM_LIBS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@

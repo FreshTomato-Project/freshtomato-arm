@@ -91,11 +91,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@WITH_LIBATM_FALSE@am__append_1 = text2qos.c text2atm.c misc.c ans.c
 subdir = pppd/plugins/pppoatm
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_atm.m4 \
-	$(top_srcdir)/m4/ax_check_openssl.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_openssl.m4 \
 	$(top_srcdir)/m4/ax_check_openssl_func.m4 \
 	$(top_srcdir)/m4/ax_check_pam.m4 \
 	$(top_srcdir)/m4/ax_check_pcap.m4 $(top_srcdir)/m4/libtool.m4 \
@@ -140,13 +138,9 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(pppd_plugindir)"
 LTLIBRARIES = $(pppd_plugin_LTLIBRARIES)
-pppoatm_la_DEPENDENCIES =
-am__pppoatm_la_SOURCES_DIST = pppoatm.c text2qos.c text2atm.c misc.c \
-	ans.c
-@WITH_LIBATM_FALSE@am__objects_1 = pppoatm_la-text2qos.lo \
-@WITH_LIBATM_FALSE@	pppoatm_la-text2atm.lo pppoatm_la-misc.lo \
-@WITH_LIBATM_FALSE@	pppoatm_la-ans.lo
-am_pppoatm_la_OBJECTS = pppoatm_la-pppoatm.lo $(am__objects_1)
+pppoatm_la_LIBADD =
+am_pppoatm_la_OBJECTS = pppoatm_la-pppoatm.lo pppoatm_la-text2qos.lo \
+	pppoatm_la-text2atm.lo pppoatm_la-misc.lo
 pppoatm_la_OBJECTS = $(am_pppoatm_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -170,8 +164,7 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/pppd -I$(top_builddir)/pppd/plugins/pppoe
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/pppoatm_la-ans.Plo \
-	./$(DEPDIR)/pppoatm_la-misc.Plo \
+am__depfiles_remade = ./$(DEPDIR)/pppoatm_la-misc.Plo \
 	./$(DEPDIR)/pppoatm_la-pppoatm.Plo \
 	./$(DEPDIR)/pppoatm_la-text2atm.Plo \
 	./$(DEPDIR)/pppoatm_la-text2qos.Plo
@@ -195,7 +188,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(pppoatm_la_SOURCES)
-DIST_SOURCES = $(am__pppoatm_la_SOURCES_DIST)
+DIST_SOURCES = $(pppoatm_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -225,9 +218,6 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
-ATM_CFLAGS = @ATM_CFLAGS@
-ATM_LDFLAGS = @ATM_LDFLAGS@
-ATM_LIBS = @ATM_LIBS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -376,9 +366,7 @@ noinst_HEADERS = \
 
 pppoatm_la_CPPFLAGS = -I${top_srcdir}
 pppoatm_la_LDFLAGS = -module -avoid-version
-pppoatm_la_SOURCES = pppoatm.c $(am__append_1)
-@WITH_LIBATM_FALSE@pppoatm_la_LIBADD = -lresolv
-@WITH_LIBATM_TRUE@pppoatm_la_LIBADD = -latm
+pppoatm_la_SOURCES = pppoatm.c text2qos.c text2atm.c misc.c
 all: all-am
 
 .SUFFIXES:
@@ -455,7 +443,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pppoatm_la-ans.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pppoatm_la-misc.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pppoatm_la-pppoatm.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pppoatm_la-text2atm.Plo@am__quote@ # am--include-marker
@@ -515,13 +502,6 @@ pppoatm_la-misc.lo: misc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='misc.c' object='pppoatm_la-misc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pppoatm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pppoatm_la-misc.lo `test -f 'misc.c' || echo '$(srcdir)/'`misc.c
-
-pppoatm_la-ans.lo: ans.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pppoatm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pppoatm_la-ans.lo -MD -MP -MF $(DEPDIR)/pppoatm_la-ans.Tpo -c -o pppoatm_la-ans.lo `test -f 'ans.c' || echo '$(srcdir)/'`ans.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pppoatm_la-ans.Tpo $(DEPDIR)/pppoatm_la-ans.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ans.c' object='pppoatm_la-ans.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pppoatm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pppoatm_la-ans.lo `test -f 'ans.c' || echo '$(srcdir)/'`ans.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -657,7 +637,6 @@ clean-am: clean-generic clean-libtool clean-pppd_pluginLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
-	-rm -f ./$(DEPDIR)/pppoatm_la-ans.Plo
 	-rm -f ./$(DEPDIR)/pppoatm_la-misc.Plo
 	-rm -f ./$(DEPDIR)/pppoatm_la-pppoatm.Plo
 	-rm -f ./$(DEPDIR)/pppoatm_la-text2atm.Plo
@@ -707,7 +686,6 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -f ./$(DEPDIR)/pppoatm_la-ans.Plo
 	-rm -f ./$(DEPDIR)/pppoatm_la-misc.Plo
 	-rm -f ./$(DEPDIR)/pppoatm_la-pppoatm.Plo
 	-rm -f ./$(DEPDIR)/pppoatm_la-text2atm.Plo

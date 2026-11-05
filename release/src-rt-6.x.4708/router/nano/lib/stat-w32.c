@@ -44,6 +44,7 @@
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
+#include <wchar.h>
 #include <windows.h>
 
 /* Specification.  */
@@ -54,13 +55,6 @@
 /* Don't assume that UNICODE is not defined.  */
 #undef LoadLibrary
 #define LoadLibrary LoadLibraryA
-#undef GetFinalPathNameByHandle
-#define GetFinalPathNameByHandle GetFinalPathNameByHandleA
-
-/* Older mingw headers do not define VOLUME_NAME_NONE.  */
-#ifndef VOLUME_NAME_NONE
-# define VOLUME_NAME_NONE 4
-#endif
 
 #if !WIN32_ASSUME_VISTA
 
@@ -68,20 +62,12 @@
 # define GetProcAddress \
    (void *) GetProcAddress
 
-# if _GL_WINDOWS_STAT_INODES == 2
 /* GetFileInformationByHandleEx was introduced only in Windows Vista.  */
 typedef DWORD (WINAPI * GetFileInformationByHandleExFuncType) (HANDLE hFile,
                                                                FILE_INFO_BY_HANDLE_CLASS fiClass,
                                                                LPVOID lpBuffer,
                                                                DWORD dwBufferSize);
 static GetFileInformationByHandleExFuncType GetFileInformationByHandleExFunc = NULL;
-# endif
-/* GetFinalPathNameByHandle was introduced only in Windows Vista.  */
-typedef DWORD (WINAPI * GetFinalPathNameByHandleFuncType) (HANDLE hFile,
-                                                           LPSTR lpFilePath,
-                                                           DWORD lenFilePath,
-                                                           DWORD dwFlags);
-static GetFinalPathNameByHandleFuncType GetFinalPathNameByHandleFunc = NULL;
 static BOOL initialized = FALSE;
 
 static void
@@ -89,21 +75,17 @@ initialize (void)
 {
   HMODULE kernel32 = LoadLibrary ("kernel32.dll");
   if (kernel32 != NULL)
-    {
-# if _GL_WINDOWS_STAT_INODES == 2
-      GetFileInformationByHandleExFunc =
-        (GetFileInformationByHandleExFuncType) GetProcAddress (kernel32, "GetFileInformationByHandleEx");
-# endif
-      GetFinalPathNameByHandleFunc =
-        (GetFinalPathNameByHandleFuncType) GetProcAddress (kernel32, "GetFinalPathNameByHandleA");
-    }
+    GetFileInformationByHandleExFunc =
+      (GetFileInformationByHandleExFuncType) GetProcAddress (kernel32, "GetFileInformationByHandleEx");
   initialized = TRUE;
 }
 
 #else
 
 # define GetFileInformationByHandleExFunc GetFileInformationByHandleEx
-# define GetFinalPathNameByHandleFunc GetFinalPathNameByHandle
+# if _GL_GNUC_PREREQ (4, 2)
+#  pragma GCC diagnostic ignored "-Waddress"
+# endif
 
 #endif
 
@@ -272,21 +254,37 @@ _gl_fstat_by_handle (HANDLE h, const char *path, struct stat *buf)
              name suffix.
              If the file name is already known, use it. Otherwise, for
              non-empty files, it can be determined through
-             GetFinalPathNameByHandle
-             <https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-getfinalpathnamebyhandlea>
-             or through
              GetFileInformationByHandleEx with argument FileNameInfo
              <https://docs.microsoft.com/en-us/windows/desktop/api/winbase/nf-winbase-getfileinformationbyhandleex>
              <https://docs.microsoft.com/en-us/windows/desktop/api/winbase/ns-winbase-_file_name_info>
-             Both require -D_WIN32_WINNT=_WIN32_WINNT_VISTA or higher.  */
+             This requires -D_WIN32_WINNT=_WIN32_WINNT_VISTA or higher.  */
           if (info.nFileSizeHigh > 0 || info.nFileSizeLow > 0)
             {
-              char fpath[PATH_MAX];
-              if (path != NULL
-                  || (GetFinalPathNameByHandleFunc != NULL
-                      && GetFinalPathNameByHandleFunc (h, fpath, sizeof (fpath), VOLUME_NAME_NONE)
-                         < sizeof (fpath)
-                      && (path = fpath, 1)))
+              /* Room for the header and for the file name.  */
+              union
+                {
+                  FILE_NAME_INFO info;
+                  char storage[sizeof (FILE_NAME_INFO)
+                               + PATH_MAX * sizeof (WCHAR)];
+                } fni;
+              if (GetFileInformationByHandleExFunc != NULL
+                  && GetFileInformationByHandleExFunc (h, FileNameInfo,
+                                                       &fni.info,
+                                                       sizeof (fni)))
+                {
+                  size_t length = fni.info.FileNameLength / sizeof (WCHAR);
+                  const WCHAR *name = fni.info.FileName;
+                  if (length >= 4 && name[length - 4] == L'.')
+                    {
+                      const WCHAR *suffix = name + length - 3;
+                      if (_wcsnicmp (suffix, L"exe", 3) == 0
+                          || _wcsnicmp (suffix, L"bat", 3) == 0
+                          || _wcsnicmp (suffix, L"cmd", 3) == 0
+                          || _wcsnicmp (suffix, L"com", 3) == 0)
+                        mode |= S_IEXEC_UGO;
+                    }
+                }
+              else if (path != NULL)
                 {
                   const char *last_dot = NULL;
                   for (const char *p = path; *p != '\0'; p++)

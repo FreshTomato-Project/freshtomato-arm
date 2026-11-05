@@ -4,7 +4,7 @@
  *   Copyright (C) 2001-2011, 2013-2026 Free Software Foundation, Inc.    *
  *   Copyright (C) 2014 Mike Frysinger                                    *
  *   Copyright (C) 2019 Brand Huntsman                                    *
- *   Copyright (C) 2014-2021, 2024 Benno Schulenberg                      *
+ *   Copyright (C) 2014-2021, 2024, 2026 Benno Schulenberg                *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -872,15 +872,6 @@ void parse_binding(char *ptr, bool dobind)
 		return;
 	}
 
-#ifndef NANO_TINY
-	/* If this is a toggle, find and copy its sequence number. */
-	if (newsc->func == do_toggle) {
-		for (keystruct *s = sclist; s != NULL; s = s->next)
-			if (s->func == do_toggle && s->toggle == newsc->toggle)
-				newsc->ordinal = s->ordinal;
-	} else
-		newsc->ordinal = 0;
-#endif
 	/* Add the new shortcut at the start of the list. */
 	newsc->next = sclist;
 	sclist = newsc;

@@ -1,5 +1,5 @@
 # mbrtoc32.m4
-# serial 25
+# serial 29
 dnl Copyright (C) 2014-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
@@ -9,6 +9,7 @@ dnl This file is offered as-is, without any warranty.
 AC_DEFUN([gl_FUNC_MBRTOC32],
 [
   AC_REQUIRE([gl_UCHAR_H_DEFAULTS])
+  AC_REQUIRE([AC_CANONICAL_HOST])
 
   AC_REQUIRE([AC_TYPE_MBSTATE_T])
   dnl Determine REPLACE_MBSTATE_T, from which GNULIB_defined_mbstate_t is
@@ -28,6 +29,7 @@ AC_DEFUN([gl_FUNC_MBRTOC32],
     else
       gl_MBRTOC32_EMPTY_INPUT
       gl_MBRTOC32_C_LOCALE
+      gl_MBRTOC32_C_LOCALE_LIKE_ISO_8859
       gl_MBRTOC32_UTF8_LOCALE
       case "$gl_cv_func_mbrtoc32_empty_input" in
         *yes) ;;
@@ -42,6 +44,26 @@ AC_DEFUN([gl_FUNC_MBRTOC32],
              [Define if the mbrtoc32 function may signal encoding errors in the C locale.])
            REPLACE_MBRTOC32=1
            ;;
+      esac
+      case "$gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ" in
+        *yes)
+          case "$gl_cv_func_mbrtoc32_C_locale_like_iso_8859" in
+            *yes)
+              case "$host_os" in
+                solaris*)
+                  dnl Solaris 11 OpenIndiana has a well-working mbrtoc32. No
+                  dnl need to apply the MBRTOC32_IN_C_LOCALE_MAYBE_LIKE_ISO_8859
+                  dnl workaround.
+                  ;;
+                *)
+                  AC_DEFINE([MBRTOC32_IN_C_LOCALE_MAYBE_LIKE_ISO_8859], [1],
+                    [Define if the mbrtoc32 function in the C locale may work like in an ISO-8859-1 locale.])
+                  REPLACE_MBRTOC32=1
+                  ;;
+              esac
+              ;;
+          esac
+          ;;
       esac
       case "$gl_cv_func_mbrtoc32_utf8_locale_works" in
         *yes) ;;
@@ -82,6 +104,12 @@ AC_DEFUN([gl_FUNC_MBRTOC32],
       case "$gl_cv_func_mbrtoc32_regular" in
         *no) REPLACE_MBRTOC32=1 ;;
       esac
+      m4_ifdef([gl_UCHAR_H_C23], [
+        AC_REQUIRE([gl_UCHAR_H_C23])
+        if test $gl_char32_t_vs_wchar_t_needs_conversion = yes; then
+          REPLACE_MBRTOC32=1
+        fi
+      ])
     fi
     if test $HAVE_WORKING_MBRTOC32 = 0; then
       REPLACE_MBRTOC32=1
@@ -159,15 +187,14 @@ AC_DEFUN([gl_MBRTOC32_EMPTY_INPUT],
     ])
 ])
 
-dnl <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mbrtowc.html>
-dnl POSIX:2018 says regarding mbrtowc: "In the POSIX locale an [EILSEQ] error
-dnl cannot occur since all byte values are valid characters."  It is reasonable
-dnl to expect mbrtoc32 to behave in the same way.
+dnl <https://pubs.opengroup.org/onlinepubs/9799919799/functions/mbrtoc32.html>
+dnl POSIX:2024 says: "In the POSIX locale an [EILSEQ] error cannot occur
+dnl since all byte values are valid characters."
 
 AC_DEFUN([gl_MBRTOC32_C_LOCALE],
 [
   AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
-  AC_CACHE_CHECK([whether the C locale is free of encoding errors],
+  AC_CACHE_CHECK([whether mbrtoc32 in the C locale is free of encoding errors],
     [gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ],
     [AC_RUN_IFELSE(
        [AC_LANG_PROGRAM(
@@ -199,6 +226,44 @@ AC_DEFUN([gl_MBRTOC32_C_LOCALE],
                              # Guess yes on native Windows.
           mingw* | windows*) gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ="guessing yes" ;;
           *)                 gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ="$gl_cross_guess_normal" ;;
+        esac
+       ])
+    ])
+])
+
+dnl Test whether mbrtoc32 in the C locale works like in an ISO-8859-1 locale.
+
+AC_DEFUN([gl_MBRTOC32_C_LOCALE_LIKE_ISO_8859],
+[
+  AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
+  AC_CACHE_CHECK([whether mbrtoc32 in the C locale works like in an ISO-8859-1 locale],
+    [gl_cv_func_mbrtoc32_C_locale_like_iso_8859],
+    [AC_RUN_IFELSE(
+       [AC_LANG_PROGRAM(
+          [[#include <limits.h>
+            #include <locale.h>
+            #ifdef __HAIKU__
+             #include <stdint.h>
+            #endif
+            #include <uchar.h>
+          ]], [[
+            int i;
+            const char *locale = setlocale (LC_ALL, "C");
+            if (! locale)
+              return 2;
+            char c = 0xE0;
+            char32_t wc;
+            mbstate_t mbs = { 0, };
+            size_t ss = mbrtoc32 (&wc, &c, 1, &mbs);
+            if (ss == 1 && wc == 0x00E0)
+              return 3;
+            return 0;
+          ]])],
+       [gl_cv_func_mbrtoc32_C_locale_like_iso_8859=no],
+       [gl_cv_func_mbrtoc32_C_locale_like_iso_8859=yes],
+       [case "$host_os" in
+          *-musl* | midipix*) gl_cv_func_mbrtoc32_C_locale_like_iso_8859="no" ;;
+          *)                  gl_cv_func_mbrtoc32_C_locale_like_iso_8859="possibly yes" ;;
         esac
        ])
     ])

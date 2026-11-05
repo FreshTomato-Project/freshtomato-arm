@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.4 -->
-<!-- CreationDate: Fri Jul 31 06:15:07 2026 -->
+<!-- CreationDate: Wed Oct 21 06:35:25 2026 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -230,9 +230,9 @@ position on the status bar. This overrides the option
 
 <p style="margin-left:11%;"><b>set cutfromcursor</b></p>
 
-<p style="margin-left:15%;">Use
-cut-from-cursor-to-end-of-line by default, instead of
-cutting the whole line.</p>
+<p style="margin-left:15%;">Let <b>^K</b> cut from the
+cursor to end-of-line, instead of cutting the whole
+line.</p>
 
 <p style="margin-left:11%;"><b>set emptyline</b></p>
 
@@ -359,13 +359,16 @@ more details.</p>
 
 <p style="margin-left:11%;"><b>set mouse</b></p>
 
-<p style="margin-left:15%;">Enable mouse support, if
-available for your system. When enabled, mouse clicks can be
-used to place the cursor, set the mark (with two clicks),
-and execute shortcuts. The mouse works in the X Window
-System, and on the console when gpm is running. Text can
-still be selected through dragging by holding down the Shift
-key.</p>
+<p style="margin-left:15%;">Enable mouse support. This
+means: a click in the edit window places the cursor, two
+clicks at the same spot toggle the mark, a click in the help
+lines executes the touched shortcut, a click in the
+&acirc;scrollbar&acirc; scrolls the buffer to roughly that
+position, and rolling the wheel scrolls the viewport instead
+of moving the cursor. (The mouse works in the X Window
+System, and on the console when <i>gpm</i> is running. Under
+X, text can still be selected through dragging by holding
+down the Shift key.)</p>
 
 <p style="margin-left:11%;"><b>set newbuffer</b></p>
 

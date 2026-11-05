@@ -2590,20 +2590,32 @@ void do_spell(void)
 #endif /* ENABLE_SPELLER */
 
 #ifdef ENABLE_LINTER
+/* Free the given lint record, and return a pointer to the next. */
+lintstruct* free_one_lint(lintstruct *thisone)
+{
+	lintstruct *nextone = thisone->next;
+
+	free(thisone->msg);
+	free(thisone->filename);
+	free(thisone);
+
+	return nextone;
+}
+
 /* Run a linting program on the current buffer. */
 void do_linter(void)
 {
 #if defined(HAVE_FORK) && defined(HAVE_WAITPID)
 	char *lintings, *pointer, *onelint;
-	long pipesize;
 	size_t buffersize, totalread;
 	ssize_t bytesread;
-	int errornumber;
-	bool parsesuccess = FALSE;
-	int lint_status, lint_fd[2];
-	pid_t pid_lint;
+	long pipesize;
+	pid_t thepid;
+	int lint_fd[2], lint_status, errornumber;;
 	bool helpless = ISSET(NO_HELP);
-	lintstruct *lints = NULL, *tmplint = NULL, *curlint = NULL;
+	lintstruct *curlint = NULL;
+	lintstruct *lints = NULL;
+	lintstruct *lastone;
 	time_t last_wait = 0;
 
 	ran_a_tool = TRUE;
@@ -2642,7 +2654,7 @@ void do_linter(void)
 	statusbar(_("Invoking linter..."));
 
 	/* Fork a process to run the linter in. */
-	if ((pid_lint = fork()) == 0) {
+	if ((thepid = fork()) == 0) {
 		char **lintargs = NULL;
 
 		/* Redirect standard output and standard error into the pipe. */
@@ -2667,7 +2679,7 @@ void do_linter(void)
 	close(lint_fd[1]);
 
 	/* If the child process was not forked successfully... */
-	if (pid_lint < 0) {
+	if (thepid < 0) {
 		statusline(ALERT, _("Could not fork: %s"), strerror(errno));
 		close(lint_fd[0]);
 		return;
@@ -2741,13 +2753,10 @@ void do_linter(void)
 									colnumber = strtol(colstring, NULL, 10);
 							}
 
-							parsesuccess = TRUE;
-							tmplint = curlint;
+							lastone = curlint;
 							curlint = nmalloc(sizeof(lintstruct));
+							curlint->prev = lastone;
 							curlint->next = NULL;
-							curlint->prev = tmplint;
-							if (curlint->prev)
-								curlint->prev->next = curlint;
 							curlint->filename = copy_of(filename);
 							curlint->lineno = linenumber;
 							curlint->colno = colnumber;
@@ -2755,6 +2764,8 @@ void do_linter(void)
 
 							if (lints == NULL)
 								lints = curlint;
+							else
+								lastone->next = curlint;
 						}
 					}
 				}
@@ -2769,25 +2780,20 @@ void do_linter(void)
 	free(lintings);
 
 	/* Process the end of the linting process. */
-	waitpid(pid_lint, &lint_status, 0);
+	waitpid(thepid, &lint_status, 0);
 
 	if (!WIFEXITED(lint_status) || WEXITSTATUS(lint_status) > 2) {
 		statusline(ALERT, _("Error invoking '%s'"), openfile->syntax->linter);
-		for (curlint = lints; curlint != NULL;) {
-			tmplint = curlint;
-			curlint = curlint->next;
-			free(tmplint->msg);
-			free(tmplint->filename);
-			free(tmplint);
-		}
+		for (curlint = lints; curlint != NULL;)
+			curlint = free_one_lint(curlint);
 		return;
 	} else if (bytesread < 0) {
 		statusline(ALERT, _("Error reading pipe: %s"), strerror(errornumber));
 		return;
 	}
 
-	if (!parsesuccess) {
-		statusline(REMARK, _("Got 0 parsable lines from command: %s"), openfile->syntax->linter);
+	if (!lints) {
+		statusline(REMARK, _("Zero messages from '%s'"), openfile->syntax->linter);
 		return;
 	}
 
@@ -2801,7 +2807,7 @@ void do_linter(void)
 	titlebar(NULL);
 	bottombars(MLINTER);
 
-	tmplint = NULL;
+	lastone = NULL;
 	curlint = lints;
 
 	while (TRUE) {
@@ -2849,11 +2855,7 @@ void do_linter(void)
 								curlint->prev->next = curlint->next;
 							if (curlint->next)
 								curlint->next->prev = curlint->prev;
-							tmplint = curlint;
-							curlint = curlint->next;
-							free(tmplint->msg);
-							free(tmplint->filename);
-							free(tmplint);
+							curlint = free_one_lint(curlint);
 						} else {
 							if (restlint == NULL)
 								restlint = curlint;
@@ -2876,7 +2878,7 @@ void do_linter(void)
 #endif
 		}
 
-		if (tmplint != curlint) {
+		if (lastone != curlint) {
 			/* Put the cursor at the reported position, but don't go beyond EOL
 			 * when the second number is a column number instead of an index. */
 			goto_line_posx(curlint->lineno, curlint->colno - 1);
@@ -2902,13 +2904,13 @@ void do_linter(void)
 			continue;
 #endif
 		function = func_from_key(kbinput);
-		tmplint = curlint;
+		lastone = curlint;
 
 		if (function == do_cancel || function == do_enter) {
 			wipe_statusbar();
 			break;
 		} else if (function == do_help) {
-			tmplint = NULL;
+			lastone = NULL;
 			do_help();
 		} else if (function == do_page_up || function == to_prev_block) {
 			if (curlint->prev)
@@ -2934,13 +2936,8 @@ void do_linter(void)
 			beep();
 	}
 
-	for (curlint = lints; curlint != NULL;) {
-		tmplint = curlint;
-		curlint = curlint->next;
-		free(tmplint->msg);
-		free(tmplint->filename);
-		free(tmplint);
-	}
+	for (curlint = lints; curlint != NULL;)
+		curlint = free_one_lint(curlint);
 
 	if (helpless) {
 		SET(NO_HELP);
@@ -3001,8 +2998,9 @@ void count_lines_words_and_characters(void)
 	size_t was_x = openfile->current_x;
 	linestruct *topline, *botline;
 	size_t top_x, bot_x;
-	size_t words = 0, chars = 0;
 	ssize_t lines = 0;
+	size_t words = 0;
+	size_t chars = 0;
 
 	/* Set the start and end point of the area to measure: either the marked
 	 * region or the whole buffer.  Then compute the number of characters. */
@@ -3098,8 +3096,9 @@ void do_verbatim_input(void)
 /* Return a copy of the found completion candidate. */
 char *copy_completion(char *text)
 {
+	size_t length = 0;
+	size_t index = 0;
 	char *word;
-	size_t length = 0, index = 0;
 
 	/* Find the end of the candidate word to get its length. */
 	while (is_word_char(&text[length], FALSE))

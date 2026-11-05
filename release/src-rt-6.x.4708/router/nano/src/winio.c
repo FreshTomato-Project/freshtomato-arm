@@ -37,11 +37,6 @@
 #define BRANDING  PACKAGE_STRING
 #endif
 
-/* When having an older ncurses, then most likely libvte is older too. */
-#if defined(NCURSES_VERSION_PATCH) && (NCURSES_VERSION_PATCH < 20200212)
-#define USING_OLDER_LIBVTE  yes
-#endif
-
 static int *key_buffer = NULL;
 		/* A buffer for the keystrokes that haven't been handled yet. */
 static int *nextcodes = NULL;
@@ -1051,20 +1046,16 @@ int parse_kbinput(WINDOW *frame)
 			else if (keycode == KEY_BACKSPACE || keycode == '\b' || keycode == DEL_CODE)
 				return CONTROL_SHIFT_DELETE;
 #endif
-#ifdef ENABLE_UTF8
-			else if (0xC0 <= keycode && keycode <= 0xFF && using_utf8) {
-				while (waiting_codes && 0x80 <= nextcodes[0] && nextcodes[0] <= 0xBF)
-					get_input(NULL);
-				return FOREIGN_SEQUENCE;
-			}
-#endif
-			else if (keycode < 0x20 && !last_escape_was_alone)
+			else if (keycode < 0x20 && !last_escape_was_alone) {
 				meta_key = TRUE;
+				return keycode;
+			}
 		} else if (waiting_codes == 0 || nextcodes[0] == ESC_CODE ||
 								(keycode != 'O' && keycode != '[')) {
 			if ('A' <= keycode && keycode <= 'Z' && !shifted_metas)
 				keycode |= 0x20;
 			meta_key = TRUE;
+			return keycode;
 		} else
 			keycode = parse_escape_sequence(keycode);
 	} else {
@@ -1265,10 +1256,6 @@ int parse_kbinput(WINDOW *frame)
 	}
 #endif /* __linux__ */
 
-	/* Spurious codes from VTE -- see https://sv.gnu.org/bugs/?64578. */
-	if (keycode == mousefocusin || keycode == mousefocusout)
-		return ERR;
-
 	switch (keycode) {
 		case KEY_SLEFT:
 			shift_held = TRUE;
@@ -1362,6 +1349,17 @@ int parse_kbinput(WINDOW *frame)
 		case KEY_FRESH:
 #endif
 			return ERR;    /* Ignore this keystroke. */
+
+		default:
+#if (NCURSES_VERSION_PATCH > 20230506) && (NCURSES_VERSION_PATCH < 20231028)
+			/* Two spurious codes -- see https://sv.gnu.org/bugs/?64578. */
+			if (keycode == mousefocusin)   return ERR;
+			if (keycode == mousefocusout)  return ERR;
+#endif
+			if (keycode == operatorslash)  return '/';
+			if (keycode == operatorstar)   return '*';
+			if (keycode == operatorminus)  return '-';
+			if (keycode == operatorplus)   return '+';
 	}
 
 	return keycode;
@@ -2154,30 +2152,20 @@ void titlebar(const char *path)
 /* Draw a bar at the bottom with some minimal state information. */
 void minibar(void)
 {
-	char *thename = NULL, *number_of_lines = NULL, *ranking = NULL;
+	char *thename = NULL;
 	char *location = nmalloc(44);
-	char *hexadecimal = nmalloc(9);
 	char *successor = NULL;
 	size_t namewidth, placewidth;
 	size_t tallywidth = 0;
 	size_t padding = 2;
-#ifdef ENABLE_UTF8
-	wchar_t widecode;
-#endif
 
 	/* Draw a colored bar over the full width of the screen. */
 	wattron(footwin, interface_color_pair[MINI_INFOBAR]);
 	mvwprintw(footwin, 0, 0, "%*s", COLS, " ");
 
-	if (openfile->filename[0]) {
-		as_an_at = FALSE;
-		thename = display_string(openfile->filename, 0, COLS, FALSE, FALSE);
-	} else
-		thename = copy_of(_("(nameless)"));
-
-	sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
-	placewidth = strlen(location);
+	thename = copy_of(*openfile->filename ? openfile->filename : _("(nameless)"));
 	namewidth = breadth(thename);
+	as_an_at = FALSE;
 
 	/* If the file name is relatively long, drop the side spaces. */
 	if (namewidth + 19 > COLS)
@@ -2186,24 +2174,28 @@ void minibar(void)
 	/* Display the name of the current file (dottifying it if it doesn't fit),
 	 * plus a star when the file has been modified. */
 	if (COLS > 4) {
-		if (namewidth > COLS - 2) {
-			char *shortname = display_string(thename, namewidth - COLS + 5,
-												COLS - 5, FALSE, FALSE);
-			mvwaddstr(footwin, 0, 0, "...");
-			waddstr(footwin, shortname);
-			free(shortname);
-		} else
-			mvwaddstr(footwin, 0, padding, thename);
+		char *stagename;
 
+		wmove(footwin, 0, padding);
+		if (namewidth > COLS - 2) {
+			waddstr(footwin, "...");
+			stagename = display_string(thename, namewidth - COLS + 5, COLS - 5, FALSE, FALSE);
+		} else
+			stagename = display_string(thename, 0, COLS - 2, FALSE, FALSE);
+		waddstr(footwin, stagename);
 		waddstr(footwin, openfile->modified ? " *" : "  ");
+		free(stagename);
 	}
+
+	sprintf(location, "%zi,%zi", openfile->current->lineno, xplustabs() + 1);
+	placewidth = strlen(location);
 
 	/* Right after reading or writing a file, display its number of lines;
 	 * otherwise, when there are multiple buffers, display an [x/n] counter. */
 	if (report_size && COLS > 35) {
 		size_t count = openfile->filebot->lineno - (openfile->filebot->data[0] == '\0');
+		char *number_of_lines = nmalloc(64);
 
-		number_of_lines = nmalloc(49);
 		if (openfile->fmt == NIX_FILE || openfile->fmt == UNSPECIFIED)
 			sprintf(number_of_lines, P_(" (%zu line)", " (%zu lines)", count), count);
 		else
@@ -2214,14 +2206,17 @@ void minibar(void)
 			waddstr(footwin, number_of_lines);
 		else
 			tallywidth = 0;
+		free(number_of_lines);
 		report_size = FALSE;
 	}
 #ifdef ENABLE_MULTIBUFFER
 	else if (openfile->next != openfile && COLS > 35) {
-		ranking = nmalloc(24);
+		char *ranking = nmalloc(24);
+
 		sprintf(ranking, " [%i/%i]", buffer_number(openfile), buffer_number(startfile->prev));
 		if (namewidth + placewidth + breadth(ranking) + 32 < COLS)
 			waddstr(footwin, ranking);
+		free(ranking);
 	}
 #endif
 
@@ -2233,6 +2228,10 @@ void minibar(void)
 	 * plus the codes of up to two succeeding zero-width characters. */
 	if (ISSET(CONSTANT_SHOW) && namewidth + tallywidth + 28 < COLS) {
 		char *this_position = openfile->current->data + openfile->current_x;
+		char *hexadecimal = nmalloc(9);
+#ifdef ENABLE_UTF8
+		wchar_t widecode;
+#endif
 
 		if (*this_position == '\0')
 			sprintf(hexadecimal, openfile->current->next ?
@@ -2240,7 +2239,7 @@ void minibar(void)
 		else if (*this_position == '\n')
 			sprintf(hexadecimal, "  0x00");
 #ifdef ENABLE_UTF8
-		else if ((unsigned char)*this_position < 0x80 && using_utf8)
+		else if (using_utf8 && (unsigned char)*this_position < 0x80)
 			sprintf(hexadecimal, "U+%04X", (unsigned char)*this_position);
 		else if (using_utf8 && mbtowide(&widecode, this_position) > 0)
 			sprintf(hexadecimal, "U+%04X", (int)widecode);
@@ -2251,22 +2250,24 @@ void minibar(void)
 		mvwaddstr(footwin, 0, COLS - 23, hexadecimal);
 
 #ifdef ENABLE_UTF8
-		successor = this_position + char_length(this_position);
-
-		if (*this_position && *successor && is_zerowidth(successor) &&
-								mbtowide(&widecode, successor) > 0) {
-			sprintf(hexadecimal, "|%04X", (int)widecode);
-			waddstr(footwin, hexadecimal);
-
-			successor += char_length(successor);
+		if (using_utf8 && *this_position) {
+			successor = this_position + char_length(this_position);
 
 			if (is_zerowidth(successor) && mbtowide(&widecode, successor) > 0) {
 				sprintf(hexadecimal, "|%04X", (int)widecode);
 				waddstr(footwin, hexadecimal);
-			}
-		} else
-			successor = NULL;
+
+				successor += char_length(successor);
+
+				if (is_zerowidth(successor) && mbtowide(&widecode, successor) > 0) {
+					sprintf(hexadecimal, "|%04X", (int)widecode);
+					waddstr(footwin, hexadecimal);
+				}
+			} else
+				successor = NULL;
+		}
 #endif
+		free(hexadecimal);
 	}
 
 	/* Display the state of three flags, and the state of macro and mark. */
@@ -2288,11 +2289,8 @@ void minibar(void)
 	wattroff(footwin, interface_color_pair[MINI_INFOBAR]);
 	wrefresh(footwin);
 
-	free(number_of_lines);
-	free(hexadecimal);
 	free(location);
 	free(thename);
-	free(ranking);
 }
 #endif /* NANO_TINY */
 
@@ -2388,12 +2386,6 @@ void statusline(message_type importance, const char *msg, ...)
 	if (bracketed)
 		waddstr(footwin, " ]");
 	wattroff(footwin, colorpair);
-
-#ifdef USING_OLDER_LIBVTE
-	/* Defeat a VTE/Konsole bug, where the cursor can go off-limits. */
-	if (ISSET(CONSTANT_SHOW) && ISSET(NO_HELP))
-		wmove(footwin, 0, 0);
-#endif
 
 	/* Push the message to the screen straightaway. */
 	wrefresh(footwin);
@@ -2755,18 +2747,6 @@ void draw_row(int row, const char *converted, linestruct *line, size_t from_col)
 		if (*(converted + target_x)) {
 			charlen = collect_char(converted + target_x, striped_char);
 			target_column = wideness(converted, target_x);
-#ifdef USING_OLDER_LIBVTE
-		} else if (target_column + 1 == editwincols) {
-			/* Defeat a VTE bug -- see https://sv.gnu.org/bugs/?55896. */
-#ifdef ENABLE_UTF8
-			if (using_utf8) {
-				striped_char[0] = '\xC2';
-				striped_char[1] = '\xA0';
-				charlen = 2;
-			} else
-#endif
-				striped_char[0] = '.';
-#endif
 		} else
 			striped_char[0] = ' ';
 

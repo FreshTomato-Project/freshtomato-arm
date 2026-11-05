@@ -120,12 +120,12 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/fstatat.m4 $(top_srcdir)/m4/futimens.m4 \
 	$(top_srcdir)/m4/getcwd.m4 $(top_srcdir)/m4/getdelim.m4 \
 	$(top_srcdir)/m4/getdtablesize.m4 $(top_srcdir)/m4/getline.m4 \
-	$(top_srcdir)/m4/getlogin.m4 $(top_srcdir)/m4/getlogin_r.m4 \
-	$(top_srcdir)/m4/getopt.m4 $(top_srcdir)/m4/getprogname.m4 \
-	$(top_srcdir)/m4/getrandom.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gettext_h.m4 $(top_srcdir)/m4/gettime.m4 \
-	$(top_srcdir)/m4/gettimeofday.m4 $(top_srcdir)/m4/glob.m4 \
-	$(top_srcdir)/m4/glob_h.m4 $(top_srcdir)/m4/gnulib-common.m4 \
+	$(top_srcdir)/m4/getlogin_r.m4 $(top_srcdir)/m4/getopt.m4 \
+	$(top_srcdir)/m4/getprogname.m4 $(top_srcdir)/m4/getrandom.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gettext_h.m4 \
+	$(top_srcdir)/m4/gettime.m4 $(top_srcdir)/m4/gettimeofday.m4 \
+	$(top_srcdir)/m4/glob.m4 $(top_srcdir)/m4/glob_h.m4 \
+	$(top_srcdir)/m4/gnulib-common.m4 \
 	$(top_srcdir)/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/gnulib-i18n.m4 \
 	$(top_srcdir)/m4/host-cpu-c-abi.m4 $(top_srcdir)/m4/iconv.m4 \
@@ -174,8 +174,9 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/pthread_sigmask.m4 $(top_srcdir)/m4/raise.m4 \
 	$(top_srcdir)/m4/rawmemchr.m4 $(top_srcdir)/m4/readdir.m4 \
 	$(top_srcdir)/m4/readlink.m4 $(top_srcdir)/m4/realloc.m4 \
-	$(top_srcdir)/m4/regex.m4 $(top_srcdir)/m4/save-cwd.m4 \
-	$(top_srcdir)/m4/sched_h.m4 $(top_srcdir)/m4/setlocale_null.m4 \
+	$(top_srcdir)/m4/regex.m4 $(top_srcdir)/m4/rewinddir.m4 \
+	$(top_srcdir)/m4/save-cwd.m4 $(top_srcdir)/m4/sched_h.m4 \
+	$(top_srcdir)/m4/setlocale_null.m4 \
 	$(top_srcdir)/m4/sigaction.m4 $(top_srcdir)/m4/signal_h.m4 \
 	$(top_srcdir)/m4/signalblocking.m4 $(top_srcdir)/m4/signbit.m4 \
 	$(top_srcdir)/m4/size_max.m4 \
@@ -208,10 +209,11 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/00gnulib.m4 \
 	$(top_srcdir)/m4/vsnprintf.m4 $(top_srcdir)/m4/warn-on-use.m4 \
 	$(top_srcdir)/m4/wchar_h.m4 $(top_srcdir)/m4/wcrtomb.m4 \
 	$(top_srcdir)/m4/wctype.m4 $(top_srcdir)/m4/wctype_h.m4 \
-	$(top_srcdir)/m4/wcwidth.m4 $(top_srcdir)/m4/wint_t.m4 \
-	$(top_srcdir)/m4/wmemchr.m4 $(top_srcdir)/m4/wmempcpy.m4 \
-	$(top_srcdir)/m4/xsize.m4 $(top_srcdir)/m4/zzgnulib.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/wcwidth.m4 \
+	$(top_srcdir)/m4/windows-stat-timespec.m4 \
+	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/wmemchr.m4 \
+	$(top_srcdir)/m4/wmempcpy.m4 $(top_srcdir)/m4/xsize.m4 \
+	$(top_srcdir)/m4/zzgnulib.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -287,7 +289,7 @@ ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 FLOAT_H = @FLOAT_H@
 FNMATCH_H = @FNMATCH_H@
-GETLOGIN_LIB = @GETLOGIN_LIB@
+GETLOGIN_R_LIB = @GETLOGIN_R_LIB@
 GETOPT_CDEFS_H = @GETOPT_CDEFS_H@
 GETOPT_H = @GETOPT_H@
 GETRANDOM_LIB = @GETRANDOM_LIB@
@@ -1556,7 +1558,6 @@ LIBUNISTRING_UNISTR_H = @LIBUNISTRING_UNISTR_H@
 LIBUNISTRING_UNITYPES_H = @LIBUNISTRING_UNITYPES_H@
 LIBUNISTRING_UNIWIDTH_H = @LIBUNISTRING_UNIWIDTH_H@
 LIB_CLOCK_GETTIME = @LIB_CLOCK_GETTIME@
-LIB_GETLOGIN = @LIB_GETLOGIN@
 LIB_GETRANDOM = @LIB_GETRANDOM@
 LIB_HARD_LOCALE = @LIB_HARD_LOCALE@
 LIB_MBRTOWC = @LIB_MBRTOWC@
@@ -2180,39 +2181,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = \
 	ac_define_dir.m4 \
-	ax_check_compile_flag.m4 \
-	codeset.m4 \
-	extern-inline.m4 \
-	fcntl-o.m4 \
-	gettext.m4 \
-	glibc21.m4 \
-	glibc2.m4 \
-	gnulib-cache.m4 \
-	iconv.m4 \
-	intdiv0.m4 \
-	intldir.m4 \
-	intl.m4 \
-	intlmacosx.m4 \
-	intmax.m4 \
-	inttypes_h.m4 \
-	inttypes-pri.m4 \
-	lcmessage.m4 \
-	lib-ld.m4 \
-	lib-link.m4 \
-	lib-prefix.m4 \
-	lock.m4 \
-	longlong.m4 \
-	nls.m4 \
-	po.m4 \
-	printf-posix.m4 \
-	progtest.m4 \
-	size_max.m4 \
-	stdint_h.m4 \
-	threadlib.m4 \
-	uintmax_t.m4 \
-	visibility.m4 \
-	wint_t.m4 \
-	xsize.m4
+	ax_check_compile_flag.m4
 
 all: all-am
 

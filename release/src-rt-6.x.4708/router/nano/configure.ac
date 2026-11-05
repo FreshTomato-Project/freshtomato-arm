@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
-AC_INIT([GNU nano], [9.2], [nano-devel@gnu.org], [nano])
+AC_INIT([GNU nano], [9.3], [nano-devel@gnu.org], [nano])
 AC_CONFIG_SRCDIR([src/nano.c])
 AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE([1.14])
@@ -87,7 +87,7 @@ fi
 
 dnl Checks for header files.
 
-AC_CHECK_HEADERS(libintl.h limits.h pwd.h termios.h sys/param.h)
+AC_CHECK_HEADERS(libintl.h limits.h pwd.h term.h termios.h sys/param.h)
 
 dnl Checks for options.
 
@@ -479,6 +479,9 @@ AC_CHECK_LIB([$CURSES_LIB_NAME], [set_escdelay],
 			 [], [$CURSES_LIB])
 AC_CHECK_LIB([$CURSES_LIB_NAME], [key_defined],
 			 [AC_DEFINE(HAVE_KEY_DEFINED, 1, [Define this if your curses library has the key_defined() function.])],
+			 [], [$CURSES_LIB])
+AC_CHECK_LIB([$CURSES_LIB_NAME], [define_key],
+			 [AC_DEFINE(HAVE_DEFINE_KEY, 1, [Define this if your curses library has the define_key() function.])],
 			 [], [$CURSES_LIB])
 
 LIBS="$LIBS $CURSES_LIB"

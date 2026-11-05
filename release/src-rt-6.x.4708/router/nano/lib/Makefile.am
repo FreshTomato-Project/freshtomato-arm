@@ -44,6 +44,7 @@
 #  mkstemps \
 #  nl_langinfo \
 #  regex \
+#  rewinddir \
 #  sigaction \
 #  snprintf-posix \
 #  stdarg-h \
@@ -54,7 +55,8 @@
 #  vsnprintf-posix \
 #  wchar-h \
 #  wctype-h \
-#  wcwidth
+#  wcwidth \
+#  windows-stat-timespec
 
 AUTOMAKE_OPTIONS = 1.14 gnits subdir-objects
 
@@ -514,7 +516,7 @@ endif
 ## begin gnulib module eloop-threshold
 
 
-EXTRA_DIST += eloop-threshold.h
+EXTRA_DIST += min-eloop-threshold.h
 
 ## end   gnulib module eloop-threshold
 
@@ -2239,6 +2241,16 @@ EXTRA_DIST += regcomp.c regex.h regex_internal.c regex_internal.h regexec.c
 EXTRA_libgnu_a_SOURCES += regcomp.c regex_internal.c regexec.c
 
 ## end   gnulib module regex
+
+## begin gnulib module rewinddir
+
+if GL_COND_OBJ_REWINDDIR
+libgnu_a_SOURCES += rewinddir.c
+endif
+
+EXTRA_DIST += dirent-private.h
+
+## end   gnulib module rewinddir
 
 ## begin gnulib module save-cwd
 

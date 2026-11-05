@@ -1,5 +1,5 @@
 # gnulib-common.m4
-# serial 122
+# serial 124
 dnl Copyright (C) 2007-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
@@ -296,11 +296,9 @@ AC_DEFUN([gl_COMMON_BODY], [
    we cannot omit the storage-class specifier.  Therefore, the following rule
    applies:
      * The macros
-         _GL_ATTRIBUTE_CONST
          _GL_ATTRIBUTE_DEPRECATED
          _GL_ATTRIBUTE_MAYBE_UNUSED
          _GL_ATTRIBUTE_NODISCARD
-         _GL_ATTRIBUTE_PURE
          _GL_ATTRIBUTE_REPRODUCIBLE
          _GL_ATTRIBUTE_UNSEQUENCED
        which may expand to bracket syntax [[...]], must come first, before the
@@ -444,9 +442,8 @@ AC_DEFUN([gl_COMMON_BODY], [
 #ifndef _GL_ATTRIBUTE_COUNTED_BY
 /* This attributes is supported
      - for fields of array type: by gcc >= 16, clang >= 18,
-     - for fields of pointer type: by gcc when <https://gcc.gnu.org/PR125072>
-       will be fixed, clang >= 19.  */
-# if defined __clang__ && __clang_major__ >= 19
+     - for fields of pointer type: by gcc >= 16.2, clang >= 19.  */
+# if _GL_GNUC_PREREQ (16, 2) || (defined __clang__ && __clang_major__ >= 19)
 #  define _GL_ATTRIBUTE_COUNTED_BY(c) __attribute__ ((__counted_by__ (c)))
 # else
 #  define _GL_ATTRIBUTE_COUNTED_BY(c)
@@ -935,6 +932,31 @@ AC_DEFUN([gl_COMMON_BODY], [
      __attribute__ ((__release_capability__ (resource)))
 # else
 #  define _GL_ATTRIBUTE_RELEASE_CAPABILITY(resource)
+# endif
+#endif
+])
+  AH_VERBATIM([sanitizer_features],
+[/* Sanitizer features.  */
+#ifdef __has_feature
+# if !defined __SANITIZE_ADDRESS__ && __has_feature (address_sanitizer)
+#  define __SANITIZE_ADDRESS__ 1
+# endif
+# if !defined __SANITIZE_HWADDRESS__ && __has_feature (hwaddress_sanitizer)
+#  define __SANITIZE_HWADDRESS__ 1
+# endif
+# if !defined __SANITIZE_LEAK__ && __has_feature (leak_sanitizer)
+#  define __SANITIZE_LEAK__ 1
+# endif
+# if !defined __SANITIZE_THREAD__ && __has_feature (thread_sanitizer)
+#  define __SANITIZE_THREAD__ 1
+# endif
+  /* Although the following sanitizers are in Clang not GCC,
+     define GCC-like macro names for consistency and convenience.  */
+# if !defined __SANITIZE_MEMORY__ && __has_feature (memory_sanitizer)
+#  define __SANITIZE_MEMORY__ 1
+# endif
+# if !defined __SANITIZE_SCUDO__ && __has_feature (scudo_sanitizer)
+#  define __SANITIZE_SCUDO__ 1
 # endif
 #endif
 ])

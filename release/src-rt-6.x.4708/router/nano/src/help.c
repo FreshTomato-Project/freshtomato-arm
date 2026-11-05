@@ -3,7 +3,7 @@
  *                                                                        *
  *   Copyright (C) 2000-2011, 2013-2026 Free Software Foundation, Inc.    *
  *   Copyright (C) 2017 Rishabh Dave                                      *
- *   Copyright (C) 2014-2019 Benno Schulenberg                            *
+ *   Copyright (C) 2014-2020, 2026 Benno Schulenberg                      *
  *                                                                        *
  *   GNU nano is free software: you can redistribute it and/or modify     *
  *   it under the terms of the GNU General Public License as published    *
@@ -294,23 +294,15 @@ void help_init(void)
 	}
 
 #ifndef NANO_TINY
-	/* And the toggles... */
+	/* In the main help text, show the toggles in their original order. */
 	if (currmenu == MMAIN) {
-		int maximum = 0, counter = 0;
-
-		/* First see how many toggles there are. */
-		for (s = sclist; s != NULL; s = s->next)
-			maximum = (s->toggle && s->ordinal > maximum) ? s->ordinal : maximum;
-
-		/* Now show them in the original order. */
-		while (counter < maximum) {
-			counter++;
+		for (int flag = ZERO; flag <= USE_MOUSE; flag++) {
 			for (s = sclist; s != NULL; s = s->next)
-				if (s->toggle && s->ordinal == counter) {
+				if (s->toggle == flag) {
 					ptr += sprintf(ptr, "%s\t\t %s %s\n", (s->menus & MMAIN ? s->keystr : ""),
 								_(epithet_of_flag(s->toggle)), _("enable/disable"));
-					/* Add a blank like between two groups. */
-					if (s->toggle == NO_SYNTAX)
+					/* Add blank line in three places to separate four grouplets. */
+					if (s->toggle == LINE_NUMBERS || s->toggle == SOFTWRAP || s->toggle == AUTOINDENT)
 						ptr += sprintf(ptr, "\n");
 					break;
 				}

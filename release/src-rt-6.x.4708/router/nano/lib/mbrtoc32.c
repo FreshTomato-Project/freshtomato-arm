@@ -92,7 +92,12 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
 # include "localcharset.h"
 # include "streq-opt.h"
 
-# if MBRTOC32_IN_C_LOCALE_MAYBE_EILSEQ
+# if (MBRTOC32_IN_C_LOCALE_MAYBE_LIKE_ISO_8859 \
+      || MBRTOC32_IN_C_LOCALE_MAYBE_EILSEQ \
+      || (HAVE_WORKING_MBRTOC32 && HAVE_WORKING_C32RTOMB && !_GL_WCHAR_T_IS_UCS4) \
+      || _GL_SMALL_WCHAR_T \
+      || ((!(HAVE_WORKING_MBRTOC32 && HAVE_WORKING_C32RTOMB) && !_GL_SMALL_WCHAR_T) \
+          && GL_CHAR32_T_IS_UNICODE && GL_CHAR32_T_VS_WCHAR_T_NEEDS_CONVERSION))
 #  include "hard-locale.h"
 #  include <locale.h>
 # endif
@@ -134,8 +139,13 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
       n = 1;
     }
 
-# if (MBRTOC32_EMPTY_INPUT_BUG || _GL_SMALL_WCHAR_T \
-      || (GNULIB_WCHAR_SINGLE_LOCALE && __GLIBC__ >= 2 && !__UCLIBC__))
+# if (MBRTOC32_EMPTY_INPUT_BUG \
+      || (GNULIB_WCHAR_SINGLE_LOCALE && __GLIBC__ >= 2 && !__UCLIBC__) \
+      || MBRTOC32_IN_C_LOCALE_MAYBE_LIKE_ISO_8859 \
+      || (HAVE_WORKING_MBRTOC32 && HAVE_WORKING_C32RTOMB && !_GL_WCHAR_T_IS_UCS4) \
+      || _GL_SMALL_WCHAR_T \
+      || ((!(HAVE_WORKING_MBRTOC32 && HAVE_WORKING_C32RTOMB) && !_GL_SMALL_WCHAR_T) \
+          && GL_CHAR32_T_IS_UNICODE && GL_CHAR32_T_VS_WCHAR_T_NEEDS_CONVERSION))
   if (n == 0)
     return (size_t) -2;
 # endif
@@ -262,6 +272,20 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
   /* mbrtoc32() may produce different values for wc than mbrtowc().  Therefore
      use mbrtoc32().  */
 
+#  if MBRTOC32_IN_C_LOCALE_MAYBE_LIKE_ISO_8859 /* OpenBSD */ \
+      || !_GL_WCHAR_T_IS_UCS4 /* NetBSD ≥ 11 */
+  if (!hard_locale (LC_CTYPE))
+    {
+      /* In the "C" locale, map the bytes 0x80..0xFF to U+DF80..U+DFFF, so that
+         the c32is* functions return false on them, for consistency with the
+         <ctype.h> is* functions.  */
+      unsigned char c = (unsigned char) s[0];
+      if (pwc != NULL)
+        *pwc = (c < 0x80 ? c : 0xDF00 + c);
+      return (c == 0 ? 0 : 1);
+    }
+#  endif
+
 #  if defined _WIN32 && !defined __CYGWIN__
   char32_t wc;
   size_t ret = mbrtoc32 (&wc, s, n, ps);
@@ -280,18 +304,18 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
     abort ();
 #  endif
 
-#  if MBRTOC32_IN_C_LOCALE_MAYBE_EILSEQ
+#  if MBRTOC32_IN_C_LOCALE_MAYBE_EILSEQ /* glibc */
   if ((size_t) -2 <= ret && n != 0 && ! hard_locale (LC_CTYPE))
     {
       if (pwc != NULL)
-        *pwc = (unsigned char) *s;
+        *pwc = 0xDF00 + (unsigned char) *s;
       return 1;
     }
 #  endif
 
   return ret;
 
-# elif _GL_SMALL_WCHAR_T
+# elif _GL_SMALL_WCHAR_T /* Cygwin, mingw, MSVC */
 
   /* Special-case all encodings that may produce wide character values
      > WCHAR_MAX.  */
@@ -386,6 +410,16 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
       /* The conversion state is undefined, says POSIX.  */
       return (size_t)(-1);
     }
+  else if (!hard_locale (LC_CTYPE))
+    {
+      /* In the "C" locale, map the bytes 0x80..0xFF to U+DF80..U+DFFF, so that
+         the c32is* functions return false on them, for consistency with the
+         <ctype.h> is* functions.  */
+      unsigned char c = (unsigned char) s[0];
+      if (pwc != NULL)
+        *pwc = (c < 0x80 ? c : 0xDF00 + c);
+      return (c == 0 ? 0 : 1);
+    }
   else
     {
       wchar_t wc;
@@ -398,6 +432,21 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
 # else
 
   /* char32_t and wchar_t are equivalent.  Use mbrtowc().  */
+
+#  if (!(HAVE_WORKING_MBRTOC32 && HAVE_WORKING_C32RTOMB) && !_GL_SMALL_WCHAR_T) \
+      && GL_CHAR32_T_IS_UNICODE && GL_CHAR32_T_VS_WCHAR_T_NEEDS_CONVERSION
+  if (!hard_locale (LC_CTYPE))
+    {
+      /* In the "C" locale, map the bytes 0x80..0xFF to U+DF80..U+DFFF, so that
+         the c32is* functions return false on them, for consistency with the
+         <ctype.h> is* functions.  */
+      unsigned char c = (unsigned char) s[0];
+      if (pwc != NULL)
+        *pwc = (c < 0x80 ? c : 0xDF00 + c);
+      return (c == 0 ? 0 : 1);
+    }
+#  endif
+
   wchar_t wc;
   size_t ret = mbrtowc (&wc, s, n, ps);
 

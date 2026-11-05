@@ -212,6 +212,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module readlink:
   # Code from module realloc-posix:
   # Code from module regex:
+  # Code from module rewinddir:
   # Code from module save-cwd:
   # Code from module sched-h:
   # Code from module setlocale-null:
@@ -317,6 +318,8 @@ AC_DEFUN([gl_EARLY],
   # Code from module windows-recmutex:
   # Code from module windows-rwlock:
   # Code from module windows-spin:
+  # Code from module windows-stat-override:
+  # Code from module windows-stat-timespec:
   # Code from module windows-tls:
   # Code from module wmemchr:
   # Code from module wmempcpy:
@@ -636,7 +639,6 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_GETLOGIN_R
   ])
   gl_UNISTD_MODULE_INDICATOR([getlogin_r])
-  AC_REQUIRE([gl_LIB_GETLOGIN])
   gl_FUNC_GETOPT_GNU
   dnl Because of the way gl_FUNC_GETOPT_GNU is implemented (the gl_getopt_required
   dnl mechanism), there is no need to do any AC_LIBOBJ or AC_SUBST here; they are
@@ -964,6 +966,10 @@ AC_DEFUN([gl_INIT],
   AM_COND_IF([GL_COND_OBJ_REGEX], [
     gl_PREREQ_REGEX
   ])
+  gl_FUNC_REWINDDIR
+  gl_CONDITIONAL([GL_COND_OBJ_REWINDDIR],
+                 [test $HAVE_REWINDDIR = 0 || test $REPLACE_REWINDDIR = 1])
+  gl_DIRENT_MODULE_INDICATOR([rewinddir])
   gl_SAVE_CWD
   gl_SCHED_H
   gl_SCHED_H_REQUIRE_DEFAULTS
@@ -1270,6 +1276,12 @@ AC_DEFUN([gl_INIT],
   AC_REQUIRE([AC_CANONICAL_HOST])
   gl_CONDITIONAL([GL_COND_OBJ_WINDOWS_SPIN],
                  [case "$host_os" in mingw* | windows*) true;; *) false;; esac])
+  gl_SYS_STAT_H_REQUIRE_DEFAULTS
+  AC_REQUIRE([AC_CANONICAL_HOST])
+  case "$host_os" in
+    mingw* | windows*) gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_OVERRIDES_STRUCT_STAT], [1]) ;;
+  esac
+  AC_REQUIRE([gl_WINDOWS_STAT_TIMESPEC])
   AC_REQUIRE([AC_CANONICAL_HOST])
   gl_CONDITIONAL([GL_COND_OBJ_WINDOWS_TLS],
                  [case "$host_os" in mingw* | windows*) true;; *) false;; esac])
@@ -1519,7 +1531,6 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/dirname.h
   lib/dup2.c
   lib/dynarray.h
-  lib/eloop-threshold.h
   lib/errno.in.h
   lib/error.c
   lib/error.in.h
@@ -1658,6 +1669,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/memeq.c
   lib/mempcpy.c
   lib/memrchr.c
+  lib/min-eloop-threshold.h
   lib/minmax.h
   lib/mkdir.c
   lib/mkstemps.c
@@ -1698,6 +1710,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/regex_internal.c
   lib/regex_internal.h
   lib/regexec.c
+  lib/rewinddir.c
   lib/save-cwd.c
   lib/save-cwd.h
   lib/sched.in.h
@@ -1992,6 +2005,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/readlink.m4
   m4/realloc.m4
   m4/regex.m4
+  m4/rewinddir.m4
   m4/save-cwd.m4
   m4/sched_h.m4
   m4/setlocale_null.m4
@@ -2056,6 +2070,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/wctype.m4
   m4/wctype_h.m4
   m4/wcwidth.m4
+  m4/windows-stat-timespec.m4
   m4/wint_t.m4
   m4/wmemchr.m4
   m4/wmempcpy.m4

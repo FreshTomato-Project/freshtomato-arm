@@ -214,9 +214,6 @@
 #define SHIFT_DELETE    0x45D
 #define SHIFT_TAB       0x45F
 
-#define FOCUS_IN   0x491
-#define FOCUS_OUT  0x499
-
 /* Custom keycodes for signaling the start and end of a bracketed paste. */
 #define START_OF_PASTE  0x4B5
 #define END_OF_PASTE    0x4BE
@@ -330,57 +327,57 @@ enum {
 /* Enumeration used in the flags array.  See the definition of FLAGMASK. */
 enum {
 	DONTUSE = 0,
-	CASE_SENSITIVE,
-	CONSTANT_SHOW,
+	ZERO,			/* The thirteen togglable flags should come first... */
 	NO_HELP,
-	NO_WRAP,
+	CONSTANT_SHOW,
+	LINE_NUMBERS,
+	WHITESPACE_DISPLAY,
+	NO_SYNTAX,
+	SOFTWRAP,
+	BREAK_LONG_LINES,
+	TABS_TO_SPACES,
 	AUTOINDENT,
-	VIEW_MODE,
-	USE_MOUSE,
-	USE_REGEXP,
-	SAVE_ON_EXIT,
+	SMART_HOME,
 	CUT_FROM_CURSOR,
+	USE_MOUSE,		/* ... and in this exact order. */
+	CASE_SENSITIVE,
+	USE_REGEXP,
 	BACKWARDS_SEARCH,
+	COLON_PARSING,
+	NOREAD_MODE,
+	LOCKING,
+	RESTRICTED,
+	VIEW_MODE,
+	USE_MAGIC,
 	NEW_BUFFER,
-	REBIND_DELETE,
-	RAW_SEQUENCES,
 	NO_CONVERT,
+	NO_NEWLINES,
+	HISTORYLOG,
+	POSITIONLOG,
 	MAKE_BACKUP,
 	INSECURE_BACKUP,
-	NO_SYNTAX,
-	PRESERVE,
-	HISTORYLOG,
-	RESTRICTED,
-	SMART_HOME,
-	WHITESPACE_DISPLAY,
-	TABS_TO_SPACES,
-	QUICK_BLANK,
-	WORD_BOUNDS,
-	NO_NEWLINES,
-	BOLD_TEXT,
-	SOFTWRAP,
-	POSITIONLOG,
-	LOCKING,
-	NOREAD_MODE,
+	SAVE_ON_EXIT,
 	MAKE_IT_UNIX,
-	TRIM_BLANKS,
-	SHOW_CURSOR,
-	LINE_NUMBERS,
-	AT_BLANKS,
-	AFTER_ENDS,
+	PRESERVE,
+	REBIND_DELETE,
+	RAW_SEQUENCES,
+	MODERN_BINDINGS,
 	LET_THEM_ZAP,
-	BREAK_LONG_LINES,
+	AFTER_ENDS,
+	WORD_BOUNDS,
+	AT_BLANKS,
+	TRIM_BLANKS,
+	BOOKSTYLE,
+	NO_WRAP,
 	JUMPY_SCROLLING,
+	SOLO_SIDESCROLL,
+	QUICK_BLANK,
+	SHOW_CURSOR,
+	BOLD_TEXT,
 	EMPTY_LINE,
 	INDICATOR,
-	BOOKSTYLE,
-	COLON_PARSING,
 	STATEFLAGS,
-	USE_MAGIC,
-	MINIBAR,
-	ZERO,
-	MODERN_BINDINGS,
-	SOLO_SIDESCROLL
+	MINIBAR
 };
 
 /* Structure types. */
@@ -633,9 +630,6 @@ typedef struct keystruct {
 #ifndef NANO_TINY
 	int toggle;
 		/* If a toggle, what we're toggling. */
-	int ordinal;
-		/* The how-manieth toggle this is, in order to be able to
-		 * keep them in sequence. */
 #endif
 #ifdef ENABLE_NANORC
 	char *expansion;

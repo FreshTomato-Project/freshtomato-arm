@@ -543,6 +543,9 @@
 /* Define to 1 when the gnulib module realpath should be tested. */
 #undef GNULIB_TEST_REALPATH
 
+/* Define to 1 when the gnulib module rewinddir should be tested. */
+#undef GNULIB_TEST_REWINDDIR
+
 /* Define to 1 when the gnulib module scanf should be tested. */
 #undef GNULIB_TEST_SCANF
 
@@ -858,6 +861,9 @@
 /* Define to 1 if you have the declaration of `__argv', and to 0 if you don't.
    */
 #undef HAVE_DECL___ARGV
+
+/* Define this if your curses library has the define_key() function. */
+#undef HAVE_DEFINE_KEY
 
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
@@ -1195,6 +1201,9 @@
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
 
+/* Define to 1 if you have the `rewinddir' function. */
+#undef HAVE_REWINDDIR
+
 /* Define to 1 if 'long double' and 'double' have the same representation. */
 #undef HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
 
@@ -1364,6 +1373,9 @@
 
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
+
+/* Define to 1 if you have the <term.h> header file. */
+#undef HAVE_TERM_H
 
 /* Define to 1 if you have the `thrd_create' function. */
 #undef HAVE_THRD_CREATE
@@ -1648,6 +1660,10 @@
 /* Define if the mbrtoc32 function may signal encoding errors in the C locale.
    */
 #undef MBRTOC32_IN_C_LOCALE_MAYBE_EILSEQ
+
+/* Define if the mbrtoc32 function in the C locale may work like in an
+   ISO-8859-1 locale. */
+#undef MBRTOC32_IN_C_LOCALE_MAYBE_LIKE_ISO_8859
 
 /* Define if the mbrtoc32 function does not accept the input bytes one-by-one.
    */
@@ -2366,11 +2382,9 @@
    we cannot omit the storage-class specifier.  Therefore, the following rule
    applies:
      * The macros
-         _GL_ATTRIBUTE_CONST
          _GL_ATTRIBUTE_DEPRECATED
          _GL_ATTRIBUTE_MAYBE_UNUSED
          _GL_ATTRIBUTE_NODISCARD
-         _GL_ATTRIBUTE_PURE
          _GL_ATTRIBUTE_REPRODUCIBLE
          _GL_ATTRIBUTE_UNSEQUENCED
        which may expand to bracket syntax [[...]], must come first, before the
@@ -2513,9 +2527,8 @@
 #ifndef _GL_ATTRIBUTE_COUNTED_BY
 /* This attributes is supported
      - for fields of array type: by gcc >= 16, clang >= 18,
-     - for fields of pointer type: by gcc when <https://gcc.gnu.org/PR125072>
-       will be fixed, clang >= 19.  */
-# if defined __clang__ && __clang_major__ >= 19
+     - for fields of pointer type: by gcc >= 16.2, clang >= 19.  */
+# if _GL_GNUC_PREREQ (16, 2) || (defined __clang__ && __clang_major__ >= 19)
 #  define _GL_ATTRIBUTE_COUNTED_BY(c) __attribute__ ((__counted_by__ (c)))
 # else
 #  define _GL_ATTRIBUTE_COUNTED_BY(c)
@@ -3140,6 +3153,31 @@
 # define _Restrict
 # define __restrict__
 #endif
+
+/* Sanitizer features.  */
+#ifdef __has_feature
+# if !defined __SANITIZE_ADDRESS__ && __has_feature (address_sanitizer)
+#  define __SANITIZE_ADDRESS__ 1
+# endif
+# if !defined __SANITIZE_HWADDRESS__ && __has_feature (hwaddress_sanitizer)
+#  define __SANITIZE_HWADDRESS__ 1
+# endif
+# if !defined __SANITIZE_LEAK__ && __has_feature (leak_sanitizer)
+#  define __SANITIZE_LEAK__ 1
+# endif
+# if !defined __SANITIZE_THREAD__ && __has_feature (thread_sanitizer)
+#  define __SANITIZE_THREAD__ 1
+# endif
+  /* Although the following sanitizers are in Clang not GCC,
+     define GCC-like macro names for consistency and convenience.  */
+# if !defined __SANITIZE_MEMORY__ && __has_feature (memory_sanitizer)
+#  define __SANITIZE_MEMORY__ 1
+# endif
+# if !defined __SANITIZE_SCUDO__ && __has_feature (scudo_sanitizer)
+#  define __SANITIZE_SCUDO__ 1
+# endif
+#endif
+
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t

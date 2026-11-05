@@ -99,7 +99,7 @@ struct ethertypeent *parseethertypebynumber(int type)
 }
 
 /* Put the mac address into 6 (ETH_ALEN) bytes returns 0 on success. */
-int ebt_get_mac_and_mask(const char *from, unsigned char *to,
+int ebt_get_mac_and_mask(char *from, unsigned char *to,
   unsigned char *mask)
 {
 	char *p;

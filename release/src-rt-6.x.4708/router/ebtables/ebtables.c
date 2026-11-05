@@ -166,7 +166,7 @@ static void merge_target(struct ebt_u_target *t)
 
 /* Be backwards compatible, so don't use '+' in kernel */
 #define IF_WILDCARD 1
-static void print_iface(const char *iface)
+static void print_iface(char *iface)
 {
 	char *c;
 
@@ -423,7 +423,7 @@ static void list_rules()
 	}
 }
 
-static int parse_rule_range(const char *argv, int *rule_nr, int *rule_nr_end)
+static int parse_rule_range(char *argv, int *rule_nr, int *rule_nr_end)
 {
 	char *colon = strchr(argv, ':'), *buffer;
 

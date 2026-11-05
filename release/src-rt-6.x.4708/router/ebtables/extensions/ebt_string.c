@@ -174,7 +174,7 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 		break;
 	case STRING_ICASE:
 		ebt_check_option2(flags, OPT_STRING_ICASE);
-		if (ebt_check_inverse2(optarg))
+		if (ebt_check_inverse(optarg))
 			ebt_print_error2("Unexpected `!' after --string-icase");
 		info->u.v1.flags |= XT_STRING_FLAG_IGNORECASE;
 		break;

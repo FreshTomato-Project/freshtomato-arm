@@ -5,6 +5,200 @@ FreshTomato-ARM Changelog
 
 
 
+2026.5          2026.11.08
+---------------------------
+
+- Note: Due to vulnerability (CVE) fixes in many packages, updating is strongly recommended!
+
+Kernel:
+- kernel: net: ctf: reject non-PPP point-to-point devices (closes #335)
+- kernel: wireguard: fix IPv4 route lookup failure on legacy kernel
+- kernel: wireguard: fix IPv6 socket initialization (closes #325)
+
+Updates:
+- adminer: update to adminneo-5.9.0
+- dnsmasq: update to v2.93-10fbc39
+- expat: update to 2.10.0
+- haveged: update to 1.9.27
+- iperf: update to 3.22
+- libcap-ng: update to 0.9.6
+- libcurl: update to 8.23.0
+- libjpeg-turbo: update to 3.2.1
+- libpng: update to 1.6.59
+- libubox: update to da2d205 (2026-10-08) snapshot
+- libzip: update to 1.12.1
+- lz4: update to 1.11.0
+- meson: update to 1.12.1
+- nano: update to 9.3
+- nginx: update to 1.31.8
+- ntfs-3g: update to 2026.9.28
+- openvpn: update to 2.7.8
+- pcre2: update to 10.49
+- php: update to 8.3.36
+- pppd: update to 2.5.5
+- sqlite: update to 3.54.1
+- tor: update to 0.4.9.16
+- transmission: update to 4.1.4
+- zlib: update to 1.4
+
+GUI / WWW:
+- GUI: Add arrow transition styles for indent1 class to the menu
+- GUI: admin-upgrade.asp overhaul
+- GUI: advanced-dhcpdns.asp - Adjust TFTP root path input field size
+- GUI: Refactor navigation menu for improved structure
+- GUI: status-overview.asp - Update placeholder for Ethernet desc
+- www: advanced-wlanvifs.asp: escape VIF nvram values passed to shell.cgi
+- www: basic-network.asp: retain DHCP settings when disabled
+- www: qos-graphs.asp: refresh QoS bandwidth distribution from current qrate sample
+- www: reboot.asp: wait for HTTP recovery before enabling Continue
+- www: security: escape untrusted data rendered by web UI
+- www: security: harden CGI parameters and shell input handling
+- www: tomato.css: styles for admin-upgrade.asp
+- www: tools-shell.asp: escape shell working directory paths
+
+Build:
+- build: change targets for Linksys. EA6200/EA6350v1/EA6700/EA6400/EA6500v2/EA6900 from AIO to AIO_Lite due to the image size being too large (closes #316)
+- build: iperf: tune recipe for size; do not build shared library
+- build: libcurl: tune recipe for size
+- build: nginx: tune recipe for size
+- build: sqlite: tune recipe for size; compile only library
+- build: tor: tune recipe for size; remove relay module
+
+Other:
+- busybox: enable server in netcat
+- cstats: initialize a missing history file automatically (closes #330)
+- ebtables: updates from the upstream
+- httpd: cgi.c: validate percent-encoded input
+- httpd: config.c: track consumed restore body and complete file writes
+- httpd: fix request-time memory leaks
+- httpd: httpd.c: garbage collect stale GUI login markers
+- httpd: httpd.c: reject Basic Auth payloads that fill authinfo
+- httpd: httpd.c: validate Content-Length before narrowing to int
+- httpd: keep Ethernet port states stable after VLAN  reassignment
+- httpd: log.c: avoid pointer underflow in WebMon reverse scan
+- httpd: log.c: check readall size arithmetic before addition
+- httpd: log.c: handle empty WebMon files safely
+- httpd: log.c: keep WebMon line lengths in size_t
+- httpd: log.c: shell-quote configured log file paths
+- httpd: make str_replace destination length-aware
+- httpd: map Ethernet GUI captions to physical MultiWAN ports
+- httpd: misc.c: harden escaped string allocation and formatting
+- httpd: nocat.c: require a valid multipart boundary
+- httpd/rc/www: re-encode mojibake comment characters as UTF-8
+- httpd: read complete upload bodies before processing
+- httpd: security: escape dynamic JavaScript response data
+- httpd: tighten fixed-size string copy bounds
+- httpd: tomato.c: validate VPN tunnel check addresses
+- httpd: upgrade.c: report late upgrade errors through dbg()
+- httpd: utf8.c: bound formatted escape output
+- httpd: utf8.c: guard output allocation arithmetic
+- httpd: webio.c: make web printf buffer growth overflow-safe
+- httpd: wl.c: escape scanned SSIDs in JavaScript output
+- httpd: wwan.c: validate modem device before shell commands
+- httpd: zero listener sockaddr before filling it in
+- libshared: add feature-gated alphanumeric string validator
+- libshared: base64.c: guard length helper arithmetic
+- libshared: bound DCE UUID formatting to its fixed output size
+- libshared: build splitpath only with nginx support
+- libshared: consolidate common string validation helpers
+- libshared: consolidate quoted config value serialization
+- libshared: fail closed when secure random input is unavailable
+- libshared: files.c: complete reads up to the requested length
+- libshared: files.c: validate lock pid reads and writes
+- libshared: files: fix invalid free and allocation overflow
+- libshared: fix console descriptor handling in dbg()
+- libshared: fix realloc error handling and leaked buffers
+- libshared: harden safe stdio helper length arithmetic
+- libshared: id.c: terminate Netgear board model string
+- libshared: linux_timer.c: validate event queue allocation
+- libshared: make get_wan_prefix destination length-aware
+- libshared: make get_wlname_by_mac destination length-aware
+- libshared: make string moves and path splitting size-safe
+- libshared: make WDS security parsing length-aware
+- libshared: misc.c: fix VLAN parsing buffer overflow
+- libshared: misc.c: harden NVRAM file base64 size handling
+- libshared: misc: replace remaining fixed-string strcpy
+- libshared: nvparse: replace strncpy with strlcpy
+- libshared: process.c: avoid closing a NULL proc directory
+- libshared: replace fixed-buffer sprintf calls with snprintf
+- libshared: replace fixed-buffer strcpy and strncpy uses
+- libshared: shutils.c: guard fd2str allocation growth overflow
+- libshared: UdpLib: bound formatted trace messages
+- libshared: usb.c: bound partition parsing and close proc file
+- libshared: wl.c: validate lengths before buffer arithmetic
+- libshared: wlif_utils: replace strcat with strlcat
+- mdu: pin temporary DDNS routes to the selected WAN
+- mwwatchdog: use owned WAN-specific probe routes and retain IPv6 checks
+- openssl-1.1: add fix for CVE-2026-35189, CVE-2026-54872, CVE-2026-75806, CVE-2026-77696 and CVE-2026-84782
+- openvpn: disable compression support but still allow limited interoperability with compression-enabled peers
+- others: adblock-v2: diagnose dnsmasq failures before trimming  lists
+- others: adblock-v2: discard rejected runtime blockfiles
+- others: adblock-v2: do not rewrite user settings on runtime  failure
+- others: adblock-v2: fix RAM admission sizing
+- others: adblock-v2: initialize hold time before stale pid  recovery
+- others: adblock-v2: match whitelist domains literally
+- others: adblock-v2: preserve the working blockfile until replacement
+- others: adblock-v2: preserve valid long and ccTLD domains  (closes #326)
+- others: adblock-v2: stop only the pidfile-owned process
+- others: adblock-v2: validate and initialize the blockfile limit
+- others: gencert.sh: harden generated OpenSSL config values
+- others: mwwatchdog: schedule the 30-second check interval
+- others: updown-client.sh: fix foreign option condition
+- others: vpnrouting.sh: validate OpenVPN policy routing values
+- rc: bound remaining sscanf string conversions
+- rc: bwlimit.c: avoid writing formatted priority into packed input
+- rc: dnsmasq.c: reject line breaks in domain values
+- rc: firewall.c: bound address sscanf conversions
+- rc: ftpd.c: validate user names before using them as paths
+- rc/httpd: ARM: erase NVRAM within the firmware writer after a successful upgrade
+- rc: init.c: validate board-data allocation and read
+- rc: init.c: validate board MAC reads
+- rc: misc.c: bound resolved socket address copies
+- rc: mtd.c: avoid overflow when rounding image lengths
+- rc: mtd.c: match complete MTD partition names in /proc/mtd
+- rc: mtd.c: select the failsafe boot partition only after flashing succeeds
+- rc: mtd.c: store getopt results in int
+- rc: mtd.c: validate HTTP response lengths
+- rc: mtd.c: validate Netgear firmware header length
+- rc: mwan.c: fix MultiWAN PBR failover ordering
+- rc: nfs.c: validate generated export entries
+- rc: nginx.c: validate generated config values in backend
+- rc: nocat.c: reject line breaks in generated config values
+- rc: openvpn.c: prevent CCD path traversal
+- rc: openvpn.c: reject unsafe pushed domain values
+- rc: openvpn.c: serialize client strings safely
+- rc: openvpn.c: validate CCD routes before config generation
+- rc: pptp_client.c: escape quoted pppd credentials
+- rc: pptpd.c: validate CHAP user entries
+- rc: pptpd.c: validate generated DNS and WINS addresses
+- rc: qos.c: free generated classification rate buffers
+- rc: rc.c: guard DNS result vector growth arithmetic
+- rc: renew DHCP when physical WAN links bounce
+- rc: roamast.c: handle station allocation failure
+- rc: samba.c: validate packed share entries
+- rc: serialize dhcp6c-state and ntpd_synced service restarts
+- rc: services.c: ntpd: reject line breaks in generated server config
+- rc: services.c: stubby: reject unsafe generated YAML values
+- rc: snmp.c: reject line breaks in generated config values
+- rc: tinc.c: validate host names and ports
+- rc: tor.c: reject line breaks in data directory
+- rc: update MultiWAN PBR incrementally on health changes
+- rc: usb.c: pass unsigned char values to isalnum
+- rc: use f_write_string for simple file writes
+- rc: validate VPN watchdog tunnel check addresses
+- rc: wan.c: escape values written to pppd options
+- rc: wireguard.c: harden dynamic domain list sizing
+- rc: wireguard.c: validate values embedded in generated scripts
+- routing: exclude temporary MDU and watchdog routes from VPN PBR
+- rstats: initialize a missing history file automatically
+- switch4g: restore generic usbserial fallback for DIAG ports (closes #315)
+- wireguard: clear RX queue link before handing packets to network stack
+- wireguard: reject executable hooks from imported configs
+- wireless: clamp driver-provided station counts
+- wlconf: fix sparse VIF MAC defaults and full VIF token matches
+- www/httpd: omit Wi-Fi QR passwords for open networks and clear unused wireless secrets
+
+
 2026.4          2026.09.14
 ---------------------------
 

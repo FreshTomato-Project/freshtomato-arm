@@ -1992,9 +1992,9 @@ circuit_build_times_recover_unusable(circuit_build_times_t *cbt,
   }
   cbt->liveness.after_firsthop_idx = 0;
   cbt->timeout_ms = MAX(initial,
-      isfinite(old_soft) && old_soft >= 0 ? old_soft : initial);
+      tor_isfinite(old_soft) && old_soft >= 0 ? old_soft : initial);
   cbt->close_ms = MAX(cbt->timeout_ms,
-      isfinite(old_close) && old_close >= 0 ? old_close : initial);
+      tor_isfinite(old_close) && old_close >= 0 ? old_close : initial);
   cbt->timeout_ms = MIN(cbt->timeout_ms, CBT_MAX_TIMEOUT_INITIAL_VALUE);
   cbt->close_ms = MIN(cbt->close_ms, CBT_MAX_TIMEOUT_INITIAL_VALUE);
 

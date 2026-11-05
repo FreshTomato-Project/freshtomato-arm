@@ -1787,6 +1787,8 @@ test_conflux_cross_cancel_channel(void *arg)
   request->want_onehop = 1;
   request->chosen_exit_name = tor_strdup(
       "$4242424242424242424242424242424242424242");
+  ENTRY_TO_CONN(request)->conn_array_index =
+    smartlist_len(get_connection_array());
   smartlist_add(get_connection_array(), ENTRY_TO_CONN(request));
 
   tt_assert(launch_new_set(2));
@@ -1815,7 +1817,7 @@ test_conflux_cross_cancel_channel(void *arg)
  done:
   test_clear_circs();
   if (request) {
-    smartlist_remove(get_connection_array(), ENTRY_TO_CONN(request));
+    connection_remove(ENTRY_TO_CONN(request));
     connection_free_(ENTRY_TO_CONN(request));
   }
   if (chan) {

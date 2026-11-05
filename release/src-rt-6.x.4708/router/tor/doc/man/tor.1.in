@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 10/07/2026
+.\"      Date: 11/04/2026
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "10/07/2026" "Tor" "Tor Manual"
+.TH "TOR" "1" "11/04/2026" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -2987,6 +2987,36 @@ The allowed rate of stream creation from a single circuit per second\&. Coupled 
 The allowed burst of stream creation from a circuit per second\&. See the DoSStreamCreationRate for more details on this detection\&. If not defined or set to 0, it is controlled by a consensus parameter\&. If not defined in the consensus, the value is 300\&. (Default: 0)
 .RE
 .sp
+The following options are useful only for a directory cache\&.
+.PP
+\fBDoSBeginDirRateEnabled\fR \fB0\fR|\fB1\fR|\fBauto\fR
+.RS 4
+Enable the BEGIN_DIR rate limit\&. If set to 1 (enabled), tor will apply a rate limit on the directory streams opened per circuit\&. "auto" means use the consensus parameter\&. If not defined in the consensus, the value is 1\&. (Default: auto)
+.RE
+.PP
+\fBDoSBeginDirDefenseType\fR \fINUM\fR
+.RS 4
+This is the type of defense applied to a circuit going over the BEGIN_DIR rate limit\&. The possible values are:
+
+1: No defense\&.
+
+2: Reject the directory stream\&.
+
+3: Close the circuit\&.
+
+"0" means use the consensus parameter\&. If not defined in the consensus, the value is 3\&. (Default: 0)
+.RE
+.PP
+\fBDoSBeginDirRate\fR \fINUM\fR
+.RS 4
+The allowed rate of BEGIN_DIR from a single circuit per second\&. Coupled with the burst (see below), if the limit is reached, actions can be taken against the stream or circuit (DoSBeginDirDefenseType)\&. If not defined or set to 0, it is controlled by a consensus parameter\&. If not defined in the consensus, the value is 10\&. (Default: 0)
+.RE
+.PP
+\fBDoSBeginDirBurst\fR \fINUM\fR
+.RS 4
+The allowed burst of BEGIN_DIR from a circuit\&. See the DoSBeginDirRate for more details on this detection\&. If not defined or set to 0, it is controlled by a consensus parameter\&. If not defined in the consensus, the value is 60\&. (Default: 0)
+.RE
+.sp
 For onion services, mitigations are a work in progress and multiple options are currently available\&.
 .sp
 The introduction point defense is a rate limit on the number of introduction requests that will be forwarded to a service by each of its honest introduction point routers\&. This can prevent some types of overwhelming floods from reaching the service, but it will also prevent legitimate clients from establishing new connections\&.
@@ -3286,7 +3316,7 @@ A total value, in abstract bandwidth units, describing how much measured total b
 .PP
 \fBMinUptimeHidServDirectoryV2\fR \fIN\fR \fBseconds\fR|\fBminutes\fR|\fBhours\fR|\fBdays\fR|\fBweeks\fR
 .RS 4
-Minimum uptime of a relay to be accepted as a hidden service directory by directory authorities\&. (Default: 96 hours)
+Minimum uptime of a relay to be accepted as a hidden service directory by directory authorities\&. A relay that has the HSDir flag in a recent consensus doesn\(cqt need to meet it\&. (Default: 96 hours)
 .RE
 .PP
 \fBRecommendedClientVersions\fR \fISTRING\fR

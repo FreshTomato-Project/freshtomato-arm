@@ -5576,6 +5576,61 @@ Denial of Service mitigation subsystem described above.</p></div>
 </p>
 </dd>
 </dl></div>
+<div class="paragraph"><p>The following options are useful only for a directory cache.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<a id="DoSBeginDirRateEnabled"></a> <strong>DoSBeginDirRateEnabled</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    Enable the BEGIN_DIR rate limit. If set to 1 (enabled), tor will apply a
+    rate limit on the directory streams opened per circuit. "auto" means use
+    the consensus parameter. If not defined in the consensus, the value is 1.
+    (Default: auto)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSBeginDirDefenseType"></a> <strong>DoSBeginDirDefenseType</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    This is the type of defense applied to a circuit going over the BEGIN_DIR
+    rate limit. The possible values are:
+    <br />
+      1: No defense.
+    <br />
+      2: Reject the directory stream.
+    <br />
+      3: Close the circuit.
+    <br />
+    "0" means use the consensus parameter. If not defined in the consensus, the value is 3.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSBeginDirRate"></a> <strong>DoSBeginDirRate</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The allowed rate of BEGIN_DIR from a single circuit per second. Coupled
+    with the burst (see below), if the limit is reached, actions can be taken
+    against the stream or circuit (DoSBeginDirDefenseType). If not defined or
+    set to 0, it is controlled by a consensus parameter. If not defined in the
+    consensus, the value is 10. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSBeginDirBurst"></a> <strong>DoSBeginDirBurst</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The allowed burst of BEGIN_DIR from a circuit. See the DoSBeginDirRate for
+    more details on this detection. If not defined or set to 0, it is
+    controlled by a consensus parameter. If not defined in the consensus, the
+    value is 60. (Default: 0)
+</p>
+</dd>
+</dl></div>
 <div class="paragraph"><p>For onion services, mitigations are a work in progress and multiple options
 are currently available.</p></div>
 <div class="paragraph"><p>The introduction point defense is a rate limit on the number of introduction
@@ -6102,7 +6157,8 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
 <dd>
 <p>
     Minimum uptime of a relay to be accepted as a hidden service directory
-    by directory authorities. (Default: 96 hours)
+    by directory authorities. A relay that has the HSDir flag in a recent
+    consensus doesn&#8217;t need to meet it. (Default: 96 hours)
 </p>
 </dd>
 <dt class="hdlist1">

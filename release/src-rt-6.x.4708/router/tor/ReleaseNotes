@@ -2,6 +2,160 @@ This document summarizes new features and bugfixes in each stable
 release of Tor. If you want to see more detailed descriptions of the
 changes in each development snapshot, see the ChangeLog file.
 
+Changes in version 0.4.9.16 - 2026-11-04
+  This is an emergency release affecting only directory authorities. It
+  includes fixes to address the thundering herd caused by the new required
+  protover values introduced in the previous release.
+
+  o Major features (authority):
+    - Work around a bug where old clients did not, in fact, correctly
+      handle unparseable microdescriptors in the way that we had hoped
+      that they would. We triggered this bug by omitting TAP keys from
+      microdescriptors. To solve this issue, instead of omitting TAP
+      keys, we replace them with a dummy TAP key. (This is safe, because
+      nothing has used TAP since v2 onion services.)
+    - New consensus method 38 added for this TAP dummy key.
+    - Revert back the required protover version for both "Desc" and "Microdesc"
+      from 3 to 2 which is causing <= 0.4.8.x clients to exit(1).
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on November 04, 2026.
+
+  o Minor bugfixes (dirauth):
+    - Let dir auth fetches be twice as big, to allow for the fact that 9
+      votes can exceed 16MB even compressed. Part of 41471; bugfix
+      on 0.3.5.1-alpha.
+
+Changes in version 0.4.9.15 - 2026-10-28
+  This is another security release that includes new DoS defenses against large
+  volumes of directory requests received by relays. Another significant change
+  is that the HSDir flag is now sticky, meaning it persists across restarts.
+  This release primarily affects relays so please upgrade as soon as possible.
+
+  o Directory authority changes:
+    - Directory authorities now list the protocol capabilities
+      "RELAY_NEGOTIATE_SUBPROTO" and "RELAY_CRYPT_CGO" as required for
+      relays. This change will allow clients to assume that all relays
+      support Counter Galois Onion encryption, and use it even for
+      relays not currently listed in the consensus.
+    - Directory authorities now list the protocol capabilities
+      "DESC_NO_TAP" and "MICRODESC_NO_TAP" as required for clients and
+      relays. This changes will allow us to remove TAP keys from onion
+      desciptors and microdescriptors, saving a great deal of directory
+      bandwidth. Because of this change, Tor versions 0.4.8 and earlier
+      will no longer work on the network.
+
+  o Major bugfixes (clients):
+    - When an exit relay refuses a stream because it's hibernating or
+      out of file descriptors, clients would mark that relay as unsuitable
+      for exiting until the next restart. Now forgive the relay when
+      the next consensus arrives, which goes with the fix we already
+      made in ticket 7582. Fixes bug 41450; bugfix on 0.2.3.1-alpha.
+
+  o Major features (directory authority):
+    - Directory authorities provide a new consensus method that omits
+      _all_ TAP keys and family lists from microdescriptors. This change
+      is not compatible with 0.4.8, but 0.4.8 is no longer supported. It
+      will save a great deal of directory bandwidth.
+
+  o Major bugfixes (directory authority):
+    - Correctly handle the middle-only flag at directory authorities, to
+      prevent it from getting clobbered by a newly created consensus.
+      This prevents flip-flopping of the middleonly flag. Fixes bug
+      41457; bugfix on 0.4.9.14.
+
+  o Minor features (denial of service mitigation):
+    - Directory caches can now rate limit BEGIN_DIR cells per circuit,
+      independently of the exit stream creation limit. This is
+      controlled by the new DoSBeginDirRateEnabled, DoSBeginDirRate,
+      DoSBeginDirBurst and DoSBeginDirDefenseType consensus parameters
+      and torrc options, enabled by default. Refusals are reported in
+      the heartbeat and in the
+      relay_dos_total{type="begindir_rate_rejected"} metric. Part of
+      ticket 41411.
+    - Directory caches can now refuse any BEGIN_DIR after the first one
+      on a circuit from an authenticated relay. This is controlled by
+      the new DoSBeginDirLimitEnabled consensus parameter, disabled by
+      default. Refusals are reported in the heartbeat and in the
+      relay_dos_total{type="begindir_rejected"} metric. Closes
+      ticket 41411.
+    - Onion service directories now accept at most one descriptor fetch
+      or upload per circuit from an authenticated relay, and close the
+      circuit on any later one. This holds even when the BEGIN_DIR per-
+      circuit limit is disabled.
+
+  o Minor features (directory authority):
+    - Directory authorities now assign the HSDir flag to a relay that
+      had it in a recent consensus even if its uptime is below
+      MinUptimeHidServDirectoryV2, so a restart no longer costs a relay
+      its HSDir flag for 96 hours. All other HSDir requirements still
+      apply. Fixes ticket 41175.
+
+  o Minor features (directory performance):
+    - Filter malformed directory request digests in linear time,
+      avoiding repeated list shifting when rejecting invalid entries.
+      Preserve digest ordering and the existing sorting and
+      deduplication behavior.
+    - Summarize invalid directory request digests and consensus diff
+      header digests once per parsing call, instead of logging each
+      rejected entry. Omit rejected digest strings from these
+      diagnostics and from invalid consensus diff URL diagnostics.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on October 28, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/10/28.
+
+  o Minor features (performance):
+    - Track connection membership in the active linked and closeable
+      lists using indices, and update those indices when removing
+      entries. Use the connection array index for membership checks and
+      clear it on removal. This avoids repeated global list scans during
+      activation and teardown. Report inconsistent indices nonfatally
+      and recover with a list search before modifying the list.
+
+  o Minor features (relay):
+    - Relays now use a separate circuit for each directory request, so
+      that directory caches can later limit relays to one BEGIN_DIR
+      per circuit.
+
+  o Minor bugfixes (conflux, control port):
+    - Refuse ATTACHSTREAM onto a conflux circuit that has not finished
+      linking. Such a leg is open but a stream that you attach to it
+      will be silently dropped from the circuit (with a BUG() warning)
+      when the set linked. Fixes bug 41454; bugfix on 0.4.8.1-alpha.
+
+  o Minor bugfixes (onion service, control port):
+    - Fix a memory leak of the parsed signing-key certificate and
+      superencrypted blob (roughly the size of the descriptor) on every
+      HSPOST control-port command. Fixes bug 41455; bugfix
+      on 0.3.3.1-alpha.
+
+  o Minor bugfixes (scheduling):
+    - Fix a bug in smartlist_pqueue_remove that could schedulers (for
+      circuits within a channel, and for channels on the internet
+      connection) to serve items in the wrong order, leading to
+      temporary starvation for higher-priority circuits. Fixes bug
+      41428; bugfix on 0.2.2.7-alpha.
+
+  o Minor bugfixes (security):
+    - Fix a bug that a minority of directory authorities could use
+      to prevent a valid consensus from being generated.
+      Fixes bug 41456; bugfix on 0.2.1.5-alpha.
+      Tracked as TROVE-2026-072.
+
+  o Minor bugfixes (relay, channel padding):
+    - Clamp the netflow padding timeouts a peer negotiates with
+      PADDING_NEGOTIATE to the consensus maximum (60 seconds). Previously
+      a client could ask for up to 65.5 seconds, which the padding
+      scheduler then mistook for a clock jump once per second for
+      as long as the connection stayed idle, emitting an unthrottled
+      "Bug:" warning and a padding cell each time. Fixes bug 41441;
+      bugfix on 0.3.1.1-alpha.
+
+
 Changes in version 0.4.9.14 - 2026-10-07
   Another week, another security release. This again contains major bugfixes
   related to high severity issues. The fixes affect all Tor components: relay,

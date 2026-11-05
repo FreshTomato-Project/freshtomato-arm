@@ -1148,6 +1148,7 @@ or_circuit_new(circid_t p_circ_id, channel_t *p_chan)
 
   init_circuit_base(TO_CIRCUIT(circ));
   dos_stream_init_circ_tbf(circ);
+  dos_begindir_init_circ_tbf(circ);
 
   tor_trace(TR_SUBSYS(circuit), TR_EV(new_or), circ);
   return circ;

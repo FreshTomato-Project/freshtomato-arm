@@ -3361,9 +3361,9 @@ lz4:
 		$(MAKE) LN_S="ln -sf" install DESTDIR=$(TOP)/lz4/staged
 
 lz4-install:
-	install -D lz4/lib/liblz4.so.1.10.0 $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.10.0
-	$(STRIP) $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.10.0
-	cd $(INSTALLDIR)/lz4/usr/lib && ln -sf liblz4.so.1.10.0 liblz4.so.1 && ln -sf liblz4.so.1.10.0 liblz4.so
+	install -D lz4/lib/liblz4.so.1.11.0 $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.11.0
+	$(STRIP) $(INSTALLDIR)/lz4/usr/lib/liblz4.so.1.11.0
+	cd $(INSTALLDIR)/lz4/usr/lib && ln -sf liblz4.so.1.11.0 liblz4.so.1 && ln -sf liblz4.so.1.11.0 liblz4.so
 
 lz4-clean:
 	-@$(MAKE) -C lz4 clean

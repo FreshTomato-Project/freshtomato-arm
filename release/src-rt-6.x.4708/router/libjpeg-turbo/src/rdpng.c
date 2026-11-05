@@ -590,6 +590,8 @@ start_input_png(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
     if ((cinfo->in_color_space == JCS_UNKNOWN ||
          cinfo->in_color_space == JCS_RGB) && gray)
       cinfo->in_color_space = JCS_GRAYSCALE;
+    else if (cinfo->in_color_space == JCS_UNKNOWN)
+      cinfo->in_color_space = JCS_EXT_RGB;
     if (cinfo->in_color_space == JCS_GRAYSCALE && !gray)
       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
 

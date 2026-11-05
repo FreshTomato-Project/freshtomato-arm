@@ -655,7 +655,9 @@ jpegtran accepts a subset of the switches recognized by cjpeg:
         -progressive    Create progressive JPEG file.
         -arithmetic     Use arithmetic coding.
         -restart N      Emit a JPEG restart marker every N MCU rows, or every
-                        N MCUs if "B" is attached to the number.
+                        N MCUs if "B" is attached to the number.  The default
+                        is to emit no restart markers, even if the source file
+                        contains them.
         -scans file     Use the scan script given in the specified text file.
 See the previous discussion of cjpeg for more details about these switches.
 If you specify none of these switches, you get a plain baseline-JPEG output
@@ -720,6 +722,10 @@ image covers at least the requested region, but it may cover more.  The
 adjustment of the region dimensions may be optionally disabled by attaching an
 'f' character ("force") to the width or height number.
 
+Note that lossless cropping is performed after any other operations, so the
+coordinates and iMCU boundaries are relative to the flipped/rotated/tranposed
+image.
+
 The image can be losslessly cropped by giving the switch:
         -crop WxH+X+Y   Crop to a rectangular region of width W and height H,
                         starting at point X,Y.
@@ -767,9 +773,8 @@ quantization of the output image will be adapted to accommodate the higher of
 the input image quality and the drop image quality.  The trim option can be
 used with the drop option to requantize the drop image to match the input
 image.  Note that a grayscale image can be dropped into a full-color image or
-vice versa, as long as the full-color image has no vertical subsampling.  If
-the input image is grayscale and the drop image is full-color, then the
-chrominance channels from the drop image will be discarded.
+vice versa.  If the input image is grayscale and the drop image is full-color,
+then the chrominance channels from the drop image will be discarded.
 
 Other not-strictly-lossless transformation switches are:
 

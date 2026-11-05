@@ -167,12 +167,26 @@ for precision in 8 12; do
 				-outfile $OUTDIR/${basename}_rgb_${colors}.jpg \
 				$OUTDIR/${basename}_rgb_${colors}.$ext
 			compare $OUTDIR/${basename}_rgb_${colors}.jpg
+			if [ "$ext" = "png" -o "$ext" = "ppm" -o "$ext" = "bmp" ]; then
+				rm $OUTDIR/${basename}_rgb_${colors}.jpg
+				runme $EXEDIR/tjcomp -precision $precision -lossless 1 -noicc \
+					$OUTDIR/${basename}_rgb_${colors}.$ext \
+					$OUTDIR/${basename}_rgb_${colors}.jpg
+				compare $OUTDIR/${basename}_rgb_${colors}.jpg
+			fi
 			if [ $precision -eq 8 -a ! "$ext" = "bmp" -a ! "$ext" = "gif" -a \
 				! "$ext" = "tga" ]; then
 				runme $EXEDIR/cjpeg -verbose -precision 12 -lossless 1 \
 					-outfile $OUTDIR/${basename}_12_rgb_${colors}.jpg \
 					$OUTDIR/${basename}_rgb_${colors}.$ext
 				compare $OUTDIR/${basename}_12_rgb_${colors}.jpg
+				if [ "$ext" = "png" -o "$ext" = "ppm" ]; then
+					rm $OUTDIR/${basename}_12_rgb_${colors}.jpg
+					runme $EXEDIR/tjcomp -precision 12 -lossless 1 \
+						$OUTDIR/${basename}_rgb_${colors}.$ext \
+						$OUTDIR/${basename}_12_rgb_${colors}.jpg
+					compare $OUTDIR/${basename}_12_rgb_${colors}.jpg
+				fi
 			fi
 			echo
 
@@ -184,12 +198,26 @@ for precision in 8 12; do
 				-outfile $OUTDIR/${basename}_rgb2gray_${colors}.jpg \
 				$OUTDIR/${basename}_rgb2gray_${colors}.$grayext
 			compare $OUTDIR/${basename}_rgb2gray_${colors}.jpg
+			if [ "$ext" = "png" -o "$ext" = "ppm" -o "$ext" = "bmp" ]; then
+				rm $OUTDIR/${basename}_rgb2gray_${colors}.jpg
+				runme $EXEDIR/tjcomp -precision $precision -lossless 1 -noicc \
+					$OUTDIR/${basename}_rgb2gray_${colors}.$grayext \
+					$OUTDIR/${basename}_rgb2gray_${colors}.jpg
+				compare $OUTDIR/${basename}_rgb2gray_${colors}.jpg
+			fi
 			if [ $precision -eq 8 -a ! "$ext" = "bmp" -a ! "$ext" = "gif" -a \
 				! "$ext" = "tga" ]; then
 				runme $EXEDIR/cjpeg -verbose -precision 12 -lossless 1 \
 					-outfile $OUTDIR/${basename}_12_rgb2gray_${colors}.jpg \
 					$OUTDIR/${basename}_rgb2gray_${colors}.$grayext
 				compare $OUTDIR/${basename}_12_rgb2gray_${colors}.jpg
+				if [ "$ext" = "png" -o "$ext" = "ppm" ]; then
+					rm $OUTDIR/${basename}_12_rgb2gray_${colors}.jpg
+					runme $EXEDIR/tjcomp -precision 12 -lossless 1 \
+						$OUTDIR/${basename}_rgb2gray_${colors}.$grayext \
+						$OUTDIR/${basename}_12_rgb2gray_${colors}.jpg
+					compare $OUTDIR/${basename}_12_rgb2gray_${colors}.jpg
+				fi
 			fi
 			echo
 
@@ -201,12 +229,26 @@ for precision in 8 12; do
 				-outfile $OUTDIR/${basename}_gray_${colors}.jpg \
 				$OUTDIR/${basename}_gray_${colors}.$grayext
 			compare $OUTDIR/${basename}_gray_${colors}.jpg
+			if [ "$ext" = "png" -o "$ext" = "ppm" -o "$ext" = "bmp" ]; then
+				rm $OUTDIR/${basename}_gray_${colors}.jpg
+				runme $EXEDIR/tjcomp -precision $precision -lossless 1 -noicc \
+					$OUTDIR/${basename}_gray_${colors}.$grayext \
+					$OUTDIR/${basename}_gray_${colors}.jpg
+				compare $OUTDIR/${basename}_gray_${colors}.jpg
+			fi
 			if [ $precision -eq 8 -a ! "$ext" = "bmp" -a ! "$ext" = "gif" -a \
 				! "$ext" = "tga" ]; then
 				runme $EXEDIR/cjpeg -verbose -precision 12 -lossless 1 \
 					-outfile $OUTDIR/${basename}_12_gray_${colors}.jpg \
 					$OUTDIR/${basename}_gray_${colors}.$grayext
 				compare $OUTDIR/${basename}_12_gray_${colors}.jpg
+				if [ "$ext" = "png" -o "$ext" = "ppm" ]; then
+					rm $OUTDIR/${basename}_12_gray_${colors}.jpg
+					runme $EXEDIR/tjcomp -precision 12 -lossless 1 \
+						$OUTDIR/${basename}_gray_${colors}.$grayext \
+						$OUTDIR/${basename}_12_gray_${colors}.jpg
+					compare $OUTDIR/${basename}_12_gray_${colors}.jpg
+				fi
 				if [ "$ext" = "png" ]; then
 					magick $OUTDIR/${basename}_gray_${colors}.$grayext \
 						-define png:color-type=3 \
@@ -215,9 +257,19 @@ for precision in 8 12; do
 						-outfile $OUTDIR/${basename}_gray_${colors}.jpg \
 						$OUTDIR/${basename}_indexedgray_${colors}.$grayext
 					compare $OUTDIR/${basename}_gray_${colors}.jpg
+					rm $OUTDIR/${basename}_gray_${colors}.jpg
+					runme $EXEDIR/tjcomp -precision $precision -lossless 1 \
+						$OUTDIR/${basename}_indexedgray_${colors}.$grayext \
+						$OUTDIR/${basename}_gray_${colors}.jpg
+					compare $OUTDIR/${basename}_gray_${colors}.jpg
 					runme $EXEDIR/cjpeg -verbose -precision 12 -lossless 1 \
 						-outfile $OUTDIR/${basename}_12_gray_${colors}.jpg \
 						$OUTDIR/${basename}_indexedgray_${colors}.$grayext
+					compare $OUTDIR/${basename}_12_gray_${colors}.jpg
+					rm $OUTDIR/${basename}_12_gray_${colors}.jpg
+					runme $EXEDIR/tjcomp -precision 12 -lossless 1 \
+						$OUTDIR/${basename}_indexedgray_${colors}.$grayext \
+						$OUTDIR/${basename}_12_gray_${colors}.jpg
 					compare $OUTDIR/${basename}_12_gray_${colors}.jpg
 				fi
 			fi
@@ -231,12 +283,26 @@ for precision in 8 12; do
 				-outfile $OUTDIR/${basename}_gray2rgb_${colors}.jpg \
 				$OUTDIR/${basename}_gray2rgb_${colors}.$ext
 			compare $OUTDIR/${basename}_gray2rgb_${colors}.jpg
+			if [ "$ext" = "png" -o "$ext" = "ppm" -o "$ext" = "bmp" ]; then
+				rm $OUTDIR/${basename}_gray2rgb_${colors}.jpg
+				runme $EXEDIR/tjcomp -precision $precision -lossless 1 -noicc \
+					$OUTDIR/${basename}_gray2rgb_${colors}.$ext \
+					$OUTDIR/${basename}_gray2rgb_${colors}.jpg
+				compare $OUTDIR/${basename}_gray2rgb_${colors}.jpg
+			fi
 			if [ $precision -eq 8 -a ! "$ext" = "bmp" -a ! "$ext" = "gif" -a \
 				! "$ext" = "tga" ]; then
 				runme $EXEDIR/cjpeg -verbose -precision 12 -lossless 1 \
 					-outfile $OUTDIR/${basename}_12_gray2rgb_${colors}.jpg \
 					$OUTDIR/${basename}_gray2rgb_${colors}.$ext
 				compare $OUTDIR/${basename}_12_gray2rgb_${colors}.jpg
+				if [ "$ext" = "png" -o "$ext" = "ppm" ]; then
+					rm $OUTDIR/${basename}_12_gray2rgb_${colors}.jpg
+					runme $EXEDIR/tjcomp -precision 12 -lossless 1 \
+						$OUTDIR/${basename}_gray2rgb_${colors}.$ext \
+						$OUTDIR/${basename}_12_gray2rgb_${colors}.jpg
+					compare $OUTDIR/${basename}_12_gray2rgb_${colors}.jpg
+				fi
 			fi
 			echo
 

@@ -98,6 +98,7 @@ Data Fields</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Cropping region. </p>
+<p>Note that lossless cropping is performed after any other transformation operations, so the coordinates and iMCU dimensions are relative to the flipped/rotated/tranposed image. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a id="aecefc45a26f4d8b60dd4d825c1710115" name="aecefc45a26f4d8b60dd4d825c1710115"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aecefc45a26f4d8b60dd4d825c1710115">&#9670;&#160;</a></span>h</h2>
@@ -146,7 +147,7 @@ Data Fields</h2></td></tr>
 </div><div class="memdoc">
 
 <p>The left boundary of the cropping region. </p>
-<p>For lossless transformation, this must be evenly divisible by the iMCU width (see <a class="el" href="group___turbo_j_p_e_g.html#ga9e61e7cd47a15a173283ba94e781308c" title="iMCU width (in pixels) for a given level of chrominance subsampling">tjMCUWidth</a>) of the destination image. For decompression, this must be evenly divisible by the scaled iMCU width of the source image. </p>
+<p>For lossless transformation, this must be evenly divisible by the iMCU width (see <a class="el" href="group___turbo_j_p_e_g.html#ga9e61e7cd47a15a173283ba94e781308c" title="iMCU width (in pixels) for a given level of chrominance subsampling">tjMCUWidth</a>) of the transformed image. For decompression, this must be evenly divisible by the scaled iMCU width of the source image. </p>
 
 </div>
 </div>
@@ -163,7 +164,7 @@ Data Fields</h2></td></tr>
 </div><div class="memdoc">
 
 <p>The upper boundary of the cropping region. </p>
-<p>For lossless transformation, this must be evenly divisible by the iMCU height (see <a class="el" href="group___turbo_j_p_e_g.html#gabd247bb9fecb393eca57366feb8327bf" title="iMCU height (in pixels) for a given level of chrominance subsampling">tjMCUHeight</a>) of the destination image. </p>
+<p>For lossless transformation, this must be evenly divisible by the iMCU height (see <a class="el" href="group___turbo_j_p_e_g.html#gabd247bb9fecb393eca57366feb8327bf" title="iMCU height (in pixels) for a given level of chrominance subsampling">tjMCUHeight</a>) of the transformed image. </p>
 
 </div>
 </div>

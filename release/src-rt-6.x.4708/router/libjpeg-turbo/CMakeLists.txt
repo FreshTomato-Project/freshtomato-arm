@@ -14,7 +14,7 @@ if(CMAKE_C_FLAGS_RELWITHDEBINFO)
 endif()
 
 project(libjpeg-turbo C)
-set(VERSION 3.2.0)
+set(VERSION 3.2.1)
 set(COPYRIGHT_YEAR "1991-2026")
 string(REPLACE "." ";" VERSION_TRIPLET ${VERSION})
 list(GET VERSION_TRIPLET 0 VERSION_MAJOR)
@@ -81,12 +81,6 @@ set(CMAKE_MACOSX_BUNDLE FALSE)
 
 get_property(GENERATOR_IS_MULTI_CONFIG GLOBAL PROPERTY
   GENERATOR_IS_MULTI_CONFIG)
-# If the GENERATOR_IS_MULTI_CONFIG property doesn't exist (CMake < 3.9), then
-# set the GENERATOR_IS_MULTI_CONFIG variable manually if the generator is
-# Visual Studio or Xcode (the only multi-config generators in CMake < 3.9).
-if(NOT GENERATOR_IS_MULTI_CONFIG AND (MSVC_IDE OR XCODE))
-  set(GENERATOR_IS_MULTI_CONFIG TRUE)
-endif()
 
 string(TIMESTAMP DEFAULT_BUILD "%Y%m%d")
 set(BUILD ${DEFAULT_BUILD} CACHE STRING "Build string (default: ${DEFAULT_BUILD})")
@@ -107,12 +101,14 @@ include(cmakescripts/PackageInfo.cmake)
 math(EXPR BITS "${CMAKE_SIZEOF_VOID_P} * 8")
 string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} CMAKE_SYSTEM_PROCESSOR_LC)
 set(COUNT 1)
-foreach(ARCH ${CMAKE_OSX_ARCHITECTURES})
-  if(COUNT GREATER 1)
-    message(FATAL_ERROR "${CMAKE_PROJECT_NAME} contains assembly code, so it cannot be built with multiple values in CMAKE_OSX_ARCHITECTURES.")
-  endif()
-  math(EXPR COUNT "${COUNT}+1")
-endforeach()
+if(WITH_SIMD OR NOT DEFINED WITH_SIMD)
+  foreach(ARCH ${CMAKE_OSX_ARCHITECTURES})
+    if(COUNT GREATER 1)
+      message(FATAL_ERROR "${CMAKE_PROJECT_NAME} contains assembly code, so it cannot be built with multiple values in CMAKE_OSX_ARCHITECTURES.")
+    endif()
+    math(EXPR COUNT "${COUNT}+1")
+  endforeach()
+endif()
 if(CMAKE_SYSTEM_PROCESSOR_LC MATCHES "x86_64" OR
   CMAKE_SYSTEM_PROCESSOR_LC MATCHES "amd64" OR
   CMAKE_SYSTEM_PROCESSOR_LC MATCHES "i[0-9]86" OR
@@ -455,7 +451,7 @@ if(MSVC_LIKE)
     # Use the static C library for all build types
     if(CMAKE_BUILD_TYPE_UC STREQUAL "DEBUG")
       set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
-    elseif(MSVC_IDE)
+    elseif(GENERATOR_IS_MULTI_CONFIG)
       set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
       set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
@@ -519,26 +515,21 @@ if(UNIX)
   if(CMAKE_CROSSCOMPILING)
     set(RIGHT_SHIFT_IS_UNSIGNED 0)
   else()
-    include(CheckCSourceRuns)
-    check_c_source_runs("
-      #include <stdio.h>
-      #include <stdlib.h>
-      static int is_shifting_signed (long arg) {
-        long res = arg >> 4;
-        if (res == -0x7F7E80CL)
-          return 1; /* right shift is signed */
-        /* see if unsigned-shift hack will fix it. */
-        /* we can't just test exact value since it depends on width of long... */
-        res |= 0xFFFFFFFFL << (32-4);
-        if (res == -0x7F7E80CL)
-          return 0; /* right shift is unsigned */
-        printf(\"Right shift isn't acting as I expect it to.\\\\n\");
-        printf(\"I fear the JPEG software will not work at all.\\\\n\\\\n\");
-        return 0; /* try it with unsigned anyway */
-      }
-      int main (void) {
-        exit(is_shifting_signed(-0x7F7E80B1L));
-      }" RIGHT_SHIFT_IS_UNSIGNED)
+    try_run(RIGHT_SHIFT_IS_UNSIGNED RIGHT_SHIFT_IS_UNSIGNED_COMPILES
+      ${CMAKE_CURRENT_BINARY_DIR}
+      ${CMAKE_SOURCE_DIR}/cmakescripts/right_shift_is_unsigned.c)
+    if(RIGHT_SHIFT_IS_UNSIGNED EQUAL 1)
+      message(STATUS "Right shift is unsigned")
+    elseif(RIGHT_SHIFT_IS_UNSIGNED EQUAL 0)
+      message(STATUS "Right shift is signed")
+    elseif(RIGHT_SHIFT_IS_UNSIGNED EQUAL 2)
+      message(FATAL_ERROR
+        "Could not determine whether right shift is signed or unsigned.")
+    else()
+      message(WARNING
+        "Could not determine whether right shift is signed or unsigned.  Assuming signed.  (This is normal if cross-compiling.)")
+      set(RIGHT_SHIFT_IS_UNSIGNED 0)
+    endif()
   endif()
 endif()
 
@@ -729,16 +720,35 @@ if(WITH_JNA)
 endif()
 
 if(WITH_TURBOJPEG OR WITH_TOOLS OR WITH_TESTS)
+  # Only the in-tree version of libspng is thoroughly tested by our project
+  # (including fuzz testing) and is subject to our quality control and version
+  # control processes.  Few operating systems and packaging environments
+  # provide libspng, and the version they provide may or may not have the same
+  # bug fixes as our in-tree version.  This option should only be enabled by
+  # those who are willing to assume the quality control, version control, and
+  # support burden of the combined solution.
   option(WITH_SYSTEM_SPNG
-    "Build ${CMAKE_PROJECT_NAME} against the system-supplied libspng implementation rather than the implementation in the ${CMAKE_PROJECT_NAME} source tree"
+    "Build ${CMAKE_PROJECT_NAME} against the system-supplied libspng implementation rather than the implementation in the ${CMAKE_PROJECT_NAME} source tree (Experimental)"
     OFF)
   boolean_number(WITH_SYSTEM_SPNG)
   report_option(WITH_SYSTEM_SPNG "System-supplied libspng")
   if(WITH_SYSTEM_SPNG)
-    include(FindPkgConfig)
-    pkg_check_modules(spng REQUIRED spng IMPORTED_TARGET)
+    find_package(SPNG CONFIG QUIET)
+    if(SPNG_FOUND)
+      if(TARGET spng::spng)
+        set(SPNG_TARGET_DEFAULT spng::spng)
+      elseif(TARGET spng::spng_static)
+        set(SPNG_TARGET_DEFAULT spng::spng_static)
+      endif()
+    else()
+      include(FindPkgConfig)
+      pkg_check_modules(spng REQUIRED spng IMPORTED_TARGET)
+      set(SPNG_TARGET_DEFAULT PkgConfig::spng)
+    endif()
+    set(SPNG_TARGET ${SPNG_TARGET_DEFAULT} CACHE STRING
+      "The imported target to use when linking libspng")
     unset(SPNG_STATIC_SOURCES)
-    set(SPNG_LIBRARY PkgConfig::spng)
+    set(SPNG_LIBRARY ${SPNG_TARGET})
   else()
     option(WITH_SYSTEM_ZLIB
       "Build ${CMAKE_PROJECT_NAME} against the system-supplied zlib implementation rather than the implementation in the ${CMAKE_PROJECT_NAME} source tree"
@@ -950,6 +960,10 @@ if(ENABLE_STATIC)
       endif()
       if(ZLIB_LIBRARY)
         target_link_libraries(bmpsizetest-static ${ZLIB_LIBRARY})
+      else()
+        target_include_directories(bmpsizetest-static PRIVATE
+          ${CMAKE_SOURCE_DIR}/src/spng/zlib)
+        target_compile_definitions(bmpsizetest-static PRIVATE Z_PREFIX)
       endif()
     endif()
   endif()
@@ -1460,13 +1474,13 @@ foreach(libtype ${TEST_LIBTYPES})
       set(MD5_JPEG_RGB_ISLOW2 b811e5ad807beb9384e51ef6a47f715d)
       set(MD5_PPM_RGB_ISLOW 00a257f5393fef8821f2b88ac7421291)
       set(MD5_BMP_RGB_ISLOW_565 f07d2e75073e4bb10f6c6f4d36e2e3be)
-      set(MD5_BMP_RGB_ISLOW_565D 4cfa0928ef3e6bb626d7728c924cfda4)
+      set(MD5_PPM_RGB_ISLOW_565D cad7899c270831ec79dc110f05df5c80)
       set(MD5_JPEG_422_IFAST_OPT 2540287b79d913f91665e660303ab2c8)
       set(MD5_PPM_422_IFAST 35bd6b3f833bad23de82acea847129fa)
       set(MD5_JPEG_440_ISLOW 538bc02bd4b4658fd85de6ece6cbeda6)
       set(MD5_PPM_440_ISLOW 11e7eab7ef7ef3276934bb7e7b6bb377)
       set(MD5_PPM_422M_IFAST 8dbc65323d62cca7c91ba02dd1cfa81d)
-      set(MD5_BMP_422M_IFAST_565 3294bd4d9a1f2b3d08ea6020d0db7065)
+      set(MD5_PPM_422M_IFAST_565 5c6d88c2dff62622fa29670ec1384368)
       set(MD5_BMP_422M_IFAST_565D da98c9c7b6039511be4a79a878a9abc1)
       set(MD5_JPEG_420_IFAST_Q100_PROG 0ba15f9dab81a703505f835f9dbbac6d)
       set(MD5_PPM_420_Q100_IFAST 5a732542015c278ff43635e473a8a294)
@@ -1475,7 +1489,7 @@ foreach(libtype ${TEST_LIBTYPES})
       set(MD5_PPM_GRAY_ISLOW 8d3596c56eace32f205deccc229aa5ed)
       set(MD5_PPM_GRAY_ISLOW_RGB 116424ac07b79e5e801f00508eab48ec)
       set(MD5_BMP_GRAY_ISLOW_565 12f78118e56a2f48b966f792fedf23cc)
-      set(MD5_BMP_GRAY_ISLOW_565D bdbbd616441a24354c98553df5dc82db)
+      set(MD5_PPM_GRAY_ISLOW_565D 0d8df13bfb812bcbd40fd389398d1b2c)
       set(MD5_JPEG_420S_ISLOW_OPT 388708217ac46273ca33086b22827ed8)
 
       set(MD5_JPEG_3x2_FLOAT_PROG_SSE 343e3f8caf8af5986ebaf0bdc13b5c71)
@@ -1499,7 +1513,7 @@ foreach(libtype ${TEST_LIBTYPES})
       set(MD5_PPM_3x2_IFAST fd283664b3b49127984af0a7f118fccd)
       set(MD5_JPEG_420_ISLOW_ARI e986fb0a637a8d833d96e8a6d6d84ea1)
       set(MD5_JPEG_444_ISLOW_PROGARI 0a8f1c8f66e113c3cf635df0a475a617)
-      set(MD5_PPM_420M_IFAST_ARI 57251da28a35b46eecb7177d82d10e0e)
+      set(MD5_PPM_420M_IFAST_ARI 541b4ac6b8f21c282fb5aa7c7e96f028)
       set(MD5_JPEG_420_ISLOW 9a68f56bc76e466aa7e52f415d0f4a5f)
       set(MD5_PPM_420M_ISLOW_2_1 9f9de8c0612f8d06869b960b05abf9c9)
       set(MD5_PPM_420M_ISLOW_15_8 b6875bc070720b899566cc06459b63b7)
@@ -1514,10 +1528,10 @@ foreach(libtype ${TEST_LIBTYPES})
       set(MD5_PPM_420M_ISLOW_1_4 79cd778f8bf1a117690052cacdd54eca)
       set(MD5_PPM_420M_ISLOW_1_8 391b3d4aca640c8567d6f8745eb2142f)
       set(MD5_BMP_420_ISLOW_256 4980185e3776e89bd931736e1cddeee6)
-      set(MD5_BMP_420_ISLOW_565 bf9d13e16c4923b92e1faa604d7922cb)
+      set(MD5_PPM_420_ISLOW_565 70efe087dd300ed1900fd077755c3f08)
       set(MD5_BMP_420_ISLOW_565D 6bde71526acc44bcff76f696df8638d2)
       set(MD5_BMP_420M_ISLOW_565 8dc0185245353cfa32ad97027342216f)
-      set(MD5_BMP_420M_ISLOW_565D ce034037d212bc403330df6f915c161b)
+      set(MD5_PPM_420M_ISLOW_565D 2077a19977c92ca9e5676af9b08e5b7a)
       set(MD5_JPEG_LOSSLESS fc777b82d42d835ae1282ba1ee87c209)
       set(MD5_PPM_LOSSLESS 64072f1dbdc5b3a187777788604971a5)
       set(MD5_PPM_420_ISLOW_SKIP15_31 c4c65c1e43d7275cd50328a61e6534f0)
@@ -1562,9 +1576,9 @@ foreach(libtype ${TEST_LIBTYPES})
         ${MD5_BMP_RGB_ISLOW_565} ${cjpeg}-${libtype}-rgb-islow)
 
       # CC: RGB->RGB565 (dithered)  SAMP: fullsize  IDCT: islow  ENT: huff
-      add_bittest(${djpeg} rgb-islow-565D "-dct;int;-rgb565;-bmp"
-        ${testout}_rgb_islow_565D.bmp ${testout}_rgb_islow.jpg
-        ${MD5_BMP_RGB_ISLOW_565D} ${cjpeg}-${libtype}-rgb-islow)
+      add_bittest(${djpeg} rgb-islow-565D "-dct;int;-rgb565"
+        ${testout}_rgb_islow_565D.ppm ${testout}_rgb_islow.jpg
+        ${MD5_PPM_RGB_ISLOW_565D} ${cjpeg}-${libtype}-rgb-islow)
     endif()
 
     # CC: RGB->YCC  SAMP: fullsize/h2v1  FDCT: ifast  ENT: 2-pass huff
@@ -1595,9 +1609,9 @@ foreach(libtype ${TEST_LIBTYPES})
     if(sample_bits EQUAL 8)
       # CC: YCC->RGB565  SAMP: h2v1 merged  IDCT: ifast  ENT: huff
       add_bittest(${djpeg} 422m-ifast-565
-        "-dct;int;-nosmooth;-rgb565;-dither;none;-bmp"
-        ${testout}_422m_ifast_565.bmp ${testout}_422_ifast_opt.jpg
-        ${MD5_BMP_422M_IFAST_565} ${cjpeg}-${libtype}-422-ifast-opt)
+        "-dct;int;-nosmooth;-rgb565;-dither;none"
+        ${testout}_422m_ifast_565.ppm ${testout}_422_ifast_opt.jpg
+        ${MD5_PPM_422M_IFAST_565} ${cjpeg}-${libtype}-422-ifast-opt)
 
       # CC: YCC->RGB565 (dithered)  SAMP: h2v1 merged  IDCT: ifast  ENT: huff
       add_bittest(${djpeg} 422m-ifast-565D "-dct;int;-nosmooth;-rgb565;-bmp"
@@ -1643,9 +1657,9 @@ foreach(libtype ${TEST_LIBTYPES})
         ${MD5_BMP_GRAY_ISLOW_565} ${cjpeg}-${libtype}-gray-islow)
 
       # CC: Gray->RGB565 (dithered)  SAMP: fullsize  IDCT: islow  ENT: huff
-      add_bittest(${djpeg} gray-islow-565D "-dct;int;-rgb565;-bmp"
-        ${testout}_gray_islow_565D.bmp ${testout}_gray_islow.jpg
-        ${MD5_BMP_GRAY_ISLOW_565D} ${cjpeg}-${libtype}-gray-islow)
+      add_bittest(${djpeg} gray-islow-565D "-dct;int;-rgb565"
+        ${testout}_gray_islow_565D.ppm ${testout}_gray_islow.jpg
+        ${MD5_PPM_GRAY_ISLOW_565D} ${cjpeg}-${libtype}-gray-islow)
     endif()
 
     # CC: RGB->YCC  SAMP: fullsize smooth/h2v2 smooth  FDCT: islow
@@ -1739,9 +1753,9 @@ foreach(libtype ${TEST_LIBTYPES})
         ${MD5_BMP_420_ISLOW_256})
 
       # CC: YCC->RGB565  SAMP: h2v2 fancy  IDCT: islow  ENT: huff
-      add_bittest(${djpeg} 420-islow-565 "-dct;int;-rgb565;-dither;none;-bmp"
-        ${testout}_420_islow_565.bmp ${JPEGIMG}
-        ${MD5_BMP_420_ISLOW_565})
+      add_bittest(${djpeg} 420-islow-565 "-dct;int;-rgb565;-dither;none"
+        ${testout}_420_islow_565.ppm ${JPEGIMG}
+        ${MD5_PPM_420_ISLOW_565})
 
       # CC: YCC->RGB565 (dithered)  SAMP: h2v2 fancy  IDCT: islow  ENT: huff
       add_bittest(${djpeg} 420-islow-565D "-dct;int;-rgb565;-bmp"
@@ -1755,9 +1769,9 @@ foreach(libtype ${TEST_LIBTYPES})
         ${MD5_BMP_420M_ISLOW_565})
 
       # CC: YCC->RGB565 (dithered)  SAMP: h2v2 merged  IDCT: islow  ENT: huff
-      add_bittest(${djpeg} 420m-islow-565D "-dct;int;-nosmooth;-rgb565;-bmp"
-        ${testout}_420m_islow_565D.bmp ${JPEGIMG}
-        ${MD5_BMP_420M_ISLOW_565D})
+      add_bittest(${djpeg} 420m-islow-565D "-dct;int;-nosmooth;-rgb565"
+        ${testout}_420m_islow_565D.ppm ${JPEGIMG}
+        ${MD5_PPM_420M_ISLOW_565D})
     endif()
 
     # Lossless (all arguments other than -lossless and -restart should have no
@@ -1882,10 +1896,20 @@ add_custom_target(croptest
   COMMAND echo croptest
   COMMAND ${BASH} ${CMAKE_CURRENT_BINARY_DIR}/test/croptest)
 
+configure_file(test/droptest.in test/droptest @ONLY)
+add_custom_target(droptest
+  COMMAND echo droptest
+  COMMAND ${BASH} ${CMAKE_CURRENT_BINARY_DIR}/test/droptest)
+
 configure_file(test/indexedcolortest.in test/indexedcolortest @ONLY)
 add_custom_target(indexedcolortest
   COMMAND echo indexedcolortest
   COMMAND ${BASH} ${CMAKE_CURRENT_BINARY_DIR}/test/indexedcolortest)
+
+configure_file(test/rgb565test.in test/rgb565test @ONLY)
+add_custom_target(rgb565test
+  COMMAND echo rgb565test
+  COMMAND ${BASH} ${CMAKE_CURRENT_BINARY_DIR}/test/rgb565test)
 
 if(WITH_TURBOJPEG)
   configure_file(test/tjbenchtest.in test/tjbenchtest @ONLY)

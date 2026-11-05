@@ -22,7 +22,6 @@
 #cmakedefine HAVE_VLD1_S16_X3
 #cmakedefine HAVE_VLD1_U16_X2
 #cmakedefine HAVE_VLD1Q_U8_X4
-#cmakedefine WITH_SIMDE
 
 #if defined(WITH_SIMDE) && !defined(__EMSCRIPTEN__)
 #define SIMDE_ENABLE_NATIVE_ALIASES

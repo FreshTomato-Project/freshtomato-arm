@@ -94,8 +94,13 @@ init_simd(j_common_ptr cinfo)
 #endif
   if (!GETENV_S(env, 2, "JSIMD_FORCENONE") && !strcmp(env, "1"))
     simd_support = 0;
+#ifdef WITH_SIMDE
+  if (!GETENV_S(env, 2, "JSIMD_HUFFENC") && !strcmp(env, "1"))
+    simd_huffman = 1;
+#else
   if (!GETENV_S(env, 2, "JSIMD_NOHUFFENC") && !strcmp(env, "1"))
     simd_huffman = 0;
+#endif
 #endif
 
   if (cinfo->is_decompressor) {

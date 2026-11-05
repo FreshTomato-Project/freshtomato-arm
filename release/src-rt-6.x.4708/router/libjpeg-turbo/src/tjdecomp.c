@@ -34,7 +34,6 @@
  * - OS/2 BMP, GIF, and Targa output file formats [legacy feature]
  * - Color quantization and dithering [legacy feature]
  * - The floating-point IDCT method [legacy feature]
- * - Extracting an ICC color management profile
  * - Progress reporting
  * - Skipping rows (i.e. exclusive rather than inclusive partial decompression)
  * - Debug output
@@ -342,9 +341,10 @@ int main(int argc, char **argv)
       sampleSize > (unsigned long long)((size_t)-1))
     THROW("allocating uncompressed image buffer", "Image is too large");
 #endif
+
   if ((dstBuf =
-       (unsigned char *)malloc(width * height * tjPixelSize[pixelFormat] *
-                               sampleSize)) == NULL)
+       (unsigned char *)malloc((size_t)width * height *
+                               tjPixelSize[pixelFormat] * sampleSize)) == NULL)
     THROW_UNIX("allocating uncompressed image buffer");
 
   if (precision <= 8) {

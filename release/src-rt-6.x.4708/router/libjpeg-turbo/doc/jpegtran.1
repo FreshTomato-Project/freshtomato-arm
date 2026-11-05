@@ -1,4 +1,4 @@
-.TH JPEGTRAN 1 "19 Mar 2026"
+.TH JPEGTRAN 1 "7 October 2026"
 .SH NAME
 jpegtran \- lossless transformation of JPEG files
 .SH SYNOPSIS
@@ -69,7 +69,8 @@ Use arithmetic coding.
 .TP
 .BI \-restart " N"
 Emit a JPEG restart marker every N MCU rows, or every N MCUs if "B" is attached
-to the number.
+to the number.  The default is to emit no restart markers, even if the source
+file contains them.
 .TP
 .BI \-scans " file"
 Use the scan script given in the specified text file.
@@ -176,6 +177,10 @@ output image covers at least the requested region, but it may cover more.  The
 adjustment of the region dimensions may be optionally disabled by attaching
 an 'f' character ("force") to the width or height number.
 
+Note that lossless cropping is performed after any other oeprations, so the
+coordinates and iMCU boundaries are relative to the flipped/rotated/tranposed
+image.
+
 The image can be losslessly cropped by giving the switch:
 .TP
 .B \-crop WxH+X+Y
@@ -241,9 +246,8 @@ quantization of the output image will be adapted to accommodate the higher of
 the input image quality and the drop image quality.  The trim option can be
 used with the drop option to requantize the drop image to match the input
 image.  Note that a grayscale image can be dropped into a full-color image or
-vice versa, as long as the full-color image has no vertical subsampling.  If
-the input image is grayscale and the drop image is full-color, then the
-chrominance channels from the drop image will be discarded.
+vice versa.  If the input image is grayscale and the drop image is full-color,
+then the chrominance channels from the drop image will be discarded.
 .PP
 Other not-strictly-lossless transformation switches are:
 .TP

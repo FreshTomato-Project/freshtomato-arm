@@ -120,7 +120,10 @@ DLLEXPORT int GET_NAME(tj3Compress, BITS_IN_JSAMPLE)
 
   setCompDefaults(this, pixelFormat, FALSE);
   if (this->noRealloc) alloc = FALSE;
+  CHECK_DESTINATION_MGRS(1);
+  cinfo->dest = this->dstMgrs[0];
   jpeg_mem_dest_tj(cinfo, jpegBuf, jpegSize, alloc);
+  this->dstMgrs[0] = cinfo->dest;
 
   jpeg_start_compress(cinfo, TRUE);
   if (this->iccBuf != NULL && this->iccSize != 0)
@@ -336,7 +339,7 @@ _JSAMPLE *GET_NAME(_tj3LoadImageFromFileHandle, BITS_IN_JSAMPLE)
   else if (tempc == EOF)
     THROW("Input file contains no data");
 
-  CATCH_LIBJPEG(this2);
+  CATCH_LIBJPEG2();
 
   cinfo->data_precision = BITS_IN_JSAMPLE;
   if (*pixelFormat == TJPF_UNKNOWN) cinfo->in_color_space = JCS_UNKNOWN;
@@ -370,10 +373,7 @@ _JSAMPLE *GET_NAME(_tj3LoadImageFromFileHandle, BITS_IN_JSAMPLE)
   } else
     THROW("Unsupported file type");
 
-  if (setjmp(this2->jerr.setjmp_buffer)) {
-    /* If we get here, the JPEG code has signaled an error. */
-    retval = -1;  goto bailout;
-  }
+  CATCH_LIBJPEG2();
 
   cinfo->mem->max_memory_to_use = (long)this->maxMemory * 1048576L;
 
@@ -402,16 +402,18 @@ _JSAMPLE *GET_NAME(_tj3LoadImageFromFileHandle, BITS_IN_JSAMPLE)
   *pixelFormat = cs2pf[cinfo->in_color_space];
 
   pitch = PAD((*width) * tjPixelSize[*pixelFormat], align);
+
   if (
 #if ULLONG_MAX > SIZE_MAX
-      (unsigned long long)pitch * (unsigned long long)(*height) >
+      (unsigned long long)pitch * (unsigned long long)(*height) *
+      (unsigned long long)sizeof(_JSAMPLE) >
       (unsigned long long)((size_t)-1) ||
 #endif
       (dstBuf = (_JSAMPLE *)malloc(pitch * (*height) *
                                    sizeof(_JSAMPLE))) == NULL)
     THROW("Memory allocation failure");
 
-  CATCH_LIBJPEG(this2);
+  CATCH_LIBJPEG2();
 
   while (cinfo->next_scanline < cinfo->image_height) {
     int i, nlines = (*src->get_pixel_rows) (cinfo, src);
@@ -531,7 +533,7 @@ DLLEXPORT int GET_NAME(tj3SaveImage, BITS_IN_JSAMPLE)
 #endif
     THROW_UNIX("Cannot open output file");
 
-  CATCH_LIBJPEG(this2);
+  CATCH_LIBJPEG2();
 
   this2->dinfo.out_color_space = pf2cs[pixelFormat];
   dinfo->image_width = width;  dinfo->image_height = height;

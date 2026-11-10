@@ -11,7 +11,7 @@ No part of this file may be used without permission.
 <meta http-equiv="content-type" content="text/html;charset=utf-8">
 <meta name="robots" content="noindex,nofollow">
 <title>[<% ident(); %>] Shutting down...</title>
-<link rel="stylesheet" type="text/css" href="tomato.css?rel=<% version(); %>">
+<link rel="stylesheet" type="text/css" href="tomato.css?r=@GIT_HASH@">
 <% css(); %>
 <script src="tomato.js"></script>
 <script>

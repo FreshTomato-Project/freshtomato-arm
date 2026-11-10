@@ -12,13 +12,13 @@
 <meta http-equiv="content-type" content="text/html;charset=utf-8">
 <meta name="robots" content="noindex,nofollow">
 <title>[<% ident(); %>] Basic: Network</title>
-<link rel="stylesheet" type="text/css" href="tomato.css?rel=<% version(); %>">
+<link rel="stylesheet" type="text/css" href="tomato.css?r=@GIT_HASH@">
 <% css(); %>
-<script src="tomato.js?rel=<% version(); %>"></script>
-<script src="md5.js?rel=<% version(); %>"></script>
+<script src="tomato.js?r=@GIT_HASH@"></script>
+<script src="md5.js?r=@GIT_HASH@"></script>
 <script src="wireless.jsx?_http_id=<% nv(http_id); %>"></script>
-<script src="interfaces.js?rel=<% version(); %>"></script>
-<script src="wireless.js?rel=<% version(); %>"></script>
+<script src="interfaces.js?r=@GIT_HASH@"></script>
+<script src="wireless.js?r=@GIT_HASH@"></script>
 <script>
 
 //	<% nvram("dhcp_lease,dhcpd_startip,dhcpd_endip,lan_dhcp,lan_gateway,lan_ipaddr,lan_netmask,lan_proto,lan_state,lan_desc,lan_invert,wl_security_mode,wl_wds_enable,wl_channel,wl_closed,wl_crypto,wl_key,wl_key1,wl_key2,wl_key3,wl_key4,wl_clap_hwaddr,wl_lazywds,wl_mode,wl_net_mode,wl_passphrase,wl_radio,wl_radius_ipaddr,wl_radius_port,wl_ssid,wl_wds,wl_wep_bit,wl_wpa_gtk_rekey,wl_wpa_psk,wl_radius_key,wl_auth,wl_hwaddr,t_features,wl_nbw_cap,wl_nctrlsb,wl_nband,wl_phytype,lan_ifname,lan_stp,cstats_enable,wan_proto,wan_weight,wan_modem_type,wan_modem_pin,wan_modem_dev,wan_modem_init,wan_modem_apn,wan_modem_speed,wan_modem_band,wan_modem_roam,wan_ppp_username,wan_ppp_passwd,wan_ppp_service,wan_l2tp_server_ip,wan_pptp_dhcp,wan_ipaddr,wan_netmask,wan_gateway,wan_pptp_server_ip,wan_ppp_custom,wan_ppp_demand,wan_ppp_idletime,wan_ppp_demand_dnsip,wan_ppp_redialperiod,wan_pppoe_lei,wan_pppoe_lef,wan_mtu_enable,wan_mtu,wan_ppp_mlppp,wan_modem_ipaddr,wan_sta,wan_dns,wan_dns_auto,wan_ifnameX,wan_ckmtd,wan_ck_pause,mwan_num,mwan_cktime,mwan_ckdst,mwan_tune_gc,wan_hilink_ip,wan_status_script,dnscrypt_proxy,dnscrypt_priority,stubby_proxy,stubby_priority,dhcp_moveip,smart_connect_x"); %>

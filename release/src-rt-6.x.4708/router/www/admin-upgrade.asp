@@ -14,7 +14,7 @@
 <title>[<% ident(); %>] Admin: Upgrade</title>
 <link rel="stylesheet" type="text/css" href="tomato.css">
 <% css(); %>
-<script src="tomato.js"></script>
+<script src="tomato.js?r=@GIT_HASH@"></script>
 
 <script>
 
@@ -169,7 +169,7 @@ function earlyInit() {
 				                       null,
 				                       { title: '&nbsp;',text: 'Select a <a href="https://freshtomato.org/downloads/"> valid firmware<\/a> to install (.trx or .bin):' },
 				                       { title: 'Current File:',text: '<span id="afu-fname" class="disabled"><\/span>' },
-				                       { title: 'Upgrade File:',text: '<div id="afu-selected-fname"><\/div><input type="file" id="afu-file" name="file" class="afu-file-input" onchange="updateFilenameDiff()">' },
+				                       { title: 'Upgrade File:',text: '<div id="afu-selected-fname"><\/div>'+filePicker('afu-file', 'file', '', 'updateFilenameDiff()') },
 				                       { title: '&nbsp;',text: '<input type="button" id="afu-upgrade-button" value="🛠️ Upgrade" onclick="upgrade()">' }
 				]);
 				</script>

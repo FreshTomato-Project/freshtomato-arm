@@ -1126,8 +1126,9 @@ img[id^="barnoise_"] {
 	white-space: nowrap;
 }
 
-.import-file {
-	width: 80%;
+.file-picker-name {
+	margin: 0 8px;
+	word-wrap: break-word;
 }
 
 #qos-cl-grid .x2c {
@@ -2109,29 +2110,12 @@ span.pptpsvg {
 	transform: rotate(90deg);
 }
 
-.afu-file-input {
-	border: none !important;
-	min-width: 0 !important;
-	width: 90px;
-	height: 26px;
-	overflow: hidden;
-	color: transparent;
-	font: inherit;
-	font-size: 0;
-	display: inline-block;
-	vertical-align: middle;
-}
-
 #afu-selected-fname {
 	display: inline;
-	margin-right: 8px;
-
 }
 
-.afu-file-input::file-selector-button {
-	color: ButtonText;
-	font: inherit;
-	font-size: 13px;
+#afu-selected-fname:not(:empty) {
+	margin-right: 8px;
 }
 
 .afu-diff {

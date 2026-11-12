@@ -10700,6 +10700,9 @@ int init_main(int argc, char *argv[])
 	unsigned int i;
 	int state;
 	sigset_t sigset;
+#ifdef TCONFIG_EA6500V1
+	int first_start = 1;
+#endif
 
 	/* failsafe? */
 	nvram_unset("debug_rc_svc");
@@ -10873,6 +10876,21 @@ int init_main(int argc, char *argv[])
 			}
 
 			logmsg(LOG_INFO, "%s: FreshTomato %s", nvram_safe_get("t_model_name"), tomato_version);
+
+#ifdef TCONFIG_EA6500V1
+			/* Only acknowledge the first startup from the supported NAND slot. */
+			if (first_start) {
+				first_start = 0;
+				if (get_model() == MODEL_EA6500V1 &&
+				    nvram_match("bootpartition", "0") &&
+				    nvram_get_int("partialboots") > 0) {
+					if (!wait_action_idle(10))
+						logmsg(LOG_ERR, "EA6500v1: NVRAM busy, boot not acknowledged");
+					else if (nvram_set("partialboots", "0") != 0 || nvram_commit() != 0)
+						logmsg(LOG_ERR, "EA6500v1: failed to reset partialboots");
+				}
+			}
+#endif
 
 			led(LED_DIAG, LED_OFF);
 

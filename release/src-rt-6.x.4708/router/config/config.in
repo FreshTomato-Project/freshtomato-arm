@@ -482,6 +482,9 @@ config TCONFIG_WNDR4500V1
 config TCONFIG_WNDR4500V2
 	bool "Flag to distinguish Netgear WNDR4500 v2 from R6300 v1 and WNDR4500 v1"
 
+config TCONFIG_EA6500V1
+	bool "Linksys EA6500 v1"
+
 endchoice
 
 config TCONFIG_AC3200

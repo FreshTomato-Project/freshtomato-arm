@@ -115,6 +115,7 @@ TCONFIG_SAMBASRV=y
 # TCONFIG_R6300V1 is not set
 # TCONFIG_WNDR4500V1 is not set
 # TCONFIG_WNDR4500V2 is not set
+# TCONFIG_EA6500V1 is not set
 # TCONFIG_AC3200 is not set
 # TCONFIG_AC5300 is not set
 # TCONFIG_DHDAP is not set

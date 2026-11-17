@@ -365,7 +365,7 @@ static void write_dhcp_ranges(FILE *f, int *do_dhcpd_hosts, int *do_dns_ptr, cha
 					if (dns->count == 0 && nvram_get_int("dhcpd_llndns")) {
 						/* no DNS might be temporary. use a low lease time to force clients to update. */
 						dhcp_lease = 2;
-						strlcpy(sdhcp_lease, "2m", sizeof(sdhcp_lease));
+						strlcpy(sdhcp_lease, "2m", buf_sz);
 						do_dns = 1;
 					}
 					else {
@@ -956,7 +956,7 @@ void start_dnsmasq(void) {
 	FILE *hf = NULL;
 	int mwan_num, do_dhcpd_hosts = 0;
 	int do_dns = nvram_get_int("dhcpd_dmdns");
-	char sdhcp_lease[32];
+	char sdhcp_lease[32] = "";
 
 	if (serialize_restart("dnsmasq", 1))
 		return;

@@ -4,9 +4,11 @@
 
 . nvram_ops
 
-ver="v2.72j - 10/13" # rs232, pedro
+ver="v2.72k - 11/17" # rs232, pedro
 PID=$$
 pidfile="/var/run/adblock.pid"
+lockdir="/var/run/adblock.lock"
+lockHeld=0
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/home/root
 pre=$(date +%s)
 alias only="sed -e 's/^[ \t]*//' | grep -Ev '^($|#|!)' | sort"
@@ -41,34 +43,127 @@ adblockPidIsRunning() {
 	case "$1" in
 		''|0|*[!0-9]*) return 1 ;;
 	esac
-
 	[ "$1" != "$PID" ] || return 1
 	[ -r "/proc/$1/cmdline" ] || return 1
+	# Accept both the firmware's adblock and locally named test copies.
+	tr '\000' '\n' < "/proc/$1/cmdline" 2>/dev/null |
+		grep -Eq '(^|/)(adblock|adblock-v2[^/]*)$'
+}
 
-	# Match a real argv element named adblock, not an arbitrary command line
-	# which merely contains the word (for example the calling SSH shell).
-	tr '\000' '\n' < "/proc/$1/cmdline" 2>/dev/null | grep -Eq '(^|/)adblock$'
+adblockProcStart() {
+	# /proc/PID/stat field 22 is starttime; fields 1-2 contain pid/comm.
+	# Remove through the last ")" so spaces inside comm do not shift fields.
+	[ -r "/proc/$1/stat" ] || return 1
+	sed 's/^.*) //' "/proc/$1/stat" 2>/dev/null | awk '{print $20}'
+}
+
+adblockLockOwnerAlive() {
+	case "$1" in ''|0|*[!0-9]*) return 1 ;; esac
+	case "$2" in ''|0|*[!0-9]*) return 1 ;; esac
+	[ "$(adblockProcStart "$1")" = "$2" ]
+}
+
+releaseAdblockLock() {
+	[ "$lockHeld" -eq 1 ] || return 0
+	# Only the original owner is allowed to remove the shared PID/lock.
+	read lockPid lockStart < "$lockdir/owner" 2>/dev/null || return 0
+	[ "$lockPid" = "$PID" ] && [ "$lockStart" = "$myStart" ] || return 0
+	rm -f "$pidfile" "$lockdir/owner"
+	rmdir "$lockdir" 2>/dev/null
+	lockHeld=0
+}
+
+acquireAdblockLock() {
+	myStart=$(adblockProcStart "$PID")
+	[ -n "$myStart" ] || { loge "Cannot read own process starttime; refusing update."; return 1; }
+
+	# Compatibility with old firmware processes which do not use lockdir.
+	if [ -f "$pidfile" ] && [ ! -d "$lockdir" ]; then
+		legacyPid=$(cat "$pidfile" 2>/dev/null)
+		if adblockPidIsRunning "$legacyPid"; then
+			logn "Adblock/DNS-filtering is already loading (legacy PID $legacyPid). Skipping call..."
+			return 1
+		fi
+		logw "Removing orphaned legacy Adblock PID file ($legacyPid)."
+		rm -f "$pidfile" || return 1
+	fi
+
+	lockAttempts=0
+	while [ "$lockAttempts" -lt 3 ]; do
+		lockAttempts=$((lockAttempts + 1))
+		if mkdir "$lockdir" 2>/dev/null; then
+			if ! printf '%s %s\n' "$PID" "$myStart" > "$lockdir/owner"; then
+				rmdir "$lockdir" 2>/dev/null
+				loge "Unable to write Adblock lock owner."
+				return 1
+			fi
+			lockHeld=1
+			if ! printf '%s\n' "$PID" > "$pidfile"; then
+				loge "Unable to create Adblock PID file."
+				releaseAdblockLock
+				return 1
+			fi
+			trap 'releaseAdblockLock' EXIT
+			trap 'exit 129' HUP
+			trap 'exit 130' INT
+			trap 'exit 143' TERM
+			return 0
+		fi
+
+		[ -d "$lockdir" ] || {
+			loge "Cannot create Adblock lock directory $lockdir."
+			return 1
+		}
+		lockPid="" lockStart=""
+		read lockPid lockStart < "$lockdir/owner" 2>/dev/null || :
+		if adblockLockOwnerAlive "$lockPid" "$lockStart"; then
+			logn "Adblock/DNS-filtering is already loading (PID $lockPid). Skipping call..."
+			return 1
+		fi
+
+		# A newly created, not-yet-populated lock must not be stolen.
+		lockAge=$(( $(date +%s) - $(date -r "$lockdir" +%s) ))
+		[ "$lockAge" -ge 5 ] || {
+			logw "Adblock lock is initializing or ambiguous; refusing concurrent update."
+			return 1
+		}
+
+		# An orphaned lock can be removed without killing any process or
+		# restarting dnsmasq. Rename before deletion to avoid path reuse.
+		staleLock="${lockdir}.stale.${PID}"
+		[ ! -e "$staleLock" ] || {
+			loge "Cannot recover Adblock lock: stale cleanup path already exists."
+			return 1
+		}
+		if mv "$lockdir" "$staleLock" 2>/dev/null; then
+			logw "Recovered orphaned Adblock lock (previous PID ${lockPid:-unknown})."
+			rm -rf "$staleLock"
+			rm -f "$pidfile"
+		else
+			logw "Adblock lock changed during recovery; refusing update."
+			return 1
+		fi
+	done
+	loge "Unable to acquire Adblock lock after stale recovery."
+	return 1
 }
 
 stopRunningAdblock() {
 	adpid=$(cat "$pidfile" 2>/dev/null)
 	adblockPidIsRunning "$adpid" || return 0
-
-	logn "Stopping stale/running Adblock process $adpid"
+	logn "Stopping running Adblock process $adpid"
 	kill -9 "$adpid" 2>/dev/null
 }
 
-( [ -f $pidfile ] && [ $# -eq 0 -o $1 == start -o $1 == update -o $1 == delay ] ) && {
-	# If the pidfile is older than $hold min this is very likely and issue = remove it.
-	[ $((($(date +%s) - $(date -r ${pidfile} +%s))/60)) -gt $hold ] && {
-		stopRunningAdblock
-		rm -f "$pidfile"
-		dnsrestart
-	}
-	logn "Adblock/DNS-filtering is already loading. Skipping call..."
-	echo "Adblock/DNS-filtering is already loading. Skipping call..."
-	exit
-}
+# Lock only commands that may rebuild or start a list, not read-only GUI status.
+case "$1" in
+	''|start|update|delay)
+		acquireAdblockLock || {
+			echo "Adblock update skipped: another instance or an ambiguous lock is present."
+			exit 1
+		}
+		;;
+esac
 
 ( ls -1tr /tmp/adblock.debug.output.* | head -n -10 | while read file; do rm -f $file; done ) 2>/dev/null # Keep maximum 10 debug files
 
@@ -236,6 +331,59 @@ checkRam() {
 		RTN=1
 	}
 	rtn
+}
+
+# Lightweight diagnostics: log tmpfs pressure and intermediate file sizes.
+buildStats() {
+	local stage="$1" free_kb shmem_kb tmp_avail tmp_used tm_bytes tm_lines
+	# Only collect routine metrics when debug logging is enabled.
+	# Failures keep a one-off snapshot at ERROR priority.
+	case "$stage" in
+		failed:*) ;;
+		*) [ "$LOGL" -ge 7 ] || return 0 ;;
+	esac
+	free_kb=$(awk '/^MemFree:/ { print $2; exit }' /proc/meminfo)
+	shmem_kb=$(awk '/^Shmem:/ { print $2; exit }' /proc/meminfo)
+	tmp_used=$(df -k /tmp | awk 'NR==2 {print $3}')
+	tmp_avail=$(df -k /tmp | awk 'NR==2 {print $4}')
+	tm_bytes=0
+	tm_lines=0
+	[ -f "$TM" ] && {
+		tm_bytes=$(wc -c < "$TM")
+		tm_lines=$(wc -l < "$TM")
+	}
+	case "$stage" in
+		failed:*) loge "BUILD[$stage]: temp=${tm_bytes}B/${tm_lines}lines MemFree=${free_kb}KiB Shmem=${shmem_kb}KiB tmpfs_used=${tmp_used}KiB tmpfs_avail=${tmp_avail}KiB" ;;
+		*) logd "BUILD[$stage]: temp=${tm_bytes}B/${tm_lines}lines MemFree=${free_kb}KiB Shmem=${shmem_kb}KiB tmpfs_used=${tmp_used}KiB tmpfs_avail=${tmp_avail}KiB" ;;
+	esac
+}
+
+buildFailed() {
+	loge "BUILD FAILED at $1 (rc=$2). Keeping previous blockfile; no dnsmasq restart."
+	buildStats "failed:$1"
+	erroradd
+	return 1
+}
+
+# Fail closed before an operation needs another large tmpfs file.
+# The floor is deliberately conservative for 256 MiB routers with no swap.
+# These checks do not replace the kernel's memory allocator and cannot
+# eliminate brief allocation spikes inside an individual command.
+buildSpaceGuard() {
+	local stage="$1" extra_bytes="${2:-0}" free_kb memfree_kb need_kb
+	free_kb=$(df -Pk "$PREFIX" 2>/dev/null | awk 'NR==2 {print $4}')
+	memfree_kb=$(awk '/^MemFree:/ {print $2; exit}' /proc/meminfo)
+	case "$free_kb:$memfree_kb:$extra_bytes" in
+		*[!0-9:]*|:*|*::*|*:) buildFailed "space-stat:$stage" 1; return 1 ;;
+	esac
+	# 16 MiB tmpfs reserve, plus the expected temporary output.
+	need_kb=$(( (extra_bytes + 1023) / 1024 + 16384 ))
+	if [ "$free_kb" -lt "$need_kb" ] || [ "$memfree_kb" -lt 32768 ]; then
+		loge "BUILD GUARD[$stage]: tmpfs_free=${free_kb}KiB required=${need_kb}KiB MemFree=${memfree_kb}KiB (minimum 32768KiB)."
+		buildFailed "low-memory:$stage" 1
+		return 1
+	fi
+	return 0
 }
 
 download() {
@@ -426,7 +574,7 @@ download() {
 								erroradd
 							} || {
 								logi "[$COUNT][$SUBLIST][$u] Found $(echo $ENTRIES|number) entries"
-								parsefile "$D/${urinamed}.list" "$u" "$COUNT" "$SUBLIST"
+								parsefile "$D/${urinamed}.list" "$u" "$COUNT" "$SUBLIST" || return 1
 							}
 						}
 					done
@@ -438,13 +586,16 @@ download() {
 					erroradd
 				} || {
 					logi "[$COUNT][$URL] Found $(echo $ENTRIES|number) entries"
-					parsefile "$D/${uriname}.list" "$URL" "$COUNT"
+					parsefile "$D/${uriname}.list" "$URL" "$COUNT" || return 1
 				}
 			}
 		} || {
 			logi "[$COUNT][$URL][$uriname] Disabled."
 		}
 	done
+
+	buildStats "lists-extracted"
+	buildSpaceGuard "lists-extracted" 0 || return 1
 
 	# CUSTOM BLACKLIST
 	[ $(echo $CUSTOM | wc -c) -gt 2 ] && {
@@ -530,23 +681,84 @@ download() {
 	# Strict (%domain) entries are intentionally handled by phases B/C below.
 	echo "$subsed" | tr " " "\n" | grep -v '^%' | domain | sort -u > "$PREFIX/adblock.white"
 	[ -s "$PREFIX/adblock.white" ] && {
-		awk 'NR == FNR { white[$0] = 1; next }
+		# awk writes a second file on the same tmpfs. Never start unless
+		# at least one complete input-sized copy plus the reserve fits.
+		buildSpaceGuard "whitelist-awk" "$(wc -c < "$TM")" || return 1
+		rm -f "$PREFIX/adblock.white.stats"
+		awk -v metrics="$PREFIX/adblock.white.stats" '
+		     NR == FNR { white[$0] = 1; next }
 		     {
+		       input++
 		       d = $0
 		       while (d != "") {
-		         if (d in white)
+		         if (d in white) {
+		           excluded++
 		           next
+		         }
 		         p = index(d, ".")
 		         if (p == 0)
 		           break
 		         d = substr(d, p + 1)
 		       }
 		       print
-		     }' "$PREFIX/adblock.white" "$TM" > "$TM1" && mv -f "$TM1" "$TM"
+		       emitted++
+		     }
+		     END {
+		       printf "%d %d %d\n", input, excluded, emitted > metrics
+		       close(metrics)
+		     }' "$PREFIX/adblock.white" "$TM" > "$TM1"
+		rc=$?
+		if [ "$rc" -ne 0 ]; then
+			buildFailed "whitelist-awk" "$rc"
+			return 1
+		fi
+		if ! read -r whitelist_input whitelist_excluded whitelist_emitted < "$PREFIX/adblock.white.stats"; then
+			buildFailed "whitelist-stats" 1
+			return 1
+		fi
+		written_lines=$(wc -l < "$TM1")
+		if [ "$whitelist_input" -ne "$((whitelist_excluded + whitelist_emitted))" ] ||
+		   [ "$written_lines" -ne "$whitelist_emitted" ]; then
+			loge "Whitelist mismatch: input=$whitelist_input excluded=$whitelist_excluded emitted=$whitelist_emitted written=$written_lines"
+			buildFailed "whitelist-counts" 1
+			return 1
+		fi
+		logd "Whitelist A: input=$whitelist_input excluded=$whitelist_excluded emitted=$whitelist_emitted"
+		mv -f "$TM1" "$TM"
+		rc=$?
+		if [ "$rc" -ne 0 ]; then
+			buildFailed "whitelist-mv" "$rc"
+			return 1
+		fi
 	}
-	rm -f "$PREFIX/adblock.white"
-	# localhost is not a DNS domain accepted by the domain extractor above.
-	sed -i -e '/^localhost$/d' -e '/^$/d' -e "s/.*/local=\/&\//" "$TM" 2>/dev/null
+	rm -f "$PREFIX/adblock.white" "$PREFIX/adblock.white.stats"
+	# Phase A only removes matched domains; the next sed pass should
+	# preserve every remaining non-empty, non-localhost input line.
+	# The wrapper "local=/.../" adds eight bytes per retained line.
+	pre_sed_lines=$(wc -l < "$TM") || { buildFailed "whitelist-sed-input-stat" 1; return 1; }
+	pre_sed_bytes=$(wc -c < "$TM") || { buildFailed "whitelist-sed-input-size" 1; return 1; }
+	sed_removed=$(awk '/^$/ || /^localhost$/ { n++ } END { print n+0 }' "$TM") || {
+		buildFailed "whitelist-sed-input-count" 1
+		return 1
+	}
+	expected_sed_lines=$((pre_sed_lines - sed_removed))
+	# sed -i writes a new copy while the old one still occupies tmpfs.
+	# Estimate the expanded output, not merely the original input size.
+	projected_sed_bytes=$((pre_sed_bytes + expected_sed_lines * 8))
+	buildSpaceGuard "whitelist-sed" "$projected_sed_bytes" || return 1
+	sed -i -e '/^localhost$/d' -e '/^$/d' -e "s/.*/local=\\/&\\//" "$TM"
+	rc=$?
+	if [ "$rc" -ne 0 ]; then
+		buildFailed "whitelist-sed" "$rc"
+		return 1
+	fi
+	post_sed_lines=$(wc -l < "$TM") || { buildFailed "whitelist-sed-output-stat" 1; return 1; }
+	if [ "$post_sed_lines" -ne "$expected_sed_lines" ]; then
+		loge "Whitelist sed line mismatch: input=$pre_sed_lines removed=$sed_removed expected=$expected_sed_lines actual=$post_sed_lines"
+		buildFailed "whitelist-sed-counts" 1
+		return 1
+	fi
+	logd "Whitelist sed: input=$pre_sed_lines removed=$sed_removed emitted=$post_sed_lines"
 	# Whitelisting phase B = Add exceptions for whitelisted subdomains whose parent domain is blacklisted
 	whitish=$(echo $subsed | tr " " "\n" | grep -E '^[0-9a-z]|^%[0-9a-z]' | sed 's/^%//' | grep -E '^[^.]+\.([^.]+\.)+[^.]*$' | sort -u | while read k; do for p in $(w=$(echo "$k" | cut -d. -f2- | cut -c1-50) && grep -F "$w" "$TM" | grep -Fo "$w" | sort -u ); do [ ! -z "$k" ] && { echo "$k";} ; done ;done)
 	[ $LOGL -eq 7 ] && echo $whitish >/tmp/adblock.whitish
@@ -556,20 +768,50 @@ download() {
 	[ $LOGL -eq 7 ] && echo $whitis >/tmp/adblock.whitis
 	echo ${whitis} | grep -vq ^$ && { echo ${whitis} | tr " " "\n" | while read l; do echo "local=/.$l/" >> $TM ; done ;}
 
+	buildStats "after-whitelist"
+
 	# DE-DUPLICATION
+	buildSpaceGuard "before-dedup" "$(wc -c < "$TM")" || return 1
 	logn "Removing duplicates"
 	pred=$(wc -l < $TM)
-	[ $DPATH != '/etc' ] && {
-		# Let's use external storage to halve the RAM needed for deduplication
-		mv -f $TM $D
-		awk '!seen[$0]++' $D/adblock.temp > $TM
-		rm -f $D/adblock.temp
-	} || {
-		# No external storage available? No problem we'll use what we have
-		awk '!seen[$0]++' $TM > $TM1 && mv -f $TM1 $TM
-	}
+	if [ "$DPATH" != '/etc' ]; then
+		# Keep the original input until awk has completed successfully.
+		mv -f "$TM" "$D/adblock.temp" || {
+			buildFailed "dedup-input-mv" "$?"
+			return 1
+		}
+		awk '!seen[$0]++' "$D/adblock.temp" > "$TM1"
+		rc=$?
+		if [ "$rc" -ne 0 ]; then
+			buildFailed "dedup-awk" "$rc"
+			return 1
+		fi
+		mv -f "$TM1" "$TM" || {
+			buildFailed "dedup-output-mv" "$?"
+			return 1
+		}
+		rm -f "$D/adblock.temp"
+	else
+		awk '!seen[$0]++' "$TM" > "$TM1"
+		rc=$?
+		if [ "$rc" -ne 0 ]; then
+			buildFailed "dedup-awk" "$rc"
+			return 1
+		fi
+		mv -f "$TM1" "$TM" || {
+			buildFailed "dedup-output-mv" "$?"
+			return 1
+		}
+	fi
+	buildStats "after-dedup"
 	redun=$(($pred - $(wc -l < $TM) ))
-	logi "Deduplication efficiency = $(printf "%.2f" $(( 10**2 * $redun * 100 / $pred ))e-2)"%" / $redun lines removed."
+	# Avoid 32-bit shell arithmetic overflow when processing large lists.
+	if [ "$pred" -gt 0 ]; then
+		efficiency=$(awk -v removed="$redun" -v total="$pred" 'BEGIN { printf "%.2f", (removed * 100) / total }')
+	else
+		efficiency="0.00"
+	fi
+	logi "Deduplication efficiency = ${efficiency}% / $redun lines removed."
 	# Applying sizeLimit
 	# Trim down to the hard limit (trim from the top) the adblock file
 	[ $(wc -c < $TM) -gt $sizeLimit	] && {
@@ -578,6 +820,13 @@ download() {
 		TRIM=$(( $(wc -l < $TM) - $(tail -c $sizeLimit < $TM | wc -l) +1 ))
 		vi $TM -c ":1,${TRIM}d" -c ":wq"
 	}
+
+	buildStats "before-publish"
+	if [ "$DPATH" = '/etc' ]; then
+		buildSpaceGuard "before-publish" "$(wc -c < "$TM")" || return 1
+	else
+		buildSpaceGuard "before-publish" 0 || return 1
+	fi
 
 	# Publish only a complete replacement. Stage it on the destination
 	# filesystem first, then rename it into place so a failed copy/OOM does
@@ -621,7 +870,33 @@ parsefile() {
 	elif [ $(notin "$1" | head -500 | domain | wc -l ) -gt 0 ]; then
 		# Extract domains only
 		logi "[$3]$S[$2] Extracting domains..."
-		notin $1 | domain >> $TM
+		# Domain extraction appends data on tmpfs. Use the source byte size
+		# as a conservative output estimate; check BEFORE the large append.
+		buildSpaceGuard "before-extract-$3" "$(wc -c < "$1")" || return 1
+		# The first extraction creates $TM; do not read a nonexistent file.
+		before_bytes=0
+		if [ -f "$TM" ]; then
+			before_bytes=$(wc -c < "$TM") || {
+				buildFailed "extract-before-stat-$3" 1
+				return 1
+			}
+		fi
+		notin "$1" | domain >> "$TM"
+		parse_rc=$?
+		if [ ! -f "$TM" ]; then
+			buildFailed "extract-output-missing-$3" 1
+			return 1
+		fi
+		after_bytes=$(wc -c < "$TM") || {
+			buildFailed "extract-after-stat-$3" 1
+			return 1
+		}
+		logd "[$3]$S[$2] Extraction: $before_bytes -> $after_bytes bytes (pipeline-last-command-rc=$parse_rc)"
+		if [ "$parse_rc" -ne 0 ] || [ "$after_bytes" -lt "$before_bytes" ]; then
+			buildFailed "extract-$3" "$parse_rc"
+			return 1
+		fi
+		buildSpaceGuard "extract-$3" 0 || return 1
 	else
 		loge "[$3]$S[$2] List content not understood (unknown data). Skipping..."
 		erroradd
@@ -794,7 +1069,8 @@ safeDnsmasqRestart() {
 adExit() {
 	[ "$1" -eq 1 ] && stopRunningAdblock
 	rm -rf $PREFIX/*
-	rm -f "$pidfile"
+	# EXIT trap releases only a lock owned by this invocation.
+	[ "$1" -eq 1 ] && rm -f "$pidfile"
 	if [ $1 -eq 0 ]; then
 		[ $DPATH != '/etc' ] && {
 			rm -f /etc/dnsmasq.adblock
@@ -908,7 +1184,14 @@ Adblock calls today = $(grep -E $(date +%b)" "+$(date +%d|sed 's/^0*//') /var/lo
 Adblock config loaded = $(echo $(grep -q 'conf-file=/etc/dnsmasq.adblock' /etc/dnsmasq.conf && echo "Yes 🆗" || echo "No ⛔"))
 Adblock script activity = $(echo $([ -f "/var/run/adblock.pid" ] && { [ -f ${VRFY} ] && echo "👁️ Checking...<img src=\"spin.svg\" style=\"vertical-align:middle;height:7px;width:7px\">" || echo "🌀 Loading... $([ -s $TM ] && { wc -l < $TM | number ;}) domains / $([ -s $TM ] && { wc -c < $TM | number ;} ) Bytes <img src=\"spin.svg\" style=\"vertical-align:middle;height:7px;width:7px\">" ;} || echo "idle"))"
 	[ -s "$FINAL" -a $(grep 'conf-file=/etc/dnsmasq.adblock' /etc/dnsmasq.conf | wc -l) -eq 1 ] && {
-		filp=$(($(wc -c < $FINAL) * 100 / $([ $(echo $sizeLimit | wc -c 2>/dev/null ) -gt 0 ] && echo $sizeLimit || echo 99999999)))
+		# readlimit() already validates sizeLimit. An empty value means
+		# that the GUI limit was cleared and will be initialized on next run.
+		# Never pass an empty denominator to shell arithmetic.
+		if [ -n "$sizeLimit" ]; then
+			filp=$(( $(wc -c < "$FINAL") * 100 / sizeLimit ))
+		else
+			filp=0
+		fi
 		lre=$(grep 'error' $ADHELPER | awk '{print $2}')
 		[ $lre -gt 0 ] && { echo "Last run errors = $lre ⚠️"; } || { echo "Last run errors = $lre"; }
 		echo -e "Last run processing time = $(grep 'runtime' $ADHELPER | cut -d: -f2)
@@ -1050,7 +1333,6 @@ elif [ "$1" == "snapshot" ]; then
 	exit
 elif [ "$1" == "update" -o "$1" == "start" -o "$1" == "delay" -o $# -eq 0 ]; then
 	if [ "$ENABLE" -eq "1" ]; then {
-		[ ! -f $pidfile ] && echo $PID > $pidfile
 		[ "$1" == "delay" ] && DELAY=1
 		[ $(NG adblock_blacklist | tr ">" "\n" | grep ^1 | wc -l) -gt 0 ] && {
 		[[ $(NP mwan_ckdst) -eq 1 && $(NG mwan_ckdst | tr ',' '\n' | domain | wc -l) -gt 0 ]] && { itarget=$(NG mwan_ckdst | tr ',' '\n' | domain | head -1); } || { itarget="google.com"; }
@@ -1086,9 +1368,9 @@ elif [ "$1" == "update" -o "$1" == "start" -o "$1" == "delay" -o $# -eq 0 ]; the
 		[ "$1" == "update" ] && {
 			logn "Updating lists"
 			rm -f ${UNLOADED}
-			download
+			download || adExit 5
 		} || {
-			[ -s $UNLOADED ] && { mv $UNLOADED $FINAL ; logn "Using saved version of the blockfile for quick start-up" ; } || download
+			[ -s $UNLOADED ] && { mv $UNLOADED $FINAL ; logn "Using saved version of the blockfile for quick start-up" ; } || { download || adExit 5; }
 		}
 		cronAdd
 	}

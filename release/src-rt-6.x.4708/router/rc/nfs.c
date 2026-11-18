@@ -96,6 +96,10 @@ void start_nfs(void)
 			if ((vstrsep(p, "<", &dir, &address, &access, &sync, &subtree, &other)) < 6)
 				continue;
 
+			/* blank client = all hosts, as /etc/exports got before entries were validated */
+			if (address && !*address)
+				address = "*";
+
 			if (!dir || !*dir || strpbrk(dir, "\r\n") ||
 			    !nfs_valid_client(address) ||
 			    (strcmp(access, "rw") && strcmp(access, "ro")) ||

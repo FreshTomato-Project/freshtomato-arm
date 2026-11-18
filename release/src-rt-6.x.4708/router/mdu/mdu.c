@@ -23,6 +23,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <ctype.h>
 #include <netdb.h>
 
@@ -33,8 +35,6 @@
 #ifdef USE_LIBCURL
  #include <curl/curl.h>
 #else
- #include <errno.h>
- #include <fcntl.h>
  #include "mssl.h"
 #endif
 
@@ -45,6 +45,10 @@
 #define HALF_BLOB		(BLOB_SIZE >> 1)
 #define QUARTER_BLOB		(BLOB_SIZE >> 2)
 #define DDNS_IP_CACHE		5 * 60 /* 5-minute cache for IP extracted by a given checker */
+#define MDU_ROUTE_BUSY		-2
+#define MDU_HTTP_BUSY		-3
+#define MDU_EXIT_BUSY		4
+#define MDU_ROUTE_LOCK_DIR	"/tmp/mdu-route-locks"
 
 #define M_UNKNOWN_ERROR__D	"Unknown error (%d)."
 #define M_UNKNOWN_RESPONSE__D	"Unknown response (%d)."
@@ -78,6 +82,7 @@ char *blob = NULL;
 char ifname[16];
 static int mdu_http_force_af = 0;
 static int mdu_addr_cache_cold = 0;
+static int mdu_checking_ip = 0;
 char sPrefix[8];
 int error_exitcode = 1;
 int g_argc;
@@ -228,7 +233,66 @@ static int mdu_eval(const char *cmd, const char *path)
 typedef struct {
 	char delete_cmd[256];
 	int installed;
+	int lock_fd;
 } mdu_route_t;
+
+/*
+ * A lock belongs to the destination, not a DDNS slot. Never unlink
+ * these files: another process might already be waiting on the inode.
+ * F_SETLK does not wait, and POSIX locks are released on process exit.
+ */
+static int mdu_route_lock(const char *ip, mdu_route_t *route)
+{
+	char path[80];
+	struct stat st;
+	struct flock fl;
+	int fd, n, err;
+
+	if ((mkdir(MDU_ROUTE_LOCK_DIR, 0700) != 0) && (errno != EEXIST))
+		goto fail;
+	if ((lstat(MDU_ROUTE_LOCK_DIR, &st) != 0) || !S_ISDIR(st.st_mode) ||
+	    (st.st_uid != geteuid()) || (st.st_mode & 0077))
+		goto fail;
+
+	n = snprintf(path, sizeof(path), "%s/%s", MDU_ROUTE_LOCK_DIR, ip);
+	if ((n < 0) || ((size_t)n >= sizeof(path)))
+		goto fail;
+	fd = open(path, O_RDWR | O_CREAT | O_NOFOLLOW, 0600);
+	if (fd < 0)
+		goto fail;
+	if ((fstat(fd, &st) != 0) || !S_ISREG(st.st_mode) ||
+	    (st.st_uid != geteuid()) || (st.st_mode & 0022) ||
+	    (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0)) {
+		close(fd);
+		goto fail;
+	}
+
+	memset(&fl, 0, sizeof(fl));
+	fl.l_type = F_WRLCK;
+	fl.l_whence = SEEK_SET;
+	if (fcntl(fd, F_SETLK, &fl) != 0) {
+		err = errno;
+		close(fd);
+		if ((err == EACCES) || (err == EAGAIN))
+			return MDU_ROUTE_BUSY;
+		goto fail;
+	}
+
+	route->lock_fd = fd;
+	return 0;
+
+fail:
+	logmsg(LOG_ERR, "%s: cannot acquire lock for %s", __FUNCTION__, ip);
+	return -1;
+}
+
+static void mdu_route_unlock(mdu_route_t *route)
+{
+	if (route->lock_fd >= 0) {
+		close(route->lock_fd);
+		route->lock_fd = -1;
+	}
+}
 
 /* Reject existing host routes, including routes with a different metric. */
 static int mdu_route_conflict(const char *ip)
@@ -271,6 +335,7 @@ static int mdu_route_add(const char *ip, mdu_route_t *route)
 	int n;
 
 	memset(route, 0, sizeof(*route));
+	route->lock_fd = -1;
 	if (!mdu_mwan_route_enabled() || mdu_addr_family(ip, NULL, 0) != AF_INET)
 		return 0;
 
@@ -310,13 +375,20 @@ static int mdu_route_add(const char *ip, mdu_route_t *route)
 	if ((n < 0) || ((size_t)n >= sizeof(route->delete_cmd)))
 		return -1;
 
+	/* Serialize check/add/use/delete for this exact IPv4 destination. */
+	n = mdu_route_lock(ip, route);
+	if (n != 0)
+		return n;
 	/* A route from another service is never our property. */
 	if (mdu_route_conflict(ip) != 0) {
 		logmsg(LOG_WARNING, "%s: conflicting/unknown host route to %s", __FUNCTION__, ip);
+		mdu_route_unlock(route);
 		return -1;
 	}
-	if (mdu_eval(add_cmd, NULL) != 0)
+	if (mdu_eval(add_cmd, NULL) != 0) {
+		mdu_route_unlock(route);
 		return -1;
+	}
 	route->installed = 1;
 	return 1;
 }
@@ -327,6 +399,7 @@ static void mdu_route_del(mdu_route_t *route)
 		mdu_eval(route->delete_cmd, NULL);
 		route->installed = 0;
 	}
+	mdu_route_unlock(route);
 }
 
 static int check_stop(void)
@@ -557,6 +630,16 @@ static void error(const char *fmt, ...)
 	save_msg(s);
 
 	exit(error_exitcode);
+}
+
+static void mdu_route_busy_exit(void)
+{
+	const char *msg = "DDNS route temporarily busy; retry later.";
+
+	logmsg(LOG_INFO, "%s", msg);
+	printf("%s\n", msg);
+	save_msg(msg);
+	exit(MDU_EXIT_BUSY);
 }
 
 static void success_msg(const char *msg, const unsigned int do_exit)
@@ -1080,7 +1163,12 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 
 	/* Never silently use a different WAN if host-route setup fails. */
 	route_status = (ip[0] != '\0') ? mdu_route_add(ip, &ddns_route) : 0;
-	if (route_status < 0) {
+	if (route_status == MDU_ROUTE_BUSY) {
+		/* No network request: let external IP checking use another server. */
+		code = MDU_HTTP_BUSY;
+		r = CURLE_COULDNT_CONNECT;
+	}
+	else if (route_status < 0) {
 		r = CURLE_COULDNT_CONNECT;
 		snprintf(errbuf, sizeof(errbuf), "cannot pin DDNS request to selected WAN");
 	}
@@ -1097,11 +1185,15 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 	if (route_status > 0)
 		mdu_route_del(&ddns_route);
 
-	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
+	if (route_status != MDU_ROUTE_BUSY)
+		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
 
 	logmsg(LOG_DEBUG, "*** %s: response code=%ld", __FUNCTION__, code);
 
-	if ((r == CURLE_OK) || (r == CURLE_RECV_ERROR)) { /* CURLE_RECV_ERROR needed for cloudflare */
+	if (route_status == MDU_ROUTE_BUSY) {
+		/* Local contention is not a libcurl/network error. */
+	}
+	else if ((r == CURLE_OK) || (r == CURLE_RECV_ERROR)) { /* CURLE_RECV_ERROR needed for cloudflare */
 		*body = blob;
 		/* body is pointer into global blob - caller must NOT free it */
 	}
@@ -1127,6 +1219,8 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 
 	curl_cleanup();
 
+	if (route_status == MDU_ROUTE_BUSY && !mdu_checking_ip)
+		mdu_route_busy_exit();
 	if (stop)
 		error("Force stop.");
 
@@ -1155,6 +1249,8 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 	int sockfd = -1;
 	mdu_route_t ddns_route;
 	int route_status;
+	int saw_busy = 0;
+	int saw_failure = 0;
 	int stop = 0;
 
 	httpv = (strncmp(host, "updates.opendns.com", 19) == 0 || strncmp(host, "api.cloudflare.com", 18) == 0) ? "HTTP/1.1" : "HTTP/1.0";
@@ -1299,14 +1395,17 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 
 		result = NULL;
 		if (getaddrinfo(a, cport, &hints, &result) != 0) {
+			saw_failure = 1;
 			sleep(2);
 			continue;
 		}
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
 			sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-			if (sockfd == -1)
+			if (sockfd == -1) {
+				saw_failure = 1;
 				continue;
+			}
 
 			if (ifname[0] != '\0') {
 				struct ifreq ifr;
@@ -1315,6 +1414,7 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 				if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0) {
 					logmsg(LOG_DEBUG, "*** %s: bind to device %s failed", __FUNCTION__, ifname);
 					close(sockfd);
+					saw_failure = 1;
 					continue;
 				}
 			}
@@ -1331,9 +1431,21 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 			                 addrstr, sizeof(addrstr));
 #endif
 			route_status = c_ip ? mdu_route_add(c_ip, &ddns_route) : 0;
+			if (route_status == MDU_ROUTE_BUSY) {
+				close(sockfd);
+				sockfd = -1;
+				if (!mdu_checking_ip) {
+					freeaddrinfo(result);
+					free(request);
+					mdu_route_busy_exit();
+				}
+				saw_busy = 1;
+				continue;
+			}
 			if (route_status < 0) {
 				close(sockfd);
 				sockfd = -1;
+				saw_failure = 1;
 				continue;
 			}
 
@@ -1355,6 +1467,7 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 
 			close(sockfd);
 			sockfd = -1;
+			saw_failure = 1;
 
 			stop = check_stop();
 			if (stop)
@@ -1363,7 +1476,7 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 
 		if (result)
 			freeaddrinfo(result);
-		if (stop)
+		if (stop || (saw_busy && !saw_failure))
 			break;
 
 		sleep(2);
@@ -1373,7 +1486,7 @@ static long _http_req(const unsigned int ssl, int static_host, const char *host,
 	if (stop)
 		error("Force stop.");
 
-	return -1;
+	return (saw_busy && !saw_failure) ? MDU_HTTP_BUSY : -1;
 
 connected:
 	logmsg(LOG_DEBUG, "*** %s: connected:", __FUNCTION__);
@@ -1559,7 +1672,7 @@ static const char *get_address_checked(int want_af)
 	static char addr[64];
 	long ut, et, expire, code;
 	int af;
-	int rows, service_num, n, i, j, temp, max_tries;
+	int rows, service_num, n, i, j, temp, max_tries, busy_tries = 0;
 #ifdef TCONFIG_IPV6
 	int indices[(ASIZE(services4) > ASIZE(services6)) ? ASIZE(services4) : ASIZE(services6)];
 	char saved_ifname[sizeof(ifname)];
@@ -1610,7 +1723,7 @@ static const char *get_address_checked(int want_af)
 
 	/* Fisher-Yates shuffle */
 	for (i = 0; i < rows; i++) indices[i] = i;
-	srand(time(NULL) ^ (unsigned int)ut);
+	srand(time(NULL) ^ (unsigned int)ut ^ (unsigned int)getpid());
 	for (i = rows - 1; i > 0; i--) {
 		j = rand() % (i + 1);
 		temp = indices[i];
@@ -1628,8 +1741,15 @@ static const char *get_address_checked(int want_af)
 		curl_err_str[0] = '\0';
 #endif
 		mdu_http_force_af = want_af;
+		mdu_checking_ip = 1;
 		code = http_req(1, 1, services[service_num][0], services[service_num][1], NULL, 0, &body); /* use ssl */
+		mdu_checking_ip = 0;
 		mdu_http_force_af = 0;
+
+		if (code == MDU_HTTP_BUSY) {
+			++busy_tries;
+			continue; /* use another checker without waiting for the route */
+		}
 
 		if (code == 200 && body) {
 			/* body points to global blob - no free needed */
@@ -1690,6 +1810,10 @@ static const char *get_address_checked(int want_af)
 	if (saved_ifname[0] != '\0')
 		strlcpy(ifname, saved_ifname, sizeof(ifname));
 #endif
+
+	/* A pure lock collision is not a DDNS/network failure. */
+	if (busy_tries == max_tries)
+		mdu_route_busy_exit();
 
 	/* all attempts failed */
 #ifdef USE_LIBCURL

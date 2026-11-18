@@ -17,6 +17,7 @@
 #include <arpa/inet.h>
 
 #define CRU_TMP_FN	"/tmp/cru-ddns"
+#define MDU_EXIT_BUSY	4
 
 /* needed by logmsg() */
 #define LOGMSG_DISABLE	DISABLE_SYSLOG_OS
@@ -187,6 +188,18 @@ static void update(int num, int *dirty, int force)
 	logmsg(LOG_DEBUG, "*** mdu >>>>>>> %s: service: %s config: %s; exitcode: %d", __FUNCTION__, serv, conf_fn, exitcode);
 
 	snprintf(s, sizeof(s), "%s_errors", ddnsx);
+	/*
+	 * Another mdu process is using this destination. Retry once next
+	 * minute without changing the account's error count or cookie.
+	 */
+	if (exitcode == MDU_EXIT_BUSY) {
+		t = time(0) + 60;
+		tm = localtime(&t);
+		snprintf(s, sizeof(s), "ddns%d", num);
+		snprintf(v, sizeof(v), "%d * * * * ddns-update %d", tm->tm_min, num);
+		eval("cru", "a", s, v);
+		goto CLEANUP;
+	}
 	if ((exitcode == 1) || (exitcode == 2)) {
 		if (force)
 			errors = 0;

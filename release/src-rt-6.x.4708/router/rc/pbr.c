@@ -16,6 +16,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+/* needed by logmsg() */
+#define LOGMSG_DISABLE	DISABLE_SYSLOG_OSM
+#define LOGMSG_NVDEBUG	"pbr_debug"
+
 
 void ipt_routerpolicy(void)
 {
@@ -283,14 +287,8 @@ void mwan_pbr_update(int wan_unit, int up)
 {
 	char chain[16], mark[16];
 	char *flush_argv[] = { "iptables", "-t", "mangle", "-F", chain, NULL };
-	char *mark_argv[] = { "iptables", "-t", "mangle", "-A", chain,
-	                      "-m", "conntrack", "--ctstate", "NEW",
-	                      "-j", "CONNMARK", "--set-mark", mark, NULL
-	                    };
-	char *restore_argv[] = { "iptables", "-t", "mangle", "-A", chain,
-	                         "-m", "conntrack", "--ctstate", "NEW",
-	                         "-j", "CONNMARK", "--restore-mark", "--mask", "0xf00", NULL
-	                       };
+	char *mark_argv[] = { "iptables", "-t", "mangle", "-A", chain, "-m", "conntrack", "--ctstate", "NEW", "-j", "CONNMARK", "--set-mark", mark, NULL };
+	char *restore_argv[] = { "iptables", "-t", "mangle", "-A", chain, "-m", "conntrack", "--ctstate", "NEW", "-j", "CONNMARK", "--restore-mark", "--mask", "0xf00", NULL };
 
 	if ((wan_unit < 1) || (wan_unit > MWAN_MAX))
 		return;
@@ -305,8 +303,18 @@ void mwan_pbr_update(int wan_unit, int up)
 	 * as a no-op; a later firewall build will create the correct state.
 	 */
 	if (_eval(flush_argv, NULL, 0, NULL) == 0 && up) {
-		_eval(mark_argv, NULL, 0, NULL);
-		_eval(restore_argv, NULL, 0, NULL);
+		int failed_step = 0;
+
+		if (_eval(mark_argv, NULL, 0, NULL) != 0)
+			failed_step = 1;
+		else if (_eval(restore_argv, NULL, 0, NULL) != 0)
+			failed_step = 2;
+
+		if (failed_step) {
+			logmsg(LOG_WARNING, "PBR: WAN %d CONNMARK step %d failed", wan_unit, failed_step);
+			if (_eval(flush_argv, NULL, 0, NULL) != 0)
+				logmsg(LOG_WARNING, "PBR: cannot clear incomplete WAN %d marking chain", wan_unit);
+		}
 	}
 
 	simple_unlock("firewall");

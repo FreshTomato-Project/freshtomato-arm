@@ -135,6 +135,7 @@ struct ngx_http_v2_connection_s {
     ngx_uint_t                       refused_streams;
 
     size_t                           send_window;
+    size_t                           send_queued;
     size_t                           recv_window;
     size_t                           init_window;
 
@@ -261,9 +262,11 @@ ngx_http_v2_stream_precedes(ngx_http_v2_stream_t *s,
 }
 
 
-static ngx_inline void
-ngx_http_v2_queue_frame(ngx_http_v2_connection_t *h2c,
-    ngx_http_v2_out_frame_t *frame)
+/* all frames of a stream are queued at the same position */
+
+static ngx_inline ngx_http_v2_out_frame_t **
+ngx_http_v2_queue_position(ngx_http_v2_connection_t *h2c,
+    ngx_http_v2_stream_t *stream)
 {
     ngx_http_v2_out_frame_t  **out;
 
@@ -273,11 +276,19 @@ ngx_http_v2_queue_frame(ngx_http_v2_connection_t *h2c,
             break;
         }
 
-        if (ngx_http_v2_stream_precedes((*out)->stream, frame->stream)) {
+        if (ngx_http_v2_stream_precedes((*out)->stream, stream)) {
             break;
         }
     }
 
+    return out;
+}
+
+
+static ngx_inline void
+ngx_http_v2_queue_frame(ngx_http_v2_out_frame_t **out,
+    ngx_http_v2_out_frame_t *frame)
+{
     frame->next = *out;
     *out = frame;
 }

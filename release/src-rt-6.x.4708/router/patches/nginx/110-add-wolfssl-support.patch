@@ -156,7 +156,7 @@
      level = NGX_LOG_CRIT;
  
      if (sslerr == SSL_ERROR_SYSCALL) {
-@@ -5066,7 +5110,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
+@@ -5072,7 +5116,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
              return -1;
          }
  
@@ -166,7 +166,7 @@
          if (HMAC_Init_ex(hctx, key[0].hmac_key, size, digest, NULL) != 1) {
              ngx_ssl_error(NGX_LOG_ALERT, c->log, 0, "HMAC_Init_ex() failed");
              return -1;
-@@ -5109,7 +5154,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
+@@ -5115,7 +5160,8 @@ ngx_ssl_ticket_key_callback(ngx_ssl_conn_t *ssl_conn,
              size = 32;
          }
  
@@ -176,7 +176,7 @@
          if (HMAC_Init_ex(hctx, key[i].hmac_key, size, digest, NULL) != 1) {
              ngx_ssl_error(NGX_LOG_ALERT, c->log, 0, "HMAC_Init_ex() failed");
              return -1;
-@@ -5724,6 +5770,14 @@ ngx_ssl_get_curve(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
+@@ -5730,6 +5776,14 @@ ngx_ssl_get_curve(ngx_connection_t *c, ngx_pool_t *pool, ngx_str_t *s)
  
  #endif
  

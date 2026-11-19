@@ -1052,7 +1052,9 @@ safeDnsmasqRestart() {
 		[ "$(countdownDnsmasq)" -eq 0 ] && {
 			FINAL_LINES=$(wc -l < "$FINAL")
 			REMOVED=$((SIZE-FINAL_LINES))
-			[ "$SIZE" -gt 0 ] && REMOVED_PCT=$((REMOVED * 100 / SIZE)) || REMOVED_PCT=0
+			# Use awk floating-point arithmetic: BusyBox ash can overflow when
+			# multiplying large domain counts by 100 on 32-bit targets.
+			[ "$SIZE" -gt 0 ] && REMOVED_PCT=$(awk -v removed="$REMOVED" -v total="$SIZE" 'BEGIN { printf "%.0f", int(removed * 100 / total) }') || REMOVED_PCT=0
 			logo "Dnsmasq recovered after $i trim attempt(s): adblock list reduced from $(echo "$SIZE"|number) to $(echo "$FINAL_LINES"|number) lines (about ${REMOVED_PCT}% removed). Configured adblock_limit remains ${sizeLimit}."
 			return 0
 		}
@@ -1188,7 +1190,8 @@ Adblock script activity = $(echo $([ -f "/var/run/adblock.pid" ] && { [ -f ${VRF
 		# that the GUI limit was cleared and will be initialized on next run.
 		# Never pass an empty denominator to shell arithmetic.
 		if [ -n "$sizeLimit" ]; then
-			filp=$(( $(wc -c < "$FINAL") * 100 / sizeLimit ))
+			# Avoid 32-bit shell arithmetic overflow for blockfiles > ~21 MiB.
+			filp=$(awk -v bytes="$(wc -c < "$FINAL")" -v limit="$sizeLimit" 'BEGIN { printf "%.0f", int(bytes * 100 / limit) }')
 		else
 			filp=0
 		fi

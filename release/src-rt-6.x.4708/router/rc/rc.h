@@ -224,6 +224,7 @@ extern int get_sta_wan_prefix(char *sPrefix, const size_t buf_sz);
 extern void get_wan_info(char *sPrefix);
 extern void mwan_table_add(char *sPrefix);
 extern void mwan_table_del(char *sPrefix);
+extern void mwan_dns_rules_refresh(void);
 extern void mwan_load_balance(void);
 extern int mwan_route_main(int argc, char **argv);
 extern void mwan_state_files(void);

@@ -3081,6 +3081,7 @@ static int svc_exec_simple(const struct svc_entry *svc, const char *service, int
 			if (act_start && !nvram_get_int("g_upgrade")) {
 				dns_to_resolv();
 				start_dnsmasq();
+				mwan_dns_rules_refresh();
 			}
 			return 1;
 		case SVCOP_LOGGING:

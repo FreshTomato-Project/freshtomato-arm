@@ -1217,9 +1217,8 @@ REMOVE-END */
 		}
 		else {
 			E('_wan'+u+'_dns_auto').options[0].disabled = 0;
-			/* disable DNS and set to Auto if dnscrypt/Stubby with No-Resolv is enabled (except for static proto) */
+			/* Disable editing without changing the saved Auto/Manual selection. */
 			if ((nvram.dnscrypt_proxy == '1' && nvram.dnscrypt_priority == '2') || (nvram.stubby_proxy == '1' && nvram.stubby_priority == '2')) {
-				E('_wan'+u+'_dns_auto').value = '1';
 				E('_wan'+u+'_dns_auto').disabled = 1;
 				elem.display(E('dns'+u+'_faq'), 1);
 			}
@@ -1229,7 +1228,7 @@ REMOVE-END */
 			}
 		}
 		/* hide dns1/dns2 when set to auto or invisible */
-		if ((PR('_wan'+u+'_dns_auto').style.display == 'none') || (E('_wan'+u+'_dns_auto').value == '1')) {
+		if ((PR('_wan'+u+'_dns_auto').style.display == 'none') || E('_wan'+u+'_dns_auto').disabled || (E('_wan'+u+'_dns_auto').value == '1')) {
 			PR('_f_wan'+u+'_dns_1').style.display = 'none';
 			PR('_f_wan'+u+'_dns_2').style.display = 'none';
 		}
@@ -1916,7 +1915,12 @@ REMOVE-END */
 				s += 'nvram set wan'+u+'_proto="disabled"\n';
 		}
 
-		if (fom['wan'+u+'_dns_auto'].value == '1')
+		/* No-Resolv disables DNS editing, not the saved preference. */
+		if ((fom['wan'+u+'_proto'].value != 'disabled') && (fom['wan'+u+'_proto'].value != 'static') && ((nvram.dnscrypt_proxy == '1' && nvram.dnscrypt_priority == '2') || (nvram.stubby_proxy == '1' && nvram.stubby_priority == '2'))) {
+			fom['wan'+u+'_dns_auto'].value = nvram['wan'+u+'_dns_auto'];
+			fom['wan'+u+'_dns'].value = nvram['wan'+u+'_dns'];
+		}
+		else if (fom['wan'+u+'_dns_auto'].value == '1')
 			fom['wan'+u+'_dns'].value = '';
 		else
 			fom['wan'+u+'_dns'].value = joinAddr([fom['f_wan'+u+'_dns_1'].value, fom['f_wan'+u+'_dns_2'].value]);
@@ -2134,7 +2138,7 @@ function init() {
 			{ title: 'Gateway', name: 'wan'+u+'_gateway', type: 'text', maxlen: 15, size: 17, value: nvram['wan'+u+'_gateway'] },
 			{ title: 'PPTP Gateway', name: 'wan'+u+'_pptp_server_ip', type: 'text', maxlen: 128, size: 64, value: nvram['wan'+u+'_pptp_server_ip'] },
 			{ title: 'Options', name: 'wan'+u+'_ppp_custom', type: 'text', maxlen: 256, size: 64, value: nvram['wan'+u+'_ppp_custom'] },
-			{ title: 'DNS Server', name: 'wan'+u+'_dns_auto', type: 'select', options: [['1','Auto'],['0','Manual']], suffix: '&nbsp; <small id="dns'+u+'_faq">inactive when using dncrypt-proxy/Stubby with No-Resolv option<\/small>', value: nvram['wan'+u+'_dns_auto']},
+			{ title: 'DNS Server', name: 'wan'+u+'_dns_auto', type: 'select', options: [['1','Auto'],['0','Manual']], suffix: '&nbsp; <small id="dns'+u+'_faq">saved setting is inactive for standard DNS with DNSCrypt/Stubby No-Resolv<\/small>', value: nvram['wan'+u+'_dns_auto']},
 			{ title: 'DNS 1', indent: 2, name: 'f_wan'+u+'_dns_1', type: 'text', maxlen: 21, size: 17, value: dns[0] || '0.0.0.0' },
 			{ title: 'DNS 2', indent: 2, name: 'f_wan'+u+'_dns_2', type: 'text', maxlen: 21, size: 17, value: dns[1] || '0.0.0.0' },
 			{ title: 'Connect Mode', name: 'wan'+u+'_ppp_demand', type: 'select', options: [['1','Connect On Demand'],['0','Keep Alive']],

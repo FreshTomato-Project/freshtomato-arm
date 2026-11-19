@@ -25,7 +25,6 @@ typedef struct
 	char wan_ipaddr[32];
 	char wan_netmask[32];
 	char wan_gateway[32];
-	const dns_list_t *dns;
 	int wan_weight;
 } waninfo_t;
 
@@ -133,9 +132,6 @@ void get_wan_info(char *sPrefix)
 	/* WAN gateway */
 	strlcpy(wan_info.wan_gateway, wan_gateway(sPrefix), sizeof(wan_info.wan_gateway));
 
-	/* WAN dns */
-	wan_info.dns = get_dns(sPrefix); /* static buffer */
-
 	/* WAN weight */
 	wan_info.wan_weight = atoi(prefix_nvram_get(sPrefix, "weight", tmp, sizeof(tmp)));
 
@@ -170,10 +166,107 @@ void get_cidr(char *ipaddr, char *netmask, char *cidr, const size_t buf_sz)
 	snprintf(cidr, buf_sz, "%s/%d", inet_ntoa(in_network), netmask_bit);
 }
 
+/*
+ * No-Resolv bypasses dnsmasq's usual WAN DNS list, but DNS servers
+ * configured with an alternate port are still explicit upstreams.
+ */
+static int mwan_dns_no_resolv(void)
+{
+#if defined(TCONFIG_DNSCRYPT) || defined(TCONFIG_STUBBY)
+	int backend = dns_backend_active();
+
+#ifdef TCONFIG_DNSCRYPT
+	if (backend == DNS_BACKEND_DNSCRYPT && nvram_match("dnscrypt_priority", "2"))
+		return 1;
+#endif
+#ifdef TCONFIG_STUBBY
+	if (backend == DNS_BACKEND_STUBBY && nvram_match("stubby_priority", "2"))
+		return 1;
+#endif
+#endif
+	return 0;
+}
+
+/* This function does not change the stored WAN DNS preference. */
+static const dns_list_t *mwan_dns_for_rules(char *prefix)
+{
+	static dns_list_t effective;
+	const dns_list_t *dns = get_dns(prefix);
+	char key[32], list[512], *token, *saveptr;
+	struct in_addr addr;
+	int i;
+
+	if (!mwan_dns_no_resolv() || get_wanx_proto(prefix) == WP_STATIC || prefix_nvram_get_int(prefix, "dns_auto", key, sizeof(key)))
+		return dns;
+
+	/* Only alternate-port manual servers are active dnsmasq upstreams. */
+	effective.count = 0;
+	for (i = 0; i < dns->count; ++i) {
+		if (dns->dns[i].port != 53)
+			effective.dns[effective.count++] = dns->dns[i];
+	}
+	if (effective.count)
+		return &effective;
+
+	/* No explicit upstream: pin the received DNS servers as for Auto. */
+	strlcpy(list, prefix_nvram_get(prefix, "get_dns", key, sizeof(key)), sizeof(list));
+	for (token = strtok_r(list, " \t", &saveptr); token && effective.count < (int)ASIZE(effective.dns); token = strtok_r(NULL, " \t", &saveptr)) {
+		char *port = strchr(token, ':');
+
+		if (port)
+			*port = '\0';
+
+		if (inet_pton(AF_INET, token, &addr) != 1)
+			continue;
+
+		for (i = 0; i < effective.count; ++i) {
+			if (effective.dns[i].addr.s_addr == addr.s_addr)
+				break;
+		}
+		if (i == effective.count) {
+			effective.dns[i].addr = addr;
+			effective.dns[i].port = 53;
+			++effective.count;
+		}
+	}
+	return &effective;
+}
+
+static void mwan_dns_rules_del(char *prefix, int wan_unit)
+{
+	char table[12], pref[12];
+	char *argv[] = { "ip", "rule", "del", "table", table, "pref", pref, NULL };
+	int i;
+
+	snprintf(table, sizeof(table), "%d", wan_unit);
+	snprintf(pref, sizeof(pref), "11%d", wan_unit);
+
+	/* The previous DNS count is unknown: delete until none remain. */
+	for (i = 0; i < 32; ++i) {
+		if (mwan_eval(argv, __FUNCTION__, prefix) != 0)
+			return;
+	}
+	logmsg(LOG_WARNING, "%s: too many DNS rules for WAN%d", __FUNCTION__, wan_unit);
+}
+
+static void mwan_dns_rules_add(char *prefix, int wan_unit)
+{
+	const dns_list_t *dns = mwan_dns_for_rules(prefix);
+	char table[12], pref[12];
+	char *argv[] = { "ip", "rule", "add", "to", NULL, "table", table, "pref", pref, NULL };
+	int i;
+
+	snprintf(table, sizeof(table), "%d", wan_unit);
+	snprintf(pref, sizeof(pref), "11%d", wan_unit);
+	for (i = 0; i < dns->count; ++i) {
+		argv[4] = inet_ntoa(dns->dns[i].addr);
+		mwan_eval(argv, __FUNCTION__, prefix);
+	}
+}
+
 void mwan_table_del(char *sPrefix)
 {
 	int wan_unit;
-	int i;
 	char table[12];
 	char pref[12];
 	char *rule_del_argv[] = { "ip", "rule", "del", "table", table, "pref", pref, NULL };
@@ -181,7 +274,6 @@ void mwan_table_del(char *sPrefix)
 	logmsg(LOG_DEBUG, "*** %s IN", __FUNCTION__);
 
 	wan_unit = get_wan_unit(sPrefix);
-	get_wan_info(sPrefix); /* get the current wan infos to work with */
 
 	snprintf(table, sizeof(table), "%d", wan_unit);
 
@@ -190,11 +282,7 @@ void mwan_table_del(char *sPrefix)
 	mwan_eval(rule_del_argv, __FUNCTION__, sPrefix);
 
 	/* ip rule del table WAN1 pref 111 (dns); table: 1 to 4; pref: 111 to 114 */
-	/* delete only active & valid DNS; two options right now: only AUTO DNS server (1x DNS) or Manual DNS server (2x DNS) (see GUI basic-network.asp) */
-	for (i = 0 ; i < wan_info.dns->count; ++i) {
-		snprintf(pref, sizeof(pref), "11%d", wan_unit);
-		mwan_eval(rule_del_argv, __FUNCTION__, sPrefix);
-	}
+	mwan_dns_rules_del(sPrefix, wan_unit);
 
 	/* ip rule del fwmark 0x100/0xf00 table 1 pref 121 (mark); table: 1 to 4; pref: 121 to 124 */
 	snprintf(pref, sizeof(pref), "12%d", wan_unit);
@@ -221,7 +309,6 @@ void mwan_table_add(char *sPrefix)
 	char *lan_netmask;
 	char *route_dst;
 	char *rule_from_argv[] = { "ip", "rule", "add", "from", wan_info.wan_ipaddr, "table", table, "pref", pref, NULL };
-	char *rule_dns_argv[] = { "ip", "rule", "add", "to", NULL, "table", table, "pref", pref, NULL };
 	char *rule_mark_argv[] = { "ip", "rule", "add", "fwmark", mark, "table", table, "pref", pref, NULL };
 	char *route_link_argv[] = { "ip", "route", "append", NULL, "dev", wan_info.wan_name, "proto", "kernel", "scope", "link", "src", wan_info.wan_ipaddr, "table", wanid_s, NULL };
 	char *route_lan_argv[] = { "ip", "route", "append", cidr, "dev", NULL, "proto", "kernel", "scope", "link", "src", NULL, "table", table, NULL };
@@ -248,11 +335,7 @@ void mwan_table_add(char *sPrefix)
 		mwan_eval(rule_from_argv, __FUNCTION__, sPrefix);
 
 		/* set the routing rules of DNS */
-		for (i = 0; i < wan_info.dns->count; ++i) {
-			snprintf(pref, sizeof(pref), "11%d", wan_unit);
-			rule_dns_argv[4] = inet_ntoa(wan_info.dns->dns[i].addr);
-			mwan_eval(rule_dns_argv, __FUNCTION__, sPrefix);
-		}
+		mwan_dns_rules_add(sPrefix, wan_unit);
 
 		/* ip rule add fwmark 0x100/0xf00 table 1 pref 121 */
 		snprintf(mark, sizeof(mark), "0x%d00/0xf00", wan_unit);
@@ -298,6 +381,24 @@ void mwan_table_add(char *sPrefix)
 	}
 
 	logmsg(LOG_DEBUG, "*** %s OUT", __FUNCTION__);
+}
+
+/* Rebuild only DNS policy rules; leave WAN route tables and marks alone. */
+void mwan_dns_rules_refresh(void)
+{
+	char prefix[16];
+	int mwan_num, wan_unit;
+
+	mwan_num = mwan_active_num();
+	if (mwan_num <= 1)
+		return;
+
+	for (wan_unit = 1; wan_unit <= mwan_num; ++wan_unit) {
+		get_wan_prefix(wan_unit, prefix, sizeof(prefix));
+		mwan_dns_rules_del(prefix, wan_unit);
+		if (check_wanup(prefix))
+			mwan_dns_rules_add(prefix, wan_unit);
+	}
 }
 
 void mwan_state_files(void)

@@ -307,6 +307,7 @@ static int renew(char *ifname, char *prefix)
 	if (changed_dns) {
 		logmsg(LOG_DEBUG, "*** %s: DNS changed", __FUNCTION__);
 		dns_to_resolv(); /* dynamic update */
+		mwan_dns_rules_refresh(); /* update MultiWAN DNS policy rules */
 	}
 
 	if (changed) { /* changed - part 2 of 2 */

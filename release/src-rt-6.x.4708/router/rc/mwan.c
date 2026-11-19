@@ -471,12 +471,8 @@ void mwan_status_update(void)
 				memset(prefix, 0, sizeof(prefix));
 				get_wan_prefix(wan_unit, prefix, sizeof(prefix));
 				get_wan_info(prefix);
-				if (wan_info.wan_weight == 0) {
-					if (mwan_last[wan_unit - 1] != '2')
-						logmsg(LOG_INFO, "Failover in action - WAN%d", (wan_unit - 1));
-
+				if (wan_info.wan_weight == 0)
 					mwan_curr[wan_unit - 1] = '2';
-				}
 			}
 		}
 	}
@@ -652,6 +648,19 @@ int mwan_route_main(int argc, char **argv)
 			for (i = 1; i <= (unsigned int)mwan_num; ++i) {
 				int was_up = (mwan_last[i - 1] != '0');
 				int now_up = (mwan_curr[i - 1] != '0');
+
+				/* Log real failover transitions only in the persistent mwanroute process. */
+				if ((mwan_last[i - 1] != mwan_curr[i - 1]) &&
+				    ((mwan_last[i - 1] == '2') || (mwan_curr[i - 1] == '2'))) {
+					get_wan_prefix((int)i, prefix, sizeof(prefix));
+					get_wan_info(prefix);
+					if (wan_info.wan_weight == 0) {
+						if (mwan_curr[i - 1] == '2')
+							logmsg(LOG_INFO, "Failover in action - WAN%d", (int)i - 1);
+						else if (mwan_curr[i - 1] == '1')
+							logmsg(LOG_INFO, "Failover ended - WAN%d", (int)i - 1);
+					}
+				}
 
 				if (was_up == now_up)
 					continue;

@@ -156,7 +156,7 @@ void get_cidr(char *ipaddr, char *netmask, char *cidr, const size_t buf_sz)
 	inet_aton(netmask, &in_netmask);
 
 	unsigned int i;
-	for (i = 1; i < sizeof(bits) * 8; i++) {
+	for (i = 0; i < sizeof(bits) * 8; i++) {
 		if (in_netmask.s_addr & bits)
 			netmask_bit++;
 		bits = bits << 1;

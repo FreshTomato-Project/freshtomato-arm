@@ -671,7 +671,7 @@ void kill_switch(_tf_ipt_write ipt_write)
 										snprintf(buf2, BUF_SIZE_64, "-s %s", sip);
 
 									snprintf(buf, BUF_SIZE_64, "br%u", br); /* copy brX to buffer */
-									logmsg(LOG_INFO, "Kill-Switch: type: %d - add '%s'", policy_type, sip);
+									logmsg(LOG_INFO, "Kill-Switch: type: %d - add '%s' [%s]", policy_type, sip, wan_if);
 
 									ipt_write("-I FORWARD %s -i %s -o %s -j REJECT --reject-with icmp-port-unreachable\n", buf2, buf, wan_if); /* sip! */
 									type1_added = 1;
@@ -703,7 +703,7 @@ void kill_switch(_tf_ipt_write ipt_write)
 							count = 0;
 							res = resolve_fqdn(val, &addrs, &count, resolver_timeout);
 							if (res != 0) {
-								logmsg(LOG_WARNING, "Kill-Switch: type: %d - can't resolve '%s' (%s)", policy_type, val, (res == 1 ? "DNS timeout" : res == 2 ? "DNS error" : "resolve_fqdn() error"));
+								logmsg(LOG_WARNING, "Kill-Switch: type: %d - can't resolve '%s' (%s) [%s]", policy_type, val, (res == 1 ? "DNS timeout" : res == 2 ? "DNS error" : "resolve_fqdn() error"), wan_if);
 								/* set the flag that an error occurred */
 								type3_err = 1;
 
@@ -720,7 +720,7 @@ void kill_switch(_tf_ipt_write ipt_write)
 							}
 
 							/* OK to add */
-							logmsg(LOG_INFO, "Kill-Switch: type: %d - add '%s'", policy_type, val);
+							logmsg(LOG_INFO, "Kill-Switch: type: %d - add '%s' [%s]", policy_type, val, wan_if);
 
 							/* add every resolved IP */
 							for (j = 0; j < count; j++) {
@@ -740,7 +740,7 @@ void kill_switch(_tf_ipt_write ipt_write)
 						}
 						/* it's IPv4 already inspected/prepared by check_string() */
 						else if (ret == 1) {
-							logmsg(LOG_INFO, "Kill-Switch: type: %d - add '%s'", policy_type, sip);
+							logmsg(LOG_INFO, "Kill-Switch: type: %d - add '%s' [%s]", policy_type, sip, wan_if);
 
 							ipt_write("-I FORWARD -d %s ! -o %s -j REJECT --reject-with icmp-port-unreachable\n", sip, buf); /* sip! */
 							ipt_write("-I FORWARD -d %s -o %s -j REJECT --reject-with icmp-port-unreachable\n", sip, wan_if);

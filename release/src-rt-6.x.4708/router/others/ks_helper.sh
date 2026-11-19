@@ -118,7 +118,7 @@ addToFW() {
 				[ "$PRIORITY" -eq 1 ] && simple_unlock
 			}
 		done
-		[ "$ADDED" -eq 1 ] && $LOGI "type: 3 - add '$DOMAIN'"
+		[ "$ADDED" -eq 1 ] && $LOGI "type: 3 - add '$DOMAIN' [$WAN_IF]"
 
 	done < "$FILE"
 }

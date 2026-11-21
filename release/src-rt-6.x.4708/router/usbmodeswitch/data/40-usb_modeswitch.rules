@@ -1,4 +1,4 @@
-# Part of usb-modeswitch-data, version 20251207
+# Part of usb-modeswitch-data, version 20261111
 #
 # Works with usb_modeswitch versions >= 2.4.0. Slash before %k parameter
 # is for compatibility only. Versions >= 2.5.0 don't need it.
@@ -115,6 +115,9 @@ ATTR{idVendor}=="0421", ATTR{idProduct}=="0637", RUN+="usb_modeswitch '/%k'"
 
 # Logitech G920 Racing Wheel
 ATTR{idVendor}=="046d", ATTR{idProduct}=="c261", RUN+="usb_modeswitch '/%k'"
+
+# Logitech G923 Racing Wheel (Xbox edition)
+ATTR{idVendor}=="046d", ATTR{idProduct}=="c26d", RUN+="usb_modeswitch '/%k'"
 
 # Philips (?), Vodafone MD950 (Wisue Technology)
 ATTR{idVendor}=="0471", ATTR{idProduct}=="1210", RUN+="usb_modeswitch '/%k'"
@@ -413,7 +416,7 @@ ATTR{idVendor}=="0b3c", ATTR{idProduct}=="f00c", RUN+="usb_modeswitch '/%k'"
 # Olivetti Olicard 500
 ATTR{idVendor}=="0b3c", ATTR{idProduct}=="f017", RUN+="usb_modeswitch '/%k'"
 
-# D-Link DWA-171 Wifi Dongle
+# D-Link DWA-171 Wifi Dongle, Realtek Wifi Dongle
 ATTR{idVendor}=="0bda", ATTR{idProduct}=="1a2b", RUN+="usb_modeswitch '/%k'"
 
 # Mercury MW310UH Wifi Dongle (based on RTL8192FU)

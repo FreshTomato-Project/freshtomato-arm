@@ -1,0 +1,6 @@
+# Logitech G923 Racing Wheel (Xbox edition)
+MessageEndpoint=01
+ResponseEndpoint=01
+TargetClass=0x03
+MessageContent="0f00010142"
+

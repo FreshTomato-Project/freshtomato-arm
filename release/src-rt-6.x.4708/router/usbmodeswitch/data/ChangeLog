@@ -1,3 +1,6 @@
+20261111:
+    Added devices: [0bda:1a2b] Realtek Wifi Dongle, thanks to 'NullString1';
+    [046d:c26d] Logitech G923 Wheel (Xbox ed.), thanks to Camerin Hahn
 20251207:
     Added device: [0bda:a192] MERCURY MW310UH (Wifi, based on RTL8192FU),
     thanks to Zenm Chen for the report

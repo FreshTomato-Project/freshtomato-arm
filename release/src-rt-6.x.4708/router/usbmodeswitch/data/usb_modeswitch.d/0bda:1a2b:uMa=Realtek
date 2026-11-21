@@ -1,0 +1,6 @@
+# Realtek Wifi Dongle
+TargetVendor=0x0bda
+TargetProduct=0xb851
+StandardEject=1
+
+

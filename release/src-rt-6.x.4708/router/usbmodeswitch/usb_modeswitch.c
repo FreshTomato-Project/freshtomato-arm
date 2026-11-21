@@ -1,8 +1,8 @@
 /*
   Mode switching tool for controlling mode of 'multi-state' USB devices
-  Version 2.6.2, 2025/02/19
+  Version 2.6.3, 2026/11/11
 
-  Copyright (C) 2007 - 2025 Josua Dietze (mail to "usb" at the domain
+  Copyright (C) 2007 - 2026 Josua Dietze (mail to "usb" at the domain
   of the home page; or write a personal message through the forum to "Josh".
   NO SUPPORT VIA E-MAIL - please use the forum for that)
 

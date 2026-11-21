@@ -1,8 +1,9 @@
 PROG        = usb_modeswitch
-VERS        = 2.6.1
+VERS        = 2.6.3
 CC          ?= gcc
 CFLAGS      += -Wall -Wno-deprecated-declarations
 LIBS        = `pkg-config --libs --cflags libusb-1.0`
+JIMLIBS     = `pkg-config --static --libs jimtcl 2>/dev/null`
 RM          = /bin/rm -f
 OBJS        = usb_modeswitch.c
 PREFIX      = $(DESTDIR)/usr
@@ -38,7 +39,7 @@ dispatcher-dynlink: dispatcher.c dispatcher.h
 
 dispatcher-statlink: dispatcher.c dispatcher.h
 	DISPATCH=dispatcher-statlink
-	$(CC) dispatcher.c $(LDFLAGS) -l:libjim.a -ldl -Ijim -o usb_modeswitch_dispatcher $(CFLAGS)
+	$(CC) dispatcher.c $(LDFLAGS) -l:libjim.a $(JIMLIBS) -ldl -Ijim -o usb_modeswitch_dispatcher $(CFLAGS)
 
 dispatcher.h: usb_modeswitch_dispatcher.tcl
 	./make_string.sh usb_modeswitch_dispatcher.tcl > $@

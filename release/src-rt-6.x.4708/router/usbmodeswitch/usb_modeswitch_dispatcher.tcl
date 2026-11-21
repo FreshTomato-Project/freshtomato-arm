@@ -9,8 +9,8 @@
 # the mode switching program with the matching parameter
 # file from /usr/share/usb_modeswitch
 #
-# Part of usb-modeswitch-2.6.2 package, 2025/02/19
-# (C) Josua Dietze 2009 - 2025
+# Part of usb-modeswitch-2.6.3 package, 2026/11/11
+# (C) Josua Dietze 2009 - 2026
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

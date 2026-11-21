@@ -2,6 +2,9 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.6.3, 2026/11/11
+    Fixed linking error for static builds with jimtcl (static dispatcher);
+    thanks to Yegor Yefremov for the report and the patch
 Version 2.6.2, 2025/02/19
     Bug in C code (with gcc 1.5) fixed
 Version 2.6.1, 2020/07/10

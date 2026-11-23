@@ -742,6 +742,7 @@ static const nvset_t nvset_list[] = {
 	{ "dns_norebind",		V_01				},
 	{ "dns_fwd_local",		V_01				},	/* forward queries for local domain to upstream DNS server */
 	{ "dns_priv_override",		V_01				},	/* override DoH */
+	{ "dns_block_dotq",		V_01				},	/* block forwarded DoT/DoQ in firewall */
 	{ "dnsmasq_debug",		V_01				},
 	{ "dnsmasq_custom",		V_TEXT(0, 4096)			},
 	{ "dnsmasq_q",			V_RANGE(0, 7)			},	/* bitfield quiet bit0=dhcp, 1=dhcp6, 2=ra */

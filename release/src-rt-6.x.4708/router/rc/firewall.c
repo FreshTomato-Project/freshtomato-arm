@@ -1308,7 +1308,7 @@ static void filter_forward(void)
 #endif
 
 	/* Prevent LAN clients from bypassing local DNS via DoT or DoQ */
-	if (nvram_get_int("dns_priv_override")) {
+	if (nvram_get_int("dns_block_dotq")) {
 		ip46t_write(ipv6_enabled, "-A FORWARD -i br+ -p tcp --dport 853 -j REJECT\n");
 		ip46t_write(ipv6_enabled, "-A FORWARD -i br+ -p udp --dport 853 -j REJECT\n");
 	}

@@ -19,7 +19,7 @@
 
 <script>
 
-//	<% nvram("dnsmasq_q,ipv6_service,ipv6_radvd,ipv6_dhcpd,ipv6_lease_time,ipv6_fast_ra,ipv6_dns_lan,dhcpd_dmdns,dhcpd_gwmode,dns_intcpt,dhcpc_minpkt,dnsmasq_custom,dnsmasq_onion_support,dnsmasq_gen_names,dhcpd_lmax,dhcpc_custom,dns_norebind,dns_fwd_local,dns_priv_override,dhcpd_ostatic,dnsmasq_debug,dnsmasq_edns_size,dnssec_enable,dnssec_method,dnscrypt_proxy,dnscrypt_priority,dnscrypt_port,dnscrypt_resolver,dnscrypt_log,dnscrypt_manual,dnscrypt_provider_name,dnscrypt_provider_key,dnscrypt_resolver_address,dnscrypt_ephemeral_keys,stubby_proxy,stubby_priority,stubby_log,stubby_force_tls13,stubby_port,stubby_custom,wan_wins,mdns_enable,mdns_reflector,lan_ifname,dnsmasq_tftp,dnsmasq_tftp_path,dnsmasq_pxelan,dnsmasq_safe,wan_addget,wan_proto"); %>
+//	<% nvram("dnsmasq_q,ipv6_service,ipv6_radvd,ipv6_dhcpd,ipv6_lease_time,ipv6_fast_ra,ipv6_dns_lan,dhcpd_dmdns,dhcpd_gwmode,dns_intcpt,dhcpc_minpkt,dnsmasq_custom,dnsmasq_onion_support,dnsmasq_gen_names,dhcpd_lmax,dhcpc_custom,dns_norebind,dns_fwd_local,dns_priv_override,dns_block_dotq,dhcpd_ostatic,dnsmasq_debug,dnsmasq_edns_size,dnssec_enable,dnssec_method,dnscrypt_proxy,dnscrypt_priority,dnscrypt_port,dnscrypt_resolver,dnscrypt_log,dnscrypt_manual,dnscrypt_provider_name,dnscrypt_provider_key,dnscrypt_resolver_address,dnscrypt_ephemeral_keys,stubby_proxy,stubby_priority,stubby_log,stubby_force_tls13,stubby_port,stubby_custom,wan_wins,mdns_enable,mdns_reflector,lan_ifname,dnsmasq_tftp,dnsmasq_tftp_path,dnsmasq_pxelan,dnsmasq_safe,wan_addget,wan_proto"); %>
 
 var cprefix = 'advanced_dhcpdns';
 var height = 0;
@@ -315,9 +315,9 @@ function finishSave(fom, retries) {
 		addService(fom, 'dnsmasq-restart'); /* start dnsmasq if safe mode is set */
 	}
 
-	if ((fom.dns_intcpt.value != nvram.dns_intcpt) || (fom.dns_priv_override.value != nvram.dns_priv_override)) {
+	if ((fom.dns_intcpt.value != nvram.dns_intcpt) || (fom.dns_block_dotq.value != nvram.dns_block_dotq)) {
 		nvram.dns_intcpt = fom.dns_intcpt.value;
-		nvram.dns_priv_override = fom.dns_priv_override.value;
+		nvram.dns_block_dotq = fom.dns_block_dotq.value;
 		addService(fom, 'firewall-restart'); /* special case: restart FW */
 	}
 
@@ -375,6 +375,7 @@ function save() {
 	fom.dns_fwd_local.value = fom._f_dns_fwd_local.checked ? 1 : 0;
 	fom.dns_intcpt.value = fom._f_dns_intcpt.checked ? 1 : 0;
 	fom.dns_priv_override.value = fom._f_dns_priv_override.checked ? 1 : 0;
+	fom.dns_block_dotq.value = fom._f_dns_block_dotq.checked ? 1 : 0;
 	fom.dnsmasq_debug.value = fom._f_dnsmasq_debug.checked ? 1 : 0;
 	fom.dnsmasq_edns_size.value = fom._f_dnsmasq_edns_size.value;
 /* TOR-BEGIN */
@@ -515,6 +516,7 @@ function init() {
 <input type="hidden" name="dns_fwd_local">
 <input type="hidden" name="dns_intcpt">
 <input type="hidden" name="dns_priv_override">
+<input type="hidden" name="dns_block_dotq">
 <!-- IPV6-BEGIN -->
 <input type="hidden" name="ipv6_radvd">
 <input type="hidden" name="ipv6_dhcpd">
@@ -717,7 +719,8 @@ function init() {
 			{ title: 'Mute dhcpv6 logging', name: 'f_dnsmasq_q6', type: 'checkbox', value: (nvram.dnsmasq_q & 2) },
 			{ title: 'Mute RA logging', name: 'f_dnsmasq_qr', type: 'checkbox', value: (nvram.dnsmasq_q & 4) },
 /* IPV6-END */
-			{ title: 'Prevent client auto DoH /<br> block DoT and DoQ', name: 'f_dns_priv_override', type: 'checkbox', value: nvram.dns_priv_override == 1 },
+			{ title: 'Prevent client auto DoH', name: 'f_dns_priv_override', type: 'checkbox', value: nvram.dns_priv_override == 1 },
+			{ title: 'Block DoT/DoQ (FW)', name: 'f_dns_block_dotq', type: 'checkbox', value: nvram.dns_block_dotq == 1 },
 			{ title: 'Enable DNS Rebind protection', name: 'f_dns_norebind', type: 'checkbox', suffix: ' <small>note: disabled when \'Resolve .onion using Tor\' is checked<\/small>', value: nvram.dns_norebind == 1 },
 			{ title: 'Forward local domain queries to upstream DNS', name: 'f_dns_fwd_local', type: 'checkbox', value: nvram.dns_fwd_local == 1 }
 /* MDNS-BEGIN */
@@ -804,7 +807,8 @@ function init() {
 		<li><b>Fast RA mode</b> - Forces dnsmasq to be always in frequent RA mode. (Recommendation: enable also "Mute RA logging" option)</li>
 		<li><b>IPv6 DNS Server</b> - Send DHCPv6 option6 dns-server (RDNSS). (Default (empty) will use the global address of the router if SLAAC and/or DHCPv6 is enabled!)</li>
 <!-- IPV6-END -->
-		<li><b>Prevent client auto DoH / block DoT and DoQ</b> - Some clients like Firefox or Windows' Discovery of Designated Resolver support can automatically switch to DNS over HTTPS, bypassing your preferred DNS servers. This option may prevent that. It also rejects forwarded DNS over TLS (TCP/853) and DNS over QUIC (UDP/853) from LAN clients, for IPv4 and IPv6.</li>
+		<li><b>Prevent client auto DoH</b> - Some clients like Firefox or Windows' Discovery of Designated Resolver support can automatically switch to DNS over HTTPS, bypassing your preferred DNS servers. This option may prevent that.</li>
+		<li><b>Block DoT/DoQ (FW)</b> - Reject forwarded DNS over TLS (TCP/853) and DNS over QUIC (UDP/853) traffic from LAN clients, for IPv4 and IPv6, using firewall rules. This may prevent Android Private DNS from working.</li>
 		<li><b>Enable DNS Rebind protection</b> - Enabling this will protect your LAN against DNS rebind attacks, however it will prevent upstream DNS servers from resolving queries to any non-routable IP (for example, 192.168.1.1).</li>
 <!-- MDNS-BEGIN -->
 		<li><b>Enable multicast DNS (Avahi mDNS)</b> - You will probably also want to add some <a href="advanced-access.asp">LAN access rules</a> (by default all communication between bridges is blocked) and/or use <a href="admin-scripts.asp">Firewall script</a> to add your own rules, ie. (br0 = private network, br1 = IOT): <i>iptables -I FORWARD -i br0 -o br+ -j ACCEPT</i> and <i>iptables -I INPUT -i br1 -p udp --dport 5353 -j ACCEPT</i>. Alternative config file is available (/etc/avahi/avahi-daemon_alt.conf).</li>

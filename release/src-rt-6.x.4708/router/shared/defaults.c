@@ -1143,6 +1143,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "dns_norebind",		"1"				},
 	{ "dns_fwd_local",		"0"				},
 	{ "dns_priv_override",		"0"				},
+	{ "dns_block_dotq",		"0"				},
 	{ "dnsmasq_debug",		"0"				},
 	{ "dnsmasq_custom",		""				},
 	{ "dnsmasq_static_only",	"0"				},

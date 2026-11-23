@@ -1222,13 +1222,15 @@ void start_ovpn_server(int unit)
 		else
 			snprintf(buffer2, BUF_SIZE_32, "tcp");
 
-		fprintf(fp, "#!/bin/sh\n"
-		            "iptables -t nat -I PREROUTING -p %s --dport %d -j ACCEPT\n",
-		            buffer2, atoi(getNVRAMVar("vpns%d_port", unit)));
+		fprintf(fp, "#!/bin/sh\n");
 
-		strlcpy(buffer, getNVRAMVar("vpns%d_proto", unit), BUF_SIZE);
-		fprintf(fp, "iptables -I INPUT -p %s --dport %d -j %s\n",
-		            buffer2, atoi(getNVRAMVar("vpns%d_port", unit)), chain_in_accept);
+		/* IPv4 port, unless the server is IPv6 only */
+		if (strcmp(buffer, "udp6") && strcmp(buffer, "tcp6-server")) {
+			fprintf(fp, "iptables -t nat -I PREROUTING -p %s --dport %d -j ACCEPT\n"
+			            "iptables -I INPUT -p %s --dport %d -j %s\n",
+			            buffer2, atoi(getNVRAMVar("vpns%d_port", unit)),
+			            buffer2, atoi(getNVRAMVar("vpns%d_port", unit)), chain_in_accept);
+		}
 
 		snprintf(buffer, BUF_SIZE, "vpns%d_firewall", unit);
 		if (!nvram_contains_word(buffer, "external")) {
@@ -1270,9 +1272,11 @@ void start_ovpn_server(int unit)
 		/* Create firewall rules for IPv6 */
 #ifdef TCONFIG_IPV6
 		if (ipv6_enabled()) {
+			/* IPv6 port, unless the server is IPv4 only */
 			strlcpy(buffer, getNVRAMVar("vpns%d_proto", unit), BUF_SIZE);
-			fprintf(fp, "ip6tables -I INPUT -p %s --dport %d -j %s\n",
-			            buffer2, atoi(getNVRAMVar("vpns%d_port", unit)), chain_in_accept);
+			if (strcmp(buffer, "udp4") && strcmp(buffer, "tcp4-server"))
+				fprintf(fp, "ip6tables -I INPUT -p %s --dport %d -j %s\n",
+				            buffer2, atoi(getNVRAMVar("vpns%d_port", unit)), chain_in_accept);
 
 			snprintf(buffer, BUF_SIZE, "vpns%d_firewall", unit);
 			if (!nvram_contains_word(buffer, "external")) {

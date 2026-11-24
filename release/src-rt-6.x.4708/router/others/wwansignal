@@ -315,18 +315,18 @@ signal4g() {
 	fi
 }
 
-checkPid() {
-	local PIDNO
-
-	[ -f $PIDFILE ] && {
-		PIDNO=$(cat $PIDFILE)
-		cat "/proc/$PIDNO/cmdline" &>/dev/null
-
-		[ $? -eq 0 ] && {
-			$LOGS "MODEM - another process in action - exiting"
-			exit 0
-		}
+lockSignal() {
+	# wwansignal does not own switch4g/switch3g PID files
+	# Use the SAME per-WAN lock as connect/disconnect/reset
+	local lockfile="/var/lock/modem_$PREFIX.lock"
+	exec 9>"$lockfile" || {
+		$LOGS "MODEM - cannot open modem lock: $lockfile"
+		return 1
 	}
+	if ! flock -n 9; then
+		$LOGS "MODEM - another modem operation for $PREFIX in progress"
+		return 1
+	fi
 }
 
 uqmiCall() {
@@ -348,7 +348,6 @@ uqmiCall() {
 		uqmiKill $COMMAND
 	} || {
 		$LOGS "MODEM - another uqmi process in action (hangs?) - exiting ..."
-		rm -f $PIDFILE &>/dev/null
 		exit 0
 	}
 }
@@ -375,18 +374,14 @@ uqmiKill() {
 
 
 if [ "$MODE" == "ppp3g" ]; then
+	lockSignal || exit 0
 	$LOGS "MODEM Type: 3G"
-	PIDFILE="/var/run/switch3g_$PREFIX.pid"
-	checkPid
 	signal3g
 elif [ "$MODE" == "lte" ]; then
-	$LOGS "MODEM Type: "$MTYPE
-	PIDFILE="/var/run/switch4g_$PREFIX.pid"
-	checkPid
+	lockSignal || exit 0
+	$LOGS "MODEM Type: $MTYPE"
 	signal4g
 else
 	$LOGS "Warning, $PREFIX not in 3G/LTE mode. Aborting ..."
 	exit 0
 fi
-
-rm -f $PIDFILE &>/dev/null

@@ -81,6 +81,7 @@ find_iface() {
 
 	MARK="vpnrouting$FWMARK"
 	PIDFILE="/var/run/vpnrouting$FWMARK.pid"
+	LOCKFILE="/var/lock/vpnrouting$FWMARK.lock"
 }
 
 stopRouting() {
@@ -212,34 +213,34 @@ checkRestart() {
 	[ "$RESTART_FW" -eq 1 ] && service firewall restart
 }
 
+cleanupPid() {
+	# Only the lock owner may remove its diagnostic PID file
+	[ "$(cat "$PIDFILE" 2>/dev/null)" = "$PID" ] && rm -f "$PIDFILE"
+}
+
 checkPid() {
-	local PIDNO
+	local waited=0
 
-	[ -f $PIDFILE ] && {
-		PIDNO=$(cat $PIDFILE)
-		cat "/proc/$PIDNO/cmdline" &>/dev/null
-
-		if [ $? -eq 0 ]; then
-			# priority has the last process
-			$LOGW "killing previous process ..."
-			kill -9 $PIDNO
-			echo $PID > $PIDFILE || {
-				$LOGE "could not create PID file"
-				exit 0
-			}
-		else
-			# process not found assume not running
-			echo $PID > $PIDFILE || {
-				$LOGE "could not create PID file"
-				exit 0
-			}
-		fi
-	} || {
-		echo $PID > $PIDFILE || {
-			$LOGE "could not create PID file"
-			exit 0
-		}
+	# A newer OpenVPN up/down event must not SIGKILL an older one halfway
+	# through route/ipset/DNS changes. Queue events under this per-client lock
+	exec 9>"$LOCKFILE" || {
+		$LOGE "could not open routing lock: $LOCKFILE"
+		exit 1
 	}
+	until flock -n 9; do
+		waited=$((waited + 1))
+		if [ "$waited" -ge 60 ]; then
+			$LOGE "routing lock busy for 60 seconds: $LOCKFILE"
+			exit 1
+		fi
+		sleep 1
+	done
+
+	printf '%s\n' "$PID" > "$PIDFILE" || {
+		$LOGE "could not create PID file"
+		exit 1
+	}
+	trap 'cleanupPid' EXIT
 }
 
 
@@ -270,6 +271,5 @@ VPN_REDIR=$(NG vpn"$NVSERV"_rgw)
 
 ip route flush cache
 
-rm -f $PIDFILE &>/dev/null
 
 exit 0

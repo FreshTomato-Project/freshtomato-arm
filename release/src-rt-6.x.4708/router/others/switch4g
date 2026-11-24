@@ -16,6 +16,7 @@ PREFIX="$1"
 
 PID=$$
 PIDFILE="/var/run/switch4g_$PREFIX.pid"
+MODEM_LOCK="/var/lock/modem_$PREFIX.lock"
 READYFILE="/tmp/switch4g_$PREFIX.ready"
 DIAGSFILE="/tmp/switch4g_$PREFIX.diags"
 STATEFILE="/var/lib/misc/$PREFIX_state"
@@ -71,6 +72,7 @@ getBandText() {
 }
 
 connect() {
+	abortIfShutdown
 	DEVNR=$(NG "$PREFIX"_modem_dev)
 	APN=$(NG "$PREFIX"_modem_apn)
 	SPEED=$(NG "$PREFIX"_modem_speed)
@@ -100,7 +102,9 @@ connect() {
 		DEVALL="$DEVALL $DEVALL $DEVALL" # try 3x on every interface
 
 		while [ "$CONNECTED" -eq 0 ]; do
+			abortIfShutdown
 			for i in $DEVALL; do
+				abortIfShutdown
 				# disconnect first
 				MODE="AT^NDISDUP=1,0" gcom -d "$i" -s /etc/gcom/setmode.gcom >/dev/null
 				sleep 2
@@ -206,6 +210,7 @@ connect() {
 		# devices need timeout, otherwise they hang
 		sleep 6
 
+		abortIfShutdown
 		# try to clear previous autoconnect state
 		uqmiCall "-t 1000 --stop-network 0xffffffff --autoconnect"
 		uqmiCall "-t 1000 --set-ip-family ipv6 --stop-network 0xffffffff --autoconnect"
@@ -245,6 +250,7 @@ connect() {
 		sleep 5
 
 		while true; do
+			abortIfShutdown
 			REGISTRATION_STATE=$(echo "$(uqmiCall "-t 1000 --get-serving-system")" | grep -o '"registration":"[^"]*"' | cut -d'"' -f4)
 
 			[ "$REGISTRATION_STATE" = "registered" ] && break
@@ -280,6 +286,7 @@ connect() {
 		uqmiCall "-t 5000 --set-client-id wds,$CLID --set-ip-family ipv4"
 
 		while [ "$CONNECTED" -eq 0 ]; do
+			abortIfShutdown
 			if [ "$COUNT" -lt 6 ]; then
 				# connect
 				PDH=$(uqmiCall "-t 5000 --set-client-id wds,$CLID --start-network" 1)
@@ -332,6 +339,7 @@ connect() {
 	COUNT=1
 
 	while [ "$DONE" -eq 0 ] && [ "$COUNT" -lt 6 ]; do
+		abortIfShutdown
 		dhcpc-release "$PREFIX"
 		sleep 1
 		dhcpc-renew "$PREFIX"
@@ -363,6 +371,7 @@ connect() {
 		fi
 	}
 
+	abortIfShutdown
 	echo "1" > $STATEFILE
 	mwwatchdog add
 }
@@ -405,6 +414,7 @@ disconnect() {
 }
 
 switchMode() {
+	abortIfShutdown
 	VENDOR="" PRODUCT="" MTYPE="" MODULE="" DEVICENAME="" SWITCHED=0 # global
 # BCMARM-BEGIN
 	MODULES="qmi_wwan cdc_ether huawei_cdc_ncm cdc_ncm rndis_host"
@@ -491,6 +501,7 @@ switchMe() {
 }
 
 searchWAN() {
+	abortIfShutdown
 	# search WAN interface (usbX, ethX, wwanX)
 	WAN="" WANS="" # global
 	local FOUND=0 MODULE WDM WDM_PATH
@@ -598,6 +609,7 @@ bindUsbserialGeneric() {
 }
 
 searchDiag() {
+	abortIfShutdown
 	DEVNR=""
 	local TTYS="" UQMIRET="" UQMIPID=""
 	local PATHDEV WAN IFACE TTY
@@ -712,6 +724,7 @@ findType() {
 }
 
 modemReset() {
+	abortIfShutdown
 	# TODO: reset should also be performed if the connection fails X times at any given time
 	local DNAME=$(NG "$PREFIX"_modem_devicename)
 
@@ -725,6 +738,7 @@ modemReset() {
 }
 
 setPIN() {
+	abortIfShutdown
 	local PIN=$(NG "$PREFIX"_modem_pin)
 	local IS_DONE=0 COUNT=1 PIN_STATUS PIN_VERIFY_TRIES PIN_EXT_STATUS=0 PINVAL SIM_STATE STATUS
 
@@ -739,6 +753,7 @@ setPIN() {
 			if [ -z "$(echo "$STATUS" | grep OK)" ] || [ -n "$(echo "$STATUS" | grep ERR)" ]; then # error?
 				COUNT=1
 				while [ "$COUNT" -lt 4 ]; do # try 3 times
+					abortIfShutdown
 					STATUS=$(MODE="AT+CPIN?" gcom -d "$DEVNR" -s /etc/gcom/setverbose.gcom) # std PIN status
 
 					if [ -z "$(echo "$STATUS" | grep OK)" ] || [ -n "$(echo "$STATUS" | grep ERR)" ]; then # error?
@@ -786,6 +801,7 @@ setPIN() {
 			uqmiCall "-t 3000 --get-pin-status"
 
 			while uqmiCall "-t 1000 --get-pin-status" | grep '"UIM uninitialized"'; do
+				abortIfShutdown
 				[ -n "$DEVNR" ] || wayOut "4G MODEM - DIAG interface not found!"
 
 				if [ "$COUNT" -lt 30 ]; then
@@ -801,6 +817,7 @@ setPIN() {
 			# the legacy DMS command returns a valid SIM status.
 			COUNT=1
 			while true; do
+				abortIfShutdown
 				STATUS=$(uqmiCall "-t 2000 --uim-get-sim-state")
 				SIM_STATE=$(echo "$STATUS" | sed -n 's/.*"card_application_state"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 
@@ -887,6 +904,7 @@ setPIN() {
 }
 
 detect() {
+	abortIfShutdown
 	# modem not yet detected
 	[ ! -f $READYFILE ] && {
 		switchMode
@@ -957,29 +975,37 @@ uqmiKill() {
 	fi
 }
 
-checkPid() {
-	local PRIORITY="$1" PIDNO
+cleanupPid() {
+	# Only the lock owner may remove its diagnostic PID file
+	[ "$(cat "$PIDFILE" 2>/dev/null)" = "$PID" ] && rm -f "$PIDFILE"
+}
 
-	if [ -f "$PIDFILE" ]; then
-		PIDNO=$(cat "$PIDFILE")
-		if kill -0 "$PIDNO" 2>/dev/null; then
-			$LOGW "4G MODEM - another process in action - exiting"
-			exit 0
-		fi
-	fi
-
-	[ "$PRIORITY" -eq 0 ] && return
-
-	echo $PID > $PIDFILE || {
-		$LOGE "4G MODEM - could not create PID file"
+abortIfShutdown() {
+	if [ "$(NG g_upgrade)" = "1" ] || [ "$(NG g_reboot)" = "1" ]; then
+		$LOGW "4G MODEM - skipping connection during reboot/upgrade"
 		exit 0
+	fi
+}
+
+checkPid() {
+	exec 9>"$MODEM_LOCK" || {
+		$LOGE "4G MODEM - cannot open modem lock: $MODEM_LOCK"
+		exit 1
 	}
+	if ! flock -n 9; then
+		$LOGW "4G MODEM - another modem operation for $PREFIX in progress - exiting"
+		exit 0
+	fi
+	printf '%s\n' "$PID" > "$PIDFILE" || {
+		$LOGE "4G MODEM - could not create PID file"
+		exit 1
+	}
+	trap 'cleanupPid' EXIT
 }
 
 wayOut() {
 	$LOGE "${1:-4G MODEM - exiting}"
-	rm -f $READYFILE 2>/dev/null
-	rm -f $PIDFILE 2>/dev/null
+	rm -f "$READYFILE" 2>/dev/null
 	exit 0
 }
 
@@ -989,27 +1015,25 @@ wayOut() {
 
 case "$2" in
 	connect)
-		checkPid 1
+		checkPid
 		detect
 		connect
 	;;
 	disconnect)
-		checkPid 0
+		checkPid
 		disconnect
 	;;
 	reset)
-		checkPid 0
+		checkPid
 		modemReset
 	;;
 	signal)
-		wwansignal $PREFIX
+		wwansignal "$PREFIX"
 		exit
 	;;
 	*)
-		checkPid 1
+		checkPid
 		detect
 		connect
 	;;
 esac
-
-rm -f $PIDFILE 2>/dev/null

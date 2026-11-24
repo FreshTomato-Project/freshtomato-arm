@@ -141,6 +141,7 @@ temporaryRoute() {
 
 cleanupTemporaryRoutes() {
 	local ip
+
 	for ip in $ROUTED_IPS; do
 		temporaryRoute del "$ip" "$ROUTE_IFACE" "$ROUTE_GATEWAY" >/dev/null 2>&1 ||
 			$LOGW "Cannot delete temporary route for $ip on $ROUTE_IFACE"
@@ -281,6 +282,11 @@ mwwatchdogRun() {
 
 			# handle WAN down
 			if [ "$RESULT" -eq 0 ]; then
+				# The flags may have changed while this run was probing WAN
+				if shutdownPending; then
+					$LOGD "reboot/upgrade in progress; skipping WAN reconnect"
+					continue
+				fi
 				[ "$PROTO" = "lte" ] && {
 					$LOGI "Connection $PREFIX_LOG DOWN - Reconnecting ..."
 					echo "0" > "$STATE_FILE"
@@ -454,6 +460,7 @@ mwanJob() {
 }
 
 mwanAlive() {
+	shutdownPending && return 0
 	[ "$MWAN" -gt 1 ] && {
 		ps | grep -q '[m]wanroute' && $LOGD "mwanroute is running" || {
 			$LOGW "mwanroute not found, trying to recover it"
@@ -462,20 +469,23 @@ mwanAlive() {
 	}
 }
 
+shutdownPending() {
+	[ "$(NG g_upgrade)" = "1" ] || [ "$(NG g_reboot)" = "1" ]
+}
+
 checkPid() {
-	local PIDNO
-
-	if [ -f "$PIDFILE" ]; then
-		PIDNO=$(cat "$PIDFILE")
-		if kill -0 "$PIDNO" 2>/dev/null; then
-			$LOGW "another process in action - exiting ..."
-			exit 0
-		fi
-	fi
-
-	echo $PID > "$PIDFILE" || {
-		$LOGE "could not create PID file"
+	# Kernel lock is the source of truth; the PID file is informational only
+	exec 9>"/var/lock/mwwatchdog.lock" || {
+		$LOGE "could not open mwwatchdog lock"
+		exit 1
+	}
+	if ! flock -n 9; then
+		$LOGD "another mwwatchdog run is in progress - exiting"
 		exit 0
+	fi
+	printf '%s\n' "$PID" > "$PIDFILE" || {
+		$LOGE "could not create PID file"
+		exit 1
 	}
 }
 
@@ -483,28 +493,14 @@ checkPidSwitch() {
 	local SPREFIX
 
 	for SPREFIX in $MWANTABLE; do
-		if [ -f "/var/run/switch3g_$SPREFIX.pid" ]; then
-			if ! ps | grep -q '[s]witch3g'; then
-				# PID file exists but process doesn't
-				rm "/var/run/switch3g_$SPREFIX.pid" 2>/dev/null
-			else
-				$LOGW "switch3g ($SPREFIX) script in action - exiting ..."
-				rm -f "$PIDFILE" 2>/dev/null
-				exit 0
-			fi
-		fi
-
-		if [ -f "/var/run/switch4g_$SPREFIX.pid" ]; then
-			if ! ps | grep -q '[s]witch4g'; then
-				# PID file exists but process doesn't
-				rm "/var/run/switch4g_$SPREFIX.pid" 2>/dev/null
-			else
-				$LOGW "switch4g ($SPREFIX) script in action - exiting ..."
-				rm -f "$PIDFILE" 2>/dev/null
-				exit 0
-			fi
+		# Probe the lock for this WAN only. Do not trust ps from another WAN
+		# and never remove switch3g/switch4g PID files owned by others
+		if ! ( exec 8>"/var/lock/modem_$SPREFIX.lock" && flock -n 8 ); then
+			$LOGW "modem operation for $SPREFIX in progress - exiting ..."
+			return 1
 		fi
 	done
+	return 0
 }
 
 
@@ -513,6 +509,10 @@ checkPidSwitch() {
 
 case "$1" in
 	add)
+		if shutdownPending; then
+			$LOGD "reboot/upgrade in progress; skipping watchdog add"
+			exit 0
+		fi
 		mwwatchdogAdd
 		mwanJob
 		;;
@@ -525,7 +525,10 @@ case "$1" in
 	*)
 		if [ "$(NG g_upgrade)" != "1" ] && [ "$(NG g_reboot)" != "1" ]; then
 			checkPid
-			checkPidSwitch
+			checkPidSwitch || {
+				[ "$(cat "$PIDFILE" 2>/dev/null)" = "$PID" ] && rm -f "$PIDFILE"
+				exit 0
+			}
 			mwanJob
 			findHost
 

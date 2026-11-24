@@ -15,6 +15,7 @@ PREFIX="$1"
 
 PID=$$
 PIDFILE="/var/run/switch3g_$PREFIX.pid"
+MODEM_LOCK="/var/lock/modem_$PREFIX.lock"
 DIAGSFILE="/tmp/switch3g_$PREFIX.diags"
 MODE=$(NG "$PREFIX"_proto)
 DEVNR=$(NG "$PREFIX"_modem_dev)
@@ -32,11 +33,13 @@ LOGW="logger -p WARN -t switch3g[$PID]"
 
 
 switchMode() {
+	abortIfShutdown
 	VENDOR="" PRODUCT="" MODULE="" DEVICENAME="" TTYS="" ALREADYFOUND=0 # global
 	local COUNT SWITCHED=0 DVDP=0 TTYS_PATH PATHDEV SWITCH DEVICES IFN_BEFORE DV DP DB DG
 
 	# search for DEVICENAME via active TTYs
 	for DEVICENAME in $(ls /sys/bus/usb/devices/ | grep -v ":" | grep "-"); do
+		abortIfShutdown
 
 		PATHDEV="/sys/bus/usb/devices/$DEVICENAME"
 		[ -f "$PATHDEV/idVendor" -a -f "$PATHDEV/idProduct" -a -f "$PATHDEV/uevent" ] || continue # skip
@@ -67,9 +70,11 @@ switchMode() {
 		DEVICES=$(lsusb | awk '{print $6}')
 
 		for SWITCH in $DEVICES; do
+			abortIfShutdown
 			[ "$(ls /etc/usb_modeswitch.d/"$SWITCH" 2>/dev/null | wc -l)" -eq 1 ] && {
 				# search for DEVICENAME & other data
 				for DEVICENAME in $(ls /sys/bus/usb/devices/ | grep -v ":" | grep "-"); do
+					abortIfShutdown
 					PATHDEV="/sys/bus/usb/devices/$DEVICENAME"
 					[ -f "$PATHDEV/idVendor" -a -f "$PATHDEV/idProduct" -a -f "$PATHDEV/uevent" ] || continue # skip
 
@@ -87,6 +92,7 @@ switchMode() {
 				[ "$DVDP" -eq 1 ] && {
 					# in some cases it needs more time
 					for COUNT in 1 2 3 4; do
+						abortIfShutdown
 						sleep 1
 						[ -s "$PATHDEV/bNumInterfaces" ] && {
 							IFN_BEFORE=$(cat "$PATHDEV/bNumInterfaces")
@@ -100,6 +106,7 @@ switchMode() {
 
 					# need few seconds before modem will be detected once again after switch
 					for COUNT in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
+						abortIfShutdown
 						sleep 1
 						[ -s "$PATHDEV/bNumInterfaces" ] && {
 							[ "$(cat "$PATHDEV/bNumInterfaces")" -gt "$IFN_BEFORE" ] && break
@@ -179,6 +186,7 @@ bindUsbserialGeneric() {
 }
 
 searchDiag() {
+	abortIfShutdown
 	local MODULES="cdc-acm option sierra"
 	local PATHDIAG="/sys/bus/usb/devices"
 	local PATHDEV
@@ -188,6 +196,7 @@ searchDiag() {
 
 	[ -z "$TTYS" ] && {
 		for MODULE in $MODULES; do
+			abortIfShutdown
 			modprobe $MODULE
 			sleep 1
 
@@ -209,6 +218,7 @@ searchDiag() {
 			else
 				# VENDOR/PRODUCT unknown, so try every possible device.
 				for DEVICENAME in $(ls /sys/bus/usb/devices/ | grep -v ":" | grep "-"); do
+					abortIfShutdown
 					PATHDEV="$PATHDIAG/$DEVICENAME"
 					[ -f "$PATHDEV/idVendor" ] && [ -f "$PATHDEV/idProduct" ] && [ -f "$PATHDEV/uevent" ] || continue # skip
 
@@ -250,6 +260,7 @@ findPath() {
 }
 
 setPIN() {
+	abortIfShutdown
 	local PIN=$(NG "$PREFIX"_modem_pin)
 	local IS_DONE=0 COUNT WORKING_IF=0 PINVAL DEVALL STATUS PIN_STATUS i
 
@@ -258,6 +269,7 @@ setPIN() {
 	DEVALL="$DEVNR $(cat "$DIAGSFILE" | sed "s~$DEVNR~~")"
 
 	for i in $DEVALL; do # find working interface
+		abortIfShutdown
 		[ -n "$(MODE="ATI" gcom -d "$i" -s /etc/gcom/setverbose.gcom | grep OK)" ] && {
 			DEVNR=$i
 			WORKING_IF=1
@@ -269,6 +281,7 @@ setPIN() {
 	[ "$WORKING_IF" -eq 1 ] && {
 		MODE="AT+CFUN=1" gcom -d "$DEVNR" -s /etc/gcom/setverbose.gcom >/dev/null # set as online mode (default value)
 		for COUNT in 1 2 3; do # try 3 times
+			abortIfShutdown
 			STATUS=$(MODE="AT+CPIN?" gcom -d "$DEVNR" -s /etc/gcom/setverbose.gcom) # std PIN status
 
 			[ -n "$(echo "$STATUS" | grep OK)" -a -z "$(echo "$STATUS" | grep ERR)" ] && break # error?
@@ -310,28 +323,36 @@ setPIN() {
 	}
 }
 
-checkPid() {
-	local PRIORITY="$1" PIDNO
+cleanupPid() {
+	# Only the lock owner may remove its diagnostic PID file
+	[ "$(cat "$PIDFILE" 2>/dev/null)" = "$PID" ] && rm -f "$PIDFILE"
+}
 
-	[ -f "$PIDFILE" ] && {
-		PIDNO=$(cat "$PIDFILE")
-		kill -0 "$PIDNO" 2>/dev/null && {
-			$LOGW "3G MODEM - another process in action - exiting"
-			exit 0
-		}
-	}
-
-	[ "$PRIORITY" -eq 0 ] && return
-
-	echo $PID > $PIDFILE || {
-		$LOGE "3G MODEM - could not create PID file"
+abortIfShutdown() {
+	if [ "$(NG g_upgrade)" = "1" ] || [ "$(NG g_reboot)" = "1" ]; then
+		$LOGW "3G MODEM - skipping initialization during reboot/upgrade"
 		exit 0
+	fi
+}
+
+checkPid() {
+	exec 9>"$MODEM_LOCK" || {
+		$LOGE "3G MODEM - cannot open modem lock: $MODEM_LOCK"
+		exit 1
 	}
+	if ! flock -n 9; then
+		$LOGW "3G MODEM - another modem operation for $PREFIX in progress - exiting"
+		exit 0
+	fi
+	printf '%s\n' "$PID" > "$PIDFILE" || {
+		$LOGE "3G MODEM - could not create PID file"
+		exit 1
+	}
+	trap 'cleanupPid' EXIT
 }
 
 wayOut() {
 	$LOGE "${1:-3G MODEM - exiting}"
-	rm -f $PIDFILE 2>/dev/null
 	exit 0
 }
 
@@ -339,12 +360,11 @@ wayOut() {
 ###################################################
 
 
-[ "$2" = "signal" ] && {
-	wwansignal $PREFIX
-} || {
-	checkPid 1
+if [ "$2" = "signal" ]; then
+	wwansignal "$PREFIX"
+else
+	checkPid
 	switchMode
 	searchDiag
 	setPIN
-	rm -f $PIDFILE 2>/dev/null
-}
+fi

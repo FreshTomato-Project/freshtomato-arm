@@ -474,11 +474,11 @@ void wo_ovpn_genclientconfig(char *url)
 	            get_wanip("wan"),
 	            atoi(getNVRAMVar("vpns%d_port", server)));
 
-	/* Proto */
-	memset(buffer, 0, sizeof(buffer));
-	strlcpy(buffer, getNVRAMVar("vpns%d_proto", server), sizeof(buffer));
-	str_replace(buffer, sizeof(buffer), "-server", "-client");
-	fprintf(fp, "proto %s\n", buffer);
+	/* Proto: plain udp/tcp-client, client uses whichever family the server offers */
+	if (strncmp(getNVRAMVar("vpns%d_proto", server), "tcp", 3) == 0)
+		fprintf(fp, "proto tcp-client\n");
+	else
+		fprintf(fp, "proto udp\n");
 
 	/* Interface */
 	fprintf(fp, "dev %s\n", getNVRAMVar("vpns%d_if", server));

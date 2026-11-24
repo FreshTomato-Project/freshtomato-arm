@@ -31,6 +31,7 @@
 
 #include <stdarg.h>
 #include <arpa/inet.h>
+#include <sys/file.h>
 
 
 static int web_lanport;
@@ -1723,11 +1724,37 @@ int start_firewall(void)
 	char *c;
 	char *wanface[MWAN_MAX];
 	int n, enable_rp_filter;
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+	int ks_lockfd, ks_restore_ok = 1;
+#endif
 	unsigned int mwan;
 	int wanproto;
 	char *iptrestore_argv[] = { "iptables-restore", (char *)ipt_fname, NULL };
 #ifdef TCONFIG_IPV6
 	char *ip6trestore_argv[] = { "ip6tables-restore", (char *)ip6t_fname, NULL };
+#endif
+
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+	/*
+	 * Kernel lock shared with ks_helper.sh: never allow FQDN rule updates
+	 * to overlap the complete firewall rebuild. A dead process releases it
+	 * The shell helper invokes the built-in BusyBox flock applet
+	 */
+	ks_lockfd = open("/var/run/ks-firewall.guard", O_RDWR | O_CREAT, 0600);
+	/* No O_CLOEXEC: some supported firmware kernels are old */
+	if (ks_lockfd >= 0 && fcntl(ks_lockfd, F_SETFD, FD_CLOEXEC) != 0) {
+		close(ks_lockfd);
+		ks_lockfd = -1;
+	}
+	if (ks_lockfd < 0 || flock(ks_lockfd, LOCK_EX) != 0) {
+		syslog(LOG_ERR, "Kill-Switch: cannot obtain ks-firewall.guard");
+		if (ks_lockfd >= 0)
+			close(ks_lockfd);
+
+		return 0;
+	}
+	/* Old instances cannot modify the new generation after this point */
+	killall("ks_helper.sh", SIGTERM);
 #endif
 
 	simple_lock("firewall");
@@ -1928,6 +1955,9 @@ int start_firewall(void)
 		notice_set("iptables", "Unable to create iptables restore file!");
 		simple_unlock("firewall");
 		simple_unlock("restrictions");
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+		close(ks_lockfd);
+#endif
 		return 0;
 	}
 
@@ -1939,6 +1969,9 @@ int start_firewall(void)
 			ipt_file = NULL;
 			simple_unlock("firewall");
 			simple_unlock("restrictions");
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+			close(ks_lockfd);
+#endif
 			return 0;
 		}
 		modprobe("nf_conntrack_ipv6");
@@ -1971,6 +2004,10 @@ int start_firewall(void)
 	if (debug_only) {
 		simple_unlock("firewall");
 		simple_unlock("restrictions");
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+		kill_switch_discard_staged();
+		close(ks_lockfd);
+#endif
 		return 0;
 	}
 #endif
@@ -2002,6 +2039,9 @@ int start_firewall(void)
 		}
 	}
 	if (n < 5) {
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+		ks_restore_ok = 0;
+#endif
 		snprintf(s, sizeof(s), "%s.error", ipt_fname);
 		rename(ipt_fname, s);
 		syslog(LOG_CRIT, "Error while loading rules. See %s file.", s);
@@ -2025,6 +2065,9 @@ int start_firewall(void)
 			}
 		}
 		if (n < 5) {
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+			ks_restore_ok = 0;
+#endif
 			snprintf(s, sizeof(s), "%s.error", ip6t_fname);
 			rename(ip6t_fname, s);
 			syslog(LOG_CRIT, "Error while loading rules. See %s file.", s);
@@ -2118,7 +2161,16 @@ int start_firewall(void)
 	allow_fastnat("firewall", can_enable_fastnat);
 	try_enabling_fastnat();
 
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+	/* Generate state only after restore and user firewall scripts have finished */
+	kill_switch_commit(ks_restore_ok);
+#endif
 	simple_unlock("firewall");
+
+#if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
+	close(ks_lockfd);
+	kill_switch_activate();
+#endif
 
 	return 0;
 }

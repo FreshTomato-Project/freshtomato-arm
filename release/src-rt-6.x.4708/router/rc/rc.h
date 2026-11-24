@@ -148,6 +148,9 @@ extern void kill_switch(_tf_ipt_write ipt_write, _tf_ip6t_write ip6t_write);
 extern void kill_switch(_tf_ipt_write ipt_write);
 #endif
 extern void run_vpn_firewall_scripts(const char *kind);
+extern void kill_switch_discard_staged(void);
+extern void kill_switch_commit(int restore_ok);
+extern void kill_switch_activate(void);
 #endif
 
 /* init.c */

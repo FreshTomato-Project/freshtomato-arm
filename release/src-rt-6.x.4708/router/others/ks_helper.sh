@@ -1,192 +1,302 @@
 #!/bin/sh
-export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/home/root
 #
-# Kill Switch FQDNs (type 3) helper script
-#
+# FreshTomato: Kill Switch FQDN helper (type 3)
 # Copyright by pedro 2025 - 2026
 # https://freshtomato.org/
 #
-
+# Revised: serialize instances, verify rules before clearing pending flags, and avoid ICMP-based gating of DNS lookups
+#
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/home/root
 
 . nvram_ops
 . simple_lock_unlock.sh
 
 PID=$$
-MODE="$1"
-FILE="/tmp/kill-switch/fqdns"
-PIDFILE="/var/run/ks_helper.pid"
-LOGI="logger -t KS-helper[$PID]"
-LOGE="logger -p ERROR -t KS-helper[$PID]"
-LOGW="logger -p WARN -t KS-helper[$PID]"
-LOGD="logger -p DEBUG -t KS-helper[$PID]"
-PRIORITY=0
-ALLOK=1
-IP="$(NG wan_checker)"
+MODE=$1
+FILE=/tmp/kill-switch/fqdns
+PIDFILE=/var/run/ks_helper.pid
+SESSION_LOCK=/var/run/ks_helper.instance
+FW_GUARD=/var/run/ks-firewall.guard
+TAG="KS-helper[$PID]"
+ATTEMPT=0
+HAVE_FW_LOCK=0
 
-
-[ -z "$1" ] && { echo "usage: $0 update | add"; exit 0; }
-
-
-ipv6Enabled() {
-	local names="native native-pd 6to4 sit other 6rd 6rd-pd"
-	local p=$(NG ipv6_service 2>/dev/null) i=1
-
-	for name in $names; do
-		[ "$p" = "$name" ] && { echo "$i"; return; }
-		i=$((i + 1))
-	done
-
-	echo 0
+LOGI() { logger -t "$TAG" "$*"; }
+LOGE() { logger -p ERROR -t "$TAG" "$*"; }
+LOGD() { logger -p DEBUG -t "$TAG" "$*"; }
+LOGR() {
+	if [ "$MODE" = update ] || [ "$ATTEMPT" -eq 1 ] || [ $((ATTEMPT % 10)) -eq 0 ]; then
+		LOGE "$*"
+	fi
 }
 
-pingOK() {
-	local i=1 REPEAT
+case "$MODE" in
+	add|update) ;;
+	*) echo "usage: $0 update | add" >&2; exit 2 ;;
+esac
 
-	[ "$PRIORITY" -eq 1 ] && REPEAT=300 || REPEAT=30
-
-	while :; do
-		ping -c 1 -A -W 1 -q $IP &>/dev/null && { echo 1; return; }
-		[ $((i++)) -ge $REPEAT ] && break || sleep 5
-	done
-
-	echo 0
+cleanup() {
+	trap - 0 HUP INT TERM
+	[ "$HAVE_FW_LOCK" -eq 0 ] || simple_unlock
+	flock -u 9 >/dev/null 2>&1 || :
+	rm -f "$PIDFILE"
 }
 
-addToFW() {
-	local DOMAIN VPN_IF WAN_IF FLAG RESULT IP ipt ADD1 ADD2 ADDED SUCCESS RETRIES
+# Legacy /var/lock/firewall.lock is still shared with other FreshTomato scripts
+# Unlike simple_lock(), this must NOT claim success if its timeout expires
+acquire_legacy_lock() {
+	local n=25
+	while ! rm -- /var/lock/firewall.lock 2>/dev/null; do
+		n=$((n - 1))
+		[ "$n" -gt 0 ] || return 1
+		sleep 1
+	done
+	HAVE_FW_LOCK=1
+	return 0
+}
 
-	while IFS= read -r line; do
-		# omit comments and blank lines
-		[ -z "$line" ] || [ "${line#\#}" != "$line" ] && continue
+has_pending() {
+	[ -r "$FILE" ] || return 1
+	awk '
+		$1 !~ /^#/ && NF == 4 && $4 == "1" { found=1; exit }
+		END { exit(found ? 0 : 1) }
+	' "$FILE"
+}
 
-		DOMAIN=$(echo "$line" | awk '{print $1}')
-		VPN_IF=$(echo "$line" | awk '{print $2}')
-		WAN_IF=$(echo "$line" | awk '{print $3}')
-		FLAG=$(echo "$line" | awk '{print $4}')
+ipv6_enabled() {
+	case "$(NG ipv6_service 2>/dev/null)" in
+		native|native-pd|6to4|sit|other|6rd|6rd-pd) return 0 ;;
+		*) return 1 ;;
+	esac
+}
 
-		# for add mode skip the domain if FLAG=0
-		[ "$PRIORITY" -eq 1 ] && [ "$FLAG" -eq 0 ] && continue
+# Parse only answer addresses, never the DNS server address
+answer_ips() {
+	awk '
+		$1 == "Name:" { answer=1; next }
+		answer && ($1 == "Address:" || ($1 == "Address" && $2 ~ /^[0-9]+:$/)) {
+			ip=$1 == "Address:" ? $2 : $3
+			sub(/#.*/, "", ip)
+			if (ip ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ || (index(ip, ":") && ip ~ /^[0-9A-Fa-f:.]+$/))
+				if (!seen[ip]++) print ip
+		}
+	'
+}
 
-		# resolve
-		RETRIES=3
-		SUCCESS=0
-		for i in $(seq 1 $RETRIES); do
-			RESULT=$(nslookup "$DOMAIN" 2>&1)
-			if [ $? -eq 0 ] && ! echo "$RESULT" | grep -q "can't resolve\|connection timed out\|server can't find\|Can't find"; then
-				SUCCESS=1
-				break
+# Check or insert each rule while holding both firewall locks
+ensure_rule() {
+	local tool=$1 ip=$2 reject=$3
+	shift 3
+	"$tool" -C FORWARD -d "$ip" "$@" -j REJECT --reject-with "$reject" >/dev/null 2>&1 && return 0
+	"$tool" -I FORWARD -d "$ip" "$@" -j REJECT --reject-with "$reject" >/dev/null 2>&1 || return 1
+	ADDED=1
+}
+
+# Rewrite by exact field match, not by interpolating an FQDN into a sed regex
+# Caller must hold the FreshTomato firewall lock
+mark_resolved() {
+	local domain=$1 vpn=$2 wan=$3 temp
+	temp=$(mktemp "$FILE.XXXXXX") || return 1
+	# Preserve the source file's owner/mode (mktemp defaults to 0600)
+	if ! cp -p "$FILE" "$temp"; then
+		rm -f "$temp"
+		return 1
+	fi
+	if ! awk -v d="$domain" -v v="$vpn" -v w="$wan" '
+		NF == 4 && $1 == d && $2 == v && $3 == w && $4 == "1" {
+			print $1, $2, $3, "0"
+			next
+		}
+		{ print }
+	' "$FILE" > "$temp"; then
+		rm -f "$temp"
+		return 1
+	fi
+	if ! mv -f "$temp" "$FILE"; then
+		rm -f "$temp"
+		return 1
+	fi
+}
+
+process_domains() {
+	local line domain vpn wan flag result ips ip tool reject n ok any status
+	local rc had_error=0 generation current_generation stale=0
+
+	[ -r "$FILE" ] || {
+		LOGE "FQDN input file unavailable: $FILE"
+		return 1
+	}
+	# Read the generation of the snapshot; do not apply DNS responses to a
+	# different firewall generation when a restart happened during nslookup
+	IFS= read -r generation < "$FILE" || return 1
+	while IFS= read -r line || [ -n "$line" ]; do
+		case "$line" in ""|\#*) continue ;; esac
+		# Field splitting is intentional; glob expansion is disabled below
+		set -f
+		set -- $line
+		set +f
+		if [ "$#" -ne 4 ]; then
+			LOGR "malformed FQDN entry (expected 4 fields)"
+			had_error=1
+			continue
+		fi
+		domain=$1 vpn=$2 wan=$3 flag=$4
+		case "$flag" in
+			0) [ "$MODE" = add ] && continue ;;
+			1) ;;
+			*) LOGR "invalid state flag for $domain: $flag"; had_error=1; continue ;;
+		esac
+		case "$domain" in
+			""|-*|*[!a-zA-Z0-9._-]*)
+				LOGR "invalid domain in FQDN file: $domain"
+				had_error=1
+				continue ;;
+		esac
+		case "$vpn:$wan" in
+			*[!a-zA-Z0-9_.:+-]*|:*|*:)
+				LOGR "invalid interface name for $domain"
+				had_error=1
+				continue ;;
+		esac
+
+		result= ips= rc=1
+		n=1
+		while [ "$n" -le 3 ]; do
+			result=$(nslookup "$domain" 2>&1)
+			rc=$?
+			if [ "$rc" -eq 0 ]; then
+				ips=$(printf '%s\n' "$result" | answer_ips)
+				[ -n "$ips" ] && break
 			fi
-			usleep 200000
+			n=$((n + 1))
+			[ "$n" -le 3 ] && usleep 200000
 		done
 
-		# add info about problem
-		if [ "$SUCCESS" -ne 1 ]; then
-			$LOGE "type: 3 - can't resolve '$DOMAIN' after $RETRIES attempts: $RESULT (are all WANs down, or did you enter the wrong domain?)"
-			ALLOK=0
+		if [ -z "$ips" ]; then
+			LOGR "type: 3 - no usable DNS answers for '$domain' after 3 attempts (nslookup status $rc): $result"
+			had_error=1
 			continue
 		fi
 
-		# update FLAG to 0 for successfully resolved domain (add mode only)
-		if [ "$PRIORITY" -eq 1 ]; then
-			sed -i "s/^\($DOMAIN[[:space:]]\+$VPN_IF[[:space:]]\+$WAN_IF[[:space:]]\+\)[[:digit:]]\+$/\10/" "$FILE"
+		ok=1 any=0 ADDED=0
+		# Mutual exclusion with start_firewall() using the *same kernel lock*.
+		# The shell does not hold this lock during a slow DNS lookup
+		if ! flock 9; then
+			LOGR "cannot acquire firewall generation lock"
+			had_error=1
+			continue
 		fi
 
-		# add IP(s) for given domain
-		ADDGLOB=0
-		echo "$RESULT" | awk -v domain="$DOMAIN" '/^Name:/ { if ($2 == domain) {flag=1; next} } flag && /Address [0-9]+:/ { print $3 }' | \
-		while IFS= read -r IP; do
-			if echo "$IP" | grep -qv ':'; then
-				ipt="iptables"
-			else
-				[ "$(ipv6Enabled)" -eq 1 ] && ipt=ip6tables || continue
+		# Reject stale DNS results after a firewall generation change
+		current_generation=
+		IFS= read -r current_generation < "$FILE" || :
+		if [ "$generation" != "$current_generation" ]; then
+			flock -u 9
+			LOGD "FQDN snapshot changed during resolution; restarting scan"
+			stale=1
+			break
+		fi
+
+		if ! acquire_legacy_lock; then
+			LOGR "cannot obtain FreshTomato firewall lock for $domain"
+			flock -u 9
+			had_error=1
+			continue
+		fi
+
+		for ip in $ips; do
+			case "$ip" in
+				*:*) ipv6_enabled || continue; tool=ip6tables; reject=icmp6-port-unreachable ;;
+				*) tool=iptables; reject=icmp-port-unreachable ;;
+			esac
+			any=1
+			status=0
+			ensure_rule "$tool" "$ip" "$reject" ! -o "$vpn" || status=1
+			ensure_rule "$tool" "$ip" "$reject" -o "$wan" || status=1
+			if [ "$status" -ne 0 ]; then
+				LOGR "type: 3 - failed to install $tool rules for '$domain' ($ip)"
+				ok=0
 			fi
-			ADD1=0
-			ADD2=0
-
-			! $ipt -C FORWARD -d "$IP" ! -o "$VPN_IF" -j REJECT 2>/dev/null && ADD1=1
-			! $ipt -C FORWARD -d "$IP" -o "$WAN_IF" -j REJECT 2>/dev/null && ADD2=1
-
-			[ "$ADD1$ADD2" != "00" ] && {
-				ADDED=1
-
-				# keep the lock as short as possible (in add mode)
-				[ "$PRIORITY" -eq 1 ] && simple_lock
-
-				[ "$ADD1" -eq 1 ] && $ipt -I FORWARD -d "$IP" ! -o "$VPN_IF" -j REJECT
-				[ "$ADD2" -eq 1 ] && $ipt -I FORWARD -d "$IP" -o "$WAN_IF" -j REJECT
-
-				[ "$PRIORITY" -eq 1 ] && simple_unlock
-			}
 		done
-		[ "$ADDED" -eq 1 ] && $LOGI "type: 3 - add '$DOMAIN' [$WAN_IF]"
 
-	done < "$FILE"
-}
+		# Do not clear pending=1 if DNS returned only disabled IP families
+		if [ "$any" -eq 0 ]; then
+			ok=0
+		fi
 
-checkPid() {
-	local PIDNO
-
-	if [ -f "$PIDFILE" ]; then
-		PIDNO=$(cat "$PIDFILE")
-		if cat "/proc/$PIDNO/cmdline" &>/dev/null; then
-			if [ "$(PRIORITY)" -eq 1 ]; then
-				# our process has priority (add mode)
-				$LOGW "killing previous process ..."
-				kill -9 "$PIDNO"
-			else
-				# priority has the previous process (std mode)
-				$LOGW "another process in action - Exiting ..."
-				exit 0
+		if [ "$ok" -eq 1 ] && [ "$flag" = 1 ]; then
+			if ! mark_resolved "$domain" "$vpn" "$wan"; then
+				LOGR "unable to clear pending flag for $domain"
+				ok=0
 			fi
 		fi
-	fi
+		simple_unlock
+		HAVE_FW_LOCK=0
+		flock -u 9
 
-	if ! echo "$PID" >"$PIDFILE"; then
-		$LOGE "could not create PID file"
-		exit 0
-	fi
+		if [ "$ok" -ne 1 ]; then
+			had_error=1
+			continue
+		fi
+		[ "$ADDED" -eq 1 ] && LOGI "type: 3 - added '$domain' [$wan]"
+	done < "$FILE"
+
+	[ "$stale" -eq 0 ] && [ "$had_error" -eq 0 ]
 }
 
 
 ###################################################
 
 
-# set PRIORITY for checkPid
-if [ "$MODE" = "add" ]; then
-	PRIORITY=1
-elif [ "$MODE" = "update" ]; then
-	PRIORITY=0
+if [ "$MODE" = add ]; then
+	if [ ! -r "$FILE" ]; then
+		LOGE "FQDN input file unavailable: $FILE"
+		exit 1
+	fi
+	has_pending || exit 0
+fi
+
+# Session lock: one active helper. Cron update skips a busy instance;
+# add waits up to 60 seconds for the instance to finish
+exec 8>"$SESSION_LOCK" || { LOGE "cannot open session lock"; exit 1; }
+if [ "$MODE" = update ]; then
+	flock -n 8 || exit 0
 else
-	exit 1
+	n=0
+	until flock -n 8; do
+		[ "$n" -lt 60 ] || { LOGE "helper instance busy for >60 seconds"; exit 1; }
+		n=$((n + 1))
+		sleep 1
+	done
+fi
+printf '%s\n' "$PID" > "$PIDFILE" || exit 1
+
+exec 9>"$FW_GUARD" || { LOGE "cannot open firewall guard"; exit 1; }
+trap 'cleanup' 0
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+if [ "$MODE" = add ]; then
+	has_pending || exit 0
+	LOGI "trying to resolve pending FQDNs for FW ..."
+else
+	LOGD "perform scheduled FQDN checks ..."
 fi
 
-checkPid
-
-if [ "$MODE" = "add" ]; then
-	# wait for FW to finish (in add mode)
-	sleep 5
-	$LOGI "trying to resolve FQDNs for FW ..."
-elif [ "$MODE" = "update" ]; then
-	$LOGD "perform scheduled FQDN checks ..."
+if [ "$MODE" = update ]; then
+	ATTEMPT=1
+	process_domains
+	exit $?
 fi
 
-# in add mode, retry until all domains are resolved
+DELAY=15
 while :; do
-	# check connection
-	[ "$(pingOK)" -eq 1 ] && {
-		ALLOK=1
-		addToFW
-		if [ "$MODE" = "add" ] && [ "$ALLOK" != "1" ]; then
-			$LOGE "not all domain IPs have been resolved and added to FW! Will retry ASAP ..."
-			continue
-		fi
-	} || {
-		$LOGE "could not $MODE IPs of FQDNs for FW ($MODE mode) - connection is down! Will retry later ..."
-		[ "$MODE" = "add" ] && { sleep 10; continue; }
-	}
-	break
+	ATTEMPT=$((ATTEMPT + 1))
+	process_domains || :
+	[ -r "$FILE" ] || { LOGE "FQDN input file disappeared: $FILE"; exit 1; }
+	has_pending || break
+	sleep "$DELAY"
+	[ "$DELAY" -ge 60 ] || DELAY=$((DELAY * 2))
 done
-
-rm -f $PIDFILE &>/dev/null
-
 exit 0

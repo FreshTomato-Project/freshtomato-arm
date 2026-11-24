@@ -15,7 +15,8 @@
  #include <netdb.h>
  #include <sys/time.h>
  #include <sys/socket.h>
- #include <setjmp.h>
+ #include <poll.h>
+ #include <sys/wait.h>
 #endif
 
 /* needed by logmsg() */
@@ -26,7 +27,13 @@
 #if defined(TCONFIG_OPENVPN) || defined(TCONFIG_WIREGUARD)
  const char ks_dir[]      = "/tmp/kill-switch";
  const char ks_fqdns_fn[] = "fqdns";
- static jmp_buf jmp_env;
+ /* Staged FQDN snapshot: published after successful firewall installation */
+ static char ks_staged_fqdns[BUF_SIZE_128];
+ static int ks_staged_ready;
+ static int ks_any_fqdn;
+ static int ks_pending_fqdn;
+ static int ks_post_commit_ok;
+
 #endif
 
 #ifdef DEBUG_RCTEST
@@ -367,7 +374,9 @@ static int check_string(const char *str, char *out, size_t outlen)
 			if (!isdigit((unsigned char)*q))
 				return 0;
 
-			mask_val = mask_val * 10 + (*q - '0');
+			/* Values greater than 32 will be coerced to /32. Avoid overflow */
+			if (mask_val <= 32)
+				mask_val = mask_val * 10 + (*q - '0');
 		}
 		if (q != end)
 			return 0;
@@ -397,143 +406,139 @@ static int eq_ip(const ip_addr *a, const ip_addr *b)
 	return a->family == b->family && strcmp(a->addr, b->addr) == 0;
 }
 
-static void timeout_handler(int sig)
-{
-	longjmp(jmp_env, 1);
-}
+/*
+ * One DNS lookup runs in a child process so a uClibc resolver timeout never
+ * interrupts getaddrinfo() via a non-local jump from a signal handler.
+ *
+ * AF_UNIX/SOCK_DGRAM carries one bounded result message atomically.
+ * The parent polls with a CLOCK_MONOTONIC deadline and kills/reaps the child
+ * when the deadline expires.
+ */
+#define KS_DNS_MAX_ADDRS 128
+
+typedef struct {
+	int rc;
+	size_t count;
+	ip_addr addrs[KS_DNS_MAX_ADDRS];
+} ks_dns_reply;
 
 /*
- * Resolves a fully qualified domain name to a deduplicated vector of numeric IPv4 and/or IPv6 addresses
- * @param	host		pointer to a domain name
- * @param	out_addrs	output pointer to a dynamically allocated array
- * @param	out_count	output pointer to the number of unique addresses
- * @param	timeout_sec	timeout in secs
- * @return	0 on success, non-zero on failure
+ * Called only in the short-lived resolver child.
+ * Returns: 0 success; 2 DNS error; 3 internal/capacity error; 4 no addresses.
  */
+static void resolve_fqdn_sync(const char *host, ks_dns_reply *reply)
+{
+	struct addrinfo hints = { 0 }, *res = NULL, *rp;
+	ip_addr cand;
+	size_t i;
+	int err;
+
+	hints.ai_family = AF_UNSPEC;     /* IPv4 and IPv6 */
+	hints.ai_flags  = AI_ADDRCONFIG; /* return only families used locally */
+	reply->rc = 2;
+	err = getaddrinfo(host, NULL, &hints, &res);
+	if (err) {
+		if (err != EAI_AGAIN)
+			logmsg(LOG_DEBUG, "*** %s: DNS error: %s", __FUNCTION__, gai_strerror(err));
+
+		return;
+	}
+
+	reply->rc = 4;
+	for (rp = res; rp; rp = rp->ai_next) {
+#ifdef TCONFIG_IPV6
+		if (rp->ai_family != AF_INET && (!ipv6_enabled() || rp->ai_family != AF_INET6))
+			continue;
+#else
+		if (rp->ai_family != AF_INET)
+			continue;
+#endif
+		if (getnameinfo(rp->ai_addr, rp->ai_addrlen, cand.addr, sizeof(cand.addr), NULL, 0, NI_NUMERICHOST) != 0)
+			continue;
+		cand.family = rp->ai_family;
+		for (i = 0; i < reply->count && !eq_ip(&cand, &reply->addrs[i]); i++);
+		if (i < reply->count)
+			continue;
+		if (reply->count == KS_DNS_MAX_ADDRS) {
+			reply->rc = 3;
+			break;
+		}
+		reply->addrs[reply->count++] = cand;
+		reply->rc = 0;
+	}
+	freeaddrinfo(res);
+}
+
+/* Run getaddrinfo() in a child with a monotonic timeout and one datagram reply */
 static int resolve_fqdn(const char *host, ip_addr **out_addrs, size_t *out_count, int timeout_ms)
 {
-	struct addrinfo hints, *res = NULL, *rp;
-	struct sigaction sa, sa_old;
-	struct itimerval timer, old_timer;
-	char buf[INET6_ADDRSTRLEN];
-	ip_addr *vec = NULL;
-	int dup, ret;
-	size_t cap = 0, ncap, i;
+	int sv[2], pr, status, got = 0;
+	pid_t child;
+	struct pollfd pfd;
+	struct timespec start, now;
+	ks_dns_reply reply;
+	long long elapsed;
+	ssize_t nread;
 
 	*out_addrs = NULL;
 	*out_count = 0;
+	if (timeout_ms <= 0 || clock_gettime(CLOCK_MONOTONIC, &start) != 0 || socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) != 0)
+		return 3;
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family   = AF_UNSPEC;     /* IPv4 and IPv6 */
-	hints.ai_socktype = 0;             /* any */
-	hints.ai_flags    = AI_ADDRCONFIG; /* return only families used locally */
-
-	/* set the SIGALRM signal handler */
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = timeout_handler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-	sigaction(SIGALRM, &sa, &sa_old);
-
-	/* set the timer */
-	memset(&timer, 0, sizeof(timer));
-	timer.it_value.tv_sec = 0;
-	timer.it_value.tv_usec = timeout_ms * 1000; /* ms */
-	timer.it_interval.tv_sec = 0;
-	timer.it_interval.tv_usec = 0;
-	setitimer(ITIMER_REAL, &timer, &old_timer);
-
-	if (setjmp(jmp_env) == 0) {
-		ret = getaddrinfo(host, NULL, &hints, &res);
-
-		/* turn off the timer */
-		memset(&timer, 0, sizeof(timer));
-		setitimer(ITIMER_REAL, &timer, NULL);
+	child = fork();
+	if (child < 0) {
+		close(sv[0]);
+		close(sv[1]);
+		return 3;
 	}
-	else
-		ret = EAI_AGAIN; /* timeout */
-
-	/* restore previous handler and timer */
-	sigaction(SIGALRM, &sa_old, NULL);
-	setitimer(ITIMER_REAL, &old_timer, NULL);
-
-	if (ret == EAI_AGAIN)
-		return 1; /* DNS timeout */
-	else if (ret != 0) {
-		logmsg(LOG_DEBUG, "*** %s: DNS error: %s", __FUNCTION__, gai_strerror(ret));
-		return 2; /* DNS error */
+	if (child == 0) {
+		close(sv[0]);
+		memset(&reply, 0, sizeof(reply));
+		resolve_fqdn_sync(host, &reply);
+		nread = send(sv[1], &reply, sizeof(reply), MSG_NOSIGNAL);
+		_exit(nread == (ssize_t)sizeof(reply) ? 0 : 1);
 	}
+	close(sv[1]);
+	pfd.fd = sv[0];
+	pfd.events = POLLIN;
+	while (clock_gettime(CLOCK_MONOTONIC, &now) == 0) {
+		elapsed = (long long)(now.tv_sec - start.tv_sec) * 1000 + (now.tv_nsec - start.tv_nsec) / 1000000;
+		if (elapsed >= timeout_ms)
+			break;
 
-	for (rp = res; rp != NULL; rp = rp->ai_next) {
-#ifdef TCONFIG_IPV6
-		if (ipv6_enabled()) {
-			if (rp->ai_family != AF_INET && rp->ai_family != AF_INET6)
-				continue;
-		}
-		else
-#else
-		{
-			if (rp->ai_family != AF_INET)
-				continue;
-		}
-#endif
-		memset(buf, 0, INET6_ADDRSTRLEN);
-		if (getnameinfo(rp->ai_addr, rp->ai_addrlen, buf, INET6_ADDRSTRLEN, NULL, 0, NI_NUMERICHOST) != 0)
+		pfd.revents = 0;
+		pr = poll(&pfd, 1, timeout_ms - (int)(elapsed < 0 ? 0 : elapsed));
+		if (pr < 0 && errno == EINTR)
 			continue;
 
-		ip_addr cand;
-		cand.family = rp->ai_family;
-		strlcpy(cand.addr, buf, sizeof(cand.addr));
-
-		dup = 0;
-		for (i = 0; i < *out_count; i++) {
-			if (eq_ip(&cand, &vec[i])) {
-				dup = 1;
-				break;
-			}
+		if (pr > 0 && (pfd.revents & POLLIN)) {
+			do {
+				nread = recv(sv[0], &reply, sizeof(reply), MSG_DONTWAIT);
+			} while (nread < 0 && errno == EINTR);
+			got = nread == (ssize_t)sizeof(reply);
 		}
-		if (dup)
-			continue;
-
-		if (*out_count == cap) {
-			if (cap > ((size_t)-1 / 2)) {
-				free(vec);
-				freeaddrinfo(res);
-				logmsg(LOG_ERR, "%s: DNS result capacity overflow", __FUNCTION__);
-				return 3;
-			}
-
-			ncap = cap ? cap * 2 : 8;
-			if (ncap > ((size_t)-1 / sizeof(*vec))) {
-				free(vec);
-				freeaddrinfo(res);
-				logmsg(LOG_ERR, "%s: DNS result allocation overflow", __FUNCTION__);
-				return 3;
-			}
-
-			ip_addr *nvec = realloc(vec, ncap * sizeof(*nvec));
-			if (!nvec) {
-				free(vec);
-				freeaddrinfo(res);
-				logmsg(LOG_ERR, "%s: failed to allocate memory for DNS lookup results", __FUNCTION__);
-				return 3;
-			}
-			vec = nvec;
-			cap = ncap;
-		}
-		vec[*out_count] = cand;
-		(*out_count)++;
+		break;
 	}
+	close(sv[0]);
+	if (!got)
+		kill(child, SIGKILL);
 
-	freeaddrinfo(res);
+	while (waitpid(child, &status, 0) < 0 && errno == EINTR);
+	if (!got)
+		return 1;
 
-	if (*out_count == 0) {
-		free(vec);
-		logmsg(LOG_ERR, "%s: no data", __FUNCTION__);
-		return 4; /* no data */
-	}
+	if (reply.rc != 0)
+		return reply.rc >= 2 && reply.rc <= 4 ? reply.rc : 3;
 
-	*out_addrs = vec;
+	if (!reply.count || reply.count > KS_DNS_MAX_ADDRS)
+		return 3;
+
+	*out_addrs = malloc(reply.count * sizeof(**out_addrs));
+	if (!*out_addrs)
+		return 3;
+
+	memcpy(*out_addrs, reply.addrs, reply.count * sizeof(**out_addrs));
+	*out_count = reply.count;
 
 	return 0;
 }
@@ -545,12 +550,14 @@ void kill_switch(_tf_ipt_write ipt_write)
 #endif
 {
 	FILE *fp = NULL;
-	unsigned int unit, br, rules_count, kd, type1_added, type3_exist = 0, type3_err = 0, type3_ok_fp = 0;
+	int fqdns_fd, fqdns_write_error = 0;
+	struct timeval now;
+	unsigned int unit, br, rules_count, kd, type1_added;
 	int policy_type, wan_unit, mwan_num, ret, res;
 	char *enable, *type, *value, *kswitch;
 	char *nv, *nvp, *b, *c, *lan_ip;
 	char wan_prefix[] = "wanXX";
-	char buf[BUF_SIZE_64], buf2[BUF_SIZE_64], val[BUF_SIZE_64], wan_if[BUF_SIZE_16];
+	char buf[BUF_SIZE_64], buf2[BUF_SIZE_64], val[BUF_SIZE], wan_if[BUF_SIZE_16];
 	static char sip[BUF_SIZE_64];
 	size_t n, i, j, dots, count;
 	const char *routing_key, *rgw_key, *iface_fmt;
@@ -570,12 +577,33 @@ void kill_switch(_tf_ipt_write ipt_write)
 	};
 	n = ASIZE(kind);
 
-	/* create kill-switch dir */
-	mkdir_if_none(ks_dir);
+	/* Never truncate the live queue while building the restore file */
+	if (ks_staged_fqdns[0])
+		unlink(ks_staged_fqdns);
 
-	/* open FQDN file for writing */
-	snprintf(buf, BUF_SIZE_64, "%s/%s", ks_dir, ks_fqdns_fn);
-	fp = fopen(buf, "w");
+	ks_staged_fqdns[0] = '\0';
+	ks_staged_ready = ks_any_fqdn = ks_pending_fqdn = ks_post_commit_ok = 0;
+
+	mkdir_if_none(ks_dir);
+	snprintf(ks_staged_fqdns, BUF_SIZE_128, "%s/%s.XXXXXX", ks_dir, ks_fqdns_fn);
+	fqdns_fd = mkstemp(ks_staged_fqdns);
+	if (fqdns_fd >= 0) {
+		fp = fdopen(fqdns_fd, "w");
+		if (!fp) {
+			close(fqdns_fd);
+			unlink(ks_staged_fqdns);
+		}
+	}
+	if (!fp) {
+		ks_staged_fqdns[0] = '\0';
+		logmsg(LOG_ERR, "Kill-Switch: unable to stage FQDN queue");
+	}
+	else {
+		/* Header identifies the firewall generation, preventing stale writes */
+		gettimeofday(&now, NULL);
+		if (fprintf(fp, "# KS-GEN %ld.%06ld.%ld\n", (long)now.tv_sec, (long)now.tv_usec, (long)getpid()) < 0)
+			fqdns_write_error = 1;
+	}
 
 	/* proceed routing_val */
 	for (i = 0; i < n; i++) {
@@ -617,21 +645,33 @@ void kill_switch(_tf_ipt_write ipt_write)
 					continue;
 
 				policy_type = atoi(type);
+				if (strlen(value) >= BUF_SIZE) {
+					logmsg(LOG_ERR, "Kill-Switch: routing value too long for %s%u", (kd ? "openvpn-client" : "wireguard"), unit);
+					continue;
+				}
 
 				/* check all active WANs */
 				for (wan_unit = 1; wan_unit <= mwan_num; ++wan_unit) {
 					get_wan_prefix(wan_unit, wan_prefix, sizeof(wan_prefix));
 
-					/* skip if given WAN is disabled */
+					/* Skip administratively disabled WANs, not temporarily down links */
 					if (get_wanx_proto(wan_prefix) == WP_DISABLED)
 						continue;
 
-					/* find WAN IF */
-					snprintf(wan_if, BUF_SIZE_16, "%s", get_wanface(wan_prefix));
-					if ((!*wan_if) || (strcmp(wan_if, "") == 0))
+					/* Preserve the interface chosen by FreshTomato.
+					 * "none" is an intentional marker set by stop_wan_if():
+					 * a former pppN may already belong to a DIFFERENT WAN.
+					 * Never infer a new pppN from wan_unit here.
+					 * The first KS rule (! -o VPN_IF) still rejects non-VPN
+					 * egress for a known destination; "-o none" is inert.
+					 */
+					snprintf(wan_if, sizeof(wan_if), "%s", get_wanface(wan_prefix));
+					if (!*wan_if) {
+						logmsg(LOG_WARNING, "Kill-Switch: empty WAN interface for %s", wan_prefix);
 						continue;
+					}
 
-					snprintf(val, BUF_SIZE_64, "%s", value); /* copy IP/domain to buffer */
+					snprintf(val, BUF_SIZE, "%s", value); /* copy IP/domain to buffer */
 
 					/* "From Source IP" */
 					if (policy_type == 1) {
@@ -692,7 +732,7 @@ void kill_switch(_tf_ipt_write ipt_write)
 						/* it's FQDN, so no 'sip' */
 						if (!ret) {
 							/* set the flag that type 3 is present */
-							type3_exist = 1;
+							ks_any_fqdn = 1;
 
 							/* warn about problem with FQDN file */
 							if (!fp)
@@ -705,18 +745,18 @@ void kill_switch(_tf_ipt_write ipt_write)
 							if (res != 0) {
 								logmsg(LOG_WARNING, "Kill-Switch: type: %d - can't resolve '%s' (%s) [%s]", policy_type, val, (res == 1 ? "DNS timeout" : res == 2 ? "DNS error" : "resolve_fqdn() error"), wan_if);
 								/* set the flag that an error occurred */
-								type3_err = 1;
+								ks_pending_fqdn = 1;
 
 								/* add FQDN, VPN IF, WAN IF and FLAG to file */
-								if (fp)
-									fprintf(fp, "%s %s %s 1\n", val, buf, wan_if); /* FLAG=1: add domain (only for add mode) */
+								if (fp && fprintf(fp, "%s %s %s 1\n", val, buf, wan_if) < 0) /* FLAG=1: add domain (only for add mode) */
+									fqdns_write_error = 1;
 
 								continue;
 							}
 							else {
 								/* add FQDN, VPN IF, WAN IF and FLAG to file */
-								if (fp)
-									fprintf(fp, "%s %s %s 0\n", val, buf, wan_if); /* FLAG=0: omit domain (only for add mode) */
+								if (fp && fprintf(fp, "%s %s %s 0\n", val, buf, wan_if) < 0) /* FLAG=0: omit domain (only for add mode) */
+									fqdns_write_error = 1;
 							}
 
 							/* OK to add */
@@ -756,36 +796,133 @@ void kill_switch(_tf_ipt_write ipt_write)
 				logmsg(LOG_INFO, "Kill-Switch: added %u rules to firewall for %s%u", rules_count, (kd ? "openvpn-client" : "wireguard"), unit);
 		}
 	}
-	/* close FQDN file */
+	/* The snapshot is still private. Publication happens after restore */
 	if (fp) {
-		fclose(fp);
-		type3_ok_fp = 1;
+		if (ferror(fp))
+			fqdns_write_error = 1;
+		if (fclose(fp) != 0)
+			fqdns_write_error = 1;
+		if (fqdns_write_error) {
+			unlink(ks_staged_fqdns);
+			ks_staged_fqdns[0] = '\0';
+			logmsg(LOG_ERR, "Kill-Switch: error writing FQDN snapshot");
+		}
+		else
+			ks_staged_ready = 1;
 	}
 
-	/* proceed FQDNs */
-	if (type3_exist) {
-		if (type3_ok_fp) {
-			/* run ks helper 12 minutes past every 2nd hour */
-			logmsg(LOG_INFO, "Kill-Switch: add cron job for FQDNs (type 3)");
-			eval("cru", "a", "kscheck", "12 */2 * * * ks_helper.sh update");
+}
 
-			if (type3_err) {
-				/* run ks helper in special mode to add these FQDNs to FW ASAP */
-				logmsg(LOG_WARNING, "Kill-Switch: add KS-helper to add FQDNs (type 3) to firewall ASAP");
-				xstart("ks_helper.sh", "add");
-			}
-			else {
-				/* if every FQDN is added, kill script */
-				killall("ks_helper.sh", SIGTERM);
+/*
+ * Flip every generated "0" to "1" if any restore failed.
+ * Input lines are generated by kill_switch(), not supplied by users.
+ */
+static int ks_force_pending_on_failed_restore(const char *path)
+{
+	FILE *fp;
+	char line[512];
+	long off;
+	size_t len;
+	int ok = 1;
+
+	fp = fopen(path, "r+");
+	if (!fp)
+		return 0;
+
+	while (1) {
+		off = ftell(fp);
+		if (off < 0) {
+			ok = 0;
+			break;
+		}
+		if (!fgets(line, sizeof(line), fp))
+			break;
+
+		len = strlen(line);
+		if (len == 0 || line[len - 1] != '\n') {
+			ok = 0;
+			break;
+		}
+		if (line[0] == '#')
+			continue;
+
+		if (len < 3 || (line[len - 2] != '0' && line[len - 2] != '1')) {
+			ok = 0;
+			break;
+		}
+		if (line[len - 2] == '0') {
+			if (fseek(fp, off + (long)len - 2, SEEK_SET) != 0 || fputc('1', fp) == EOF || fseek(fp, off + (long)len, SEEK_SET) != 0) {
+				ok = 0;
+				break;
 			}
 		}
-		else if (!type3_ok_fp && type3_err)
-			logmsg(LOG_ERR, "Kill-Switch: cannot add FQDNs (type 3) to firewall!");
 	}
-	else {
-		/* if there is no type 3, remove cron and helper (if running) */
+	if (ferror(fp))
+		ok = 0;
+	if (fclose(fp) != 0)
+		ok = 0;
+
+	return ok;
+}
+
+void kill_switch_discard_staged(void)
+{
+	if (ks_staged_fqdns[0])
+		unlink(ks_staged_fqdns);
+
+	ks_staged_fqdns[0] = '\0';
+	ks_staged_ready = ks_post_commit_ok = 0;
+}
+
+/* Called only after IPv4/IPv6 restore attempts, while holding firewall lock */
+void kill_switch_commit(int restore_ok)
+{
+	char final_path[BUF_SIZE_128];
+
+	ks_post_commit_ok = 0;
+	if (!ks_staged_ready) {
+		logmsg(LOG_ERR, "Kill-Switch: FQDN snapshot not available; keeping previous queue");
+		return;
+	}
+
+	if (!restore_ok && ks_any_fqdn) {
+		/* The kernel may not contain rules generated from successful DNS */
+		if (!ks_force_pending_on_failed_restore(ks_staged_fqdns)) {
+			logmsg(LOG_ERR, "Kill-Switch: cannot mark all FQDNs pending after restore failure");
+			kill_switch_discard_staged();
+			return;
+		}
+		ks_pending_fqdn = 1;
+	}
+
+	snprintf(final_path, BUF_SIZE_128, "%s/%s", ks_dir, ks_fqdns_fn);
+	if (rename(ks_staged_fqdns, final_path) != 0) {
+		logmsg(LOG_ERR, "Kill-Switch: cannot publish %s: %s", final_path, strerror(errno));
+		kill_switch_discard_staged();
+		return;
+	}
+
+	ks_staged_fqdns[0] = '\0';
+	ks_staged_ready = 0;
+	ks_post_commit_ok = 1;
+}
+
+/* Called after firewall guard release: no sleep and no early helper spawn */
+void kill_switch_activate(void)
+{
+	if (!ks_post_commit_ok)
+		return;
+
+	if (!ks_any_fqdn) {
 		eval("cru", "d", "kscheck");
 		killall("ks_helper.sh", SIGTERM);
+		return;
+	}
+
+	eval("cru", "a", "kscheck", "12 */2 * * * ks_helper.sh update");
+	if (ks_pending_fqdn) {
+		logmsg(LOG_WARNING, "Kill-Switch: pending FQDNs, starting repair helper");
+		xstart("ks_helper.sh", "add");
 	}
 }
 

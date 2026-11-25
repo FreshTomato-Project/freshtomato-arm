@@ -46,8 +46,10 @@ function tick() {
 	var remaining = Math.max(0, n - elapsed);
 	document.getElementById('continue').value = remaining ? remaining : 'Waiting...';
 
-	if (!remaining)
+	if (!remaining) {
+		document.getElementById('reboot-spinner').style.display = 'inline';
 		showManualHelp();
+	}
 
 	setTimeout(tick, 1000);
 }
@@ -81,6 +83,7 @@ function pollRouter() {
 				e.value = 'Continue';
 				e.disabled = false;
 				e.style.cursor = 'pointer';
+				document.getElementById('reboot-spinner').style.display = 'none';
 				document.getElementById('msg2').textContent = 'The router web server is responding again.';
 				document.getElementById('manual').style.display = 'none';
 				return;
@@ -163,7 +166,7 @@ function init() {
 			<div class="info-centered">
 				<form>
 					<div id="msg1"></div>
-					<div id="msg2" style="display:inline-block"></div><div style="display:inline-block"><input type="button" value="" id="continue" onclick="go()" disabled="disabled"></div>
+					<div id="msg2" style="display:inline-block"></div><div style="display:inline-block"><input type="button" value="" id="continue" onclick="go()" disabled="disabled"> <img src="spin.svg" alt="" id="reboot-spinner" style="display:none;vertical-align:middle"></div>
 					<div id="inf" style="display:none">The router will reset its address back to 192.168.1.1. You may need to renew your computer's DHCP lease or temporarily use a static address such as 192.168.1.2/24 before reconnecting.</div>
 					<div id="manual" style="display:none; margin-top:10px"><a id="manualLink" href=""></a><div>If the router's address changed after restoring settings, use its new address instead. The link does not confirm the upgrade succeeded.</div></div>
 				</form>

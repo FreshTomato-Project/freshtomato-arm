@@ -797,6 +797,22 @@ int get_default_wan_phy_port(void)
 {
 	const char *router_name = nvram_safe_get("t_fix1");
 	int i;
+
+#ifndef TCONFIG_BCMARM
+	/*
+	 * WRT54G/GS/GL boards (0x0467, except WHR-G54S boardrev 0x13)
+	 * have their dedicated WAN jack on switch port 4. The VLAN GUI
+	 * already uses this boardtype/revision mapping. Do not depend on
+	 * t_fix1 here: a missing model-name match would wrongly select
+	 * port 0 and shift the port-state and VLAN captions.
+	 *
+	 * Keep this independent of WAN0 enable state and vlanXports, so
+	 * reassigning the WAN jack cannot move the physical display slots.
+	 */
+	if ((strtoul(nvram_safe_get("boardtype"), NULL, 0) == 0x0467) && (strtoul(nvram_safe_get("boardrev"), NULL, 0) != 0x13))
+		return 4;
+#endif
+
 #ifdef TCONFIG_BCMARM
 	/* ARM routers with WAN on Port 4 */
 	/* t_fix1 contains only the model name, not the manufacturer prefix. */
